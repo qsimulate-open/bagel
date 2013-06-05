@@ -37,7 +37,7 @@ namespace bagel {
 
 class Timer {
   protected:
-    std::chrono::high_resolution_clock::time_point tp_; 
+    std::chrono::high_resolution_clock::time_point tp_;
     const int level_;
 
   public:

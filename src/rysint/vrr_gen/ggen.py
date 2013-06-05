@@ -117,7 +117,7 @@ for a in range(0,7):
     off = 1 << 8
     key = d+off*(c+off*(b+off*a))
 
-    if a == 0 and c == 0: 
+    if a == 0 and c == 0:
      ss += "\
   switch (hashkey) {\n"
     ss += "\

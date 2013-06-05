@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB, 
+DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
   const shared_ptr<const Coeff> coeff)
 : Jop(ref, nstart, nfenceB, coeff, string("HZ")) {
 
@@ -49,7 +49,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     for (int i = 0; i < norbA; ++i) {
       for (int j = 0; j < norbA; ++j, ++modata) {
         *modata = ( i < j ? mo1e(i,j) : mo1e(j,i) );
-      }   
+      }
     }
   }
 
@@ -58,7 +58,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     for (int i = 0; i < norbB; ++i) {
       for (int j = 0; j < norbB; ++j, ++modata) {
         *modata = ( i < j ? mo1e(i+norbA,j+norbA) : mo1e(j+norbA,i+norbA) );
-      }   
+      }
     }
   }
 
@@ -85,8 +85,8 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
       }
       modata += norb*norb*norbB;
     }
-  } 
-  
+  }
+
   {
     double* Bdata = mo2eB.get();
     double* modata = mo2e_ptr() + norb*norb*norb*norbA;
@@ -117,7 +117,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
     for (int i = 0; i < norbB; ++i) {
       for (int j = 0; j < norbA; ++j, ++modata) {
         *modata = mo1e(j,i+norbA);
-      }   
+      }
     }
   }
 }

@@ -108,7 +108,7 @@ void GradTask::compute() {
 #endif
     gradbatch.compute();
     const size_t block = gradbatch.size_block();
-    const size_t sblock = shell_[1]->nbasis()*shell_[2]->nbasis()*shell_[3]->nbasis(); 
+    const size_t sblock = shell_[1]->nbasis()*shell_[2]->nbasis()*shell_[3]->nbasis();
     assert(sblock <= block);
 
     // unfortunately the convention is different...

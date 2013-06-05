@@ -32,38 +32,38 @@
 #include <cassert>
 
 extern "C" {
-  void ld0006_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0014_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0026_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0038_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0050_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0074_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0086_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0110_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0146_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0170_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0194_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0230_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0266_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0302_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0350_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0434_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0590_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0770_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld0974_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld1202_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld1454_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld1730_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld2030_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld2354_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld2702_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld3074_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld3470_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld3890_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld4334_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld4802_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld5294_(double* x, double* y, double* z, double* weight, const int* n); 
-  void ld5810_(double* x, double* y, double* z, double* weight, const int* n); 
+  void ld0006_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0014_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0026_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0038_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0050_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0074_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0086_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0110_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0146_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0170_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0194_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0230_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0266_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0302_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0350_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0434_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0590_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0770_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld0974_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld1202_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld1454_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld1730_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld2030_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld2354_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld2702_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld3074_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld3470_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld3890_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld4334_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld4802_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld5294_(double* x, double* y, double* z, double* weight, const int* n);
+  void ld5810_(double* x, double* y, double* z, double* weight, const int* n);
 }
 
 namespace bagel {

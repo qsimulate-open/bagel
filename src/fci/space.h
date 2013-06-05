@@ -52,7 +52,7 @@ namespace bagel {
 // implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
 class Space {
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta. 
+    // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
 
     const int nelea_; // reference number of alpha electrons
@@ -77,7 +77,7 @@ class Space {
     static const int Alpha = 0;
     static const int Beta = 1;
 
-    int nspin() const { return nelea_ - neleb_; }; 
+    int nspin() const { return nelea_ - neleb_; };
 
     std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid

@@ -57,8 +57,8 @@ void JacobiDiag::rotate(const int k, const int l) {
   const double s = c*t;
   const double rho = (1.0 - c)/s;
 
-  A_->element(k,k) = kk - t * kl; 
-  A_->element(l,l) = ll + t * kl; 
+  A_->element(k,k) = kk - t * kl;
+  A_->element(l,l) = ll + t * kl;
 
   A_->element(k,l) = 0.0;
   A_->element(l,k) = 0.0;

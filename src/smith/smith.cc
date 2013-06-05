@@ -57,4 +57,4 @@ void Smith::compute() {
   // calculate unrelaxed dipole moment from dm
   algo_->dipole().compute();
 
-} 
+}

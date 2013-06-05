@@ -193,7 +193,7 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
   vector<size_t> rec(mpi__->size());
   fill(rec.begin(), rec.end(), 0);
 
-  mpi__->allgather(&astart, 1, &rec[0], 1); 
+  mpi__->allgather(&astart, 1, &rec[0], 1);
   rec.push_back(naux_);
 
   return make_shared<const StaticDist>(rec);
@@ -257,7 +257,7 @@ shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, sh
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->transform_second(c, nocc));
   return out;
 }
@@ -265,7 +265,7 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const siz
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const double* c, const size_t nocc) const {
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->transform_third(c, nocc)->swap());
   return out;
 }
@@ -276,7 +276,7 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const double* c, cons
 
 shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nocc);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->transform_third(c, nocc));
   return out;
 }
@@ -284,7 +284,7 @@ shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, con
 
 shared_ptr<DFHalfDist> DFHalfDist::copy() const {
   auto out = make_shared<DFHalfDist> (df_, nindex1_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->copy());
   return out;
 }
@@ -292,7 +292,7 @@ shared_ptr<DFHalfDist> DFHalfDist::copy() const {
 
 shared_ptr<DFHalfDist> DFHalfDist::clone() const {
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->clone());
   return out;
 }
@@ -300,7 +300,7 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 
 shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
   auto out = make_shared<DFDist>(df_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->transform_second(c, df_->nindex1(), true));
   return out;
 }
@@ -313,8 +313,8 @@ void DFHalfDist::rotate_occ(const double* d) {
 
 
 shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
-  auto out = make_shared<DFHalfDist>(df_, nindex1_); 
-  for (auto& i : block_) 
+  auto out = make_shared<DFHalfDist>(df_, nindex1_);
+  for (auto& i : block_)
     out->add_block(i->transform_third(den, nindex2_));
   return out;
 }
@@ -330,7 +330,7 @@ shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den, const double 
 
 shared_ptr<DFFullDist> DFFullDist::copy() const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->copy());
   return out;
 }
@@ -338,7 +338,7 @@ shared_ptr<DFFullDist> DFFullDist::copy() const {
 
 shared_ptr<DFFullDist> DFFullDist::clone() const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->clone());
   return out;
 }
@@ -353,7 +353,7 @@ void DFFullDist::symmetrize() {
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->transform_third(c, df_->nindex2(), true));
   return out;
 }
@@ -362,7 +362,7 @@ shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
 // 2RDM contractions
 shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM(const double scale_exch) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->apply_rhf_2RDM(scale_exch));
   return out;
 }
@@ -370,7 +370,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_closed_2RDM(const double scale_exch) co
 
 shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const double* bmat) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->apply_uhf_2RDM(amat, bmat));
   return out;
 }
@@ -378,7 +378,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_uhf_2RDM(const double* amat, const doub
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->apply_2RDM(rdm, rdm1, nclosed, nact));
   return out;
 }
@@ -386,7 +386,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* r
 
 shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
-  for (auto& i : block_) 
+  for (auto& i : block_)
     out->add_block(i->apply_2RDM(rdm));
   return out;
 }
@@ -440,7 +440,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) con
       ++j;
     }
   }
-  return out; 
+  return out;
 }
 
 

@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <map>
-#include <boost/regex.hpp> 
+#include <boost/regex.hpp>
 
 #include <fstream>
 #include <vector>
@@ -65,7 +65,7 @@ MoldenIn& MoldenIn::operator>> (shared_ptr<const Coeff>& coeff) {
   assert(!mo_coefficients_.empty());
 
   vector<int> atom_offsets;
-  for(auto& ioff : coeff->geom()->offsets()) {
+  for (auto& ioff : coeff->geom()->offsets()) {
     atom_offsets.push_back(ioff.front());
   }
 
@@ -74,12 +74,12 @@ MoldenIn& MoldenIn::operator>> (shared_ptr<const Coeff>& coeff) {
   cout << shell_orders_.size() << endl;
 
   double *idata = coeff->data();
-  for(auto& imo : mo_coefficients_) {
+  for (auto& imo : mo_coefficients_) {
     auto icoeff = imo.begin();
     int ii = 0;
-    for(auto iatom = shell_orders_.begin(); iatom != shell_orders_.end(); ++iatom, ++ii) {
+    for (auto iatom = shell_orders_.begin(); iatom != shell_orders_.end(); ++iatom, ++ii) {
       double* tmp_idata = idata + atom_offsets[gto_order_[ii]-1];
-      for(auto& ishell : *iatom) {
+      for (auto& ishell : *iatom) {
         if (cartesian_) {
           vector<int> corder = m2b_cart_.at(ishell);
           vector<double> scales = scaling_.at(ishell);
@@ -90,16 +90,14 @@ MoldenIn& MoldenIn::operator>> (shared_ptr<const Coeff>& coeff) {
               in.push_back(*(icoeff + iorder) * scales.at(jj++));
             vector<double> new_in = transform_cart(in, ishell);
             tmp_idata = copy(new_in.begin(), new_in.end(), tmp_idata);
-          }
-          else {
-            for(auto& iorder : corder)
+          } else {
+            for (auto& iorder : corder)
               *tmp_idata++ = *(icoeff + iorder) * scales.at(jj++);
           }
           icoeff += corder.size();
-        }
-        else {
+        } else {
           vector<int> corder = m2b_sph_.at(ishell);
-          for(auto& iorder : corder)
+          for (auto& iorder : corder)
             *tmp_idata++ = *(icoeff + iorder);
           icoeff += corder.size();
         }
@@ -125,9 +123,9 @@ void MoldenIn::read() {
   int num_atoms = 0;
 
   /* Atom positions */
-  vector< array<double,3>> positions;
+  vector<array<double,3>> positions;
   /* Atom names */
-  vector< string > names;
+  vector<string> names;
   /* Map atom number to basis info */
   map<int, vector<tuple<string, vector<double>, vector<double>>>> basis_info;
 
@@ -160,31 +158,30 @@ void MoldenIn::read() {
   ************************************************************/
   cartesian_ = true;
 
-  ifstream sph_input;
-  sph_input.open(filename_.c_str());
-  if(!sph_input.is_open()){
+  ifstream sph_input(filename_);
+  if (!sph_input.is_open()){
     throw runtime_error("Molden input file not found");
-  }   
+  }
   else {
     boost::regex _5d_re("\\[5[Dd]\\]");
     boost::regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
     while (!sph_input.eof()) {
       getline(sph_input, line);
-      if(boost::regex_search(line,_5d_re)){
+      if (boost::regex_search(line,_5d_re)){
         cartesian_ = false;
-      }   
+      }
       else if(boost::regex_search(line,_5d7f_re)) {
         cartesian_ = false;
-      }   
-    }   
-  }   
+      }
+    }
+  }
   sph_input.close();
 
   /************************************************************
   *  Open input stream                                        *
   ************************************************************/
 
-  ifs_.open(filename_.c_str());
+  ifs_.open(filename_);
 
   getline(ifs_, line);
 
@@ -196,15 +193,15 @@ void MoldenIn::read() {
       scale = boost::regex_search(line, ang_re) ? ang2bohr__ : 1.0;
 
       getline(ifs_, line);
-      while(!boost::regex_search(line, other_re)){
+      while (!boost::regex_search(line, other_re)){
         if (ifs_.eof()) { break; }
 
-        if(boost::regex_search(line.c_str(), matches, atoms_line)) {
+        if (boost::regex_search(line.c_str(), matches, atoms_line)) {
           ++num_atoms;
 
           const string nm(matches[1].first, matches[1].second);
           names.push_back(nm);
-          
+
           const string x_str(matches[2].first, matches[2].second);
           const string y_str(matches[3].first, matches[3].second);
           const string z_str(matches[4].first, matches[4].second);
@@ -214,7 +211,7 @@ void MoldenIn::read() {
           pos[0] = lexical_cast<double>(x_str)*scale;
           pos[1] = lexical_cast<double>(y_str)*scale;
           pos[2] = lexical_cast<double>(z_str)*scale;
-          
+
           positions.push_back(pos);
 
           getline(ifs_,line);
@@ -232,17 +229,17 @@ void MoldenIn::read() {
       boost::regex exp_line("(\\S+)\\s+(\\S+)");
       boost::regex Dd("[Dd]");
 
-      while(!boost::regex_search(line,other_re)){
+      while (!boost::regex_search(line,other_re)){
         if (ifs_.eof()) { break; }
 
         /* This line should be a new atom */
-        if(!boost::regex_search(line.c_str(), matches, atom_line)) {
+        if (!boost::regex_search(line.c_str(), matches, atom_line)) {
            getline(ifs_,line); continue;
         }
         vector<tuple<string,vector<double>,vector<double>>> atom_basis_info;
 
         const string atom_no_str(matches[1].first, matches[1].second);
-        const int atom_no = lexical_cast<int>(atom_no_str.c_str());
+        const int atom_no = lexical_cast<int>(atom_no_str);
 
         gto_order_.push_back(atom_no);
 
@@ -251,7 +248,7 @@ void MoldenIn::read() {
 
         getline(ifs_, line);
 
-        while(boost::regex_search(line.c_str(), matches, shell_line)) {
+        while (boost::regex_search(line.c_str(), matches, shell_line)) {
           /* Now it should be a new angular shell */
           const string ang_l(matches[1].first, matches[1].second);
           atomic_shell_order.push_back(atommap.angular_number(ang_l));
@@ -286,7 +283,7 @@ void MoldenIn::read() {
           ************************************************************/
           atom_basis_info.push_back(make_tuple(ang_l, exponents, coefficients));
 
-          getline(ifs_, line); 
+          getline(ifs_, line);
         }
         //atom_basis_info to basis_info
         shell_orders_.push_back(atomic_shell_order);
@@ -296,7 +293,7 @@ void MoldenIn::read() {
       found_gto = true;
     }
     else if (boost::regex_search(line,mo_re)) {
-      if(!found_gto) {
+      if (!found_gto) {
         throw runtime_error("MO section found before GTO section. Check Molden file.");
       }
       /* Not used at the moment. Maybe later.
@@ -307,18 +304,18 @@ void MoldenIn::read() {
       boost::regex coeff_re("\\d+\\s+(\\S+)");
 
       getline(ifs_,line);
-      while(!boost::regex_search(line,other_re)) {
+      while (!boost::regex_search(line,other_re)) {
         if (ifs_.eof()) { break; }
 
         vector<double> movec;
 
         getline(ifs_,line);
-        while(!boost::regex_search(line.c_str(),coeff_re)) {
+        while (!boost::regex_search(line.c_str(),coeff_re)) {
           /* For now, throwing away excess data until we get to MO coefficients */
           getline(ifs_,line);
         }
 
-        while(boost::regex_search(line.c_str(),matches,coeff_re)){
+        while (boost::regex_search(line.c_str(),matches,coeff_re)){
           string mo_string(matches[1].first, matches[1].second);
           double coeff = lexical_cast<double>(mo_string);
 
@@ -329,8 +326,7 @@ void MoldenIn::read() {
         mo_coefficients_.push_back(movec);
       }
       found_mo = true;
-    }
-    else {
+    } else {
       getline(ifs_,line);
     }
   }
@@ -345,21 +341,21 @@ void MoldenIn::read() {
      if (!found_gto)  { message += "GTO"; }
      throw runtime_error(message);
   }
-  
+
   vector<shared_ptr<const Atom>> all_atoms;
-  
+
   /* Assuming the names and positions vectors are in the right order */
   vector<string>::iterator iname = names.begin();
   vector<array<double,3>>::iterator piter = positions.begin();
-  for(int i = 0; i < num_atoms; ++i, ++iname, ++piter){
-     vector<tuple<string, vector<double>, vector<double>>> binfo = basis_info.find(i+1)->second;
-     if (i == num_atoms) {
-        throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
-     }
-  
-     transform(iname->begin(), iname->end(), iname->begin(), ::tolower);
-     /* For each atom, I need to make an atom object and stick it into a vector */
-     all_atoms.push_back(make_shared<const Atom>(is_spherical_, *iname, *piter, binfo));
+  for (int i = 0; i < num_atoms; ++i, ++iname, ++piter){
+    vector<tuple<string, vector<double>, vector<double>>> binfo = basis_info.find(i+1)->second;
+    if (i == num_atoms) {
+      throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
+    }
+
+    transform(iname->begin(), iname->end(), iname->begin(), ::tolower);
+    /* For each atom, I need to make an atom object and stick it into a vector */
+    all_atoms.push_back(make_shared<const Atom>(is_spherical_, *iname, *piter, binfo));
   }
 
   atoms_ = all_atoms;

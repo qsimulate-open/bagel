@@ -48,7 +48,7 @@ Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom, const int n, const int
 
 
 Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), geom_(o.geom_) {
-  copy_n(o.data(), ndim_*mdim_, data()); 
+  copy_n(o.data(), ndim_*mdim_, data());
 }
 
 

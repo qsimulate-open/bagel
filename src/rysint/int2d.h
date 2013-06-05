@@ -41,11 +41,11 @@ void int2d(const double& P, const double& Q, const double& A, const double& B, c
   double B10_[rank_]__attribute__((aligned(32)));
   double B01_[rank_]__attribute__((aligned(32)));
 #else
-  alignas(32) double C00_[rank_]; 
-  alignas(32) double D00_[rank_]; 
-  alignas(32) double B00_[rank_]; 
-  alignas(32) double B10_[rank_]; 
-  alignas(32) double B01_[rank_]; 
+  alignas(32) double C00_[rank_];
+  alignas(32) double D00_[rank_];
+  alignas(32) double B00_[rank_];
+  alignas(32) double B10_[rank_];
+  alignas(32) double B01_[rank_];
 #endif
 
   const double xqopq = xq * one_pq;

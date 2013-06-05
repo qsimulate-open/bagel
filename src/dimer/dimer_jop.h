@@ -34,13 +34,13 @@ namespace bagel {
 
 class DimerJop : public Jop {
   protected:
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_; 
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_; 
+    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_;
+    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_;
 
     std::shared_ptr<Matrix> cross_mo1e_;
 
   public:
-    DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB, 
+    DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
       std::shared_ptr<const Coeff> coeff); // note that in DimerJop, I'm forcing a HZ Jop
     ~DimerJop() {};
 

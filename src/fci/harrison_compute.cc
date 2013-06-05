@@ -40,8 +40,8 @@ using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
 shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
-                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates 
-  const int ij = norb_*norb_; 
+                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
+  const int ij = norb_*norb_;
 
   const int nstate = ccvec->ij();
 
@@ -58,17 +58,17 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);
     if (conv[istate]) continue;
-    shared_ptr<const Civec> cc = ccvec->data(istate);  
-    shared_ptr<Civec> sigma = sigmavec->data(istate);  
+    shared_ptr<const Civec> cc = ccvec->data(istate);
+    shared_ptr<Civec> sigma = sigmavec->data(istate);
 
-    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia) 
+    // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);
 
     // (task2) two electron contributions
     // (2aa) alpha-alpha contributions
     sigma_2aa(cc,sigma,jop);
     pdebug.tick_print("task2aa");
-    
+
     // (2bb) beta-beta contributions
     /* Mostly the same as the alpha-alpha, except for data storage */
     sigma_2bb(cc, sigma, jop);
@@ -86,7 +86,7 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
 
     sigma_2ab_3(sigma, e);
     pdebug.tick_print("task2ab-3");
-    
+
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     sigma_3(cc, sigma, jop);
     pdebug.tick_print("task3");
@@ -98,13 +98,13 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
 
 void HarrisonZarrabian::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
-  const int ij = nij(); 
+  const int ij = nij();
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
       const double hc = h * iter.sign;
-      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1); 
+      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
     }
   }
 }
@@ -134,7 +134,7 @@ void HarrisonZarrabian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> 
   const double* const source_base = cc->data();
   double* target_base = sigma->data();
   const int lb = sigma->lenb();
-  
+
   for (auto aiter = base_det->stringa().begin(); aiter != base_det->stringa().end(); ++aiter, target_base+=lb) {
     bitset<nbit__> nstring = *aiter;
     for (int i = 0; i != norb; ++i) {
@@ -142,7 +142,7 @@ void HarrisonZarrabian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> 
       for (int j = 0; j < i; ++j) {
         if(!nstring[j]) continue;
         const int ij_phase = base_det->sign(nstring,i,j);
-        bitset<nbit__> string_ij = nstring; 
+        bitset<nbit__> string_ij = nstring;
         string_ij.reset(i); string_ij.reset(j);
         for (int l = 0; l != norb; ++l) {
           if (string_ij[l]) continue;
@@ -250,7 +250,7 @@ void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e)
           const double sign = aiter.sign * biter.sign;
           target[biter.target] += sign * source[biter.source];
         }
-      } 
+      }
     }
   }
 }

@@ -34,7 +34,7 @@ void SortList::sort_indices_00(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 1;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 1 * c2end; 
+    const int cont2csize = 1 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -75,7 +75,7 @@ void SortList::sort_indices_01(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 3;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 3 * c2end; 
+    const int cont2csize = 3 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -120,7 +120,7 @@ void SortList::sort_indices_11(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 9;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 3 * c2end; 
+    const int cont2csize = 3 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -171,7 +171,7 @@ void SortList::sort_indices_02(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 6;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 6 * c2end; 
+    const int cont2csize = 6 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -222,7 +222,7 @@ void SortList::sort_indices_12(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 18;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 6 * c2end; 
+    const int cont2csize = 6 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -285,7 +285,7 @@ void SortList::sort_indices_22(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 36;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 6 * c2end; 
+    const int cont2csize = 6 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -366,7 +366,7 @@ void SortList::sort_indices_03(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 10;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 10 * c2end; 
+    const int cont2csize = 10 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -425,7 +425,7 @@ void SortList::sort_indices_13(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 30;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 10 * c2end; 
+    const int cont2csize = 10 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -504,7 +504,7 @@ void SortList::sort_indices_23(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 60;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 10 * c2end; 
+    const int cont2csize = 10 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -613,7 +613,7 @@ void SortList::sort_indices_33(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 100;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 10 * c2end; 
+    const int cont2csize = 10 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -762,7 +762,7 @@ void SortList::sort_indices_04(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 15;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 15 * c2end; 
+    const int cont2csize = 15 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -831,7 +831,7 @@ void SortList::sort_indices_14(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 45;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 15 * c2end; 
+    const int cont2csize = 15 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -930,7 +930,7 @@ void SortList::sort_indices_24(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 90;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 15 * c2end; 
+    const int cont2csize = 15 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1074,7 +1074,7 @@ void SortList::sort_indices_34(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 150;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 15 * c2end; 
+    const int cont2csize = 15 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1278,7 +1278,7 @@ void SortList::sort_indices_44(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 225;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 15 * c2end; 
+    const int cont2csize = 15 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1557,7 +1557,7 @@ void SortList::sort_indices_05(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 21;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1638,7 +1638,7 @@ void SortList::sort_indices_15(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 63;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1761,7 +1761,7 @@ void SortList::sort_indices_25(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 126;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -1947,7 +1947,7 @@ void SortList::sort_indices_35(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 210;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2217,7 +2217,7 @@ void SortList::sort_indices_45(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 315;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -2592,7 +2592,7 @@ void SortList::sort_indices_55(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 441;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 21 * c2end; 
+    const int cont2csize = 21 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -3093,7 +3093,7 @@ void SortList::sort_indices_06(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 28;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -3188,7 +3188,7 @@ void SortList::sort_indices_16(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 84;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -3339,7 +3339,7 @@ void SortList::sort_indices_26(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 168;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -3574,7 +3574,7 @@ void SortList::sort_indices_36(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 280;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -3921,7 +3921,7 @@ void SortList::sort_indices_46(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 420;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -4408,7 +4408,7 @@ void SortList::sort_indices_56(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 588;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];
@@ -5063,7 +5063,7 @@ void SortList::sort_indices_66(double* target, const double* source, const int c
   const int innerloopsize = c2end * c3end * 784;
   if (!swap23) {
     int offset = 0;
-    const int cont2csize = 28 * c2end; 
+    const int cont2csize = 28 * c2end;
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {
       double* current_target = &target[offset];
       const double* current_source = &source[offset];

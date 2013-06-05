@@ -30,7 +30,7 @@
 
 namespace bagel {
 
-// T is either DFDist or DFDist 
+// T is either DFDist or DFDist
 template<typename T>
 class DFIntTask_OLD {
   protected:

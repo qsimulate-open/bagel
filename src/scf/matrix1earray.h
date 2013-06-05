@@ -121,9 +121,9 @@ void Matrix1eArray<N>::init() {
         if (u++ % mpi__->size() == mpi__->rank()) {
           std::array<std::shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           computebatch(input, *offset0, *offset1);
-        }   
-      }   
-    }   
+        }
+      }
+    }
 
     auto o1 = o0+1;
     for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
@@ -134,10 +134,10 @@ void Matrix1eArray<N>::init() {
           if (u++ % mpi__->size() == mpi__->rank()) {
             std::array<std::shared_ptr<const Shell>,2> input = {{*b1, *b0}};
             computebatch(input, *offset0, *offset1);
-          }   
-        }   
-      }   
-    }   
+          }
+        }
+      }
+    }
   }
   for (auto& i : matrices_) i->allreduce();
 

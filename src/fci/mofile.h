@@ -124,9 +124,9 @@ class Htilde : public MOFile {
     std::shared_ptr<const Matrix> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); }; 
+    std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
     std::unique_ptr<double[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
-  
+
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> h1, std::unique_ptr<double[]> h2)
       : MOFile(b,c,d), h1_tmp_(h1), h2_tmp_(std::move(h2)) {

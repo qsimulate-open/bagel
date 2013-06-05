@@ -18,7 +18,7 @@ namespace boost {
 
 namespace detail {
 
-template<class BidirectionalIterator> 
+template<class BidirectionalIterator>
   bool next_combination(BidirectionalIterator first1,
                         BidirectionalIterator last1,
                         BidirectionalIterator first2,
@@ -27,19 +27,19 @@ template<class BidirectionalIterator>
       if ((first1 == last1) || (first2 == last2)) {
           return false;
       }
-      
+
       BidirectionalIterator m1 = last1;
       BidirectionalIterator m2 = last2; --m2;
-      
+
       // Find first m1 not less than *m2 (i.e., lower_bound(first1, last1, *m2)).
       // Actually, this loop stops at one position before that, except perhaps
       // if m1 == first1 (in which case one must compare *first1 with *m2).
       while (--m1 != first1 && !(*m1 < *m2)) {
       }
-      
+
       // Test if all elements in [first1, last1) not less than *m2.
       bool result = (m1 == first1) && !(*first1 < *m2);
-      
+
       if (!result) {
 
           // Find first first2 greater than *m1 (since *m1 < *m2, we know it
@@ -47,31 +47,31 @@ template<class BidirectionalIterator>
           while (first2 != m2 && !(*m1 < *first2)) {
               ++first2;
           }
-          
+
           first1 = m1;
           std::iter_swap (first1, first2);
           ++first1;
           ++first2;
       }
-      
+
       // Merge [first1, last1) with [first2, last2), given that the rest of the
       // original ranges are sorted and compare appropriately.
-      if ((first1 != last1) && (first2 != last2)) {      
+      if ((first1 != last1) && (first2 != last2)) {
           for (m1 = last1, m2 = first2;  (m1 != first1) && (m2 != last2); ++m2) {
               std::iter_swap (--m1, m2);
           }
-          
+
           std::reverse (first1, m1);
           std::reverse (first1, last1);
-          
+
           std::reverse (m2, last2);
           std::reverse (first2, last2);
       }
-      
+
       return !result;
   }
-    
-template<class BidirectionalIterator, class Compare> 
+
+template<class BidirectionalIterator, class Compare>
   bool next_combination(BidirectionalIterator first1,
                         BidirectionalIterator last1,
                         BidirectionalIterator first2,
@@ -80,57 +80,57 @@ template<class BidirectionalIterator, class Compare>
       if ((first1 == last1) || (first2 == last2)) {
           return false;
       }
-      
+
       BidirectionalIterator m1 = last1;
       BidirectionalIterator m2 = last2; --m2;
-      
+
       while (--m1 != first1 && !comp(*m1, *m2)) {
       }
-      
+
       bool result = (m1 == first1) && !comp(*first1, *m2);
-      
+
       if (!result) {
-          
+
           while (first2 != m2 && !comp(*m1, *first2)) {
               ++first2;
           }
 
-          first1 = m1; 
+          first1 = m1;
           std::iter_swap (first1, first2);
           ++first1;
           ++first2;
       }
-      
-      if ((first1 != last1) && (first2 != last2)) {      
+
+      if ((first1 != last1) && (first2 != last2)) {
           for (m1 = last1, m2 = first2;  (m1 != first1) && (m2 != last2); ++m2) {
               std::iter_swap (--m1, m2);
           }
-          
+
           std::reverse (first1, m1);
           std::reverse (first1, last1);
-          
+
           std::reverse (m2, last2);
           std::reverse (first2, last2);
       }
-      
+
       return !result;
   }
-  
+
 }  // namespace detail
 
 /* PROPOSED STANDARD EXTENSIONS:
  *
- * template<class BidirectionalIterator> 
+ * template<class BidirectionalIterator>
  *   bool next_partial_permutation(BidirectionalIterator first,
  *                                 BidirectionalIterator middle,
- *                                 BidirectionalIterator last); 
+ *                                 BidirectionalIterator last);
  *
- * template<class BidirectionalIterator, class Compare> 
+ * template<class BidirectionalIterator, class Compare>
  *   bool next_partial_permutation(BidirectionalIterator first,
  *                                 BidirectionalIterator middle,
- *                                 BidirectionalIterator last, Compare comp); 
+ *                                 BidirectionalIterator last, Compare comp);
  */
- 
+
 template <class BidirectionalIterator>
   bool next_partial_permutation(BidirectionalIterator first,
                                 BidirectionalIterator middle,
@@ -140,7 +140,7 @@ template <class BidirectionalIterator>
   return next_permutation(first, last);
 }
 
-template<class BidirectionalIterator, class Compare> 
+template<class BidirectionalIterator, class Compare>
   bool next_partial_permutation(BidirectionalIterator first,
                                 BidirectionalIterator middle,
                                 BidirectionalIterator last, Compare comp)
@@ -151,18 +151,18 @@ template<class BidirectionalIterator, class Compare>
 
 /* PROPOSED STANDARD EXTENSIONS:
  *
- * template<class BidirectionalIterator> 
+ * template<class BidirectionalIterator>
  *   bool prev_partial_permutation(BidirectionalIterator first,
  *                                 BidirectionalIterator middle,
- *                                 BidirectionalIterator last); 
+ *                                 BidirectionalIterator last);
  *
- * template<class BidirectionalIterator, class Compare> 
+ * template<class BidirectionalIterator, class Compare>
  *   bool prev_partial_permutation(BidirectionalIterator first,
  *                                 BidirectionalIterator middle,
- *                                 BidirectionalIterator last, Compare comp); 
+ *                                 BidirectionalIterator last, Compare comp);
  */
- 
-template<class BidirectionalIterator> 
+
+template<class BidirectionalIterator>
   bool prev_partial_permutation(BidirectionalIterator first,
                                 BidirectionalIterator middle,
                                 BidirectionalIterator last)
@@ -173,7 +173,7 @@ template<class BidirectionalIterator>
 }
 
 
-template<class BidirectionalIterator, class Compare> 
+template<class BidirectionalIterator, class Compare>
   bool prev_partial_permutation(BidirectionalIterator first,
                                 BidirectionalIterator middle,
                                 BidirectionalIterator last, Compare comp)
@@ -185,46 +185,46 @@ template<class BidirectionalIterator, class Compare>
 
 /* PROPOSED STANDARD EXTENSIONS:
  *
- * template<class BidirectionalIterator> 
+ * template<class BidirectionalIterator>
  *   bool next_combination(BidirectionalIterator first,
  *                         BidirectionalIterator middle,
- *                         BidirectionalIterator last); 
+ *                         BidirectionalIterator last);
  *
- * template<class BidirectionalIterator, class Compare> 
+ * template<class BidirectionalIterator, class Compare>
  *   bool next_combination(BidirectionalIterator first,
  *                         BidirectionalIterator middle,
- *                         BidirectionalIterator last, Compare comp); 
+ *                         BidirectionalIterator last, Compare comp);
  */
 
-template<class BidirectionalIterator> 
+template<class BidirectionalIterator>
   bool next_combination(BidirectionalIterator first,
                         BidirectionalIterator middle,
                         BidirectionalIterator last)
   {
     return detail::next_combination(first, middle, middle, last);
   }
-    
-template<class BidirectionalIterator, class Compare> 
+
+template<class BidirectionalIterator, class Compare>
   bool next_combination(BidirectionalIterator first,
                         BidirectionalIterator middle,
                         BidirectionalIterator last, Compare comp)
   {
       return detail::next_combination(first, middle, middle, last, comp);
   }
- 
+
 /* PROPOSED STANDARD EXTENSIONS:
  *
- * template<class BidirectionalIterator> 
+ * template<class BidirectionalIterator>
  *   bool prev_combination(BidirectionalIterator first,
  *                         BidirectionalIterator middle,
- *                         BidirectionalIterator last); 
+ *                         BidirectionalIterator last);
  *
- * template<class BidirectionalIterator, class Compare> 
+ * template<class BidirectionalIterator, class Compare>
  *   bool prev_combination(BidirectionalIterator first,
  *                         BidirectionalIterator middle,
- *                         BidirectionalIterator last, Compare comp); 
+ *                         BidirectionalIterator last, Compare comp);
  */
- 
+
 template<class BidirectionalIterator>
   inline
   bool prev_combination(BidirectionalIterator first,
@@ -233,8 +233,8 @@ template<class BidirectionalIterator>
   {
     return detail::next_combination(middle, last, first, middle);
   }
-  
-template<class BidirectionalIterator, class Compare> 
+
+template<class BidirectionalIterator, class Compare>
   inline
   bool prev_combination(BidirectionalIterator first,
                         BidirectionalIterator middle,
@@ -242,20 +242,20 @@ template<class BidirectionalIterator, class Compare>
   {
     return detail::next_combination(middle, last, first, middle, comp);
   }
-  
+
 /* PROPOSED STANDARD EXTENSION:
  *
- * template<class BidirectionalIterator, class T> 
+ * template<class BidirectionalIterator, class T>
  *   bool next_mapping(BidirectionalIterator first,
  *                     BidirectionalIterator last,
- *                     T first_value, T last_value); 
+ *                     T first_value, T last_value);
  *
- * template<class BidirectionalIterator, class T, class Incrementor> 
+ * template<class BidirectionalIterator, class T, class Incrementor>
  *   bool next_mapping(BidirectionalIterator first,
  *                     BidirectionalIterator last,
- *                     T first_value, T last_value, Incrementor increment); 
+ *                     T first_value, T last_value, Incrementor increment);
 */
- 
+
 template <class BidirectionalIterator, class T>
   bool
   next_mapping(BidirectionalIterator first,
@@ -277,7 +277,7 @@ template <class BidirectionalIterator, class T>
 template <class BidirectionalIterator, class T, class Incrementer>
   bool
   next_mapping(BidirectionalIterator first,
-               BidirectionalIterator last, 
+               BidirectionalIterator last,
                T first_value, T last_value, Incrementer increment)
 {
     if (last == first ) {
@@ -294,15 +294,15 @@ template <class BidirectionalIterator, class T, class Incrementer>
 
 /* PROPOSED STANDARD EXTENSION:
  *
- * template<class BidirectionalIterator, class T> 
+ * template<class BidirectionalIterator, class T>
  *   bool prev_mapping(BidirectionalIterator first,
  *                     BidirectionalIterator last,
- *                     T first_value, T last_value); 
+ *                     T first_value, T last_value);
  *
- * template<class BidirectionalIterator, class T, class Decrementor> 
+ * template<class BidirectionalIterator, class T, class Decrementor>
  *   bool prev_mapping(BidirectionalIterator first,
  *                     BidirectionalIterator last,
- *                     T first_value, T last_value, Decrementor decrement); 
+ *                     T first_value, T last_value, Decrementor decrement);
  */
 
 template <class BidirectionalIterator, class T>
@@ -328,7 +328,7 @@ template <class BidirectionalIterator, class T>
 template <class BidirectionalIterator, class T, class Decrementer>
   bool
   prev_mapping(BidirectionalIterator first,
-               BidirectionalIterator last, 
+               BidirectionalIterator last,
                T first_value, T last_value, Decrementer decrement)
 {
     if (last == first) {
@@ -347,11 +347,11 @@ template <class BidirectionalIterator, class T, class Decrementer>
 
 /* PROPOSED STANDARD EXTENSION:
  *
- * template<class BidirectionalIterator, class T> 
+ * template<class BidirectionalIterator, class T>
  *   bool next_combination_counts(BidirectionalIterator first,
  *                                BidirectionalIterator last);
  */
- 
+
 template <class BidirectionalIterator>
   bool
   next_combination_counts(BidirectionalIterator first,
@@ -373,9 +373,9 @@ template <class BidirectionalIterator>
 
 /* PROPOSED STANDARD EXTENSION:
  *
- * template<class BidirectionalIterator> 
+ * template<class BidirectionalIterator>
  *   bool prev_combination_counts(BidirectionalIterator first,
- *                                BidirectionalIterator last); 
+ *                                BidirectionalIterator last);
  */
 
 template <class BidirectionalIterator>
@@ -391,7 +391,7 @@ prev_combination_counts(BidirectionalIterator first,
     if (current == last || current == first && *current == 0) {
         if (first != last)
             std::iter_swap(first, last);
-        return false; 
+        return false;
     }
     --(*current);
     ++current;

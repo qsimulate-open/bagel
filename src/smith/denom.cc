@@ -215,7 +215,7 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   shalf.inverse_half(thresh_);
 
   RDM<3> d0 = rdm3;
-  RDM<3> d3 = rdm3; 
+  RDM<3> d3 = rdm3;
   d0.scale(-1.0);
   for (int i5 = 0; i5 != nact; ++i5)
     for (int i4 = 0; i4 != nact; ++i4)
@@ -376,6 +376,6 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
   fss = shalf % fss * shalf;
   denom_xxh_ = unique_ptr<double[]>(new double[dim]);
   fss.diagonalize(denom_xxh_.get());
-  shalf_xxh_ = make_shared<const Matrix>(fss % shalf); 
+  shalf_xxh_ = make_shared<const Matrix>(fss % shalf);
 }
 

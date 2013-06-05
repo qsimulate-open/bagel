@@ -126,7 +126,7 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
   //- Exchange-correlation part -//
-  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), coeff_occ); 
+  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), coeff_occ);
   *grad += *ggrad;
 
   grad->print();

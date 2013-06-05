@@ -36,7 +36,7 @@ namespace bagel {
 
 
 // SendRequest sends buffer using MPI_send. When completed, releases the buffer. Note that
-// one needs to periodically call "void flush()" 
+// one needs to periodically call "void flush()"
 class SendRequest : public ServerFlush {
   protected:
     struct Probe {
@@ -56,7 +56,7 @@ class SendRequest : public ServerFlush {
     // mutex for protected members of this class
     std::mutex mutex_;
 
-    // tuple contains: size, if ready, target rank, and buffer 
+    // tuple contains: size, if ready, target rank, and buffer
     std::map<int, std::shared_ptr<Probe>> inactive_;
     std::map<int, std::shared_ptr<Probe>> requests_;
 

@@ -58,7 +58,7 @@ double meh_energy(std::string inp) {
 
       std::string form = dimdata.get<std::string>("form", "displace");
       if (form == "d" || form == "disp" || form == "displace") {
-        double scale = (dimdata.get<bool>("angstrom",false) ? ang2bohr__ : 1.0 ) ; 
+        double scale = (dimdata.get<bool>("angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
         double dx = dimdata.get<double>("dx",0.0) * scale;
         double dy = dimdata.get<double>("dy",0.0) * scale;
@@ -67,11 +67,11 @@ double meh_energy(std::string inp) {
 
         if (static_cast<bool>(ref)) {
           dimer = std::make_shared<Dimer>(ref,disp);
-        }   
+        }
         else {
           throw std::runtime_error("dimerize needs a reference calculation (for now)");
-        }   
-      }   
+        }
+      }
       dimer->scf(iter->second);
 
       *geom = *dimer->sgeom();

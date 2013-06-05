@@ -38,7 +38,7 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
  : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  size_alloc_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_)) * b1size_*b2size_; 
+  size_alloc_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_)) * b1size_*b2size_;
   data_ = unique_ptr<double[]>(new double[size_alloc_]);
 
 }
@@ -69,7 +69,7 @@ void DFBlock::average() {
   int sendtag = 0;
   int recvtag = 0;
 
-  if (asendsize) { 
+  if (asendsize) {
     vector<CopyBlockTask> task;
     task.reserve(b2size_);
 
@@ -95,22 +95,22 @@ void DFBlock::average() {
   if (arecvsize || asendsize) {
     const size_t t_size = t_end - t_start;
     const size_t retsize = asize_ - asendsize;
-    if (t_size <= asize_) { 
+    if (t_size <= asize_) {
       for (size_t i = 0; i != b1size_*b2size_; ++i)
-        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size); 
+        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
     } else {
       for (long long int i = b1size_*b2size_-1; i >= 0; --i)
-        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size); 
+        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
     }
   }
 
   // set new astart_ and asize_
-  asize_ = t_end - t_start; 
+  asize_ = t_end - t_start;
   astart_ = t_start;
 
   // set received data
   if (arecvsize) {
-    // wait for recv communication 
+    // wait for recv communication
     mpi__->wait(recvtag);
 
     vector<CopyBlockTask> task;
@@ -194,7 +194,7 @@ void DFBlock::symmetrize() {
   const int n = b1size_;
   for (int i = 0; i != n; ++i)
     for (int j = i; j != n; ++j) {
-      daxpy_(asize_, 1.0, data_.get()+asize_*(j+n*i), 1, data_.get()+asize_*(i+n*j), 1); 
+      daxpy_(asize_, 1.0, data_.get()+asize_*(j+n*i), 1, data_.get()+asize_*(i+n*j), 1);
       copy_n(data_.get()+asize_*(i+n*j), asize_, data_.get()+asize_*(j+n*i));
     }
 }
@@ -216,7 +216,7 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   shared_ptr<DFBlock> out = clone();
   out->zero();
   // exchange contributions
-  out->daxpy(-2.0*scale_exch, *this); 
+  out->daxpy(-2.0*scale_exch, *this);
   // coulomb contributions (diagonal to diagonal)
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
@@ -389,7 +389,7 @@ shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
 void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::contrib_apply_J");
   dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data_.get(), o->asize_,
-                                                        1.0, data_.get(), asize_); 
+                                                        1.0, data_.get(), asize_);
 }
 
 
@@ -399,7 +399,7 @@ void DFBlock::copy_block(const std::unique_ptr<double[]>& o, const int jdim, con
 
 
 unique_ptr<double[]> DFBlock::form_Dj(const unique_ptr<double[]>& o, const int jdim) const {
-  unique_ptr<double[]> out(new double[asize_*jdim]); 
+  unique_ptr<double[]> out(new double[asize_*jdim]);
   dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o.get(), b1size_*b2size_, 0.0, out.get(), asize_);
   return out;
 }
@@ -412,14 +412,14 @@ unique_ptr<double[]> DFBlock::get_block(const int ist, const int i, const int js
   const int ifen = ist + i - astart_;
   const int jfen = jst + j - b1start_;
   const int kfen = kst + k - b2start_;
-  if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize_ || jfen > b1size_ || kfen > b2size_) 
+  if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize_ || jfen > b1size_ || kfen > b2size_)
     throw logic_error("illegal call of DFBlock::get_block");
 
   unique_ptr<double[]> out(new double[i*j*k]);
   double* d = out.get();
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj, d += i)
-      copy_n(data_.get()+ista+asize_*(jj+b1size_*kk), i, d); 
+      copy_n(data_.get()+ista+asize_*(jj+b1size_*kk), i, d);
 
   return out;
 }

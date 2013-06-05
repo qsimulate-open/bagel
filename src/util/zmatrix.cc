@@ -45,14 +45,14 @@ ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) { 
+ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
   assert(r.ndim() == i.ndim() && r.mdim() == i.mdim());
   add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim_, mdim_, r.data());
   add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim_, mdim_, i.data());
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) { 
+ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
   add_real_block(factor, 0, 0, ndim_, mdim_, r.data());
 }
 
@@ -313,7 +313,7 @@ void ZMatrix::diagonalize_skew(double* eig) {
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
   unique_ptr<double[]> rwork(new double[lwork]);
   int info;
-  zgeev_("N", "V", n, data(), n, w.get(), vr.get(), n, vr.get(), n, work.get(), lwork, rwork.get(), info); 
+  zgeev_("N", "V", n, data(), n, w.get(), vr.get(), n, vr.get(), n, work.get(), lwork, rwork.get(), info);
   for (int i = 0; i != n; ++i) {
     if (fabs(w[i].imag()) > 1.0e-8) {
       stringstream ss; ss << "eigenvalue is found complex in ZMatrix::diagonalize_skew " << setprecision(10) << w[i];

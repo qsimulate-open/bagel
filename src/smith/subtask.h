@@ -53,7 +53,7 @@ class SubTask {
 
     virtual void compute() = 0;
 
-    const Index& block(const size_t& i) const { return block_index_[i]; } 
+    const Index& block(const size_t& i) const { return block_index_[i]; }
     const std::shared_ptr<const Tensor<T>>& in_tensor(const size_t& i) const { return in_[i]; }
     const std::shared_ptr<Tensor<T>>& out_tensor() const { return out_; }
 };

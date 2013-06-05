@@ -37,7 +37,7 @@ void SlaterBatch::perform_SVRR() {
   const int b = basisinfo_[1]->angular_number();
   const int c = basisinfo_[2]->angular_number();
   const int d = basisinfo_[3]->angular_number();
-  const int isize = (amax_+1) * (cmax_+1); 
+  const int isize = (amax_+1) * (cmax_+1);
   double* const workx = stack_->get(isize*rank_*3);
   double* const worky = workx + isize*rank_;
   double* const workz = worky + isize*rank_;

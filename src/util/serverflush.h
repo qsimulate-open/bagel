@@ -26,7 +26,7 @@
 #ifndef __SRC_UTIL_SERVERFLUSH_H
 #define __SRC_UTIL_SERVERFLUSH_H
 
-#ifdef __GNUC__ 
+#ifdef __GNUC__
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
 #define _GLIBCXX_USE_NANOSLEEP
 #endif
@@ -50,7 +50,7 @@ class ServerFlush {
     void periodic() {
       while (thread_alive_) {
         flush_();
-        std::this_thread::sleep_for(sleeptime__); 
+        std::this_thread::sleep_for(sleeptime__);
       }
     }
 

@@ -7,13 +7,13 @@
        double precision c
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated from C to fortran77 by hand.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -26,23 +26,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -67,7 +67,7 @@ cvw    code=6:   (a,b,c) etc, c=sqrt(1-a^2-b^2), a/b input  ( 48 points)
 cvw
        goto (1,2,3,4,5,6) code
        write (6,*) 'Gen_Oh: Invalid Code'
-       stop 
+       stop
     1  continue
        a=1.0d0
        x(1) =  a
@@ -598,14 +598,14 @@ CVW    LEBEDEV    6-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -618,23 +618,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -658,14 +658,14 @@ CVW    LEBEDEV   14-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -678,23 +678,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -720,14 +720,14 @@ CVW    LEBEDEV   26-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -740,23 +740,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -784,14 +784,14 @@ CVW    LEBEDEV   38-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -804,23 +804,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -849,14 +849,14 @@ CVW    LEBEDEV   50-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -869,23 +869,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -916,14 +916,14 @@ CVW    LEBEDEV   74-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -936,23 +936,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -986,14 +986,14 @@ CVW    LEBEDEV   86-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1006,23 +1006,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1057,14 +1057,14 @@ CVW    LEBEDEV  110-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1077,23 +1077,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1131,14 +1131,14 @@ CVW    LEBEDEV  146-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1151,23 +1151,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1208,14 +1208,14 @@ CVW    LEBEDEV  170-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1228,23 +1228,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1288,14 +1288,14 @@ CVW    LEBEDEV  194-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1308,23 +1308,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1371,14 +1371,14 @@ CVW    LEBEDEV  230-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1391,23 +1391,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1458,14 +1458,14 @@ CVW    LEBEDEV  266-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1478,23 +1478,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1548,14 +1548,14 @@ CVW    LEBEDEV  302-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1568,23 +1568,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1642,14 +1642,14 @@ CVW    LEBEDEV  350-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1662,23 +1662,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1740,14 +1740,14 @@ CVW    LEBEDEV  434-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1760,23 +1760,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1847,14 +1847,14 @@ CVW    LEBEDEV  590-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1867,23 +1867,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -1969,14 +1969,14 @@ CVW    LEBEDEV  770-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -1989,23 +1989,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -2108,14 +2108,14 @@ CVW    LEBEDEV  974-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -2128,23 +2128,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -2266,14 +2266,14 @@ CVW    LEBEDEV 1202-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -2286,23 +2286,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -2445,14 +2445,14 @@ CVW    LEBEDEV 1454-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -2465,23 +2465,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -2647,14 +2647,14 @@ CVW    LEBEDEV 1730-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -2667,23 +2667,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -2874,14 +2874,14 @@ CVW    LEBEDEV 2030-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -2894,23 +2894,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -3128,14 +3128,14 @@ CVW    LEBEDEV 2354-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -3148,23 +3148,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -3411,14 +3411,14 @@ CVW    LEBEDEV 2702-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -3431,23 +3431,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -3725,14 +3725,14 @@ CVW    LEBEDEV 3074-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -3745,23 +3745,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -4072,14 +4072,14 @@ CVW    LEBEDEV 3470-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -4092,23 +4092,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -4454,14 +4454,14 @@ CVW    LEBEDEV 3890-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -4474,23 +4474,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -4873,14 +4873,14 @@ CVW    LEBEDEV 4334-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -4893,23 +4893,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -5331,14 +5331,14 @@ CVW    LEBEDEV 4802-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -5351,23 +5351,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -5830,14 +5830,14 @@ CVW    LEBEDEV 5294-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -5850,23 +5850,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,
@@ -6372,14 +6372,14 @@ CVW    LEBEDEV 5810-POINT ANGULAR GRID
 CVW
 chvd
 chvd   This subroutine is part of a set of subroutines that generate
-chvd   Lebedev grids [1-6] for integration on a sphere. The original 
-chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and 
+chvd   Lebedev grids [1-6] for integration on a sphere. The original
+chvd   C-code [1] was kindly provided by Dr. Dmitri N. Laikov and
 chvd   translated into fortran by Dr. Christoph van Wuellen.
 chvd   This subroutine was translated using a C to fortran77 conversion
 chvd   tool written by Dr. Christoph van Wuellen.
 chvd
 chvd   Users of this code are asked to include reference [1] in their
-chvd   publications, and in the user- and programmers-manuals 
+chvd   publications, and in the user- and programmers-manuals
 chvd   describing their codes.
 chvd
 chvd   This code was distributed through CCL (http://www.ccl.net/).
@@ -6392,23 +6392,23 @@ chvd
 chvd   [2] V.I. Lebedev
 chvd       "A quadrature formula for the sphere of 59th algebraic
 chvd        order of accuracy"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 50, 1995, pp. 283-286.
 chvd
 chvd   [3] V.I. Lebedev, and A.L. Skorokhodov
 chvd       "Quadrature formulas of orders 41, 47, and 53 for the sphere"
-chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592. 
+chvd       Russian Acad. Sci. Dokl. Math., Vol. 45, 1992, pp. 587-592.
 chvd
 chvd   [4] V.I. Lebedev
 chvd       "Spherical quadrature formulas exact to orders 25-29"
-chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107. 
+chvd       Siberian Mathematical Journal, Vol. 18, 1977, pp. 99-107.
 chvd
 chvd   [5] V.I. Lebedev
 chvd       "Quadratures on a sphere"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 16,
-chvd       1976, pp. 10-24. 
+chvd       1976, pp. 10-24.
 chvd
 chvd   [6] V.I. Lebedev
-chvd       "Values of the nodes and weights of ninth to seventeenth 
+chvd       "Values of the nodes and weights of ninth to seventeenth
 chvd        order Gauss-Markov quadrature formulae invariant under the
 chvd        octahedron group with inversion"
 chvd       Computational Mathematics and Mathematical Physics, Vol. 15,

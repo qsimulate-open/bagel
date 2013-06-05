@@ -73,7 +73,7 @@ class RecvRequest {
 
     size_t counter_;
 
-    // tuple contains: size, if ready, target rank, and buffer 
+    // tuple contains: size, if ready, target rank, and buffer
     std::map<int, std::shared_ptr<Probe>> request_;
     std::vector<int> probe_;
 

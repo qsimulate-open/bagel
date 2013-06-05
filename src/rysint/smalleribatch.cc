@@ -75,7 +75,7 @@ void SmallERIBatch::compute() {
     dgemm_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->small(i)->data(), a2, 0.0, ints, s0size*a1);
     for (int k = 0; k <= i; ++k) {
       for (int j = 0; j != s2size; ++j) {
-        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, data[k*(5-k)/2+i]+j*s0size*s1size, s0size); 
+        dgemm_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, data[k*(5-k)/2+i]+j*s0size*s1size, s0size);
       }
     }
   }
@@ -98,7 +98,7 @@ namespace bagel {
 
 void SmallERIBatch::eri_compute(double* eri) const {
 
-  // shells_[0] is aux function, shelles_[1] and [2] are basis 
+  // shells_[0] is aux function, shelles_[1] and [2] are basis
 
   const int s0size = shells_[0]->nbasis();
   const int a1size_inc = shells_[1]->aux_inc()->nbasis();

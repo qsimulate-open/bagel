@@ -40,7 +40,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
-  
+
   hz_ = (method=="HZ");
 }
 
@@ -51,7 +51,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 
-  hz_ = (method=="HZ"); 
+  hz_ = (method=="HZ");
 }
 
 

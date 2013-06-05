@@ -36,7 +36,7 @@ using namespace bagel;
 * will eventually be fixed.                                                         *
 ************************************************************************************/
 MultiExcitonHamiltonian::MultiExcitonHamiltonian(const boost::property_tree::ptree& input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
-  ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace), 
+  ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace),
   dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
   nact_(dimer->nact()), nbasis_(dimer->nbasis())
 {
@@ -252,7 +252,7 @@ void MultiExcitonHamiltonian::compute() {
       conv.at(i) = static_cast<int>(errors.at(i) < thresh_);
     }
 
-    if(!*min_element(conv.begin(), conv.end())) {
+    if (!*min_element(conv.begin(), conv.end())) {
       for (int ist = 0; ist != nstates_; ++ist) {
         if (conv.at(ist)) continue;
         const int size = dimerstates_;
@@ -277,11 +277,11 @@ void MultiExcitonHamiltonian::compute() {
     for (int i = 0; i != nstates_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i] << "   "
-                              << setw(10) << scientific << setprecision(2) << errors[i] << "   " 
+                              << setw(10) << scientific << setprecision(2) << errors[i] << "   "
                               << fixed << setw(10) << setprecision(2) << mehtime.tick() << endl;
       energies_.at(i) = energies[i];
     }
-    if(*min_element(conv.begin(), conv.end())) break;
+    if (*min_element(conv.begin(), conv.end())) break;
   }
 
   adiabats_ = make_shared<Matrix>(dimerstates_, nstates_);
@@ -336,8 +336,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 
   auto out = make_shared<Matrix>(dimerstates, dimerstates);
 
-  for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-    for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
+  for (int stateAp = 0; stateAp < nstatesA; ++stateAp) {
+    for (int stateBp = 0; stateBp < nstatesB; ++stateBp) {
       const int stateApBp = AB.dimerindex(stateAp,stateBp);
       // hAA
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
@@ -403,7 +403,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
 }
 
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const { 
+shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const {
   const int nstatesA = ccvecA->ij();
   const int nstatesAp = ccvecAp->ij();
 
@@ -415,21 +415,21 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> cc
 
   double *edata = tmp.data();
 
-  for(int state = 0; state < nstatesA; ++state) {
+  for (int state = 0; state < nstatesA; ++state) {
     shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
 
     // | C > ^A_ac is done
-    for(int statep = 0; statep < nstatesAp; ++statep) {
-      for(int ac = 0; ac < ij; ++ac, ++edata) {
-        *edata = c->data(ac)->ddot(*ccvecAp->data(statep)); 
-      }   
-    }   
+    for (int statep = 0; statep < nstatesAp; ++statep) {
+      for (int ac = 0; ac < ij; ++ac, ++edata) {
+        *edata = c->data(ac)->ddot(*ccvecAp->data(statep));
+      }
+    }
   }
 
   return tmp.transpose();
 }
 
-void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target, 
+void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target,
   const int nA, const int nAp, const int nB, const int nBp) const
 {
   const int nstatesAB = nA * nB;
@@ -463,11 +463,11 @@ void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string t
          << setprecision(8) << setw(17) << fixed << energies_.at(istate)
          << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
-    for(auto& subspace : subspaces_) {
+    for (auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
       const int nB = subspace.nstates<1>();
-      for(int i = 0; i < nA; ++i) {
-        for(int j = 0; j < nB; ++j, ++eigendata) {
+      for (int i = 0; i < nA; ++i) {
+        for (int j = 0; j < nB; ++j, ++eigendata) {
           if ( (*eigendata)*(*eigendata) > thresh ) {
             cout << "      " << subspace.string(i,j) << setprecision(12) << setw(20) << *eigendata << endl;
           }
@@ -489,7 +489,7 @@ void MultiExcitonHamiltonian::print_property(const string label, shared_ptr<cons
     cout << indent << "<" << istate << "|";
     for (int jstate = 0; jstate < nprint; ++jstate) {
       cout << setw(12) << setprecision(6) << property->element(jstate, istate);
-    }   
+    }
     cout << endl;
   }
   cout << endl;

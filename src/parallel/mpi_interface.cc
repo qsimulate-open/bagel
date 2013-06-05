@@ -152,7 +152,7 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
   for (int i = 0; i != size_; ++i)
     if (i != rank_) {
       for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
-    } 
+    }
 }
 
 
@@ -234,7 +234,7 @@ int MPI_Interface::win_create(double* buf, const size_t size) {
 #ifdef HAVE_MPI_H
   MPI_Win win;
   MPI_Win_create(static_cast<void*>(buf), size*sizeof(double), sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-  window_.insert(make_pair(cnt_, win)); 
+  window_.insert(make_pair(cnt_, win));
   win_fence(cnt_);
 #endif
   ++cnt_;
@@ -267,7 +267,7 @@ void MPI_Interface::get(double* buf, const size_t len, const int rank, const siz
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
-  MPI_Get(static_cast<void*>(buf), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second); 
+  MPI_Get(static_cast<void*>(buf), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second);
 #endif
 }
 
@@ -277,7 +277,7 @@ void MPI_Interface::put(const double* buf, const size_t len, const int rank, con
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
-  MPI_Put(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second); 
+  MPI_Put(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, iter->second);
 #endif
 }
 
@@ -287,7 +287,7 @@ void MPI_Interface::accumulate(const double* buf, const size_t len, const int ra
 #ifdef HAVE_MPI_H
   auto iter = window_.find(win);
   if (iter == window_.end()) throw logic_error("illegal call of MPI_Interface::win_free");
-  MPI_Accumulate(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, MPI_SUM, iter->second); 
+  MPI_Accumulate(const_cast<void*>(static_cast<const void*>(buf)), len, MPI_DOUBLE, rank, disp, len, MPI_DOUBLE, MPI_SUM, iter->second);
 #endif
 }
 #endif
@@ -298,7 +298,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
-  for (int i = 0; i != nbatch; ++i) { 
+  for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
     MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, tag, MPI_COMM_WORLD, &c);
@@ -317,7 +317,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
-  for (int i = 0; i != nbatch; ++i) { 
+  for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
     MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
@@ -336,7 +336,7 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
-  for (int i = 0; i != nbatch; ++i) { 
+  for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);
@@ -353,7 +353,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
-  for (int i = 0; i != nbatch; ++i) { 
+  for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);

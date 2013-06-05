@@ -71,10 +71,10 @@ class DFDistT {
 
     int size() const { return size_; }
     int start() const { return start_; }
-    const double* data() const { assert(data_.size() == 1); return data(0); } 
+    const double* data() const { assert(data_.size() == 1); return data(0); }
     const double* data(const int i) const { return data_[i]->data(); }
-}; 
-    
+};
+
 }
 
 #endif

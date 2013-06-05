@@ -34,7 +34,7 @@
 #include <stdexcept>
 
 // TODO until GCC fixes this bug
-#ifdef __GNUC__ 
+#ifdef __GNUC__
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
 #define _GLIBCXX_USE_NANOSLEEP
 #endif

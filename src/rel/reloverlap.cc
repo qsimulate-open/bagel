@@ -49,7 +49,7 @@ void RelOverlap::compute_() {
 
   copy_real_block(coeff1, 0, 0, n, n, ovl);
   copy_real_block(coeff1, n, n, n, n, ovl);
-  copy_real_block(coeff1, 2*n, 2*n, n, n, k12); 
-  copy_real_block(coeff1, 3*n, 3*n, n, n, k12); 
+  copy_real_block(coeff1, 2*n, 2*n, n, n, k12);
+  copy_real_block(coeff1, 3*n, 3*n, n, n, k12);
 }
 

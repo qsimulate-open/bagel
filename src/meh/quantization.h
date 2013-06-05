@@ -42,7 +42,7 @@ enum class SQ {
   AnnihilateBeta = -2
 };
 
-class Quantization { 
+class Quantization {
   protected:
     static const int Alpha = 0;
     static const int Beta = 1;
@@ -65,12 +65,12 @@ class OneBody : public Quantization {
     const int ij(const int norb) const override { return norb; }
     std::shared_ptr<Dvec> compute(std::shared_ptr<const Civec> ccvec) const override {
       const int action = (static_cast<int>(oper) > 0 ? Create : Annihilate);
-      const int spin = ( (oper==SQ::CreateAlpha || oper==SQ::AnnihilateAlpha) ? Alpha : Beta ); 
+      const int spin = ( (oper==SQ::CreateAlpha || oper==SQ::AnnihilateAlpha) ? Alpha : Beta );
 
       std::shared_ptr<const Determinants> source_det = ccvec->det();
-      std::shared_ptr<const Determinants> target_det = ( (spin == Alpha) ? 
-        (action == Annihilate ? ccvec->det()->remalpha() : ccvec->det()->addalpha() ) : 
-        (action == Annihilate ? ccvec->det()->rembeta() : ccvec->det()->addbeta() )); 
+      std::shared_ptr<const Determinants> target_det = ( (spin == Alpha) ?
+        (action == Annihilate ? ccvec->det()->remalpha() : ccvec->det()->addalpha() ) :
+        (action == Annihilate ? ccvec->det()->rembeta() : ccvec->det()->addbeta() ));
 
       const int norb = target_det->norb();
 
@@ -98,7 +98,7 @@ class OneBody : public Quantization {
           double* target = target_base + target_start * iter.target;
           const double* source = source_base + source_start * iter.source;
           daxpy_(length, sign, source, source_stride, target, target_stride);
-        }   
+        }
       }
 
       return out;
@@ -171,7 +171,7 @@ class TwoBody : public Quantization {
 template<SQ oper1, SQ oper2, SQ oper3> class ThreeBody : public Quantization {
   public:
     ThreeBody() {}
-  
+
     const int ij(const int norb) const override { return norb*norb*norb; }
     std::shared_ptr<Dvec> compute(std::shared_ptr<const Civec> ccvec) const override {
       if ( ((static_cast<int>(oper2) + static_cast<int>(oper3)) == 0) && (static_cast<int>(oper3) < 0) ) { // Can start with an optimized TwoBody

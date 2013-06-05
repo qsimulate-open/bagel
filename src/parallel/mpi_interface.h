@@ -48,12 +48,12 @@ class MPI_Interface {
     int cnt_;
     // request handles
 #ifdef HAVE_MPI_H
-    std::map<int, std::vector<MPI_Request>> request_; 
+    std::map<int, std::vector<MPI_Request>> request_;
 #if 0
     std::map<int, MPI_Win> window_;
 #endif
 #endif
-    int nprow_; 
+    int nprow_;
     int npcol_;
     int context_;
     int myprow_;
@@ -92,9 +92,9 @@ class MPI_Interface {
     void broadcast(std::complex<double>*, const size_t size, const int root) const;
     // broadcast of const objects. Use with caution...
     void broadcast_force(const double*, const size_t size, const int root) const;
-    void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const; 
-    void allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const; 
-    void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const; 
+    void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const;
+    void allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const;
+    void allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const;
 
     // one-sided communication with Isend, Irecv
     int request_send(const double* sbuf, const size_t size, const int dest, const int tag);
@@ -126,7 +126,7 @@ class MPI_Interface {
     std::unique_ptr<int[]> descinit(const int, const int) const;
 };
 
-extern MPI_Interface* mpi__; 
+extern MPI_Interface* mpi__;
 
 }
 

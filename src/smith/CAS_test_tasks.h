@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_CAS_test_TASKS_H 
-#define __SRC_SMITH_CAS_test_TASKS_H 
+#ifndef __SRC_SMITH_CAS_test_TASKS_H
+#define __SRC_SMITH_CAS_test_TASKS_H
 
 #include <memory>
 #include <algorithm>
@@ -49,13 +49,13 @@ class Task0 : public Task<T> {
 
     void compute_() {
       r_->zero();
-    };  
+    };
 
   public:
     Task0(std::vector<std::shared_ptr<Tensor<T>>> t) : Task<T>() {
       r_ =  t[0];
-    };  
-    ~Task0() {}; 
+    };
+    ~Task0() {};
 };
 
 template <typename T>
@@ -97,8 +97,8 @@ class Task1 : public Task<T> {  // associated with gamma
             }
           }
           out()->put_block(odata);
-        }  
-    };  
+        }
+    };
 
     std::vector<std::shared_ptr<Task_local>> subtasks_;
 
@@ -1043,13 +1043,13 @@ class Task17 : public DensityTask<T> {
 
     void compute_() {
       d_->zero();
-    };  
+    };
 
   public:
     Task17(std::vector<std::shared_ptr<Tensor<T>>> t) : DensityTask<T>() {
       d_ =  t[0];
-    };  
-    ~Task17() {}; 
+    };
+    ~Task17() {};
 };
 
 template <typename T>
@@ -1082,8 +1082,8 @@ class Task18 : public Task<T> {  // associated with gamma
             sort_indices<0,1,1,1,1,1>(i0data, odata, x1.size(), x0.size());
           }
           out()->put_block(odata, x1, x0);
-        }  
-    };  
+        }
+    };
 
     std::vector<std::shared_ptr<Task_local>> subtasks_;
 

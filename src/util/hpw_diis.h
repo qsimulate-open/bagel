@@ -75,7 +75,7 @@ class HPW_DIIS  {
       return std::make_shared<T>(*orig_* *extrap);
     }
 
-    RefT extrap() const { return base_; } 
+    RefT extrap() const { return base_; }
     RefT start() const { return orig_; }
 
 };

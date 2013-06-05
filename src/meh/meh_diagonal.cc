@@ -92,7 +92,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subs
       }
     }
   }
-  
+
   // now do H^{BB}_{BB} case
   {
     shared_ptr<const Dvec> ccvecB = subspace.ci<1>();

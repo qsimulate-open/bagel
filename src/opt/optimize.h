@@ -40,7 +40,7 @@ class Optimize {
     double thresh_;
 
   public:
-    Optimize(const boost::property_tree::ptree&, std::shared_ptr<const Geometry>); 
+    Optimize(const boost::property_tree::ptree&, std::shared_ptr<const Geometry>);
 
     void compute();
     std::shared_ptr<const Geometry> geometry() const { return geom_; }

@@ -129,7 +129,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
   // first see if there are disconnected shells
   const int nb = nbasis_ / contraction_upper_.size();
   assert(nbasis_%contraction_upper_.size() == 0);
-  
+
   int smallest = 0;
   int largest = contraction_upper_.front();
   auto upper = contraction_upper_.begin();
@@ -216,7 +216,7 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
     {
       OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_dec_, aux_dec_}});
       ovl.compute();
-      for (int i = 0; i != asize_dec; ++i) 
+      for (int i = 0; i != asize_dec; ++i)
         copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
     }
     {
@@ -260,7 +260,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
   for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
     if (spherical_) {
       const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-      const int nloop = num_contracted() * asize_inc; 
+      const int nloop = num_contracted() * asize_inc;
       carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
     } else {
       assert(coeff0->size_block() == asize_inc*ssize);
@@ -269,7 +269,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
     if (aux_dec_) {
       if (spherical_) {
         const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-        const int nloop = num_contracted() * asize_dec; 
+        const int nloop = num_contracted() * asize_dec;
         carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
       } else {
         assert(coeff1->size_block() == asize_dec*ssize);
@@ -308,7 +308,7 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
   for (auto& i : contractions_) {
     double exp0 = 0.0;
     double exp1 = 0.0;
-    for (int j = range->first; j != range->second; ++j) { 
+    for (int j = range->first; j != range->second; ++j) {
       const double tmp = i[j]*exp(-exponents_[j]*rr);
       exp0 += tmp;
       exp1 -= 2.0*exponents_[j]*tmp;
@@ -373,9 +373,9 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
     double expxz = 0.0;
     double expyz = 0.0;
     double expzz = 0.0;
-    for (int j = range->first; j != range->second; ++j) { 
+    for (int j = range->first; j != range->second; ++j) {
       const double tmp = i[j]*exp(-exponents_[j]*rr);
-      exp0 += tmp; 
+      exp0 += tmp;
       expx += -2.0*exponents_[j]*x*tmp;
       expy += -2.0*exponents_[j]*y*tmp;
       expz += -2.0*exponents_[j]*z*tmp;
@@ -395,18 +395,18 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
                      + cart*expxx;
         tmp[1][ixyz] = (ix > 0 && iy > 0 ? ix*iy*pow(x,ix-1)*pow(y,iy-1)*pow(z,iz)*exp0 : 0)
                      + (ix > 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expy : 0)
-                     + (iy > 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expx : 0) 
+                     + (iy > 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expx : 0)
                      + cart*expxy;
         tmp[2][ixyz] = (iy > 1 ? iy*(iy-1)*pow(x,ix)*pow(y,iy-2)*pow(z,iz)*exp0 : 0)
                      + (iy > 0 ? 2.0*iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expy : 0)
                      + cart*expyy;
         tmp[3][ixyz] = (ix > 0 && iz > 0 ? ix*iz*pow(x,ix-1)*pow(y,iy)*pow(z,iz-1)*exp0 : 0)
                      + (ix > 0 ? ix*pow(x,ix-1)*pow(y,iy)*pow(z,iz)*expz : 0)
-                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expx : 0) 
+                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expx : 0)
                      + cart*expxz;
         tmp[4][ixyz] = (iy > 0 && iz > 0 ? iy*iz*pow(x,ix)*pow(y,iy-1)*pow(z,iz-1)*exp0 : 0)
                      + (iy > 0 ? iy*pow(x,ix)*pow(y,iy-1)*pow(z,iz)*expz : 0)
-                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expy : 0) 
+                     + (iz > 0 ? iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expy : 0)
                      + cart*expyz;
         tmp[5][ixyz] = (iz > 1 ? iz*(iz-1)*pow(x,ix)*pow(y,iy)*pow(z,iz-2)*exp0 : 0)
                      + (iz > 0 ? 2.0*iz*pow(x,ix)*pow(y,iy)*pow(z,iz-1)*expz : 0)

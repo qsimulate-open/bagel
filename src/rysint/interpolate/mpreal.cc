@@ -5,11 +5,11 @@
 
 	Copyright (c) 2008-2010 Pavel Holoborodko
 
-	Core Developers: 
-	Pavel Holoborodko, Dmitriy Gubanov, Konstantin Holoborodko. 
+	Core Developers:
+	Pavel Holoborodko, Dmitriy Gubanov, Konstantin Holoborodko.
 
 	Contributors:
-	Brian Gladman, Helmut Jarausch, Fokko Beekhof, Ulrich Mutze, 
+	Brian Gladman, Helmut Jarausch, Fokko Beekhof, Ulrich Mutze,
 	Heinz van Saanen, Pere Constans, Peter van Hoof.
 
 	****************************************************************************
@@ -31,14 +31,14 @@
 	Redistribution and use in source and binary forms, with or without
 	modification, are permitted provided that the following conditions
 	are met:
-	
+
 	1. Redistributions of source code must retain the above copyright
 	notice, this list of conditions and the following disclaimer.
-	
+
 	2. Redistributions in binary form must reproduce the above copyright
 	notice, this list of conditions and the following disclaimer in the
 	documentation and/or other materials provided with the distribution.
-	
+
 	3. Redistributions of any form whatsoever must retain the following
 	acknowledgment:
 	"
@@ -47,11 +47,11 @@
          e-mail: pavel@holoborodko.com
 	"
 
-	4. This software cannot be, by any means, used for any commercial 
+	4. This software cannot be, by any means, used for any commercial
 	purpose without the prior permission of the copyright holder.
-	
-	Any of the above conditions can be waived if you get permission from 
-	the copyright holder. 
+
+	Any of the above conditions can be waived if you get permission from
+	the copyright holder.
 
 	THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 	ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -79,21 +79,21 @@ using std::istream;
 
 namespace mpfr{
 
-mp_rnd_t   mpreal::default_rnd  = mpfr_get_default_rounding_mode();	
-mp_prec_t  mpreal::default_prec = mpfr_get_default_prec();	
+mp_rnd_t   mpreal::default_rnd  = mpfr_get_default_rounding_mode();
+mp_prec_t  mpreal::default_prec = mpfr_get_default_prec();
 int		   mpreal::default_base = 10;
 int        mpreal::double_bits = -1;
 bool       mpreal::is_custom_malloc = false;
 
 // Default constructor: creates mp number and initializes it to 0.
-mpreal::mpreal() 
-{ 
+mpreal::mpreal()
+{
 	set_custom_malloc();
-	mpfr_init2(mp,default_prec); 
+	mpfr_init2(mp,default_prec);
 	mpfr_set_ui(mp,0,default_rnd);
 }
 
-mpreal::mpreal(const mpreal& u) 
+mpreal::mpreal(const mpreal& u)
 {
 	set_custom_malloc();
 	mpfr_init2(mp,mpfr_get_prec(u.mp));
@@ -141,35 +141,35 @@ mpreal::mpreal(const double u, mp_prec_t prec, mp_rnd_t mode)
 }
 
 mpreal::mpreal(const long double u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 	set_custom_malloc();
     mpfr_init2(mp,prec);
 	mpfr_set_ld(mp,u,mode);
 }
 
 mpreal::mpreal(const unsigned long int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 	set_custom_malloc();
 	mpfr_init2(mp,prec);
 	mpfr_set_ui(mp,u,mode);
 }
 
 mpreal::mpreal(const unsigned int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 	set_custom_malloc();
 	mpfr_init2(mp,prec);
 	mpfr_set_ui(mp,u,mode);
 }
 
 mpreal::mpreal(const long int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 	set_custom_malloc();
 	mpfr_init2(mp,prec);
 	mpfr_set_si(mp,u,mode);
 }
 
 mpreal::mpreal(const int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 	set_custom_malloc();
 	mpfr_init2(mp,prec);
 	mpfr_set_si(mp,u,mode);
@@ -179,19 +179,19 @@ mpreal::mpreal(const char* s, mp_prec_t prec, int base, mp_rnd_t mode)
 {
 	set_custom_malloc();
 	mpfr_init2(mp,prec);
-	mpfr_set_str(mp, s, base, mode); 
+	mpfr_set_str(mp, s, base, mode);
 }
 
-mpreal::~mpreal() 
-{ 
+mpreal::~mpreal()
+{
 	mpfr_clear(mp);
-}                           
+}
 
 // Operators - Assignment
 mpreal& mpreal::operator=(const char* s)
 {
 	mpfr_t t;
-	
+
 	set_custom_malloc();
 
 	if(0==mpfr_init_set_str(t,s,default_base,default_rnd))
@@ -211,9 +211,9 @@ const mpreal fma (const mpreal& v1, const mpreal& v2, const mpreal& v3, mp_rnd_t
 	mpreal a;
 	mp_prec_t p1, p2, p3;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
-	p3 = v3.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
+	p3 = v3.get_prec();
 
 	a.set_prec(p3>p2?(p3>p1?p3:p1):(p2>p1?p2:p1));
 
@@ -226,9 +226,9 @@ const mpreal fms (const mpreal& v1, const mpreal& v2, const mpreal& v3, mp_rnd_t
 	mpreal a;
 	mp_prec_t p1, p2, p3;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
-	p3 = v3.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
+	p3 = v3.get_prec();
 
 	a.set_prec(p3>p2?(p3>p1?p3:p1):(p2>p1?p2:p1));
 
@@ -241,8 +241,8 @@ const mpreal agm (const mpreal& v1, const mpreal& v2, mp_rnd_t rnd_mode)
 	mpreal a;
 	mp_prec_t p1, p2;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
 
 	a.set_prec(p1>p2?p1:p2);
 
@@ -256,8 +256,8 @@ const mpreal hypot (const mpreal& x, const mpreal& y, mp_rnd_t rnd_mode)
 	mpreal a;
 	mp_prec_t yp, xp;
 
-	yp = y.get_prec(); 
-	xp = x.get_prec(); 
+	yp = y.get_prec();
+	xp = x.get_prec();
 
 	a.set_prec(yp>xp?yp:xp);
 
@@ -280,12 +280,12 @@ const mpreal sum (const mpreal tab[], unsigned long int n, mp_rnd_t rnd_mode)
 }
 
 const mpreal remainder (const mpreal& x, const mpreal& y, mp_rnd_t rnd_mode)
-{	
+{
 	mpreal a;
 	mp_prec_t yp, xp;
 
-	yp = y.get_prec(); 
-	xp = x.get_prec(); 
+	yp = y.get_prec();
+	xp = x.get_prec();
 
 	a.set_prec(yp>xp?yp:xp);
 
@@ -299,8 +299,8 @@ const mpreal remquo (long* q, const mpreal& x, const mpreal& y, mp_rnd_t rnd_mod
 	mpreal a;
 	mp_prec_t yp, xp;
 
-	yp = y.get_prec(); 
-	xp = x.get_prec(); 
+	yp = y.get_prec();
+	xp = x.get_prec();
 
 	a.set_prec(yp>xp?yp:xp);
 
@@ -324,22 +324,22 @@ mpreal::operator std::string() const
 
 string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 {
-	char *s, *ns = NULL;	
+	char *s, *ns = NULL;
 	size_t slen, nslen;
 	mp_exp_t exp;
 	string out;
-	
+
 	set_custom_malloc();
-	
+
 	if(mpfr_inf_p(mp))
-	{ 
+	{
 		if(mpfr_sgn(mp)>0) return "+@Inf@";
 		else			   return "-@Inf@";
 	}
 
 	if(mpfr_zero_p(mp)) return "0";
 	if(mpfr_nan_p(mp))  return "@NaN@";
-		
+
 	s  = mpfr_get_str(NULL,&exp,b,0,mp,mode);
 	ns = mpfr_get_str(NULL,&exp,b,n,mp,mode);
 
@@ -347,7 +347,7 @@ string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 	{
 		slen  = strlen(s);
 		nslen = strlen(ns);
-		if(nslen<=slen) 
+		if(nslen<=slen)
 		{
 			mpfr_free_str(s);
 			s = ns;
@@ -364,7 +364,7 @@ string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+exp) ptr--; 
+				while (*ptr=='0' && ptr>s+exp) ptr--;
 
 				if(ptr==s+exp) out = string(s,exp+1);
 				else		   out = string(s,exp+1)+'.'+string(s+exp+1,ptr-(s+exp+1)+1);
@@ -375,7 +375,7 @@ string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+exp-1) ptr--; 
+				while (*ptr=='0' && ptr>s+exp-1) ptr--;
 
 				if(ptr==s+exp-1) out = string(s,exp);
 				else		     out = string(s,exp)+'.'+string(s+exp,ptr-(s+exp)+1);
@@ -388,7 +388,7 @@ string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+1) ptr--; 
+				while (*ptr=='0' && ptr>s+1) ptr--;
 
 				if(ptr==s+1) out = string(s,2);
 				else		 out = string(s,2)+'.'+string(s+2,ptr-(s+2)+1);
@@ -399,7 +399,7 @@ string mpreal::to_string(size_t n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s) ptr--; 
+				while (*ptr=='0' && ptr>s) ptr--;
 
 				if(ptr==s) out = string(s,1);
 				else	   out = string(s,1)+'.'+string(s+1,ptr-(s+1)+1);
@@ -431,12 +431,12 @@ ostream& operator<<(ostream& os, const mpreal& v)
 
 istream& operator>>(istream &is, mpreal& v)
 {
-	char c;	
+	char c;
 	string s = "";
 	mpfr_t t;
-	
+
 	mpreal::set_custom_malloc();
-	
+
 	if(is.good())
 	{
 		is>>ws;
@@ -453,11 +453,11 @@ istream& operator>>(istream &is, mpreal& v)
 		if(s.size() != 0)
 		{
 			// Protect current value from alternation in case of input error
-			// so some error handling(roll back) procedure can be used 			
+			// so some error handling(roll back) procedure can be used
 
 			if(0==mpfr_init_set_str(t,s.c_str(),mpreal::default_base,mpreal::default_rnd))
 			{
-				mpfr_set(v.mp,t,mpreal::default_rnd);				
+				mpfr_set(v.mp,t,mpreal::default_rnd);
 				mpfr_clear(t);
 
 			}else{

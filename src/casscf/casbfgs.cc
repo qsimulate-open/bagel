@@ -86,7 +86,7 @@ void CASBFGS::compute() {
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice(nclosed_, nocc_);
     for (int i = 0; i != nact_; ++i)
-      dscal_(acoeff->ndim(), sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), 1); 
+      dscal_(acoeff->ndim(), sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), 1);
     // then make a AO density matrix
     shared_ptr<const Matrix> aden = make_shared<Matrix>((*acoeff ^ *acoeff)*2.0);
     shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_, aden, acoeff);
@@ -97,9 +97,9 @@ void CASBFGS::compute() {
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
-    // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at 
+    // grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
     grad_va(cfock, qxr, sigma);
-    // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir 
+    // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
     grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
@@ -111,7 +111,7 @@ void CASBFGS::compute() {
     }
     if (iter == 0) {
 //if (false) {
-      xstart = xold->copy(); 
+      xstart = xold->copy();
       diis = make_shared<HPW_DIIS<Matrix>>(10, cold);
     }
     // extrapolation using BFGS
@@ -217,7 +217,7 @@ void CASBFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
 }
 
 
-// grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at 
+// grad(a/t) (eq.4.3b): 2cfock_au gamma_ut + q_at
 // gamma is assumed to be diagonal
 void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
@@ -229,7 +229,7 @@ void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> q
 }
 
 
-// grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir 
+// grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
 void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
   {
@@ -237,7 +237,7 @@ void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
     for (int i = 0; i != nact_; ++i, target += nclosed_) {
       daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
-      daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1); 
+      daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
     }
   }
 }

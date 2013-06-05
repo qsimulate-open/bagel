@@ -36,7 +36,7 @@ namespace bagel {
 template<int a_, int c_, int rank_>
 void vrr(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
 
-  static_assert(a_>=0 && c_>=0 && rank_ >= 1, "parameter(s) wrong in vrr"); 
+  static_assert(a_>=0 && c_>=0 && rank_ >= 1, "parameter(s) wrong in vrr");
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
   // TODO when GCC 4.7 is gone, we remove these lines. "alignas(32)" is based on the standard C++11
@@ -46,19 +46,19 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
   double B01_[rank_]__attribute__((aligned(32)));
   double B10_[rank_]__attribute__((aligned(32)));
 #else
-  alignas(32) double C00_[rank_]; 
-  alignas(32) double D00_[rank_]; 
-  alignas(32) double B00_[rank_]; 
-  alignas(32) double B01_[rank_]; 
-  alignas(32) double B10_[rank_]; 
+  alignas(32) double C00_[rank_];
+  alignas(32) double D00_[rank_];
+  alignas(32) double B00_[rank_];
+  alignas(32) double B01_[rank_];
+  alignas(32) double B10_[rank_];
 #endif
   std::copy_n(C00, rank_, C00_);
   std::copy_n(D00, rank_, D00_);
   std::copy_n(B00, rank_, B00_);
   std::copy_n(B01, rank_, B01_);
   std::copy_n(B10, rank_, B10_);
-  
-  if ((a_ > 1 && c_ > 1) || (a_ == 1 && c_ >  1)) { 
+
+  if ((a_ > 1 && c_ > 1) || (a_ == 1 && c_ >  1)) {
     // c == 0
     for (int t = 0; t != rank_; ++t)
       data_[rank_*0+t] = 1.0;
@@ -258,7 +258,7 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
 
   } else if (a_ == 1 && c_ == 1) {
     for (int t = 0; t != rank_; ++t)
-      data_[rank_*0+t] = 1.0; 
+      data_[rank_*0+t] = 1.0;
 
     for (int t = 0; t != rank_; ++t)
       data_[rank_*1+t] = C00_[t];
@@ -269,7 +269,7 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
     for (int t = 0; t != rank_; ++t)
       data_[rank_*3+t] = C00_[t] * data_[rank_*2+t] + B00_[t];
 
-  } else if (a_ >  0 && c_ == 0) { 
+  } else if (a_ >  0 && c_ == 0) {
     for (int t = 0; t != rank_; ++t)
       data_[rank_*0+t] = 1.0;
 

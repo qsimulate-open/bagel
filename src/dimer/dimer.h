@@ -83,7 +83,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
       std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
 
-      void set_sref(std::shared_ptr<const Reference> ref) { 
+      void set_sref(std::shared_ptr<const Reference> ref) {
         scoeff_ = std::make_shared<Coeff>(*ref->coeff());
         sref_ = std::make_shared<Reference>(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt());
       }
@@ -103,7 +103,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       int dimerbasis() const { return dimerbasis_; }
 
       // Utility functions
-      std::shared_ptr<Coeff> overlap() const; 
+      std::shared_ptr<Coeff> overlap() const;
       std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const { return std::shared_ptr<Matrix>(); };
 
       void set_active(TreeInput idata);
@@ -123,7 +123,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 };
 
 template<int unit>
-std::shared_ptr<const Dvec> Dimer::embedded_casci(const boost::property_tree::ptree& idata, const int charge, const int nspin, const int nstates) const { 
+std::shared_ptr<const Dvec> Dimer::embedded_casci(const boost::property_tree::ptree& idata, const int charge, const int nspin, const int nstates) const {
   const int nclosed = nclosed_;
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const int nact = (unit == 0) ? nact_.first : nact_.second;

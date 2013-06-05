@@ -38,7 +38,7 @@ void RelHcore::compute_() {
 
   array<shared_ptr<ZMatrix>,4> zsmallnai;
   for (auto& i : zsmallnai)
-    i = znai->clone(); 
+    i = znai->clone();
 
   const complex<double> coeff1 (1.0, 0.0);
   const complex<double> coeffi (0.0, 1.0);

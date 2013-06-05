@@ -85,7 +85,7 @@ void SCF::compute() {
 
   if (!dodf_) {
     aodensity_ = coeff_->form_density_rhf(nocc_);
-    aodensity = aodensity_->distmatrix(); 
+    aodensity = aodensity_->distmatrix();
   } else {
     aodensity = coeff->form_density_rhf(nocc_);
   }
@@ -154,7 +154,7 @@ void SCF::compute() {
       aodensity_ = new_density;
       aodensity = aodensity_->distmatrix();
     } else {
-      aodensity = coeff->form_density_rhf(nocc_); 
+      aodensity = coeff->form_density_rhf(nocc_);
     }
     pdebug.tick_print("Post process");
   }

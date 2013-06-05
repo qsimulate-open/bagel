@@ -75,7 +75,7 @@ class DIIS {
       for (int i = 0; i != cnum - 1; ++i, ++data_iter) {
         matrix_->element(cnum-1, i) = matrix_->element(i, cnum-1) = e->ddot(*(data_iter->second));
         if (std::is_same<ZMatrix, Mat>::value)
-          matrix_->element(i, cnum-1) = std::conj(matrix_->element(i, cnum-1)); 
+          matrix_->element(i, cnum-1) = std::conj(matrix_->element(i, cnum-1));
       }
       matrix_->element(cnum-1, cnum-1)= e->ddot(e);
       for (int i = 0; i != cnum; ++i)

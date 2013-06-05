@@ -34,7 +34,7 @@ namespace bagel {
 class RelReference : public std::enable_shared_from_this<RelReference> {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const ZMatrix> coeff_; 
+    const std::shared_ptr<const ZMatrix> coeff_;
     const double energy_;
     const int nocc_;
     const int nvirt_;

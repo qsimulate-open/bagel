@@ -39,11 +39,11 @@ using namespace std;
 using namespace bagel;
 
 
-Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) { 
+Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) {
 }
 
 
-Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) { 
+Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
 
@@ -257,7 +257,7 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 
 
 void Matrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diagonalize(double*)"); 
+  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diagonalize(double*)");
   const int n = ndim_;
   int info;
 
@@ -270,7 +270,7 @@ void Matrix::diagonalize(double* eig) {
     dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
     mpi__->broadcast(data(), n*n, 0);
 #ifdef HAVE_SCALAPACK
-  } else {  
+  } else {
     const int localrow = get<0>(localsize_);
     const int localcol = get<1>(localsize_);
 
@@ -405,7 +405,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor); 
+  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor);
   return out;
 }
 
@@ -502,7 +502,7 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 }
 
 
-// compute S^{-1} using diagonalization 
+// compute S^{-1} using diagonalization
 void Matrix::inverse_symmetric(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
@@ -517,11 +517,11 @@ void Matrix::inverse_symmetric(const double thresh) {
 #ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
-    if (vec[i] < thresh) rm.push_back(vec[i]); 
+    if (vec[i] < thresh) rm.push_back(vec[i]);
   if (!rm.empty())
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
-            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl; 
+            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 #endif
 }
 
@@ -556,11 +556,11 @@ void Matrix::inverse_half(const double thresh) {
 //#ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
-    if (vec[i] < thresh) rm.push_back(vec[i]); 
+    if (vec[i] < thresh) rm.push_back(vec[i]);
   if (!rm.empty())
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
-            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl; 
+            "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 //#endif
 }
 
@@ -606,7 +606,7 @@ void Matrix::copy_block(const int nstart, const int mstart, const shared_ptr<con
 
 shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
   auto out = make_shared<Matrix>(nsize, msize, localized_);
-  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
+  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
     copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
   return out;
 }
@@ -642,7 +642,7 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 
 #ifndef HAVE_SCALAPACK
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<const Matrix> tmp = this->slice(offset, offset+n); 
+  shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;

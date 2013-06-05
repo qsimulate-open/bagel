@@ -42,7 +42,7 @@ class DimerDipole : public CIDipole {
     int norbB_;
 
   public:
-    DimerDipole(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB, 
+    DimerDipole(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
       std::shared_ptr<const Coeff> coeff) : CIDipole(ref, nstart, nfenceB, coeff), norbA_(nfenceA-nstart), norbB_(nfenceB-nfenceA)
     {
 

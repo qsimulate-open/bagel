@@ -35,7 +35,7 @@ using namespace bagel;
 
 // CIDipole start
 void CIDipole::init(const int nstart, const int nfence) {
-  DipoleMatrix dipole(geom_);  
+  DipoleMatrix dipole(geom_);
 
   for(int i = 0; i < dipole.nblocks(); ++i) {
     dipole_mo_[i] = make_shared<Matrix>((*coeff_) % (*dipole.data(i)) * (*coeff_));

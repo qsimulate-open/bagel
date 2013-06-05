@@ -35,7 +35,7 @@ vector<mpreal> chebft(int n) {
   vector<mpreal> out(n);
   const mpreal half = "0.5";
   for (int k = 0; k != n; ++k) {
-     const mpreal y = mpfr::cos(GMPPI * (k + half) / n); 
+     const mpreal y = mpfr::cos(GMPPI * (k + half) / n);
      out[k] = y;
   }
   return out;
@@ -47,15 +47,15 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
 
   const mpreal zero = "0.0";
   const mpreal half = "0.5";
-  vector<mpreal> cheb = chebft(n); 
+  vector<mpreal> cheb = chebft(n);
 
   const mpreal Tmin = tbase;
   const mpreal Tmax = Tmin + stride;
   const mpreal Tp = half * (Tmin + Tmax);
 
   vector<mpreal> Tpoints(n);
-  for (int i = 0; i != n; ++i) { 
-    Tpoints[i] = stride*half*cheb[i] + Tp; 
+  for (int i = 0; i != n; ++i) {
+    Tpoints[i] = stride*half*cheb[i] + Tp;
   }
 
   vector<map<mpreal, mpreal>> table_reserve(n);
@@ -66,7 +66,7 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
     rysroot_gmp(ttt, dx, dw, rank, 1);
     // sort dx and dw using dx
     for (int j = 0; j != rank; ++j)
-      table_reserve[i].insert(make_pair(dx[j], dw[j])); 
+      table_reserve[i].insert(make_pair(dx[j], dw[j]));
   }
 
   vector<vector<double>> c;
@@ -80,11 +80,11 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
       for (int i = 0; i != ii; ++i) ++iter;
       cdx.push_back(iter->first);
       cdw.push_back(iter->second);
-    }  
+    }
 
     const mpreal two = "2.0";
     const mpreal half = "0.5";
-    const mpreal fac = two / n; 
+    const mpreal fac = two / n;
     const mpreal pi = GMPPI;
     for (int j = 0; j != n; ++j) {
       mpreal sum = "0.0";
@@ -97,11 +97,11 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
       tc2[j] = sum2 * fac;
     }
     if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
-      cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << (double)Tmin << " " << (double)Tmax << endl; 
+      cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << (double)Tmin << " " << (double)Tmax << endl;
       for (int i = 0; i != n; ++i) {
-        cout << setw(20) << (double)(Tpoints[i]) << setw(20) << (double)cdx[i] << setw(20) << (double)(cdw[i]) << endl; 
+        cout << setw(20) << (double)(Tpoints[i]) << setw(20) << (double)cdx[i] << setw(20) << (double)(cdw[i]) << endl;
       }
-    } 
+    }
     c.push_back(tc);
     c.push_back(tc2);
   }
@@ -188,7 +188,7 @@ bool test(const int nrank, const double tin) {
   vector<mpreal> tt(nsize, tin);
   vector<mpreal> rr(nsize*nrank);
   vector<mpreal> ww(nsize*nrank);
-  rysroot_gmp(tt, rr, ww, nrank, nsize); 
+  rysroot_gmp(tt, rr, ww, nrank, nsize);
   map<mpreal,mpreal> gmp;
   for (int i = 0; i != nsize*nrank; ++i)
     gmp.insert(make_pair(rr[i], ww[i]));
@@ -250,16 +250,16 @@ int main(int argc, char** argv) {
   }
 
   vector<double> nbox_(14);
-  for (int nroot=1; nroot!=14; ++nroot) { 
+  for (int nroot=1; nroot!=14; ++nroot) {
     nbox_[nroot] = NBOX;
-  } 
+  }
 
   for (int nroot=1; nroot!=14; ++nroot) { // this is the outer most loop.
     if (argc > 2) {
       const string toggle = argv[1];
       if (toggle == "-r") {
-        const string target = argv[2]; 
-        if (nroot != lexical_cast<int>(target)) continue; 
+        const string target = argv[2];
+        if (nroot != lexical_cast<int>(target)) continue;
       }
     }
     vector<double> aroot;
@@ -273,8 +273,8 @@ int main(int argc, char** argv) {
     double b[100];
     double c[500];
     for (int i=0; i!= n; ++i) {
-      a[i+i*n] = 0.0; 
-      if (i > 0) { 
+      a[i+i*n] = 0.0;
+      if (i > 0) {
         const double ia = static_cast<double>(i);
         a[(i-1)+i*n] = ::sqrt(ia*0.5);
         a[i+(i-1)*n] = ::sqrt(ia*0.5);
@@ -282,7 +282,7 @@ int main(int argc, char** argv) {
     }
     int nn = n*5;
     int info = 0;
-    dsyev_("v", "U", &n, a, &n, b, c, &nn, &info); 
+    dsyev_("v", "U", &n, a, &n, b, c, &nn, &info);
     for (int j = 0; j != nroot; ++j) {
       aroot.push_back((double)(b[nroot+j]*b[nroot+j]));
       aweight.push_back((double)(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*sqrt(pi)));
@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
     const int jend = nbox;
     const double stride = static_cast<double>(MAXT)/nbox;
     const mpreal mstride = static_cast<mpreal>(MAXT)/nbox;
-    ofstream ofs; 
+    ofstream ofs;
 #ifndef SPIN2
 #ifndef BREIT
     const string func = "eriroot";
@@ -358,7 +358,7 @@ int main(int argc, char** argv) {
       data (aw(i), i = 1, "<<nroot<<")/\n";
     for (int j=0; j!= nroot; ++j) {
       ofs << "\
-     &   " << scientific << setprecision(15) << setw(20) << aweight[j]; 
+     &   " << scientific << setprecision(15) << setw(20) << aweight[j];
       if (j != nroot-1) ofs << ",";
       ofs << endl;
     }
@@ -380,11 +380,11 @@ int main(int argc, char** argv) {
 
       for (int i = 0; i != nroot; ++i, ++index) {
         const int ii = 2 * i;
-        const vector<double> x = c_all[ii]; 
-        const vector<double> w = c_all[ii + 1]; 
+        const vector<double> x = c_all[ii];
+        const vector<double> w = c_all[ii + 1];
 
         for (vector<double>::const_iterator iter = x.begin(); iter != x.end(); ++iter) {
-          listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) << 
+          listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
           if (iter + 1 != x.end() || j+1 != jend || i+1 != nroot) listx << ",";
           listx << "\n";
@@ -458,7 +458,7 @@ int main(int argc, char** argv) {
             ww(offset+j) = t*e - g + w(boxof+" << i << ")*0.5d0\n";
        }
      }
-       
+
      ofs << "\
           enddo\n\
         endif\n\

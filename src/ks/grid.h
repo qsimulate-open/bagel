@@ -48,10 +48,10 @@ class Grid {
     Grid(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
       : geom_(g), data_(o) { assert(data_->ndim() == 4); }
 
-    std::shared_ptr<const Matrix> basis() const { return basis_; } 
-    std::shared_ptr<const Matrix> gradx() const { return gradx_; } 
-    std::shared_ptr<const Matrix> grady() const { return grady_; } 
-    std::shared_ptr<const Matrix> gradz() const { return gradz_; } 
+    std::shared_ptr<const Matrix> basis() const { return basis_; }
+    std::shared_ptr<const Matrix> gradx() const { return gradx_; }
+    std::shared_ptr<const Matrix> grady() const { return grady_; }
+    std::shared_ptr<const Matrix> gradz() const { return gradz_; }
     const double& weight(const size_t i) const { return data_->element(3,i); }
     size_t size() const { return data_->mdim(); }
     std::shared_ptr<const Matrix> data() const { return data_; }

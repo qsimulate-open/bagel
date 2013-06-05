@@ -43,7 +43,7 @@ struct CopyBlockTask {
       : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
 
     void compute() {
-      for (size_t j = 0; j != m_; ++j) 
+      for (size_t j = 0; j != m_; ++j)
         std::copy_n(a_+j*astride_, n_, b_+j*bstride_);
     }
 };

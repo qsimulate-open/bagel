@@ -123,5 +123,5 @@ array<shared_ptr<Matrix>,6> Grid::compute_grad2() const {
   }
   TaskQueue<GridDeriv2Task> tq(tasks);
   tq.compute(resources__->max_num_threads());
-  return out; 
+  return out;
 }

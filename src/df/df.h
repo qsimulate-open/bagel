@@ -74,7 +74,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     std::shared_ptr<Matrix> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
-    std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const; 
+    std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const;
 
     void daxpy(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
@@ -114,7 +114,7 @@ class DFDist : public ParallelDF {
         block_.push_back(block);
     }
 
-    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }  
+    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }
 
     bool has_2index() const { return data2_.get() != nullptr; };
     size_t nbasis0() const { return nindex2_; };
@@ -140,7 +140,7 @@ class DFDist : public ParallelDF {
       return out;
     }
 
-    void average_3index() { 
+    void average_3index() {
       Timer time;
       if (!serial_)
         for (auto& i : block_)
@@ -155,7 +155,7 @@ class DFDist_ints : public DFDist {
   protected:
     void compute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,
                         const std::vector<std::shared_ptr<const Shell>>& b1shell,
-                        const std::vector<std::shared_ptr<const Shell>>& b2shell, 
+                        const std::vector<std::shared_ptr<const Shell>>& b2shell,
                         const size_t asize, const size_t b1size, const size_t b2size,
                         const size_t astart, const double thresh, const bool compute_inv) {
       Timer time;
@@ -209,7 +209,7 @@ class DFDist_ints : public DFDist {
       std::tie(astart, myashell) = get_ashell(ashell);
 
       std::shared_ptr<const StaticDist> adist_shell = make_table(astart);
-      std::shared_ptr<const StaticDist> adist_averaged = std::make_shared<const StaticDist>(naux_, mpi__->size()); 
+      std::shared_ptr<const StaticDist> adist_averaged = std::make_shared<const StaticDist>(naux_, mpi__->size());
 
       // make empty dfblocks
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
@@ -244,8 +244,8 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFDist> back_transform(const double* c) const;
     std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex1_); return back_transform(c->data()); }
 
-    std::shared_ptr<DFHalfDist> copy() const; 
-    std::shared_ptr<DFHalfDist> clone() const; 
+    std::shared_ptr<DFHalfDist> copy() const;
+    std::shared_ptr<DFHalfDist> clone() const;
 
     void rotate_occ(const double* d);
     std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
@@ -271,8 +271,8 @@ class DFFullDist : public ParallelDF {
     int nocc1() const { return nindex1_; }
     int nocc2() const { return nindex2_; }
 
-    std::shared_ptr<DFFullDist> copy() const; 
-    std::shared_ptr<DFFullDist> clone() const; 
+    std::shared_ptr<DFFullDist> copy() const;
+    std::shared_ptr<DFFullDist> clone() const;
 
     std::shared_ptr<DFHalfDist> back_transform(const double* c) const;
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex2_); return back_transform(c->data()); }
@@ -293,7 +293,7 @@ class DFFullDist : public ParallelDF {
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
-    void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset); 
+    void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset);
 
     std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }

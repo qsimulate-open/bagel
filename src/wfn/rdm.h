@@ -67,14 +67,14 @@ class RDM : public RDM_base {
     size_t address_(const T& head, const args&... tail) const {
       static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
       T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_; 
+      for (int j = 0; j != i; ++j) out *= norb_;
       return out + address_<i+1>(tail...);
     }
     template<int i, typename T>
     size_t address_(const T& head) const {
       static_assert(i+1 == rank*2 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
       T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_; 
+      for (int j = 0; j != i; ++j) out *= norb_;
       return out;
     }
 

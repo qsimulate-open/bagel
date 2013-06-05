@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_MP2_TASKS_H 
-#define __SRC_SMITH_MP2_TASKS_H 
+#ifndef __SRC_SMITH_MP2_TASKS_H
+#define __SRC_SMITH_MP2_TASKS_H
 
 #include <memory>
 #include <algorithm>
@@ -48,7 +48,7 @@ class Task0 : public Task<T> {
 
     void compute_() {
       r_->zero();
-    };  
+    };
 
   public:
     Task0(std::vector<std::shared_ptr<Tensor<T>>> t, std::vector<IndexRange> i) : Task<T>() {
@@ -56,8 +56,8 @@ class Task0 : public Task<T> {
       closed_ = i[0];
       active_ = i[1];
       virt_   = i[2];
-    };  
-    ~Task0() {}; 
+    };
+    ~Task0() {};
 };
 
 template <typename T>
@@ -91,7 +91,7 @@ class Task1 : public Task<T> {  // associated with gamma
         }
       }
       Gamma0->put_block(ohash, odata);
-    };  
+    };
 
 
   public:
@@ -199,7 +199,7 @@ class Task3 : public Task<T> {
       virt_   = i[2];
       I0 = t[0];
       t2 = t[1];
-      e0_ = e; 
+      e0_ = e;
       v2 = t[2];
     };
     ~Task3() {};
