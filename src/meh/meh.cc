@@ -252,7 +252,7 @@ void MultiExcitonHamiltonian::compute() {
       conv.at(i) = static_cast<int>(errors.at(i) < thresh_);
     }
 
-    if(!*min_element(conv.begin(), conv.end())) {
+    if (!*min_element(conv.begin(), conv.end())) {
       for (int ist = 0; ist != nstates_; ++ist) {
         if (conv.at(ist)) continue;
         const int size = dimerstates_;
@@ -281,7 +281,7 @@ void MultiExcitonHamiltonian::compute() {
                               << fixed << setw(10) << setprecision(2) << mehtime.tick() << endl;
       energies_.at(i) = energies[i];
     }
-    if(*min_element(conv.begin(), conv.end())) break;
+    if (*min_element(conv.begin(), conv.end())) break;
   }
 
   adiabats_ = make_shared<Matrix>(dimerstates_, nstates_);
@@ -336,8 +336,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 
   auto out = make_shared<Matrix>(dimerstates, dimerstates);
 
-  for(int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-    for(int stateBp = 0; stateBp < nstatesB; ++stateBp) {
+  for (int stateAp = 0; stateAp < nstatesA; ++stateAp) {
+    for (int stateBp = 0; stateBp < nstatesB; ++stateBp) {
       const int stateApBp = AB.dimerindex(stateAp,stateBp);
       // hAA
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
@@ -415,12 +415,12 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> cc
 
   double *edata = tmp.data();
 
-  for(int state = 0; state < nstatesA; ++state) {
+  for (int state = 0; state < nstatesA; ++state) {
     shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
 
     // | C > ^A_ac is done
-    for(int statep = 0; statep < nstatesAp; ++statep) {
-      for(int ac = 0; ac < ij; ++ac, ++edata) {
+    for (int statep = 0; statep < nstatesAp; ++statep) {
+      for (int ac = 0; ac < ij; ++ac, ++edata) {
         *edata = c->data(ac)->ddot(*ccvecAp->data(statep)); 
       }   
     }   
@@ -463,11 +463,11 @@ void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string t
          << setprecision(8) << setw(17) << fixed << energies_.at(istate)
          << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
-    for(auto& subspace : subspaces_) {
+    for (auto& subspace : subspaces_) {
       const int nA = subspace.nstates<0>();
       const int nB = subspace.nstates<1>();
-      for(int i = 0; i < nA; ++i) {
-        for(int j = 0; j < nB; ++j, ++eigendata) {
+      for (int i = 0; i < nA; ++i) {
+        for (int j = 0; j < nB; ++j, ++eigendata) {
           if ( (*eigendata)*(*eigendata) > thresh ) {
             cout << "      " << subspace.string(i,j) << setprecision(12) << setw(20) << *eigendata << endl;
           }

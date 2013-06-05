@@ -301,7 +301,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB
       }
     }
 
-    
+
     for (int iBp = 0; iBp < nBp; ++iBp) {
       for (int iAp = 0; iAp < nAp; ++iAp) {
         const int iABp = ApBp.dimerindex(iAp,iBp);
