@@ -41,6 +41,7 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/lexical_cast.h>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -78,15 +79,65 @@ Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
   common_init();
 }
 
+
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string json_file, const bool dummy)
+ : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
+
+  string bfile = json_file;
+  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
+  const string filename = "basis/" + bfile + ".json";
+
+  boost::property_tree::ptree bdata;
+  boost::property_tree::json_parser::read_json(filename, bdata);
+
+  string na = name_;
+  na[0] = toupper(na[0]);
+  boost::property_tree::ptree basis = bdata.get_child(na);
+
+  // basis_info will be used in the construction of Basis_batch
+  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
+
+  for (auto& ib : basis) {
+    boost::property_tree::ptree ibas = ib.second;
+    const string ang = ibas.get<string>("angular"); 
+    boost::property_tree::ptree prim = ibas.get_child("prim");
+    vector<double> exponents; 
+    for (auto& p : prim)
+      exponents.push_back(lexical_cast<double>(p.second.data()));
+
+    boost::property_tree::ptree cont = ibas.get_child("cont");
+    vector<vector<double>> coeff;
+    for (auto& c : cont) {
+      vector<double> tmp;
+      for (auto& cc : c.second)
+        tmp.push_back(lexical_cast<double>(cc.second.data()));
+      coeff.push_back(tmp);
+    }
+#if 1
+// TODO once everyting is based on JSON, we should delete this transformation by tweaking construct_shells function 
+    const int n = coeff.size();
+    const int m = coeff.front().size();
+    vector<vector<double>> tmp(m, vector<double>(n));
+    for (int i = 0; i != n; ++i)
+      for (int j = 0; j != m; ++j)
+        tmp[j][i] = coeff[i][j];
+    coeff = tmp;
+#endif
+    basis_info.push_back(make_tuple(ang, exponents, coeff));
+  }
+  construct_shells(basis_info);
+  common_init();
+}
+
+
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string basis_file)
 : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
-  ifstream ifs;
   string bfile = basis_file;
   transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".basis";
   bool basis_found = false;
-  ifs.open(filename.c_str());
+  ifstream ifs(filename);
 
   // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;

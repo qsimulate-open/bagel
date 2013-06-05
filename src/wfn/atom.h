@@ -53,6 +53,7 @@ class Atom {
     void common_init();
 
   public:
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string jsonfile, const bool dummy);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string basisfile);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
