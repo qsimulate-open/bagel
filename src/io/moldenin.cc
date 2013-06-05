@@ -241,7 +241,7 @@ void MoldenIn::read() {
         vector<tuple<string,vector<double>,vector<double>>> atom_basis_info;
 
         const string atom_no_str(matches[1].first, matches[1].second);
-        const int atom_no = lexical_cast<int>(atom_no_str.c_str());
+        const int atom_no = lexical_cast<int>(atom_no_str);
 
         gto_order_.push_back(atom_no);
 
