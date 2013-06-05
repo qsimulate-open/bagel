@@ -38,8 +38,7 @@ using namespace std;
 using namespace bagel;
 
 PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
-  ifstream ifs;
-  ifs.open(fil.c_str());
+  ifstream ifs(fil);
   if(!ifs.is_open()) throw runtime_error("input file could not be opened.");
 
   smatch what;

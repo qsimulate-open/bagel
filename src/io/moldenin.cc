@@ -160,8 +160,7 @@ void MoldenIn::read() {
   ************************************************************/
   cartesian_ = true;
 
-  ifstream sph_input;
-  sph_input.open(filename_.c_str());
+  ifstream sph_input(filename_);
   if(!sph_input.is_open()){
     throw runtime_error("Molden input file not found");
   }   
@@ -184,7 +183,7 @@ void MoldenIn::read() {
   *  Open input stream                                        *
   ************************************************************/
 
-  ifs_.open(filename_.c_str());
+  ifs_.open(filename_);
 
   getline(ifs_, line);
 
