@@ -692,15 +692,12 @@ class SpinFreeMethod {
       auto dtot = std::make_shared<Matrix>(*dm1);
 
       // add correction to active space
-      dtot->print();
       for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correct_den1_*2.0;
-      dtot->print();
+      dtot->print("dm1 post correction");
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
-      dtot->print();
       dtot->add_block(nclo, nclo, nact, nact, ref_->rdm1(0)->data());
-      dtot->print();
       // convert to ao basis
       auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
       Dipole dipole(ref_->geom(), dtotao);
