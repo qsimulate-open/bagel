@@ -1,20 +1,3 @@
- v1.2.2 
-
-!  cc-pVDZ  EMSL  Basis Set Exchange Library   2/9/13 2:13 PM
-! Elements                             References
-! --------                             ----------
-! H     : T.H. Dunning, Jr. J. Chem. Phys. 90, 1007 (1989).
-! He    : D.E. Woon and T.H. Dunning, Jr. J. Chem. Phys. 100, 2975 (1994).
-! Li - Ne: T.H. Dunning, Jr. J. Chem. Phys. 90, 1007 (1989).
-! Na - Mg: D.E. Woon and T.H. Dunning, Jr.  (to be published)
-! Al - Ar: D.E. Woon and T.H. Dunning, Jr.  J. Chem. Phys. 98, 1358 (1993).
-! Sc - Zn: N.B. Balabanov and K.A. Peterson, J. Chem. Phys. 123, 064107 (2005),
-! N.B. Balabanov and K.A. Peterson, J. Chem. Phys. 125, 074110 (2006)
-! Ca     : J. Koput and K.A. Peterson, J. Phys. Chem. A, 106, 9595 (2002).
-! 
-
-
-
 ****
 H     0 
 S   3   1.00
@@ -3386,5 +3369,3 @@ D   5   1.00
 D   1   1.00
       0.5030000              1.0000000        
 ****
-
-

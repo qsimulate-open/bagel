@@ -80,12 +80,15 @@ Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string json_file, const bool dummy)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string json_file)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   string bfile = json_file;
   transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".json";
+
+/*** TODO BAD PRACTICE - until I make a script to convert Turbomole-type basis files ***/
+try {
 
   boost::property_tree::ptree bdata;
   boost::property_tree::json_parser::read_json(filename, bdata);
@@ -127,13 +130,12 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   }
   construct_shells(basis_info);
   common_init();
-}
 
+/*** deprecated constructor from here >>>>>>>>>>>>>>>>>>>>> ***/
+} catch (std::exception const& e) { 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string basis_file)
-: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
-
-  string bfile = basis_file;
+  cout << "  warning: " << e.what() << endl;
+  string bfile = json_file;
   transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".basis";
   bool basis_found = false;
@@ -218,10 +220,10 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
     construct_shells(basis_info);
   }
-
   ifs.close();
-
   common_init();
+}
+/*** deprecated constructor from here <<<<<<<<<<<<<<<<<<<<< ***/
 
 }
 
