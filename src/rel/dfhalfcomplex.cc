@@ -34,7 +34,7 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr
   common_init();
   basis_ = bas;
 
-  const int index = basis_.front()->basis(0); 
+  const int index = basis_.front()->basis(0);
   for (auto& i : basis_)
     if (i->basis(0) != index) throw logic_error("basis should have the same first index");
 
@@ -43,10 +43,10 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr
 
   if (df->swapped()) {
     rhalfbj = df->df()->compute_half_transform_swap(rcoeff[index]);
-    ihalfbj = df->df()->compute_half_transform_swap(icoeff[index]); 
+    ihalfbj = df->df()->compute_half_transform_swap(icoeff[index]);
   } else {
     rhalfbj = df->df()->compute_half_transform(rcoeff[index]);
-    ihalfbj = df->df()->compute_half_transform(icoeff[index]); 
+    ihalfbj = df->df()->compute_half_transform(icoeff[index]);
   }
 
   dfhalf_[0] = rhalfbj->apply_J();
@@ -57,13 +57,13 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr
 
 DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<const ABcases>> bas) : RelDFBase(coord), dfhalf_(data) {
   common_init();
-  basis_ = bas; 
+  basis_ = bas;
 }
 
 
 DFHalfComplex::DFHalfComplex(const DFHalfComplex& o) : RelDFBase(o.coord_) {
   common_init();
-  basis_ = o.basis_; 
+  basis_ = o.basis_;
   dfhalf_[0] = o.dfhalf_[0]->copy();
   dfhalf_[1] = o.dfhalf_[1]->copy();
 }

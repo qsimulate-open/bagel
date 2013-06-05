@@ -31,7 +31,7 @@ using namespace bagel;
 
 // hand written code
 void BreitBatch::perform_VRR1() {
-  // VRR1 means that angular numbers are both zero  
+  // VRR1 means that angular numbers are both zero
   double t[3]; // tilde
   double s[3]; // tilde,tilde
 
@@ -63,7 +63,7 @@ void BreitBatch::perform_VRR1() {
 
 // hand written code
 void Spin2Batch::perform_VRR1() {
-  // VRR1 means that angular numbers are both zero  
+  // VRR1 means that angular numbers are both zero
   double t[3]; // tilde
   double s[3]; // tilde,tilde
 

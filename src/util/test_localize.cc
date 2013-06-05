@@ -70,7 +70,7 @@ double pm_localization(std::string filename) {
 #else
 throw std::logic_error("region localization test broken");
 #endif
-      }   
+      }
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
         localization = std::make_shared<PMLocalization>(ref);
       else throw std::runtime_error("Unrecognized orbital localization method");

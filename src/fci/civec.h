@@ -173,8 +173,8 @@ class DistCivec {
     double& local(const size_t i) { return local_[i]; }
     const double& local(const size_t i) const { return local_[i]; }
 
-    double* local() { return local_.get(); } 
-    const double* local() const { return local_.get(); } 
+    double* local() { return local_.get(); }
+    const double* local() const { return local_.get(); }
 
     size_t size() const { return lenb_*(aend_-astart_); }
     size_t global_size() const { return lena_*lenb_; }
@@ -194,11 +194,11 @@ class DistCivec {
 
     // MPI Isend Irecv
     void init_mpi_accumulate() const;
-    void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const; 
+    void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const;
     void terminate_mpi_accumulate() const;
 
     void init_mpi_recv() const;
-    int get_bstring_buf(double* buf, const size_t a) const; 
+    int get_bstring_buf(double* buf, const size_t a) const;
     void terminate_mpi_recv() const;
 
     // utility functions
@@ -218,9 +218,9 @@ class DistCivec {
 // if we use a dedicated server. currently not using this. defined in src/util/serverflush.h
 #ifndef USE_SERVER_THREAD
     void flush() const {
-      if (accum_) accum_->flush(); 
-      if (send_ ) send_->flush(); 
-      if (put_  ) put_->flush(); 
+      if (accum_) accum_->flush();
+      if (send_ ) send_->flush();
+      if (put_  ) put_->flush();
     }
 #endif
 

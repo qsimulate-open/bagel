@@ -144,8 +144,8 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
     ualpha_array.push_back(salpha_array.back());
     salpha_array.pop_back();
   }
-  bitset<nbit__> salpha = numbers_to_bit(salpha_array); 
-  bitset<nbit__> ualpha = numbers_to_bit(ualpha_array); 
+  bitset<nbit__> salpha = numbers_to_bit(salpha_array);
+  bitset<nbit__> ualpha = numbers_to_bit(ualpha_array);
   bitset<nbit__> common_plus_alpha(common.to_ulong() + ualpha.to_ulong());
 
   // number of unpaired alpha orbitals (minus Ms)

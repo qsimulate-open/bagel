@@ -110,12 +110,12 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
           const int jyz = amax1_ * (jy + amax1_ * jz);
           for (int i = 0; i != rank_; ++i) {
             const double fac = 1.0 / 3.0 / (1.0-roots[i]);
-            iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i] * fac; 
+            iyiz_nn[i] = worky [offsety + i] * workz [offsetz + i] * fac;
             iyiz_tn[i] = workty[offsety + i] * workz [offsetz + i];
             iyiz_nt[i] = worky [offsety + i] * worktz[offsetz + i];
             iyiz_tt[i] = workty[offsety + i] * worktz[offsetz + i];
-            iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i] * fac; 
-            iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i] * fac; 
+            iyiz_sn[i] = worksy[offsety + i] * workz [offsetz + i] * fac;
+            iyiz_ns[i] = worky [offsety + i] * worksz[offsetz + i] * fac;
           }
           for (int ix = std::max(0, cmin_ - iy - iz); ix <= cmax_ - iy - iz; ++ix) {
             const int iposition = cmap[ix + iyz];
@@ -125,14 +125,14 @@ void s2vrr_driver(double* out, const double* const roots, const double* const we
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
               const double xx = std::inner_product(iyiz_nn, iyiz_nn+rank_, worksx+offsetx, 0.0);
-              const double yy = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0); 
+              const double yy = std::inner_product(iyiz_sn, iyiz_sn+rank_, workx +offsetx, 0.0);
               const double zz = std::inner_product(iyiz_ns, iyiz_ns+rank_, workx +offsetx, 0.0);
               dataxx[ijposition] = 2.0*xx - yy - zz;
               dataxy[ijposition] = std::inner_product(iyiz_tn, iyiz_tn+rank_, worktx+offsetx, 0.0);
               dataxz[ijposition] = std::inner_product(iyiz_nt, iyiz_nt+rank_, worktx+offsetx, 0.0);
-              datayy[ijposition] = 2.0*yy - zz - xx; 
+              datayy[ijposition] = 2.0*yy - zz - xx;
               datayz[ijposition] = std::inner_product(iyiz_tt, iyiz_tt+rank_, workx +offsetx, 0.0);
-              datazz[ijposition] = 2.0*zz - xx - yy; 
+              datazz[ijposition] = 2.0*zz - xx - yy;
             }
           }
         }

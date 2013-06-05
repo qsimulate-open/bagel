@@ -168,7 +168,7 @@ shared_ptr<const Reference> Reference::set_active(string active_string) const {
 
   auto start = active_string.cbegin();
   auto end = active_string.cend();
-  
+
   set<int> active_set;
 
   while( boost::regex_search(start, end, what, r) ) {

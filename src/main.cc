@@ -130,14 +130,14 @@ int main(int argc, char** argv) {
     // timer for each method
     Timer timer(-1);
 
-    boost::property_tree::ptree keys = idata.get_child("bagel"); 
+    boost::property_tree::ptree keys = idata.get_child("bagel");
     for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
       string method = iter->second.get<string>("title", "");
       transform(method.begin(), method.end(), method.begin(), ::tolower);
       if (method.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (method == "molecule") {
-        if (ref != nullptr) geom->discard_df(); 
+        if (ref != nullptr) geom->discard_df();
         geom = make_shared<Geometry>(iter->second);
         if (iter->second.get<bool>("restart", false)) {
           ref = shared_ptr<const Reference>();
@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
         } else if (algorithm == "bfgs") {
           casscf = make_shared<CASBFGS>(iter->second, geom, ref);
         } else {
-          stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm; 
+          stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm;
           throw runtime_error(ss.str());
         }
         casscf->compute();
@@ -336,7 +336,7 @@ throw logic_error("broken!");
 #endif
       } else if (method == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
-    
+
           auto meh = make_shared<MultiExcitonHamiltonian>(iter->second, dimer, cispace);
           meh->compute();
           meh->print();
@@ -365,7 +365,7 @@ throw logic_error("broken!");
 
         shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize(max_iter,thresh));
         ref = make_shared<const Reference>(ref, new_coeff);
-        
+
       } else if (method == "print") {
 
         const boost::property_tree::ptree pdata = iter->second;

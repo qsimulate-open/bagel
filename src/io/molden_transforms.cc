@@ -29,7 +29,7 @@ void MoldenIn::compute_transforms() {
     };
     double comb(const int i, const int j) const {
       return factorial[i] / factorial[j] / factorial[i - j];
-    }; 
+    };
   } data;
 
   const double one = 1.0;
@@ -43,7 +43,7 @@ void MoldenIn::compute_transforms() {
   lmtuv_.push_back(s1);
 
   for (int l = 1; l != LEND; ++l) {
-  
+
     map<int, int> mapping;
     int cnt = 0;
     for (int z = 0; z <= l; ++z) {
@@ -51,20 +51,20 @@ void MoldenIn::compute_transforms() {
         const int x = l - y - z;
         if (x < 0) continue;
         const int key = x + y * LARGE + z * LARGE * LARGE;
-        mapping.insert(make_pair(key, cnt)); 
+        mapping.insert(make_pair(key, cnt));
         ++cnt;
       }
     }
-  
+
     vector<vector<pair<int, double>>> mtuv;
     for (int n = 0; n != 2 * l + 1; ++n) {
-      int m = l - (n / 2); 
+      int m = l - (n / 2);
       if (n % 2 == 1) m *= -1;
 
       const int vm2 = m < 0 ? 1 : 0;
       const int absm = m > 0 ? m : -m;
       vector<pair<int, double>> tuv;
-  
+
       const double Nlms = one / pow(two, absm) / factorial[l] * sqrt((m == 0 ? one : two) * factorial[l + absm] * factorial[l - absm]);
       const int tmax = floor((l - absm) / 2.0);
       for (int t = 0; t <= tmax; ++t) {
@@ -72,15 +72,15 @@ void MoldenIn::compute_transforms() {
           const int vmax = 2 * floor((absm - vm2) / 2.0) + vm2;
           for (int v2 = vm2; v2 <= vmax; v2 += 2) {
             assert((v2 - vm2) % 2 == 0);
-            const double Clmtuv = pow(-one, t + ((v2 - vm2) / 2)) * pow(quarter, t) 
-                                * data.comb(l, t) * data.comb(l - t, absm + t) 
+            const double Clmtuv = pow(-one, t + ((v2 - vm2) / 2)) * pow(quarter, t)
+                                * data.comb(l, t) * data.comb(l - t, absm + t)
                                 * data.comb(t, u) * data.comb(absm, v2) * Nlms;
             const int xexp = 2 * t + absm - 2 * u - v2;
             const int yexp = 2 * u + v2;
             const int zexp = l - 2 * t - absm;
             double denom = one;
             map<int, int>::const_iterator current = mapping.find(xexp + yexp * LARGE + zexp * LARGE * LARGE);
-            assert(current != mapping.end());        
+            assert(current != mapping.end());
             const double coeff = Clmtuv / denom;
             tuv.push_back(make_pair(current->second, coeff));
           }

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_CAS_test_H 
-#define __SRC_SMITH_CAS_test_H 
+#ifndef __SRC_SMITH_CAS_test_H
+#define __SRC_SMITH_CAS_test_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -308,7 +308,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       r = t2->clone();
       this->den1_ = this->h1_->clone();
     };
-    ~CAS_test() {}; 
+    ~CAS_test() {};
 
     void solve() {
       this->print_iteration();
@@ -326,7 +326,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
         if (err < thresh_residual()) break;
       }
       this->print_iteration(iter == maxiter_);
-      std::cout << " === Unrelaxed density matrix ===" << std::endl; 
+      std::cout << " === Unrelaxed density matrix ===" << std::endl;
       while (!dens->done())
         dens->next_compute();
       this->den1_->scale(0.25);
@@ -341,18 +341,18 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       while (!energ->done()) {
         std::shared_ptr<Task<T>> c = energ->next_compute();
         en += c->energy() * 0.25;
-      }   
-      return en; 
-    };  
+      }
+      return en;
+    };
 
     double correction(std::shared_ptr<Queue<T>> correct) {
       double n = 0.0;
       while (!correct->done()) {
         std::shared_ptr<Task<T>> c = correct->next_compute();
         n += c->correction() * 0.25;
-      }   
-      return n; 
-    };  
+      }
+      return n;
+    };
 
 };
 

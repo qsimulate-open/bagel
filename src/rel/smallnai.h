@@ -38,7 +38,7 @@ class SmallNAI : public Matrix1eArray<4> {
 
   public:
     SmallNAI(const std::shared_ptr<const Geometry>);
-  
+
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
 
     void print(const std::string n = "") const override;

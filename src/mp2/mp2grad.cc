@@ -113,7 +113,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
-    // BV and gia are DFFullDist 
+    // BV and gia are DFFullDist
     const size_t offset = i*nocc;
     gia->set_product(bv, buf, nocc, offset);
 
@@ -144,7 +144,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   {
     lia.add_block(ncore, 0, nocc, nvirt, *lip * *vcmat);
     if (ncore)
-      lif = *lip * *ccmat; 
+      lif = *lip * *ccmat;
   }
 
   // core-occ density matrix elements

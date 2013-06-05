@@ -53,7 +53,7 @@ class Shell {
     bool relativistic_;
 
     // protected members for relativistic calculations
-    std::array<std::shared_ptr<const Matrix>,3> small_; 
+    std::array<std::shared_ptr<const Matrix>,3> small_;
     std::shared_ptr<const Shell> aux_inc_;
     std::shared_ptr<const Shell> aux_dec_;
     std::shared_ptr<const Matrix> overlap_compute_() const;
@@ -103,7 +103,7 @@ class Shell {
 
     void init_relativistic();
 
-    // Relativistic 
+    // Relativistic
     const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
     const std::shared_ptr<const Shell> aux_inc() const { assert(relativistic_); return aux_inc_; }
     const std::shared_ptr<const Shell> aux_dec() const { assert(relativistic_); return aux_dec_; }

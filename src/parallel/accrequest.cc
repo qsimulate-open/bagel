@@ -109,7 +109,7 @@ void AccRequest::init() {
   // receives
   auto call = make_shared<Call>();
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key__); 
+  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key__);
   {
     lock_guard<mutex> lock(mutex_);
     auto m = calls_.insert(make_pair(rq, call));
@@ -134,7 +134,7 @@ void AccRequest::flush_() {
         buffer[0] = tag;
         // sending back the buffer address
         mpi__->request_send(buffer.get(), 1, rank, tag);
-        const int rq = mpi__->request_recv(buffer.get(), size, rank, tag); 
+        const int rq = mpi__->request_recv(buffer.get(), size, rank, tag);
         auto m = requests_.insert(make_pair(rq, make_shared<Prep>(size, off, move(buffer))));
         assert(m.second);
         i = calls_.erase(i);
@@ -146,7 +146,7 @@ void AccRequest::flush_() {
   }
 
   for (int i = 0; i != cnt; ++i)
-    init(); 
+    init();
 
   {
     lock_guard<mutex> lock(mutex_);
@@ -158,7 +158,7 @@ void AccRequest::flush_() {
         lock_guard<mutex> lock((*datamutex_)[p->off/p->size]);
         // perform daxpy
         daxpy_(p->size, 1.0, p->buf.get(), 1, data_+p->off, 1);
-        i = requests_.erase(i); 
+        i = requests_.erase(i);
       } else {
         ++i;
       }

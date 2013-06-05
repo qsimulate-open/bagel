@@ -68,16 +68,16 @@ class DFock : public ZMatrix {
     }
 
   public:
-    DFock(const std::shared_ptr<const Geometry> a, 
+    DFock(const std::shared_ptr<const Geometry> a,
           const std::shared_ptr<const RelHcore> h,
           const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
           const bool rhf = true, const double scale_ex = 1.0)
      : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit) {
-       
+
        assert(breit ? gaunt : true);
        two_electron_part(coeff, rhf, scale_ex);
     }
-    
+
 };
 
 }

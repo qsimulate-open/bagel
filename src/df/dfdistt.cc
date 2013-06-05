@@ -70,7 +70,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
         rrequest.push_back(mpi__->request_recv(buf->data()+atab[i].first*size_, atab[i].second*size_, i, i));
       } else {
         assert(source->asize()*tabsize_[i] == atab[i].second*size_);
-        copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf->data()+atab[i].first*size_); 
+        copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf->data()+atab[i].first*size_);
       }
     }
     for (auto& i : rrequest) mpi__->wait(i);
@@ -102,7 +102,7 @@ DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<siz
 
 
 shared_ptr<DFDistT> DFDistT::clone() const {
-  return make_shared<DFDistT>(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_); 
+  return make_shared<DFDistT>(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_);
 }
 
 
@@ -110,7 +110,7 @@ shared_ptr<DFDistT> DFDistT::apply_J(shared_ptr<const Matrix> d) const {
   shared_ptr<DFDistT> out = clone();
   auto j = data_.begin();
   for (auto& i : out->data_)
-    *i = *d % **j++; 
+    *i = *d % **j++;
   return out;
 }
 
@@ -119,7 +119,7 @@ vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o,
   vector<shared_ptr<Matrix>> out;
   auto i = data_.begin();
   for (auto& j : o->data_) {
-    auto tmp = make_shared<Matrix>(**i++ ^ *j); 
+    auto tmp = make_shared<Matrix>(**i++ ^ *j);
     tmp->allreduce();
     out.push_back(tmp);
   }
@@ -131,7 +131,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
 
   vector<int> request;
 
-  // we need buffer n regions (n is the number of blocks) 
+  // we need buffer n regions (n is the number of blocks)
   assert(out->block().size() == data_.size());
   vector<shared_ptr<Matrix>> bufv;
   for (auto& i : data_) bufv.push_back(i->clone());

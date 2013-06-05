@@ -61,7 +61,7 @@ std::vector<double> fci_energy(std::string inp) {
       if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(iter->second, ref);
       else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(iter->second, ref);
       else assert(false);
-     
+
       fci->compute();
       std::cout.rdbuf(backup_stream);
       return fci->energy();

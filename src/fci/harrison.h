@@ -40,7 +40,7 @@ class HarrisonZarrabian : public FCI {
     std::shared_ptr<Space> space_;
 
     virtual void const_denom() override;
-  
+
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
 
     // run-time functions.
@@ -60,7 +60,7 @@ class HarrisonZarrabian : public FCI {
       update(ref_->coeff());
     }
 
-    virtual void update(std::shared_ptr<const Coeff>) override; 
+    virtual void update(std::shared_ptr<const Coeff>) override;
 };
 
 }

@@ -253,7 +253,7 @@ void Dimer::construct_coeff() {
   if(static_cast<bool>(refs_.first)) {
     ncore_.first  = refs_.first->nclosed();
     ncore_.second = refs_.second->nclosed();
-    
+
     nact_.first  = refs_.first->nact();
     nact_.second = refs_.second->nact();
 
@@ -263,7 +263,7 @@ void Dimer::construct_coeff() {
   else if (static_cast<bool>(ci_.first)) {
     ncore_.first  = ci_.first->ncore();
     ncore_.second = ci_.second->ncore();
-    
+
     nact_.first  = ci_.first->nact();
     nact_.second = ci_.second->nact();
 
@@ -318,7 +318,7 @@ void Dimer::construct_coeff() {
   tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
 
   scoeff_ = make_shared<Coeff>(*tmpcoeff);
-} 
+}
 
 shared_ptr<Coeff> Dimer::overlap() const {
    Overlap ovlp(sgeom_);
@@ -483,7 +483,7 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
   if (!Bi.empty()) Blist = Bi;
 
   // Make new References
-  pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs = 
+  pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs =
         make_pair(refs_.first->set_active(Alist), refs_.second->set_active(Blist));
 
   // Update Dimer info

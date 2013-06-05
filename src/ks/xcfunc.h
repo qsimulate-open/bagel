@@ -75,9 +75,9 @@ class XCFunc {
     ~XCFunc() { xc_func_end(&func_); }
 
     void compute_exc_vxc(int np, const double* rho, const double* sigma, double* exc, double* vxc, double* vxc2) const {
-      if (lda()) { 
+      if (lda()) {
         xc_lda_exc_vxc(&func_, np, rho, exc, vxc);
-      } else if (gga()) { 
+      } else if (gga()) {
         xc_gga_exc_vxc(&func_, np, rho, sigma, exc, vxc, vxc2);
       } else {
         throw std::runtime_error("Meta GGA not supported yet");
@@ -85,9 +85,9 @@ class XCFunc {
     }
 
     void compute_vxc(int np, const double* rho, const double* sigma, double* vxc, double* vxc2) const {
-      if (lda()) { 
+      if (lda()) {
         xc_lda_vxc(&func_, np, rho, vxc);
-      } else if (gga()) { 
+      } else if (gga()) {
         xc_gga_vxc(&func_, np, rho, sigma, vxc, vxc2);
       } else {
         throw std::runtime_error("Meta GGA not supported yet");
@@ -101,7 +101,7 @@ class XCFunc {
 };
 
 #else
-class XCFunc { 
+class XCFunc {
 public:
   XCFunc(const std::string) { assert(false); }
   void compute_exc_vxc(int np, const double* rho, const double* sigma, double* exc, double* vxc, double* vxc2) const {}

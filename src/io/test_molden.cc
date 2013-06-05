@@ -58,7 +58,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
         const boost::property_tree::ptree pdata = iter->second;
         bool orbitals = pdata.get<bool>("orbitals", false);
         std::string out_file = pdata.get<std::string>("file", inp1 + ".molden");
-     
+
         MoldenOut mfs(out_file);
         mfs << geom;
         mfs << ref;

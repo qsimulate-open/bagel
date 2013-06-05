@@ -91,7 +91,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
       for(int& imixed : mixed) jacobi->rotate(iocc, imixed);
       for(int& ivirt : virt) jacobi->rotate(iocc, ivirt);
     }
-  
+
     for(int& imixed : mixed) {
       for(int& ivirt : virt) jacobi->rotate(imixed, ivirt);
     }
@@ -193,7 +193,7 @@ shared_ptr<const Matrix> PMLocalization::localize(const int iter, const double t
   else {
     cout << "  No active space to localize" << endl << endl;
   }
-    
+
 
   // If there is virtual left, localize it
   if ( nvirt_ != 0 ) {

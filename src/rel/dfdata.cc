@@ -44,7 +44,7 @@ DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfda
     for (auto& i : basis_)
       newbas.push_back(i->swap());
     basis_ = newbas;
-    std::swap(coord_.first, coord_.second); 
+    std::swap(coord_.first, coord_.second);
   }
 
 }
@@ -83,7 +83,7 @@ vector<shared_ptr<ZMatrix>> DFData::compute_Jop(list<shared_ptr<const CDMatrix>>
   for (auto& b : basis_) {
     sum.push_back(cd.front()->clone());
     for (auto& i : cd) {
-      if(b->comp() == i->comp()) 
+      if(b->comp() == i->comp())
         sum.back()->zaxpy(1.0, *i);
     }
   }

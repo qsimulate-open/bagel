@@ -74,7 +74,7 @@ void MixedERIBatch::compute() {
 
   for (int k = 0; k != 3; ++k) {
     for (int j = 0; j != s2size; ++j) {
-      dgemm_("N", "N", s0size, s1size, a1, 1.0, eri+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, data[k]+j*s0size*s1size, s0size); 
+      dgemm_("N", "N", s0size, s1size, a1, 1.0, eri+j*s0size*a1, s0size, shells_[1]->small(k)->data(), a1, 0.0, data[k]+j*s0size*s1size, s0size);
     }
   }
 
@@ -96,7 +96,7 @@ namespace bagel {
 
 void MixedERIBatch::eri_compute(double* eri) const {
 
-  // shells_[0] is aux function, shelles_[1] and [2] are basis 
+  // shells_[0] is aux function, shelles_[1] and [2] are basis
 
   const int s0size = shells_[0]->nbasis();
   const int s2size = shells_[2]->nbasis();
@@ -140,7 +140,7 @@ void MixedERIBatch::eri_compute(double* eri) const {
   if (shells_[1]->aux_dec()) {
     shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();
     const int s2cart = cart2->nbasis();
-#ifndef LIBINT_INTERFACE 
+#ifndef LIBINT_INTERFACE
     auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), cart2}},
                                       2.0, 0.0, true, stack_);
 #else

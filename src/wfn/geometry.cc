@@ -493,7 +493,7 @@ void Geometry::merge_obs_aux() {
 
 
 shared_ptr<const Matrix> Geometry::xyz() const {
-  auto out = make_shared<Matrix>(3, natom()); 
+  auto out = make_shared<Matrix>(3, natom());
   int iat = 0;
   for (auto& i : atoms_) {
     out->element(0, iat) = i->position(0);
@@ -831,7 +831,7 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   geom->atoms_ = atom;
   geom->df_->average_3index();
   geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
-  if (do_gaunt) 
+  if (do_gaunt)
     geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
 
   // suppress some of the printing
@@ -844,6 +844,6 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
 
 
 void Geometry::discard_relativistic() const {
-  dfs_ = shared_ptr<DFDist>(); 
+  dfs_ = shared_ptr<DFDist>();
   dfsl_ = shared_ptr<DFDist>();
 }

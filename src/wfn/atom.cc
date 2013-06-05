@@ -102,9 +102,9 @@ try {
 
   for (auto& ib : basis) {
     boost::property_tree::ptree ibas = ib.second;
-    const string ang = ibas.get<string>("angular"); 
+    const string ang = ibas.get<string>("angular");
     boost::property_tree::ptree prim = ibas.get_child("prim");
-    vector<double> exponents; 
+    vector<double> exponents;
     for (auto& p : prim)
       exponents.push_back(lexical_cast<double>(p.second.data()));
 
@@ -117,7 +117,7 @@ try {
       coeff.push_back(tmp);
     }
 #if 1
-// TODO once everyting is based on JSON, we should delete this transformation by tweaking construct_shells function 
+// TODO once everyting is based on JSON, we should delete this transformation by tweaking construct_shells function
     const int n = coeff.size();
     const int m = coeff.front().size();
     vector<vector<double>> tmp(m, vector<double>(n));
@@ -132,7 +132,7 @@ try {
   common_init();
 
 /*** deprecated constructor from here >>>>>>>>>>>>>>>>>>>>> ***/
-} catch (std::exception const& e) { 
+} catch (std::exception const& e) {
 
   cout << "  warning: " << e.what() << endl;
   string bfile = json_file;
@@ -359,7 +359,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
   } // end of batch loop
 
-  // shuffle, but deterministic 
+  // shuffle, but deterministic
   // FIXME this breaks the atomic density guess, since it relies on the shell ordering
 #if 0
   srand(0);
@@ -376,7 +376,7 @@ void Atom::split_shells(const size_t batchsize) {
   vector<shared_ptr<const Shell>> out;
   for (auto& i : shells_) {
     const int nbasis = i->nbasis();
-    if (nbasis >= batchsize) { 
+    if (nbasis >= batchsize) {
       vector<shared_ptr<const Shell>> tmp = i->split_if_possible(batchsize);
       out.insert(out.end(), tmp.begin(), tmp.end());
     } else {
@@ -384,7 +384,7 @@ void Atom::split_shells(const size_t batchsize) {
     }
   }
   shells_ = out;
-} 
+}
 
 
 void Atom::print_basis() const {

@@ -63,7 +63,7 @@ void DimerCISpace::complete() {
       }
     }
   }
-  
+
 
   {
     vector<SpaceKey> references;

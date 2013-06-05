@@ -61,7 +61,7 @@ void KnowlesHandy::const_denom() {
   }
 
   denom_ = make_shared<Civec>(det());
-  const int nspin = det()->nspin(); 
+  const int nspin = det()->nspin();
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
@@ -79,9 +79,9 @@ void KnowlesHandy::const_denom() {
           const int nja = ia[j];
           const int njb = ib[j];
           const int Nj = (nja ^ njb);
-          const int addj = niab * (nja + njb); 
+          const int addj = niab * (nja + njb);
           *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
-        }   
+        }
         *iter += (jop_->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
       }
       ++iter;
@@ -95,7 +95,7 @@ void KnowlesHandy::update(shared_ptr<const Coeff> c) {
   Timer timer;
   jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "KH");
 
-  // right now full basis is used. 
+  // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();

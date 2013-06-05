@@ -24,8 +24,8 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
   mpreal mlp[40];
   mpreal sigma[40];
   mpreal fm[40];
-  mpreal w[40]; 
-  mpreal x[40]; 
+  mpreal w[40];
+  mpreal x[40];
   mpreal lp[40];
 
   for (int ibatch = 0; ibatch != nbatch; ++ibatch) {
@@ -35,9 +35,9 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
 
     const mpreal T = ta[ibatch];
     assert(T > 0);
-    
+
     mpreal mone;
-  
+
     {
       const mpreal zero = "0.0";
       const mpreal half = "0.5";
@@ -68,12 +68,12 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
     {
       // Chebyshev algorithm; VERY unstable
       const mpreal mpone = "1.0";
-      const int n = nrank; 
+      const int n = nrank;
 
       mlp[0] = mpone / fm[0];
       x[0] = fm[1] * mlp[0];
       w[0] = "0.0";
- 
+
       for (int k = 0; k <= n - 2; k += 2) {
         for (int l = k; l <= 2 * n - k - 3; ++l) {
           sigma[l + 1] = fm[l + 2] - x[k] * fm[l + 1] - w[k] * sigma[l + 1] ;
@@ -82,8 +82,8 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
         x[k + 1] = - fm[k + 1] * mlp[k] + sigma[k + 2] * mlp[k + 1];
         w[k + 1] = sigma[k + 1] * mlp[k];
 
-        if(k != n - 2) { 
-          for (int l = k + 1; l <= 2 * n - k - 4; ++l)  
+        if(k != n - 2) {
+          for (int l = k + 1; l <= 2 * n - k - 4; ++l)
             fm[l + 1] = sigma[l + 2] - x[k + 1] * sigma[l + 1] - w[k + 1] * fm[l + 1];
           mlp[k + 2] = mpone / fm[k + 2];
           x[k + 2] = - sigma[k + 2] * mlp[k + 1] + fm[k + 3] * mlp[k + 2];
@@ -94,14 +94,14 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       dx[offset + 0] = x[0];
       for (int i = 1; i != n; ++i) {
         dw[offset + i - 1] = sqrt(w[i]);
-        dx[offset + i] = x[i]; 
+        dx[offset + i] = x[i];
       }
       dw[offset + n - 1] = "0.0";
 
-      // solve tri-diagonal linear equation 
+      // solve tri-diagonal linear equation
       const mpreal zero = "0.0";
       const mpreal one = "1.0";
-    
+
       lp[0] = one;
       for (int i = 1; i <= n + n - 2; ++i) lp[i] = zero;
 
@@ -109,7 +109,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
         int iter = 0;
 line1:
         int mm;
-        for (mm = l; mm <= n - 2; ++mm) { 
+        for (mm = l; mm <= n - 2; ++mm) {
           mpreal dd = abs(dx[offset + mm]) + abs(dx[offset + mm + 1]);
           if (fabs(dw[offset + mm]) + dd == dd) goto line2;
         }
@@ -141,7 +141,7 @@ line2:
             mpreal td = c * bb;
             r = (dx[offset + i] - g) * s + td * 2;
             p = s * r;
-            dx[offset + i + 1] = g + p;     
+            dx[offset + i + 1] = g + p;
             g = c * r - bb;
             f= lp[i + 1];
             lp[i + 1] = s * lp[i] + c * f;

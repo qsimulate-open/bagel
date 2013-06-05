@@ -138,7 +138,7 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
     *tmp += *jvec->half()->form_2index(full, 4.0);
   }
 
-  *out += *cc % *tmp; 
+  *out += *cc % *tmp;
 
   return out;
 }

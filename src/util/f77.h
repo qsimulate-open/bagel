@@ -131,9 +131,9 @@ static void drot_(const int a, const double* b, const int c, const double* d, co
 static void drot_(const int a, std::unique_ptr<double[]> b, const int c, std::unique_ptr<double[]> d, const int e, const double f, const double g)
                  { drot_(&a, b.get(), &c, d.get(), &e, &f, &g); }
 static void dgesvd_(const char* a, const char* b, const int c, const int d, double* e, const int f, double* g, double* h, const int i, double* j, const int k,
-                    double* l, const int m, int& n) { dgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,&n); } 
+                    double* l, const int m, int& n) { dgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,&n); }
 static void zgesvd_(const char* a, const char* b, const int c, const int d, std::complex<double>* e, const int f, double* g, std::complex<double>* h,
-                    const int i, std::complex<double>* j, const int k, std::complex<double>* l, const int m, double* n, int& o) { zgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,n,&o); } 
+                    const int i, std::complex<double>* j, const int k, std::complex<double>* l, const int m, double* n, int& o) { zgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,n,&o); }
 
 static void zgemm3m_(const char* transa, const char* transb, const int m, const int n, const int k,
                      const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,

@@ -38,10 +38,10 @@ using namespace bagel;
 DistMatrix::DistMatrix(const int n, const int m) : DistMatrix_base<double>(n,m) {}
 
 
-DistMatrix::DistMatrix(const DistMatrix& o) : DistMatrix_base<double>(o) {} 
+DistMatrix::DistMatrix(const DistMatrix& o) : DistMatrix_base<double>(o) {}
 
 
-DistMatrix::DistMatrix(const Matrix& o) : DistMatrix_base<double>(o.ndim(), o.mdim()) { 
+DistMatrix::DistMatrix(const Matrix& o) : DistMatrix_base<double>(o.ndim(), o.mdim()) {
   copy_n(o.getlocal().get(), size(), local_.get());
 }
 
@@ -89,7 +89,7 @@ DistMatrix DistMatrix::operator^(const DistMatrix& o) const {
 
 
 void DistMatrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of DistMatrix::diagonalize(double*)"); 
+  if (ndim_ != mdim_) throw logic_error("illegal call of DistMatrix::diagonalize(double*)");
   const int n = ndim_;
 
   DistMatrix tmp(*this);
@@ -108,7 +108,7 @@ void DistMatrix::diagonalize(double* eig) {
   if (info) throw runtime_error("pdsyevd failed in DistMatrix");
 
   // seems MKL does not broadcast for tiny matrices..
-  if (n <= blocksize__) mpi__->broadcast(eig, n, 0); 
+  if (n <= blocksize__) mpi__->broadcast(eig, n, 0);
 
   *this = tmp;
 }

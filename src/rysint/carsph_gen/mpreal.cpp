@@ -5,12 +5,12 @@
 
 	Copyright (c) 2008-2011 Pavel Holoborodko
 
-	Core Developers: 
-	Pavel Holoborodko, Dmitriy Gubanov, Konstantin Holoborodko. 
+	Core Developers:
+	Pavel Holoborodko, Dmitriy Gubanov, Konstantin Holoborodko.
 
 	Contributors:
-	Brian Gladman, Helmut Jarausch, Fokko Beekhof, Ulrich Mutze, 
-	Heinz van Saanen, Pere Constans, Peter van Hoof, Gael Guennebaud, 
+	Brian Gladman, Helmut Jarausch, Fokko Beekhof, Ulrich Mutze,
+	Heinz van Saanen, Pere Constans, Peter van Hoof, Gael Guennebaud,
 	Tsai Chia Cheng, Alexei Zubanov.
 
 	****************************************************************************
@@ -72,8 +72,8 @@ using std::istream;
 
 namespace mpfr{
 
-mp_rnd_t   mpreal::default_rnd  = GMP_RNDN;	//(mpfr_get_default_rounding_mode)();	
-mp_prec_t  mpreal::default_prec = 64;			//(mpfr_get_default_prec)();	
+mp_rnd_t   mpreal::default_rnd  = GMP_RNDN;	//(mpfr_get_default_rounding_mode)();
+mp_prec_t  mpreal::default_prec = 64;			//(mpfr_get_default_prec)();
 int		   mpreal::default_base = 10;
 int        mpreal::double_bits = -1;
 
@@ -82,20 +82,20 @@ bool       mpreal::is_custom_malloc = false;
 #endif
 
 // Default constructor: creates mp number and initializes it to 0.
-mpreal::mpreal() 
-{ 
+mpreal::mpreal()
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
 #endif
 
-	mpfr_init2(mp,default_prec); 
+	mpfr_init2(mp,default_prec);
 	mpfr_set_ui(mp,0,default_rnd);
 
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
-mpreal::mpreal(const mpreal& u) 
+mpreal::mpreal(const mpreal& u)
 {
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
@@ -117,7 +117,7 @@ mpreal::mpreal(const mpfr_t u)
 
 	mpfr_init2(mp,mpfr_get_prec(u));
 	mpfr_set(mp,u,default_rnd);
-	
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
@@ -143,7 +143,7 @@ mpreal::mpreal(const mpz_t u, mp_prec_t prec, mp_rnd_t mode)
 
 	mpfr_init2(mp,prec);
 	mpfr_set_z(mp,u,mode);
-	
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
@@ -156,7 +156,7 @@ mpreal::mpreal(const mpq_t u, mp_prec_t prec, mp_rnd_t mode)
 
 	mpfr_init2(mp,prec);
 	mpfr_set_q(mp,u,mode);
-	
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
@@ -171,7 +171,7 @@ mpreal::mpreal(const double u, mp_prec_t prec, mp_rnd_t mode)
     {
     	mpfr_init2(mp,prec);
 	    mpfr_set_d(mp,u,mode);
-		
+
 		MPREAL_MSVC_DEBUGVIEW_CODE;
     }
     else
@@ -179,7 +179,7 @@ mpreal::mpreal(const double u, mp_prec_t prec, mp_rnd_t mode)
 }
 
 mpreal::mpreal(const long double u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
@@ -187,12 +187,12 @@ mpreal::mpreal(const long double u, mp_prec_t prec, mp_rnd_t mode)
 
     mpfr_init2(mp,prec);
 	mpfr_set_ld(mp,u,mode);
-	
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
 mpreal::mpreal(const unsigned long int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
@@ -200,12 +200,12 @@ mpreal::mpreal(const unsigned long int u, mp_prec_t prec, mp_rnd_t mode)
 
 	mpfr_init2(mp,prec);
 	mpfr_set_ui(mp,u,mode);
-	
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
 mpreal::mpreal(const unsigned int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
@@ -218,7 +218,7 @@ mpreal::mpreal(const unsigned int u, mp_prec_t prec, mp_rnd_t mode)
 }
 
 mpreal::mpreal(const long int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
@@ -231,7 +231,7 @@ mpreal::mpreal(const long int u, mp_prec_t prec, mp_rnd_t mode)
 }
 
 mpreal::mpreal(const int u, mp_prec_t prec, mp_rnd_t mode)
-{ 
+{
 
 #if defined (MPREAL_HAVE_CUSTOM_MPFR_MALLOC)
 	set_custom_malloc();
@@ -252,7 +252,7 @@ mpreal::mpreal(const uint64_t u, mp_prec_t prec, mp_rnd_t mode)
 #endif
 
 	mpfr_init2(mp,prec);
-	mpfr_set_uj(mp, u, mode); 
+	mpfr_set_uj(mp, u, mode);
 
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
@@ -265,8 +265,8 @@ mpreal::mpreal(const int64_t u, mp_prec_t prec, mp_rnd_t mode)
 #endif
 
 	mpfr_init2(mp,prec);
-	mpfr_set_sj(mp, u, mode); 
-	
+	mpfr_set_sj(mp, u, mode);
+
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 #endif
@@ -279,7 +279,7 @@ mpreal::mpreal(const char* s, mp_prec_t prec, int base, mp_rnd_t mode)
 #endif
 
 	mpfr_init2(mp,prec);
-	mpfr_set_str(mp, s, base, mode); 
+	mpfr_set_str(mp, s, base, mode);
 
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
@@ -292,15 +292,15 @@ mpreal::mpreal(const std::string& s, mp_prec_t prec, int base, mp_rnd_t mode)
 #endif
 
 	mpfr_init2(mp,prec);
-	mpfr_set_str(mp, s.c_str(), base, mode); 
+	mpfr_set_str(mp, s.c_str(), base, mode);
 
 	MPREAL_MSVC_DEBUGVIEW_CODE;
 }
 
-mpreal::~mpreal() 
-{ 
+mpreal::~mpreal()
+{
 	mpfr_clear(mp);
-}                           
+}
 
 // Operators - Assignment
 mpreal& mpreal::operator=(const char* s)
@@ -314,7 +314,7 @@ mpreal& mpreal::operator=(const char* s)
 	if(0==mpfr_init_set_str(t,s,default_base,default_rnd))
 	{
 		// We will rewrite mp anyway, so flash it and resize
-		mpfr_set_prec(mp,mpfr_get_prec(t)); 
+		mpfr_set_prec(mp,mpfr_get_prec(t));
 		mpfr_set(mp,t,mpreal::default_rnd);
 		mpfr_clear(t);
 
@@ -332,9 +332,9 @@ const mpreal fma (const mpreal& v1, const mpreal& v2, const mpreal& v3, mp_rnd_t
 	mpreal a;
 	mp_prec_t p1, p2, p3;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
-	p3 = v3.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
+	p3 = v3.get_prec();
 
 	a.set_prec(p3>p2?(p3>p1?p3:p1):(p2>p1?p2:p1));
 
@@ -347,9 +347,9 @@ const mpreal fms (const mpreal& v1, const mpreal& v2, const mpreal& v3, mp_rnd_t
 	mpreal a;
 	mp_prec_t p1, p2, p3;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
-	p3 = v3.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
+	p3 = v3.get_prec();
 
 	a.set_prec(p3>p2?(p3>p1?p3:p1):(p2>p1?p2:p1));
 
@@ -362,8 +362,8 @@ const mpreal agm (const mpreal& v1, const mpreal& v2, mp_rnd_t rnd_mode)
 	mpreal a;
 	mp_prec_t p1, p2;
 
-	p1 = v1.get_prec(); 
-	p2 = v2.get_prec(); 
+	p1 = v1.get_prec();
+	p2 = v2.get_prec();
 
 	a.set_prec(p1>p2?p1:p2);
 
@@ -390,8 +390,8 @@ const mpreal remquo (long* q, const mpreal& x, const mpreal& y, mp_rnd_t rnd_mod
 	mpreal a;
 	mp_prec_t yp, xp;
 
-	yp = y.get_prec(); 
-	xp = x.get_prec(); 
+	yp = y.get_prec();
+	xp = x.get_prec();
 
 	a.set_prec(yp>xp?yp:xp);
 
@@ -449,7 +449,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 
 #else
 
-	char *s, *ns = NULL; 
+	char *s, *ns = NULL;
 	size_t slen, nslen;
 	mp_exp_t exp;
 	string out;
@@ -459,7 +459,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 #endif
 
 	if(mpfr_inf_p(mp))
-	{ 
+	{
 		if(mpfr_sgn(mp)>0) return "+Inf";
 		else			   return "-Inf";
 	}
@@ -474,7 +474,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 	{
 		slen  = strlen(s);
 		nslen = strlen(ns);
-		if(nslen<=slen) 
+		if(nslen<=slen)
 		{
 			mpfr_free_str(s);
 			s = ns;
@@ -491,7 +491,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+exp) ptr--; 
+				while (*ptr=='0' && ptr>s+exp) ptr--;
 
 				if(ptr==s+exp) out = string(s,exp+1);
 				else		   out = string(s,exp+1)+'.'+string(s+exp+1,ptr-(s+exp+1)+1);
@@ -502,7 +502,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+exp-1) ptr--; 
+				while (*ptr=='0' && ptr>s+exp-1) ptr--;
 
 				if(ptr==s+exp-1) out = string(s,exp);
 				else		     out = string(s,exp)+'.'+string(s+exp,ptr-(s+exp)+1);
@@ -515,7 +515,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s+1) ptr--; 
+				while (*ptr=='0' && ptr>s+1) ptr--;
 
 				if(ptr==s+1) out = string(s,2);
 				else		 out = string(s,2)+'.'+string(s+2,ptr-(s+2)+1);
@@ -526,7 +526,7 @@ std::string mpreal::toString(int n, int b, mp_rnd_t mode) const
 			{
 				// Remove zeros starting from right end
 				char* ptr = s+slen-1;
-				while (*ptr=='0' && ptr>s) ptr--; 
+				while (*ptr=='0' && ptr>s) ptr--;
 
 				if(ptr==s) out = string(s,1);
 				else	   out = string(s,1)+'.'+string(s+1,ptr-(s+1)+1);

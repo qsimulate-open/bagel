@@ -300,7 +300,7 @@ void FCI::update_rdms(const shared_ptr<Matrix>& coeff) {
   // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
   if (rdm1_.size() > 1) rdm1_av_->transform(coeff);
   if (rdm2_.size() > 1) rdm2_av_->transform(coeff);
-  assert(rdm1_.size() > 1 || rdm1_.front() == rdm1_av_); 
-  assert(rdm2_.size() > 1 || rdm2_.front() == rdm2_av_); 
+  assert(rdm1_.size() > 1 || rdm1_.front() == rdm1_av_);
+  assert(rdm2_.size() > 1 || rdm2_.front() == rdm2_av_);
 }
 

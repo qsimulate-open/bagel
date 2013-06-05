@@ -38,7 +38,7 @@
 namespace bagel {
 
 // This is the base class. It literally does nothing.
-template<class Type> 
+template<class Type>
 class LevelShift {
   protected:
     int nocc_;

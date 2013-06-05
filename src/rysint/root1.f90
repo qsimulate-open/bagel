@@ -39820,26 +39820,26 @@
       parameter (o7  = (2.0d0 / 14.0d0))
       parameter (o14 = (1.0d0 / 14.0d0))
       do i = 1, n ! loop over parameter set
-        t = ta(i) 
-        if (t .lt. 0.0d0) cycle 
-        if (t .gt. 19682.99d0) t = 19682.99d0 
-        u = ua(i) 
-        tt = dsqrt(t) 
-        if (tt .gt. 1.0d0) tt = dlog(t) * 0.9102392266268373d0 + 1.0d0 ! log(3)+1 
+        t = ta(i)
+        if (t .lt. 0.0d0) cycle
+        if (t .gt. 19682.99d0) t = 19682.99d0
+        u = ua(i)
+        tt = dsqrt(t)
+        if (tt .gt. 1.0d0) tt = dlog(t) * 0.9102392266268373d0 + 1.0d0 ! log(3)+1
         uu = dlog10(u)
 
-        it = tt 
+        it = tt
         tt = tt - it
-        tt = 2.0d0 * tt - 1.0d0 
+        tt = 2.0d0 * tt - 1.0d0
 
         iu = uu + 7 ! 0 <= iu <= 9
         if (iu < 0 .or. iu > 10) then
           print *, "current implementation assumes 1.0d-7 < U < 1.0e3"
-          stop  
+          stop
         else
           uu = uu - (iu - 7)
-          uu = 2.0d0 * uu - 1.0d0 
-        endif 
+          uu = 2.0d0 * uu - 1.0d0
+        endif
 
         offset = 196 * (iu + it * 10)
         u2 = uu * 2.0d0

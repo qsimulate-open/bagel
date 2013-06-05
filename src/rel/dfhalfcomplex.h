@@ -74,13 +74,13 @@ class DFHalfComplex : public RelDFBase {
 
     // for the zgemm3m-like algorithm
     void set_sum_diff();
-    std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; } 
-    std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; } 
+    std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
+    std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
     std::list<std::shared_ptr<DFHalfComplex>> split(const bool docopy = false);
     bool split_status() const { return split_; }
-    const std::vector<std::shared_ptr<const ABcases>> new_basis(std::shared_ptr<const Breit2Index>) const; 
+    const std::vector<std::shared_ptr<const ABcases>> new_basis(std::shared_ptr<const Breit2Index>) const;
 
 };
 

@@ -70,7 +70,7 @@ shared_ptr<const ZMatrix> RelFCI::time_reversal_operator() {
   const int n = geom_->nbasis();
   std::complex<double> one  (1.0, 0.0);
   std::complex<double> coeffi  (0.0, 1.0);
-  
+
   auto kramers = make_shared<ZMatrix>(4*n, 4*n);
 
   auto unit = make_shared<ZMatrix>(n, n);

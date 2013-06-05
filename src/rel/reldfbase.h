@@ -34,7 +34,7 @@ namespace bagel {
 class ABcases {
   protected:
     std::array<std::shared_ptr<const ZMatrix>, 2> spinor_;
-    std::pair<int, int> basis_; 
+    std::pair<int, int> basis_;
     std::complex<double> fac_;
     int alpha_comp_;
 
@@ -67,7 +67,7 @@ class ABcases {
     std::complex<double> fac() const { return fac_; }
     bool nonzero() const { return fac_ != std::complex<double>(0.0); }
 
-    bool operator==(const ABcases& o) const { return basis_.first == o.basis_.first && basis_.second == o.basis_.second && fac_ == o.fac_ && alpha_comp_ == o.alpha_comp_; } 
+    bool operator==(const ABcases& o) const { return basis_.first == o.basis_.first && basis_.second == o.basis_.second && fac_ == o.fac_ && alpha_comp_ == o.alpha_comp_; }
     bool operator!=(const ABcases& o) const { return !(*this == o); }
 
     std::shared_ptr<const ABcases> swap() const {
@@ -87,7 +87,7 @@ class ABcases {
       return out;
     }
 
-    std::pair<int, int> basis() const {return basis_; } 
+    std::pair<int, int> basis() const {return basis_; }
     int basis_first() const { return basis_.first; }
     int basis_second() const { return basis_.second; }
     int comp() const { return alpha_comp_; }

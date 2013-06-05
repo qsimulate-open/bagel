@@ -36,7 +36,7 @@ using namespace bagel;
 * will eventually be fixed.                                                         *
 ************************************************************************************/
 MultiExcitonHamiltonian::MultiExcitonHamiltonian(const boost::property_tree::ptree& input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
-  ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace), 
+  ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace),
   dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
   nact_(dimer->nact()), nbasis_(dimer->nbasis())
 {
@@ -277,7 +277,7 @@ void MultiExcitonHamiltonian::compute() {
     for (int i = 0; i != nstates_; ++i) {
       cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
                               << setw(17) << fixed << setprecision(8) << energies[i] << "   "
-                              << setw(10) << scientific << setprecision(2) << errors[i] << "   " 
+                              << setw(10) << scientific << setprecision(2) << errors[i] << "   "
                               << fixed << setw(10) << setprecision(2) << mehtime.tick() << endl;
       energies_.at(i) = energies[i];
     }
@@ -403,7 +403,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
 }
 
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const { 
+shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const {
   const int nstatesA = ccvecA->ij();
   const int nstatesAp = ccvecAp->ij();
 
@@ -421,15 +421,15 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> cc
     // | C > ^A_ac is done
     for (int statep = 0; statep < nstatesAp; ++statep) {
       for (int ac = 0; ac < ij; ++ac, ++edata) {
-        *edata = c->data(ac)->ddot(*ccvecAp->data(statep)); 
-      }   
-    }   
+        *edata = c->data(ac)->ddot(*ccvecAp->data(statep));
+      }
+    }
   }
 
   return tmp.transpose();
 }
 
-void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target, 
+void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target,
   const int nA, const int nAp, const int nB, const int nBp) const
 {
   const int nstatesAB = nA * nB;
@@ -489,7 +489,7 @@ void MultiExcitonHamiltonian::print_property(const string label, shared_ptr<cons
     cout << indent << "<" << istate << "|";
     for (int jstate = 0; jstate < nprint; ++jstate) {
       cout << setw(12) << setprecision(6) << property->element(jstate, istate);
-    }   
+    }
     cout << endl;
   }
   cout << endl;

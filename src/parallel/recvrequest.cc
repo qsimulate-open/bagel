@@ -65,7 +65,7 @@ void PutRequest::flush_() {
   {
     lock_guard<mutex> lock(block_);
     for (auto i = calls_.begin(); i != calls_.end(); ) {
-      // if this has already arrived, send data 
+      // if this has already arrived, send data
       if (mpi__->test(i->first)) {
         const int size = i->second->buf[0];
         const int tag  = i->second->buf[1];

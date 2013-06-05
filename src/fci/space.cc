@@ -38,15 +38,15 @@ Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, 
   common_init();
 }
 
-Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) : 
+Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) :
   norb_(det->norb()), nelea_(det->nelea()), neleb_(det->neleb()), M_(_M), compress_(_compress), mute_(_mute) {
 
   common_init();
 }
 
 void Space::common_init() {
-  if (!mute_) cout << " Constructing space of all determinants that can formed by removing " 
-                  << M_ << " electrons from " << nelea_ 
+  if (!mute_) cout << " Constructing space of all determinants that can formed by removing "
+                  << M_ << " electrons from " << nelea_
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {

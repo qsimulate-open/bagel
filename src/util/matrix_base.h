@@ -64,17 +64,17 @@ class Matrix_base {
 
       for (int i = 0; i != mblock; ++i)
         for (int j = 0; j != nblock; ++j)
-          for (int id = 0; id != blocksize__; ++id) 
-            std::copy_n(&local[j*blocksize__+localrow*(i*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+i*mstride+id)); 
+          for (int id = 0; id != blocksize__; ++id)
+            std::copy_n(&local[j*blocksize__+localrow*(i*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+i*mstride+id));
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
         for (int j = 0; j != nblock; ++j)
-          std::copy_n(&local[j*blocksize__+localrow*(mblock*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id)); 
+          std::copy_n(&local[j*blocksize__+localrow*(mblock*blocksize__+id)], blocksize__, element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id));
         for (int jd = 0; jd != localrow % blocksize__; ++jd)
           element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id) = local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)];
       }
       for (int i = 0; i != mblock; ++i)
-        for (int id = 0; id != blocksize__; ++id) 
+        for (int id = 0; id != blocksize__; ++id)
           for (int jd = 0; jd != localrow % blocksize__; ++jd)
             element(myprow+nblock*nstride+jd, mypcol+i*mstride+id) = local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)];
 
@@ -138,8 +138,8 @@ class Matrix_base {
     }
 
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
-      std::unique_ptr<DataType[]> out(new DataType[nsize*msize]); 
-      for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j) 
+      std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
+      for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
         std::copy_n(data_.get() + nstart + i*ndim_, nsize, out.get() + j*nsize);
       return out;
     }
@@ -205,17 +205,17 @@ class Matrix_base {
 
       for (int i = 0; i != mblock; ++i)
         for (int j = 0; j != nblock; ++j)
-          for (int id = 0; id != blocksize__; ++id) 
-            std::copy_n(element_ptr(myprow+j*nstride, mypcol+i*mstride+id), blocksize__, &local[j*blocksize__+localrow*(i*blocksize__+id)]); 
+          for (int id = 0; id != blocksize__; ++id)
+            std::copy_n(element_ptr(myprow+j*nstride, mypcol+i*mstride+id), blocksize__, &local[j*blocksize__+localrow*(i*blocksize__+id)]);
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
         for (int j = 0; j != nblock; ++j)
-          std::copy_n(element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id), blocksize__, &local[j*blocksize__+localrow*(mblock*blocksize__+id)]); 
+          std::copy_n(element_ptr(myprow+j*nstride, mypcol+mblock*mstride+id), blocksize__, &local[j*blocksize__+localrow*(mblock*blocksize__+id)]);
         for (int jd = 0; jd != localrow % blocksize__; ++jd)
           local[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+mblock*mstride+id);
       }
       for (int i = 0; i != mblock; ++i)
-        for (int id = 0; id != blocksize__; ++id) 
+        for (int id = 0; id != blocksize__; ++id)
           for (int jd = 0; jd != localrow % blocksize__; ++jd)
             local[nblock*blocksize__+jd+localrow*(i*blocksize__+id)] = element(myprow+nblock*nstride+jd, mypcol+i*mstride+id);
       return local;

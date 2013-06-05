@@ -147,7 +147,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
 
 #ifdef HAVE_SCALAPACK
-// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
+// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistMatrix : public DistMatrix_base<double> {
   public:
     DistMatrix(const int n, const int m);

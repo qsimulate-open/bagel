@@ -76,7 +76,7 @@ void HarrisonZarrabian::update(shared_ptr<const Coeff> c) {
   Timer timer;
   jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
 
-  // right now full basis is used. 
+  // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();

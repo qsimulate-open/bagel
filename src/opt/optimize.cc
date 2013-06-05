@@ -38,7 +38,7 @@ Optimize::Optimize(const boost::property_tree::ptree& idata, std::shared_ptr<con
 
 void Optimize::compute() {
   const boost::property_tree::ptree methodblock = idata_.get_child("method");
-  string method = methodblock.get<string>("title", ""); 
+  string method = methodblock.get<string>("title", "");
   if (method.empty()) throw std::runtime_error("title is missing in one of the input blocks (opt)");
 
   if (method == "uhf") {

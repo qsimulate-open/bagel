@@ -49,10 +49,10 @@ class KS : public SCF_base {
       std::cout << indent << "*** Kohn-Sham DFT ***" << std::endl << std::endl;
 
       // default is now B3LYP
-      name_ = idata_.get<std::string>("xc_func", "b3lyp"); 
+      name_ = idata_.get<std::string>("xc_func", "b3lyp");
       func_ = std::make_shared<XCFunc>(name_);
 
-      Timer preptime; 
+      Timer preptime;
       grid_ = std::make_shared<DefaultGrid>(geom);
       preptime.tick_print("DFT grid generation");
 

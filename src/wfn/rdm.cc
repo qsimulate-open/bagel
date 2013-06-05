@@ -68,7 +68,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
   // sort eigenvectors so that buf is close to a unit matrix
   // target column
   for (int i = 0; i != dim_; ++i) {
-    // first find the source column 
+    // first find the source column
     tuple<int, double> max = make_tuple(-1, 0.0);
     for (int j = 0; j != dim_; ++j)
       if (fabs(buf->element(i,j)) > get<1>(max))

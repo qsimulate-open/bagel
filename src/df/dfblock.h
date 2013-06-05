@@ -47,16 +47,16 @@ class DFBlock {
     const std::shared_ptr<const StaticDist> adist_;
     // if true, asize is evenly distributed. If false, asize is at the shell boundary
     bool averaged_;
- 
+
     // dimensions of the block
     size_t asize_;
     size_t b1size_;
     size_t b2size_;
 
     // a set of offsets of this block in the entire DF integrals
-    size_t astart_; 
-    size_t b1start_; 
-    size_t b2start_; 
+    size_t astart_;
+    size_t b1start_;
+    size_t b2start_;
 
     // allocation info
     size_t size_alloc_;
@@ -83,7 +83,7 @@ class DFBlock {
     void zero() { std::fill_n(data_.get(), size(), 0.0); }
 
     // dist
-    const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; } 
+    const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; }
 
     // dimensions of the block
     size_t asize() const { return asize_; }
@@ -120,8 +120,8 @@ class DFBlock {
     std::shared_ptr<DFBlock> swap() const;
 
     // 2RDM contractions
-    std::shared_ptr<DFBlock> apply_rhf_2RDM(const double scale_exch) const; 
-    std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const; 
+    std::shared_ptr<DFBlock> apply_rhf_2RDM(const double scale_exch) const;
+    std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const;
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
 
@@ -141,8 +141,8 @@ class DFBlock {
     // compute (D|ia)(ia|j) and set to the location specified by the offset
     std::unique_ptr<double[]> form_Dj(const std::unique_ptr<double[]>& o, const int jdim) const;
 
-    // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k 
-    std::unique_ptr<double[]> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const; 
+    // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k
+    std::unique_ptr<double[]> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
     // use with caution
     std::unique_ptr<double[]> release_data() { return std::move(data_); }

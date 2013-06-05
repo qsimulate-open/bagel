@@ -227,7 +227,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   }
 
   // G matrix (active-active) Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  gaa = factp->clone(); 
+  gaa = factp->clone();
   dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
   for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
@@ -272,7 +272,7 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
   int nbas = geom_->nbasis();
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
-  return cnew; 
+  return cnew;
 }
 
 

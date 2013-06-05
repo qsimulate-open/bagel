@@ -45,7 +45,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DFDist> df, shared_ptr<con
   // [D|tu] = (D|xy)Gamma_xy,tu
   shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm->data());
 
-  // (r,u) = (rt|D)[D|tu] 
+  // (r,u) = (rt|D)[D|tu]
   shared_ptr<const Matrix> tmp = half->form_2index(prdm, 1.0);
 
   // MO transformation of the first index

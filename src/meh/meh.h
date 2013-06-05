@@ -68,7 +68,7 @@ class DimerSubspace {
     std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> ci_;
 
   public:
-    DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> _ci) : 
+    DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> _ci) :
       offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
        ci_(_ci) { _offset += dimerstates(); }
 
@@ -82,7 +82,7 @@ class DimerSubspace {
 
     template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
     template <int unit> std::shared_ptr<const Dvec> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
-    
+
 };
 
 struct SpinMap {

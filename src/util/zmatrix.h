@@ -126,7 +126,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     double rms() const;
     std::complex<double> trace() const;
 
-    // for generic algorithms 
+    // for generic algorithms
     void daxpy(const std::complex<double> a, const ZMatrix& o) { zaxpy(a, o); }
     void daxpy(const std::complex<double> a, const std::shared_ptr<const ZMatrix> o) { zaxpy(a, o); }
 
@@ -173,7 +173,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
 
 #ifdef HAVE_SCALAPACK
-// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality 
+// Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistZMatrix : public DistMatrix_base<std::complex<double>> {
   public:
     DistZMatrix(const int n, const int m);
@@ -207,7 +207,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     // for generic algorithms
     std::complex<double> ddot(const DistZMatrix& o) const { return zdotc(o); }
     std::complex<double> ddot(const std::shared_ptr<const DistZMatrix> o) const { return zdotc(o); }
-    void daxpy(const std::complex<double> a, const DistZMatrix& o) { zaxpy(a, o); } 
+    void daxpy(const std::complex<double> a, const DistZMatrix& o) { zaxpy(a, o); }
     void daxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, o); }
 
     void scale(const std::complex<double> a) { zscal_(size(), a, local_.get(), 1); }

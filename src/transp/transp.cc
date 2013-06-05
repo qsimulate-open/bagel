@@ -42,7 +42,7 @@ Transp::Transp(const boost::property_tree::ptree& idata_, const shared_ptr<const
   cout << " eigenvalues" << endl;
   int n = 0;
   for (auto& i : ref_->eig()) {
-    cout << setw(10) << n++ << setw(20) << setprecision(10) << i << endl; 
+    cout << setw(10) << n++ << setw(20) << setprecision(10) << i << endl;
   }
 
   // number of state (now default to 15)

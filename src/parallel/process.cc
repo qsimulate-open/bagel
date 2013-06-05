@@ -33,7 +33,7 @@ using namespace bagel;
 
 Process::Process() : print_level_(3) {
   if (mpi__->rank() != 0) {
-    cout_orig = cout.rdbuf(); 
+    cout_orig = cout.rdbuf();
     cout.rdbuf(ss_.rdbuf());
   }
 }

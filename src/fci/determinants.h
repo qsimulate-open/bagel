@@ -44,7 +44,7 @@ struct DetMap {
   unsigned int target;
   unsigned int source;
   int sign;
-  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {}; 
+  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {};
 };
 
 // implements a determinant space
@@ -151,7 +151,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
       const std::bitset<nbit__> ii( (1 << (i)) - 1 );
-      bit = bit & ii; 
+      bit = bit & ii;
       return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
@@ -160,7 +160,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
       std::bitset<nbit__> ii(~((1 << (min+1)) - 1));
-      std::bitset<nbit__> jj((1 << max) - 1); 
+      std::bitset<nbit__> jj((1 << max) - 1);
       bit = (bit & ii) & jj;
       return 1 - ((bit.count() & 1) << 1);
     }
@@ -169,7 +169,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
       unsigned int out = 0;
       int k = 0;
-      for (int i = 0; i != norb_; ++i) 
+      for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += zkl(k,i, spin); ++k; }
       return out;
     }

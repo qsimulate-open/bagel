@@ -32,8 +32,8 @@
 namespace bagel {
 
 // to make readable
-enum Comp { X = 0, Y = 1, Z = 2, L = 3 }; 
-enum Basis { a = 0, b = 1 }; 
+enum Comp { X = 0, Y = 1, Z = 2, L = 3 };
+enum Basis { a = 0, b = 1 };
 
 class Sigma2 {
   protected:

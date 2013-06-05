@@ -38,10 +38,10 @@ using namespace bagel;
 DistZMatrix::DistZMatrix(const int n, const int m) : DistMatrix_base<std::complex<double>>(n,m) {}
 
 
-DistZMatrix::DistZMatrix(const DistZMatrix& o) : DistMatrix_base<std::complex<double>>(o) {} 
+DistZMatrix::DistZMatrix(const DistZMatrix& o) : DistMatrix_base<std::complex<double>>(o) {}
 
 
-DistZMatrix::DistZMatrix(const ZMatrix& o) : DistMatrix_base<std::complex<double>>(o.ndim(), o.mdim()) { 
+DistZMatrix::DistZMatrix(const ZMatrix& o) : DistMatrix_base<std::complex<double>>(o.ndim(), o.mdim()) {
   copy_n(o.getlocal().get(), size(), local_.get());
 }
 
@@ -89,7 +89,7 @@ DistZMatrix DistZMatrix::operator^(const DistZMatrix& o) const {
 
 
 void DistZMatrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of DistZMatrix::diagonalize(double*)"); 
+  if (ndim_ != mdim_) throw logic_error("illegal call of DistZMatrix::diagonalize(double*)");
   const int n = ndim_;
   const int localrow = get<0>(localsize_);
   const int localcol = get<1>(localsize_);

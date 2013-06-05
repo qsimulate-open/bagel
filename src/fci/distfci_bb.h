@@ -45,7 +45,7 @@ class DistBBTask {
 
   public:
     DistBBTask(const size_t& l, const double* s, double* t, const double* h, std::shared_ptr<const Determinants> det, const std::bitset<nbit__>& bs, std::vector<std::mutex>* m)
-      : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {} 
+      : la(l), source(s), target(t), hamil(h), base_det(det), b(bs), mutex(m) {}
 
     void compute() {
       const size_t norb_ = base_det->norb();
@@ -105,7 +105,7 @@ class DistBBTask {
           const double ij_phase = base_det->sign(bt, -1, i);
           daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*i, 1);
         }
-        dgemm_("N", "N", la, norb_, norb_, 1.0, ints.get(), la, hamil, norb_, 0.0, ints2.get(), la); 
+        dgemm_("N", "N", la, norb_, norb_, 1.0, ints.get(), la, hamil, norb_, 0.0, ints2.get(), la);
         for (int i = 0; i != norb_; ++i) {
           if (b[i]) continue;
           std::bitset<nbit__> bt = b; bt.set(i);

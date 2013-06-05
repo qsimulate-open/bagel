@@ -235,7 +235,7 @@ shared_ptr<DistCivec> DistCivec::transpose() const {
 
 void DistCivec::transpose_wait() {
   for (auto& i : transp_)
-    mpi__->wait(i); 
+    mpi__->wait(i);
 
   buf_ = shared_ptr<DistCivec>();
   buf_ = clone();

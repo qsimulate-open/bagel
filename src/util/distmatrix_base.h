@@ -54,7 +54,7 @@ class DistMatrix_base {
     DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       zero();
-    } 
+    }
     DistMatrix_base(const DistMatrix_base& o) : ndim_(o.ndim_), mdim_(o.mdim_), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       std::copy_n(o.local_.get(), size(), local_.get());

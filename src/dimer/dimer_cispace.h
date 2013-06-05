@@ -53,7 +53,7 @@ class SpaceKey {
     std::string to_string() const {
       std::vector<std::string> anions = {{ "O", "A", "diA", "triA", "tetA", "pentA" }};
       std::vector<std::string> cations = {{ "O", "C", "diC", "triC", "tetC", "pentC" }};
-      
+
       std::string out = ( q > 0 ? anions.at(q) : cations.at(-q) );
       out = out + "(2S=" + std::to_string(S) + ";2m_s=" + std::to_string(m_s) + ")";
       return out;
@@ -101,7 +101,7 @@ class DimerCISpace {
     }
 
     template<int unit> std::shared_ptr<Determinants> det(std::pair<const int, const int> p) { return det<unit>(p.first,p.second); }
-    template<int unit> std::shared_ptr<Determinants> det(const int qa, const int qb) { 
+    template<int unit> std::shared_ptr<Determinants> det(const int qa, const int qb) {
       DMap& dets = (unit == 0 ? detspaceA_ : detspaceB_);
       auto iter = dets.find(std::make_pair(qa, qb));
       return (iter != dets.end() ? iter->second : nullptr);

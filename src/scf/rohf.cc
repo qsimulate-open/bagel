@@ -57,7 +57,7 @@ void ROHF::compute() {
 
     shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0,nocc_));
     shared_ptr<const Matrix> fockB = noccB_ ? make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_))
-                                            : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis()); 
+                                            : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis());
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
