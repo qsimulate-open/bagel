@@ -56,17 +56,17 @@ void MoldenOut::write_geom() {
   const int num_atoms = geom_->natom();
 
   ofs_ << "[Atoms] Angs" << endl;
-     
-  for(int i = 0; i < num_atoms; ++i) {
+
+  for (int i = 0; i < num_atoms; ++i) {
      shared_ptr<const Atom> cur_atom = geom_->atoms(i);
-     
+
      const string cur_name = cur_atom->name();
      const int cur_number = cur_atom->atom_number();
      const array<double,3> cur_pos = cur_atom->position();
-                                  
-     ofs_ << setw(2) << cur_name << setw(8)  << i+1 
+
+     ofs_ << setw(2) << cur_name << setw(8)  << i+1
                                  << setw(8)  << cur_number << setiosflags(ios_base::scientific)
-                                 << setw(20) << setprecision(12) << cur_pos[0]/ang2bohr__ 
+                                 << setw(20) << setprecision(12) << cur_pos[0]/ang2bohr__
                                  << setw(20) << setprecision(12) << cur_pos[1]/ang2bohr__
                                  << setw(20) << setprecision(12) << cur_pos[2]/ang2bohr__ << endl;
   }
@@ -82,34 +82,34 @@ void MoldenOut::write_mos() {
   *  Print GTO section                                        *
   ************************************************************/
   ofs_ << "[GTO]" << endl;
-      
-  AtomMap am; 
+
+  AtomMap am;
   auto iatom = atoms.begin();
-  for(int ii = 0; ii != num_atoms; ++iatom, ++ii) {
+  for (int ii = 0; ii != num_atoms; ++iatom, ++ii) {
     ofs_ << ii+1 << endl;
 
     vector<shared_ptr<const Shell>> shells = (*iatom)->shells();
-    for(auto& ishell : shells) {
+    for (auto& ishell : shells) {
       string ang_l = am.angular_string(ishell->angular_number());
       vector<double> exponents = ishell->exponents();
 
       int num_contracted = ishell->contractions().size();
-      for(int jj = 0; jj < num_contracted; ++jj) {
+      for (int jj = 0; jj < num_contracted; ++jj) {
         pair<int,int> range = ishell->contraction_ranges(jj);
-   
+
         ofs_ << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
-        for(int kk = range.first; kk < range.second; ++kk) {
+        for (int kk = range.first; kk < range.second; ++kk) {
           ofs_ << setiosflags(ios_base::scientific)
                << setw(20) << setprecision(8) << exponents[kk]
-               << setw(20) << setprecision(8) 
+               << setw(20) << setprecision(8)
                << ishell->contractions(jj)[kk]*denormalize(ishell->angular_number(), exponents[kk]) << endl;
-        }   
-      }   
-    }   
+        }
+      }
+    }
     ofs_ << endl;
-  }   
+  }
   ofs_ << endl;
-  if(is_spherical) ofs_ << "[5D]" << endl; 
+  if (is_spherical) ofs_ << "[5D]" << endl;
   ofs_ << "[MO]" << endl;
 
   const int nbasis = ref_->coeff()->ndim();
@@ -119,12 +119,12 @@ void MoldenOut::write_mos() {
   double* modata = ref_->coeff()->data();
 
   vector<double> eigvec = ref_->eig();
-  if(eigvec.empty()) eigvec = vector<double>(num_mos,0.0);
+  if (eigvec.empty()) eigvec = vector<double>(num_mos,0.0);
 
   int i = 0;
   auto ieig = eigvec.begin();
 
-  for(int i = 0; i < num_mos; ++ieig, ++i) {
+  for (int i = 0; i < num_mos; ++ieig, ++i) {
 
     ofs_ << " Ene=" << setw(12) << setprecision(6) << fixed << *ieig << endl;
 
@@ -141,7 +141,7 @@ void MoldenOut::write_mos() {
         for (int icont = 0; icont != ishell->num_contracted(); ++icont) {
           vector<int> corder = (is_spherical ? b2m_sph_.at(ishell->angular_number()) : b2m_cart_.at(ishell->angular_number()));
           vector<double> scales = (is_spherical ? vector<double>(corder.size(), 1.0) : scaling_.at(ishell->angular_number())) ;
-          for(auto& iorder : corder) {
+          for (auto& iorder : corder) {
              ofs_ << fixed << setw(4) << ++j << setw(22) << setprecision(16) << modata[iorder] / scales.at(iorder) << endl;
           }
           modata += corder.size();
