@@ -87,9 +87,6 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".json";
 
-/*** TODO BAD PRACTICE - until I make a script to convert Turbomole-type basis files ***/
-try {
-
   boost::property_tree::ptree bdata;
   boost::property_tree::json_parser::read_json(filename, bdata);
 
@@ -116,114 +113,10 @@ try {
         tmp.push_back(lexical_cast<double>(cc.second.data()));
       coeff.push_back(tmp);
     }
-#if 1
-// TODO once everyting is based on JSON, we should delete this transformation by tweaking construct_shells function
-    const int n = coeff.size();
-    const int m = coeff.front().size();
-    vector<vector<double>> tmp(m, vector<double>(n));
-    for (int i = 0; i != n; ++i)
-      for (int j = 0; j != m; ++j)
-        tmp[j][i] = coeff[i][j];
-    coeff = tmp;
-#endif
     basis_info.push_back(make_tuple(ang, exponents, coeff));
   }
   construct_shells(basis_info);
   common_init();
-
-/*** deprecated constructor from here >>>>>>>>>>>>>>>>>>>>> ***/
-} catch (std::exception const& e) {
-
-  cout << "  warning: " << e.what() << endl;
-  string bfile = json_file;
-  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
-  const string filename = "basis/" + bfile + ".basis";
-  bool basis_found = false;
-  ifstream ifs(filename);
-
-  // basis_info will be used in the construction of Basis_batch
-  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
-
-  if (!ifs.is_open()) {
-    throw runtime_error("Basis file not found");
-  } else {
-    boost::regex first_line("^\\s*([spdfghijkl]+)\\s+([0-9eE\\+\\-\\.]+)\\s+");
-    boost::regex other_line("^\\s*([0-9eE\\+\\-\\.-]+)\\s+");
-    boost::regex coeff_line("([0-9eE\\+\\-\\.-]+)\\s*");
-    string nnm = nm;
-    nnm[0] = toupper(nnm[0]);
-    boost::regex atom_line("Atom:" + nnm +"\\s*$");
-
-    // Reading a file to the end of the file
-    string buffer;
-    while (!ifs.eof()) {
-      getline(ifs, buffer);
-      if (buffer.empty()) continue;
-      string::const_iterator start = buffer.begin();
-      string::const_iterator end = buffer.end();
-      boost::smatch what;
-      if (regex_search(start, end, what, atom_line)) {
-        basis_found = true;
-        // temporary storage of info
-        string angular_number;
-        vector<double> exponents;
-        vector<vector<double>> coefficients;
-        while (!ifs.eof()) {
-          getline(ifs, buffer);
-          if (buffer.empty()) continue;
-
-          string::const_iterator start = buffer.begin();
-          string::const_iterator end = buffer.end();
-
-          if (regex_search(start, end, what, first_line)) {
-            // if something is in temporary area, add to basis_info
-            if (!exponents.empty()) {
-              assert(!angular_number.empty());
-              basis_info.push_back(make_tuple(angular_number, exponents, coefficients));
-              exponents.clear();
-              coefficients.clear();
-            }
-            const string ang(what[1].first, what[1].second);
-            const string exp_str(what[2].first, what[2].second);
-            exponents.push_back(lexical_cast<double>(exp_str));
-            angular_number = ang;
-
-            start = what[0].second;
-            vector<double> tmp;
-            while(regex_search(start, end, what, coeff_line)) {
-              const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(lexical_cast<double>(coeff_str));
-              start = what[0].second;
-            }
-            coefficients.push_back(tmp);
-          } else if (regex_search(start, end, what, other_line)) {
-            const string exp_str(what[1].first, what[1].second);
-            exponents.push_back(lexical_cast<double>(exp_str));
-
-            start = what[0].second;
-            vector<double> tmp;
-            while(regex_search(start, end, what, coeff_line)) {
-              const string coeff_str(what[1].first, what[1].second);
-              tmp.push_back(lexical_cast<double>(coeff_str));
-              start = what[0].second;
-            }
-            coefficients.push_back(tmp);
-          } else {
-            basis_info.push_back(make_tuple(angular_number, exponents, coefficients));
-            break;
-          }
-        }
-        break;
-      }
-    }
-    if (!basis_found) throw runtime_error("Basis was not found.");
-
-    construct_shells(basis_info);
-  }
-  ifs.close();
-  common_init();
-}
-/*** deprecated constructor from here <<<<<<<<<<<<<<<<<<<<< ***/
 
 }
 
@@ -235,8 +128,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
   for (auto& iele : in) {
     vector<double> tmp = get<2>(iele);
-    vector<vector<double>> tmp2;
-    for (auto& i : tmp) tmp2.push_back(vector<double>(1, i));
+    vector<vector<double>> tmp2 = {tmp};
     basis_info.push_back(make_tuple(get<0>(iele), get<1>(iele), tmp2));
   }
 
@@ -299,12 +191,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
       const vector<vector<double>> conts = get<2>(*biter);
 
       // loop over contraction coefficients
-      for (int j = 0; j != conts.front().size(); ++j) {
-
-        // picking the current contraction coefficients (for the case there are multiple coefficients specified).
-        vector<double> current;
-        for (auto citer = conts.begin(); citer != conts.end(); ++citer)
-          current.push_back((*citer)[j]);
+      for (auto& current : conts) {
 
         // counting the number of zeros above and below in the segmented contractions
         int zerostart = 0;
