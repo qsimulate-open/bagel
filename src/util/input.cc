@@ -39,3 +39,7 @@ const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shar
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
 PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }   
+
+void PTree::print() const {
+  write_json(cout, data_);
+}

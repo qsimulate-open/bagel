@@ -94,6 +94,8 @@ class PTree {
     PTreeIterator begin() const;
     PTreeIterator end()   const;
 
+    void print() const;
+
 };
 
 
