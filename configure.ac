@@ -45,8 +45,8 @@ if test "x${with_include}" != xno; then
     CXXFLAGS="${with_include} ${CXXFLAGS}"
     FFLAGS="${with_include} ${FFLAGS}"
     FCFLAGS="${with_include} ${FCFLAGS}"
+    CPPFLAGS="${with_include} ${CPPFLAGS}"
 fi
-CPPFLAGS="${CXXFLAGS}"
 
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
 
