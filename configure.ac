@@ -45,6 +45,7 @@ if test "x${with_include}" != xno; then
     CXXFLAGS="${with_include} ${CXXFLAGS}"
     FFLAGS="${with_include} ${FFLAGS}"
     FCFLAGS="${with_include} ${FCFLAGS}"
+    CPPFLAGS="${with_include} ${CPPFLAGS}"
 fi
 
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
@@ -81,6 +82,15 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
         ])
     ])
 ])
+AC_CHECK_LIB(boost_python-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_python-mt, main, , [
+        AC_CHECK_LIB(boost_python, main, , [
+            AC_MSG_ERROR("Linking against boost::python library failed.")
+        ])
+    ])
+])
+AC_CHECK_LIB(python, main, , [AC_MSG_ERROR("Linking against python library failed.")])
+AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
 
 if test x${libxc} = xyes; then
   AC_CHECK_HEADERS([xc.h], [], [AC_MSG_ERROR([xc.h not found or not working])], [])

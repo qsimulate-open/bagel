@@ -34,33 +34,31 @@ namespace bagel {
 // rename as you like
 class PTree;
 class PTreeIterator {
-    friend class PTree;
-    private:
-        boost::property_tree::ptree::const_iterator current;
-    public:
-        PTreeIterator() {}
-        explicit PTreeIterator(boost::property_tree::ptree::const_iterator curr):
-            current(curr) {}
+  private:
+    boost::property_tree::ptree::const_iterator current;
+  public:
+    PTreeIterator() {}
+    explicit PTreeIterator(boost::property_tree::ptree::const_iterator curr): current(curr) {}
 
-        //Dereference operator - return the current node's data.
-        const std::shared_ptr<const PTree> operator*();
+    //Dereference operator - return the current node's data.
+    const std::shared_ptr<const PTree> operator*();
 
-        //Prefix returns by reference.
-        PTreeIterator& operator++() { ++current; return *this; } 
-        PTreeIterator& operator--() { --current; return *this; }
+    //Prefix returns by reference.
+    PTreeIterator& operator++() { ++current; return *this; } 
+    PTreeIterator& operator--() { --current; return *this; }
 
-        //Postfix should be implemented in terms of prefix operators
-        PTreeIterator operator++(int) { PTreeIterator out = *this; ++*this; return out; }
-        PTreeIterator operator--(int) { PTreeIterator out = *this; --*this; return out; }
+    //Postfix should be implemented in terms of prefix operators
+    PTreeIterator operator++(int) { PTreeIterator out = *this; ++*this; return out; }
+    PTreeIterator operator--(int) { PTreeIterator out = *this; --*this; return out; }
 
-        bool operator==(const PTreeIterator& o) const { return current == o.current; } 
-        bool operator!=(const PTreeIterator& o) const { return current != o.current; } 
+    bool operator==(const PTreeIterator& o) const { return current == o.current; } 
+    bool operator!=(const PTreeIterator& o) const { return current != o.current; } 
 
 };
 
 class PTree {
   protected:
-     boost::property_tree::ptree data_;
+    boost::property_tree::ptree data_;
 
   public:
     PTree() : data_() {}
