@@ -41,11 +41,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
     std::shared_ptr<Reference> ref;
 
-    // TODO modify
-    auto keys_tmp = keys->data();
-    for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
-      auto itree = std::make_shared<const PTree>(iter->second); 
-
+    for (auto& itree : *keys) {
       std::string method = itree->get<std::string>("title", "");
       std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
@@ -74,16 +70,13 @@ double molden_out_energy(std::string inp1, std::string inp2) {
   {
     std::stringstream ss; ss << "../../test/" << inp2 << ".in";
     auto idata = std::make_shared<const PTree>(ss.str());
-    auto keys = idata->get_child("bagel");
-    // TODO modify
-    auto mold = keys->data();
-    auto mol = mold.begin();
-    auto mol_tmp = std::make_shared<const PTree>(mol->second);
+    std::shared_ptr<const PTree> keys = idata->get_child("bagel");
+    std::shared_ptr<const PTree> mol = *keys->begin();
 
-    std::string method = mol_tmp->get<std::string>("title", "");
+    std::string method = mol->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
     if (method != "molecule") throw std::logic_error("broken test case");
-    auto geom = std::make_shared<Geometry>(mol_tmp);
+    auto geom = std::make_shared<Geometry>(mol);
 
     auto coeff = std::make_shared<const Coeff>(geom);
 

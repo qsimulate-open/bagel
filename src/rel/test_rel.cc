@@ -41,11 +41,7 @@ double rel_energy(std::string filename) {
 
   std::shared_ptr<Reference> ref_;
 
-  // TODO modify
-  auto keys_tmp = keys->data();
-  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
-    auto itree = std::make_shared<const PTree>(iter->second); 
-
+  for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 

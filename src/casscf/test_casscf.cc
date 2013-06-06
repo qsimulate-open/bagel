@@ -37,11 +37,7 @@ double cas_energy(std::string filename) {
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  // TODO modify
-  auto keys_tmp = keys->data();
-  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
-    auto itree = std::make_shared<const PTree>(iter->second); 
-
+  for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
