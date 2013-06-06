@@ -94,20 +94,16 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const shar
     const shared_ptr<const PTree> prim = ibas->get_child("prim");
     vector<double> exponents;
 
-    // TODO modify
-    auto tmp1 = prim->data(); 
-    for (auto& p : tmp1)
-      exponents.push_back(lexical_cast<double>(p.second.data()));
+    for (auto& p : *prim)
+      exponents.push_back(lexical_cast<double>(p->data()));
 
     const shared_ptr<const PTree> cont = ibas->get_child("cont");
     vector<vector<double>> coeff;
 
-    // TODO modify
-    auto tmp2 = cont->data();
-    for (auto& c : tmp2) {
+    for (auto& c : *cont) {
       vector<double> tmp;
-      for (auto& cc : c.second)
-        tmp.push_back(lexical_cast<double>(cc.second.data()));
+      for (auto& cc : *c)
+        tmp.push_back(lexical_cast<double>(cc->data()));
       coeff.push_back(tmp);
     }
     basis_info.push_back(make_tuple(ang, exponents, coeff));

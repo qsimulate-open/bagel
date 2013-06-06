@@ -50,12 +50,10 @@ void FCI::common_init() {
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
 
-  auto iactive = idata_->get_child_optional("active");
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     set<int> tmp;
-    // TODO modify
-    auto tmp0 = iactive->data();
-    for (auto& i : tmp0) tmp.insert(lexical_cast<int>(i.second.data()));
+    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()));
     ref_ = ref_->set_active(tmp);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();

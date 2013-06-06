@@ -86,9 +86,9 @@ class PTree {
 
     void erase(const std::string key) { data_.erase(key); } 
 
-    // for the time being I use this for debugging 
-    // TODO remove
-    boost::property_tree::ptree data() const { return data_; }
+    std::string data() const { return data_.data(); }
+
+    size_t size() const { return data_.size(); }
 
 
     PTreeIterator begin() const;
