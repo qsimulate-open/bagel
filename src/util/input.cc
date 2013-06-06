@@ -33,3 +33,9 @@ PTree::PTree(const std::string& input) {
   boost::property_tree::json_parser::read_json(input, data_);
 }
 
+
+//Dereference operator - return the current node's data.
+const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
+
+PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
+PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }   
