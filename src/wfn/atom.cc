@@ -40,7 +40,6 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/lexical_cast.h>
-#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -79,19 +78,12 @@ Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string json_file)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const boost::property_tree::ptree& json)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
-
-  string bfile = json_file;
-  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
-  const string filename = "basis/" + bfile + ".json";
-
-  boost::property_tree::ptree bdata;
-  boost::property_tree::json_parser::read_json(filename, bdata);
 
   string na = name_;
   na[0] = toupper(na[0]);
-  boost::property_tree::ptree basis = bdata.get_child(na);
+  boost::property_tree::ptree basis = json.get_child(na);
 
   // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;

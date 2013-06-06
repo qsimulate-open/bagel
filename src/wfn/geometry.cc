@@ -41,11 +41,25 @@
 #include <src/util/quatern.h>
 #include <src/rysint/libint.h>
 #include <src/util/lexical_cast.h>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
 
 const static AtomMap atommap_;
+
+
+// this has been used a couple of times in this file. TODO what is the optimal way? 
+namespace bagel {
+static const boost::property_tree::ptree read_basis(string name) {
+  transform(name.begin(), name.end(), name.begin(),(int (*)(int))tolower);
+  const string filename = "basis/" + name + ".json";
+  boost::property_tree::ptree bdata;
+  boost::property_tree::json_parser::read_json(filename, bdata);
+  return bdata;
+}
+}
+
 
 Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   : spherical_(true), input_(""), lmax_(0) {
@@ -67,8 +81,9 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   /* Set up atoms_ */
   basisfile_ = geominfo.get<string>("basis", "");
   transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
-  if (basisfile_ == "") throw runtime_error("There is no basis specification");
-  else if (basisfile_ == "molden") {
+  if (basisfile_ == "") {
+    throw runtime_error("There is no basis specification");
+  } else if (basisfile_ == "molden") {
     string molden_file = geominfo.get<string>("molden_file", "");
     if (molden_file == "") throw runtime_error("No molden_in file provided");
 
@@ -76,9 +91,11 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
     mfs.read();
     mfs >> atoms_;
     mfs.close();
-  }
-  else {
+  } else {
     const bool angstrom = geominfo.get<bool>("angstrom", false);
+
+    // read basis file
+    const boost::property_tree::ptree bdata = read_basis(basisfile_);
 
     auto atoms = geominfo.get_child("geometry");
     for (auto iter = atoms.begin(); iter != atoms.end(); ++iter) {
@@ -94,7 +111,7 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
         *p++ = lexical_cast<double>(i.second.data()) * prefac;
 
       if (aname != "q") {
-        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, basisfile_));
+        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, bdata));
       } else {
         if (symmetry_ != "c1")
           throw runtime_error("External point charges are only allowed in C1 calculations so far.");
@@ -110,9 +127,12 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   auxfile_ = geominfo.get<string>("df_basis", "");
   transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
+    // read basis file
+    const boost::property_tree::ptree bdata = read_basis(auxfile_);
+
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
-        aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_));
+        aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), bdata));
       } else {
         // we need a dummy atom here to be consistent in gradient computations
         aux_atoms_.push_back(iatom);
@@ -365,9 +385,12 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::prop
   // basis
   auxfile_ = geominfo.get<string>("df_basis", "");
   if (!auxfile_.empty()) {
+    // read basis file
+    const boost::property_tree::ptree bdata = read_basis(auxfile_);
+
     if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)
-      aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_));
+      aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), bdata));
   }
   // symmetry
   symmetry_ = geominfo.get<string>("symmetry", "c1");
