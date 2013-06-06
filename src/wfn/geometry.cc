@@ -94,27 +94,25 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     const shared_ptr<const PTree> bdata = read_basis(basisfile_);
 
     auto atoms = geominfo->get_child("geometry");
-    // TODO modify
-    auto tmp0 = atoms->data();
-    for (auto iter = tmp0.begin(); iter != tmp0.end(); ++iter) {
+    for (auto& a : *atoms) {
 
-      string aname = iter->second.get<string>("atom");
+      string aname = a->get<string>("atom");
       transform(aname.begin(), aname.end(), aname.begin(), ::tolower);
-      auto xyz = iter->second.get_child("xyz");
-      if (xyz.size() < 3)
+      shared_ptr<const PTree> xyz = a->get_child("xyz");
+      if (xyz->size() < 3)
         throw runtime_error("XYZ coordinate was not specified correctly");
       array<double,3> positions;
       auto p = positions.begin();
       const double prefac = angstrom ? ang2bohr__ : 1.0;
-      for (auto& i : xyz)
-        *p++ = lexical_cast<double>(i.second.data()) * prefac;
+      for (auto& i : *xyz)
+        *p++ = lexical_cast<double>(i->data()) * prefac;
 
       if (aname != "q") {
         atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, bdata));
       } else {
         if (symmetry_ != "c1")
           throw runtime_error("External point charges are only allowed in C1 calculations so far.");
-        const double charge = lexical_cast<double>(iter->second.get<double>("charge"));
+        const double charge = lexical_cast<double>(a->get<double>("charge"));
         atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, charge));
       }
 

@@ -467,21 +467,9 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   auto Bsp = idata->get_child_optional("active_B");
   auto isp = idata->get_child_optional("dimer_active");
   set<int> Ai, Bi, it;
-  if (Asp) {
-    // TODO modify
-    auto tmp0 = Asp->data();
-    for (auto& s : tmp0) { Ai.insert(lexical_cast<int>(s.second.data())-1); } // TODO I think this -1 is very confusing!
-  }
-  if (Bsp) {
-    // TODO modify
-    auto tmp0 = Bsp->data();
-    for (auto& s : tmp0) { Bi.insert(lexical_cast<int>(s.second.data())-1); }
-  }
-  if (isp) {
-    // TODO modify
-    auto tmp0 = isp->data();
-    for (auto& s : tmp0) { it.insert(lexical_cast<int>(s.second.data())-1); }
-  }
+  if (Asp) for (auto& s : *Asp) { Ai.insert(lexical_cast<int>(s->data())-1); } // TODO I think this -1 is very confusing!
+  if (Bsp) for (auto& s : *Bsp) { Bi.insert(lexical_cast<int>(s->data())-1); }
+  if (isp) for (auto& s : *isp) { it.insert(lexical_cast<int>(s->data())-1); }
 
   set<int> Alist, Blist;
 
@@ -602,9 +590,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
   auto space = idata->get_child_optional("space");
   if (space) {
     // TODO make a function
-    // TODO modify
-    auto tmp0 = space->data();
-    for (auto& s : tmp0) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
     spaces_B = spaces_A;
   }
   else {
@@ -614,11 +600,8 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
       throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
     }
     // TODO make a function
-    // TODO modify
-    auto tmp0 = spacea->data();
-    auto tmp1 = spaceb->data();
-    for (auto& s : tmp0) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
-    for (auto& s : tmp1) { spaces_B.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
   }
 
   Timer castime;
