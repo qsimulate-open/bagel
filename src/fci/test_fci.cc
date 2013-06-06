@@ -34,32 +34,35 @@ std::vector<double> fci_energy(std::string inp) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::string filename = "../../test/" + inp + ".in";
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(filename, idata);
-  auto keys = idata.get_child("bagel");
+  auto idata = std::make_shared<const PTree>(filename);
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
   std::shared_ptr<Reference> ref;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(iter->second);
+      geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(iter->second, geom);
+      auto scf = std::make_shared<SCF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "rohf"){
-      auto scf = std::make_shared<ROHF>(iter->second, geom);
+      auto scf = std::make_shared<ROHF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
-      std::string algorithm = iter->second.get<std::string>("algorithm", "");
-      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(iter->second, ref);
-      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(iter->second, ref);
+      std::string algorithm = itree->get<std::string>("algorithm", "");
+      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, ref);
+      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, ref);
       else assert(false);
 
       fci->compute();

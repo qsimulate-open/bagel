@@ -36,7 +36,7 @@ class MP2Grad : public MP2 {
   protected:
 
   public:
-    MP2Grad(const boost::property_tree::ptree&, const std::shared_ptr<const Geometry>);
+    MP2Grad(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>);
 
     void compute();
 

@@ -35,8 +35,7 @@
 #include <boost/test/unit_test.hpp>
 #include <src/parallel/resources.h>
 #include <src/parallel/mpi_interface.h>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <src/util/input.h>
 
 using namespace bagel;
 

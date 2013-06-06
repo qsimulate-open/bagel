@@ -54,7 +54,7 @@ class HarrisonZarrabian : public FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    HarrisonZarrabian(const boost::property_tree::ptree a, std::shared_ptr<const Reference> b,
+    HarrisonZarrabian(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, b, ncore, nocc, nstate) {
       space_ = std::make_shared<Space>(det_, 1);
       update(ref_->coeff());

@@ -40,7 +40,7 @@
 using namespace std;
 using namespace bagel;
 
-MP2::MP2(const boost::property_tree::ptree& input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
+MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
 
   scf_ = make_shared<SCF>(input, g, ref);
   scf_->compute();
@@ -49,8 +49,8 @@ MP2::MP2(const boost::property_tree::ptree& input, const shared_ptr<const Geomet
   cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
 
   // checks for frozen core
-  const bool frozen = idata_.get<bool>("frozen", false);
-  ncore_ = idata_.get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+  const bool frozen = idata_->get<bool>("frozen", false);
+  ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   ref_->set_ncore(ncore_);
@@ -108,9 +108,9 @@ void MP2::compute() {
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
   // check if F12 is requested.
-  const bool do_f12 = idata_.get<bool>("f12", false);
+  const bool do_f12 = idata_->get<bool>("f12", false);
   if (do_f12) {
-    const double gamma = idata_.get<double>("gamma", 1.5);
+    const double gamma = idata_->get<double>("gamma", 1.5);
     cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
 #if 0
     auto f12int = make_shared<F12Int>(idata_, geom_, ref_, gamma, ncore_);

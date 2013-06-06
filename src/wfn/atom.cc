@@ -78,27 +78,36 @@ Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const boost::property_tree::ptree& json)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const shared_ptr<const PTree> json)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
 
   string na = name_;
   na[0] = toupper(na[0]);
-  boost::property_tree::ptree basis = json.get_child(na);
+  const shared_ptr<const PTree> basis = json->get_child(na);
 
   // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
 
-  for (auto& ib : basis) {
-    boost::property_tree::ptree ibas = ib.second;
-    const string ang = ibas.get<string>("angular");
-    boost::property_tree::ptree prim = ibas.get_child("prim");
+  // TODO modify
+  auto tmp0 = basis->data();
+  for (auto& ib : tmp0) {
+    const shared_ptr<const PTree> ibas = make_shared<const PTree>(ib.second);
+
+    const string ang = ibas->get<string>("angular");
+    const shared_ptr<const PTree> prim = ibas->get_child("prim");
     vector<double> exponents;
-    for (auto& p : prim)
+
+    // TODO modify
+    auto tmp1 = prim->data(); 
+    for (auto& p : tmp1)
       exponents.push_back(lexical_cast<double>(p.second.data()));
 
-    boost::property_tree::ptree cont = ibas.get_child("cont");
+    const shared_ptr<const PTree> cont = ibas->get_child("cont");
     vector<vector<double>> coeff;
-    for (auto& c : cont) {
+
+    // TODO modify
+    auto tmp2 = cont->data();
+    for (auto& c : tmp2) {
       vector<double> tmp;
       for (auto& cc : c.second)
         tmp.push_back(lexical_cast<double>(cc.second.data()));

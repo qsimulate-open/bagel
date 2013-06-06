@@ -47,7 +47,7 @@ namespace bagel {
 class RelFCI {
 
   protected:
-    boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
 
     double thresh_;
     double print_thresh_;
@@ -69,12 +69,12 @@ class RelFCI {
 
     std::shared_ptr<const ZMatrix> coeff_;
 
-    void common_init(const boost::property_tree::ptree&);
+    void common_init(const std::shared_ptr<const PTree>);
 
     std::shared_ptr<const ZMatrix> time_reversal_operator();
 
   public:
-    RelFCI(const boost::property_tree::ptree&, const std::shared_ptr<const Geometry> geom,
+    RelFCI(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry> geom,
              const std::shared_ptr<const RelReference> re);
 
     void compute();

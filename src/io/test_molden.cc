@@ -35,29 +35,31 @@ double molden_out_energy(std::string inp1, std::string inp2) {
 
   {
     std::stringstream ss; ss << "../../test/" << inp1 << ".in";
-    boost::property_tree::ptree idata;
-    boost::property_tree::json_parser::read_json(ss.str(), idata);
-    auto keys = idata.get_child("bagel");
+    auto idata = std::make_shared<const PTree>(ss.str());
+    auto keys = idata->get_child("bagel");
     std::shared_ptr<Geometry> geom;
 
     std::shared_ptr<Reference> ref;
 
-    for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      std::string method = iter->second.get<std::string>("title", "");
+    // TODO modify
+    auto keys_tmp = keys->data();
+    for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+      auto itree = std::make_shared<const PTree>(iter->second); 
+
+      std::string method = itree->get<std::string>("title", "");
       std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
       if (method == "molecule") {
-        geom = std::make_shared<Geometry>(iter->second);
+        geom = std::make_shared<Geometry>(itree);
 
       } else if (method == "hf") {
-        auto scf = std::make_shared<SCF>(iter->second, geom);
+        auto scf = std::make_shared<SCF>(itree, geom);
         scf->compute();
         ref = scf->conv_to_ref();
       }
       else if (method == "print") {
-        const boost::property_tree::ptree pdata = iter->second;
-        bool orbitals = pdata.get<bool>("orbitals", false);
-        std::string out_file = pdata.get<std::string>("file", inp1 + ".molden");
+        bool orbitals = itree->get<bool>("orbitals", false);
+        std::string out_file = itree->get<std::string>("file", inp1 + ".molden");
 
         MoldenOut mfs(out_file);
         mfs << geom;
@@ -71,14 +73,17 @@ double molden_out_energy(std::string inp1, std::string inp2) {
   double energy = 0.0;
   {
     std::stringstream ss; ss << "../../test/" << inp2 << ".in";
-    boost::property_tree::ptree idata;
-    boost::property_tree::json_parser::read_json(ss.str(), idata);
-    auto keys = idata.get_child("bagel");
-    auto mol = keys.begin();
-    std::string method = mol->second.get<std::string>("title", "");
+    auto idata = std::make_shared<const PTree>(ss.str());
+    auto keys = idata->get_child("bagel");
+    // TODO modify
+    auto mold = keys->data();
+    auto mol = mold.begin();
+    auto mol_tmp = std::make_shared<const PTree>(mol->second);
+
+    std::string method = mol_tmp->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
     if (method != "molecule") throw std::logic_error("broken test case");
-    auto geom = std::make_shared<Geometry>(mol->second);
+    auto geom = std::make_shared<Geometry>(mol_tmp);
 
     auto coeff = std::make_shared<const Coeff>(geom);
 

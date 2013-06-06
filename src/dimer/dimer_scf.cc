@@ -33,12 +33,12 @@
 using namespace bagel;
 using namespace std;
 
-DimerSCF::DimerSCF(const boost::property_tree::ptree& idata, const shared_ptr<const Dimer> dimer)
+DimerSCF::DimerSCF(const std::shared_ptr<const PTree> idata, const shared_ptr<const Dimer> dimer)
   : SCF_base(idata, dimer->sgeom(), dimer->sref()) {
 
   dimer_ = dimer;
 
-  const double shiftparameter = idata.get<double>("levelshift", 1.0e7);
+  const double shiftparameter = idata->get<double>("levelshift", 1.0e7);
   levelshift_ = make_shared<ShiftDimer>(dimer_, shiftparameter);
 }
 

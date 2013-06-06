@@ -39,25 +39,25 @@
 using namespace std;
 using namespace bagel;
 
-RelFCI::RelFCI(const boost::property_tree::ptree& idata, const shared_ptr<const Geometry> geom,
+RelFCI::RelFCI(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const RelReference> re) : relref_(re) {
-  gaunt_ = idata.get<bool>("gaunt", true);
-  breit_ = idata.get<bool>("breit", gaunt_);
+  gaunt_ = idata->get<bool>("gaunt", true);
+  breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
-void RelFCI::common_init(const boost::property_tree::ptree& idata) {
+void RelFCI::common_init(const shared_ptr<const PTree> idata) {
   cout << "  *** Relativistic Full CI ***" << endl << endl;
 
   // reading input keywords
-  max_iter_ = idata.get<int>("maxiter", 100);
-  max_iter_ = idata.get<int>("maxiter_scf", max_iter_);
-  diis_start_ = idata.get<int>("diis_start", 1);
-  thresh_scf_ = idata.get<double>("thresh", 1.0e-8);
-  thresh_scf_ = idata.get<double>("thresh_scf", thresh_scf_);
-  ncharge_ = idata.get<int>("charge", 0);
+  max_iter_ = idata->get<int>("maxiter", 100);
+  max_iter_ = idata->get<int>("maxiter_scf", max_iter_);
+  diis_start_ = idata->get<int>("diis_start", 1);
+  thresh_scf_ = idata->get<double>("thresh", 1.0e-8);
+  thresh_scf_ = idata->get<double>("thresh_scf", thresh_scf_);
+  ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
   nneg_ = geom_->nbasis()*2;
 

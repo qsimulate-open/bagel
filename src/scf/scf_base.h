@@ -36,7 +36,7 @@ namespace bagel {
 
 class SCF_base {
   protected:
-    const boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<TildeX> tildex_;
     std::shared_ptr<const Overlap> overlap_;
@@ -61,7 +61,7 @@ class SCF_base {
     const std::string indent = "  ";
 
   public:
-    SCF_base(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry>,
+    SCF_base(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
     ~SCF_base() {};
 

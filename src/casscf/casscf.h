@@ -41,7 +41,7 @@ class CASSCF {
 
   protected:
     // input
-    boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
 
@@ -81,7 +81,7 @@ class CASSCF {
     std::vector<double> energy_;
 
   public:
-    CASSCF(const boost::property_tree::ptree& idat, const std::shared_ptr<const Geometry> geom,
+    CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,
            const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     virtual ~CASSCF();
 

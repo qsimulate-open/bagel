@@ -44,7 +44,7 @@
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(const boost::property_tree::ptree& a, shared_ptr<const Reference> b, const int ncore, const int nocc, const int nstate)
+DistFCI::DistFCI(const std::shared_ptr<const PTree> a, shared_ptr<const Reference> b, const int ncore, const int nocc, const int nstate)
  : FCI(a, b, ncore, nocc, nstate) {
 
 #ifndef HAVE_MPI_H

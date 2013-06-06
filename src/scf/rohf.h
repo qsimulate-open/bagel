@@ -37,8 +37,8 @@ class ROHF : public UHF {
     void symmetrize_cv(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
 
   public:
-    ROHF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata_, geom, re) { };
+    ROHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
+         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata, geom, re) { };
 
     void compute() override;
 };

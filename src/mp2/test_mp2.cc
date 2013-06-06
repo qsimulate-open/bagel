@@ -34,20 +34,23 @@ double mp2_energy() {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::string filename = "../../test/benzene_svp_mp2.in";
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(filename, idata);
-  auto keys = idata.get_child("bagel");
+  auto idata = std::make_shared<const PTree>(filename);
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(iter->second);
+      geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "mp2") {
-      auto mp2 = std::make_shared<MP2>(iter->second, geom);
+      auto mp2 = std::make_shared<MP2>(itree, geom);
       mp2->compute();
 
       std::cout.rdbuf(backup_stream);

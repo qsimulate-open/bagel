@@ -41,7 +41,7 @@ class Transp {
     int nstate_;
 
   public:
-    Transp(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
+    Transp(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
            const std::shared_ptr<const Reference> ref);
     void compute();
 

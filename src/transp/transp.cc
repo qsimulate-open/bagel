@@ -32,7 +32,7 @@
 using namespace std;
 using namespace bagel;
 
-Transp::Transp(const boost::property_tree::ptree& idata_, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
+Transp::Transp(const shared_ptr<const PTree> idata_, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
   : ref_(ref) {
 
   // for HF, Reference (src/wfn/referenceh.h) has all the information you need.
@@ -46,7 +46,7 @@ Transp::Transp(const boost::property_tree::ptree& idata_, const shared_ptr<const
   }
 
   // number of state (now default to 15)
-  nstate_ = idata_.get<int>("nstate", 15);
+  nstate_ = idata_->get<int>("nstate", 15);
 }
 
 
@@ -55,33 +55,33 @@ void Transp::compute() {
   // diagonalization within active space for the ground state
   // 3 orbitals from HOMO, 3 orbitals from LUMO. Unfortunately some pi orbitals are outside this window. One needs to pick by hand (or write a code to pick them).
   {
-    KnowlesHandy g(boost::property_tree::ptree(), ref_, 18, 6, 1);
+    KnowlesHandy g(shared_ptr<const PTree>(), ref_, 18, 6, 1);
     g.compute();
   }
   // do the same but with 25 states. If you go further it seems numerical noise kills the calculation.
   // Also if you add an input keyword "nstate = 10" within transp, you can change the numer of states
   {
     // all of them are singlet
-    boost::property_tree::ptree options;
-    options.put("thresh", "1.0e-15");
+    shared_ptr<PTree> options = make_shared<PTree>();
+    options->put("thresh", "1.0e-15");
     KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }
   {
     // all of them are triplet
-    boost::property_tree::ptree options;
-    options.put("nspin", "2");
-    options.put("thresh", "1.0e-15");
+    shared_ptr<PTree> options = make_shared<PTree>();
+    options->put("nspin", "2");
+    options->put("thresh", "1.0e-15");
     KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }
   // you can change the number of electrons
   {
     // ionized states. doublets
-    boost::property_tree::ptree options;
-    options.put("charge", "1");
-    options.put("nspin", "1");
-    options.put("thresh", "1.0e-15");
+    shared_ptr<PTree> options = make_shared<PTree>();
+    options->put("charge", "1");
+    options->put("nspin", "1");
+    options->put("thresh", "1.0e-15");
     KnowlesHandy g(options, ref_, 18, 6, nstate_);
     g.compute();
   }

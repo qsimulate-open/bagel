@@ -37,20 +37,23 @@ double ks_energy(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(ss.str(), idata);
-  auto keys = idata.get_child("bagel");
+  auto idata = std::make_shared<const PTree>(ss.str());
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(iter->second);
+      geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "ks") {
-      auto scf = std::make_shared<KS>(iter->second, geom);
+      auto scf = std::make_shared<KS>(itree, geom);
       scf->compute();
       std::shared_ptr<Reference> ref = scf->conv_to_ref();
 

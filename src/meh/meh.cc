@@ -35,15 +35,15 @@ using namespace bagel;
 * debug, using as much code as possible from other functions already written. This  *
 * will eventually be fixed.                                                         *
 ************************************************************************************/
-MultiExcitonHamiltonian::MultiExcitonHamiltonian(const boost::property_tree::ptree& input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
+MultiExcitonHamiltonian::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
   ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace),
   dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
   nact_(dimer->nact()), nbasis_(dimer->nbasis())
 {
-  nstates_ = input.get<int>("nstates", 10);
-  max_iter_ = input.get<int>("max_iter", 50);
-  dipoles_ = input.get<bool>("dipoles", false);
-  thresh_ = input.get<double>("thresh", 1.0e-12);
+  nstates_ = input->get<int>("nstates", 10);
+  max_iter_ = input->get<int>("max_iter", 50);
+  dipoles_ = input->get<bool>("dipoles", false);
+  thresh_ = input->get<double>("thresh", 1.0e-12);
 
   common_init();
 }

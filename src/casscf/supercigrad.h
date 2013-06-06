@@ -36,7 +36,7 @@ class SuperCIGrad : public SuperCI {
   protected:
 
   public:
-    SuperCIGrad(const boost::property_tree::ptree& idat, const std::shared_ptr<const Geometry> geom)
+    SuperCIGrad(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom)
       : SuperCI(idat, geom) { };
 
     void compute() {

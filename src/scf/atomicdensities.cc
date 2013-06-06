@@ -47,8 +47,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   string bfile = basis;
   transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + bfile + ".json";
-  boost::property_tree::ptree bdata;
-  boost::property_tree::json_parser::read_json(filename, bdata);
+  shared_ptr<const PTree> bdata = make_shared<const PTree>(filename);
 
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) continue;
@@ -60,9 +59,9 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, bdata);
 
-      boost::property_tree::ptree geomop;
-      geomop.put("basis", basis);
-      geomop.put("df_basis", dfbasis.empty() ? basis : dfbasis);
+      shared_ptr<PTree> geomop = make_shared<PTree>();
+      geomop->put("basis", basis);
+      geomop->put("df_basis", dfbasis.empty() ? basis : dfbasis);
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 

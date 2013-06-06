@@ -47,9 +47,9 @@ class UHF : public SCF_base {
     void print_S2(const std::string) const;
 
   public:
-    UHF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
+    UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
-      : SCF_base(idata_, geom, re) {
+      : SCF_base(idata, geom, re) {
 
       std::cout << indent << "*** Open-shell HF ***" << std::endl << std::endl;
 

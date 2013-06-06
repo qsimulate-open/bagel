@@ -52,7 +52,7 @@ class GradEval : public GradEval_base {
 
   public:
     // Constructor performs energy calculation
-    GradEval(const boost::property_tree::ptree& idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom) {
+    GradEval(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom) {
       if (geom->external()) throw std::logic_error("Gradients with external fields have not been implemented.");
       task_ = std::make_shared<T>(idata, geom);
       task_->compute();

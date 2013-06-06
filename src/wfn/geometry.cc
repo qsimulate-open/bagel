@@ -41,7 +41,6 @@
 #include <src/util/quatern.h>
 #include <src/rysint/libint.h>
 #include <src/util/lexical_cast.h>
-#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -51,40 +50,38 @@ const static AtomMap atommap_;
 
 // this has been used a couple of times in this file. TODO what is the optimal way? 
 namespace bagel {
-static const boost::property_tree::ptree read_basis(string name) {
+static const shared_ptr<const PTree> read_basis(string name) {
   transform(name.begin(), name.end(), name.begin(),(int (*)(int))tolower);
   const string filename = "basis/" + name + ".json";
-  boost::property_tree::ptree bdata;
-  boost::property_tree::json_parser::read_json(filename, bdata);
-  return bdata;
+  return make_shared<const PTree>(filename);
 }
 }
 
 
-Geometry::Geometry(const boost::property_tree::ptree& geominfo)
+Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   : spherical_(true), input_(""), lmax_(0) {
 
-  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
   // symmetry
-  symmetry_ = geominfo.get<string>("symmetry", "c1");
+  symmetry_ = geominfo->get<string>("symmetry", "c1");
   transform(symmetry_.begin(), symmetry_.end(), symmetry_.begin(), ::tolower);
 
   // cartesian or not.
-  const bool cart = geominfo.get<bool>("cartesian", false);
+  const bool cart = geominfo->get<bool>("cartesian", false);
   if (cart) {
     cout << "  Cartesian basis functions are used" << endl;
     spherical_ = false;
   }
 
   /* Set up atoms_ */
-  basisfile_ = geominfo.get<string>("basis", "");
+  basisfile_ = geominfo->get<string>("basis", "");
   transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
-    string molden_file = geominfo.get<string>("molden_file", "");
+    string molden_file = geominfo->get<string>("molden_file", "");
     if (molden_file == "") throw runtime_error("No molden_in file provided");
 
     MoldenIn mfs(molden_file, spherical_);
@@ -92,13 +89,16 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
     mfs >> atoms_;
     mfs.close();
   } else {
-    const bool angstrom = geominfo.get<bool>("angstrom", false);
+    const bool angstrom = geominfo->get<bool>("angstrom", false);
 
     // read basis file
-    const boost::property_tree::ptree bdata = read_basis(basisfile_);
+    const shared_ptr<const PTree> bdata = read_basis(basisfile_);
 
-    auto atoms = geominfo.get_child("geometry");
-    for (auto iter = atoms.begin(); iter != atoms.end(); ++iter) {
+    auto atoms = geominfo->get_child("geometry");
+    // TODO modify
+    auto tmp0 = atoms->data();
+    for (auto iter = tmp0.begin(); iter != tmp0.end(); ++iter) {
+
       string aname = iter->second.get<string>("atom");
       transform(aname.begin(), aname.end(), aname.begin(), ::tolower);
       auto xyz = iter->second.get_child("xyz");
@@ -124,11 +124,11 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   if(atoms_.empty()) throw runtime_error("No atoms specified at all");
 
   /* Set up aux_atoms_ */
-  auxfile_ = geominfo.get<string>("df_basis", "");
+  auxfile_ = geominfo->get<string>("df_basis", "");
   transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
     // read basis file
-    const boost::property_tree::ptree bdata = read_basis(auxfile_);
+    const shared_ptr<const PTree> bdata = read_basis(auxfile_);
 
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
@@ -150,9 +150,9 @@ Geometry::Geometry(const boost::property_tree::ptree& geominfo)
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_[0] = geominfo.get<double>("ex", 0.0);
-  external_[1] = geominfo.get<double>("ey", 0.0);
-  external_[2] = geominfo.get<double>("ez", 0.0);
+  external_[0] = geominfo->get<double>("ex", 0.0);
+  external_[1] = geominfo->get<double>("ey", 0.0);
+  external_[2] = geominfo->get<double>("ez", 0.0);
   if (external())
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
@@ -234,7 +234,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 
 // suitable for geometry updates in optimization
-Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const boost::property_tree::ptree& geominfo, const bool rotate, const bool nodf)
+Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
 
@@ -281,7 +281,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   }
 
   common_init1();
-  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   common_init2(false, overlap_thresh_, nodf);
 }
 
@@ -374,26 +374,26 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
                                                                           << setw(7) << external_[2] << ") a.u." << endl << endl;
 }
 
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::property_tree::ptree& geominfo)
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo)
   : spherical_(true), input_(""), atoms_(atoms), lmax_(0) {
 
-  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
   // basis
-  auxfile_ = geominfo.get<string>("df_basis", "");
+  auxfile_ = geominfo->get<string>("df_basis", "");
   if (!auxfile_.empty()) {
     // read basis file
-    const boost::property_tree::ptree bdata = read_basis(auxfile_);
+    const shared_ptr<const PTree> bdata = read_basis(auxfile_);
 
     if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)
       aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), bdata));
   }
   // symmetry
-  symmetry_ = geominfo.get<string>("symmetry", "c1");
+  symmetry_ = geominfo->get<string>("symmetry", "c1");
 
   common_init1();
 
@@ -402,9 +402,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::prop
   common_init2(true, overlap_thresh_);
 
   // static external field
-  external_[0] = geominfo.get<double>("ex", 0.0);
-  external_[1] = geominfo.get<double>("ey", 0.0);
-  external_[2] = geominfo.get<double>("ez", 0.0);
+  external_[0] = geominfo->get<double>("ex", 0.0);
+  external_[1] = geominfo->get<double>("ey", 0.0);
+  external_[2] = geominfo->get<double>("ez", 0.0);
   if (external())
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
@@ -412,22 +412,22 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const boost::prop
 }
 
 
-void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, const boost::property_tree::ptree& geominfo){
+void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo){
 
-  schwarz_thresh_ = geominfo.get<double>("schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = geominfo.get<double>("thresh_overlap", 1.0e-8);
+  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
   // cartesian or not.
-  const bool cart = geominfo.get<bool>("cartesian", false);
+  const bool cart = geominfo->get<bool>("cartesian", false);
   if (cart) {
     cout << "  Cartesian basis functions are used" << endl;
     spherical_ = false;
   }
 
   // basis
-  auxfile_ = geominfo.get<string>("df_basis", "");
+  auxfile_ = geominfo->get<string>("df_basis", "");
   // symmetry
-  symmetry_ = geominfo.get<string>("symmetry", "c1");
+  symmetry_ = geominfo->get<string>("symmetry", "c1");
 
 }
 
