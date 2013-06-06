@@ -27,6 +27,7 @@
 #include <src/util/atommap.h>
 #include <src/util/diis.h>
 #include <src/scf/rohf.h>
+#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
@@ -41,6 +42,13 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
 
   int offset = 0;
+
+  // read basis file
+  string bfile = basis;
+  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
+  const string filename = "basis/" + bfile + ".json";
+  shared_ptr<const PTree> bdata = make_shared<const PTree>(filename);
+
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) continue;
     if (atoms.find(i->name()) == atoms.end()) {
@@ -49,7 +57,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       std::streambuf* cout_orig = cout.rdbuf();
       cout.rdbuf(ss.rdbuf());
 
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis);
+      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, bdata);
 
       shared_ptr<PTree> geomop = make_shared<PTree>();
       geomop->put("basis", basis);

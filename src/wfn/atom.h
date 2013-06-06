@@ -28,6 +28,7 @@
 #define __SRC_SCF_ATOM_H
 
 #include <src/wfn/shell.h>
+#include <src/util/input.h>
 
 namespace bagel {
 
@@ -53,7 +54,7 @@ class Atom {
     void common_init();
 
   public:
-    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string jsonfile);
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::shared_ptr<const PTree> json);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
