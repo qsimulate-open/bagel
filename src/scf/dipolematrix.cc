@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/dipole.h>
+#include <src/scf/dipolematrix.h>
 #include <src/osint/dipolebatch.h>
 
 using namespace std;
