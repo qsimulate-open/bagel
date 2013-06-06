@@ -37,7 +37,7 @@ namespace bagel {
 class MP2 {
   friend class MP2AssemTask;
   protected:
-    const boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
     const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<Reference> ref_;
     std::shared_ptr<SCF> scf_;
@@ -47,7 +47,7 @@ class MP2 {
     std::mutex mut_;
 
   public:
-    MP2(const boost::property_tree::ptree&, const std::shared_ptr<const Geometry>,
+    MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
         const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
 
     virtual void compute();

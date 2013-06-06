@@ -38,7 +38,7 @@ class SCF : public SCF_base {
     const bool dodf_;
 
   public:
-    SCF(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
+    SCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
 
     void compute() override;

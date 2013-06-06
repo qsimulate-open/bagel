@@ -34,19 +34,22 @@ std::vector<double> run_opt(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(outputname, std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(inputname, idata);
-  auto keys = idata.get_child("bagel");
+  auto idata = std::make_shared<const PTree>(inputname);
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<const Geometry> geom;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<const Geometry>(iter->second);
+      geom = std::make_shared<const Geometry>(itree);
     } else {
-      auto opt = std::make_shared<Optimize>(iter->second, geom);
+      auto opt = std::make_shared<Optimize>(itree, geom);
       opt->compute();
 
       std::cout.rdbuf(backup_stream);

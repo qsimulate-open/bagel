@@ -70,8 +70,7 @@
 #include <config.h>
 
 // input parser
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <src/util/input.h>
 
 
 // TODO they are ugly
@@ -114,8 +113,7 @@ int main(int argc, char** argv) {
     }
     const string input = argv[1];
 
-    boost::property_tree::ptree idata;
-    boost::property_tree::json_parser::read_json(input, idata);
+    auto idata = make_shared<const PTree>(input); 
 
     bool scf_done = false;
     bool casscf_done = false;
@@ -130,16 +128,21 @@ int main(int argc, char** argv) {
     // timer for each method
     Timer timer(-1);
 
-    boost::property_tree::ptree keys = idata.get_child("bagel");
-    for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-      string method = iter->second.get<string>("title", "");
+    shared_ptr<const PTree> keys = idata->get_child("bagel");
+
+    // TODO modify
+    auto keys_tmp = keys->data();
+    for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+      auto itree = make_shared<const PTree>(iter->second); 
+
+      string method = itree->get<string>("title", "");
       transform(method.begin(), method.end(), method.begin(), ::tolower);
       if (method.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (method == "molecule") {
         if (ref != nullptr) geom->discard_df();
-        geom = make_shared<Geometry>(iter->second);
-        if (iter->second.get<bool>("restart", false)) {
+        geom = make_shared<Geometry>(itree);
+        if (itree->get<bool>("restart", false)) {
           ref = shared_ptr<const Reference>();
           relref = shared_ptr<const RelReference>();
         }
@@ -155,60 +158,58 @@ int main(int argc, char** argv) {
 
       if (method == "hf") {
 
-        scf = make_shared<SCF>(iter->second, geom, ref);
+        scf = make_shared<SCF>(itree, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "dhf") {
 
-        auto dirac = relref ? make_shared<Dirac>(iter->second, geom, relref)
-                            : make_shared<Dirac>(iter->second, geom, ref);
+        auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
 
       } else if (method == "relfci") {
         //currently under construction
-        auto dirac = relref ? make_shared<Dirac>(iter->second, geom, relref)
-                            : make_shared<Dirac>(iter->second, geom, ref);
+        auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
 
-        auto relfci = make_shared<RelFCI>(iter->second, geom, relref);
+        auto relfci = make_shared<RelFCI>(itree, geom, relref);
         relfci->compute();
 
       } else if (method == "ks") {
 
-        scf = make_shared<KS>(iter->second, geom, ref);
+        scf = make_shared<KS>(itree, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "uhf") {
 
-        scf = make_shared<UHF>(iter->second, geom, ref);
+        scf = make_shared<UHF>(itree, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "rohf") {
 
-        scf = make_shared<ROHF>(iter->second, geom, ref);
+        scf = make_shared<ROHF>(itree, geom, ref);
         scf->compute();
         ref = scf->conv_to_ref();
 
       } else if (method == "optimize") {
 
-        auto opt = make_shared<Optimize>(iter->second, geom);
+        auto opt = make_shared<Optimize>(itree, geom);
         opt->compute();
 
       } else if (method == "casscf") {
 
         shared_ptr<CASSCF> casscf;
-        string algorithm = iter->second.get<string>("algorithm", "");
+        string algorithm = itree->get<string>("algorithm", "");
         if (algorithm == "superci" || algorithm == "") {
-          casscf = make_shared<SuperCI>(iter->second, geom, ref);
+          casscf = make_shared<SuperCI>(itree, geom, ref);
         } else if (algorithm == "werner" || algorithm == "knowles") {
-          casscf = make_shared<WernerKnowles>(iter->second, geom);
+          casscf = make_shared<WernerKnowles>(itree, geom);
         } else if (algorithm == "bfgs") {
-          casscf = make_shared<CASBFGS>(iter->second, geom, ref);
+          casscf = make_shared<CASBFGS>(itree, geom, ref);
         } else {
           stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm;
           throw runtime_error(ss.str());
@@ -218,38 +219,38 @@ int main(int argc, char** argv) {
 
       } else if (method == "mp2") {
 
-        auto mp2 = make_shared<MP2>(iter->second, geom);
+        auto mp2 = make_shared<MP2>(itree, geom);
         mp2->compute();
 
       } else if (method == "transp") {
 
-        auto tran = make_shared<Transp>(iter->second, geom, ref);
+        auto tran = make_shared<Transp>(itree, geom, ref);
         tran->compute();
 
       } else if (method == "smith") {
 
         if (ref == nullptr) throw runtime_error("SMITH needs a reference");
-        auto smith = make_shared<Smith>(iter->second, ref);
+        auto smith = make_shared<Smith>(itree, ref);
         smith->compute();
 
       } else if (method == "fci") {
         if (ref == nullptr) throw runtime_error("FCI needs a reference");
         shared_ptr<FCI> fci;
 
-        string algorithm = iter->second.get<string>("algorithm", "");
+        string algorithm = itree->get<string>("algorithm", "");
         if (algorithm == "" || algorithm == "auto") {
           // TODO At the moment this doesn't take freezing of orbitals into account
           const int nele = ref->geom()->nele();
           const int norb = ref->geom()->nbasis();
-          if ( nele <= norb ) fci = make_shared<HarrisonZarrabian>(iter->second, ref);
-          else fci = make_shared<KnowlesHandy>(iter->second, ref);
+          if ( nele <= norb ) fci = make_shared<HarrisonZarrabian>(itree, ref);
+          else fci = make_shared<KnowlesHandy>(itree, ref);
         } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-          fci = make_shared<KnowlesHandy>(iter->second, ref);
+          fci = make_shared<KnowlesHandy>(itree, ref);
         } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-          fci = make_shared<HarrisonZarrabian>(iter->second, ref);
+          fci = make_shared<HarrisonZarrabian>(itree, ref);
 #ifdef HAVE_MPI_H
         } else if (algorithm == "parallel" || algorithm == "dist") {
-          fci = make_shared<DistFCI>(iter->second, ref);
+          fci = make_shared<DistFCI>(itree, ref);
 #endif
         } else {
           throw runtime_error("unknown FCI algorithm specified.");
@@ -258,15 +259,15 @@ int main(int argc, char** argv) {
         fci->compute();
 
       } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-        const boost::property_tree::ptree dimdata = iter->second;
+        shared_ptr<const PTree> dimdata = itree;
 
-        const string form = dimdata.get<string>("form", "displace");
+        const string form = dimdata->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
-          double scale = (dimdata.get<bool>("angstrom", false) ? ang2bohr__ : 1.0 ) ;
+          double scale = (dimdata->get<bool>("angstrom", false) ? ang2bohr__ : 1.0 ) ;
 
-          double dx = dimdata.get<double>("dx", 0.0) * scale;
-          double dy = dimdata.get<double>("dy", 0.0) * scale;
-          double dz = dimdata.get<double>("dz", 0.0) * scale;
+          double dx = dimdata->get<double>("dx", 0.0) * scale;
+          double dy = dimdata->get<double>("dy", 0.0) * scale;
+          double dz = dimdata->get<double>("dz", 0.0) * scale;
           array<double,3> disp = {{dx,dy,dz}};
 
           if (static_cast<bool>(ref)) {
@@ -315,7 +316,7 @@ throw logic_error("broken!");
 #endif
         }
 
-        dimer->scf(iter->second);
+        dimer->scf(itree);
 
         *geom = *dimer->sgeom();
         ref = dimer->sref();
@@ -335,15 +336,15 @@ throw logic_error("broken!");
 throw logic_error("broken!");
 #endif
       } else if (method == "meh") {
-          shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
+          shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
 
-          auto meh = make_shared<MultiExcitonHamiltonian>(iter->second, dimer, cispace);
+          auto meh = make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
           meh->compute();
           meh->print();
       } else if (method == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
-        string localizemethod = iter->second.get<string>("algorithm", "pm");
+        string localizemethod = itree->get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
 #if 0
@@ -360,17 +361,16 @@ throw logic_error("broken!");
           localization = make_shared<PMLocalization>(ref);
         else throw runtime_error("Unrecognized orbital localization method");
 
-        const int max_iter = iter->second.get<int>("max_iter", 50);
-        const double thresh = iter->second.get<double>("thresh", 1.0e-6);
+        const int max_iter = itree->get<int>("max_iter", 50);
+        const double thresh = itree->get<double>("thresh", 1.0e-6);
 
         shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize(max_iter,thresh));
         ref = make_shared<const Reference>(ref, new_coeff);
 
       } else if (method == "print") {
 
-        const boost::property_tree::ptree pdata = iter->second;
-        const bool orbitals = pdata.get<bool>("orbitals", false);
-        const string out_file = pdata.get<string>("file", "out.molden");
+        const bool orbitals = itree->get<bool>("orbitals", false);
+        const string out_file = itree->get<string>("file", "out.molden");
 
         MoldenOut mfs(out_file);
         mfs << geom;

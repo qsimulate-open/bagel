@@ -41,7 +41,7 @@ class Smith {
     std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
 
   public:
-    Smith(const boost::property_tree::ptree&, std::shared_ptr<const Reference>);
+    Smith(const std::shared_ptr<const PTree>, std::shared_ptr<const Reference>);
 
     void compute();
 

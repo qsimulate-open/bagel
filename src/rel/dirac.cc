@@ -34,37 +34,37 @@
 using namespace std;
 using namespace bagel;
 
-Dirac::Dirac(const boost::property_tree::ptree& idata, const shared_ptr<const Geometry> geom,
+Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const Reference> re) : ref_(re) {
-  gaunt_ = idata.get<bool>("gaunt", true);
-  breit_ = idata.get<bool>("breit", gaunt_);
+  gaunt_ = idata->get<bool>("gaunt", true);
+  breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
-Dirac::Dirac(const boost::property_tree::ptree& idata, const shared_ptr<const Geometry> geom,
+Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const RelReference> re) : relref_(re) {
-  gaunt_ = idata.get<bool>("gaunt", true);
-  breit_ = idata.get<bool>("breit", gaunt_);
+  gaunt_ = idata->get<bool>("gaunt", true);
+  breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
 
-void Dirac::common_init(const boost::property_tree::ptree& idata) {
+void Dirac::common_init(const shared_ptr<const PTree> idata) {
   cout << "  *** Dirac HF ***" << endl << endl;
 
   hcore_ = make_shared<const RelHcore>(geom_);
   overlap_ = make_shared<const RelOverlap>(geom_, false);
   s12_ = make_shared<const RelOverlap>(geom_, true);
   // reading input keywords
-  max_iter_ = idata.get<int>("maxiter", 100);
-  max_iter_ = idata.get<int>("maxiter_scf", max_iter_);
-  diis_start_ = idata.get<int>("diis_start", 1);
-  thresh_scf_ = idata.get<double>("thresh", 1.0e-8);
-  thresh_scf_ = idata.get<double>("thresh_scf", thresh_scf_);
-  ncharge_ = idata.get<int>("charge", 0);
+  max_iter_ = idata->get<int>("maxiter", 100);
+  max_iter_ = idata->get<int>("maxiter_scf", max_iter_);
+  diis_start_ = idata->get<int>("diis_start", 1);
+  thresh_scf_ = idata->get<double>("thresh", 1.0e-8);
+  thresh_scf_ = idata->get<double>("thresh_scf", thresh_scf_);
+  ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
   nneg_ = geom_->nbasis()*2;
 

@@ -36,34 +36,36 @@ double pm_localization(std::string filename) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << filename << ".in";
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(ss.str(), idata);
-  std::shared_ptr<const Reference> ref;
-  auto keys = idata.get_child("bagel");
-
+  auto idata = std::make_shared<const PTree>(ss.str());
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
+  std::shared_ptr<const Reference> ref;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(iter->second);
+      geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(iter->second, geom);
+      auto scf = std::make_shared<SCF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
 
     } else if (method == "localize") {
       if (ref == nullptr) throw std::runtime_error("Localize needs a reference");
 
-      std::string localizemethod = iter->second.get<std::string>("algorithm", "pm");
+      std::string localizemethod = itree->get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
 #if 0
         std::vector<int> sizes;
-        auto bound = iter->second.equal_range("region");
+        auto bound = itree->equal_range("region");
         for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
 
         localization = std::make_shared<RegionLocalization>(ref, sizes);
@@ -75,8 +77,8 @@ throw std::logic_error("region localization test broken");
         localization = std::make_shared<PMLocalization>(ref);
       else throw std::runtime_error("Unrecognized orbital localization method");
 
-      const int max_iter = iter->second.get<int>("max_iter", 50);
-      const double thresh = iter->second.get<double>("thresh", 1.0e-6);
+      const int max_iter = itree->get<int>("max_iter", 50);
+      const double thresh = itree->get<double>("thresh", 1.0e-6);
 
       localization->localize(max_iter, thresh);
 

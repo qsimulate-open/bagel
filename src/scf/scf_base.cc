@@ -37,7 +37,7 @@ using namespace std;
 using namespace bagel;
 
 
-SCF_base::SCF_base(const boost::property_tree::ptree& idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
  : idata_(idat), geom_(geom) {
 
   Timer scfb;
@@ -48,18 +48,18 @@ SCF_base::SCF_base(const boost::property_tree::ptree& idat, const shared_ptr<con
 
   eig_= unique_ptr<double[]>(new double[geom_->nbasis()]);
 
-  max_iter_ = idata_.get<int>("maxiter", 100);
-  max_iter_ = idata_.get<int>("maxiter_scf", max_iter_);
-  diis_start_ = idata_.get<int>("diis_start", 1);
-  diis_size_ = idata_.get<int>("diis_size", 5);
-  thresh_overlap_ = idata_.get<double>("thresh_overlap", 1.0e-8);
-  thresh_scf_ = idata_.get<double>("thresh", 1.0e-8);
-  thresh_scf_ = idata_.get<double>("thresh_scf", thresh_scf_);
-  string dd = idata_.get<string>("diis", "gradient");
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
+  diis_start_ = idata_->get<int>("diis_start", 1);
+  diis_size_ = idata_->get<int>("diis_size", 5);
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
+  thresh_scf_ = idata_->get<double>("thresh", 1.0e-8);
+  thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
+  string dd = idata_->get<string>("diis", "gradient");
 
-  const int ncharge = idata_.get<int>("charge", 0);
-  const int nact    = idata_.get<int>("nact", (geom_->nele()-ncharge)%2);
-  nocc_ = idata_.get<int>("nocc", (geom_->nele()-ncharge+nact)/2);
+  const int ncharge = idata_->get<int>("charge", 0);
+  const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
+  nocc_ = idata_->get<int>("nocc", (geom_->nele()-ncharge+nact)/2);
   noccB_ = nocc_ - nact;
 
   if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");

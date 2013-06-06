@@ -31,15 +31,15 @@
 using namespace bagel;
 using namespace std;
 
-SCF::SCF(const boost::property_tree::ptree& idata_, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : SCF_base(idata_, geom, re, !idata_.get<bool>("df",true)), dodf_(idata_.get<bool>("df",true)) {
+SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
+ : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)) {
 
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
 
   // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
   // In the future, this should probably be moved to SCF_base and designed to work properly there
-  double lshift = idata_.get<double>("levelshift", 0.0);
+  double lshift = idata->get<double>("levelshift", 0.0);
   if (lshift != 0.0) {
     cout << "  level shift : " << setprecision(3) << lshift << endl << endl;
     levelshift_ = make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift);

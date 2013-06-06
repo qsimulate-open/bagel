@@ -33,8 +33,8 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Smith::Smith(const boost::property_tree::ptree& idata, shared_ptr<const Reference> ref) {
-  string method = idata.get<string>("method", "mp2");
+Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Reference> ref) {
+  string method = idata->get<string>("method", "mp2");
   if (method == "mp2") {
     algo_ = make_shared<MP2::MP2<Storage_Incore>>(ref);
   } else if (method == "caspt2") {

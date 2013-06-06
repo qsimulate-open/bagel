@@ -391,8 +391,8 @@ void Dimer::embed_refs() {
   }
 }
 
-void Dimer::localize(const boost::property_tree::ptree& idata) {
-  string localizemethod = idata.get<string>("localization", "pm");
+void Dimer::localize(const std::shared_ptr<const PTree> idata) {
+  string localizemethod = idata->get<string>("localization", "pm");
 
   shared_ptr<OrbitalLocalization> localization;
   if (localizemethod == "region") {
@@ -461,15 +461,27 @@ void Dimer::localize(const boost::property_tree::ptree& idata) {
   set_coeff(out);
 }
 
-void Dimer::set_active(const boost::property_tree::ptree& idata) {
+void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   // TODO needs clean up
-  auto Asp = idata.get_child_optional("active_A");
-  auto Bsp = idata.get_child_optional("active_B");
-  auto isp = idata.get_child_optional("dimer_active");
+  auto Asp = idata->get_child_optional("active_A");
+  auto Bsp = idata->get_child_optional("active_B");
+  auto isp = idata->get_child_optional("dimer_active");
   set<int> Ai, Bi, it;
-  if (Asp) for (auto& s : *Asp) { Ai.insert(lexical_cast<int>(s.second.data())-1); } // TODO I think this -1 is very confusing!
-  if (Bsp) for (auto& s : *Bsp) { Bi.insert(lexical_cast<int>(s.second.data())-1); }
-  if (isp) for (auto& s : *isp) { it.insert(lexical_cast<int>(s.second.data())-1); }
+  if (Asp) {
+    // TODO modify
+    auto tmp0 = Asp->data();
+    for (auto& s : tmp0) { Ai.insert(lexical_cast<int>(s.second.data())-1); } // TODO I think this -1 is very confusing!
+  }
+  if (Bsp) {
+    // TODO modify
+    auto tmp0 = Bsp->data();
+    for (auto& s : tmp0) { Bi.insert(lexical_cast<int>(s.second.data())-1); }
+  }
+  if (isp) {
+    // TODO modify
+    auto tmp0 = isp->data();
+    for (auto& s : tmp0) { it.insert(lexical_cast<int>(s.second.data())-1); }
+  }
 
   set<int> Alist, Blist;
 
@@ -533,7 +545,7 @@ void Dimer::set_active(const boost::property_tree::ptree& idata) {
 }
 
 // RHF and then localize
-void Dimer::scf(const boost::property_tree::ptree& idata) {
+void Dimer::scf(const std::shared_ptr<const PTree> idata) {
   Timer dimertime;
   // SCF
   auto rhf = make_shared<SCF>(idata, sgeom_, sref_);
@@ -549,7 +561,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
   else set_active(idata);
 
   // Localize
-  const string localmethod = idata.get<string>("localization", "pm");
+  const string localmethod = idata->get<string>("localization", "pm");
   dimertime.tick();
   if (localmethod != "none") {
     localize(idata);
@@ -577,7 +589,7 @@ void Dimer::scf(const boost::property_tree::ptree& idata) {
 }
 
 
-shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptree& idata) {
+shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
@@ -587,21 +599,26 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const boost::property_tree::ptre
   vector<vector<int>> spaces_A;
   vector<vector<int>> spaces_B;
 
-  auto space = idata.get_child_optional("space");
+  auto space = idata->get_child_optional("space");
   if (space) {
     // TODO make a function
-    for (auto& s : *space) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    // TODO modify
+    auto tmp0 = space->data();
+    for (auto& s : tmp0) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
     spaces_B = spaces_A;
   }
   else {
-    auto spacea = idata.get_child_optional("space_a");
-    auto spaceb = idata.get_child_optional("space_b");
+    auto spacea = idata->get_child_optional("space_a");
+    auto spaceb = idata->get_child_optional("space_b");
     if (!(spacea && spaceb)) {
       throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
     }
     // TODO make a function
-    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
-    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    // TODO modify
+    auto tmp0 = spacea->data();
+    auto tmp1 = spaceb->data();
+    for (auto& s : tmp0) { spaces_A.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
+    for (auto& s : tmp1) { spaces_B.push_back(vector<int>{s.second.get<int>("charge"), s.second.get<int>("spin"), s.second.get<int>("nstate")}); }
   }
 
   Timer castime;

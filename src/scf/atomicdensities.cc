@@ -51,9 +51,9 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis);
 
-      boost::property_tree::ptree geomop;
-      geomop.put("basis", basis);
-      geomop.put("df_basis", dfbasis.empty() ? basis : dfbasis);
+      shared_ptr<PTree> geomop = make_shared<PTree>();
+      geomop->put("basis", basis);
+      geomop->put("df_basis", dfbasis.empty() ? basis : dfbasis);
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 

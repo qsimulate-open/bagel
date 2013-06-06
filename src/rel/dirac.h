@@ -60,13 +60,13 @@ class Dirac {
 
     std::shared_ptr<const ZMatrix> coeff_;
 
-    void common_init(const boost::property_tree::ptree&);
+    void common_init(const std::shared_ptr<const PTree>);
     std::shared_ptr<const DistZMatrix> initial_guess(const std::shared_ptr<const DistZMatrix> s12, const std::shared_ptr<const DistZMatrix> hcore) const;
 
   public:
-    Dirac(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
+    Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
-    Dirac(const boost::property_tree::ptree& idata_, const std::shared_ptr<const Geometry> geom,
+    Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const RelReference> re);
 
     ~Dirac() { geom_->discard_relativistic(); }

@@ -30,78 +30,78 @@
 using namespace std;
 using namespace bagel;
 
-Optimize::Optimize(const boost::property_tree::ptree& idata, std::shared_ptr<const Geometry> g) : idata_(idata), geom_(g) {
-  maxiter_ = idata.get<int>("maxiter", 100);
+Optimize::Optimize(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g) : idata_(idata), geom_(g) {
+  maxiter_ = idata->get<int>("maxiter", 100);
 
 }
 
 
 void Optimize::compute() {
-  const boost::property_tree::ptree methodblock = idata_.get_child("method");
-  string method = methodblock.get<string>("title", "");
-  if (method.empty()) throw std::runtime_error("title is missing in one of the input blocks (opt)");
+  const shared_ptr<const PTree> methodblock = idata_->get_child("method");
+  string method = methodblock->get<string>("title", "");
+  if (method.empty()) throw runtime_error("title is missing in one of the input blocks (opt)");
 
   if (method == "uhf") {
 
-    auto opt = std::make_shared<Opt<UHF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<UHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "rohf") {
 
-    auto opt = std::make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "hf") {
 
-    auto opt = std::make_shared<Opt<SCF>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<SCF>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "ks") {
 
-    auto opt = std::make_shared<Opt<KS>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "mp2") {
 
-    auto opt = std::make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);
+    auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();
 
   } else if (method == "casscf") {
-    std::string algorithm = methodblock.get<std::string>("algorithm", "");
+    string algorithm = methodblock->get<string>("algorithm", "");
     // in case of SS-CASSCF
-    if (methodblock.get<int>("nstate", 1) == 1) {
+    if (methodblock->get<int>("nstate", 1) == 1) {
       if (algorithm == "superci" || algorithm == "") {
-        auto opt = std::make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
+        auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();
       } else if (algorithm == "werner" || algorithm == "knowles") {
-        auto opt = std::make_shared<Opt<WernerKnowles>>(idata_, methodblock, geom_);
+        auto opt = make_shared<Opt<WernerKnowles>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();
       } else {
-        throw std::runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("unknown CASSCF algorithm specified.");
       }
     // in case of SA-CASSCF
     } else {
       if (algorithm == "superci" || algorithm == "") {
-        auto opt = std::make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
+        auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
         for (int i = 0; i != maxiter_; ++i)
           if (opt->next()) break;
         geom_ = opt->geometry();
       } else {
-        throw std::runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("unknown CASSCF algorithm specified.");
       }
     }
   }

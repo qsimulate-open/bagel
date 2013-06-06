@@ -38,9 +38,9 @@ template<typename T>
 class Opt {
   protected:
     // entire input
-    const boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
     // options for T
-    boost::property_tree::ptree input_;
+    std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
     std::shared_ptr<BFGS<GradFile>> bfgs_;
 
@@ -66,12 +66,12 @@ class Opt {
     bool internal_;
 
   public:
-    Opt(const boost::property_tree::ptree& idat, const boost::property_tree::ptree& inp, const std::shared_ptr<const Geometry> geom)
+    Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
       : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
       bfgs_ = std::make_shared<BFGS<GradFile>>(std::make_shared<const GradFile>(geom->natom(), 1.0));
       bmat_ = current_->compute_internal_coordinate();
 
-      internal_ = inp.get<bool>("internal", true);
+      internal_ = inp->get<bool>("internal", true);
     }
 
     bool next() {

@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include<src/wfn/geometry.h>
+#include <src/wfn/geometry.h>
 
 #include<boost/python.hpp>
 using namespace boost::python;
@@ -31,7 +31,7 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(geometry)
 {
   using namespace bagel; {
-  class_<Geometry>("Geometry", init<const boost::property_tree::ptree&>())
+  class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
     // .def(init<const boost::property_tree::ptree&()) alternate constructor?
     // .def(" ", &Geometry:: ) template function binding
   ;}

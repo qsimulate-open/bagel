@@ -27,20 +27,19 @@
 #define __SRC_OPT_OPTIMIZE_H
 
 #include <src/wfn/geometry.h>
-#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 
 class Optimize {
   protected:
-    const boost::property_tree::ptree idata_;
+    const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
 
     int maxiter_;
     double thresh_;
 
   public:
-    Optimize(const boost::property_tree::ptree&, std::shared_ptr<const Geometry>);
+    Optimize(const std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>);
 
     void compute();
     std::shared_ptr<const Geometry> geometry() const { return geom_; }

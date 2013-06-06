@@ -34,52 +34,53 @@ double meh_energy(std::string inp) {
 
   // a bit ugly to hardwire an input file, but anyway...
   std::stringstream ss; ss << "../../test/" << inp << ".in";
-  boost::property_tree::ptree idata;
-  boost::property_tree::json_parser::read_json(ss.str(), idata);
-  auto keys = idata.get_child("bagel");
+  auto idata = std::make_shared<const PTree>(ss.str());
+  auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
   std::shared_ptr<Reference> ref;
   std::shared_ptr<Dimer> dimer;
 
-  for (auto iter = keys.begin(); iter != keys.end(); ++iter) {
-    std::string method = iter->second.get<std::string>("title", "");
+  // TODO modify
+  auto keys_tmp = keys->data();
+  for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
+    auto itree = std::make_shared<const PTree>(iter->second); 
+
+    std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(iter->second);
+      geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(iter->second, geom);
+      auto scf = std::make_shared<SCF>(itree, geom);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-      boost::property_tree::ptree dimdata = iter->second;
 
-      std::string form = dimdata.get<std::string>("form", "displace");
+      std::string form = itree->get<std::string>("form", "displace");
       if (form == "d" || form == "disp" || form == "displace") {
-        double scale = (dimdata.get<bool>("angstrom",false) ? ang2bohr__ : 1.0 ) ;
+        double scale = (itree->get<bool>("angstrom",false) ? ang2bohr__ : 1.0 ) ;
 
-        double dx = dimdata.get<double>("dx",0.0) * scale;
-        double dy = dimdata.get<double>("dy",0.0) * scale;
-        double dz = dimdata.get<double>("dz",0.0) * scale;
+        double dx = itree->get<double>("dx",0.0) * scale;
+        double dy = itree->get<double>("dy",0.0) * scale;
+        double dz = itree->get<double>("dz",0.0) * scale;
         std::array<double,3> disp = {{dx,dy,dz}};
 
         if (static_cast<bool>(ref)) {
           dimer = std::make_shared<Dimer>(ref,disp);
-        }
-        else {
+        } else {
           throw std::runtime_error("dimerize needs a reference calculation (for now)");
         }
       }
-      dimer->scf(iter->second);
+      dimer->scf(itree);
 
       *geom = *dimer->sgeom();
       ref = dimer->sref();
     } else if (method == "meh") {
-      std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(iter->second);
+      std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
 
-      auto meh = std::make_shared<MultiExcitonHamiltonian>(iter->second, dimer, cispace);
+      auto meh = std::make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
       meh->compute();
 
       std::cout.rdbuf(backup_stream);

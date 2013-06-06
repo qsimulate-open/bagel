@@ -37,7 +37,7 @@ class FCI {
 
   protected:
     // input
-    boost::property_tree::ptree idata_;
+    std::shared_ptr<const PTree> idata_;
     // reference
     std::shared_ptr<const Reference> ref_;
     // geometry file
@@ -105,7 +105,7 @@ class FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    FCI(const boost::property_tree::ptree&, std::shared_ptr<const Reference>,
+    FCI(const std::shared_ptr<const PTree>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     virtual void compute();

@@ -147,7 +147,7 @@ class MultiExcitonHamiltonian {
       double thresh_;
 
    public:
-      MultiExcitonHamiltonian(const boost::property_tree::ptree& input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
+      MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
 
       void compute();
 
