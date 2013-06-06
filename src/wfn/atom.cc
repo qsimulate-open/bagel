@@ -88,10 +88,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const shar
   // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
 
-  // TODO modify
-  auto tmp0 = basis->data();
-  for (auto& ib : tmp0) {
-    const shared_ptr<const PTree> ibas = make_shared<const PTree>(ib.second);
+  for (auto& ibas : *basis) {
 
     const string ang = ibas->get<string>("angular");
     const shared_ptr<const PTree> prim = ibas->get_child("prim");
