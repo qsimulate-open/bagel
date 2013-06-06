@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: input.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: wfn_py.cc
+// Copyright (C) 2013 Michael Caldwell
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Michael Caldwell <MichaelCaldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,23 +23,26 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/wfn/geometry.h>
 #include <src/util/input.h>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/python.hpp>
 
-using namespace bagel;
-using namespace std;
+using namespace boost::python;
 
-PTree::PTree(const std::string& input) {
-  boost::property_tree::json_parser::read_json(input, data_);
+BOOST_PYTHON_MODULE(geometry)
+{
+  using namespace bagel;
+  {
+    class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
+    // .def(init<const boost::property_tree::ptree&()) alternate constructor?
+    // .def(" ", &Geometry:: ) template function binding
+  ;}
+
 }
 
-
-//Dereference operator - return the current node's data.
-const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
-
-PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
-PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }   
-
-void PTree::print() const {
-  write_json(cout, data_);
+BOOST_PYTHON_MODULE(ptree){
+  using namespace bagel;
+  {
+  class_<bagel::PTree>("PTree", init<const std::string&>())
+  ;}
 }

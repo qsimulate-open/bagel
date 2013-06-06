@@ -47,7 +47,6 @@ using namespace bagel;
 
 const static AtomMap atommap_;
 
-
 // this has been used a couple of times in this file. TODO what is the optimal way? 
 namespace bagel {
 static const shared_ptr<const PTree> read_basis(string name) {

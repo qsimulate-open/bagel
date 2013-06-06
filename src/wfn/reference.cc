@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <boost/regex.hpp>
-
 #include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
