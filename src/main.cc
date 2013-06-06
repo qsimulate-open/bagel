@@ -130,10 +130,7 @@ int main(int argc, char** argv) {
 
     shared_ptr<const PTree> keys = idata->get_child("bagel");
 
-    // TODO modify
-    auto keys_tmp = keys->data();
-    for (auto iter = keys_tmp.begin(); iter != keys_tmp.end(); ++iter) {
-      auto itree = make_shared<const PTree>(iter->second); 
+    for (auto& itree : *keys) {
 
       string method = itree->get<string>("title", "");
       transform(method.begin(), method.end(), method.begin(), ::tolower);
