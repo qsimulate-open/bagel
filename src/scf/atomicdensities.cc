@@ -27,7 +27,6 @@
 #include <src/util/atommap.h>
 #include <src/util/diis.h>
 #include <src/scf/rohf.h>
-#include <boost/property_tree/json_parser.hpp>
 
 using namespace std;
 using namespace bagel;
