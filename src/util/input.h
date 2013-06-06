@@ -34,7 +34,6 @@ namespace bagel {
 // rename as you like
 class PTree;
 class PTreeIterator {
-    friend class PTree;
     private:
         boost::property_tree::ptree::const_iterator current;
     public:
