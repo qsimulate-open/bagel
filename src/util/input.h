@@ -26,7 +26,6 @@
 #ifndef __SRC_UTIL_INPUT_H
 #define __SRC_UTIL_INPUT_H
 
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
 
@@ -44,9 +43,7 @@ namespace bagel {
 
       PTree(const PTree& o) : data_(o.data_) { }
 
-      PTree(const std::string& input) {
-        boost::property_tree::json_parser::read_json(input, data_);
-      }
+      PTree(const std::string& input);
 
       std::shared_ptr<PTree> get_child(const std::string& key) const {
         return std::make_shared<PTree>(data_.get_child(key));
