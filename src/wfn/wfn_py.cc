@@ -24,18 +24,25 @@
 //
 
 #include <src/wfn/geometry.h>
+#include <src/util/input.h>
+#include <boost/python.hpp>
 
-#include<boost/python.hpp>
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(geometry)
 {
-  using namespace bagel; {
-  class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
+  using namespace bagel;
+  {
+    class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
     // .def(init<const boost::property_tree::ptree&()) alternate constructor?
     // .def(" ", &Geometry:: ) template function binding
   ;}
 
 }
-// implement a converter between json to boost::property_tree::ptree
-//void convert() { }
+
+BOOST_PYTHON_MODULE(ptree){
+  using namespace bagel;
+  {
+  class_<bagel::PTree>("PTree", init<const std::string&>())
+  ;}
+}
