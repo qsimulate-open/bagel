@@ -4,6 +4,7 @@
 AC_PREREQ(2.57)
 AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu])
 AM_INIT_AUTOMAKE
+AM_PATH_PYTHON
 AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADERS([config.h])
 
@@ -82,6 +83,11 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
         ])
     ])
 ])
+AC_CHECK_LIB(python, main, , [
+    AC_CHECK_LIB(python${PYTHON_VERSION}, main, , [
+        AC_MSG_ERROR("Linking against python library failed.")
+    ])
+])
 AC_CHECK_LIB(boost_python-gcc-mt, main, , [
     AC_CHECK_LIB(boost_python-mt, main, , [
         AC_CHECK_LIB(boost_python, main, , [
@@ -89,7 +95,6 @@ AC_CHECK_LIB(boost_python-gcc-mt, main, , [
         ])
     ])
 ])
-AC_CHECK_LIB(python, main, , [AC_MSG_ERROR("Linking against python library failed.")])
 AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
 
 if test x${libxc} = xyes; then
