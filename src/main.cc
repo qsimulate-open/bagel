@@ -51,7 +51,6 @@
 #include <src/casscf/casbfgs.h>
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
-#include <src/parallel/resources.h>
 #include <src/opt/optimize.h>
 #include <src/util/constants.h>
 #include <src/util/localization.h>
@@ -62,23 +61,12 @@
 #include <src/transp/transp.h>
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
-#ifdef _OPENMP
-  #include <omp.h>
-#endif
-#include <src/parallel/mpi_interface.h>
 
 #include <config.h>
 
 // input parser
 #include <src/util/input.h>
 
-
-// TODO they are ugly
-// TODO to be determined by the number of threads passed by the arguments --num_threads=8 ?
-namespace bagel {
-  Resources* resources__;
-  MPI_Interface* mpi__;
-}
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -88,21 +76,8 @@ using namespace std;
 using namespace bagel;
 
 int main(int argc, char** argv) {
-  // setup MPI interface. It does nothing for serial runs
-  mpi__ = new MPI_Interface(argc, argv);
-  {
-    string snum_threads = getenv_multiple("BAGEL_NUM_THREADS", "OMP_NUM_THREADS");
-    const int num_threads = snum_threads.empty() ? thread::hardware_concurrency() : lexical_cast<int>(snum_threads);
-    if (num_threads < 1)
-      throw runtime_error("Set BAGEL_NUM_THREADS for the number of threads used");
-    if (mpi__->rank() == 0)
-      cout << "  * using " << num_threads << " threads per process" << endl;
-#ifdef _OPENMP
-    omp_set_num_threads(num_threads);
-#endif
-    resources__ = new Resources(num_threads);
-  }
 
+  static_variables(argc, argv);
   print_header();
 
   try {
@@ -423,9 +398,6 @@ throw logic_error("broken!");
   } catch (...) {
     throw;
   }
-  delete resources__;
-  delete mpi__;
-
 
   return 0;
 }

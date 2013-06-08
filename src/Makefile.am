@@ -2,7 +2,7 @@ INTLIBS = opt/libbagel_opt.la ks/libbagel_ks.la transp/libbagel_transp.la rel/li
 
 SUBDIRS = parallel io df opt grad mp2 wfn rysint osint scf pscf pmp2 util casscf smith prop dimer fci meh rel ks opt transp
 bin_PROGRAMS = BAGEL
-BAGEL_SOURCES = main.cc
+BAGEL_SOURCES = main.cc static.cc
 BAGEL_LDADD = $(INTLIBS) $(FLIBS)
 AM_CXXFLAGS=-I$(top_srcdir)
 
