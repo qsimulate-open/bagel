@@ -22,27 +22,19 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-
-#include <src/wfn/geometry.h>
-#include <src/util/input.h>
 #include <boost/python.hpp>
+#include <src/util/input.h>
+#include <src/wfn/geometry.h>
 
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(geometry)
-{
+BOOST_PYTHON_MODULE(bagel){
   using namespace bagel;
-  {
-    class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
-    // .def(init<const boost::property_tree::ptree&()) alternate constructor?
-    // .def(" ", &Geometry:: ) template function binding
-  ;}
-
-}
-
-BOOST_PYTHON_MODULE(ptree){
-  using namespace bagel;
-  {
-  class_<bagel::PTree>("PTree", init<const std::string&>())
-  ;}
+  class_<PTree>("PTree", init<const std::string>())
+    .def("print", &PTree::print)
+    .def("size", &PTree::size)
+    .def("get_child", &PTree::get_child)
+    .def("data", &PTree::data);
+  class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
+    .def("natom ", &Geometry::natom);
 }
