@@ -25,6 +25,7 @@
 
 #include <src/util/input.h>
 #include <boost/property_tree/json_parser.hpp>
+//#include <iostream>
 
 using namespace bagel;
 using namespace std;
@@ -39,6 +40,12 @@ const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shar
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
 PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }   
+
+
+size_t PTree::size() const {
+  return data_.size();
+}
+
 
 void PTree::print() const {
   write_json(cout, data_);

@@ -31,7 +31,7 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(bagel){
   using namespace bagel;
   class_<PTree>("PTree", init<const std::string>())
-    .def("print", &PTree::print)
+    .def("pr1nt", &PTree::print)
     .def("size", &PTree::size)
     .def("get_child", &PTree::get_child)
     .def("data", &PTree::data);

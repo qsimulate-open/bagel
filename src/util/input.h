@@ -86,7 +86,7 @@ class PTree {
 
     std::string data() const { return data_.data(); }
 
-    size_t size() const { return data_.size(); }
+    size_t size() const;
 
 
     PTreeIterator begin() const;
