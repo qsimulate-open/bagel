@@ -24,7 +24,6 @@
 //
 #include <boost/python.hpp>
 #include <src/util/input.h>
-#include <src/wfn/geometry.h>
 
 using namespace boost::python;
 
@@ -35,6 +34,6 @@ BOOST_PYTHON_MODULE(bagel){
     .def("size", &PTree::size)
     .def("get_child", &PTree::get_child)
     .def("data", &PTree::data);
-  class_<Geometry>("Geometry", init<const std::shared_ptr<const PTree>>())
-    .def("natom ", &Geometry::natom);
+
+    register_ptr_to_python< std::shared_ptr< PTree > >();
 }
