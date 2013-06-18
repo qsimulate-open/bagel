@@ -360,6 +360,7 @@ int main(int argc, char** argv) {
 //\n\
 \n\
 #include <algorithm>" << endl;
+#ifndef SPIN2
 #ifdef BREIT
 ofs << "#include <src/rysint/breitrootlist.h>\n\
 \n\
@@ -369,6 +370,14 @@ using namespace bagel;\n\
 void BreitRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #else
 throw logic_error("not yet");
+#endif
+#else
+ofs << "#include <src/rysint/spin2rootlist.h>\n\
+\n\
+using namespace std;\n\
+using namespace bagel;\n\
+\n\
+void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #endif
    ofs << "\
   constexpr double ax["<<nroot<<"] = {";
