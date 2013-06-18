@@ -331,50 +331,72 @@ int main(int argc, char** argv) {
 #else
     const string func = "spin2root";
 #endif
-    string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".f";
+    string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".cc";
     ofs.open(filename.c_str());
     ofs << "\
-!/\n\
-!/ Author : Toru Shiozaki\n\
-!/ Machine generated code\n\
-!/" << endl;
-    ofs << "\
-      subroutine " << func << nroot << "(ta, rr, ww, n)\n\
-      implicit none\n\
-      integer i, j, n, offset, it, boxof\n\
-      double precision t, t2, d, e, f, g\n\
-      double precision ta(*), rr(*), ww(*)\n\
-      double precision ax("<<nroot<<")\n\
-      double precision aw("<<nroot<<")\n\
-      data (ax(i), i = 1, "<<nroot<<")/\n";
+//\n\
+// BAGEL - Parallel electron correlation program.\n\
+// Filename: " + filename + "\n\
+// Copyright (C) 2013 Toru Shiozaki\n\
+//\n\
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
+// Maintainer: Shiozaki group\n\
+//\n\
+// This file is part of the BAGEL package.\n\
+//\n\
+// The BAGEL package is free software; you can redistribute it and/or modify\n\
+// it under the terms of the GNU Library General Public License as published by\n\
+// the Free Software Foundation; either version 2, or (at your option)\n\
+// any later version.\n\
+//\n\
+// The BAGEL package is distributed in the hope that it will be useful,\n\
+// but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
+// GNU Library General Public License for more details.\n\
+//\n\
+// You should have received a copy of the GNU Library General Public License\n\
+// along with the BAGEL package; see COPYING.  If not, write to\n\
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
+//\n\
+\n\
+#include <algorithm>" << endl;
+#ifdef BREIT
+ofs << "#include <src/rysint/breitrootlist.h>\n\
+\n\
+using namespace std;\n\
+using namespace bagel;\n\
+\n\
+void BreitRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
+#else
+throw logic_error("not yet");
+#endif
+   ofs << "\
+  constexpr double ax["<<nroot<<"] = {";
     for (int j=0; j!= nroot; ++j) {
-      ofs << "\
-     &   " << scientific << setprecision(15) << setw(20) << aroot[j];
+      ofs << scientific << setprecision(15) << setw(20) << aroot[j];
       if (j != nroot-1) ofs << ",";
-      ofs << endl;
+      if (j%7 == 4)    ofs << endl << "    ";
     }
+    ofs << "};" << endl; 
     ofs << "\
-     &/\n\
-      data (aw(i), i = 1, "<<nroot<<")/\n";
+  constexpr double aw["<<nroot<<"] = {";
     for (int j=0; j!= nroot; ++j) {
-      ofs << "\
-     &   " << scientific << setprecision(15) << setw(20) << aweight[j];
+      ofs << scientific << setprecision(15) << setw(20) << aweight[j];
       if (j != nroot-1) ofs << ",";
-      ofs << endl;
+      if (j%7 == 4) ofs << endl << "    ";
     }
-    ofs << "\
-     &/\n\
-      double precision x("<<nroot*nbox*ndeg<<")\n\
-      double precision w("<<nroot*nbox*ndeg<<")\n";
+    ofs << "};" << endl;
 
 ////////////////////////////////////////
 // now creates data
 ////////////////////////////////////////
     stringstream listx, listw;
-    string indent("     & ");
+    string indent(" ");
     int nblock = 0;
     int index = 0;
     double tiny = 1.0e-100;
+    int xcnt = 0;
+    int wcnt = 0;
     for (int j=0; j!= jend; ++j) {
       vector<vector<double>> c_all = get_C(j*mstride,mstride,nroot);
 
@@ -383,17 +405,17 @@ int main(int argc, char** argv) {
         const vector<double> x = c_all[ii];
         const vector<double> w = c_all[ii + 1];
 
-        for (vector<double>::const_iterator iter = x.begin(); iter != x.end(); ++iter) {
+        for (auto iter = x.begin(); iter != x.end(); ++iter) {
           listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
           if (iter + 1 != x.end() || j+1 != jend || i+1 != nroot) listx << ",";
-          listx << "\n";
+          if (xcnt++ % 7 == 4) listx << "\n";
         }
-        for (vector<double>::const_iterator iter = w.begin(); iter != w.end(); ++iter) {
+        for (auto iter = w.begin(); iter != w.end(); ++iter) {
           listw << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
           if (iter + 1 != w.end() || j+1 != jend || i+1 != nroot) listw << ",";
-          listw << "\n";
+          if (wcnt++ % 7 == 4) listw << "\n";
         }
       }
     }
@@ -407,63 +429,64 @@ int main(int argc, char** argv) {
     string tafactor = "t*t*t*t*t";
 #endif
     ofs << "\
-      data x /\n";
+  constexpr double x[" << nroot*nbox*ndeg<<"] = {";
     ofs << listx.str() << "\
-     &/" << endl;
+  };" << endl;
     ofs << "\
-      data w /\n";
+  constexpr double w[" << nroot*nbox*ndeg<<"] = {";
     ofs << listw.str() << "\
-     &/" << endl;
+  };" << endl;
 
-    ofs << "\
-      offset = -" << nroot << "\n\
-      do i=1, n\n\
-        t = ta(i)\n\
-        offset = offset + " << nroot << "\n\
-        if (t < 0.0d0) then\n\
-          rr(offset+1:offset+" << nroot << ") = 0.5d0\n\
-          ww(offset+1:offset+" << nroot << ") = 0.0d0\n\
-        else if (t >= " << MAXT << ".0d0) then\n\
-          t = 1.0d0/dsqrt(t)\n\
-          rr(offset+1:offset+" << nroot << ") = ax(1:" << nroot << ")*t*t\n\
-          ww(offset+1:offset+" << nroot << ") = aw(1:" << nroot << ")*" + tafactor + "\n\
-        else\n\
-          it = int(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< "d0)\n\
-          t = (t-it*" << stride << "d0-" << setw(20) << setprecision(15) << fixed << stride/2.0 << "d0)\n     &     *"
-                      << setw(20) << setprecision(15) << fixed << 2.0/stride << "d0\n\
-          t2 = t * 2.0d0\n\
-          do j=1, " << nroot << "\n\
-            boxof = it*" << ndeg*nroot << "+" << ndeg << "*(j-1)\n";
+  ofs << "\
+  int offset = -" << nroot << ";\n\
+  for (int i = 1; i <= n; ++i) {\n\
+    double t = ta[i-1];\n\
+    offset += " << nroot << ";\n\
+    if (t < 0.0) {\n\
+      fill_n(rr+offset, " << nroot << ", 0.5);\n\
+      fill_n(ww+offset, " << nroot << ", 0.0);\n\
+    } else if (t >= " << MAXT << ".0) {\n\
+      t = 1.0/sqrt(t);\n\
+      for (int r = 0; r != " << nroot << "; ++r) {\n\
+        rr[offset+r] = ax[r]*t*t;\n\
+        ww[offset+r] = aw[r]*" + tafactor + ";\n\
+      }\n\
+    } else {\n\
+      int it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n\
+      t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/stride << ";\n\
+      const double t2 = t * 2.0;\n\
+      for (int j=1; j <=" << nroot << "; ++j) {\n\
+        const int boxof = it*" << ndeg*nroot << "+" << ndeg << "*(j-1);\n";
      assert((ndeg/2)*2 == ndeg);
      for (int i=ndeg; i!=0; --i) {
        if (i==ndeg) {
          ofs << "\
-            d = x(boxof+" << i << ")\n\
-            e = w(boxof+" << i << ")\n";
+        double d = x[boxof+" << i-1 << "];\n\
+        double e = w[boxof+" << i-1 << "];\n";
        } else if (i==ndeg-1) {
          ofs << "\
-            f = t2*d + x(boxof+" << i << ")\n\
-            g = t2*e + w(boxof+" << i << ")\n";
+        double f = t2*d + x[boxof+" << i-1 << "];\n\
+        double g = t2*e + w[boxof+" << i-1 << "];\n";
        } else if (i != 1 && ((i/2)*2 == i)) { // odd
          ofs << "\
-            d = t2*f - d + x(boxof+" << i << ")\n\
-            e = t2*g - e + w(boxof+" << i << ")\n";
+        d = t2*f - d + x[boxof+" << i-1 << "];\n\
+        e = t2*g - e + w[boxof+" << i-1 << "];\n";
        } else if (i != 1) { // even
          ofs << "\
-            f = t2*d - f + x(boxof+" << i << ")\n\
-            g = t2*e - g + w(boxof+" << i << ")\n";
+        f = t2*d - f + x[boxof+" << i-1 << "];\n\
+        g = t2*e - g + w[boxof+" << i-1 << "];\n";
        } else {
          ofs << "\
-            rr(offset+j) = t*d - f + x(boxof+" << i << ")*0.5d0\n\
-            ww(offset+j) = t*e - g + w(boxof+" << i << ")*0.5d0\n";
+        rr[offset+j-1] = t*d - f + x[boxof+" << i-1 << "]*0.5;\n\
+        ww[offset+j-1] = t*e - g + w[boxof+" << i-1 << "]*0.5;\n";
        }
      }
 
      ofs << "\
-          enddo\n\
-        endif\n\
-      enddo\n\
-      end subroutine" << endl;
+      }\n\
+    }\n\
+  }\n\
+}";
 
     ofs.close();
   }
