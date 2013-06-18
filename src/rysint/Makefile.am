@@ -8,7 +8,7 @@ _breitroot_1.cc _breitroot_2.cc _breitroot_3.cc _breitroot_4.cc _breitroot_5.cc 
 _spin2root_1.cc _spin2root_2.cc _spin2root_3.cc _spin2root_4.cc _spin2root_5.cc _spin2root_6.cc _spin2root_7.cc _spin2root_8.cc _spin2root_9.cc _spin2root_10.cc _spin2root_11.cc _spin2root_12.cc _spin2root_13.cc \
 rysint.cc eribatch_base.cc naibatch_base.cc eribatch.cc gradbatch.cc gnaibatch.cc slaterbatch.cc \
 compute.cc bcompute.cc gcompute.cc ncompute.cc gncompute.cc scompute.cc contraction.cc vrr_optim.cc bvrr_optim.cc sort.cc srootlist.cc svrr_optim.cc usvrr_optim.cc \
-rys.f hrrlist.cc sortlist.cc start_up_slater.f90 \
+hrrlist.cc sortlist.cc start_up_slater.f90 \
 carsphlist.cc sort_sph.cc \
 smalleribatch.cc smallnaibatch.cc mixederibatch.cc\
 libint.cc glibint.cc
