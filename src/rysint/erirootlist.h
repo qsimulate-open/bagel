@@ -28,33 +28,47 @@
 #define __SRC_RYSINT_ERIROOTLIST_H
 
 #include <functional>
-#include <src/rysint/f77.h>
 #include <src/rysint/intparam.h>
 
 namespace bagel {
 
 struct ERIRootList  {
   private:
-    std::function<void (const double*, double*, double*, const int*)> rfunc[RYS_MAX + 1];
+    std::function<void (const double*, double*, double*, const int)> rfunc[RYS_MAX + 1];
+
+    static void eriroot1(const double*, double*, double*, const int);
+    static void eriroot2(const double*, double*, double*, const int);
+    static void eriroot3(const double*, double*, double*, const int);
+    static void eriroot4(const double*, double*, double*, const int);
+    static void eriroot5(const double*, double*, double*, const int);
+    static void eriroot6(const double*, double*, double*, const int);
+    static void eriroot7(const double*, double*, double*, const int);
+    static void eriroot8(const double*, double*, double*, const int);
+    static void eriroot9(const double*, double*, double*, const int);
+    static void eriroot10(const double*, double*, double*, const int);
+    static void eriroot11(const double*, double*, double*, const int);
+    static void eriroot12(const double*, double*, double*, const int);
+    static void eriroot13(const double*, double*, double*, const int);
+
 
   public:
     ERIRootList() {
-      rfunc[1] = &eriroot1_;
-      rfunc[2] = &eriroot2_;
-      rfunc[3] = &eriroot3_;
-      rfunc[4] = &eriroot4_;
-      rfunc[5] = &eriroot5_;
-      rfunc[6] = &eriroot6_;
-      rfunc[7] = &eriroot7_;
-      rfunc[8] = &eriroot8_;
-      rfunc[9] = &eriroot9_;
-      rfunc[10] = &eriroot10_;
-      rfunc[11] = &eriroot11_;
-      rfunc[12] = &eriroot12_;
-      rfunc[13] = &eriroot13_;
+      rfunc[1] = &eriroot1;
+      rfunc[2] = &eriroot2;
+      rfunc[3] = &eriroot3;
+      rfunc[4] = &eriroot4;
+      rfunc[5] = &eriroot5;
+      rfunc[6] = &eriroot6;
+      rfunc[7] = &eriroot7;
+      rfunc[8] = &eriroot8;
+      rfunc[9] = &eriroot9;
+      rfunc[10] = &eriroot10;
+      rfunc[11] = &eriroot11;
+      rfunc[12] = &eriroot12;
+      rfunc[13] = &eriroot13;
     }
 
-    void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, &a4); }
+    void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
 
 };
 

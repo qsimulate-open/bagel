@@ -369,7 +369,12 @@ using namespace bagel;\n\
 \n\
 void BreitRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #else
-throw logic_error("not yet");
+ofs << "#include <src/rysint/erirootlist.h>\n\
+\n\
+using namespace std;\n\
+using namespace bagel;\n\
+\n\
+void ERIRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #endif
 #else
 ofs << "#include <src/rysint/spin2rootlist.h>\n\
