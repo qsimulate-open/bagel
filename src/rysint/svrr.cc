@@ -29,6 +29,7 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
 
 void SlaterBatch::perform_SVRR() {
 #ifndef LIBINT_INTERFACE
@@ -5535,3 +5536,5 @@ void SlaterBatch::perform_SVRR() {
   stack_->release(rank_*isize*3, workx);
 #endif
 }
+
+#endif

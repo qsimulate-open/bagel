@@ -34,6 +34,8 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
+
 typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
@@ -487,5 +489,4 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
   return out;
 }
 
-
-
+#endif

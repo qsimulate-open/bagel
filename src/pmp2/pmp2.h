@@ -40,6 +40,8 @@
 
 namespace bagel {
 
+#ifdef HAVE_SLATER
+
 class PMP2 {
   typedef std::shared_ptr<PMatrix1e> RefMatrix;
   typedef std::shared_ptr<PCoeff> RefCoeff;
@@ -135,6 +137,8 @@ class PMP2 {
     void compute_conv_mp2();
 
 };
+
+#endif
 
 }
 

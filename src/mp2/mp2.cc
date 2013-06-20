@@ -110,6 +110,7 @@ void MP2::compute() {
   // check if F12 is requested.
   const bool do_f12 = idata_->get<bool>("f12", false);
   if (do_f12) {
+#ifdef HAVE_SLATER
     const double gamma = idata_->get<double>("gamma", 1.5);
     cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
 #if 0
@@ -118,7 +119,9 @@ void MP2::compute() {
     auto f12ref = make_shared<F12Ref>(geom_, ref_, ncore_, gamma);
     f12ref->compute();
 #endif
-
+#else
+  throw runtime_error("Slater-quadrature library not linked");
+#endif
   }
 }
 

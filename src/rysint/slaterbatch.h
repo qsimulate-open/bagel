@@ -35,6 +35,7 @@
 
 namespace bagel {
 
+#ifdef HAVE_SLATER
 class SlaterBatch : public RysInt {
 
   protected:
@@ -68,6 +69,7 @@ class SlaterBatch : public RysInt {
 
     constexpr static int nblocks() { return 1; }
 };
+#endif
 
 }
 

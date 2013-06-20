@@ -30,6 +30,8 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
+
 void PMP2::compute_conv_mp2() {
   cout << "  Now computing mp2 energy" << endl << endl;
   const int K = eri_ii_pp_->K();
@@ -88,3 +90,4 @@ void PMP2::compute_conv_mp2() {
 
 }
 
+#endif

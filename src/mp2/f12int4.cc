@@ -39,6 +39,7 @@ using namespace bagel;
 
 extern "C" { void start_up_slater_(); };
 
+#ifdef HAVE_SLATER
 void F12Ref::compute() {
     // TODO this 2 is bad
     const size_t ncore = ncore_;
@@ -302,4 +303,4 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::g
   return make_tuple(t.first, t.second, coeff_entire, ncabs);
 }
 
-
+#endif

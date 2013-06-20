@@ -33,6 +33,8 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
+
 // create RI basis
 
 typedef shared_ptr<PMatrix1e> RefMatrix;
@@ -77,3 +79,4 @@ std::tuple<RefMatrix, RefMatrix, RefMatrix, RefMatrix> PMP2::generate_fock_weigh
   return make_tuple(fock_o_pair.first, fock_o_pair.second, fock_c_pair.first, fock_c_pair.second);
 }
 
+#endif

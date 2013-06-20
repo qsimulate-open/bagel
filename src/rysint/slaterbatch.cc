@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifdef HAVE_SLATER
 #include <cmath>
 #include <cassert>
 #include <cstring>
@@ -45,6 +46,8 @@ using namespace bagel;
 
 static const double pitwohalf__ = ::pow(pi__, 2.5);
 
+// TODO need to update
+const static SRootList root;
 
 SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
 :  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
@@ -86,9 +89,7 @@ void SlaterBatch::root_weight(const int prim) {
   else if (rank_ == 2)
     root2_direct();
   else {
-    int ps = (int)primsize_;
-    struct SRootList root;
-    root.srootfunc_call(rank_, T_, U_, roots_, weights_, &ps);
+    root.srootfunc_call(rank_, T_, U_, roots_, weights_, primsize_);
   }
 }
 
@@ -339,3 +340,4 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
     }
   }
 }
+#endif

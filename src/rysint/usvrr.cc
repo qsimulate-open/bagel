@@ -29,6 +29,7 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
 
 void SlaterBatch::perform_USVRR() {
   const int acsize = asize_ * csize_;
@@ -5535,3 +5536,5 @@ void SlaterBatch::perform_USVRR() {
   stack_->release(rank_*isize*4, workx);
 
 }
+
+#endif

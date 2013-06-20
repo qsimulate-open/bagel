@@ -36,6 +36,8 @@
 using namespace bagel;
 using namespace std;
 
+#ifdef HAVE_SLATER
+
 
 typedef shared_ptr<Atom> RefAtom;
 typedef shared_ptr<PGeometry> RefGeom;
@@ -829,4 +831,4 @@ void PMP2::compute() {
 #endif // ifndef ONLY_B
 }
 
-
+#endif

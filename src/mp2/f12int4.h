@@ -42,6 +42,7 @@
 
 namespace bagel {
 
+#ifdef HAVE_SLATER
 // Reference implementation of an F12 theory
 class F12Ref {
   protected:
@@ -59,6 +60,7 @@ class F12Ref {
 
     std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, int> generate_cabs() const;
 };
+#endif
 
 
 class File2 {

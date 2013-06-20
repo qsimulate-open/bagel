@@ -41,6 +41,8 @@ typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
 typedef shared_ptr<PCoeff> RefCoeff;
 
+#ifdef HAVE_SLATER
+
 pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 
   // Form RI space which is a union of OBS and CABS.
@@ -157,3 +159,4 @@ void PMP2::fill_in_cabs_matices() {
 
 }
 
+#endif

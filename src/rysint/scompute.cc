@@ -39,6 +39,8 @@
 using namespace std;
 using namespace bagel;
 
+#ifdef HAVE_SLATER
+
 const static HRRList hrr;
 
 void SlaterBatch::compute() {
@@ -251,4 +253,4 @@ void SlaterBatch::compute() {
   stack_->release(size_alloc_, bkup_);
 }
 
-
+#endif
