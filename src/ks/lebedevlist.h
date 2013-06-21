@@ -31,90 +31,86 @@
 #include <map>
 #include <cassert>
 
-extern "C" {
-  void ld0006_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0014_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0026_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0038_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0050_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0074_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0086_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0110_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0146_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0170_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0194_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0230_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0266_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0302_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0350_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0434_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0590_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0770_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld0974_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld1202_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld1454_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld1730_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld2030_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld2354_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld2702_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld3074_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld3470_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld3890_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld4334_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld4802_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld5294_(double* x, double* y, double* z, double* weight, const int* n);
-  void ld5810_(double* x, double* y, double* z, double* weight, const int* n);
-}
-
 namespace bagel {
 
 struct LebedevList  {
   private:
     std::map<int, int> map_;
-    std::function<void (double*, double*, double*, double*, const int*)> rfunc[32];
+    std::function<void (double*, double*, double*, double*)> rfunc[32];
+
+    static void ld0006(double* x, double* y, double* z, double* weight);
+    static void ld0014(double* x, double* y, double* z, double* weight);
+    static void ld0026(double* x, double* y, double* z, double* weight);
+    static void ld0038(double* x, double* y, double* z, double* weight);
+    static void ld0050(double* x, double* y, double* z, double* weight);
+    static void ld0074(double* x, double* y, double* z, double* weight);
+    static void ld0086(double* x, double* y, double* z, double* weight);
+    static void ld0110(double* x, double* y, double* z, double* weight);
+    static void ld0146(double* x, double* y, double* z, double* weight);
+    static void ld0170(double* x, double* y, double* z, double* weight);
+    static void ld0194(double* x, double* y, double* z, double* weight);
+    static void ld0230(double* x, double* y, double* z, double* weight);
+    static void ld0266(double* x, double* y, double* z, double* weight);
+    static void ld0302(double* x, double* y, double* z, double* weight);
+    static void ld0350(double* x, double* y, double* z, double* weight);
+    static void ld0434(double* x, double* y, double* z, double* weight);
+    static void ld0590(double* x, double* y, double* z, double* weight);
+    static void ld0770(double* x, double* y, double* z, double* weight);
+    static void ld0974(double* x, double* y, double* z, double* weight);
+    static void ld1202(double* x, double* y, double* z, double* weight);
+    static void ld1454(double* x, double* y, double* z, double* weight);
+    static void ld1730(double* x, double* y, double* z, double* weight);
+    static void ld2030(double* x, double* y, double* z, double* weight);
+    static void ld2354(double* x, double* y, double* z, double* weight);
+    static void ld2702(double* x, double* y, double* z, double* weight);
+    static void ld3074(double* x, double* y, double* z, double* weight);
+    static void ld3470(double* x, double* y, double* z, double* weight);
+    static void ld3890(double* x, double* y, double* z, double* weight);
+    static void ld4334(double* x, double* y, double* z, double* weight);
+    static void ld4802(double* x, double* y, double* z, double* weight);
+    static void ld5294(double* x, double* y, double* z, double* weight);
+    static void ld5810(double* x, double* y, double* z, double* weight);
 
   public:
     LebedevList() {
-      rfunc[0] = &ld0006_; map_.insert(std::make_pair(6, 0));
-      rfunc[1] = &ld0014_; map_.insert(std::make_pair(14, 1));
-      rfunc[2] = &ld0026_; map_.insert(std::make_pair(26, 2));
-      rfunc[3] = &ld0038_; map_.insert(std::make_pair(38, 3));
-      rfunc[4] = &ld0050_; map_.insert(std::make_pair(50, 4));
-      rfunc[5] = &ld0074_; map_.insert(std::make_pair(74, 5));
-      rfunc[6] = &ld0086_; map_.insert(std::make_pair(86, 6));
-      rfunc[7] = &ld0110_; map_.insert(std::make_pair(110, 7));
-      rfunc[8] = &ld0146_; map_.insert(std::make_pair(146, 8));
-      rfunc[9] = &ld0170_; map_.insert(std::make_pair(170, 9));
-      rfunc[10] = &ld0194_; map_.insert(std::make_pair(194, 10));
-      rfunc[11] = &ld0230_; map_.insert(std::make_pair(230, 11));
-      rfunc[12] = &ld0266_; map_.insert(std::make_pair(266, 12));
-      rfunc[13] = &ld0302_; map_.insert(std::make_pair(302, 13));
-      rfunc[14] = &ld0350_; map_.insert(std::make_pair(350, 14));
-      rfunc[15] = &ld0434_; map_.insert(std::make_pair(434, 15));
-      rfunc[16] = &ld0590_; map_.insert(std::make_pair(590, 16));
-      rfunc[17] = &ld0770_; map_.insert(std::make_pair(770, 17));
-      rfunc[18] = &ld0974_; map_.insert(std::make_pair(974, 18));
-      rfunc[19] = &ld1202_; map_.insert(std::make_pair(1202, 19));
-      rfunc[20] = &ld1454_; map_.insert(std::make_pair(1454, 20));
-      rfunc[21] = &ld1730_; map_.insert(std::make_pair(1730, 21));
-      rfunc[22] = &ld2030_; map_.insert(std::make_pair(2030, 22));
-      rfunc[23] = &ld2354_; map_.insert(std::make_pair(2354, 23));
-      rfunc[24] = &ld2702_; map_.insert(std::make_pair(2702, 24));
-      rfunc[25] = &ld3074_; map_.insert(std::make_pair(3074, 25));
-      rfunc[26] = &ld3470_; map_.insert(std::make_pair(3470, 26));
-      rfunc[27] = &ld3890_; map_.insert(std::make_pair(3890, 27));
-      rfunc[28] = &ld4334_; map_.insert(std::make_pair(4334, 28));
-      rfunc[29] = &ld4802_; map_.insert(std::make_pair(4802, 29));
-      rfunc[30] = &ld5294_; map_.insert(std::make_pair(5294, 30));
-      rfunc[31] = &ld5810_; map_.insert(std::make_pair(5810, 31));
+      rfunc[0] = &ld0006; map_.insert(std::make_pair(6, 0));
+      rfunc[1] = &ld0014; map_.insert(std::make_pair(14, 1));
+      rfunc[2] = &ld0026; map_.insert(std::make_pair(26, 2));
+      rfunc[3] = &ld0038; map_.insert(std::make_pair(38, 3));
+      rfunc[4] = &ld0050; map_.insert(std::make_pair(50, 4));
+      rfunc[5] = &ld0074; map_.insert(std::make_pair(74, 5));
+      rfunc[6] = &ld0086; map_.insert(std::make_pair(86, 6));
+      rfunc[7] = &ld0110; map_.insert(std::make_pair(110, 7));
+      rfunc[8] = &ld0146; map_.insert(std::make_pair(146, 8));
+      rfunc[9] = &ld0170; map_.insert(std::make_pair(170, 9));
+      rfunc[10] = &ld0194; map_.insert(std::make_pair(194, 10));
+      rfunc[11] = &ld0230; map_.insert(std::make_pair(230, 11));
+      rfunc[12] = &ld0266; map_.insert(std::make_pair(266, 12));
+      rfunc[13] = &ld0302; map_.insert(std::make_pair(302, 13));
+      rfunc[14] = &ld0350; map_.insert(std::make_pair(350, 14));
+      rfunc[15] = &ld0434; map_.insert(std::make_pair(434, 15));
+      rfunc[16] = &ld0590; map_.insert(std::make_pair(590, 16));
+      rfunc[17] = &ld0770; map_.insert(std::make_pair(770, 17));
+      rfunc[18] = &ld0974; map_.insert(std::make_pair(974, 18));
+      rfunc[19] = &ld1202; map_.insert(std::make_pair(1202, 19));
+      rfunc[20] = &ld1454; map_.insert(std::make_pair(1454, 20));
+      rfunc[21] = &ld1730; map_.insert(std::make_pair(1730, 21));
+      rfunc[22] = &ld2030; map_.insert(std::make_pair(2030, 22));
+      rfunc[23] = &ld2354; map_.insert(std::make_pair(2354, 23));
+      rfunc[24] = &ld2702; map_.insert(std::make_pair(2702, 24));
+      rfunc[25] = &ld3074; map_.insert(std::make_pair(3074, 25));
+      rfunc[26] = &ld3470; map_.insert(std::make_pair(3470, 26));
+      rfunc[27] = &ld3890; map_.insert(std::make_pair(3890, 27));
+      rfunc[28] = &ld4334; map_.insert(std::make_pair(4334, 28));
+      rfunc[29] = &ld4802; map_.insert(std::make_pair(4802, 29));
+      rfunc[30] = &ld5294; map_.insert(std::make_pair(5294, 30));
+      rfunc[31] = &ld5810; map_.insert(std::make_pair(5810, 31));
     }
 
     void root(const int ngrid, double* a1, double* a2, double* a3, double* a4) const {
       auto iter = map_.find(ngrid);
       assert(iter != map_.end());
-      int n;
-      rfunc[iter->second](a1, a2, a3, a4, &n);
-      assert(ngrid == n);
+      rfunc[iter->second](a1, a2, a3, a4);
     }
 
 };
