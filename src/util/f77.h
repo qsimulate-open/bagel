@@ -33,10 +33,6 @@
 
 extern "C" {
 
- // transposition
- void mytranspose_complex_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
- void mytranspose_complex_conjg_(const std::complex<double>*, const int*, const int*, std::complex<double>*);
-
  void daxpy_(const int*, const double*, const double*, const int*, double*, const int*);
  void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*);
  void dgesv_(const int* n, const int* nrhs, double* a, const int* lda, int* ipiv, double* b, const int* ldb, int* info);
