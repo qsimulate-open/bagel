@@ -12,8 +12,6 @@ m4_include([m4/acx_mpi.m4])
 
 AC_PROG_CC([gcc])
 AC_PROG_CXX([g++])
-AC_PROG_F77([gfortran])
-AC_PROG_FC([gfortran])
 
 AC_ARG_WITH(mpi, [AS_HELP_STRING([--with-mpi],[Use MPI. Please make sure mpicxx and mpif90 are in $PATH])], [with_mpi=$withval], [with_mpi=no])
 if test x${with_mpi} = xopenmpi ; then
@@ -29,12 +27,8 @@ if test x${with_mpi} != xno; then
     ACX_MPI
     AC_PROG_CC([$MPICC])
     AC_PROG_CXX([$MPICXX])
-    AC_PROG_F77([$MPIF77])
-    AC_PROG_FC([$MPIFC])
     LIBS="${MPILIBS} ${LIBS}"
     CXXFLAGS="${CXXFLAGS}"
-    FFLAGS="${FFLAGS}"
-    FCFLAGS="${FCFLAGS}"
 fi
 
 LT_INIT([disable-static])
@@ -44,15 +38,10 @@ AC_ARG_WITH([include], [AS_HELP_STRING([--with-include],[include flags])], [with
 if test "x${with_include}" != xno; then
     CFLAGS="${with_include} ${CFLAGS}"
     CXXFLAGS="${with_include} ${CXXFLAGS}"
-    FFLAGS="${with_include} ${FFLAGS}"
-    FCFLAGS="${with_include} ${FCFLAGS}"
     CPPFLAGS="${with_include} ${CPPFLAGS}"
 fi
 
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
-
-AC_F77_LIBRARY_LDFLAGS
-
 
 #lapack and blas
 AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
