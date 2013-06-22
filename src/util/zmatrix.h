@@ -70,6 +70,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     using Matrix_base<std::complex<double>>::get_block;
     void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
     // copy a block from a Matrix object to ZMatrix object and mutliply by coefficient coeff. If type = 0, coeff is purely real, else purely imaginary
+    void copy_block(const int nstart, const int mstart, const std::shared_ptr<const ZMatrix> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);

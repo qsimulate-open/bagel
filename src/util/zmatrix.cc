@@ -664,6 +664,10 @@ void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, co
   copy_block(nstart, mstart, nsize, msize, data->data());
 }
 
+void ZMatrix::copy_block(const int nstart, const int mstart, const shared_ptr<const ZMatrix> data) {
+  copy_block(nstart, mstart, data->ndim(), data->mdim(), data->data());
+}
+
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
     for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
