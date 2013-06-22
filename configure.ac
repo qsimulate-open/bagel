@@ -7,7 +7,8 @@ AM_INIT_AUTOMAKE
 AM_PATH_PYTHON
 AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADERS([config.h])
-AC_LANG([C++])
+# since pyconfig.h sometimes needs to be compiled by the C compiler
+AC_LANG([C])
 
 m4_include([m4/acx_mpi.m4])
 
@@ -88,6 +89,8 @@ AC_CHECK_LIB(boost_python-gcc-mt, main, , [
 ])
 AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
 
+# slatermem.h and srootlist.h need to be compiled with C++11
+AC_LANG([C++])
 if test x${slater} = xyes; then
   AC_CHECK_HEADERS([slatermem.h], [], [AC_MSG_ERROR(["slatermem.h not found"])], [])
   AC_CHECK_HEADERS([srootlist.h], [], [AC_MSG_ERROR(["srootlist.h not found"])], [])
