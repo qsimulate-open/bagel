@@ -26,6 +26,7 @@
 #ifndef __SRC_RYSINT_SLATERBATCH_H
 #define __SRC_RYSINT_SLATERBATCH_H
 
+#include <config.h>
 #include <cassert>
 #include <vector>
 #include <src/rysint/int2d.h>
@@ -35,7 +36,7 @@
 
 namespace bagel {
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 class SlaterBatch : public RysInt {
 
   protected:

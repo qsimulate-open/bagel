@@ -39,7 +39,7 @@ using namespace bagel;
 
 extern "C" { void start_up_slater_(); };
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 void F12Ref::compute() {
     // TODO this 2 is bad
     const size_t ncore = ncore_;

@@ -42,7 +42,7 @@
 
 namespace bagel {
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 // Reference implementation of an F12 theory
 class F12Ref {
   protected:

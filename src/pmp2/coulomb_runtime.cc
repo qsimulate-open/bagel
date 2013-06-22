@@ -34,7 +34,7 @@
 using namespace std;
 using namespace bagel;
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 typedef shared_ptr<PMatrix1e> RefMatrix;
 typedef shared_ptr<PGeometry> RefGeom;

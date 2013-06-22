@@ -110,7 +110,7 @@ void MP2::compute() {
   // check if F12 is requested.
   const bool do_f12 = idata_->get<bool>("f12", false);
   if (do_f12) {
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
     const double gamma = idata_->get<double>("gamma", 1.5);
     cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
 #if 0

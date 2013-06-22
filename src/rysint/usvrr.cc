@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 void SlaterBatch::perform_USVRR() {
   const int acsize = asize_ * csize_;

@@ -41,7 +41,7 @@ typedef shared_ptr<PGeometry> RefGeom;
 typedef shared_ptr<PHcore> RefHcore;
 typedef shared_ptr<PCoeff> RefCoeff;
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
 

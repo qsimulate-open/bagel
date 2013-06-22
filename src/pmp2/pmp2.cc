@@ -36,7 +36,7 @@
 using namespace bagel;
 using namespace std;
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 
 typedef shared_ptr<Atom> RefAtom;

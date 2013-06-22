@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE
 AM_PATH_PYTHON
 AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADERS([config.h])
+AC_LANG([C++])
 
 m4_include([m4/acx_mpi.m4])
 
@@ -41,6 +42,7 @@ if test "x${with_include}" != xno; then
     CPPFLAGS="${with_include} ${CPPFLAGS}"
 fi
 
+AC_ARG_WITH([slater], [AS_HELP_STRING([--with-slater],[build F12 methods])], [slater=yes], [slater=no])
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
 
 #lapack and blas
@@ -85,6 +87,12 @@ AC_CHECK_LIB(boost_python-gcc-mt, main, , [
     ])
 ])
 AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
+
+if test x${slater} = xyes; then
+  AC_CHECK_HEADERS([slatermem.h], [], [AC_MSG_ERROR(["slatermem.h not found"])], [])
+  AC_CHECK_HEADERS([srootlist.h], [], [AC_MSG_ERROR(["srootlist.h not found"])], [])
+  AC_CHECK_LIB(slater, main, , AC_MSG_ERROR(["libslater not found"]))
+fi
 
 if test x${libxc} = xyes; then
   AC_CHECK_HEADERS([xc.h], [], [AC_MSG_ERROR([xc.h not found or not working])], [])

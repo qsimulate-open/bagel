@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef HAVE_SLATER
 #include <cmath>
 #include <cassert>
 #include <cstring>
@@ -31,11 +30,13 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/rysint/slaterbatch.h>
-#include <src/rysint/srootlist.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/rysint/inline.h>
 #include <src/rysint/sinline.h>
+
+#ifdef HAVE_LIBSLATER
+#include <srootlist.h>
 
 using namespace std;
 using namespace bagel;

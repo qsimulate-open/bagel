@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 void PMP2::compute_conv_mp2() {
   cout << "  Now computing mp2 energy" << endl << endl;

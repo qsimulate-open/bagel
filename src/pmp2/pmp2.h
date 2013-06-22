@@ -40,7 +40,7 @@
 
 namespace bagel {
 
-#ifdef HAVE_SLATER
+#ifdef HAVE_LIBSLATER
 
 class PMP2 {
   typedef std::shared_ptr<PMatrix1e> RefMatrix;
