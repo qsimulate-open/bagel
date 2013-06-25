@@ -109,7 +109,7 @@ class ZDavidsonDiag {
 
       if (orthogonalize_) {
        std::shared_ptr<ZMatrix> tmp = overlap_->get_submatrix(0, 0, size_, size_);
-         tmp->inverse_half();
+       tmp->inverse_half();
 
         ovlp_scr_->copy_block(0, 0, tmp);
       }

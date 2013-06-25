@@ -38,6 +38,7 @@ using namespace std;
 using namespace bagel;
 
 void test_solvers(shared_ptr<Geometry> geom_) {
+#if 0
 {
  cout << " Testing solvers." << endl;
  shared_ptr<Matrix> target(new Matrix(geom_->nbasis(), geom_->nbasis()));
@@ -64,8 +65,8 @@ void test_solvers(shared_ptr<Geometry> geom_) {
  }
 
  const double tiny = 1.0e-20;
-
-#if 1
+#endif
+#if 0
   // testing Davidson -- checked.
   cout << "  testing Davidson class" << endl;
   DavidsonDiag<Matrix> davidson(1,n*n);
@@ -90,8 +91,8 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     prev = residual;
   }
 }
-
-
+#endif
+#if 1
 {
   cout << "Testing Mike's solver." << endl;
   shared_ptr<Matrix> target(new Matrix(geom_->nbasis(), geom_->nbasis()));
@@ -125,6 +126,18 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 
   const double tiny = 1.0e-20;
+
+  //diagonalizing matrix explicitly as a check
+  cout << "using explicit diagonalize function" << endl;
+  shared_ptr<ZMatrix> dia(new ZMatrix(n*n,n*n));
+  for (int i = 0; i != n*n; ++i) {
+    for (int j = 0; j != n*n; ++j) {
+      dia->element(i,j)=hess[i+n*n*j];
+    }
+  }
+  std::unique_ptr<double[]> vec(new double[n*n]);
+  dia->diagonalize(vec.get());
+  std::cout << setprecision(10) << *vec.get() << std::setw(5) << *vec.get()+1 << std::endl;
 
   // testing Davidson -- checked.
 
