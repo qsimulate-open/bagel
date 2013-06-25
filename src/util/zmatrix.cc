@@ -380,6 +380,16 @@ complex<double> ZMatrix::zdotc(const shared_ptr<const ZMatrix> o) const {
 }
 
 
+complex<double> ZMatrix::zdotu(const ZMatrix& o) const {
+  return zdotu_(ndim_*mdim_, data(), 1, o.data(), 1);
+}
+
+
+complex<double> ZMatrix::zdotu(const shared_ptr<const ZMatrix> o) {
+  return zdotu(*o);
+}
+
+
 double ZMatrix::norm() const {
   complex<double> n = zdotc(*this);
   assert(fabs(n.imag()) < 1.0e-10);
@@ -456,7 +466,6 @@ shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
-
 
 void ZMatrix::antisymmetrize() {
   assert(ndim_ == mdim_);

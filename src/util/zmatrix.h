@@ -123,6 +123,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);
     std::complex<double> zdotc(const ZMatrix&) const;
     std::complex<double> zdotc(const std::shared_ptr<const ZMatrix>) const;
+    std::complex<double> zdotu(const ZMatrix&) const;
+    std::complex<double> zdotu(const std::shared_ptr<const ZMatrix>);
     double norm() const;
     double rms() const;
     std::complex<double> trace() const;

@@ -92,26 +92,30 @@ class ZDavidsonDiag {
         double overlap_row = 0.0;
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
-          mat(i, size_-1) = (**cciter).transpose_conjg()->zdotc(*isigma);
-          overlap_->element(i, size_-1) = (*icivec)->zdotc((**cciter));
-          overlap_->element(size_-1, i) = (overlap_->element(i, size_-1).real(), -overlap_->element(i, size_-1).imag());
+          mat(i, size_-1) = (**cciter).zdotc(*isigma);
+          mat(size_-1, i) = conj(mat(i,size_-1));
+
+          overlap_->element(i, size_-1) = (**cciter).zdotc(*icivec);
+          overlap_->element(size_-1, i) = conj(overlap_->element(i, size_-1));
+
           if (!orthogonalize_) {
-            overlap_row += fabs((overlap_->element(i, size_-1)).real());
-            overlap_row += fabs((overlap_->element(i, size_-1)).imag());
+            overlap_row += abs(overlap_->element(i, size_-1));
           }
         }
-        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) orthogonalize_ = true;
+        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) {
+          orthogonalize_ = true;
+        }
       }
 
       if (orthogonalize_) {
-        std::shared_ptr<ZMatrix> tmp = overlap_->get_submatrix(0, 0, size_, size_);
-        tmp->inverse_half();
+       std::shared_ptr<ZMatrix> tmp = overlap_->get_submatrix(0, 0, size_, size_);
+         tmp->inverse_half();
 
         ovlp_scr_->copy_block(0, 0, tmp);
       }
 
       // diagonalize matrix to get
-      *scr_ = orthogonalize_ ? *ovlp_scr_ % *mat_ * *ovlp_scr_ : *mat_;
+      *scr_ = orthogonalize_ ? (*ovlp_scr_) % (*mat_ * *ovlp_scr_) : *mat_;
       std::shared_ptr<ZMatrix> tmp = scr_->get_submatrix(0, 0, size_, size_);
       tmp->diagonalize(vec_.get());
       scr_->copy_block(0, 0, tmp);

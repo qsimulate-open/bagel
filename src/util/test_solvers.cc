@@ -23,13 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#if 0
 
 #include <src/scf/matrix1e.h>
 #include <src/util/linear.h>
 #include <src/util/linearRM.h>
 #include <src/util/aughess.h>
 #include <src/util/davidson.h>
+#include <src/util/zdavidson.h>
 #include <src/util/bfgs.h>
 #include <src/scf/scf.h>
 #include <iostream>
@@ -38,25 +38,87 @@ using namespace std;
 using namespace bagel;
 
 void test_solvers(shared_ptr<Geometry> geom_) {
-  cout << " Testing solvers." << endl;
-  shared_ptr<Matrix> target(new Matrix(geom_->nbasis(), geom_->nbasis()));
+{
+ cout << " Testing solvers." << endl;
+ shared_ptr<Matrix> target(new Matrix(geom_->nbasis(), geom_->nbasis()));
 
+ assert(target->ndim() == target->mdim());
+ const size_t n = target->ndim();
+
+ // source term
+ for (int i = 0; i != n*n; ++i) {
+   target->data(i) = static_cast<double>(rand()) / RAND_MAX;
+ }
+ // matrix.
+ unique_ptr<double[]> hess(new double[n*n*n*n]);
+ shared_ptr<Matrix> diag(new Matrix(geom_->nbasis(), geom_->nbasis()));
+ for (int i = 0; i != n*n*n*n; ++i) {
+   hess[i] = static_cast<double>(rand()) / RAND_MAX;
+ }
+ for (int i = 0; i != n*n; ++i) {
+   for (int j = 0; j != n*n; ++j) {
+     hess[j+n*n*i] =  hess[i+n*n*j] = 0.5*(hess[j+n*n*i] + hess[i+n*n*j]);
+   }
+   hess[i+n*n*i] += 2.0*i;
+   diag->data(i) = hess[i+n*n*i];
+ }
+
+ const double tiny = 1.0e-20;
+
+#if 1
+  // testing Davidson -- checked.
+  cout << "  testing Davidson class" << endl;
+  DavidsonDiag<Matrix> davidson(1,n*n);
+  shared_ptr<Matrix> prev(new Matrix(n, n));
+  prev->element(0,0) = 1.0;
+
+  for (int i = 0; i != n*n; ++i) {
+    shared_ptr<Matrix> start(new Matrix(*prev));
+    davidson.orthog(start);
+    shared_ptr<Matrix> res = start->clone();
+    dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
+
+    shared_ptr<const Matrix> ss(new Matrix(*start));
+    shared_ptr<const Matrix> rr(new Matrix(*res));
+    const double energy = davidson.compute(ss, rr);
+    shared_ptr<Matrix> residual = davidson.residual().front();
+
+    cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
+    if (::pow(residual->norm(),2.0) < tiny) break;
+
+    for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
+    prev = residual;
+  }
+}
+
+
+{
+  cout << "Testing Mike's solver." << endl;
+  shared_ptr<Matrix> target(new Matrix(geom_->nbasis(), geom_->nbasis()));
   assert(target->ndim() == target->mdim());
   const size_t n = target->ndim();
-
   // source term
   for (int i = 0; i != n*n; ++i) {
     target->data(i) = static_cast<double>(rand()) / RAND_MAX;
   }
   // matrix.
-  unique_ptr<double[]> hess(new double[n*n*n*n]);
-  shared_ptr<Matrix> diag(new Matrix(geom_->nbasis(), geom_->nbasis()));
+  unique_ptr<complex<double>[]> hess(new complex<double>[n*n*n*n]);
+  shared_ptr<ZMatrix> diag(new ZMatrix(geom_->nbasis(), geom_->nbasis()));
   for (int i = 0; i != n*n*n*n; ++i) {
-    hess[i] = static_cast<double>(rand()) / RAND_MAX;
+    double a = static_cast<double>(rand()) / RAND_MAX;
+    double b = static_cast<double>(rand()) / RAND_MAX;
+    hess[i] = complex<double>(a, b);
   }
   for (int i = 0; i != n*n; ++i) {
     for (int j = 0; j != n*n; ++j) {
-      hess[j+n*n*i] =  hess[i+n*n*j] = 0.5*(hess[j+n*n*i] + hess[i+n*n*j]);
+      if (i==j) {
+        hess[j+n*n*i] = complex<double>(hess[i+n*n*j].real(), 0);
+        //std::cout << "diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << std::endl;
+      }
+      else {
+        hess[j+n*n*i] = complex<double>(hess[i+n*n*j].real(), -hess[i+n*n*j].imag());
+        //std::cout << "off-diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << std::endl;
+      }
     }
     hess[i+n*n*i] += 2.0*i;
     diag->data(i) = hess[i+n*n*i];
@@ -64,34 +126,35 @@ void test_solvers(shared_ptr<Geometry> geom_) {
 
   const double tiny = 1.0e-20;
 
-#if 1
   // testing Davidson -- checked.
-  {
-    cout << "  testing Davidson class" << endl;
-    DavidsonDiag<Matrix> davidson(1,n*n);
-    shared_ptr<Matrix> prev(new Matrix(n, n));
-    prev->element(0,0) = 1.0;
 
-    for (int i = 0; i != n*n; ++i) {
-      shared_ptr<Matrix> start(new Matrix(*prev));
-      davidson.orthog(start);
-      shared_ptr<Matrix> res = start->clone();
-      dgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
+  cout << "  testing ZDavidson class" << endl;
+  ZDavidsonDiag<ZMatrix> zdavidson(1,n*n);
+  shared_ptr<ZMatrix> prev(new ZMatrix(n, n));
+  prev->element(0,0) = complex<double>(1.0, -1.0);
 
-      shared_ptr<const Matrix> ss(new Matrix(*start));
-      shared_ptr<const Matrix> rr(new Matrix(*res));
-      const double energy = davidson.compute(ss, rr);
-      shared_ptr<Matrix> residual = davidson.residual().front();
+  for (int i = 0; i != n*n; ++i) {
+    shared_ptr<ZMatrix> start(new ZMatrix(*prev));
+    zdavidson.orthog(start);
+    shared_ptr<ZMatrix> res = start->clone();
+    zgemv_("N", n*n, n*n, 1.0, hess.get(), n*n, start->data(), 1, 0.0, res->data(), 1);
 
-      cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
-      if (::pow(residual->norm(),2.0) < tiny) break;
+    shared_ptr<const ZMatrix> ss(new ZMatrix(*start));
+    shared_ptr<const ZMatrix> rr(new ZMatrix(*res));
+    const double energy = zdavidson.compute(ss, rr);
+    shared_ptr<ZMatrix> residual = zdavidson.residual().front();
 
-      for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
-      prev = residual;
-    }
+    cout << "davidson " << setw(20) << setprecision(10) << fixed << ::pow(residual->norm(),2.0) << " " << setw(20) << energy << endl;
+    if (::pow(residual->norm(),2.0) < tiny) break;
+
+    for (int i = 0; i != start->size(); ++i) residual->data(i) /= diag->data(i);
+    prev = residual;
   }
-#endif
+}
 
+#endif
+}
+#if 0
   // testing Linear
   {
     cout << "  testing Linear class" << endl;
@@ -142,7 +205,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     linear.civec()->print();
   }
 
-#if 1
+#if 0
   // TODO to be checked!!!!!!!!!!!!
   // testing AugHess
   {
@@ -174,7 +237,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 #endif
 
-#if 1
+#if 0
   // checked.
   // testing straight-line quasi-newton.
   {
@@ -199,7 +262,7 @@ void test_solvers(shared_ptr<Geometry> geom_) {
   }
 #endif
 
-#if 1
+#if 0
   // testing BFGS update
   {
     cout << "  testing BFGS class" << endl;

@@ -132,6 +132,11 @@ static void dgesvd_(const char* a, const char* b, const int c, const int d, doub
 static void zgesvd_(const char* a, const char* b, const int c, const int d, std::complex<double>* e, const int f, double* g, std::complex<double>* h,
                     const int i, std::complex<double>* j, const int k, std::complex<double>* l, const int m, double* n, int& o) { zgesvd_(a,b,&c,&d,e,&f,g,h,&i,j,&k,l,&m,n,&o); }
 
+static void zgemv_(const char* a, const int b, const int c, const std::complex<double> d, const std::complex<double>* e, const int f, const std::complex<double>* g, const int h,
+                   const std::complex<double> i, std::complex<double>* j, const int k) { zgemv_(a,&b,&c,&d,e,&f,g,&h,&i,j,&k); }
+static void zgemv_(const char* a, const int b, const int c, const std::complex<double> d, const std::unique_ptr<std::complex<double> []>& e, const int f,
+                   const std::unique_ptr<std::complex<double> []>& g, const int h, const std::complex<double> i, std::unique_ptr<std::complex<double> []>& j, const int k)
+                   { zgemv_(a,&b,&c,&d,e.get(),&f,g.get(),&h,&i,j.get(),&k); }
 static void zgemm3m_(const char* transa, const char* transb, const int m, const int n, const int k,
                      const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
                      const std::complex<double> beta, std::complex<double>* c, const int ldc) { zgemm3m_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }
