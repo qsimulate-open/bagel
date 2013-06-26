@@ -670,6 +670,7 @@ void ZMatrix::print_col(const string component, const string name, const size_t 
 }
 
 void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const ZMatrix> data) {
+  assert(data->ndim() == nsize && data->mdim() == msize);
   copy_block(nstart, mstart, nsize, msize, data->data());
 }
 
