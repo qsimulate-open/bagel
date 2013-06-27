@@ -110,13 +110,13 @@ nbasis_(A->geom()->nbasis(), B->geom()->nbasis())
    construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
    orthonormalize();  // Orthogonalizes projected coefficients and stores them in scoeff_;
 
-   int nclo = A->nclosed() + B->nclosed();
+   nclosed_ = A->nclosed() + B->nclosed();
    int nact = A->nact() + B->nact();
    int nvirt = A->nvirt() + B->nact();
 
    refs_ = make_pair(A, B);
 
-   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclo, nact, nvirt);
+   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, nact, nvirt);
 }
 
 Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeom_(superref->geom()), dimerbasis_(superref->geom()->nbasis())

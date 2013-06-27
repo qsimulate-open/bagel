@@ -312,7 +312,6 @@ throw logic_error("broken!");
 
           auto meh = make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
           meh->compute();
-          meh->print();
       } else if (method == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 

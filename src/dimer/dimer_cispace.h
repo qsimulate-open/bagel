@@ -44,9 +44,10 @@ class SpaceKey {
     SpaceKey(const int _s, const int _m_s, const int _q) : S(_s), m_s(_m_s), q(_q) {}
 
     bool operator<(const SpaceKey& o) const {
-      if (S != o.S) return (S < o.S);
-      else if (m_s != o.m_s) return (m_s < o.m_s);
-      else return (q < o.q);
+      if ( abs(q) != abs(o.q)) return ( abs(q) < abs(o.q));
+      else if ( q != o.q) return (q < o.q);
+      else if (S != o.S) return (S < o.S);
+      else return (m_s < o.m_s);
     }
     bool operator==(const SpaceKey& o) const { return ( ( (S == o.S) && (m_s == o.m_s) ) && (q == o.q) ); }
 

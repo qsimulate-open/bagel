@@ -44,6 +44,7 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(const std::shared_ptr<const PTr
   max_iter_ = input->get<int>("max_iter", 50);
   dipoles_ = input->get<bool>("dipoles", false);
   thresh_ = input->get<double>("thresh", 1.0e-12);
+  print_thresh_ = input->get<double>("print_thresh", 0.05);
 
   common_init();
 }
@@ -302,6 +303,8 @@ void MultiExcitonHamiltonian::compute() {
       properties_.push_back(make_pair(label, prop));
     }
   }
+
+  print(nstates_, print_thresh_);
 }
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Matrix> hAA, shared_ptr<const Matrix> hBB, shared_ptr<const Matrix> hAB, const double core) const {
@@ -455,7 +458,7 @@ void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int ns
 }
 
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
-  const int end = min(nstates, nstates_);
+  const int end = min(nstates, adiabats_->mdim());
   shared_ptr<Matrix> spn = spin(*adiabats_);
   cout << endl << " ===== " << title << " =====" << endl;
   for (int istate = 0; istate < end; ++istate) {
