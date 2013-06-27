@@ -150,6 +150,7 @@ class MultiExcitonHamiltonian {
       bool dipoles_;
 
       double thresh_;
+      double print_thresh_;
 
    public:
       MultiExcitonHamiltonian(std::multimap<std::string, std::string> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);

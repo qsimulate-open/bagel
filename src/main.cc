@@ -384,7 +384,6 @@ int main(int argc, char** argv) {
     
           shared_ptr<MultiExcitonHamiltonian> meh(new MultiExcitonHamiltonian(iter->second, dimer, cispace));
           meh->compute();
-          meh->print();
       } else if (method == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
