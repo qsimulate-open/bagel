@@ -41,6 +41,8 @@ double meh_energy(std::string inp) {
   std::shared_ptr<Reference> ref;
   std::shared_ptr<Dimer> dimer;
 
+  std::map<std::string, std::shared_ptr<const void>> saved;
+
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
@@ -69,6 +71,19 @@ double meh_energy(std::string inp) {
           throw std::runtime_error("dimerize needs a reference calculation (for now)");
         }
       }
+      else if (form == "r" || form == "refs") {
+        std::vector<std::shared_ptr<const Reference>> dimer_refs;
+        auto units = itree->get_child("refs");
+        if (units->size() != 2) throw std::runtime_error("Must provide exactly two references to dimerize with references");
+        for (auto i : *units) {
+          std::string istring = i->data();
+          auto tmp = saved.find(istring);
+          if (tmp == saved.end()) throw std::runtime_error(std::string("No reference found with name: ") + istring);
+          else dimer_refs.push_back(std::static_pointer_cast<const Reference>(tmp->second));
+        }
+
+        dimer = std::make_shared<Dimer>(dimer_refs.at(0), dimer_refs.at(1));
+      }
       dimer->scf(itree);
 
       *geom = *dimer->sgeom();
@@ -82,6 +97,9 @@ double meh_energy(std::string inp) {
       std::cout.rdbuf(backup_stream);
       return meh->energy(0);
     }
+
+    std::string saveref = itree->get<std::string>("saveref", "");
+    if (saveref != "") { saved.insert(std::make_pair(saveref, std::static_pointer_cast<const void>(ref))); }
   }
   assert(false);
   return 0.0;
@@ -90,7 +108,8 @@ double meh_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
 BOOST_AUTO_TEST_CASE(MEH_GROUND_STATE) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh"), -459.319548355058));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.319548355058));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28040890));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

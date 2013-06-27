@@ -88,17 +88,17 @@ int main(int argc, char** argv) {
     }
     const string input = argv[1];
 
-    auto idata = make_shared<const PTree>(input); 
+    auto idata = make_shared<const PTree>(input);
 
     bool scf_done = false;
     bool casscf_done = false;
     shared_ptr<Geometry> geom;
-    multimap<string, shared_ptr<Geometry>> saved_geos;
     shared_ptr<SCF_base> scf;
     shared_ptr<const Reference> ref;
-    multimap<string, shared_ptr<const Reference>> saved_refs;
     shared_ptr<const RelReference> relref;
     shared_ptr<Dimer> dimer;
+
+    map<string, shared_ptr<const void>> saved;
 
     // timer for each method
     Timer timer(-1);
@@ -250,42 +250,17 @@ int main(int argc, char** argv) {
           }
         }
         else if (form == "r" || form == "refs") {
-#if 0
-          shared_ptr<const Reference> refA;
-          shared_ptr<const Reference> refB;
-
-          auto iterA = dimdata.find("unita");
-          if ( iterA != dimdata.end() ) {
-            auto irefA = saved_refs.find(iterA->second);
-            if ( irefA != saved_refs.end() ) {
-              refA = irefA->second;
-            }
-            else {
-              throw runtime_error("Saved reference \"" + iterA->second + "\" not found");
-            }
-          }
-          else {
-            throw runtime_error("No input provided for unit A");
+          vector<shared_ptr<const Reference>> dimer_refs;
+          auto units = itree->get_child("refs");
+          if (units->size() != 2) throw runtime_error("Must provide exactly two references to dimerize with references");
+          for (auto i : *units) {
+            string istring = lexical_cast<string>(i->data());
+            auto tmp = saved.find(istring);
+            if (tmp == saved.end()) throw runtime_error(string("No reference found with name: ") + istring);
+            else dimer_refs.push_back(static_pointer_cast<const Reference>(tmp->second));
           }
 
-          auto iterB = dimdata.find("unitb");
-          if ( iterB != dimdata.end() ) {
-            auto irefB = saved_refs.find(iterB->second);
-            if ( irefB != saved_refs.end() ) {
-              refB = irefB->second;
-            }
-            else {
-              throw runtime_error("Saved reference \"" + iterB->second + "\" not found");
-            }
-          }
-          else {
-            throw runtime_error("No input provided for unit B");
-          }
-
-          dimer = make_shared<Dimer>(refA, refB);
-#else
-throw logic_error("broken!");
-#endif
+          dimer = make_shared<Dimer>(dimer_refs.at(0), dimer_refs.at(1));
         }
 
         dimer->scf(itree);
@@ -348,40 +323,11 @@ throw logic_error("broken!");
         if(orbitals) mfs << ref;
         mfs.close();
 
-      } else if (method == "save") {
-#if 0
-        auto sdata = iter->second;
-
-        auto igeom = sdata.find("geom");
-          if ( igeom != sdata.end() ) saved_geos.insert(make_pair(igeom->second, geom));
-
-        auto iref = sdata.find("ref");
-          if ( iref != sdata.end() ) saved_refs.insert(make_pair(iref->second, ref));
-#else
-throw logic_error("broken!");
-#endif
       }
-      #if 0 // <---- Testing environment
-      else if (method == "testing") {
-        multimap<string, string> geominfo = idata->get_input("molecule");
-        multimap<string,string> dimdata = iter->second;
 
-        shared_ptr<FCI> fci = make_shared<HarrisonZarrabian>(iter->second, ref);
-        fci->compute();
-
-        auto ciwfn = fci->conv_to_ciwfn();
-
-        double scale = (read_input<bool>(dimdata,"angstrom",false) ? ang2bohr__ : 1.0 ) ;
-
-        double dx = read_input<double>(dimdata,"dx",0.0) * scale;
-        double dy = read_input<double>(dimdata,"dy",0.0) * scale;
-        double dz = read_input<double>(dimdata,"dz",0.0) * scale;
-        array<double,3> disp = {{dx,dy,dz}};
-
-        dimer = make_shared<Dimer>(ciwfn, disp);
-
-      }
-      #endif
+      // Save functionality
+      string saveref = itree->get<string>("saveref", "");
+      if (saveref != "") { saved.insert(make_pair(saveref, static_pointer_cast<const void>(ref))); }
 
       cout << endl;
       timer.tick_print("Method: " + method);
