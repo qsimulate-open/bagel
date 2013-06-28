@@ -59,13 +59,7 @@ double localization(std::string filename) {
       std::string localizemethod = itree->get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
-        std::vector<int> sizes;
-        auto sizedata = itree->get_child("region_sizes");
-        if (sizedata) {
-          for (auto& isize : *sizedata) sizes.push_back(lexical_cast<double>(isize->data()));
-        }
-        else throw std::runtime_error("Must specify region_sizes with region localization");
-
+        auto sizes = itree->get_vector<int>("region_sizes");
         localization = std::make_shared<RegionLocalization>(ref, sizes);
       }
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")

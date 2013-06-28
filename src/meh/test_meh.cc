@@ -73,12 +73,10 @@ double meh_energy(std::string inp) {
       }
       else if (form == "r" || form == "refs") {
         std::vector<std::shared_ptr<const Reference>> dimer_refs;
-        auto units = itree->get_child("refs");
-        if (units->size() != 2) throw std::runtime_error("Must provide exactly two references to dimerize with references");
-        for (auto i : *units) {
-          std::string istring = i->data();
-          auto tmp = saved.find(istring);
-          if (tmp == saved.end()) throw std::runtime_error(std::string("No reference found with name: ") + istring);
+        auto units = itree->get_vector<std::string>("refs", 2);
+        for (auto& ikey : units) {
+          auto tmp = saved.find(ikey);
+          if (tmp == saved.end()) throw std::runtime_error(std::string("No reference found with name: ") + ikey);
           else dimer_refs.push_back(std::static_pointer_cast<const Reference>(tmp->second));
         }
 

@@ -292,7 +292,6 @@ throw logic_error("broken!");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
           auto sizes = itree->get_vector<int>("region_sizes");
-
           localization = make_shared<RegionLocalization>(ref, sizes);
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
