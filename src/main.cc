@@ -251,12 +251,10 @@ int main(int argc, char** argv) {
         }
         else if (form == "r" || form == "refs") {
           vector<shared_ptr<const Reference>> dimer_refs;
-          auto units = itree->get_child("refs");
-          if (units->size() != 2) throw runtime_error("Must provide exactly two references to dimerize with references");
-          for (auto& i : *units) {
-            string istring = lexical_cast<string>(i->data());
-            auto tmp = saved.find(istring);
-            if (tmp == saved.end()) throw runtime_error(string("No reference found with name: ") + istring);
+          auto units = itree->get_vector<string>("refs", 2);
+          for (auto& ikey : units) {
+            auto tmp = saved.find(ikey);
+            if (tmp == saved.end()) throw runtime_error(string("No reference found with name: ") + ikey);
             else dimer_refs.push_back(static_pointer_cast<const Reference>(tmp->second));
           }
 
@@ -293,12 +291,7 @@ throw logic_error("broken!");
         string localizemethod = itree->get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
-          vector<int> sizes;
-          auto sizedata = itree->get_child("region_sizes");
-          if (sizedata) {
-            for (auto& isize : *sizedata) sizes.push_back(lexical_cast<double>(isize->data()));
-          }
-          else throw runtime_error("Must specify region_sizes with region localization");
+          auto sizes = itree->get_vector<int>("region_sizes");
 
           localization = make_shared<RegionLocalization>(ref, sizes);
         }

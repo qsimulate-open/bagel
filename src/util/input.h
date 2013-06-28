@@ -27,7 +27,10 @@
 #define __SRC_UTIL_INPUT_H
 
 #include <boost/property_tree/ptree.hpp>
+#include <sstream>
 #include <memory>
+
+#include <src/util/lexical_cast.h>
 
 namespace bagel {
 
@@ -82,12 +85,13 @@ class PTree {
     template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); } 
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); } 
 
+    template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;
+
     void erase(const std::string key) { data_.erase(key); } 
 
     std::string data() const { return data_.data(); }
 
     size_t size() const;
-
 
     PTreeIterator begin() const;
     PTreeIterator end()   const;
@@ -95,6 +99,21 @@ class PTree {
     void print() const;
 
 };
+
+template<typename T> std::vector<T> PTree::get_vector(const std::string key, const int nexpected) const {
+  std::vector<T> out;
+
+  auto tmp = get_child(key);
+  if ( (nexpected > 0) && (tmp->size() != nexpected) ) {
+    std::stringstream err;
+    err << "Unexpected number of elements in vector " << key << ". Expected: " << nexpected << ", received: " << tmp->size();
+    throw std::runtime_error(err.str());
+  }
+  for (auto& i : *tmp)
+    out.push_back(lexical_cast<T>(i->data()));
+
+  return out;
+}
 
 
 }
