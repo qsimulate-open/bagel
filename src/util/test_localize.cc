@@ -30,7 +30,7 @@
 
 using namespace bagel;
 
-double pm_localization(std::string filename) {
+double localization(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
@@ -59,15 +59,14 @@ double pm_localization(std::string filename) {
       std::string localizemethod = itree->get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
-#if 0
         std::vector<int> sizes;
-        auto bound = itree->equal_range("region");
-        for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
+        auto sizedata = itree->get_child("region_sizes");
+        if (sizedata) {
+          for (auto& isize : *sizedata) sizes.push_back(lexical_cast<double>(isize->data()));
+        }
+        else throw std::runtime_error("Must specify region_sizes with region localization");
 
         localization = std::make_shared<RegionLocalization>(ref, sizes);
-#else
-throw std::logic_error("region localization test broken");
-#endif
       }
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
         localization = std::make_shared<PMLocalization>(ref);
@@ -89,7 +88,11 @@ throw std::logic_error("region localization test broken");
 BOOST_AUTO_TEST_SUITE(TEST_LOCALIZE)
 
 BOOST_AUTO_TEST_CASE(PML) {
-    BOOST_CHECK(compare(pm_localization("benzene_sto3g_pml"),13.2769000957, 1.0e-5));
+    BOOST_CHECK(compare(localization("benzene_sto3g_pml"),13.2769000957, 1.0e-5));
+}
+
+BOOST_AUTO_TEST_CASE(REGION) {
+    BOOST_CHECK(compare(localization("watertrimer_sto3g_rl"), 0.0));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

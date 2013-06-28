@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
           vector<shared_ptr<const Reference>> dimer_refs;
           auto units = itree->get_child("refs");
           if (units->size() != 2) throw runtime_error("Must provide exactly two references to dimerize with references");
-          for (auto i : *units) {
+          for (auto& i : *units) {
             string istring = lexical_cast<string>(i->data());
             auto tmp = saved.find(istring);
             if (tmp == saved.end()) throw runtime_error(string("No reference found with name: ") + istring);
@@ -293,15 +293,14 @@ throw logic_error("broken!");
         string localizemethod = itree->get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
-#if 0
           vector<int> sizes;
-          auto bound = iter->second.equal_range("region");
-          for (auto isizes = bound.first; isizes != bound.second; ++isizes) sizes.push_back(lexical_cast<int>(isizes->second));
+          auto sizedata = itree->get_child("region_sizes");
+          if (sizedata) {
+            for (auto& isize : *sizedata) sizes.push_back(lexical_cast<double>(isize->data()));
+          }
+          else throw runtime_error("Must specify region_sizes with region localization");
 
           localization = make_shared<RegionLocalization>(ref, sizes);
-#else
-throw logic_error("broken!");
-#endif
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
           localization = make_shared<PMLocalization>(ref);
