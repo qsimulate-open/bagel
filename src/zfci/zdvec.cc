@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: dvec.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Michael Caldwell
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -131,9 +131,9 @@ void ZDvec::scale(const complex<double> a) {
 
 
 ZDvec& ZDvec::operator/=(const ZDvec& o) {
-  assert(dvec().size() == o.dvec().size());
-  auto j = o.dvec().begin();
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+  assert(zdvec().size() == o.zdvec().size());
+  auto j = o.zdvec().begin();
+  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
     **i /= **j;
   return *this;
 }
@@ -148,8 +148,8 @@ ZDvec ZDvec::operator/(const ZDvec& o) const {
 
 void ZDvec::orthog(shared_ptr<const ZDvec> o) {
   if (o->ij() != ij()) throw logic_error("ZDvec::orthog called inconsistently");
-  auto j = o->dvec().begin();
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+  auto j = o->zdvec().begin();
+  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
     (*i)->orthog(*j);
 }
 
@@ -157,13 +157,13 @@ void ZDvec::orthog(shared_ptr<const ZDvec> o) {
 void ZDvec::project_out(shared_ptr<const ZDvec> o) {
   if (o->ij() != ij()) throw logic_error("ZDvec::project_out called inconsistently");
 #if 1
-  auto j = o->dvec().begin();
+  auto j = o->zdvec().begin();
   // simply project out each CI vector
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
+  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
     (*i)->project_out(*j);
 #else
-  for (auto i = dvec().begin(); i != dvec().end(); ++i)
-    for (auto j = o->dvec().begin(); j != o->dvec().end(); ++j)
+  for (auto i = zdvec().begin(); i != zdvec().end(); ++i)
+    for (auto j = o->zdvec().begin(); j != o->zdvec().end(); ++j)
       (*i)->project_out(*j);
 #endif
 }
@@ -180,7 +180,7 @@ shared_ptr<ZDvec> ZDvec::spin() const {
 shared_ptr<ZDvec> ZDvec::spinflip(shared_ptr<const Determinants> det) const {
   if(det == nullptr) det = det_->transpose();
 
-  vector<shared_ptr<Civec>> ccvec;
+  vector<shared_ptr<ZCivec>> ccvec;
   for (auto& cc : dvec_) {
     ccvec.push_back(cc->transpose(det));
   }
@@ -200,7 +200,7 @@ shared_ptr<ZDvec> ZDvec::spin_lower(shared_ptr<const Determinants> det) const {
   return make_shared<ZDvec>(ccvec);
 }
 
-shared_ptr<Dvec> ZDvec::spin_raise(shared_ptr<const Determinants> det) const {
+shared_ptr<ZDvec> ZDvec::spin_raise(shared_ptr<const Determinants> det) const {
   if(det == nullptr)
     det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
 

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: dvec.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Michael Caldwell
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -93,7 +93,7 @@ class ZDvec {
     std::complex<double> zdotu(const ZDvec& other) const;
     void zaxpy(std::complex<double> a, const ZDvec& other);
     ZDvec& operator+=(const ZDvec& o) { zaxpy(1.0, o); return *this; }
-    ZDvec& operator-=(const Zvec& o) { zaxpy(-1.0, o); return *this; }
+    ZDvec& operator-=(const ZDvec& o) { zaxpy(-1.0, o); return *this; }
 
     ZDvec operator+(const ZDvec& o) const { ZDvec out(*this); return out += o; }
     ZDvec operator-(const ZDvec& o) const { ZDvec out(*this); return out -= o; }

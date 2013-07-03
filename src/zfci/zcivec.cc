@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: civec.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2013 Michael Caldwell
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -31,7 +31,6 @@ using namespace std;
 using namespace bagel;
 
 //overloaded operators for convenience below
-
 complex<double> operator/(const complex<double> x, const int& y) { return complex<double>(x.real()/y, x.imag()/y); }
 complex<double> operator+(const complex<double> x, const int& y) { return complex<double>(x.real()+y, x.imag()); }
 
