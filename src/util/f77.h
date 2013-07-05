@@ -58,6 +58,8 @@ extern "C" {
 #endif
  void zaxpy_(const int*, const std::complex<double>*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zheev_(const char*, const char*, const int*, std::complex<double>*, const int*, double*, std::complex<double>*, const int*, double*, int*);
+ void zgemv_(const char*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, const std::complex<double>*, const int*,
+             const std::complex<double>*, std::complex<double>*, const int*);
  void zgeev_(const char*, const char*, const int*, std::complex<double>*, const int*, std::complex<double>*,
              std::complex<double>*, const int*, std::complex<double>*, const int*, std::complex<double>*, const int*, double*, int*);
  void zgemm3m_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
