@@ -118,33 +118,33 @@ class Opt {
       ++iter_;
       if (converged) { print_footer(); current_->print_atoms(); }
       return gradnorm < thresh_ && disnorm < thresh_;
-    };
+    }
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {
         std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl <<
                                   "     iter           energy             res norm      step norm"
         << std::endl << std::endl;
-    };
+    }
 
     void print_iteration(const double energy, const double residual, const double step, const double time) const {
       std::cout << std::setw(8) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
                                          << std::setw(20) << std::setprecision(8) << std::fixed << residual
                                          << std::setw(15) << std::setprecision(8) << std::fixed << step
                                          << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
-    };
+    }
 
     void mute_stdcout() {
       ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
       backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
-    };
+    }
 
     void resume_stdcout() {
       std::cout.rdbuf(backup_stream_);
       delete ofs_;
-    };
+    }
 
-    std::shared_ptr<const Geometry> geometry() const { return current_; };
+    std::shared_ptr<const Geometry> geometry() const { return current_; }
 
 };
 
