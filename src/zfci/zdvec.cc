@@ -103,12 +103,12 @@ void ZDvec::set_det(shared_ptr<const Determinants> o) const {
 }
 
 
-complex<double> ZDvec::zdotu(const ZDvec& other) const {
+complex<double> ZDvec::zdotc(const ZDvec& other) const {
   assert(ij() == other.ij());
   complex<double> sum = 0.0;
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    sum += i->zdotu(**j);
+    sum += i->zdotc(**j);
     ++j;
   }
   return sum;

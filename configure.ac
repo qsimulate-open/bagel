@@ -143,6 +143,7 @@ AC_CONFIG_FILES([Makefile
                  src/util/Makefile
                  src/io/Makefile
                  src/fci/Makefile
+                 src/zfci/Makefile
                  src/casscf/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile

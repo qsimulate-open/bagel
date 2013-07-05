@@ -27,12 +27,12 @@
 #include <src/zfci/zcivec.h>
 #include <src/parallel/mpi_interface.h>
 
+//overloaded operators for convenience below
+#include <src/zfci/zoperators.h>
+
 using namespace std;
 using namespace bagel;
 
-//overloaded operators for convenience below
-complex<double> operator/(const complex<double> x, const int& y) { return complex<double>(x.real()/y, x.imag()/y); }
-complex<double> operator+(const complex<double> x, const int& y) { return complex<double>(x.real()+y, x.imag()); }
 
 ZCivec::ZCivec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
   cc_ = unique_ptr<complex<double>[]>(new complex<double>[lena_*lenb_]);
@@ -80,9 +80,9 @@ shared_ptr<ZCivec> ZCivec::transpose(shared_ptr<const Determinants> det) const {
 }
 
 
-complex<double> ZCivec::zdotu(const ZCivec& other) const {
+complex<double> ZCivec::zdotc(const ZCivec& other) const {
   assert( (lena_ == other.lena_) && (lenb_ == other.lenb_) );
-  return zdotu_(lena_*lenb_, cc(), 1, other.data(), 1);
+  return zdotc_(lena_*lenb_, cc(), 1, other.data(), 1);
 }
 
 
@@ -91,8 +91,10 @@ void ZCivec::zaxpy(complex<double> a, const ZCivec& other) {
 }
 
 
-complex<double> ZCivec::norm() const {
-  return sqrt(zdotu(*this));
+double ZCivec::norm() const {
+  complex<double> normc = zdotc(*this);
+  assert(fabs(normc.imag()) < 1.0e-8);
+  return sqrt(normc.real());
 }
 
 
@@ -101,16 +103,17 @@ void ZCivec::scale(const complex<double> a) {
 }
 
 
-complex<double> ZCivec::variance() const {
-  return zdotu(*this) / (lena_*lenb_);
+double ZCivec::variance() const {
+  const double n = norm();
+  return n*n / (lena_*lenb_);
 }
 
 
 complex<double> ZCivec::orthog(list<shared_ptr<const ZCivec>> c) {
   for (auto& iter : c)
     project_out(iter);
-  const complex<double> norm = this->norm();
-  const complex<double> scal = (abs(norm*norm)<1.0e-60 ? 0.0 : 1.0/norm);
+  const double norm = this->norm();
+  const double scal = (abs(norm*norm)<1.0e-60 ? 0.0 : 1.0/norm);
   scale(scal);
   return 1.0/scal;
 }
@@ -142,10 +145,16 @@ shared_ptr<ZDistCivec> ZCivec::zdistcivec() const {
 }
 
 complex<double> ZCivec::spin_expectation() const {
+#if 0
+  // TODO this could be wrong
   shared_ptr<ZCivec> S2 = spin();
   complex<double> out = zdotu(*S2);
 
   return out;
+#else
+  logic_error("not yet implemented");
+  return 0.0;
+#endif
 }
 
 
@@ -170,6 +179,7 @@ void ZCivec::print(const double thr) const {
 
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<ZCivec> ZCivec::spin() const {
+#if 0
   auto out = make_shared<ZCivec>(det_);
 
   // First the easy part, S_z^2 + S_z
@@ -206,6 +216,10 @@ shared_ptr<ZCivec> ZCivec::spin() const {
   }
 
   return out;
+#else
+  throw logic_error("not yet implemented");
+  return shared_ptr<ZCivec>();
+#endif
 }
 
 // S_- = \sum_i i_beta^\dagger i_alpha
@@ -296,6 +310,7 @@ shared_ptr<ZCivec> ZCivec::spin_raise(shared_ptr<const Determinants> target_det)
 }
 
 void ZCivec::spin_decontaminate(const double thresh) {
+#if 0
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
@@ -310,12 +325,15 @@ void ZCivec::spin_decontaminate(const double thresh) {
     const complex<double> factor = -4.0/(static_cast<complex<double>>(k*(k+2)));
     zaxpy(factor, *S2);
 
-    const complex<double> norm = this->norm();
-    const complex<double> rescale = (abs(norm*norm) > 1.0e-60) ? 1.0/norm : 0.0;
+    const double norm = this->norm();
+    const double rescale = (abs(norm*norm) > 1.0e-60) ? 1.0/norm : 0.0;
     scale(rescale);
 
     S2 = spin();
 
     k += 2;
   }
+#else
+  throw logic_error("ZCivec::spin_decontaminate not implemented");
+#endif
 }
