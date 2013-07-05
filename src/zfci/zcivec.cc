@@ -27,9 +27,6 @@
 #include <src/zfci/zcivec.h>
 #include <src/parallel/mpi_interface.h>
 
-//overloaded operators for convenience below
-#include <src/zfci/zoperators.h>
-
 using namespace std;
 using namespace bagel;
 

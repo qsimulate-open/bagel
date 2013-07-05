@@ -97,6 +97,7 @@ class ZCivec {
     // some functions for convenience
     void zaxpy(std::complex<double> a, const ZCivec& other);
     std::complex<double> zdotc(const ZCivec& other) const;
+    std::complex<double> zdotc(std::shared_ptr<const ZCivec>& other) const { return zdotc(*other); }
     double norm() const;
     double variance() const;
     void scale(const std::complex<double> a);

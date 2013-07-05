@@ -78,7 +78,7 @@ ZDvec::ZDvec(vector<shared_ptr<ZCivec>> o) : det_(o.front()->det()), ij_(o.size(
 
 
 // returns a vector of Civec's which correspond to an unconverged state
-vector<shared_ptr<ZCivec>> ZDvec::zdvec(const vector<int>& conv) {
+vector<shared_ptr<ZCivec>> ZDvec::dvec(const vector<int>& conv) {
   vector<shared_ptr<ZCivec>> out;
   int i = 0;
   for (auto& iter : dvec_)
@@ -87,7 +87,7 @@ vector<shared_ptr<ZCivec>> ZDvec::zdvec(const vector<int>& conv) {
 }
 
 
-vector<shared_ptr<const ZCivec>> ZDvec::zdvec(const vector<int>& conv) const {
+vector<shared_ptr<const ZCivec>> ZDvec::dvec(const vector<int>& conv) const {
   vector<shared_ptr<const ZCivec>> out;
   int i = 0;
   for (auto& iter : dvec_)
@@ -131,9 +131,9 @@ void ZDvec::scale(const complex<double> a) {
 
 
 ZDvec& ZDvec::operator/=(const ZDvec& o) {
-  assert(zdvec().size() == o.zdvec().size());
-  auto j = o.zdvec().begin();
-  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
+  assert(dvec().size() == o.dvec().size());
+  auto j = o.dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
     **i /= **j;
   return *this;
 }
@@ -148,8 +148,8 @@ ZDvec ZDvec::operator/(const ZDvec& o) const {
 
 void ZDvec::orthog(shared_ptr<const ZDvec> o) {
   if (o->ij() != ij()) throw logic_error("ZDvec::orthog called inconsistently");
-  auto j = o->zdvec().begin();
-  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
+  auto j = o->dvec().begin();
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
     (*i)->orthog(*j);
 }
 
@@ -157,13 +157,13 @@ void ZDvec::orthog(shared_ptr<const ZDvec> o) {
 void ZDvec::project_out(shared_ptr<const ZDvec> o) {
   if (o->ij() != ij()) throw logic_error("ZDvec::project_out called inconsistently");
 #if 1
-  auto j = o->zdvec().begin();
+  auto j = o->dvec().begin();
   // simply project out each CI vector
-  for (auto i = zdvec().begin(); i != zdvec().end(); ++i, ++j)
+  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
     (*i)->project_out(*j);
 #else
-  for (auto i = zdvec().begin(); i != zdvec().end(); ++i)
-    for (auto j = o->zdvec().begin(); j != o->zdvec().end(); ++j)
+  for (auto i = dvec().begin(); i != dvec().end(); ++i)
+    for (auto j = o->dvec().begin(); j != o->dvec().end(); ++j)
       (*i)->project_out(*j);
 #endif
 }

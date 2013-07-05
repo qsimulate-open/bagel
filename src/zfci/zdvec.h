@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dvec.h
+// Filename: zdvec.h
 // Copyright (C) 2013 Michael Caldwell
 //
 // Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef BAGEL_FCI_DVEC_H
-#define BAGEL_FCI_DVEC_H
+#ifndef BAGEL_ZFCI_ZDVEC_H
+#define BAGEL_ZFCI_ZDVEC_H
 
 #include <src/zfci/zcivec.h>
 
@@ -77,10 +77,10 @@ class ZDvec {
     std::shared_ptr<const ZCivec> data(const size_t i) const { return dvec_[i]; }
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); }
 
-    std::vector<std::shared_ptr<ZCivec>>& zdvec() { return dvec_; }
-    const std::vector<std::shared_ptr<ZCivec>>& zdvec() const { return dvec_; }
-    std::vector<std::shared_ptr<ZCivec>> zdvec(const std::vector<int>& conv);
-    std::vector<std::shared_ptr<const ZCivec>> zdvec(const std::vector<int>& conv) const;
+    std::vector<std::shared_ptr<ZCivec>>& dvec() { return dvec_; }
+    const std::vector<std::shared_ptr<ZCivec>>& dvec() const { return dvec_; }
+    std::vector<std::shared_ptr<ZCivec>> dvec(const std::vector<int>& conv);
+    std::vector<std::shared_ptr<const ZCivec>> dvec(const std::vector<int>& conv) const;
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
