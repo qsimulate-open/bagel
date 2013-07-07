@@ -65,7 +65,7 @@ class ZFCI {
 #endif
 
     // total energy
-    std::vector<std::complex<double>> energy_;
+    std::vector<double> energy_;
 
     // CI vector at convergence
     std::shared_ptr<ZDvec> cc_;
@@ -96,11 +96,10 @@ class ZFCI {
     // generate spin-adapted guess configurations
     virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 
-#if 0
     /* Virtual functions -- these MUST be defined in the derived class*/
     // denominator
     virtual void const_denom() = 0;
-
+#if 0
     // functions related to natural orbitals
     void update_rdms(const std::shared_ptr<ZMatrix>& coeff);
 
@@ -128,9 +127,9 @@ class ZFCI {
     int ncore() const { return ncore_; }
     double core_energy() const { return jop_->core_energy(); }
 
-#if 0
     virtual int nij() const { return norb_*(norb_+1)/2; }
 
+#if 0
     double weight(const int i) const { return weight_[i]; }
 #endif
 
