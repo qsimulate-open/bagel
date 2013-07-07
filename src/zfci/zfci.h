@@ -182,9 +182,10 @@ class ZFCI {
     std::shared_ptr<ZDvec> civectors() const { return cc_; }
 
     // These are needed for the RDM stuff, apparently
+#endif
     void sigma_2a1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_2a2(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
-
+#if 0
     std::shared_ptr<const ZCIWfn> conv_to_ciwfn();
 #endif
 };
