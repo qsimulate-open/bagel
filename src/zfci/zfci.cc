@@ -166,15 +166,15 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
 
 void ZFCI::print_header() const {
   cout << "  ---------------------------" << endl;
-  cout << "        FCI calculation      " << endl;
+  cout << "        ZFCI calculation      " << endl;
   cout << "  ---------------------------" << endl << endl;
 }
 
-#if 0
-shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
-  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
+shared_ptr<const CIWfn> ZFCI::conv_to_ciwfn() {
+//  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
+    throw logic_error("ZFCI::con_to_ciwfn() not implemented yet");
+    return 0;
 }
-#endif
 
 
 void ZFCI::compute() {
@@ -200,7 +200,7 @@ void ZFCI::compute() {
   ZDavidsonDiag<ZCivec> davidson(nstate_, max_iter_);
 
   // main iteration starts here
-  cout << "  === FCI iteration ===" << endl << endl;
+  cout << "  === ZFCI iteration ===" << endl << endl;
   // 0 means not converged
   vector<int> conv(nstate_,0);
 

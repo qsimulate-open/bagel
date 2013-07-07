@@ -30,7 +30,7 @@
 #include <src/zfci/zdvec.h>
 #include <src/fci/mofile.h>
 //#include <src/zfci/zproperties.h>
-//#include <src/wfn/zciwfn.h>
+#include <src/wfn/ciwfn.h>
 #include <src/util/zmatrix.h>
 
 namespace bagel {
@@ -88,9 +88,7 @@ class ZFCI {
 
     // some init functions
     void common_init(); // may end up unnecessary
-#if 0
     void create_Jiiii();
-#endif
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDvec>);
     // generate spin-adapted guess configurations
@@ -129,9 +127,7 @@ class ZFCI {
 
     virtual int nij() const { return norb_*(norb_+1)/2; }
 
-#if 0
     double weight(const int i) const { return weight_[i]; }
-#endif
 
     // virtual application of Hamiltonian
     virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
@@ -166,27 +162,25 @@ class ZFCI {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
 
-#if 0
     // returns integral files
     std::shared_ptr<const MOFile> jop() const { return jop_; }
 
     // returns a denominator
-    std::shared_ptr<const ZCivec> denom() const { return denom_; }
+    //returns non-complex because denom_ is currently all real because of real mo2e
+    std::shared_ptr<const Civec> denom() const { return denom_; }
 
     // returns total energy
-    std::vector<std::complex<double>> energy() const { return energy_; }
-    std::complex<double> energy(const int i) const { return energy_.at(i); }
+    std::vector<double> energy() const { return energy_; }
+    double energy(const int i) const { return energy_.at(i); }
 
     // returns CI vectors
     std::shared_ptr<ZDvec> civectors() const { return cc_; }
 
     // These are needed for the RDM stuff, apparently
-#endif
     void sigma_2a1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_2a2(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
-#if 0
-    std::shared_ptr<const ZCIWfn> conv_to_ciwfn();
-#endif
+
+    std::shared_ptr<const CIWfn> conv_to_ciwfn();
 };
 
 }
