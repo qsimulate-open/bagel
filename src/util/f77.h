@@ -50,10 +50,8 @@ extern "C" {
  void zcopy_(const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
  void zscal_(const int*, const std::complex<double>*, std::complex<double>*, const int*);
 #ifndef ZDOT_RETURN
- void zdotu_(std::complex<double>*, const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
  void zdotc_(std::complex<double>*, const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
 #else
- std::complex<double> zdotu_(const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
  std::complex<double> zdotc_(const int*, const std::complex<double>*, const int*, const std::complex<double>*, const int*);
 #endif
  void zaxpy_(const int*, const std::complex<double>*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
@@ -164,23 +162,10 @@ static void zscal_(const int a, const std::complex<double> b, std::unique_ptr<st
     zdotc_(&a,&b,c.get(),&d,e.get(),&f);
     return a;
   }
-  static std::complex<double> zdotu_(const int b, const std::complex<double>* c, const int d, const std::complex<double>* e, const int f) {
-    std::complex<double> a;
-    zdotu_(&a,&b,c,&d,e,&f);
-    return a;
-  }
-  static std::complex<double> zdotu_(const int b, const std::unique_ptr<std::complex<double> []>& c, const int d, const std::unique_ptr<std::complex<double> []>& e, const int f) {
-    std::complex<double> a;
-    zdotu_(&a,&b,c.get(),&d,e.get(),&f);
-    return a;
-  }
 #else
   static std::complex<double> zdotc_(const int a, const std::complex<double>* b, const int c, const std::complex<double>* d, const int e) { return zdotc_(&a,b,&c,d,&e); }
   static std::complex<double> zdotc_(const int a, const std::unique_ptr<std::complex<double> []>& b, const int c, const std::unique_ptr<std::complex<double> []>& d, const int e)
                                   { return zdotc_(&a,b.get(),&c,d.get(),&e); }
-  static std::complex<double> zdotu_(const int a, const std::complex<double>* b, const int c, const std::complex<double>* d, const int e) { return zdotu_(&a,b,&c,d,&e); }
-  static std::complex<double> zdotu_(const int a, const std::unique_ptr<std::complex<double> []>& b, const int c, const std::unique_ptr<std::complex<double> []>& d, const int e)
-                                  { return zdotu_(&a,b.get(),&c,d.get(),&e); }
 #endif
 static void zgesv_(const int n, const int nrhs, std::complex<double>* a, const int lda, int* ipiv, std::complex<double>* b, const int ldb, int& info)
              { zgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info); }
