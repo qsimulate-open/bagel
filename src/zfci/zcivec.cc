@@ -51,6 +51,7 @@ ZCivec::ZCivec(const ZCivec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
 }
 
 
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
 // TODO Not efficient.
 ZCivec::ZCivec(const ZDistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
   cc_ = unique_ptr<complex<double>[]>(new complex<double>[size()]);
@@ -59,6 +60,7 @@ ZCivec::ZCivec(const ZDistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.le
   copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
   mpi__->allreduce(cc_ptr_, size());
 }
+#endif
 
 
 ZCivec::ZCivec(shared_ptr<ZCivec> o, shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
@@ -135,11 +137,13 @@ ZCivec ZCivec::operator/(const ZCivec& o) const {
 }
 
 
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
 shared_ptr<ZDistCivec> ZCivec::zdistcivec() const {
   auto dist = make_shared<ZDistCivec>(det_);
   copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
   return dist;
 }
+#endif
 
 double ZCivec::spin_expectation() const {
   shared_ptr<ZCivec> S2 = spin();

@@ -36,7 +36,10 @@
 
 namespace bagel {
 
+#define ZDISTCIVEC_NOT_IMPLELEMTED
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
 class ZDistCivec;
+#endif
 
 class ZCivec {
   protected:
@@ -66,8 +69,10 @@ class ZCivec {
 
     // copy constructor
     ZCivec(const ZCivec& o);
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
     // from a distribtued Civec
     ZCivec(const ZDistCivec& o);
+#endif
 
     // this is not a copy constructor.
     ZCivec(std::shared_ptr<ZCivec> o, std::shared_ptr<const Determinants> det);
@@ -127,10 +132,13 @@ class ZCivec {
 
     void print(double thresh) const;
 
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
     std::shared_ptr<ZDistCivec> zdistcivec() const;
+#endif
 };
 
 
+#ifndef ZDISTCIVEC_NOT_IMPLELEMTED
 class ZDistCivec {
   protected:
     mutable std::shared_ptr<const Determinants> det_;
@@ -229,6 +237,7 @@ class ZDistCivec {
     void transpose_wait();
 
 };
+#endif
 
 }
 
