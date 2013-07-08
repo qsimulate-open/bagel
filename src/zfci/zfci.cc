@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci.cc
-// Copyright (C) 2011 Toru Shiozaki
+// Filename: zfci.cc
+// Copyright (C) 2013 Michael Caldwell
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.

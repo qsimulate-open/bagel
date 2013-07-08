@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: civec.h
+// Filename: zcivec.h
 // Copyright (C) 2013 Michael Caldwell
 //
 // Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>

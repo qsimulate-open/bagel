@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: civec.cc
+// Filename: zcivec.cc
 // Copyright (C) 2013 Michael Caldwell
 //
 // Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
@@ -90,11 +90,6 @@ void ZCivec::zaxpy(complex<double> a, const ZCivec& other) {
 
 double ZCivec::norm() const {
   complex<double> normc = zdotc(*this);
-#if 0
-  cout << "zdotc(*this) = " << normc << endl;
-  throw logic_error("testing ZCivec::norm()");
-  return 0.0;
-#endif
   assert(abs(normc.imag()) < 1.0e-8);
   return sqrt(normc.real());
 }
@@ -198,7 +193,6 @@ shared_ptr<ZCivec> ZCivec::spin() const {
         double sign = static_cast<double>(iter.sign);
         zaxpy_(lenb, sign, source, 1, target, 1);
       }
-
       for ( auto& iter : det_->phib(j,i) ) {
         complex<double>* source = intermediate->element_ptr(iter.source, 0);
         complex<double>* target = out->element_ptr(iter.target, 0);
@@ -207,7 +201,6 @@ shared_ptr<ZCivec> ZCivec::spin() const {
       }
     }
   }
-
   return out;
 }
 

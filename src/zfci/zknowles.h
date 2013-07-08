@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zfci.h
+// Filename: zknowles.h
 // Copyright (C) 2013 Michael Caldwell
 //
 // Author: Michael Caldwell <michaelcaldwell2013@u.northwestern.edu>>
