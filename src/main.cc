@@ -57,7 +57,6 @@
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
-#include <src/rel/relfci.h>
 #include <src/transp/transp.h>
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
@@ -139,15 +138,6 @@ int main(int argc, char** argv) {
         auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
-
-      } else if (method == "relfci") {
-        //currently under construction
-        auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
-        dirac->compute();
-        relref = dirac->conv_to_ref();
-
-        auto relfci = make_shared<RelFCI>(itree, geom, relref);
-        relfci->compute();
 
       } else if (method == "ks") {
 
