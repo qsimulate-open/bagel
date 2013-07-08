@@ -184,7 +184,7 @@ void ZFCI::compute() {
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
   // some constants
-  //const int ij = nij();
+  const int ij = nij();
 
   // Creating an initial CI vector
   cc_ = make_shared<ZDvec>(det_, nstate_); // B runs first
@@ -215,7 +215,6 @@ void ZFCI::compute() {
     auto ccn = make_shared<const ZDvec>(cc_);
     auto sigman = make_shared<const ZDvec>(sigma);
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
-
     // get residual and new vectors
     vector<shared_ptr<ZCivec>> errvec = davidson.residual();
     pdebug.tick_print("davidson");
@@ -262,11 +261,11 @@ void ZFCI::compute() {
   }
   // main iteration ends here
 
-#if 0
   auto s = make_shared<ZDvec>(davidson.civec());
   s->print(print_thresh_);
-  cc_ = make_shared<ZDvec>(s);
 
+#if 0
+  cc_ = make_shared<ZDvec>(s);
   for (auto& iprop : properties_) {
     iprop->compute(cc_);
     iprop->print();

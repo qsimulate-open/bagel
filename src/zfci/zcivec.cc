@@ -90,7 +90,12 @@ void ZCivec::zaxpy(complex<double> a, const ZCivec& other) {
 
 double ZCivec::norm() const {
   complex<double> normc = zdotc(*this);
-  assert(fabs(normc.imag()) < 1.0e-8);
+#if 0
+  cout << "zdotc(*this) = " << normc << endl;
+  throw logic_error("testing ZCivec::norm()");
+  return 0.0;
+#endif
+  assert(abs(normc.imag()) < 1.0e-8);
   return sqrt(normc.real());
 }
 
@@ -141,17 +146,11 @@ shared_ptr<ZDistCivec> ZCivec::zdistcivec() const {
   return dist;
 }
 
-complex<double> ZCivec::spin_expectation() const {
-#if 0
-  // TODO this could be wrong
+double ZCivec::spin_expectation() const {
   shared_ptr<ZCivec> S2 = spin();
-  complex<double> out = zdotu(*S2);
-
-  return out;
-#else
-  logic_error("not yet implemented");
-  return 0.0;
-#endif
+  complex<double> out = zdotc(*S2);
+  assert(abs(out.imag()) < 1e-8);
+  return out.real();
 }
 
 
@@ -173,14 +172,13 @@ void ZCivec::print(const double thr) const {
   }
 }
 
-
+//TODO check that this is correct
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<ZCivec> ZCivec::spin() const {
-#if 0
   auto out = make_shared<ZCivec>(det_);
 
   // First the easy part, S_z^2 + S_z
-  const complex<double> sz = 0.5*static_cast< complex<double> >(det_->nspin());
+  const double sz = 0.5*static_cast<double>(det_->nspin());
   *out = *this;
   *out *= sz*sz + sz + det_->neleb();
 
@@ -197,26 +195,20 @@ shared_ptr<ZCivec> ZCivec::spin() const {
       for ( auto& iter : det_->phia(i,j) ) {
         const complex<double>* source = this->element_ptr(0, iter.source);
         complex<double>* target = intermediate->element_ptr(0, iter.target);
-        complex<double> sign = static_cast<double>(iter.sign);
-
+        double sign = static_cast<double>(iter.sign);
         zaxpy_(lenb, sign, source, 1, target, 1);
       }
 
       for ( auto& iter : det_->phib(j,i) ) {
         complex<double>* source = intermediate->element_ptr(iter.source, 0);
         complex<double>* target = out->element_ptr(iter.target, 0);
-        complex<double> sign = static_cast<double>(-iter.sign);
-
+        double sign = static_cast<double>(-iter.sign);
         zaxpy_(lena, sign, source, lenb, target, lenb);
       }
     }
   }
 
   return out;
-#else
-  throw logic_error("not yet implemented");
-  return shared_ptr<ZCivec>();
-#endif
 }
 
 // S_- = \sum_i i_beta^\dagger i_alpha
@@ -306,20 +298,21 @@ shared_ptr<ZCivec> ZCivec::spin_raise(shared_ptr<const Determinants> target_det)
   return out;
 }
 
+//TODO check this
 void ZCivec::spin_decontaminate(const double thresh) {
-#if 0
+
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
-  const complex<double> expectation = static_cast<complex<double> >(nspin * (nspin + 2)) * 0.25;
+  const double expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
   shared_ptr<ZCivec> S2 = spin();
 
   int k = nspin + 2;
-  while( abs(zdotu(*S2) - expectation) > thresh ) {
+  while( abs(zdotc(*S2) - expectation) > thresh ) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
-    const complex<double> factor = -4.0/(static_cast<complex<double>>(k*(k+2)));
+    const double factor = -4.0/(static_cast<double>(k*(k+2)));
     zaxpy(factor, *S2);
 
     const double norm = this->norm();
@@ -330,7 +323,4 @@ void ZCivec::spin_decontaminate(const double thresh) {
 
     k += 2;
   }
-#else
-  throw logic_error("ZCivec::spin_decontaminate not implemented");
-#endif
 }

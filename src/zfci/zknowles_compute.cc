@@ -60,6 +60,7 @@ shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, share
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);
     pdebug.tick_print("task1");
+
     // (task2) two electron contributions
     d->zero();
 
@@ -90,6 +91,7 @@ shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, share
   }
   return sigmavec;
 }
+
 // The first two are a part of Base because they are needed in the RDM parts
 void ZFCI::sigma_2a1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   assert(d->det() == cc->det());
@@ -105,6 +107,7 @@ void ZFCI::sigma_2a1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
     }
   }
 }
+
 void ZFCI::sigma_2a2(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   assert(d->det() == cc->det());
   const int la = d->lena();
@@ -120,6 +123,7 @@ void ZFCI::sigma_2a2(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
     }
   }
 }
+
 void ZKnowlesHandy::sigma_1(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
   const int ij = nij();
@@ -132,18 +136,20 @@ void ZKnowlesHandy::sigma_1(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
     }
   }
 }
+
 void ZKnowlesHandy::sigma_2c1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const int lb = e->lenb();
   const int ij = e->ij();
   for (int ip = 0; ip != ij; ++ip) {
     const complex<double>* const source_base = e->data(ip)->data();
-    for (auto& iter : e->det()->phia(ip)) {
+    for (auto& iter : (e->det())->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       complex<double>* const target_array = sigma->element_ptr(0, iter.target);
       zaxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
     }
   }
 }
+
 void ZKnowlesHandy::sigma_2c2(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const int la = e->lena();
   const int ij = e->ij();
@@ -158,7 +164,6 @@ void ZKnowlesHandy::sigma_2c2(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
     }
   }
 }
-
 
 void ZKnowlesHandy::sigma_3(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const MOFile> jop) const {
   const int la = cc->lena();
@@ -182,8 +187,14 @@ void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_pt
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  //TODO double check that none of the matrices in zgemm3m_ call should be transposed
   //temporary fix to allow for non-complex mo2e.
-  const complex<double>* complex_ptr= new complex<double>(*(jop->mo2e_ptr()), 0.0);
-  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, complex_ptr, ij, 0.0, e->data(), lenab);
+  //is lenab the correct dimension here?
+  complex<double> complex_mo2e[ij*ij];
+  for (int j=0;j<(ij);j++) {
+    for (int i=0; i<(ij); i++) {
+      complex_mo2e[i+j*ij] = complex<double>(jop->mo2e(i,j), 0.0);
+    }
+  }
+//argument 9 was originally jop->mo2e_ptr() for dgemm
+  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, complex_mo2e, ij, 0.0, e->data(), lenab);
 }

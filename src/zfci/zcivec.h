@@ -102,7 +102,7 @@ class ZCivec {
     double variance() const;
     void scale(const std::complex<double> a);
 
-    std::complex<double> spin_expectation() const; // returns < S^2 >
+    double spin_expectation() const; // returns < S^2 >
     std::shared_ptr<ZCivec> spin() const; // returns S^2 | civec >
     std::shared_ptr<ZCivec> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_-
     std::shared_ptr<ZCivec> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_+
@@ -123,7 +123,7 @@ class ZCivec {
 
     std::complex<double> orthog(std::list<std::shared_ptr<const ZCivec>> c);
     std::complex<double> orthog(std::shared_ptr<const ZCivec> o);
-    void project_out(std::shared_ptr<const ZCivec> o) { throw std::logic_error("not yet implemented"); } //zaxpy(-zdotc(*o), *o); }
+    void project_out(std::shared_ptr<const ZCivec> o) { zaxpy(-zdotc(*o), *o); }
 
     void print(double thresh) const;
 
@@ -203,13 +203,13 @@ class ZDistCivec {
     void terminate_mpi_recv() const;
 
     // utility functions
-    std::complex<double> norm() const;
-    std::complex<double> variance() const;
+    double norm() const;
+    double variance() const;
     std::complex<double> zdotc(const ZDistCivec& o) const;
     void scale(const std::complex<double> a);
     void zaxpy(const std::complex<double> a, const ZDistCivec& o);
 
-    void project_out(std::shared_ptr<const ZDistCivec> o) { std::logic_error("not yet implemented"); } // zaxpy(-zdotc(*o), *o); }
+    void project_out(std::shared_ptr<const ZDistCivec> o) { std::logic_error("project_out: not yet implemented"); } // zaxpy(-zdotc(*o), *o); }
     std::complex<double> orthog(std::list<std::shared_ptr<const ZDistCivec>> c);
     std::complex<double> orthog(std::shared_ptr<const ZDistCivec> o);
 
