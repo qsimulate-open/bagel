@@ -89,11 +89,15 @@ ptree BagelParser::parse() {
   node_stack_.push(ParseNode(NodeType::base, nullptr));
 
   // parse
-  bool result = qi::phrase_parse(iter, end, parser, skipper);
-
-  if ( !(result && (iter == end)) ) { // Hopefully would have had some sort of error thrown already
-    throw runtime_error("Parsing did not finish!");
+  bool result;
+  try {
+    result = qi::phrase_parse(iter, end, parser, skipper);
   }
+  catch (const qi::expectation_failure<Iterator>& e) {
+    cerr << "Error parsing file \'" << filename_ << "\'. Expected " << e.what_.tag << " " << get_error_position(contents_.cbegin(), e.first - 1) << endl;
+    throw runtime_error("Failed parsing input file!");
+  }
+  if ( (!result) || (iter != end) ) throw runtime_error("Failed parsing input file... but not entirely sure why...");
 
   // collect into the appropriate ptree
   ptree bageltree;
@@ -151,3 +155,21 @@ void BagelParser::insert_value(string value) {
 }
 
 void BagelParser::insert_key(string key) { key_stack_.push(key); }
+
+string BagelParser::get_error_position(std::string line) {
+  int line_number = 1;
+  std::size_t found = line.find('\n');
+  while(found != std::string::npos) {
+    ++line_number;
+    found = line.find('\n', found+1);
+  }
+
+  int col_number;
+  std::size_t last = line.find_last_of('\n');
+  if(last == std::string::npos) col_number = line.size();
+  else col_number = line.size() - (last + 1);
+
+  std::stringstream ss;
+  ss << "on line " << line_number << ", at position " << col_number << ".";
+  return ss.str();
+}
