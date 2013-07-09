@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <parse.h>
+#include <src/input/parse.h>
 
 using namespace std;
 using namespace bagel;

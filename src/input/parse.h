@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef BAGEL_PARSER
-#define BAGEL_PARSER
+#ifndef __SRC_INPUT_PARSE_H
+#define __SRC_INPUT_PARSE_H
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/property_tree/ptree.hpp>
