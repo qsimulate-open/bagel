@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.69)
 AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu])
 AM_INIT_AUTOMAKE
 AM_PATH_PYTHON
