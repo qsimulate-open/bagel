@@ -32,6 +32,7 @@ if test x${with_mpi} != xno; then
     LIBS="${MPILIBS} ${LIBS}"
     CXXFLAGS="${CXXFLAGS}"
 fi
+AX_CXX_COMPILE_STDCXX_11
 
 LT_INIT([disable-static])
 AC_CONFIG_MACRO_DIR([m4])
