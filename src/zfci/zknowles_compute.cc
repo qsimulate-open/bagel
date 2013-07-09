@@ -33,6 +33,8 @@
 #include <src/util/constants.h>
 #include <vector>
 
+#include <src/zfci/zphase.h>
+
 // toggle for timing print out.
 static const bool tprint = false;
 
@@ -50,6 +52,10 @@ shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, share
   auto d = make_shared<ZDvec>(ccvec->det(), ij);
   auto e = make_shared<ZDvec>(ccvec->det(), ij);
 
+  //
+  //seed for phase factors random numbers
+  //
+  srand(45);
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);
@@ -129,9 +135,11 @@ void ZKnowlesHandy::sigma_1(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
   const int ij = nij();
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
-    const double h = jop->mo1e(ip);
+    //mo1e
+    //const double h = jop->mo1e(ip);
+    const complex<double> h = phase_factor(jop, 1, ij)[ip];
     for (auto& iter : cc->det()->phia(ip)) {
-      const double hc = h * iter.sign;
+      const complex<double> hc = h * static_cast<double>(iter.sign);
       zaxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
     }
   }
@@ -173,9 +181,11 @@ void ZKnowlesHandy::sigma_3(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
     complex<double>* const target_array0 = sigma->element_ptr(0, i);
     const complex<double>* const source_array0 = cc->element_ptr(0, i);
     for (int ip = 0; ip != ij; ++ip) {
-      const double h = jop->mo1e(ip);
+//mo1e
+      //const double h = jop->mo1e(ip);
+      const complex<double> h = phase_factor(jop, 1, ij)[ip];
       for (auto& iter : cc->det()->phib(ip)) {
-        const double hc = h * iter.sign;
+        const complex<double> hc = h * static_cast<double>(iter.sign);
         target_array0[iter.target] += hc * source_array0[iter.source];
       }
     }
@@ -187,14 +197,7 @@ void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_pt
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  //temporary fix to allow for non-complex mo2e.
-  //is lenab the correct dimension here?
-  complex<double> complex_mo2e[ij*ij];
-  for (int j=0;j<(ij);j++) {
-    for (int i=0; i<(ij); i++) {
-      complex_mo2e[i+j*ij] = complex<double>(jop->mo2e(i,j), 0.0);
-    }
-  }
+
 //argument 9 was originally jop->mo2e_ptr() for dgemm
-  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, complex_mo2e, ij, 0.0, e->data(), lenab);
+  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, phase_factor(jop, 2, ij), ij, 0.0, e->data(), lenab);
 }

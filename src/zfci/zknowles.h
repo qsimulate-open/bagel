@@ -46,6 +46,7 @@ class ZKnowlesHandy : public ZFCI {
     void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const MOFile> jop) const;
     void sigma_2c1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2c2(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
+    std::complex<double>* phase_factor(std::shared_ptr<const MOFile> jop, int nelec, int ij) const;
   public:
     // this constructor is ugly... to be fixed some day...
     ZKnowlesHandy(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,
