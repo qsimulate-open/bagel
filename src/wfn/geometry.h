@@ -30,7 +30,7 @@
 #include <src/df/df.h>
 #include <src/wfn/atom.h>
 #include <src/wfn/petite.h>
-#include <src/util/input.h>
+#include <src/input/input.h>
 
 namespace bagel {
 

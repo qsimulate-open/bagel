@@ -64,7 +64,7 @@
 #include <config.h>
 
 // input parser
-#include <src/util/input.h>
+#include <src/input/input.h>
 
 
 // debugging

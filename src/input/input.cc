@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/input.h>
+#include <src/input/input.h>
 #include <boost/property_tree/json_parser.hpp>
 //#include <iostream>
 
@@ -39,7 +39,7 @@ PTree::PTree(const std::string& input) {
 const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
-PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }   
+PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }
 
 
 size_t PTree::size() const {

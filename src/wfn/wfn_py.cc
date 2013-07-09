@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 #include <boost/python.hpp>
-#include <src/util/input.h>
+#include <src/input/input.h>
 
 using namespace boost::python;
 

@@ -28,7 +28,7 @@
 #define __SRC_SCF_ATOM_H
 
 #include <src/wfn/shell.h>
-#include <src/util/input.h>
+#include <src/input/input.h>
 
 namespace bagel {
 

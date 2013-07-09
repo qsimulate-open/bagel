@@ -141,6 +141,7 @@ AC_CONFIG_FILES([Makefile
                  src/smith/Makefile
                  src/mp2/Makefile
                  src/util/Makefile
+                 src/input/Makefile
                  src/io/Makefile
                  src/fci/Makefile
                  src/zfci/Makefile

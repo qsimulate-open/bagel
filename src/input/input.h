@@ -47,15 +47,15 @@ class PTreeIterator {
     const std::shared_ptr<const PTree> operator*();
 
     //Prefix returns by reference.
-    PTreeIterator& operator++() { ++current; return *this; } 
+    PTreeIterator& operator++() { ++current; return *this; }
     PTreeIterator& operator--() { --current; return *this; }
 
     //Postfix should be implemented in terms of prefix operators
     PTreeIterator operator++(int) { PTreeIterator out = *this; ++*this; return out; }
     PTreeIterator operator--(int) { PTreeIterator out = *this; --*this; return out; }
 
-    bool operator==(const PTreeIterator& o) const { return current == o.current; } 
-    bool operator!=(const PTreeIterator& o) const { return current != o.current; } 
+    bool operator==(const PTreeIterator& o) const { return current == o.current; }
+    bool operator!=(const PTreeIterator& o) const { return current != o.current; }
 
 };
 
@@ -81,13 +81,13 @@ class PTree {
       return out ? std::make_shared<PTree>(*out) : std::shared_ptr<PTree>();
     }
 
-    template<typename T> T get(const std::string s) const { return data_.get<T>(s); } 
-    template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); } 
-    template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); } 
+    template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
+    template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); }
+    template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
 
     template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;
 
-    void erase(const std::string key) { data_.erase(key); } 
+    void erase(const std::string key) { data_.erase(key); }
 
     std::string data() const { return data_.data(); }
 
