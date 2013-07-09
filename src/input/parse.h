@@ -39,6 +39,10 @@ namespace bagel {
 
 enum class NodeType { base, object, vector };
 
+struct bagel_parser_error : std::runtime_error {
+  bagel_parser_error(std::string msg) : std::runtime_error(msg) {}
+};
+
 struct ParseNode {
   NodeType type_;
   std::shared_ptr<boost::property_tree::ptree> data_;

@@ -97,7 +97,7 @@ ptree BagelParser::parse() {
     cerr << "Error parsing file \'" << filename_ << "\'. Expected " << e.what_.tag << " " << get_error_position(contents_.cbegin(), e.first - 1) << endl;
     throw runtime_error("Failed parsing input file!");
   }
-  if ( (!result) || (iter != end) ) throw runtime_error("Failed parsing input file... but not entirely sure why...");
+  if ( (!result) || (iter != end) ) throw bagel_parser_error("Failed parsing input file, probably incorrect format.");
 
   // collect into the appropriate ptree
   ptree bageltree;

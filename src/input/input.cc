@@ -24,14 +24,46 @@
 //
 
 #include <src/input/input.h>
+#include <src/input/parse.h>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 //#include <iostream>
 
 using namespace bagel;
 using namespace std;
 
 PTree::PTree(const std::string& input) {
-  boost::property_tree::json_parser::read_json(input, data_);
+  // Check first from clues from file extension
+  if (string(input.end() - 5, input.end()) == ".json") {
+    boost::property_tree::json_parser::read_json(input, data_);
+  }
+  else if (string(input.end() - 4, input.end()) == ".xml") {
+    boost::property_tree::xml_parser::read_xml(input, data_);
+  }
+  else if (string(input.end() - 4, input.end()) == ".bgl" || string(input.end() - 6, input.end()) == ".bagel"){
+    BagelParser bp(input);
+    data_ = bp.parse();
+  }
+  else { // Unhelpful file extension -> just try them all!
+    try {
+      boost::property_tree::json_parser::read_json(input, data_);
+    }
+    catch (boost::property_tree::json_parser_error& e) {
+      try {
+        boost::property_tree::xml_parser::read_xml(input, data_);
+      }
+      catch (boost::property_tree::xml_parser_error& f) {
+        try {
+          BagelParser bp(input);
+          data_ = bp.parse();
+        }
+        catch (bagel_parser_error& g) {
+          throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\', \'.xml\', or (\'.bgl\'|\'.bagel\' ).");
+        }
+      }
+    }
+
+  }
 }
 
 
