@@ -94,6 +94,7 @@ AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h re
 
 # slatermem.h and srootlist.h need to be compiled with C++11
 AC_LANG([C++])
+AX_CHECK_COMPILE_FLAG([-std=c++11], [ CXXFLAGS="$CXXFLAGS -std=c++11"])
 if test x${slater} = xyes; then
   AC_CHECK_HEADERS([slatermem.h], [], [AC_MSG_ERROR(["slatermem.h not found"])], [])
   AC_CHECK_HEADERS([srootlist.h], [], [AC_MSG_ERROR(["srootlist.h not found"])], [])
