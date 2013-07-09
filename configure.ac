@@ -61,6 +61,8 @@ if test "x${use_scalapack}" = xyes; then
     fi
 fi
 
+AX_BOOST_BASE([1.53], [], [AC_MSG_ERROR("BOOST version >= 1.53.0 required.")])
+
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [
