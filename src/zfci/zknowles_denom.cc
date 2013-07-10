@@ -28,7 +28,7 @@
 #include <stdexcept>
 #include <src/zfci/zknowles.h>
 #include <src/zfci/zmofile.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #include <src/util/combination.hpp>
 #include <iostream>
 
