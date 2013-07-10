@@ -40,13 +40,13 @@ PTree::PTree(const std::string& input) {
   file.close();
 
   // Check first from clues from file extension
-  if (string(input.end() - 5, input.end()) == ".json") {
+  if (check_extension(input, ".json")) {
     boost::property_tree::json_parser::read_json(input, data_);
   }
-  else if (string(input.end() - 4, input.end()) == ".xml") {
+  else if (check_extension(input, ".xml")) {
     boost::property_tree::xml_parser::read_xml(input, data_);
   }
-  else if (string(input.end() - 4, input.end()) == ".bgl" || string(input.end() - 6, input.end()) == ".bagel"){
+  else if (check_extension(input, ".bgl") || check_extension(input, ".bagel")){
     BagelParser bp(input);
     data_ = bp.parse();
   }
@@ -87,4 +87,9 @@ size_t PTree::size() const {
 
 void PTree::print() const {
   write_json(cout, data_);
+}
+
+bool PTree::check_extension(const string filename, const string extension) const {
+  if (filename.size() < extension.size()) return false;
+  else return (string(filename.end() - extension.size(), filename.end()) == extension);
 }

@@ -97,6 +97,7 @@ class PTree {
     PTreeIterator end()   const;
 
     void print() const;
+    bool check_extension(const std::string filename, const std::string extension) const;
 
 };
 
