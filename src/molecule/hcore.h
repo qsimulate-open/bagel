@@ -24,10 +24,10 @@
 //
 
 
-#ifndef __src_scf_hcore_h
-#define __src_scf_hcore_h
+#ifndef __SRC_MOLECULE_HCORE_H
+#define __SRC_MOLECULE_HCORE_H
 
-#include <src/scf/matrix1e.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
@@ -36,7 +36,7 @@ class Hcore : public Matrix1e {
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    Hcore(const std::shared_ptr<const Geometry>);
+    Hcore(const std::shared_ptr<const Molecule>);
 
 };
 

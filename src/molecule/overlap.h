@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: matrix1e.h
+// Filename: overlap.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,31 +24,23 @@
 //
 
 
-#ifndef __src_scf_matrix1e_h
-#define __src_scf_matrix1e_h
+#ifndef __SRC_MOLECULE_OVERLAP_H
+#define __SRC_MOLECULE_OVERLAP_H
 
-#include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
-// specialized matrix for 1e integrals
-class Matrix1e : public Matrix {
+class Overlap : public Matrix1e {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-
-    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
-    virtual void init();
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    Matrix1e(const std::shared_ptr<const Geometry>);
-    Matrix1e(const std::shared_ptr<const Geometry>, const int n, const int m);
-    Matrix1e(const Matrix1e&);
-
-    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+    Overlap(const std::shared_ptr<const Molecule>);
 
 };
 
 }
 
 #endif
+

@@ -65,9 +65,6 @@ class Geometry : public Molecule {
     // small-large component
     mutable std::shared_ptr<DFDist> dfsl_;
 
-    // external field
-    std::array<double,3> external_;
-
     // for R12 calculations
     double gamma_;
 
@@ -137,12 +134,6 @@ class Geometry : public Molecule {
     }
 
     std::shared_ptr<const Matrix> xyz() const;
-
-    std::array<double,3> charge_center() const;
-
-    // external field
-    bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
-    double external(const int i) const { return external_[i]; }
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)

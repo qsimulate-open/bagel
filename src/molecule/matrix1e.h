@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipole.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: matrix1e.h
+// Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,26 +24,31 @@
 //
 
 
-#include <src/scf/dipolematrix.h>
-#include <src/integral/os/dipolebatch.h>
+#ifndef __SRC_MOLECULE_MATRIX1E_H
+#define __SRC_MOLECULE_MATRIX1E_H
 
-using namespace std;
-using namespace bagel;
+#include <src/molecule/molecule.h>
+#include <src/math/matrix.h>
 
-DipoleMatrix::DipoleMatrix(const shared_ptr<const Geometry> gm) : Matrix1eArray<3>(gm) {
-  init();
-  fill_upper();
+namespace bagel {
+
+// specialized matrix for 1e integrals
+class Matrix1e : public Matrix {
+  protected:
+    std::shared_ptr<const Molecule> mol_;
+
+    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
+    virtual void init();
+
+  public:
+    Matrix1e(const std::shared_ptr<const Molecule>);
+    Matrix1e(const std::shared_ptr<const Molecule>, const int n, const int m);
+    Matrix1e(const Matrix1e&);
+
+    const std::shared_ptr<const Molecule> mol() const { return mol_; };
+
+};
+
 }
 
-void DipoleMatrix::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
-  // input = [b1, b0]
-  array<double,3> center = geom_->charge_center();
-  const int dimb1 = input[0]->nbasis();
-  const int dimb0 = input[1]->nbasis();
-  DipoleBatch dipole(input, center);
-  dipole.compute();
-
-  for (int i = 0; i < nblocks(); ++i) {
-    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, dipole.data() + i*dipole.size_block());
-  }
-}
+#endif

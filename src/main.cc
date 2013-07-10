@@ -32,8 +32,6 @@
 #include <stdexcept>
 #include <memory>
 
-#include <src/scf/overlap.h>
-#include <src/scf/coeff.h>
 #include <src/wfn/geometry.h>
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_cispace.h>

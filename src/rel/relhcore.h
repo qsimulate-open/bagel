@@ -27,15 +27,15 @@
 #ifndef __SRC_REL_RELHCORE_H
 #define __SRC_REL_RELHCORE_H
 
-#include <src/scf/hcore.h>
-#include <src/scf/kinetic.h>
+#include <src/molecule/hcore.h>
+#include <src/molecule/kinetic.h>
 #include <src/rel/smallnai.h>
 
 namespace bagel {
 
 class RelHcore : public ZMatrix {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Molecule> geom_;
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Matrix> hcore_;
     const std::shared_ptr<const Matrix> nai_;
@@ -44,7 +44,7 @@ class RelHcore : public ZMatrix {
     void compute_();
 
   public:
-    RelHcore(const std::shared_ptr<const Geometry> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
+    RelHcore(const std::shared_ptr<const Molecule> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
             kinetic_(new Kinetic(geom_)), hcore_(new Hcore(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
 
       compute_();

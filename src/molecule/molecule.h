@@ -26,6 +26,7 @@
 #ifndef __SRC_MOLECULE_MOLECULE_H
 #define __SRC_MOLECULE_MOLECULE_H
 
+#include <algorithm>
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
 
@@ -44,6 +45,9 @@ class Molecule {
     std::string symmetry_;
     std::shared_ptr<Petite> plist_;
     int nirrep_;
+
+    // external field
+    std::array<double,3> external_;
 
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion() {
@@ -82,6 +86,30 @@ class Molecule {
       for (auto i : atoms_) i->print();
       std::cout << std::endl;
     }
+
+    std::array<double,3> charge_center() const {
+      std::array<double,3> out{{0.0, 0.0, 0.0}};
+      double sum = 0.0;
+      for (auto& i : atoms_) {
+        out[0] += i->atom_charge() * i->position(0);
+        out[1] += i->atom_charge() * i->position(1);
+        out[2] += i->atom_charge() * i->position(2);
+        sum += i->atom_charge();
+      }
+      out[0] /= sum;
+      out[1] /= sum;
+      out[2] /= sum;
+      return out;
+    }
+
+    // external field
+    bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
+    double external(const int i) const { return external_[i]; }
+
+    virtual size_t nbasis() const { return std::accumulate(atoms_.begin(), atoms_.end(), 0,
+                                    [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
+    virtual size_t naux() const { return std::accumulate(aux_atoms_.begin(), aux_atoms_.end(), 0,
+                                    [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
 };
 
 }

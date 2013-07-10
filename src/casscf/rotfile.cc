@@ -24,6 +24,8 @@
 //
 
 
+#include <iostream>
+#include <iomanip>
 #include <src/casscf/rotfile.h>
 
 using namespace std;

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: overlap.cc
+// Filename: kinetic.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,14 +24,18 @@
 //
 
 
-#include <src/scf/overlap.h>
-#include <src/integral/os/overlapbatch.h>
+#include <src/molecule/kinetic.h>
+#include <src/integral/os/kineticbatch.h>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <cassert>
 
 using namespace std;
 using namespace bagel;
 
 
-Overlap::Overlap(const shared_ptr<const Geometry> gm) : Matrix1e(gm) {
+Kinetic::Kinetic(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init();
   fill_upper();
@@ -39,21 +43,17 @@ Overlap::Overlap(const shared_ptr<const Geometry> gm) : Matrix1e(gm) {
 }
 
 
-Overlap::~Overlap() {
-
-}
-
-
-void Overlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  OverlapBatch overlap(input);
-  overlap.compute();
 
-  copy_block(offsetb1, offsetb0, dimb1, dimb0, overlap.data());
+  KineticBatch kinetic(input);
+  kinetic.compute();
+
+  copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
 }
 
 

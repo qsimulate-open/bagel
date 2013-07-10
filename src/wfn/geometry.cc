@@ -233,10 +233,11 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
-    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
+    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) {
 
-  // A member of Molecule
+  // Members of Molecule
   symmetry_ = o.symmetry_;
+  external_ = o.external_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -288,11 +289,11 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
-    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), external_(o.external_), gamma_(o.gamma_) {
+    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
 
   // A member of Molecule
   symmetry_ = o.symmetry_;
-
+  external_ = o.external_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -312,11 +313,11 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-   spherical_(nmer.front()->spherical_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
-   overlap_thresh_(nmer.front()->overlap_thresh_), external_(nmer.front()->external_)
+   spherical_(nmer.front()->spherical_), schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_)
 {
    // A member of Molecule
    symmetry_ = nmer.front()->symmetry_;
+   external_ = nmer.front()->external_;
 
    /************************************************************
    * Going down the list of protected variables, merge the     *
@@ -503,22 +504,6 @@ shared_ptr<const Matrix> Geometry::xyz() const {
     out->element(2, iat) = i->position(2);
     ++iat;
   }
-  return out;
-}
-
-
-array<double,3> Geometry::charge_center() const {
-  array<double,3> out{{0.0, 0.0, 0.0}};
-  double sum = 0.0;
-  for (auto& i : atoms_) {
-    out[0] += i->atom_charge() * i->position(0);
-    out[1] += i->atom_charge() * i->position(1);
-    out[2] += i->atom_charge() * i->position(2);
-    sum += i->atom_charge();
-  }
-  out[0] /= sum;
-  out[1] /= sum;
-  out[2] /= sum;
   return out;
 }
 

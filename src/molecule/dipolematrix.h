@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: kinetic.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: dipolematrix.h
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,20 +24,19 @@
 //
 
 
-#ifndef __src_scf_kinetic_h
-#define __src_scf_kinetic_h
+#ifndef __SRC_MOLECULE_DIPOLEMATRIX_H
+#define __SRC_MOLECULE_DIPOLEMATRIX_H
 
-#include <src/scf/matrix1e.h>
+#include <src/molecule/matrix1earray.h>
 
 namespace bagel {
 
-class Kinetic : public Matrix1e {
+class DipoleMatrix : public Matrix1eArray<3> {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    Kinetic(const std::shared_ptr<const Geometry>);
-
+    DipoleMatrix(const std::shared_ptr<const Molecule>);
 };
 
 }

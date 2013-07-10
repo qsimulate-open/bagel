@@ -27,8 +27,8 @@
 #ifndef __SRC_REL_BREIT_H
 #define __SRC_REL_BREIT_H
 
-#include <src/wfn/geometry.h>
-#include <src/scf/matrix1earray.h>
+#include <src/molecule/molecule.h>
+#include <src/molecule/matrix1earray.h>
 
 namespace bagel {
 
@@ -38,7 +38,7 @@ class Breit : public Matrix1eArray<6> {
     std::vector<std::pair<const int, const int>> index_;
 
   public:
-    Breit(const std::shared_ptr<const Geometry>);
+    Breit(const std::shared_ptr<const Molecule>);
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 

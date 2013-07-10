@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: overlap.h
+// Filename: kinetic.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,20 +24,19 @@
 //
 
 
-#ifndef __src_scf_overlap_h
-#define __src_scf_overlap_h
+#ifndef __SRC_MOLECULE_KINETIC_H
+#define __SRC_MOLECULE_KINETIC_H
 
-#include <src/scf/matrix1e.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
-class Overlap : public Matrix1e {
+class Kinetic : public Matrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    Overlap(const std::shared_ptr<const Geometry>);
-    ~Overlap();
+    Kinetic(const std::shared_ptr<const Molecule>);
 
 };
 

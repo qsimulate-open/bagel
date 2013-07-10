@@ -24,10 +24,10 @@
 //
 
 
-#ifndef __SRC_UTIL_MIXED_MATRIX1E_H
-#define __SRC_UTIL_MIXED_MATRIX1E_H
+#ifndef __SRC_MOLECULE_MIXED_MATRIX1E_H
+#define __SRC_MOLECULE_MIXED_MATRIX1E_H
 
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
@@ -46,31 +46,21 @@ class MixedBasis : public Matrix {
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Geometry> g0, const std::shared_ptr<const Geometry> g1)
+    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Geometry> g1)
      : Matrix(g1->nbasis(), g0->nbasis()) {
-
-      auto iter0 = g0->offsets().begin();
+      size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {
-        const std::vector<int> coffset0 = *iter0++;
-
-        auto iter1 = g1->offsets().begin();
-        for (auto& catom1 : g1->atoms()) {
-          const std::vector<int> coffset1 = *iter1++;
-
-          auto ioff0 = coffset0.begin();
-          for (auto& b0 : catom0->shells()) {
-
-            auto ioff1 = coffset1.begin();
+        for (auto& b0 : catom0->shells()) {
+          size_t off1 = 0;
+          for (auto& catom1 : g1->atoms())
             for (auto& b1 : catom1->shells()) {
-              computebatch(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, *ioff0, *ioff1++);
+              computebatch(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, off0, off1);
+              off1 += b1->nbasis();
             }
-            ++ioff0;
-          }
+          off0 += b0->nbasis();
         }
       }
-
     }
-    ~MixedBasis() {};
 
     void print(const std::string in = "", const size_t size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;

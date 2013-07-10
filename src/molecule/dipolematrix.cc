@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipole.h
+// Filename: dipolematrix.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,22 +24,26 @@
 //
 
 
-#ifndef __src_scf_dipole_h
-#define __src_scf_dipole_h
+#include <src/molecule/dipolematrix.h>
+#include <src/integral/os/dipolebatch.h>
 
-#include <src/scf/matrix1earray.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
-
-class DipoleMatrix : public Matrix1eArray<3> {
-  protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
-
-  public:
-    DipoleMatrix(const std::shared_ptr<const Geometry>);
-};
-
+DipoleMatrix::DipoleMatrix(const shared_ptr<const Molecule> mo) : Matrix1eArray<3>(mo) {
+  init();
+  fill_upper();
 }
 
-#endif
+void DipoleMatrix::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+  // input = [b1, b0]
+  array<double,3> center = mol_->charge_center();
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
+  DipoleBatch dipole(input, center);
+  dipole.compute();
 
+  for (int i = 0; i < nblocks(); ++i) {
+    matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, dipole.data() + i*dipole.size_block());
+  }
+}

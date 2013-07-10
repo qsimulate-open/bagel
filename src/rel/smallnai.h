@@ -28,7 +28,7 @@
 #define __SRC_REL_SMALLNAI_H
 
 #include <src/math/zmatrix.h>
-#include <src/scf/matrix1earray.h>
+#include <src/molecule/matrix1earray.h>
 
 namespace bagel {
 
@@ -37,7 +37,7 @@ class SmallNAI : public Matrix1eArray<4> {
     void init() override;
 
   public:
-    SmallNAI(const std::shared_ptr<const Geometry>);
+    SmallNAI(const std::shared_ptr<const Molecule>);
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
 
