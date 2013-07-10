@@ -26,9 +26,9 @@
 #ifndef __BAGEL_ZFCI_ZFCI_H
 #define __BAGEL_ZFCI_ZFCI_H
 
-#include <src/fci/dvec.h>
+//#include <src/fci/dvec.h>
 #include <src/zfci/zdvec.h>
-#include <src/fci/mofile.h>
+#include <src/zfci/zmofile.h>
 //#include <src/zfci/zproperties.h>
 #include <src/wfn/ciwfn.h>
 #include <src/math/zmatrix.h>
@@ -77,13 +77,12 @@ class ZFCI {
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
     // MO integrals
-    std::shared_ptr<MOFile> jop_;
+    std::shared_ptr<ZMOFile> jop_;
 
     // Determinant space
     std::shared_ptr<const Determinants> det_;
 
     // denominator
-    // TODO make sure that denom_ is real
     std::shared_ptr<Civec> denom_;
 
     // some init functions
@@ -130,7 +129,7 @@ class ZFCI {
     double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
-    virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
+    virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const = 0;
 
 #if 0
     // rdms
@@ -163,7 +162,7 @@ class ZFCI {
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     // returns integral files
-    std::shared_ptr<const MOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMOFile> jop() const { return jop_; }
 
     // returns a denominator
     //returns non-complex because denom_ is currently all real because of real mo2e

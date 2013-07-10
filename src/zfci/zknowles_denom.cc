@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <src/zfci/zknowles.h>
-#include <src/fci/mofile.h>
+#include <src/zfci/zmofile.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <iostream>
@@ -39,19 +39,20 @@ using namespace bagel;
 //
 // averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
 //
+//TODO need to check that indices used here are correct for uncompressed MOFile
 void ZKnowlesHandy::const_denom() {
-  vector<double> jop, kop, fk;
+  vector<complex<double>> jop, kop, fk;
   jop.resize(norb_*norb_);
   kop.resize(norb_*norb_);
   fk.resize(norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_kh(j, j, i, i);
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, j, i, i);
     }
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_kh(j, i, j, i);
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
     }
   }
   for (int i = 0; i != norb_; ++i) {
@@ -60,7 +61,6 @@ void ZKnowlesHandy::const_denom() {
       fk[i] += kop[i*norb_+j];
     }
   }
-
   denom_ = make_shared<Civec>(det());
   const int nspin = det()->nspin();
   const int nspin2 = nspin*nspin;
@@ -81,9 +81,13 @@ void ZKnowlesHandy::const_denom() {
           const int njb = ib[j];
           const int Nj = (nja ^ njb);
           const int addj = niab * (nja + njb);
-          *iter += jop[j+norb_*i] * 2.0 * addj - kop[j+norb_*i] * (F*Ni*Nj + addj);
+          complex<double> med = jop[j+norb_*i] * 2.0 * static_cast<double>(addj) - kop[j+norb_*i] * (F*Ni*Nj + addj);
+          assert(med.imag()<1e-8);
+          *iter += med.real();
         }
-        *iter += (jop_->mo1e(i,i) + fk[i]) * niab - kop[i+norb_*i] * 0.5 * (Ni - niab*niab);
+        complex<double> med = (jop_->mo1e(i,i) + fk[i]) * static_cast<double>(niab) - kop[i+norb_*i] * 0.5 * static_cast<double>(Ni - niab*niab);
+        assert(med.imag()<1e-8);
+        *iter += med.real();
       }
       ++iter;
     }
@@ -94,7 +98,7 @@ void ZKnowlesHandy::update(shared_ptr<const Coeff> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "KH");
+  jop_ = make_shared<ZJop>(ref_, ncore_, ncore_+norb_, c, "KH");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;

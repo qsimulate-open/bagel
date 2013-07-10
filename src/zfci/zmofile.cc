@@ -70,8 +70,7 @@ double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   unique_ptr<complex<double>[]> buf2e = compute_mo2e(nstart, nfence);
-
-//  compress(buf1e, buf2e);
+  compress(buf1e, buf2e);
   return core_energy;
 }
 //TODO is compression usable for complex kh?
@@ -79,7 +78,8 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
 
   // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
-  sizeij_ = hz_ ? nocc*nocc : nocc*(nocc+1)/2;
+  //sizeij_ = hz_ ? nocc*nocc : nocc*(nocc+1)/2;
+  sizeij_ = nocc*nocc;
   mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
 #if 0
   if (!hz_) {
@@ -108,8 +108,9 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
         }
       }
     }
-  //}
-
+#if 0
+  }
+#endif
   // h'kl = hkl - 0.5 sum_j (kj|jl)
   const int size1e = nocc*(nocc+1)/2;
   mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
@@ -172,8 +173,8 @@ unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfe
 
   // assembles (ii|ii) = (ii|D)(D|ii)
   unique_ptr<double[]> med = buf->form_4index(buf, 1.0);
-  unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
-  for (int i = 0; i < nocc*nocc*nocc*nocc; i++)  out[i] = med[i];
+  unique_ptr<complex<double>[]> out(new complex<double>[nocc * nocc * nocc * nocc]);
+  for (int i = 0; i != nocc * nocc * nocc * nocc; i++) out[i] = med[i];
   return out;
 }
 

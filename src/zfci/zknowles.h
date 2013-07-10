@@ -38,15 +38,20 @@ class ZKnowlesHandy : public ZFCI {
   protected:
     // denominator
     void const_denom() override;
+
     // virtual application of Hamiltonian
-    std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const override;
+
     // run-time functions
-    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const MOFile> jop) const;
+    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop) const;
+    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop) const;
+    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop) const;
     void sigma_2c1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2c2(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
-    std::complex<double>* phase_factor(std::shared_ptr<const MOFile> jop, int nelec, int ij) const;
+
+    // multiply copmlex phase factors to each orbitals (TODO only for debugging)
+    void mult_phase_factor();
+
   public:
     // this constructor is ugly... to be fixed some day...
     ZKnowlesHandy(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,

@@ -30,7 +30,7 @@
 
 #include <src/wfn/reference.h>
 #include <src/scf/scf.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
