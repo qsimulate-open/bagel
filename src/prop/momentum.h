@@ -30,7 +30,7 @@
 #include <memory>
 #include <array>
 #include <src/wfn/geometry.h>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 
 namespace bagel {
 

@@ -32,7 +32,7 @@
 
 #include <cassert>
 #include <iomanip>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/util/f77.h>
 

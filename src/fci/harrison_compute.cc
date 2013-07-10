@@ -28,7 +28,7 @@
 #include <string>
 #include <stdexcept>
 #include <src/fci/space.h>
-#include <src/util/davidson.h>
+#include <src/math/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
 

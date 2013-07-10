@@ -26,7 +26,7 @@
 #include <stdexcept>
 #include <src/fci/determinants.h>
 #include <src/fci/space.h>
-#include <src/util/comb.h>
+#include <src/math/comb.h>
 #include <src/util/combination.hpp>
 
 using namespace std;

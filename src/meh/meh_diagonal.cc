@@ -31,7 +31,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/meh/meh.h>
 
 using namespace std;

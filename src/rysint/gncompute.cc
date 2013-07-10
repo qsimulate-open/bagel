@@ -26,7 +26,7 @@
 #include <src/rysint/gnaibatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/sortlist.h>
-#include <src/util/comb.h>
+#include <src/math/comb.h>
 
 using namespace std;
 using namespace bagel;

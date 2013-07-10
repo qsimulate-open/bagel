@@ -27,7 +27,7 @@
 #include <src/scf/scf_base.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/timer.h>
-#include <src/util/diis.h>
+#include <src/math/diis.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>

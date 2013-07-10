@@ -33,7 +33,7 @@
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
 #include <src/wfn/reference.h>
-#include <src/util/localization.h>
+#include <src/math/localization.h>
 #include <src/util/lexical_cast.h>
 
 using namespace std;

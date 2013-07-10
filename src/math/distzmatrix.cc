@@ -25,7 +25,7 @@
 
 
 #include <stdexcept>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 

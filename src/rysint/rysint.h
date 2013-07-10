@@ -29,10 +29,10 @@
 #ifndef __SRC_RYSINT_RYSINT_H
 #define __SRC_RYSINT_RYSINT_H
 
-#include <src/wfn/shell.h>
-#include <src/rysint/intparam.h>
-#include <src/parallel/resources.h>
 #include <tuple>
+#include <src/wfn/shell.h>
+#include <src/util/constants.h>
+#include <src/parallel/resources.h>
 #include <src/rysint/integral.h>
 
 namespace bagel {

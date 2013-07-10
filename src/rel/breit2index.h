@@ -29,8 +29,8 @@
 
 #include <memory>
 #include <array>
-#include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
+#include <src/math/zmatrix.h>
+#include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/rel/breit.h>
 

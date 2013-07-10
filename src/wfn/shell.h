@@ -28,7 +28,7 @@
 #define __newint_scf_shell_h
 
 #include <array>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 
 namespace bagel {
 

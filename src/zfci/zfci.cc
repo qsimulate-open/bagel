@@ -27,7 +27,7 @@
 #include <src/fci/space.h>
 #include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
-#include <src/util/zdavidson.h>
+#include <src/math/zdavidson.h>
 #include <src/util/lexical_cast.h>
 
 using namespace std;

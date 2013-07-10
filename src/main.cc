@@ -53,7 +53,7 @@
 #include <src/global.h>
 #include <src/opt/optimize.h>
 #include <src/util/constants.h>
-#include <src/util/localization.h>
+#include <src/math/localization.h>
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>

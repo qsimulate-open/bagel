@@ -29,7 +29,7 @@
 
 #include <src/df/df.h>
 #include <src/rel/alpha.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 #include <src/rel/reldfbase.h>
 #include <src/rel/cdmatrix.h>
 #include <src/rel/dfhalfcomplex.h>

@@ -25,10 +25,10 @@
 
 
 #include <src/casscf/werner.h>
-#include <src/util/aughess.h>
-#include <src/util/linear.h>
+#include <src/math/aughess.h>
+#include <src/math/linear.h>
 #include <src/casscf/jkop.h>
-#include <src/util/bfgs.h>
+#include <src/math/bfgs.h>
 
 using namespace std;
 using namespace bagel;

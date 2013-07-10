@@ -24,12 +24,12 @@
 //
 
 
-#ifndef __src_util_diis_h
-#define __src_util_diis_h
+#ifndef __SRC_MATH_DIIS_H
+#define __SRC_MATH_DIIS_H
 
 #include <type_traits>
-#include <src/util/matrix.h>
-#include <src/util/zmatrix.h>
+#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have daxpy and ddot functions.

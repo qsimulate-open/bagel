@@ -35,8 +35,8 @@
 #ifndef __BAGEL_UTIL_HPW_DIIS_H
 #define __BAGEL_UTIL_HPW_DIIS_H
 
-#include <src/util/diis.h>
-#include <src/util/bfgs.h>
+#include <src/math/diis.h>
+#include <src/math/bfgs.h>
 
 namespace bagel {
 

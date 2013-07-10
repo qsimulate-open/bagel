@@ -29,7 +29,7 @@
 
 #include <src/scf/overlap.h>
 #include <src/scf/kinetic.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 

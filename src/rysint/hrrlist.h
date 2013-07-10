@@ -33,7 +33,7 @@
 
 #include <functional>
 #include <array>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 

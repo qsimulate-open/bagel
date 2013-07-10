@@ -23,9 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/localization.h>
+#include <src/math/localization.h>
 #include <src/scf/overlap.h>
-#include <src/util/jacobi.h>
+#include <src/math/jacobi.h>
 
 using namespace bagel;
 using namespace std;

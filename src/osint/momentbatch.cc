@@ -29,8 +29,8 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
+#include <src/util/constants.h>
 #include <src/osint/momentbatch.h>
-#include <src/rysint/intparam.h>
 #include <src/rysint/carsphlist.h>
 
 using namespace std;

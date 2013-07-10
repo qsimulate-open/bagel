@@ -28,7 +28,7 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <cassert>
 #include <cmath>
 #include <stdexcept>

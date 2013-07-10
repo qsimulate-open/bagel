@@ -27,7 +27,7 @@
 #define __SRC_REL_RELREFERENCE_H
 
 #include <src/rel/reloverlap.h>
-#include <src/util/mixedbasis.h>
+#include <src/math/mixedbasis.h>
 
 namespace bagel {
 

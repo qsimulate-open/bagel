@@ -24,7 +24,7 @@
 //
 
 
-#include <src/util/quatern.h>
+#include <src/math/quatern.h>
 
 using namespace std;
 using namespace bagel;

@@ -31,8 +31,8 @@
 #include <string>
 #include <map>
 #include <src/wfn/reference.h>
-#include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
+#include <src/math/zmatrix.h>
+#include <src/math/matrix.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/alpha.h>
 #include <src/rel/breit2index.h>

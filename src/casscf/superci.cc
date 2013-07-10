@@ -28,12 +28,12 @@
 #include <iostream>
 #include <src/fci/fci.h>
 #include <src/casscf/rotfile.h>
-#include <src/util/davidson.h>
+#include <src/math/davidson.h>
 #include <src/scf/hcore.h>
 #include <src/scf/fock.h>
 #include <src/util/f77.h>
-#include <src/util/bfgs.h>
-#include <src/util/hpw_diis.h>
+#include <src/math/bfgs.h>
+#include <src/math/hpw_diis.h>
 
 using namespace std;
 using namespace bagel;

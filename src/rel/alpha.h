@@ -26,7 +26,7 @@
 #ifndef __SRC_REL_ALPHA_H
 #define __SRC_REL_ALPHA_H
 
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 #include <src/util/constants.h>
 
 namespace bagel {

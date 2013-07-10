@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <src/rysint/naibatch.h>
 #include <src/util/f77.h>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 #include <src/rysint/sortlist.h>
 #include <src/rysint/carsphlist.h>
 #include <src/rysint/hrrlist.h>

@@ -28,7 +28,7 @@
 #define __SRC_OPT_OPT_H
 
 #include <fstream>
-#include <src/util/bfgs.h>
+#include <src/math/bfgs.h>
 #include <src/util/timer.h>
 #include <src/grad/gradeval.h>
 

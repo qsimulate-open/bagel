@@ -31,10 +31,10 @@
 #include <string>
 #include <stdexcept>
 #include <src/fci/distfci.h>
-#include <src/util/davidson.h>
+#include <src/math/davidson.h>
 #include <src/util/constants.h>
 #include <src/util/combination.hpp>
-#include <src/util/comb.h>
+#include <src/math/comb.h>
 #include <src/fci/hzdenomtask.h>
 #include <src/fci/distfci_ab.h>
 #include <src/fci/distfci_bb.h>

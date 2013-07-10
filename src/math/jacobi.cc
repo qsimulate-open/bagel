@@ -30,8 +30,8 @@
 #include <memory>
 #include <list>
 #include <src/wfn/geometry.h>
-#include <src/util/matrix.h>
-#include <src/util/jacobi.h>
+#include <src/math/matrix.h>
+#include <src/math/jacobi.h>
 
 using namespace std;
 using namespace bagel;

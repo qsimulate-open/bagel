@@ -28,7 +28,7 @@
 #include <stdexcept>
 #include <vector>
 #include <iostream>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 #include <src/parallel/resources.h>
 
 using namespace std;

@@ -24,7 +24,7 @@
 //
 
 #include <src/dimer/dimer_prop.h>
-#include <src/util/davidson.h>
+#include <src/math/davidson.h>
 #include <src/meh/meh.h>
 
 using namespace std;
