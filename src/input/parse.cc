@@ -35,8 +35,8 @@ BagelParser::BagelParser(string filename) : filename_(filename) {
 
   if (!in.good()) throw runtime_error(string("Error! Could not open input file: ") + filename_);
 
-  in.unsetf(std::ios::skipws); // No white space skipping!
-  contents_ = string( (std::istream_iterator<char>(in)) , (std::istream_iterator<char>()) );
+  in.unsetf(ios::skipws); // No white space skipping!
+  contents_ = string( (istream_iterator<char>(in)) , (istream_iterator<char>()) );
 }
 
 bool BagelParser::check() const {
@@ -156,20 +156,20 @@ void BagelParser::insert_value(string value) {
 
 void BagelParser::insert_key(string key) { key_stack_.push(key); }
 
-string BagelParser::get_error_position(std::string line) {
+string BagelParser::get_error_position(string line) {
   int line_number = 1;
-  std::size_t found = line.find('\n');
-  while(found != std::string::npos) {
+  size_t found = line.find('\n');
+  while(found != string::npos) {
     ++line_number;
     found = line.find('\n', found+1);
   }
 
   int col_number;
-  std::size_t last = line.find_last_of('\n');
-  if(last == std::string::npos) col_number = line.size();
+  size_t last = line.find_last_of('\n');
+  if(last == string::npos) col_number = line.size();
   else col_number = line.size() - (last + 1);
 
-  std::stringstream ss;
+  stringstream ss;
   ss << "on line " << line_number << ", at position " << col_number << ".";
   return ss.str();
 }
