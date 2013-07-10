@@ -2,13 +2,15 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.69)
-AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu])
+AC_INIT([BAGEL], 1.0, [shiozaki@northwestern.edu], [], [https://github.com/shiozaki/BAGEL])
 AM_INIT_AUTOMAKE
 AM_PATH_PYTHON
 AC_CONFIG_SRCDIR([src/main.cc])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([bagel_config.h])
 # since pyconfig.h sometimes needs to be compiled by the C compiler
 AC_LANG([C])
+
+AC_PREFIX_DEFAULT(["/usr/local/bagel"])
 
 m4_include([m4/acx_mpi.m4])
 
@@ -126,9 +128,6 @@ if test x${with_mpi} != xno; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
 
-AC_PREFIX_DEFAULT(["/usr/local/bagel"])
-
-
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/util/Makefile
@@ -154,5 +153,6 @@ AC_CONFIG_FILES([Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile
                  src/ks/Makefile
-                 src/opt/Makefile])
+                 src/opt/Makefile
+                 src/basis/Makefile])
 AC_OUTPUT

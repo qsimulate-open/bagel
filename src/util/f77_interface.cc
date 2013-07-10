@@ -24,7 +24,7 @@
 //
 
 #include <src/util/f77.h>
-#include <config.h>
+#include <bagel_config.h>
 
 #ifndef HAVE_MKL_H
 extern "C" {

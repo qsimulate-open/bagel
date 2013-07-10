@@ -43,10 +43,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   int offset = 0;
 
   // read basis file
-  string bfile = basis;
-  transform(bfile.begin(), bfile.end(), bfile.begin(),(int (*)(int))tolower);
-  const string filename = "basis/" + bfile + ".json";
-  shared_ptr<const PTree> bdata = make_shared<const PTree>(filename);
+  shared_ptr<const PTree> bdata = PTree::read_basis(basis); 
 
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) continue;

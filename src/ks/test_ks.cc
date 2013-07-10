@@ -26,7 +26,7 @@
 #include <sstream>
 #include <src/ks/ks.h>
 #include <src/wfn/reference.h>
-#include <config.h>
+#include <bagel_config.h>
 #ifdef HAVE_XC_H
 
 using namespace bagel;

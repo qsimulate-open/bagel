@@ -47,16 +47,6 @@ using namespace bagel;
 
 const static AtomMap atommap_;
 
-// this has been used a couple of times in this file. TODO what is the optimal way? 
-namespace bagel {
-static const shared_ptr<const PTree> read_basis(string name) {
-  transform(name.begin(), name.end(), name.begin(),(int (*)(int))tolower);
-  const string filename = "basis/" + name + ".json";
-  return make_shared<const PTree>(filename);
-}
-}
-
-
 Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   : spherical_(true), lmax_(0) {
 
@@ -91,7 +81,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     const bool angstrom = geominfo->get<bool>("angstrom", false);
 
     // read basis file
-    const shared_ptr<const PTree> bdata = read_basis(basisfile_);
+    const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
@@ -125,7 +115,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
     // read basis file
-    const shared_ptr<const PTree> bdata = read_basis(auxfile_);
+    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
 
     for(auto& iatom : atoms_) {
       if (!iatom->dummy()) {
@@ -393,7 +383,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   auxfile_ = geominfo->get<string>("df_basis", "");
   if (!auxfile_.empty()) {
     // read basis file
-    const shared_ptr<const PTree> bdata = read_basis(auxfile_);
+    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
 
     if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
     for (auto& i : atoms_)

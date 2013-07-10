@@ -31,7 +31,7 @@
 #include <iomanip>
 #include <string>
 #include <algorithm>
-#include <config.h>
+#include <bagel_config.h>
 
 namespace bagel {
 

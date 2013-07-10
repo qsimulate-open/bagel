@@ -33,7 +33,7 @@
 using namespace bagel;
 using namespace std;
 
-PTree::PTree(const std::string& input) {
+PTree::PTree(const string& input) {
   // Check first from clues from file extension
   const size_t n = input.find_last_of(".");
   const string extension = (n != string::npos) ? input.substr(n) : "";
@@ -70,7 +70,7 @@ PTree::PTree(const std::string& input) {
 
 
 //Dereference operator - return the current node's data.
-const std::shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
+const shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
 PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }
@@ -83,4 +83,31 @@ size_t PTree::size() const {
 
 void PTree::print() const {
   write_json(cout, data_);
+}
+
+
+shared_ptr<const PTree> PTree::read_basis(string name) {
+  transform(name.begin(), name.end(), name.begin(),(int (*)(int))tolower);
+  shared_ptr<const PTree> out;
+  // first try the absolute path (or current directory)
+  try {
+    out = make_shared<const PTree>(name);
+  } catch (...) {
+    // next, the standard install location
+    try {
+      const string prefix(BASIS_DIR);
+      const string filename = prefix + "/" + name + ".json";
+      out = make_shared<const PTree>(filename); 
+    } catch (...) {
+      // last, the debug location
+      const string filename = "../../src/basis/" + name + ".json";
+      out = make_shared<const PTree>(filename);
+      try {
+      } catch (...) {
+        throw runtime_error(name + " cannot be opened. Please see if the file is in ${prefix}/share.\n "
+                                 + " You can also specify the full path to the basis file.");
+      }
+    }
+  }
+  return out;
 }

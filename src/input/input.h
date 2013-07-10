@@ -98,6 +98,8 @@ class PTree {
 
     void print() const;
 
+    // static function to read basis files
+    static std::shared_ptr<const PTree> read_basis(std::string name);
 };
 
 template<typename T> std::vector<T> PTree::get_vector(const std::string key, const int nexpected) const {

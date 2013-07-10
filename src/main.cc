@@ -58,7 +58,7 @@
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
 
-#include <config.h>
+#include <bagel_config.h>
 
 // input parser
 #include <src/input/input.h>

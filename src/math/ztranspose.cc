@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <config.h>
+#include <bagel_config.h>
 #include <complex>
 #ifdef HAVE_MKL_H
 #define MKL_Complex16 std::complex<double>

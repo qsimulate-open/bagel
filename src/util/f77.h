@@ -27,7 +27,7 @@
 #ifndef __SRC_UTIL_F77_H
 #define __SRC_UTIL_F77_H
 
-#include <config.h>
+#include <bagel_config.h>
 #include <complex>
 #include <memory>
 

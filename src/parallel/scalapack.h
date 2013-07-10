@@ -26,7 +26,7 @@
 #ifndef __SRC_PARALLEL_SCALAPACK_H
 #define __SRC_PARALLEL_SCALAPACK_H
 
-#include <config.h>
+#include <bagel_config.h>
 #ifdef HAVE_SCALAPACK
 #include <memory>
 #include <cassert>

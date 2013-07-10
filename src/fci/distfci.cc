@@ -39,7 +39,7 @@
 #include <src/fci/distfci_ab.h>
 #include <src/fci/distfci_bb.h>
 #include <vector>
-#include <config.h>
+#include <bagel_config.h>
 
 using namespace std;
 using namespace bagel;

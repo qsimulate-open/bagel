@@ -27,7 +27,7 @@
 #define __SRC_PARALLEL_MPI_INTERFACE_H
 
 #include <stddef.h>
-#include <config.h>
+#include <bagel_config.h>
 #include <memory>
 #include <complex>
 #include <mutex>

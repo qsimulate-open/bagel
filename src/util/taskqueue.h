@@ -42,7 +42,7 @@
 #include <thread>
 
 #include <vector>
-#include <config.h>
+#include <bagel_config.h>
 #ifdef HAVE_MKL_H
   #include "mkl_service.h"
 #endif
