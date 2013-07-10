@@ -60,7 +60,8 @@ class Timer {
         std::transform(title.begin(), title.end(), title.begin(), ::toupper);
         std::cout << "    * " << std::left << std::setw(39) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
 #ifdef HAVE_MPI_H
-      } else if (level_ >= 1 && level_ <= resources__->proc()->print_level()) {
+//    } else if (level_ >= 1 && level_ <= resources__->proc()->print_level()) {
+      } else if (level_ >= 1) {
         const std::string indent(13+2*level_, ' ');
         const std::string mark = (level_ == 1 ? "o" : (level_ == 2 ? "*" : "-"));
         std::cout << indent << std::left << mark << " " << std::setw(35) << title << std::right << std::setw(13) << std::setprecision(2) << tick() << std::endl;
