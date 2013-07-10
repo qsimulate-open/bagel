@@ -36,7 +36,7 @@
 
 namespace bagel {
 
-void static_variables(int, char**);
+void static_variables();
 
 static void print_header() {
   std::cout << std::endl;

@@ -39,7 +39,6 @@
 
 namespace bagel {
 
-
 class MPI_Interface {
   protected:
     int rank_;
@@ -49,9 +48,6 @@ class MPI_Interface {
     // request handles
 #ifdef HAVE_MPI_H
     std::map<int, std::vector<MPI_Request>> request_;
-#if 0
-    std::map<int, MPI_Win> window_;
-#endif
 #endif
     int nprow_;
     int npcol_;
@@ -60,13 +56,13 @@ class MPI_Interface {
     int mypcol_;
 
     // maximum size of the MPI buffer
-    const static size_t bsize = 100000000LU;
+    static constexpr size_t bsize = 100000000LU;
 
     // mutex for isend and irecv
     mutable std::mutex mpimutex_;
 
   public:
-    MPI_Interface(int argc, char** argv);
+    MPI_Interface();
     ~MPI_Interface();
 
     int rank() const { return rank_; }
@@ -104,16 +100,6 @@ class MPI_Interface {
     void wait(const int rq);
     void cancel(const int rq);
     bool test(const int rq);
-
-#if 0
-    // one-sided communication with Window
-    int win_create(double* buf, const size_t size);
-    void win_fence(const int win);
-    void win_free(const int win);
-    void get(double* buf, const size_t len, const int rank, const size_t disp, const int win);
-    void put(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
-    void accumulate(const double* buf, const size_t len, const int rank, const size_t disp, const int win);
-#endif
 
     // scalapack
     int nprow() const { return nprow_; }

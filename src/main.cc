@@ -76,7 +76,7 @@ using namespace bagel;
 
 int main(int argc, char** argv) {
 
-  static_variables(argc, argv);
+  static_variables();
   print_header();
 
   try {
