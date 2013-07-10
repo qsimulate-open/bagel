@@ -58,7 +58,7 @@ static const shared_ptr<const PTree> read_basis(string name) {
 
 
 Geometry::Geometry(const shared_ptr<const PTree> geominfo)
-  : spherical_(true), input_(""), lmax_(0) {
+  : spherical_(true), lmax_(0) {
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -232,7 +232,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
+  : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
 
   // first construct atoms using displacements
@@ -284,7 +284,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : spherical_(o.spherical_), input_(o.input_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
+  : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),
     external_(o.external_), gamma_(o.gamma_) {
 
@@ -372,7 +372,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 }
 
 Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo)
-  : spherical_(true), input_(""), atoms_(atoms), lmax_(0) {
+  : spherical_(true), atoms_(atoms), lmax_(0) {
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);

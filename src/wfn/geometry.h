@@ -39,9 +39,6 @@ class Geometry {
     // Spherical or Cartesian basis set.
     bool spherical_;
 
-    // Input file name.
-    std::string input_;
-
     // Atoms, which contains basis-set info also.
     std::vector<std::shared_ptr<const Atom>> atoms_;
     std::vector<std::shared_ptr<const Atom>> aux_atoms_;
