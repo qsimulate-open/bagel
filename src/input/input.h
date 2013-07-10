@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_UTIL_INPUT_H
-#define __SRC_UTIL_INPUT_H
+#ifndef __SRC_INPUT_INPUT_H
+#define __SRC_INPUT_INPUT_H
 
 #include <boost/property_tree/ptree.hpp>
 #include <sstream>
