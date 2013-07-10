@@ -28,7 +28,6 @@
 #include <bitset>
 #include <src/fci/harrison.h>
 #include <src/fci/mofile.h>
-#include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 #include <src/util/taskqueue.h>

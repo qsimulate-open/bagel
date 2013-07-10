@@ -24,14 +24,13 @@
 //
 
 
-#include <src/osint/overlapbatch.h>
-#include <src/osint/momentbatch.h>
-#include <src/rysint/carsphlist.h>
-#include <src/wfn/shell.h>
-#include <src/util/constants.h> // for Cartesian to spherical transformation
-#include <src/rysint/carsphlist.h>
 #include <iostream>
 #include <sstream>
+#include <src/wfn/shell.h>
+#include <src/util/constants.h> // for Cartesian to spherical transformation
+#include <src/integral/carsphlist.h>
+#include <src/integral/os/overlapbatch.h>
+#include <src/integral/os/momentbatch.h>
 
 using namespace std;
 using namespace bagel;

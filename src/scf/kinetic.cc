@@ -25,9 +25,7 @@
 
 
 #include <src/scf/kinetic.h>
-#include <src/osint/kineticbatch.h>
-#include <src/osint/dipolebatch.h>
-#include <src/rysint/naibatch.h>
+#include <src/integral/os/kineticbatch.h>
 #include <vector>
 #include <iostream>
 #include <iomanip>

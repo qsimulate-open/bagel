@@ -30,8 +30,8 @@
 #include <cassert>
 #include <cmath>
 #include <algorithm>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/slaterbatch.h>
+#include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/slaterbatch.h>
 #include <src/util/constants.h>
 
 using namespace std;

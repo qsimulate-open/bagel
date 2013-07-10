@@ -31,7 +31,7 @@
 #include <iomanip>
 
 // TODO this is WRONG!!!!!!!! TODO TODO
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #define SlaterFit DFDist_ints<ERIBatch>
 #define YukawaFit DFDist_ints<ERIBatch>
 

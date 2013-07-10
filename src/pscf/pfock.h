@@ -31,7 +31,7 @@
 #include <src/pscf/pmatrix1e.h>
 #include <src/pscf/phcore.h>
 #include <src/pscf/pcompfile.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #include <memory>
 #include <vector>
 #include <complex>

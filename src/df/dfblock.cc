@@ -25,8 +25,8 @@
 
 #include <src/util/taskqueue.h>
 #include <src/df/dfblock.h>
-#include <src/rysint/libint.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/libint/libint.h>
+#include <src/integral/rys/eribatch.h>
 #include <src/util/constants.h>
 #include <src/util/simple.h>
 

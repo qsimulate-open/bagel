@@ -26,8 +26,8 @@
 
 #include <src/df/df.h>
 #include <src/df/dfdistt.h>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/libint.h>
+#include <src/integral/rys/eribatch.h>
+#include <src/integral/libint/libint.h>
 
 using namespace std;
 using namespace bagel;
@@ -202,9 +202,9 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
 
 pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
-  auto eribatch = make_shared<Libint>(input);
+  shared_ptr<RysInt> eribatch = make_shared<Libint>(input);
 #else
-  auto eribatch = make_shared<ERIBatch>(input, 2.0);
+  shared_ptr<RysInt> eribatch = make_shared<ERIBatch>(input, 2.0);
 #endif
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);

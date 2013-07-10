@@ -31,15 +31,15 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/smalleribatch.h>
-#include <src/rysint/mixederibatch.h>
+#include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/smalleribatch.h>
+#include <src/integral/rys/mixederibatch.h>
+#include <src/integral/libint/libint.h>
 #include <src/wfn/geometry.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/math/quatern.h>
-#include <src/rysint/libint.h>
 #include <src/util/lexical_cast.h>
 
 using namespace std;

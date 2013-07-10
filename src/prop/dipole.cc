@@ -28,7 +28,7 @@
 #include <iomanip>
 #include <array>
 #include <src/prop/dipole.h>
-#include <src/osint/dipolebatch.h>
+#include <src/integral/os/dipolebatch.h>
 
 using namespace std;
 using namespace bagel;

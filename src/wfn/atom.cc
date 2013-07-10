@@ -36,7 +36,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <src/math/quatern.h>
-#include <src/osint/overlapbatch.h>
+#include <src/integral/os/overlapbatch.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/lexical_cast.h>

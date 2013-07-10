@@ -27,7 +27,7 @@
 #include <src/pscf/pscf.h>
 #include <src/pscf/pcoeff.h>
 #include <src/pscf/pdiis.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>

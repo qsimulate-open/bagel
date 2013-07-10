@@ -26,7 +26,7 @@
 #include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
-#include <src/osint/overlapbatch.h>
+#include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
 #include <src/util/lexical_cast.h>
 

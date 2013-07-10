@@ -27,6 +27,7 @@
 #define __SRC_DF_DF_H
 
 #include <src/wfn/atom.h>
+#include <src/parallel/resources.h>
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
 #include <src/util/timer.h>

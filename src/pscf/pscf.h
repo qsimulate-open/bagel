@@ -37,7 +37,7 @@
 #include <src/pscf/ptildex.h>
 #include <src/pscf/pdata.h>
 #include <src/pscf/pcoeff.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 
 namespace bagel {
 

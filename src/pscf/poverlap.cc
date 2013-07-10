@@ -25,7 +25,7 @@
 
 
 #include <src/pscf/poverlap.h>
-#include <src/osint/overlapbatch.h>
+#include <src/integral/os/overlapbatch.h>
 #include <iostream>
 
 using namespace std;
