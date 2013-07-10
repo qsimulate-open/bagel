@@ -57,7 +57,6 @@
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
-#include <src/transp/transp.h>
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
 
@@ -183,11 +182,6 @@ int main(int argc, char** argv) {
 
         auto mp2 = make_shared<MP2>(itree, geom);
         mp2->compute();
-
-      } else if (method == "transp") {
-
-        auto tran = make_shared<Transp>(itree, geom, ref);
-        tran->compute();
 
       } else if (method == "smith") {
 
