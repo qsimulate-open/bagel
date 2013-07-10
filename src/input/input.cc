@@ -23,16 +23,22 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <fstream>
+
 #include <src/input/input.h>
 #include <src/input/parse.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-//#include <iostream>
 
 using namespace bagel;
 using namespace std;
 
 PTree::PTree(const std::string& input) {
+  // Does the file exist?
+  ifstream file(input);
+  if (!file) throw runtime_error(string("Input file \'") + input + string("\' not found!"));
+  file.close();
+
   // Check first from clues from file extension
   if (string(input.end() - 5, input.end()) == ".json") {
     boost::property_tree::json_parser::read_json(input, data_);
