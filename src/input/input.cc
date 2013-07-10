@@ -34,19 +34,16 @@ using namespace bagel;
 using namespace std;
 
 PTree::PTree(const std::string& input) {
-  // Does the file exist?
-  ifstream file(input);
-  if (!file) throw runtime_error(string("Input file \'") + input + string("\' not found!"));
-  file.close();
-
   // Check first from clues from file extension
-  if (check_extension(input, ".json")) {
+  const size_t n = input.find_last_of(".");
+  const string extension = (n != string::npos) ? input.substr(n) : "";
+  if (extension == ".json") {
     boost::property_tree::json_parser::read_json(input, data_);
   }
-  else if (check_extension(input, ".xml")) {
+  else if (extension == ".xml") {
     boost::property_tree::xml_parser::read_xml(input, data_);
   }
-  else if (check_extension(input, ".bgl") || check_extension(input, ".bagel")){
+  else if (extension == ".bgl" || extension == ".bagel"){
     BagelParser bp(input);
     data_ = bp.parse();
   }
@@ -64,11 +61,10 @@ PTree::PTree(const std::string& input) {
           data_ = bp.parse();
         }
         catch (bagel_parser_error& g) {
-          throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\', \'.xml\', or (\'.bgl\'|\'.bagel\' ).");
+          throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\', \'.xml\', or (\'.bgl\'|\'.bagel\' )).");
         }
       }
     }
-
   }
 }
 
@@ -87,9 +83,4 @@ size_t PTree::size() const {
 
 void PTree::print() const {
   write_json(cout, data_);
-}
-
-bool PTree::check_extension(const string filename, const string extension) const {
-  if (filename.size() < extension.size()) return false;
-  else return (string(filename.end() - extension.size(), filename.end()) == extension);
 }

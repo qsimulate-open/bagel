@@ -33,7 +33,7 @@ using ptree = boost::property_tree::ptree;
 BagelParser::BagelParser(string filename) : filename_(filename) {
   ifstream in(filename_, ios_base::in);
 
-  if (!in) throw runtime_error(string("Error! Could not open input file: ") + filename_);
+  if (!in.good()) throw runtime_error(string("Error! Could not open input file: ") + filename_);
 
   in.unsetf(std::ios::skipws); // No white space skipping!
   contents_ = string( (std::istream_iterator<char>(in)) , (std::istream_iterator<char>()) );
