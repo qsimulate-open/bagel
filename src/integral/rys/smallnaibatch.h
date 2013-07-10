@@ -29,7 +29,7 @@
 
 #include <stddef.h>
 #include <src/molecule/shell.h>
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 #include <memory>
 #include <src/integral/rys/naibatch.h>
 #include <src/math/matrix.h>
@@ -42,7 +42,7 @@ class SmallNAIBatch {
   protected:
     std::array<std::shared_ptr<Matrix>,4> data_;
 
-    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Molecule> mol_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
 
     const size_t size_block_;
@@ -50,7 +50,7 @@ class SmallNAIBatch {
     void do_nothing();
 
   public:
-    SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Geometry> geom);
+    SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol);
     ~SmallNAIBatch();
 
     void compute();

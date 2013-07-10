@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __src_scf_petite_h
-#define __src_scf_petite_h
+#ifndef __SRC_MOLECULE_PETITE_H
+#define __SRC_MOLECULE_PETITE_H
 
 #include <tuple>
 #include <src/molecule/atom.h>

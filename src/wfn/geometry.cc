@@ -118,7 +118,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
     }
   }
-  if(atoms_.empty()) throw runtime_error("No atoms specified at all");
+  if (atoms_.empty()) throw runtime_error("No atoms specified at all");
 
   /* Set up aux_atoms_ */
   auxfile_ = geominfo->get<string>("df_basis", "");
@@ -233,7 +233,10 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
-    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
+    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), external_(o.external_), gamma_(o.gamma_) {
+
+  // A member of Molecule
+  symmetry_ = o.symmetry_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -285,11 +288,13 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
-    auxfile_(o.auxfile_), symmetry_(o.symmetry_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),
-    external_(o.external_), gamma_(o.gamma_) {
+    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), external_(o.external_), gamma_(o.gamma_) {
+
+  // A member of Molecule
+  symmetry_ = o.symmetry_;
+
 
   // first construct atoms using displacements
-
   for (auto& i : o.atoms_) {
     atoms_.push_back(make_shared<Atom>(*i, displ));
   }
@@ -307,9 +312,12 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-   spherical_(nmer.front()->spherical_), symmetry_(nmer.front()->symmetry_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
+   spherical_(nmer.front()->spherical_), schwarz_thresh_(nmer.front()->schwarz_thresh_),
    overlap_thresh_(nmer.front()->overlap_thresh_), external_(nmer.front()->external_)
 {
+   // A member of Molecule
+   symmetry_ = nmer.front()->symmetry_;
+
    /************************************************************
    * Going down the list of protected variables, merge the     *
    * data, pick the best ones, or make sure they all match     *
@@ -372,7 +380,8 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 }
 
 Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo)
-  : spherical_(true), atoms_(atoms), lmax_(0) {
+  : spherical_(true), lmax_(0) {
+  atoms_ = atoms;
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -425,32 +434,6 @@ void Geometry::construct_from_atoms(const vector<shared_ptr<const Atom>> atoms, 
   auxfile_ = geominfo->get<string>("df_basis", "");
   // symmetry
   symmetry_ = geominfo->get<string>("symmetry", "c1");
-
-}
-
-double Geometry::compute_nuclear_repulsion() {
-  double out = 0.0;
-  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    const double c = (*iter)->atom_charge();
-    for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
-      const double dist = (*iter)->distance(*titer);
-      const double charge = c * (*titer)->atom_charge();
-      // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
-      if (!(*iter)->dummy() || !(*titer)->dummy())
-        out += charge / dist;
-    }
-  }
-  return out;
-}
-
-
-void Geometry::print_atoms() const {
-  cout << "  *** Geometry ***" << endl << endl;
-  cout << "  Symmetry: " << symmetry() << endl;
-  cout << endl;
-
-  for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) (*iter)->print();
-  cout << endl;
 
 }
 

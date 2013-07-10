@@ -28,26 +28,16 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/molecule/atom.h>
-#include <src/wfn/petite.h>
+#include <src/molecule/molecule.h>
 #include <src/input/input.h>
 
 namespace bagel {
 
-class Geometry {
+class Geometry : public Molecule {
   protected:
-    // Spherical or Cartesian basis set.
     bool spherical_;
 
-    // Atoms, which contains basis-set info also.
-    std::vector<std::shared_ptr<const Atom>> atoms_;
-    std::vector<std::shared_ptr<const Atom>> aux_atoms_;
     bool aux_merged_;
-
-    // Nuclear repulsion energy.
-    double nuclear_repulsion_;
-    // Computes the nuclear repulsion energy.
-    double compute_nuclear_repulsion();
 
     // Some shared info for basis sets.
     int nbasis_;
@@ -63,11 +53,6 @@ class Geometry {
 
     std::string basisfile_;
     std::string auxfile_;
-
-    // Symmetry can be used for molecular calculation.
-    std::string symmetry_;
-    std::shared_ptr<Petite> plist_;
-    int nirrep_;
 
     // integral screening
     double schwarz_thresh_;
@@ -100,13 +85,7 @@ class Geometry {
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
-    // Returns shared pointers of Atom objects, which contains basis-set info.
-    const std::vector<std::shared_ptr<const Atom>>& atoms() const { return atoms_; }
-    const std::vector<std::shared_ptr<const Atom>>& aux_atoms() const { return aux_atoms_; }
-    std::shared_ptr<const Atom> atoms(const unsigned int i) const { return atoms_[i]; }
-
     // Returns a constant
-    int natom() const { return atoms_.size(); }
     size_t nbasis() const { return nbasis_; }
     size_t nele() const { return nele_; }
     size_t nfrc() const { return nfrc_; }
@@ -116,8 +95,6 @@ class Geometry {
     bool spherical() const { return spherical_; }
     int nirrep() const { return nirrep_; }
     double gamma() const {return gamma_; }
-    const std::string symmetry() const { return symmetry_; }
-    virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     const std::string basisfile() const { return basisfile_; }
     const std::string auxfile() const { return auxfile_; }
@@ -137,9 +114,6 @@ class Geometry {
 
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
-
-    // Printing out some info
-    void print_atoms() const;
 
     // Returns the Petite list.
     std::shared_ptr<Petite> plist() const { return plist_; }

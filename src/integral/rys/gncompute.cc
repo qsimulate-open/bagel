@@ -113,9 +113,9 @@ void GNAIBatch::compute() {
     const double* croots = &roots_[i * rank_];
     const double* cweights = &weights_[i * rank_];
     double PC[3];
-    PC[0] = p_[i*3  ] - geom_->atoms(iatom)->position(0) - disp[0];
-    PC[1] = p_[i*3+1] - geom_->atoms(iatom)->position(1) - disp[1];
-    PC[2] = p_[i*3+2] - geom_->atoms(iatom)->position(2) - disp[2];
+    PC[0] = p_[i*3  ] - mol_->atoms(iatom)->position(0) - disp[0];
+    PC[1] = p_[i*3+1] - mol_->atoms(iatom)->position(1) - disp[1];
+    PC[2] = p_[i*3+2] - mol_->atoms(iatom)->position(2) - disp[2];
     for (int r = 0; r != rank_; ++r) {
       r1x[r] = p_[i*3  ] - ax - PC[0] * croots[r];
       r1y[r] = p_[i*3+1] - ay - PC[1] * croots[r];

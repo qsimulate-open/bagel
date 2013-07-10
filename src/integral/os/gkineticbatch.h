@@ -28,22 +28,16 @@
 #define __SRC_INTEGRAL_OS_GKINETICBATCH_H
 
 #include <src/integral/os/osint.h>
-#include <src/wfn/geometry.h>
 
 namespace bagel {
 
 // computes derivative integrals of kinetic operator.
 class GKineticBatch : public OSInt {
-  protected:
-    const std::shared_ptr<const Geometry> geom_;
-
   public:
-    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,3), geom_(ge) { };
+    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,3) { };
     ~GKineticBatch() {};
 
     void compute();
-
-    std::shared_ptr<const Geometry> geom() const { return geom_; };
 
 };
 

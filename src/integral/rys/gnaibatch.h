@@ -42,15 +42,15 @@ class GNAIBatch : public NAIBatch_base {
 
   public:
 
-    GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const std::tuple<int,int> i,
+    GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
               std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  NAIBatch_base(_info, gm, 1, stack), iatom_(i) {
+      :  NAIBatch_base(_info, mol, 1, stack), iatom_(i) {
       if (swap01_) {
         std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
       }
       set_exponents();
-    };
-    ~GNAIBatch() {};
+    }
+    ~GNAIBatch() {}
 
     /// compute a batch of integrals
     void compute();

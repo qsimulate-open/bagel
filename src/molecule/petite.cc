@@ -24,7 +24,7 @@
 //
 
 
-#include <src/wfn/petite.h>
+#include <src/molecule/petite.h>
 #include <array>
 #include <memory>
 #include <iostream>

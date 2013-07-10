@@ -29,7 +29,6 @@
 
 #include <stddef.h>
 #include <src/molecule/shell.h>
-#include <src/wfn/geometry.h>
 #include <memory>
 #include <src/integral/rys/eribatch.h>
 #include <src/math/matrix.h>

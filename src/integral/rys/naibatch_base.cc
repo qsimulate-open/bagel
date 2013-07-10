@@ -30,9 +30,9 @@
 using namespace std;
 using namespace bagel;
 
-NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
+NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              shared_ptr<StackMem> stack, const int L, const double A)
- : RysInt(_info, stack), geom_(gm), L_(L), A_(A) {
+ : RysInt(_info, stack), mol_(mol), L_(L), A_(A) {
 
   deriv_rank_ = deriv;
   const double integral_thresh = PRIM_SCREEN_THRESH;
@@ -40,7 +40,7 @@ NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _
   if (_info.size() != 2) throw logic_error("NAIBatch_base should be called with shell pairs");
 
   // natom_
-  natom_ = geom_->natom() * (2 * L + 1);
+  natom_ = mol_->natom() * (2 * L + 1);
 
   set_swap_info();
   set_ab_cd();
@@ -66,7 +66,7 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
   const vector<double> exp1 = basisinfo_[1]->exponents();
 
   int index = 0;
-  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
 
   const double onepi2 = 1.0 / (pi__ * pi__);
   const double sqrtpi = ::sqrt(pi__);

@@ -62,7 +62,7 @@ void GradTask::compute() {
       }
     }
     {
-      GKineticBatch batch(shell2_, ge_->geom_);
+      GKineticBatch batch(shell2_);
       const double* kdata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();
@@ -78,7 +78,7 @@ void GradTask::compute() {
       }
     }
     {
-      GOverlapBatch batch(shell2_, ge_->geom_);
+      GOverlapBatch batch(shell2_);
       const double* odata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();

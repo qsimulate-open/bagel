@@ -28,21 +28,17 @@
 #define __SRC_INTEGRAL_OS_GOVERLAPBATCH_H
 
 #include <src/integral/os/osint.h>
-#include <src/wfn/geometry.h>
 
 namespace bagel {
 
 class GOverlapBatch : public OSInt {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
 
   public:
-    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o, const std::shared_ptr<const Geometry> ge) : OSInt(o,1), geom_(ge) { };
+    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,1) { };
     ~GOverlapBatch() {};
 
     void compute();
-
-    std::shared_ptr<const Geometry> geom() const { return geom_; };
 
 };
 

@@ -28,13 +28,13 @@
 #define __SRC_RYSINT_NAIBATCH_BASE_H
 
 #include <src/integral/rys/rysint.h>
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
 class NAIBatch_base : public RysInt {
   protected:
-    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Molecule> mol_;
     int natom_;
 
     /// for periodic calculations (UNCHECKED!!)
@@ -45,13 +45,12 @@ class NAIBatch_base : public RysInt {
     void compute_ssss(const double) override;
 
   public:
-    NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Geometry> gm, const int deriv,
+    NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>(),
                   const int L = 0, const double A = 0.0);
     ~NAIBatch_base() {};
 
-    const std::shared_ptr<const Geometry> geom() const { return geom_; };
-
+    std::shared_ptr<const Molecule> mol() const { return mol_; }
 
 };
 
