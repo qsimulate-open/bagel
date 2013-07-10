@@ -35,7 +35,7 @@ using namespace std;
 using namespace bagel;
 
 
-MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
+MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
 : geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
@@ -45,7 +45,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const in
 }
 
 
-MOFile::MOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
+MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
 : hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();

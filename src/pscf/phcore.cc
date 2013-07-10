@@ -25,8 +25,8 @@
 
 
 #include <src/pscf/phcore.h>
-#include <src/osint/kineticbatch.h>
-#include <src/rysint/naibatch.h>
+#include <src/integral/os/kineticbatch.h>
+#include <src/integral/rys/naibatch.h>
 #include <iostream>
 
 using namespace std;

@@ -26,7 +26,7 @@
 
 #include <stddef.h>
 #include <src/rel/smallnai.h>
-#include <src/rysint/smallnaibatch.h>
+#include <src/integral/rys/smallnaibatch.h>
 
 using namespace std;
 using namespace bagel;

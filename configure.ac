@@ -138,8 +138,7 @@ AC_CONFIG_FILES([Makefile
                  src/meh/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
-                 src/rysint/Makefile
-                 src/osint/Makefile
+                 src/integral/Makefile
                  src/scf/Makefile
                  src/df/Makefile
                  src/prop/Makefile

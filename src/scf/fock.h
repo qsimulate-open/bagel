@@ -28,8 +28,8 @@
 #define __BAGEL_SRC_SCF_FOCK_H
 
 #include <src/df/df.h>
-#include <src/rysint/libint.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/libint/libint.h>
+#include <src/integral/rys/eribatch.h>
 #include <src/scf/fock_base.h>
 
 namespace bagel {

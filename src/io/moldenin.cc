@@ -36,7 +36,7 @@
 #include <vector>
 
 #include <src/io/moldenin.h>
-#include <src/wfn/atom.h>
+#include <src/molecule/atom.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/util/constants.h>

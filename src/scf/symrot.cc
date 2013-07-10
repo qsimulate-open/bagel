@@ -31,7 +31,7 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
-#include <src/rysint/carsphlist.h>
+#include <src/integral/carsphlist.h>
 #include <src/util/constants.h>
 
 using namespace std;

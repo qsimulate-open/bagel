@@ -28,7 +28,6 @@
 #include <stdexcept>
 #include <src/fci/knowles.h>
 #include <src/fci/mofile.h>
-#include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <iostream>
 

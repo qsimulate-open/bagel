@@ -25,8 +25,8 @@
 
 #include <src/rel/relreference.h>
 #include <src/util/constants.h>
-#include <src/osint/overlapbatch.h>
-#include <src/osint/kineticbatch.h>
+#include <src/integral/os/overlapbatch.h>
+#include <src/integral/os/kineticbatch.h>
 
 using namespace std;
 using namespace bagel;

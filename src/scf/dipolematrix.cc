@@ -25,7 +25,7 @@
 
 
 #include <src/scf/dipolematrix.h>
-#include <src/osint/dipolebatch.h>
+#include <src/integral/os/dipolebatch.h>
 
 using namespace std;
 using namespace bagel;

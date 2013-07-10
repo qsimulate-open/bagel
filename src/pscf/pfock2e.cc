@@ -28,7 +28,7 @@
 #include <complex>
 #include <iostream>
 #include <src/pscf/pfock.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #include <src/util/constants.h>
 #include <fstream>
 #include <cassert>

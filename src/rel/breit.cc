@@ -26,7 +26,7 @@
 
 #include <src/rel/breit.h>
 #include <src/rel/alpha.h>
-#include <src/rysint/breitbatch.h>
+#include <src/integral/rys/breitbatch.h>
 
 using namespace std;
 using namespace bagel;

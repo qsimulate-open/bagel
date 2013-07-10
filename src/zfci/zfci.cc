@@ -25,7 +25,6 @@
 
 #include <src/zfci/zfci.h>
 #include <src/fci/space.h>
-#include <src/rysint/eribatch.h>
 #include <src/util/combination.hpp>
 #include <src/math/zdavidson.h>
 #include <src/util/lexical_cast.h>

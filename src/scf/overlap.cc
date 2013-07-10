@@ -25,7 +25,7 @@
 
 
 #include <src/scf/overlap.h>
-#include <src/osint/overlapbatch.h>
+#include <src/integral/os/overlapbatch.h>
 
 using namespace std;
 using namespace bagel;

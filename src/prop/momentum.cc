@@ -25,7 +25,7 @@
 
 
 #include <src/prop/momentum.h>
-#include <src/osint/momentbatch.h>
+#include <src/integral/os/momentbatch.h>
 #include <iomanip>
 
 using namespace std;

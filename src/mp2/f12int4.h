@@ -31,9 +31,8 @@
 #define __SRC_MP2_F12INT4_H
 
 #include <stddef.h>
-#include <src/rysint/rysint.h>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/slaterbatch.h>
+#include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/slaterbatch.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/reference.h>
 #include <src/smith/prim_op.h>

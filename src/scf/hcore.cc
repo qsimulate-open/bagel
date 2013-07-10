@@ -25,9 +25,9 @@
 
 
 #include <src/scf/hcore.h>
-#include <src/osint/kineticbatch.h>
-#include <src/osint/dipolebatch.h>
-#include <src/rysint/naibatch.h>
+#include <src/integral/os/kineticbatch.h>
+#include <src/integral/os/dipolebatch.h>
+#include <src/integral/rys/naibatch.h>
 
 using namespace std;
 using namespace bagel;

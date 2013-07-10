@@ -28,13 +28,13 @@
 #include <array>
 #include <src/grad/gradeval_base.h>
 #include <src/grad/gradfile.h>
-#include <src/rysint/gradbatch.h>
-#include <src/rysint/gnaibatch.h>
-#include <src/osint/goverlapbatch.h>
-#include <src/osint/gkineticbatch.h>
+#include <src/integral/rys/gradbatch.h>
+#include <src/integral/rys/gnaibatch.h>
+#include <src/integral/os/goverlapbatch.h>
+#include <src/integral/os/gkineticbatch.h>
 #include <src/smith/prim_op.h>
 #ifdef LIBINT_INTERFACE
-  #include <src/rysint/glibint.h>
+  #include <src/integral/libint/glibint.h>
 #endif
 
 using namespace std;
@@ -62,7 +62,7 @@ void GradTask::compute() {
       }
     }
     {
-      GKineticBatch batch(shell2_, ge_->geom_);
+      GKineticBatch batch(shell2_);
       const double* kdata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();
@@ -78,7 +78,7 @@ void GradTask::compute() {
       }
     }
     {
-      GOverlapBatch batch(shell2_, ge_->geom_);
+      GOverlapBatch batch(shell2_);
       const double* odata = batch.data();
       batch.compute();
       const size_t s = batch.size_block();

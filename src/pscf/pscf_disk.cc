@@ -25,7 +25,7 @@
 
 
 #include <src/pscf/pscf_disk.h>
-#include <src/rysint/eribatch.h>
+#include <src/integral/rys/eribatch.h>
 #include <src/pscf/pcompfile.h>
 #include <iostream>
 #include <iomanip>

@@ -35,8 +35,8 @@
 #include <src/pscf/pfile.h>
 #include <src/pscf/pcompfile.h>
 #include <src/pscf/pcompcabsfile.h>
-#include <src/rysint/eribatch.h>
-#include <src/rysint/slaterbatch.h>
+#include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/slaterbatch.h>
 
 namespace bagel {
 
