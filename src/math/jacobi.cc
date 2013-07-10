@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <memory>
 #include <list>
-#include <src/wfn/geometry.h>
 #include <src/math/matrix.h>
 #include <src/math/jacobi.h>
 

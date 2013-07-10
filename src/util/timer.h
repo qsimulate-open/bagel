@@ -27,11 +27,11 @@
 #define __BAGEL_UTIL_TIMER_H
 
 #include <chrono>
+#include <iostream>
 #include <iomanip>
 #include <string>
 #include <algorithm>
 #include <config.h>
-#include <src/parallel/resources.h>
 
 namespace bagel {
 

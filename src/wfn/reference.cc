@@ -27,7 +27,7 @@
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
 #include <src/osint/overlapbatch.h>
-#include <src/math/mixedbasis.h>
+#include <src/molecule/mixedbasis.h>
 #include <src/util/lexical_cast.h>
 
 using namespace std;
