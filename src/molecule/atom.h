@@ -24,10 +24,10 @@
 //
 
 
-#ifndef __SRC_SCF_ATOM_H
-#define __SRC_SCF_ATOM_H
+#ifndef __SRC_MOLECULE_ATOM_H
+#define __SRC_MOLECULE_ATOM_H
 
-#include <src/wfn/shell.h>
+#include <src/molecule/shell.h>
 #include <src/input/input.h>
 
 namespace bagel {

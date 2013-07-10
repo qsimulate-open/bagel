@@ -24,7 +24,6 @@
 //
 
 
-#include <src/wfn/atom.h>
 #include <fstream>
 #include <numeric>
 #include <iostream>
@@ -35,6 +34,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <tuple>
+#include <src/molecule/atom.h>
 #include <src/math/quatern.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/util/atommap.h>

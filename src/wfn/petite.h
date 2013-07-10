@@ -28,7 +28,7 @@
 #define __src_scf_petite_h
 
 #include <tuple>
-#include <src/wfn/atom.h>
+#include <src/molecule/atom.h>
 
 namespace bagel {
 

@@ -30,7 +30,7 @@
 #define __SRC_INTEGRAL_RYS_RYSINT_H
 
 #include <tuple>
-#include <src/wfn/shell.h>
+#include <src/molecule/shell.h>
 #include <src/util/constants.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>

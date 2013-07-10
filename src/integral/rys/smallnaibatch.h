@@ -28,7 +28,7 @@
 #define __SRC_INTEGRAL_RYS_SMALLNAIBATCH_H
 
 #include <stddef.h>
-#include <src/wfn/shell.h>
+#include <src/molecule/shell.h>
 #include <src/wfn/geometry.h>
 #include <memory>
 #include <src/integral/rys/naibatch.h>

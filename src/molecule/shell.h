@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __newint_scf_shell_h
-#define __newint_scf_shell_h
+#ifndef __SRC_MOLECULE_SHELL_H
+#define __SRC_MOLECULE_SHELL_H
 
 #include <array>
 #include <src/math/matrix.h>

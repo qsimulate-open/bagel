@@ -12,5 +12,5 @@ rys/compute.cc rys/bcompute.cc rys/gcompute.cc rys/ncompute.cc rys/gncompute.cc 
 rys/smalleribatch.cc rys/smallnaibatch.cc rys/mixederibatch.cc \
 os/osint.cc os/oscontraction.cc os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/dipolebatch.cc os/momentbatch.cc os/gocompute.cc os/gkcompute.cc \
 libint/libint.cc libint/glibint.cc
-libbagel_integral_la_LIBADD = ../util/libbagel_util.la ../parallel/libbagel_parallel.la 
+libbagel_integral_la_LIBADD = ../util/libbagel_util.la ../parallel/libbagel_parallel.la ../math/libbagel_math.la ../molecule/libbagel_molecule.la
 AM_CXXFLAGS=-I$(top_srcdir)

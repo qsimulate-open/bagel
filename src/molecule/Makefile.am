@@ -1,4 +1,4 @@
 lib_LTLIBRARIES = libbagel_molecule.la
-libbagel_molecule_la_SOURCES = localization.cc
-#libbagel_molecule_la_LIBADD = ../util/libbagel_parallel.la ../util/libbagel_util.la
+libbagel_molecule_la_SOURCES = localization.cc atom.cc shell.cc
+libbagel_integral_la_LIBADD = ../util/libbagel_util.la ../parallel/libbagel_parallel.la ../math/libbagel_math.la ../integral/libbagel_integral.la
 AM_CXXFLAGS=-I$(top_srcdir)

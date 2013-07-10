@@ -23,10 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_RYSINT_SPIN2BATCH_H
-#define __SRC_RYSINT_SPIN2BATCH_H
+#ifndef __SRC_INTEGRAL_RYS_SPIN2BATCH_H
+#define __SRC_INTEGRAL_RYS_SPIN2BATCH_H
 
-#include <src/rysint/breitbatch.h>
+#include <src/integral/rys/breitbatch.h>
 
 namespace bagel {
 

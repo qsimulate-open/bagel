@@ -28,7 +28,7 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/wfn/atom.h>
+#include <src/molecule/atom.h>
 #include <src/wfn/petite.h>
 #include <src/input/input.h>
 

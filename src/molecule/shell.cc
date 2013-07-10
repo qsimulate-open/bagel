@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <sstream>
-#include <src/wfn/shell.h>
+#include <src/molecule/shell.h>
 #include <src/util/constants.h> // for Cartesian to spherical transformation
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
