@@ -28,7 +28,7 @@
 #include <src/pscf/ptildex.h>
 #include <src/pscf/phcore.h>
 #include <src/pscf/pcoeff.h>
-#include <src/util/pcompcabsfile.h>
+#include <src/pscf/pcompcabsfile.h>
 
 using namespace std;
 using namespace bagel;

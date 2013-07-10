@@ -29,7 +29,7 @@
 
 #include <complex>
 #include <src/pscf/poverlap.h>
-#include <src/util/pmatrix1e.h>
+#include <src/pscf/pmatrix1e.h>
 #include <memory>
 
 namespace bagel {

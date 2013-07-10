@@ -32,9 +32,9 @@
 #include <memory>
 #include <src/pscf/pcoeff.h>
 #include <src/pscf/pgeometry.h>
-#include <src/util/pfile.h>
-#include <src/util/pcompfile.h>
-#include <src/util/pcompcabsfile.h>
+#include <src/pscf/pfile.h>
+#include <src/pscf/pcompfile.h>
+#include <src/pscf/pcompcabsfile.h>
 #include <src/rysint/eribatch.h>
 #include <src/rysint/slaterbatch.h>
 

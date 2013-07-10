@@ -33,8 +33,8 @@
 #include <complex>
 #include <sstream>
 #include <algorithm>
-#include <src/util/filename.h>
-#include <src/util/cache.h>
+#include <src/pscf/filename.h>
+#include <src/pscf/cache.h>
 
 namespace bagel {
 

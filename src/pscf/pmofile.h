@@ -29,7 +29,7 @@
 
 #include <stddef.h>
 #include <src/pscf/pgeometry.h>
-#include <src/util/pfile.h>
+#include <src/pscf/pfile.h>
 #include <src/util/f77.h>
 #include <map>
 

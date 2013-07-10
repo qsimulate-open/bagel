@@ -24,7 +24,7 @@
 //
 
 
-#include <src/util/filename.h>
+#include <src/pscf/filename.h>
 #include <sstream>
 
 using namespace std;

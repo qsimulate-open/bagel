@@ -29,9 +29,9 @@
 #include <stdexcept>
 #include <tuple>
 #include <src/pmp2/pmp2.h>
-#include <src/util/paircompfile.h>
-#include <src/util/pcompcabsfile.h>
-#include <src/util/pmofile.h>
+#include <src/pscf/paircompfile.h>
+#include <src/pscf/pcompcabsfile.h>
+#include <src/pscf/pmofile.h>
 
 using namespace bagel;
 using namespace std;

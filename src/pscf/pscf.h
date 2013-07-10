@@ -29,13 +29,13 @@
 
 #include <stddef.h>
 #include <memory>
-#include <src/util/pcompfile.h>
+#include <src/pscf/pcompfile.h>
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/poverlap.h>
 #include <src/pscf/phcore.h>
 #include <src/pscf/pfock.h>
 #include <src/pscf/ptildex.h>
-#include <src/util/pdata.h>
+#include <src/pscf/pdata.h>
 #include <src/pscf/pcoeff.h>
 #include <src/rysint/eribatch.h>
 

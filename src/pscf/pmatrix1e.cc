@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <complex>
 #include <src/util/constants.h>
-#include <src/util/pmatrix1e.h>
+#include <src/pscf/pmatrix1e.h>
 #include <src/util/f77.h>
 
 using namespace std;

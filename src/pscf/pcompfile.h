@@ -40,9 +40,9 @@
 #include <src/util/constants.h>
 #include <src/pscf/pgeometry.h>
 #include <src/pscf/pcoeff.h>
-#include <src/util/pmofile.h>
-#include <src/util/filename.h>
-#include <src/util/cache.h>
+#include <src/pscf/pmofile.h>
+#include <src/pscf/filename.h>
+#include <src/pscf/cache.h>
 #include <src/util/f77.h>
 
 namespace bagel {

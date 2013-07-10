@@ -28,7 +28,7 @@
 #define __src_util_pcompcabsfile_h
 
 #include <vector>
-#include <src/util/pcompfile.h>
+#include <src/pscf/pcompfile.h>
 
 namespace bagel {
 

@@ -29,8 +29,8 @@
 
 #include <memory>
 #include <src/pscf/pscf.h>
-#include <src/util/pmatrix1e.h>
-#include <src/util/pcompfile.h>
+#include <src/pscf/pmatrix1e.h>
+#include <src/pscf/pcompfile.h>
 
 namespace bagel {
 
