@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-Breit::Breit(const shared_ptr<const Geometry> geom) : Matrix1eArray<6>(geom, geom->naux(), geom->naux()) {
+Breit::Breit(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->naux(), mol->naux()) {
 
   init();
 
@@ -69,7 +69,7 @@ void Breit::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 void Breit::init() {
 
   list<shared_ptr<const Shell>> shells;
-  for (auto& i : geom_->aux_atoms())
+  for (auto& i : mol_->aux_atoms())
     shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
   // TODO thread, parallel

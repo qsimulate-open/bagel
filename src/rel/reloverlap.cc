@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 void RelOverlap::compute_() {
-  const int n = geom_->nbasis();
+  const int n = mol_->nbasis();
   const complex<double> coeff1 (1.0, 0.0);
 
   auto out = make_shared<ZMatrix>(4*n, 4*n);

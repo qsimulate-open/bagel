@@ -24,10 +24,10 @@
 //
 
 
-#ifndef __src_scf_matrix1earray_h
-#define __src_scf_matrix1earray_h
+#ifndef __SRC_MOLECULE_MATRIX1EARRAY_H
+#define __SRC_MOLECULE_MATRIX1EARRAY_H
 
-#include <src/scf/matrix1e.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
@@ -37,18 +37,18 @@ class Matrix1eArray {
   protected:
     std::array<std::shared_ptr<Matrix>, N> matrices_;
 
-    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Molecule> mol_;
 
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
 
     bool localized_;
 
   public:
-    Matrix1eArray(const std::shared_ptr<const Geometry>, const bool loc = false);
-    Matrix1eArray(const std::shared_ptr<const Geometry>, const int n, const int m, const bool loc = false);
+    Matrix1eArray(const std::shared_ptr<const Molecule>, const bool loc = false);
+    Matrix1eArray(const std::shared_ptr<const Molecule>, const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
 
-    const std::shared_ptr<const Geometry> geom() const { return geom_; }
+    const std::shared_ptr<const Molecule> mol() const { return mol_; }
 
     std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
     std::shared_ptr<Matrix>& operator[](const int i) { return data(i); }
@@ -69,16 +69,16 @@ class Matrix1eArray {
 };
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const bool loc) : geom_(geom), localized_(loc) {
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : mol_(mol), localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(geom->nbasis(), geom->nbasis());
+    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis());
   }
 }
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, const int n, const int m, const bool loc) : geom_(geom), localized_(loc) {
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const int n, const int m, const bool loc) : mol_(mol), localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
     matrices_[i] = std::make_shared<Matrix>(n, m);
@@ -87,7 +87,7 @@ Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Geometry> geom, cons
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.geom(), o.localized_) {
+Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.mol(), o.localized_) {
   for (int i = 0; i < N; ++i) {
     *data(i) = *o.data(i);
   }
@@ -110,34 +110,38 @@ void Matrix1eArray<N>::init() {
   // only lower half will be stored
   // TODO rewrite. thread. parallel. distribute
 
-  auto o0 = geom_->offsets().begin();
+  size_t oa0 = 0; 
   int u = 0;
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
+  for (auto a0 = mol_->atoms().begin(); a0 != mol_->atoms().end(); ++a0) {
     // iatom1 = iatom1;
-    auto offset0 = o0->begin();
-    for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-      auto offset1 = o0->begin();
-      for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
+    size_t ob0 = oa0;
+    for (auto& b0 : (*a0)->shells()) {
+      size_t ob1 = oa0;
+      for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          std::array<std::shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          computebatch(input, *offset0, *offset1);
+          computebatch({{b1, b0}}, ob0, ob1);
         }
+        ob1 += b1->nbasis();
       }
+      ob0 += b0->nbasis();
     }
 
-    auto o1 = o0+1;
-    for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
-      auto offset0 = o0->begin();
-      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-        auto offset1 = o1->begin();
-        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
+    auto oa1 = oa0 + (*a0)->nbasis();
+    for (auto a1 = a0+1; a1 != mol_->atoms().end(); ++a1) {
+      size_t ob0 = oa0;
+      for (auto& b0 : (*a0)->shells()) {
+        size_t ob1 = oa1;
+        for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            std::array<std::shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-            computebatch(input, *offset0, *offset1);
+            computebatch({{b1, b0}}, ob0, ob1);
           }
+          ob1 += b1->nbasis();
         }
+        ob0 += b0->nbasis();
       }
+      oa1 += (*a1)->nbasis();
     }
+    oa0 += (*a0)->nbasis();
   }
   for (auto& i : matrices_) i->allreduce();
 

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: kinetic.cc
+// Filename: hcore.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,18 +24,15 @@
 //
 
 
-#include <src/scf/kinetic.h>
+#include <src/molecule/hcore.h>
 #include <src/integral/os/kineticbatch.h>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
+#include <src/integral/os/dipolebatch.h>
+#include <src/integral/rys/naibatch.h>
 
 using namespace std;
 using namespace bagel;
 
-
-Kinetic::Kinetic(const shared_ptr<const Geometry> geom) : Matrix1e(geom) {
+Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init();
   fill_upper();
@@ -43,17 +40,41 @@ Kinetic::Kinetic(const shared_ptr<const Geometry> geom) : Matrix1e(geom) {
 }
 
 
-void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  KineticBatch kinetic(input);
-  kinetic.compute();
+  {
+    KineticBatch kinetic(input);
+    kinetic.compute();
 
-  copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
+    copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
+  }
+  {
+    NAIBatch nai(input, mol_);
+    nai.compute();
+
+    add_block(offsetb1, offsetb0, dimb1, dimb0, nai.data());
+  }
+
+  if (mol_->external()) {
+    DipoleBatch dipole(input, mol_->charge_center());
+    dipole.compute();
+    const size_t block = dipole.size_block();
+    const double* dip = dipole.data();
+
+    int cnt = 0;
+    for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
+      for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
+        data_[i*ndim_ + j] += dip[cnt        ]*mol_->external(0);
+        data_[i*ndim_ + j] += dip[cnt+block  ]*mol_->external(1);
+        data_[i*ndim_ + j] += dip[cnt+block*2]*mol_->external(2);
+      }
+    }
+  }
 }
 
 

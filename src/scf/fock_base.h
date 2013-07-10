@@ -27,12 +27,14 @@
 #ifndef __src_scf_fock_base_h
 #define __src_scf_fock_base_h
 
-#include <src/scf/matrix1e.h>
+#include <src/wfn/geometry.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
 class Fock_base : public Matrix1e {
   protected:
+    const std::shared_ptr<const Geometry> geom_;
     const std::shared_ptr<const Matrix> previous_;
     const std::shared_ptr<const Matrix> density_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;

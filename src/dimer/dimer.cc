@@ -27,8 +27,8 @@
 
 #include <src/dimer/dimer.h>
 #include <src/wfn/geometry.h>
+#include <src/molecule/overlap.h>
 #include <src/scf/coeff.h>
-#include <src/scf/overlap.h>
 #include <src/scf/fock.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>

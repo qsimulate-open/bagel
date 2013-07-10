@@ -26,8 +26,8 @@
 #ifndef __scf_scf_base_h
 #define __scf_scf_base_h
 
-#include <src/scf/overlap.h>
-#include <src/scf/hcore.h>
+#include <src/molecule/overlap.h>
+#include <src/molecule/hcore.h>
 #include <src/scf/tildex.h>
 #include <src/scf/fock.h>
 #include <src/wfn/reference.h>

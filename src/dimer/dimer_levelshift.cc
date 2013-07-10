@@ -25,7 +25,7 @@
 
 
 #include <src/dimer/dimer_levelshift.h>
-#include <src/scf/overlap.h>
+#include <src/molecule/overlap.h>
 
 using namespace bagel;
 using namespace std;

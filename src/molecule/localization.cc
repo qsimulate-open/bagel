@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/scf/overlap.h>
+#include <src/molecule/overlap.h>
 #include <src/math/jacobi.h>
 #include <src/molecule/localization.h>
 

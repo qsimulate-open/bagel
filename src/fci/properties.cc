@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <cmath>
 #include <src/fci/properties.h>
-#include <src/scf/dipolematrix.h>
+#include <src/molecule/dipolematrix.h>
 
 using namespace std;
 using namespace bagel;

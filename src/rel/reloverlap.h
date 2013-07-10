@@ -27,15 +27,15 @@
 #ifndef __SRC_REL_RELOVERLAP_H
 #define __SRC_REL_RELOVERLAP_H
 
-#include <src/scf/overlap.h>
-#include <src/scf/kinetic.h>
+#include <src/molecule/overlap.h>
+#include <src/molecule/kinetic.h>
 #include <src/math/zmatrix.h>
 
 namespace bagel {
 
 class RelOverlap : public ZMatrix {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Molecule> mol_;
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Overlap> overlap_;
 
@@ -44,8 +44,8 @@ class RelOverlap : public ZMatrix {
     bool half_inverse_;
 
   public:
-    RelOverlap(const std::shared_ptr<const Geometry> geom, bool half_inverse) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4),
-            geom_(geom), kinetic_(new Kinetic(geom)), overlap_(new Overlap(geom)), half_inverse_(half_inverse) {
+    RelOverlap(const std::shared_ptr<const Molecule> mol, bool half_inverse) : ZMatrix(mol->nbasis()*4, mol->nbasis()*4),
+               mol_(mol), kinetic_(new Kinetic(mol)), overlap_(new Overlap(mol)), half_inverse_(half_inverse) {
       compute_();
     }
 

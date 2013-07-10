@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-SmallNAI::SmallNAI(const shared_ptr<const Geometry> geom) : Matrix1eArray<4>(geom) {
+SmallNAI::SmallNAI(const shared_ptr<const Molecule> mol) : Matrix1eArray<4>(mol) {
 
   init();
 
@@ -49,7 +49,7 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  SmallNAIBatch batch(input, geom_);
+  SmallNAIBatch batch(input, mol_);
   batch.compute();
 
   for (int i = 0; i != nblocks(); ++i)
@@ -61,7 +61,7 @@ void SmallNAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const
 void SmallNAI::init() {
 
   list<shared_ptr<const Shell>> shells;
-  for (auto& i : geom_->atoms())
+  for (auto& i : mol_->atoms())
     shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
   // TODO thread, parallel

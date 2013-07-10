@@ -24,7 +24,7 @@
 //
 
 
-#include <src/scf/matrix1e.h>
+#include <src/molecule/matrix1e.h>
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -37,17 +37,17 @@ using namespace std;
 using namespace bagel;
 
 
-Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom) : Matrix(geom->nbasis(), geom->nbasis()), geom_(geom) {
+Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()), mol_(mol) {
   zero();
 }
 
 
-Matrix1e::Matrix1e(const shared_ptr<const Geometry> geom, const int n, const int m) : Matrix(n,m), geom_(geom) {
+Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol, const int n, const int m) : Matrix(n,m), mol_(mol) {
   zero();
 }
 
 
-Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), geom_(o.geom_) {
+Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), mol_(o.mol_) {
   copy_n(o.data(), ndim_*mdim_, data());
 }
 
@@ -57,34 +57,38 @@ void Matrix1e::init() {
   // only lower half will be stored
   // TODO rewrite. thread. parallel
 
-  auto o0 = geom_->offsets().begin();
+  size_t oa0 = 0; 
   int u = 0;
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
+  for (auto a0 = mol_->atoms().begin(); a0 != mol_->atoms().end(); ++a0) {
     // iatom1 = iatom1;
-    auto offset0 = o0->begin();
-    for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-      auto offset1 = o0->begin();
-      for (auto b1 = (*a0)->shells().begin(); b1 != (*a0)->shells().end(); ++b1, ++offset1) {
+    size_t ob0 = oa0;
+    for (auto& b0 : (*a0)->shells()) {
+      size_t ob1 = oa0;
+      for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          computebatch(input, *offset0, *offset1);
+          computebatch({{b1, b0}}, ob0, ob1);
         }
+        ob1 += b1->nbasis();
       }
+      ob0 += b0->nbasis();
     }
 
-    auto o1 = o0+1;
-    for (auto a1 = a0+1; a1 != geom_->atoms().end(); ++a1, ++o1) {
-      auto offset0 = o0->begin();
-      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++offset0) {
-        auto offset1 = o1->begin();
-        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
+    auto oa1 = oa0 + (*a0)->nbasis();
+    for (auto a1 = a0+1; a1 != mol_->atoms().end(); ++a1) {
+      size_t ob0 = oa0;
+      for (auto& b0 : (*a0)->shells()) {
+        size_t ob1 = oa1;
+        for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-            computebatch(input, *offset0, *offset1);
+            computebatch({{b1, b0}}, ob0, ob1);
           }
+          ob1 += b1->nbasis();
         }
+        ob0 += b0->nbasis();
       }
+      oa1 += (*a1)->nbasis();
     }
+    oa0 += (*a0)->nbasis();
   }
   mpi__->allreduce(data_.get(), size());
 

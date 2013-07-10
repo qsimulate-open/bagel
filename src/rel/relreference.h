@@ -26,6 +26,7 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
+#include <src/wfn/geometry.h>
 #include <src/rel/reloverlap.h>
 #include <src/molecule/mixedbasis.h>
 
