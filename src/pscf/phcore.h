@@ -27,7 +27,7 @@
 #ifndef __src_pscf_phcore_h
 #define __src_pscf_phcore_h
 
-#include <src/util/pmatrix1e.h>
+#include <src/pscf/pmatrix1e.h>
 #include <src/pscf/pgeometry.h>
 #include <memory>
 

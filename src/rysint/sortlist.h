@@ -32,7 +32,7 @@
 #define __SRC_RYSINT_SORTLIST_H
 
 #include <functional>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 

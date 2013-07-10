@@ -26,7 +26,7 @@
 
 
 #include <src/dimer/dimer_scf.h>
-#include <src/util/diis.h>
+#include <src/math/diis.h>
 #include <src/prop/dipole.h>
 #include <src/wfn/reference.h>
 

@@ -32,7 +32,7 @@
 #include <src/wfn/geometry.h>
 #include <memory>
 #include <src/rysint/eribatch.h>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/parallel/resources.h>
 #include <src/rysint/integral.h>
 

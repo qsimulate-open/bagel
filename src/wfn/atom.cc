@@ -35,7 +35,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <tuple>
-#include <src/util/quatern.h>
+#include <src/math/quatern.h>
 #include <src/osint/overlapbatch.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>

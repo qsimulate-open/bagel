@@ -25,7 +25,7 @@
 
 
 #include <stdexcept>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 

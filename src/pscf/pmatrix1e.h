@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <src/pscf/pgeometry.h>
 #include <src/util/f77.h>
-#include <src/util/pdata.h>
+#include <src/pscf/pdata.h>
 #include <memory>
 
 namespace bagel {

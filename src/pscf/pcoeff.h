@@ -27,7 +27,7 @@
 #ifndef __src_pscf_pcoeff_h
 #define __src_pscf_pcoeff_h
 
-#include <src/util/pmatrix1e.h>
+#include <src/pscf/pmatrix1e.h>
 
 namespace bagel {
 

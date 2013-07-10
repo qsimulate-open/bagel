@@ -23,15 +23,49 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <fstream>
+
 #include <src/input/input.h>
+#include <src/input/parse.h>
 #include <boost/property_tree/json_parser.hpp>
-//#include <iostream>
+#include <boost/property_tree/xml_parser.hpp>
 
 using namespace bagel;
 using namespace std;
 
 PTree::PTree(const std::string& input) {
-  boost::property_tree::json_parser::read_json(input, data_);
+  // Check first from clues from file extension
+  const size_t n = input.find_last_of(".");
+  const string extension = (n != string::npos) ? input.substr(n) : "";
+  if (extension == ".json") {
+    boost::property_tree::json_parser::read_json(input, data_);
+  }
+  else if (extension == ".xml") {
+    boost::property_tree::xml_parser::read_xml(input, data_);
+  }
+  else if (extension == ".bgl" || extension == ".bagel"){
+    BagelParser bp(input);
+    data_ = bp.parse();
+  }
+  else { // Unhelpful file extension -> just try them all!
+    try {
+      boost::property_tree::json_parser::read_json(input, data_);
+    }
+    catch (boost::property_tree::json_parser_error& e) {
+      try {
+        boost::property_tree::xml_parser::read_xml(input, data_);
+      }
+      catch (boost::property_tree::xml_parser_error& f) {
+        try {
+          BagelParser bp(input);
+          data_ = bp.parse();
+        }
+        catch (bagel_parser_error& g) {
+          throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\', \'.xml\', or (\'.bgl\'|\'.bagel\' )).");
+        }
+      }
+    }
+  }
 }
 
 

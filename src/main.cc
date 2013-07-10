@@ -53,11 +53,10 @@
 #include <src/global.h>
 #include <src/opt/optimize.h>
 #include <src/util/constants.h>
-#include <src/util/localization.h>
+#include <src/molecule/localization.h>
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
-#include <src/transp/transp.h>
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
 
@@ -76,7 +75,7 @@ using namespace bagel;
 
 int main(int argc, char** argv) {
 
-  static_variables(argc, argv);
+  static_variables();
   print_header();
 
   try {
@@ -183,11 +182,6 @@ int main(int argc, char** argv) {
 
         auto mp2 = make_shared<MP2>(itree, geom);
         mp2->compute();
-
-      } else if (method == "transp") {
-
-        auto tran = make_shared<Transp>(itree, geom, ref);
-        tran->compute();
 
       } else if (method == "smith") {
 

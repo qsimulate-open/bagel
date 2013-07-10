@@ -25,7 +25,7 @@
 
 #include <src/rysint/gradbatch.h>
 #include <src/rysint/_gvrr_drv.h>
-#include <src/util/comb.h>
+#include <src/math/comb.h>
 #include <src/util/f77.h>
 
 using namespace std;

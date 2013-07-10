@@ -35,7 +35,7 @@
 #include <iomanip>
 #include <cassert>
 #include <type_traits>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>

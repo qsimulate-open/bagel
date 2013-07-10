@@ -28,7 +28,7 @@
 #define __SRC_UTIL_ZMATRIX_H
 
 #include <complex>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 
 namespace bagel {
 

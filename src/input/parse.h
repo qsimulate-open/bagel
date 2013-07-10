@@ -39,6 +39,10 @@ namespace bagel {
 
 enum class NodeType { base, object, vector };
 
+struct bagel_parser_error : std::runtime_error {
+  bagel_parser_error(std::string msg) : std::runtime_error(msg) {}
+};
+
 struct ParseNode {
   NodeType type_;
   std::shared_ptr<boost::property_tree::ptree> data_;
@@ -74,6 +78,10 @@ class BagelParser {
     void insert_key(std::string key);
     void insert_value(std::string value);
 
+    template <typename Iterator>
+    std::string get_error_position(Iterator first, Iterator second) { return get_error_position(std::string(first, second)); }
+    std::string get_error_position(std::string line);
+
     template <typename Iterator, typename Skipper>
       struct bagel_checker_grammar : boost::spirit::qi::grammar<Iterator, Skipper> {
 
@@ -84,7 +92,7 @@ class BagelParser {
 
           name = qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9-");
 
-          bagelvalue = +qi::char_("a-zA-Z_0-9+-.");
+          bagelvalue = qi::lexeme[+(qi::ascii::alnum | qi::char_('+') | qi::char_('-') | qi::char_('.'))];
           bagelvector = qi::lit('[') >> bageldata >> *(qi::lit(',') >> bageldata) >> qi::lit(']');
           bagelobj = qi::lit('{') >> *bagelstatement >> qi::lit('}');
 
@@ -111,34 +119,54 @@ class BagelParser {
       struct bagel_parser_grammar : boost::spirit::qi::grammar<Iterator, Skipper> {
 
         bagel_parser_grammar(BagelParser* self)
-          : bagel_parser_grammar::base_type(bagelinput)
+          : bagel_parser_grammar::base_type(bagelstatement, "bagel")
         {
           namespace qi = boost::spirit::qi;
 
+          /* Named literals for error checking */
+          semicolon = qi::lit(';'); semicolon.name("\';\'");
+          open_curly = qi::lit('{'); open_curly.name("\'{\'");
+          close_curly = qi::lit('}'); close_curly.name("\'}\'");
+          open_square = qi::lit('['); open_square.name("\'[\'");
+          close_square = qi::lit(']'); close_square.name("\']\'");
+          equals = qi::lit('='); equals.name("\'=\'");
+
           /* Define Grammar */
           name %= qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9-");
+          name.name("variable");
 
-          bagelvalue  %= +qi::char_("a-zA-Z_0-9+-.");
+          bagelvalue  %= qi::lexeme[+(qi::ascii::alnum | qi::char_('+') | qi::char_('-') | qi::char_('.'))];
+          bagelvalue.name("string");
 
-          bagelvector = qi::lit('[') [ boost::bind(&BagelParser::begin_vector, self) ]
-                        >> bageldata >> *(qi::lit(',') >> bageldata)
-                        >> qi::lit(']') [ boost::bind(&BagelParser::close_compound, self) ];
+          bagelvector = open_square [ boost::bind(&BagelParser::begin_vector, self) ]
+                        > bageldata >> *(qi::lit(',') > bageldata)
+                        > close_square [ boost::bind(&BagelParser::close_compound, self) ];
+          bagelvector.name("vector");
 
-          bagelobj    = qi::lit('{') [ boost::bind(&BagelParser::begin_object, self) ]
-                        >> *bagelstatement
-                        >> qi::lit('}') [ boost::bind(&BagelParser::close_compound, self) ];
+          bagelobj    = open_curly [ boost::bind(&BagelParser::begin_object, self) ]
+                        > *bagelstatement
+                        > close_curly [ boost::bind(&BagelParser::close_compound, self) ];
+          bagelobj.name("object");
 
           bageldata =   bagelvalue [ boost::bind(&BagelParser::insert_value, self, _1) ]
                       | bagelvector
                       | bagelobj;
+          bageldata.name("data");
 
-          bagelstatement = name [ boost::bind(&BagelParser::insert_key, self, _1) ]
-                           >> qi::lit('=')
-                           >> bageldata
-                           >> qi::lit(';');
-
-          bagelinput = +bagelstatement;
+          bagelstatement = +( name [ boost::bind(&BagelParser::insert_key, self, _1) ]
+                              >> equals
+                              > bageldata
+                              > semicolon
+                            );
+          bagelstatement.name("statement");
         }
+
+        boost::spirit::qi::rule<Iterator> semicolon;
+        boost::spirit::qi::rule<Iterator> open_curly;
+        boost::spirit::qi::rule<Iterator> close_curly;
+        boost::spirit::qi::rule<Iterator> open_square;
+        boost::spirit::qi::rule<Iterator> close_square;
+        boost::spirit::qi::rule<Iterator> equals;
 
         boost::spirit::qi::rule<Iterator, std::string()> name;
 

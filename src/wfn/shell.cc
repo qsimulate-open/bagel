@@ -28,7 +28,7 @@
 #include <src/osint/momentbatch.h>
 #include <src/rysint/carsphlist.h>
 #include <src/wfn/shell.h>
-#include <src/rysint/intparam.h> // for Cartesian to spherical transformation
+#include <src/util/constants.h> // for Cartesian to spherical transformation
 #include <src/rysint/carsphlist.h>
 #include <iostream>
 #include <sstream>

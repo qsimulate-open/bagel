@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: transp.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: filename.cc
+// Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,29 +24,29 @@
 //
 
 
-#ifndef __SRC_TRANSP_TRANSP_H
-#define __SRC_TRANSP_TRANSP_H
+#include <src/pscf/filename.h>
+#include <sstream>
 
-#include <string>
-#include <map>
-#include <src/wfn/geometry.h>
-#include <memory>
-#include <src/wfn/reference.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
+static unsigned int counter_ = 0;
 
-class Transp {
-  protected:
-    std::shared_ptr<const Reference> ref_;
-    int nstate_;
-
-  public:
-    Transp(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-           const std::shared_ptr<const Reference> ref);
-    void compute();
-
-};
+Filename::Filename() {
 
 }
 
-#endif
+
+Filename::~Filename() {
+
+}
+
+
+const string Filename::filename_next() const {
+  stringstream ss;
+  ss << "temp_file_" << counter_ << ".data";
+  ++counter_;
+
+  return ss.str();
+}
+

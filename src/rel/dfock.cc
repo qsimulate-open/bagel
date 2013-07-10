@@ -26,7 +26,7 @@
 
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/rel/cdmatrix_drv.h>
 
 using namespace std;

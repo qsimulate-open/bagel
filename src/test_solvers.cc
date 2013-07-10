@@ -25,12 +25,12 @@
 
 
 #include <src/scf/matrix1e.h>
-#include <src/util/linear.h>
-#include <src/util/linearRM.h>
-#include <src/util/aughess.h>
-#include <src/util/davidson.h>
-#include <src/util/zdavidson.h>
-#include <src/util/bfgs.h>
+#include <src/math/linear.h>
+#include <src/math/linearRM.h>
+#include <src/math/aughess.h>
+#include <src/math/davidson.h>
+#include <src/math/zdavidson.h>
+#include <src/math/bfgs.h>
 #include <src/scf/scf.h>
 #include <iostream>
 

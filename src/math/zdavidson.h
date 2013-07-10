@@ -37,7 +37,7 @@
 #include <memory>
 #include <stdexcept>
 #include <src/util/f77.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 

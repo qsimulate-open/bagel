@@ -25,7 +25,7 @@
 
 #include <stdexcept>
 #include <src/fci/determinants.h>
-#include <src/util/comb.h>
+#include <src/math/comb.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 

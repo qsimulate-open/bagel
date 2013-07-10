@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <src/fci/fci.h>
 #include <src/fci/knowles.h>
-#include <src/util/davidson.h>
+#include <src/math/davidson.h>
 #include <src/util/constants.h>
 #include <vector>
 

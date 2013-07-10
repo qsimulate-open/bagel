@@ -31,7 +31,7 @@
 #include <src/fci/mofile.h>
 //#include <src/zfci/zproperties.h>
 #include <src/wfn/ciwfn.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 

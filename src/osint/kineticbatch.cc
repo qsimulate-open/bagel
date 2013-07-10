@@ -29,7 +29,7 @@
 #include <iostream>
 #include <iomanip>
 #include <src/osint/kineticbatch.h>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 #include <src/rysint/carsphlist.h>
 
 using namespace std;

@@ -45,9 +45,10 @@ using namespace bagel;
 using namespace std;
 
 namespace bagel {
-void static_variables(int argc, char** argv) {
+
+void static_variables() {
   // setup MPI interface. It does nothing for serial runs
-  mpi = unique_ptr<MPI_Interface>(new MPI_Interface(argc, argv));
+  mpi = unique_ptr<MPI_Interface>(new MPI_Interface());
   mpi__ = mpi.get();
   {
     string snum_threads = getenv_multiple("BAGEL_NUM_THREADS", "OMP_NUM_THREADS");
@@ -63,4 +64,5 @@ void static_variables(int argc, char** argv) {
     resources__ = resources.get();
   }
 }
+
 }

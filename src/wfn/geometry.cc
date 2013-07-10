@@ -38,7 +38,7 @@
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
-#include <src/util/quatern.h>
+#include <src/math/quatern.h>
 #include <src/rysint/libint.h>
 #include <src/util/lexical_cast.h>
 

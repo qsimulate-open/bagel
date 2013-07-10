@@ -32,7 +32,7 @@
 #include <algorithm>
 #include <memory>
 #include <list>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/util/constants.h>
 
 namespace bagel {

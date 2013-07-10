@@ -43,7 +43,7 @@ Resources b(8);
 Resources* bagel::resources__ = &b;
 static int argc = 0;
 static char** argv;
-MPI_Interface c(argc, argv);
+static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
 
 static double THRESH = 1.0e-8;
@@ -76,6 +76,6 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/io/test_molden.cc>
 
-#include <src/util/test_localize.cc>
+#include <src/molecule/test_localize.cc>
 
 #include <src/meh/test_meh.cc>

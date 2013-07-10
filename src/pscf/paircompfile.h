@@ -29,7 +29,7 @@
 #ifndef __src_util_paircompfile_h
 #define __src_util_paircompfile_h
 
-#include <src/util/pcompfile.h>
+#include <src/pscf/pcompfile.h>
 
 namespace bagel {
 

@@ -32,7 +32,7 @@
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/denom.h>
-#include <src/util/matrix.h>
+#include <src/math/matrix.h>
 #include <src/wfn/reference.h>
 #include <src/prop/dipole.h>
 #include <src/grad/cphf.h>

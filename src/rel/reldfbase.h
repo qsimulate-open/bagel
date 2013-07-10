@@ -27,7 +27,7 @@
 #define __SRC_REL_RELDFBASE_H
 
 #include <src/rel/alpha.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 

@@ -26,10 +26,10 @@
 
 #include <stddef.h>
 #include <src/grad/cpcasscf.h>
-#include <src/util/linearRM.h>
+#include <src/math/linearRM.h>
 #include <cassert>
 #include <src/util/f77.h>
-#include <src/util/bfgs.h>
+#include <src/math/bfgs.h>
 
 #define CPHF_MAX_ITER 100
 #define CPHF_THRESH 1.0e-10

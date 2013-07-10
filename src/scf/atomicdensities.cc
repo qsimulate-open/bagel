@@ -25,7 +25,7 @@
 
 #include <src/scf/atomicdensities.h>
 #include <src/util/atommap.h>
-#include <src/util/diis.h>
+#include <src/math/diis.h>
 #include <src/scf/rohf.h>
 
 using namespace std;

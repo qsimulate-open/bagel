@@ -27,9 +27,9 @@
 #include <src/util/constants.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dfock.h>
-#include <src/util/zmatrix.h>
-#include <src/util/matrix.h>
-#include <src/util/diis.h>
+#include <src/math/zmatrix.h>
+#include <src/math/matrix.h>
+#include <src/math/diis.h>
 
 using namespace std;
 using namespace bagel;

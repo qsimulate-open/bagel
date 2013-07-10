@@ -30,8 +30,8 @@
 #include <string>
 #include <list>
 #include <src/util/f77.h>
-#include <src/util/matrix_base.h>
-#include <src/util/distmatrix_base.h>
+#include <src/math/matrix_base.h>
+#include <src/math/distmatrix_base.h>
 
 namespace bagel {
 

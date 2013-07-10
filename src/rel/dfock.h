@@ -29,7 +29,7 @@
 
 #include <src/wfn/reference.h>
 #include <src/wfn/geometry.h>
-#include <src/util/zmatrix.h>
+#include <src/math/zmatrix.h>
 #include <src/rel/dfhalfcomplex.h>
 #include <src/rel/dfdata.h>
 #include <src/rel/relhcore.h>

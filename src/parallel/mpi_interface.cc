@@ -39,11 +39,11 @@
 using namespace std;
 using namespace bagel;
 
-MPI_Interface::MPI_Interface(int argc, char** argv)
+MPI_Interface::MPI_Interface()
  : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
 
 #ifdef HAVE_MPI_H
-  MPI_Init(&argc, &argv);
+  MPI_Init(0, 0);
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
   MPI_Comm_size(MPI_COMM_WORLD, &size_);

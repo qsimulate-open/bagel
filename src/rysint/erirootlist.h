@@ -28,7 +28,7 @@
 #define __SRC_RYSINT_ERIROOTLIST_H
 
 #include <functional>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 

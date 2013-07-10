@@ -33,10 +33,10 @@ using ptree = boost::property_tree::ptree;
 BagelParser::BagelParser(string filename) : filename_(filename) {
   ifstream in(filename_, ios_base::in);
 
-  if (!in) throw runtime_error(string("Error! Could not open input file: ") + filename_);
+  if (!in.good()) throw runtime_error(string("Error! Could not open input file: ") + filename_);
 
-  in.unsetf(std::ios::skipws); // No white space skipping!
-  contents_ = string( (std::istream_iterator<char>(in)) , (std::istream_iterator<char>()) );
+  in.unsetf(ios::skipws); // No white space skipping!
+  contents_ = string( (istream_iterator<char>(in)) , (istream_iterator<char>()) );
 }
 
 bool BagelParser::check() const {
@@ -89,11 +89,15 @@ ptree BagelParser::parse() {
   node_stack_.push(ParseNode(NodeType::base, nullptr));
 
   // parse
-  bool result = qi::phrase_parse(iter, end, parser, skipper);
-
-  if ( !(result && (iter == end)) ) { // Hopefully would have had some sort of error thrown already
-    throw runtime_error("Parsing did not finish!");
+  bool result;
+  try {
+    result = qi::phrase_parse(iter, end, parser, skipper);
   }
+  catch (const qi::expectation_failure<Iterator>& e) {
+    cerr << "Error parsing file \'" << filename_ << "\'. Expected " << e.what_.tag << " " << get_error_position(contents_.cbegin(), e.first - 1) << endl;
+    throw runtime_error("Failed parsing input file!");
+  }
+  if ( (!result) || (iter != end) ) throw bagel_parser_error("Failed parsing input file, probably incorrect format.");
 
   // collect into the appropriate ptree
   ptree bageltree;
@@ -151,3 +155,21 @@ void BagelParser::insert_value(string value) {
 }
 
 void BagelParser::insert_key(string key) { key_stack_.push(key); }
+
+string BagelParser::get_error_position(string line) {
+  int line_number = 1;
+  size_t found = line.find('\n');
+  while(found != string::npos) {
+    ++line_number;
+    found = line.find('\n', found+1);
+  }
+
+  int col_number;
+  size_t last = line.find_last_of('\n');
+  if(last == string::npos) col_number = line.size();
+  else col_number = line.size() - (last + 1);
+
+  stringstream ss;
+  ss << "on line " << line_number << ", at position " << col_number << ".";
+  return ss.str();
+}

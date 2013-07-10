@@ -29,7 +29,7 @@
 #include <src/osint/overlapbatch.h>
 #include <src/rysint/hrrlist.h>
 #include <src/rysint/carsphlist.h>
-#include <src/rysint/intparam.h>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;

@@ -28,7 +28,7 @@
 #define __SRC_GRAD_CPCASSCF_H
 
 #include <src/fci/fci.h>
-#include <src/util/pairfile.h>
+#include <src/math/pairfile.h>
 
 // CP-CASSCF Z vector equation. Note that in addition to orbital derivatives (as in CPHF),
 // we have CI derivatives in CP-CASSCF.

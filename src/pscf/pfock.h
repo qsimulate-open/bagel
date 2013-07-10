@@ -28,9 +28,9 @@
 #define __src_pscf_pfock_h
 
 #include <src/pscf/pgeometry.h>
-#include <src/util/pmatrix1e.h>
+#include <src/pscf/pmatrix1e.h>
 #include <src/pscf/phcore.h>
-#include <src/util/pcompfile.h>
+#include <src/pscf/pcompfile.h>
 #include <src/rysint/eribatch.h>
 #include <memory>
 #include <vector>
