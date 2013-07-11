@@ -27,6 +27,7 @@
 #define __SRC_INPUT_INPUT_H
 
 #include <boost/property_tree/ptree.hpp>
+#include <array>
 #include <sstream>
 #include <memory>
 
@@ -86,6 +87,7 @@ class PTree {
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
 
     template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;
+    template<typename T, int N> std::array<T,N> get_array(const std::string s) const;
 
     void erase(const std::string key) { data_.erase(key); }
 
@@ -104,7 +106,6 @@ class PTree {
 
 template<typename T> std::vector<T> PTree::get_vector(const std::string key, const int nexpected) const {
   std::vector<T> out;
-
   auto tmp = get_child(key);
   if ( (nexpected > 0) && (tmp->size() != nexpected) ) {
     std::stringstream err;
@@ -113,7 +114,20 @@ template<typename T> std::vector<T> PTree::get_vector(const std::string key, con
   }
   for (auto& i : *tmp)
     out.push_back(lexical_cast<T>(i->data()));
+  return out;
+}
 
+template<typename T, int N> std::array<T,N> PTree::get_array(const std::string key) const {
+  std::array<T,N> out;
+  auto tmp = get_child(key);
+  if (tmp->size() != N) {
+    std::stringstream err;
+    err << "Unexpected number of elements in vector " << key << ". Expected: " << N << ", received: " << tmp->size();
+    throw std::runtime_error(err.str());
+  }
+  int n = 0;  
+  for (auto& i : *tmp)
+    out[n++] = lexical_cast<T>(i->data());
   return out;
 }
 

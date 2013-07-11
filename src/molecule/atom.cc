@@ -46,6 +46,59 @@ using namespace bagel;
 
 static const AtomMap atommap_;
 
+Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, const bool aux)
+: spherical_(spherical) {
+  name_ = inp->get<string>("atom");
+  transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
+
+  atom_number_ = atommap_.atom_number(name_);
+
+  position_ = inp->get_array<double,3>("xyz");
+  for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
+
+  if (name_ == "q") {
+    atom_charge_ = inp->get<double>("charge");
+    nbasis_ = 0;
+    lmax_ = 0;
+  } else {
+    string cbas = inp->get<string>(!aux ? "basis" : "abasis", defbas.first);
+    shared_ptr<const PTree> basisset = (cbas == defbas.first) ? defbas.second : PTree::read_basis(cbas);
+    string na = name_;
+    na[0] = toupper(na[0]);
+    basis_init(basisset->get_child(na));
+  }
+}
+
+
+void Atom::basis_init(shared_ptr<const PTree> basis) {
+  // basis_info will be used in the construction of Basis_batch
+  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
+
+  for (auto& ibas : *basis) {
+
+    const string ang = ibas->get<string>("angular");
+    const shared_ptr<const PTree> prim = ibas->get_child("prim");
+    vector<double> exponents;
+
+    for (auto& p : *prim)
+      exponents.push_back(lexical_cast<double>(p->data()));
+
+    const shared_ptr<const PTree> cont = ibas->get_child("cont");
+    vector<vector<double>> coeff;
+
+    for (auto& c : *cont) {
+      vector<double> tmp;
+      for (auto& cc : *c)
+        tmp.push_back(lexical_cast<double>(cc->data()));
+      coeff.push_back(tmp);
+    }
+    basis_info.push_back(make_tuple(ang, exponents, coeff));
+  }
+  construct_shells(basis_info);
+  common_init();
+}
+
+
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
   assert(displacement.size() == 3 && old.position().size() == 3);
@@ -83,33 +136,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const shar
 
   string na = name_;
   na[0] = toupper(na[0]);
-  const shared_ptr<const PTree> basis = json->get_child(na);
-
-  // basis_info will be used in the construction of Basis_batch
-  vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
-
-  for (auto& ibas : *basis) {
-
-    const string ang = ibas->get<string>("angular");
-    const shared_ptr<const PTree> prim = ibas->get_child("prim");
-    vector<double> exponents;
-
-    for (auto& p : *prim)
-      exponents.push_back(lexical_cast<double>(p->data()));
-
-    const shared_ptr<const PTree> cont = ibas->get_child("cont");
-    vector<vector<double>> coeff;
-
-    for (auto& c : *cont) {
-      vector<double> tmp;
-      for (auto& cc : *c)
-        tmp.push_back(lexical_cast<double>(cc->data()));
-      coeff.push_back(tmp);
-    }
-    basis_info.push_back(make_tuple(ang, exponents, coeff));
-  }
-  construct_shells(basis_info);
-  common_init();
+  basis_init(json->get_child(na));
 
 }
 
@@ -319,7 +346,7 @@ array<double,3> Atom::displ(const shared_ptr<const Atom> o) const {
 }
 
 
-double Atom::angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<const Atom> b) const {
+double Atom::angle(const shared_ptr<const Atom> a, const shared_ptr<const Atom> b) const {
   Quatern<double> ap = a->position();
   Quatern<double> bp = b->position();
   Quatern<double> op = this->position();
@@ -332,7 +359,7 @@ double Atom::angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<co
 
 
 // Dihedral angle of A-this-O-B
-double Atom::dihedral_angle(const std::shared_ptr<const Atom> a, const std::shared_ptr<const Atom> o, const std::shared_ptr<const Atom> b) const {
+double Atom::dihedral_angle(const shared_ptr<const Atom> a, const shared_ptr<const Atom> o, const shared_ptr<const Atom> b) const {
   Quatern<double> ap = a->position();
   Quatern<double> tp = this->position();
   Quatern<double> op = o->position();

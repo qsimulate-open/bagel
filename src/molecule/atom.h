@@ -51,9 +51,12 @@ class Atom {
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
     void split_shells(const size_t batchsize);
 
+    void basis_init(std::shared_ptr<const PTree>);
     void common_init();
 
   public:
+    Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, const bool aux= false);
+
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::shared_ptr<const PTree> json);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,

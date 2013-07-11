@@ -63,6 +63,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     cout << "  Cartesian basis functions are used" << endl;
     spherical_ = false;
   }
+  const bool angstrom = geominfo->get<bool>("angstrom", false);
 
   /* Set up atoms_ */
   basisfile_ = geominfo->get<string>("basis", "");
@@ -78,52 +79,39 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     mfs >> atoms_;
     mfs.close();
   } else {
-    const bool angstrom = geominfo->get<bool>("angstrom", false);
 
-    // read basis file
+    // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
-
-      string aname = a->get<string>("atom");
-      transform(aname.begin(), aname.end(), aname.begin(), ::tolower);
-      shared_ptr<const PTree> xyz = a->get_child("xyz");
-      if (xyz->size() < 3)
-        throw runtime_error("XYZ coordinate was not specified correctly");
-      array<double,3> positions;
-      auto p = positions.begin();
-      const double prefac = angstrom ? ang2bohr__ : 1.0;
-      for (auto& i : *xyz)
-        *p++ = lexical_cast<double>(i->data()) * prefac;
-
-      if (aname != "q") {
-        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, bdata));
-      } else {
-        if (symmetry_ != "c1")
-          throw runtime_error("External point charges are only allowed in C1 calculations so far.");
-        const double charge = lexical_cast<double>(a->get<double>("charge"));
-        atoms_.push_back(make_shared<const Atom>(spherical_, aname, positions, charge));
-      }
-
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata)));
     }
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
+  for (auto& i : atoms_)
+    if (symmetry_ != "c1" && i->dummy())
+      throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
   auxfile_ = geominfo->get<string>("df_basis", "");
   transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
-    // read basis file
+    // read the default aux basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-
-    for(auto& iatom : atoms_) {
-      if (!iatom->dummy()) {
-        aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), bdata));
-      } else {
-        // we need a dummy atom here to be consistent in gradient computations
-        aux_atoms_.push_back(iatom);
+    if (basisfile_ == "molden") {
+      for(auto& iatom : atoms_) {
+        if (!iatom->dummy()) {
+          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), bdata));
+        } else {
+          // we need a dummy atom here to be consistent in gradient computations
+          aux_atoms_.push_back(iatom);
+        }
       }
+    } else {
+      auto atoms = geominfo->get_child("geometry");
+      for (auto& a : *atoms)
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), true));
     }
   }
 
@@ -374,6 +362,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   : spherical_(true), lmax_(0) {
   atoms_ = atoms;
 
+  auto atomlist = geominfo->get_child_optional("geometry");
+  const bool angstrom = geominfo->get<bool>("angstrom", false);
+
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
@@ -382,12 +373,16 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   // basis
   auxfile_ = geominfo->get<string>("df_basis", "");
   if (!auxfile_.empty()) {
-    // read basis file
+    // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-
-    if (!aux_atoms_.empty()) throw logic_error("programming error in the Geometry constructor with vector<shared_ptr<Atom>>");
-    for (auto& i : atoms_)
-      aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), bdata));
+    if (atomlist) {
+      for (auto& i : *atomlist)
+        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), true));
+    } else {
+      // in the molden case
+      for (auto& i : atoms_)
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), bdata));
+    }
   }
   // symmetry
   symmetry_ = geominfo->get<string>("symmetry", "c1");

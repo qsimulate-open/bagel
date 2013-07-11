@@ -42,6 +42,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
   int offset = 0;
 
+  // TODO AtomicDensities is only using the default basis set.
   // read basis file
   shared_ptr<const PTree> bdata = PTree::read_basis(basis); 
 

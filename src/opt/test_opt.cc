@@ -68,6 +68,12 @@ std::vector<double> reference_scf_opt_cart() {
   out[5] = 0.016940;
   return out;
 }
+std::vector<double> reference_scf_opt_mix() {
+  std::vector<double> out(6);
+  out[2] = 1.755386;
+  out[5] =-0.006975;
+  return out;
+}
 std::vector<double> reference_uhf_opt() {
   std::vector<double> out(6);
   out[2] = 1.800736;
@@ -104,6 +110,7 @@ BOOST_AUTO_TEST_SUITE(TEST_OPT)
 BOOST_AUTO_TEST_CASE(DF_HF_Opt) {
     BOOST_CHECK(compare(run_opt("hf_svp_dfhf_opt"),       reference_scf_opt(),      1.0e-4));
     BOOST_CHECK(compare(run_opt("hf_svp_dfhf_opt_cart"),  reference_scf_opt_cart(), 1.0e-4));
+    BOOST_CHECK(compare(run_opt("hf_mix_dfhf_opt"),       reference_scf_opt_mix(),  1.0e-4));
     BOOST_CHECK(compare(run_opt("oh_svp_uhf_opt"),        reference_uhf_opt(),      1.0e-4));
     BOOST_CHECK(compare(run_opt("hc_svp_rohf_opt"),       reference_rohf_opt(),     1.0e-4));
 }
