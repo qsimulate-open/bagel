@@ -31,12 +31,12 @@
 
 using namespace bagel;
 
-double scf_energy(std::string filename) {
+double scf_energy(std::string filename, std::string extension = ".json") {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::stringstream ss; ss << "../../test/" << filename << ".in";
+  std::stringstream ss; ss << "../../test/" << filename << extension;
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE(TEST_SCF)
 BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_svp_hf"),          -99.84779026));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),        -99.84772354));
-    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_bgl"),    -99.84772354));
+    BOOST_CHECK(compare(scf_energy("hf_svp_dfhf",".bgl"), -99.84772354));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),    -99.83765614));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"),   -99.84911270));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_charge"), -99.77381455));

@@ -35,7 +35,7 @@ std::array<double,3> dipole(std::string filename) {
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::stringstream ss; ss << "../../test/" << filename << ".in";
+  std::stringstream ss; ss << "../../test/" << filename << ".json";
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;

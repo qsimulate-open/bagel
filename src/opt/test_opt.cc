@@ -30,7 +30,7 @@
 std::vector<double> run_opt(std::string filename) {
 
   std::string outputname = filename + ".testout";
-  std::string inputname = "../../test/" + filename + ".in";
+  std::string inputname = "../../test/" + filename + ".json";
   auto ofs = std::make_shared<std::ofstream>(outputname, std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
