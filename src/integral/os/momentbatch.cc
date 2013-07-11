@@ -44,10 +44,6 @@ MomentBatch::MomentBatch(const array<std::shared_ptr<const Shell>,2>& _basis, sh
 }
 
 
-MomentBatch::~MomentBatch() {
-}
-
-
 void MomentBatch::compute() {
 
   double* const intermediate_p = stack_->get(prim0_*prim1_*asize_intermediate_*3);
