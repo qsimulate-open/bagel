@@ -693,7 +693,7 @@ class SpinFreeMethod {
 
       // add correction to active space
       for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correct_den1_*2.0;
-      dtot->print("dm1 post correction");
+      dtot->print("dm1 post correction", 20);
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
