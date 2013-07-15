@@ -88,7 +88,7 @@ void ZFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
+  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0);
 }
 
 // generate initial vectors

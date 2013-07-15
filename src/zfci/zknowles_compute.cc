@@ -89,6 +89,7 @@ shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, share
     pdebug.tick_print("task3");
 
   }
+
   return sigmavec;
 }
 

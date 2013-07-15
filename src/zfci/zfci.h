@@ -124,7 +124,7 @@ class ZFCI {
     int ncore() const { return ncore_; }
     double core_energy() const { return jop_->core_energy(); }
 
-    virtual int nij() const { return norb_*(norb_+1)/2; }
+    virtual int nij() const { return norb_*norb_; }
 
     double weight(const int i) const { return weight_[i]; }
 

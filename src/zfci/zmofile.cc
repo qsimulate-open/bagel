@@ -97,13 +97,12 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
 #endif
     int ijkl = 0;
     // In this case, there is no compression (this is actually necessary)
-    // Is currently ordered like (ij|kl), should be ordered like (ik|jl), with the last index moving the fastest
-    // Equivalent to             <ik|jl> --> <ij|kl>
     for (int i = 0; i != nocc; ++i) {
-      for (int k = 0; k != nocc; ++k) {
-        for (int j = 0; j != nocc; ++j) {
+      for (int j = 0; j != nocc; ++j) {
+        const int ijo = (j + i*nocc)*nocc*nocc;
+        for (int k = 0; k != nocc; ++k) {
           for (int l = 0; l != nocc; ++l, ++ijkl) {
-            mo2e_[ijkl] = buf2e[l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc];
+            mo2e_[ijkl] = buf2e[l + k*nocc + ijo];
           }
         }
       }
@@ -111,17 +110,15 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
 #if 0
   }
 #endif
-  // h'kl = hkl - 0.5 sum_j (kj|jl)
-  const int size1e = nocc*(nocc+1)/2;
+  // h'ij = hij - 0.5 sum_k (ik|kj)
+  const int size1e = nocc*nocc;
   mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
-    for (int j = 0; j <= i; ++j, ++ij) {
+    for (int j = 0; j != nocc; ++j, ++ij) {
       mo1e_[ij] = buf1e->element(j,i);
-      if (!hz_) {
-        for (int k = 0; k != nocc; ++k)
-          mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
-      }
+      for (int k = 0; k != nocc; ++k)
+        mo1e_[ij] -= 0.5*buf2e[k+i*nocc+k*nocc*nocc+j*nocc*nocc*nocc];
     }
   }
 }
@@ -173,8 +170,8 @@ unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfe
 
   // assembles (ii|ii) = (ii|D)(D|ii)
   unique_ptr<double[]> med = buf->form_4index(buf, 1.0);
-  unique_ptr<complex<double>[]> out(new complex<double>[nocc * nocc * nocc * nocc]);
-  for (int i = 0; i != nocc * nocc * nocc * nocc; i++) out[i] = med[i];
+  unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
+  for (int i = 0; i != nocc*nocc*nocc*nocc; i++) out[i] = med[i];
   return out;
 }
 

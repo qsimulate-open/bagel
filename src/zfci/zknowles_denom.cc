@@ -35,11 +35,9 @@
 using namespace std;
 using namespace bagel;
 
-//all real due to non-complex mo2e values
 //
 // averaged diagonal elements as defined in Knowles & Handy (1989) Compt. Phys. Comm.
 //
-//TODO need to check that indices used here are correct for uncompressed MOFile
 void ZKnowlesHandy::const_denom() {
   vector<complex<double>> jop, kop, fk;
   jop.resize(norb_*norb_);
@@ -47,12 +45,14 @@ void ZKnowlesHandy::const_denom() {
   fk.resize(norb_);
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, j, i, i);
+      jop[i*norb_+j] = 0.5*jop_->mo2e_kh(j, j, i, i);
+      jop[j*norb_+i] = 0.5*jop_->mo2e_kh(i, i, j, j);
     }
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
+      kop[i*norb_+j] = 0.5*jop_->mo2e_kh(j, i, j, i);
+      kop[j*norb_+i] = 0.5*jop_->mo2e_kh(i, j, i, j);
     }
   }
   for (int i = 0; i != norb_; ++i) {
@@ -81,7 +81,8 @@ void ZKnowlesHandy::const_denom() {
           const int njb = ib[j];
           const int Nj = (nja ^ njb);
           const int addj = niab * (nja + njb);
-          complex<double> med = jop[j+norb_*i] * 2.0 * static_cast<double>(addj) - kop[j+norb_*i] * (F*Ni*Nj + addj);
+
+          complex<double> med = (jop[j+norb_*i]+jop[i+norb_*j]) * static_cast<double>(addj) - (0.5 * (kop[j+norb_*i]+kop[i+norb_*j]) * (F*Ni*Nj + addj));
           assert(med.imag()<1e-8);
           *iter += med.real();
         }
