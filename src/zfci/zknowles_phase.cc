@@ -44,80 +44,54 @@ void ZKnowlesHandy::mult_phase_factor() {
     const complex<double> fac(cos(ran), sin(ran));
     phase(i,i) = fac;
   }
+  const int ij = nij();
+  auto mo1e = make_shared<ZMatrix>(norb_, norb_);
+  unique_ptr<complex<double>[]> mo2e(new complex<double>[ij*ij]);
 
-  auto mo1e = make_shared<Matrix>(norb_, norb_);
-  unique_ptr<double[]> mo2e(new double[nij()]);
-#if 0
-  ZMatrix complex_mo2e(ij, ij);
-//generating complex matrix from mofile real matrix
-  if (nelec == 2) {
-  //temporary fix to allow for non-complex mo2e.
-    cout << endl << endl << "printing complex_m02e" << endl << endl;
-    for (int j = 0; j < ij; j++) {
-      cout << j << setw(1);
-      for (int i = 0; i < ij; i++) {
-        complex_moe(i, j) = complex<double>(jop->mo2e(i,j), 0.0);
+//transform 1e integrals.
+//TODO check indices
+  for (int i = 0; i != norb_; i++) {
+    for (int j = 0; j != norb_; j++) {
+      mo1e->element(i, j) = jop_->mo1e(j, i);
+    }
+  }
+  *mo1e = phase % *mo1e * phase;
+
+  mo1e->norm();
+
+  //iterating over subordinate norb_, norb_ matrices of mo2e
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j != norb_; ++j) {
+      unique_ptr<complex<double>[]> in(new complex<double>[ij]);
+      unique_ptr<complex<double>[]> tmp(new complex<double>[ij]);
+      unique_ptr<complex<double>[]> out(new complex<double>[ij]);
+
+      //assigning array 'in' by iterating over k and l to produce and norb_*norb_ array
+      for (int k = 0; k != norb_; ++k) {
+        for (int l = 0; l != norb_; ++l) {
+          in[l+norb_*k] = jop_->mo2e_kh(i, j, k, l);
+        }
       }
-    }
-    complex_moe.print();
-  } else if (nelec==1) {
-  //temporary fix to allow for non-complex mo1e.
-    cout << endl << endl << "printing complex_m01e" << endl << endl;
-    for (int j = 0; j < ij;j++) {
-      cout << j << setw(1);
-      for (int i =0; i < ij; i++) {
-        complex_moe[i] = complex<double>(jop->mo1e(i), 0.0);
-        cout << setprecision(1) << complex_moe[i+j*ij] << setw(1);
+
+      // in*U
+      zgemm3m_("n","n", norb_, norb_, norb_, 1.0, in.get(), norb_, phase.data(), norb_, 1.0, tmp.get(), norb_);
+      // UH * (in*U)
+      zgemm3m_("c","n", norb_, norb_, norb_, 1.0, phase.data(), norb_, tmp.get(), norb_, 1.0, out.get(), norb_);
+
+      // assigning transformed arrays to positions in mo2e identical to the original positions in jop_->mo2e
+      for (int k = 0; k!= norb_; ++k) {
+        for (int l = 0; l != norb_; ++l) {
+          mo2e[l + norb_*k + norb_*norb_*j + norb_*norb_*norb_*i] = out[l+norb_*k];
+        }
       }
-      cout << endl;
+
     }
   }
-//introducing phase factor to 2e integrals to check for bugs in complex portion of zfci
-//random numbers for use in phase factor
-  complex<double> random[ij];
-  for (int j=0;j<ij;j++) {
-    double a = rand() % 10 + 1;
-    random[j] = complex<double>(0,a);
-  }
-//declaring and filling intermediate w/ 0.0
-  complex<double> intermediate[ij*ij];
-  for (int j=0; j<(ij*ij); j++) intermediate[j] =0.0;
 
-//generating diagonal phase factor matrix
-  complex<double> phase_factor[ij*ij];
-  cout << endl << endl << "printing phase factor" << endl << endl;
-  for (int j=0;j<(ij);j++) {
-    cout << j << setw(1);
-    for (int i=0; i<(ij); i++) {
-      if (i==j) phase_factor[i+j*ij] = random[i];
-      else phase_factor[i+j*ij] = 0.0;
-      assert(phase_factor[i+j*ij].real()<1e-8);
-      cout << setprecision(1) << phase_factor[i+j*ij] << setw(1);
-    }
-    cout << endl;
-  }
-// (A*U)
-  zgemm3m_("n", "n", ij, ij, ij, 1.0, complex_moe, ij, phase_factor, ij, 0.0, intermediate, ij);
+  complex<double> norm = zdotc_(ij*ij, mo2e, 1, mo2e, 1);
+  assert(abs(norm.imag())<1e-8);
 
-  cout << endl << endl << "printing intermediate" << endl << endl;
-  for (int j=0; j<(ij); j++) {
-    cout << j << setw(1);
-    for (int i=0; i<(ij); i++) {
-      cout << setprecision(1) << intermediate[i+j*ij] << setw(1);
-    }
-    cout << endl;
-  }
-  cout << endl;
-
-// Udagger*(A*U)
-  zgemm3m_("c", "n", ij, ij, ij, 1.0, phase_factor, ij, intermediate, ij, 0.0, complex_moe, ij);
-
-//end of phase factor
-//there has to be a better way to do this, but this is temporary anyway
-  unique_ptr<complex<double>[]> out(new complex<double>[ij*ij]);
-  for (int i=0;i<(ij*ij);i++) out[i] = complex_moe[i];
-#endif
-
-  jop_ =  make_shared<Htilde>(ref_, 0, 0, mo1e, move(mo2e));
+//apply transformation to hamiltonian
+  jop_ =  make_shared<ZHtilde>(ref_, 0, 0, mo1e, move(mo2e));
 
 }

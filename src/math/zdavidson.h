@@ -160,6 +160,7 @@ class ZDavidsonDiag {
     }
 
     // make cc orthogonal to cc_ vectors
+    //TODO should this be complex?
     std::complex<double> orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 };
