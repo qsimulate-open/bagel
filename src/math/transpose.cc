@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/math/algo.h>
 #include <bagel_config.h>
 #ifdef HAVE_MKL_H
 #include <mkl.h>

@@ -34,6 +34,7 @@
 #include <stddef.h>
 #include <memory>
 #include <stdexcept>
+#include <src/math/algo.h>
 #include <src/wfn/reference.h>
 #include <src/smith/tensor.h>
 #include <src/scf/fock.h>

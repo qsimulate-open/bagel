@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/math/algo.h>
 #include <bagel_config.h>
-#include <complex>
 #ifdef HAVE_MKL_H
 #define MKL_Complex16 std::complex<double>
 #include <mkl.h>
@@ -179,8 +179,7 @@ void mytranspose_complex_(const complex<double>* h, const int m, const int n, co
 
 
 void mytranspose_complex_conjg_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
-//#ifdef HAVE_MKL_H
-#if 0
+#ifdef HAVE_MKL_H
   mkl_zomatcopy('c', 'c', m, n, 1.0, h, m, vec, n);
 #else
   const int mresidual = m % 10;

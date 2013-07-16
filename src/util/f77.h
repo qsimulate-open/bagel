@@ -77,12 +77,6 @@ extern "C" {
  void dger_(const int*, const int*, const double*, const double*, const int*, const double*, const int*, double*, const int*);
 }
 
-namespace bagel {
-extern void mytranspose_(const double* a, const int b, const int c, double* d, const double fac = 1.0);
-extern void mytranspose_complex_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
-extern void mytranspose_complex_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
-}
-
 static void dgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
                    const double alpha, const double* a, const int lda, const double* b, const int ldb,
                    const double beta, double* c, const int ldc) { dgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }

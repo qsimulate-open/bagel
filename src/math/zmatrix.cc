@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <src/util/f77.h>
 #include <src/math/zmatrix.h>
+#include <src/math/algo.h>
 #include <cassert>
 #include <cmath>
 #include <stdexcept>

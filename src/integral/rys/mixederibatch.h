@@ -28,10 +28,11 @@
 #define __SRC_INTEGRAL_RYS_MIXEDERIBATCH_H
 
 #include <stddef.h>
-#include <src/molecule/shell.h>
 #include <memory>
+#include <src/molecule/shell.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/math/matrix.h>
+#include <src/math/algo.h>
 #include <src/parallel/resources.h>
 
 namespace bagel {
