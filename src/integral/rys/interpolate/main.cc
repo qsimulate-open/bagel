@@ -93,13 +93,13 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
         sum += cdx[k] * mpfr::cos(pi * j * (k + half) / n);
         sum2 += cdw[k] * mpfr::cos(pi * j * (k + half) / n);
       }
-      tc[j] = sum * fac;
-      tc2[j] = sum2 * fac;
+      tc[j] = (sum * fac).toDouble();
+      tc2[j] = (sum2 * fac).toDouble();
     }
     if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
-      cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << (double)Tmin << " " << (double)Tmax << endl;
+      cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << Tmin.toDouble() << " " << Tmax.toDouble() << endl;
       for (int i = 0; i != n; ++i) {
-        cout << setw(20) << (double)(Tpoints[i]) << setw(20) << (double)cdx[i] << setw(20) << (double)(cdw[i]) << endl;
+        cout << setw(20) << Tpoints[i].toDouble() << setw(20) << cdx[i].toDouble() << setw(20) << cdw[i].toDouble() << endl;
       }
     }
     c.push_back(tc);
@@ -288,8 +288,8 @@ int main(int argc, char** argv) {
     int info = 0;
     dsyev_("v", "U", &n, a, &n, b, c, &nn, &info);
     for (int j = 0; j != nroot; ++j) {
-      aroot.push_back((double)(b[nroot+j]*b[nroot+j]));
-      aweight.push_back((double)(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*sqrt(pi)));
+      aroot.push_back(b[nroot+j]*b[nroot+j]);
+      aweight.push_back(a[(nroot+j)*(nroot*2)]*a[(nroot+j)*(nroot*2)]*(sqrt(pi)).toDouble());
     }
 #else
     const mpreal t = 1000;
@@ -301,8 +301,8 @@ int main(int argc, char** argv) {
     for (int j = 0; j != nroot; ++j) {
       assert(fabs(dx[j]*t - dx[j+nroot]*s) < 1.0e-16);
       assert(fabs(dw[j]*t*sqrt(t) - dw[j+nroot]*s*sqrt(s)) < 1.0e-16);
-      aroot.push_back((double)dx[j]*t);
-      aweight.push_back((double)dw[j]*t*sqrt(t));
+      aroot.push_back((dx[j]*t).toDouble());
+      aweight.push_back((dw[j]*t*sqrt(t)).toDouble());
     }
 #endif
 #else
@@ -315,8 +315,8 @@ int main(int argc, char** argv) {
     for (int j = 0; j != nroot; ++j) {
       assert(fabs(dx[j]*t - dx[j+nroot]*s) < 1.0e-16);
       assert(fabs(dw[j]*t*t*sqrt(t) - dw[j+nroot]*s*s*sqrt(s)) < 1.0e-16);
-      aroot.push_back((double)dx[j]*t);
-      aweight.push_back((double)dw[j]*t*t*sqrt(t));
+      aroot.push_back((dx[j]*t).toDouble());
+      aweight.push_back((dw[j]*t*t*sqrt(t)).toDouble());
     }
 #endif
 
