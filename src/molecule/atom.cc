@@ -61,7 +61,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     nbasis_ = 0;
     lmax_ = 0;
   } else {
-    string cbas = inp->get<string>(!aux ? "basis" : "abasis", defbas.first);
+    string cbas = inp->get<string>(!aux ? "basis" : "df_basis", defbas.first);
     shared_ptr<const PTree> basisset = (cbas == defbas.first) ? defbas.second : PTree::read_basis(cbas);
     string na = name_;
     na[0] = toupper(na[0]);

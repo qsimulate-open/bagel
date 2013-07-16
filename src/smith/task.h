@@ -78,6 +78,7 @@ class Task : public std::enable_shared_from_this<Task<T>> {
     }
 
     virtual double energy() const { return 0.0; }
+    virtual double dedci() const { return 0.0; }
     virtual double correction() const { return 0.0; }
 };
 
@@ -90,6 +91,17 @@ class EnergyTask : public Task<T> {
     EnergyTask() : Task<T>() {}
     ~EnergyTask() {}
     double energy() const { return energy_; }
+
+};
+
+template <typename T>
+class DedciTask : public Task<T> {
+  protected:
+    double dedci_;
+  public:
+    DedciTask() : Task<T>() {}
+    ~DedciTask() {}
+    double dedci() const { return dedci_; }
 
 };
 
