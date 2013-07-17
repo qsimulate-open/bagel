@@ -25,6 +25,7 @@
 
 
 #include <src/zfci/zcivec.h>
+#include <src/math/algo.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;

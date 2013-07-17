@@ -25,6 +25,7 @@
 
 
 #include <src/wfn/rdm.h>
+#include <src/math/algo.h>
 
 using namespace bagel;
 using namespace std;

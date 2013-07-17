@@ -35,6 +35,7 @@
 #include <src/util/constants.h>
 #include <src/util/combination.hpp>
 #include <src/math/comb.h>
+#include <src/math/algo.h>
 #include <src/fci/hzdenomtask.h>
 #include <src/fci/distfci_ab.h>
 #include <src/fci/distfci_bb.h>

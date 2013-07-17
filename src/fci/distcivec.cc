@@ -28,6 +28,7 @@
 
 #include <sstream>
 #include <src/fci/civec.h>
+#include <src/math/algo.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;

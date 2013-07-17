@@ -44,6 +44,7 @@
 #include <src/pscf/filename.h>
 #include <src/pscf/cache.h>
 #include <src/util/f77.h>
+#include <src/math/algo.h>
 
 namespace bagel {
 
