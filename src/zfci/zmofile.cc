@@ -34,7 +34,7 @@
 using namespace std;
 using namespace bagel;
 
-ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const string method)
+ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const string method)
 : geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
 
   do_df_ = geom_->df().get();
@@ -44,7 +44,7 @@ ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const int nstart, const 
 }
 
 
-ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const int nstart, const int nfence, const shared_ptr<const Coeff> c, const string method)
+ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
 : hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
@@ -73,52 +73,25 @@ double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
   compress(buf1e, buf2e);
   return core_energy;
 }
-//TODO is compression usable for complex kh?
+
 void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
 
-  // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
-  //sizeij_ = hz_ ? nocc*nocc : nocc*(nocc+1)/2;
   sizeij_ = nocc*nocc;
   mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-#if 0
-  if (!hz_) {
-    int ijkl = 0;
-    for (int i = 0; i != nocc; ++i) {
-      for (int j = 0; j <= i; ++j) {
-        const int ijo = (j + i*nocc)*nocc*nocc;
-        for (int k = 0; k != nocc; ++k)
-          for (int l = 0; l <= k; ++l, ++ijkl)
-            mo2e_[ijkl] = buf2e[l+k*nocc+ijo];
-      }
-    }
-  }
-  else {
-#endif
-    int ijkl = 0;
-    // In this case, there is no compression (this is actually necessary)
-    for (int i = 0; i != nocc; ++i) {
-      for (int j = 0; j != nocc; ++j) {
-        const int ijo = (j + i*nocc)*nocc*nocc;
-        for (int k = 0; k != nocc; ++k) {
-          for (int l = 0; l != nocc; ++l, ++ijkl) {
-            mo2e_[ijkl] = buf2e[l + k*nocc + ijo];
-          }
-        }
-      }
-    }
-#if 0
-  }
-#endif
+  copy_n(buf2e.get(), sizeij_*sizeij_, mo2e_.get());
+
   // h'ij = hij - 0.5 sum_k (ik|kj)
   const int size1e = nocc*nocc;
+  mo1e_nodelta_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
   mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j != nocc; ++j, ++ij) {
-      mo1e_[ij] = buf1e->element(j,i);
-      for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e[k+i*nocc+k*nocc*nocc+j*nocc*nocc*nocc];
+      mo1e_nodelta_[ij] = buf1e->element(j,i);
+      mo1e_[ij] = mo1e_nodelta_[ij];
+      //for (int k = 0; k != nocc; ++k)
+      //  mo1e_[ij] -= 0.5*buf2e[j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc];
     }
   }
 }

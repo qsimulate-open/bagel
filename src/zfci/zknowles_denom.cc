@@ -51,26 +51,27 @@ void ZKnowlesHandy::const_denom() {
   }
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      kop[i*norb_+j] = 0.5*jop_->mo2e_kh(j, i, j, i);
-      kop[j*norb_+i] = 0.5*jop_->mo2e_kh(i, j, i, j);
+      kop[i*norb_+j] = 0.5*jop_->mo2e_kh(j, i, i, j);
+      kop[j*norb_+i] = 0.5*jop_->mo2e_kh(i, j, j, i);
     }
   }
   for (int i = 0; i != norb_; ++i) {
     fk[i] = 0.0;
     for (int j = 0; j != norb_; ++j) {
-      fk[i] += kop[i*norb_+j];
+      fk[i] += kop[j*norb_+i];
     }
   }
   denom_ = make_shared<Civec>(det());
   const int nspin = det()->nspin();
   const int nspin2 = nspin*nspin;
-
+  complex<double> med = 0.0;
   double* iter = denom_->data();
   for (auto& ia : det()->stringa()) {
     for (auto& ib : det()->stringb()) {
       const int nopen = (ia^ib).count();
       const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
       *iter = 0.0;
+      med = 0.0;
       for (int i = 0; i != norb_; ++i) {
         const int nia = ia[i];
         const int nib = ib[i];
@@ -82,14 +83,12 @@ void ZKnowlesHandy::const_denom() {
           const int Nj = (nja ^ njb);
           const int addj = niab * (nja + njb);
 
-          complex<double> med = (jop[j+norb_*i]+jop[i+norb_*j]) * static_cast<double>(addj) - (0.5 * (kop[j+norb_*i]+kop[i+norb_*j]) * (F*Ni*Nj + addj));
-          assert(fabs(med.imag()) < 1e-8);
-          *iter += med.real();
+          med += (jop[j+norb_*i]+jop[i+norb_*j]) * static_cast<double>(addj) - (0.5 * (kop[j+norb_*i]+kop[i+norb_*j]) * (F*Ni*Nj + addj));
         }
-        complex<double> med = (jop_->mo1e(i,i) + fk[i]) * static_cast<double>(niab) - kop[i+norb_*i] * 0.5 * static_cast<double>(Ni - niab*niab);
-        assert(fabs(med.imag()) < 1e-8);
-        *iter += med.real();
+        med += (jop_->mo1e(i,i) + fk[i]) * static_cast<double>(niab) - kop[i+norb_*i] * 0.5 * static_cast<double>(Ni - niab*niab);
       }
+      assert(fabs(med.imag())<1e-8);
+      *iter = med.real();
       ++iter;
     }
   }
@@ -105,4 +104,5 @@ void ZKnowlesHandy::update(shared_ptr<const Coeff> c) {
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();
+  mult_phase_factor();
 }

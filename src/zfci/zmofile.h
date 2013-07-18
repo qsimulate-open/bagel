@@ -72,8 +72,8 @@ class ZMOFile {
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e);
     std::shared_ptr<const Coeff> coeff_;
   public:
-    ZMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::string method = std::string("KH"));
-    ZMOFile(const std::shared_ptr<const Reference>, const int nstart, const int nfence, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    ZMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
+    ZMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
     ~ZMOFile();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
@@ -114,10 +114,9 @@ class ZJop : public ZMOFile {
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
   public:
     ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : ZMOFile(b,c,d,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
+      : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
-      : ZMOFile(b,c,d,e,f) { core_energy_ = create_Jiiii(c, d); };
-    ~ZJop() {};
+      : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 class ZHtilde : public ZMOFile {
   protected:
@@ -130,10 +129,9 @@ class ZHtilde : public ZMOFile {
 
   public:
     ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
-      : ZMOFile(b,c,d), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
+      : ZMOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
       core_energy_ = create_Jiiii(c, d);
     }
-    ~ZHtilde() {};
 };
 
 }
