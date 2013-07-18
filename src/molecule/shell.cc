@@ -160,7 +160,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 // returns uncontracted cartesian shell with one higher or lower angular number if inc is + or - 1 respectively
 template<int inc>
 shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
-  static_assert(abs(inc)==1, "illegal call of Shell::kinetic_balance_uncont");
+  static_assert(inc==1||inc==-1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
