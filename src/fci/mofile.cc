@@ -55,10 +55,6 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coe
 }
 
 
-MOFile::~MOFile() {
-}
-
-
 double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // first compute all the AO integrals in core

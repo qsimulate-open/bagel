@@ -61,7 +61,7 @@ class MOFile {
     int address_(int i, int j) const {
       assert(i <= j);
       return i+((j*(j+1))>>1);
-    };
+    }
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int);
 
@@ -77,31 +77,30 @@ class MOFile {
   public:
     MOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     MOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
-    ~MOFile();
 
-    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+    const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
-    int sizeij() const { return sizeij_; };
-    double mo1e(const size_t i) const { return mo1e_[i]; };
-    double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
+    int sizeij() const { return sizeij_; }
+    double mo1e(const size_t i) const { return mo1e_[i]; }
+    double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; }
     // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l
-    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
+    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }
     // This is in <ij|kl> == (ik|jl) format
-    double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
-    double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); };
-    std::shared_ptr<const Matrix> core_fock() const { return core_fock_; };
-    double* core_fock_ptr() { return core_fock_->data(); };
-    double* mo1e_ptr() { return mo1e_.get(); };
-    double* mo2e_ptr() { return mo2e_.get(); };
-    const double* core_fock_ptr() const { return core_fock_->data(); };
-    const double* mo1e_ptr() const { return mo1e_.get(); };
-    const double* mo2e_ptr() const { return mo2e_.get(); };
+    double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; }
+    double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }
+    std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
+    double* core_fock_ptr() { return core_fock_->data(); }
+    double* mo1e_ptr() { return mo1e_.get(); }
+    double* mo2e_ptr() { return mo2e_.get(); }
+    const double* core_fock_ptr() const { return core_fock_->data(); }
+    const double* mo1e_ptr() const { return mo1e_.get(); }
+    const double* mo2e_ptr() const { return mo2e_.get(); }
 
-    double core_energy() const { return core_energy_; };
+    double core_energy() const { return core_energy_; }
 
-    std::shared_ptr<DFHalfDist> mo2e_1ext() { return mo2e_1ext_; };
-    std::shared_ptr<const DFHalfDist> mo2e_1ext() const { return mo2e_1ext_; };
+    std::shared_ptr<DFHalfDist> mo2e_1ext() { return mo2e_1ext_; }
+    std::shared_ptr<const DFHalfDist> mo2e_1ext() const { return mo2e_1ext_; }
     void update_1ext_ints(const std::shared_ptr<const Matrix>& coeff);
 
 };
@@ -112,10 +111,9 @@ class Jop : public MOFile {
     std::unique_ptr<double[]> compute_mo2e(const int, const int) override;
   public:
     Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : MOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); };
+      : MOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
-      : MOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); };
-    ~Jop() {};
+      : MOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 
 class Htilde : public MOFile {
@@ -124,15 +122,14 @@ class Htilde : public MOFile {
     std::shared_ptr<const Matrix> h1_tmp_;
     std::unique_ptr<double[]> h2_tmp_;
 
-    std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::unique_ptr<double[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
+    std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); }
+    std::unique_ptr<double[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); }
 
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> h1, std::unique_ptr<double[]> h2)
       : MOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
       core_energy_ = create_Jiiii(c, d);
     }
-    ~Htilde() {};
 };
 
 }
