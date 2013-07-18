@@ -3,7 +3,7 @@
 // Filename: wfn_py.cc
 // Copyright (C) 2013 Michael Caldwell
 //
-// Author: Michael Caldwell <MichaelCaldwell@u.northwestern.edu>
+// Author: Michael Caldwell <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
