@@ -210,7 +210,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
       if (i == j) continue;
       for (int k = 0; k != norb_; ++k)
         for (int l = 0; l < k; ++l, ++ijkl)
-          hamil2[ijkl] = jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k);
+          hamil2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
     }
   }
 
@@ -386,8 +386,8 @@ void DistFCI::const_denom() {
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
+      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(i, j, i, j);
+      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(i, j, j, i);
     }
     h[i] = jop_->mo1e(i,i);
   }

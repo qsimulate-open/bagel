@@ -152,7 +152,7 @@ void HarrisonZarrabian::sigma_2aa(shared_ptr<const Civec> cc, shared_ptr<Civec> 
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
+            const double temp = phase * ( jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i) );
             const double* source = source_base + base_det->lexical<0>(string_ijkl)*lb;
             daxpy_(lb, temp, source, 1, target_base, 1);
           }
@@ -188,7 +188,7 @@ void HarrisonZarrabian::sigma_2bb(shared_ptr<const Civec> cc, shared_ptr<Civec> 
             const double phase = -static_cast<double>(ij_phase*kl_phase);
             bitset<nbit__> string_ijkl = string_ij;
             string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(i,j,k,l) - jop->mo2e_hz(i,j,l,k) );
+            const double temp = phase * ( jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i) );
             const double* source = source_base + base_det->lexical<1>(string_ijkl);
             daxpy_(la, temp, source, lb, target_base, lb);
           }
