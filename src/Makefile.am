@@ -9,7 +9,7 @@ libbagel_la_LIBADD = $(INTLIBS)
 
 bin_PROGRAMS = BAGEL
 BAGEL_SOURCES = main.cc
-BAGEL_LDADD = libbagel.la
+BAGEL_LDADD = libbagel.la $(INTLIBS)
 
 check_PROGRAMS = TestSuite
 TestSuite_SOURCES = test_main.cc
