@@ -93,7 +93,7 @@ void ZCivec::zaxpy(complex<double> a, const ZCivec& other) {
 
 double ZCivec::norm() const {
   complex<double> normc = zdotc(*this);
-  assert(abs(normc.imag()) < 1.0e-8);
+  assert(fabs(normc.imag()) < 1.0e-8);
   return sqrt(normc.real());
 }
 
@@ -113,7 +113,7 @@ complex<double> ZCivec::orthog(list<shared_ptr<const ZCivec>> c) {
   for (auto& iter : c)
     project_out(iter);
   const double norm = this->norm();
-  const double scal = (abs(norm*norm)<1.0e-60 ? 0.0 : 1.0/norm);
+  const double scal = (fabs(norm*norm)<1.0e-60 ? 0.0 : 1.0/norm);
   scale(scal);
   return 1.0/scal;
 }
@@ -149,7 +149,7 @@ shared_ptr<ZDistCivec> ZCivec::zdistcivec() const {
 double ZCivec::spin_expectation() const {
   shared_ptr<ZCivec> S2 = spin();
   complex<double> out = zdotc(*S2);
-  assert(abs(out.imag()) < 1e-8);
+  assert(fabs(out.imag()) < 1e-8);
   return out.real();
 }
 
@@ -160,7 +160,7 @@ void ZCivec::print(const double thr) const {
   multimap<double, tuple<complex<double>, bitset<nbit__>, bitset<nbit__>>> tmp;
   for (auto& ia : det_->stringa()) {
     for (auto& ib : det_->stringb()) {
-      if (abs(*i) > thr) {
+      if (fabs(*i) > thr) {
         tmp.insert(make_pair(-sqrt(pow((*i).real(),2)+pow((*i).imag(),2)), make_tuple(*i, ia, ib)));
       }
       ++i;
@@ -307,14 +307,14 @@ void ZCivec::spin_decontaminate(const double thresh) {
   shared_ptr<ZCivec> S2 = spin();
 
   int k = nspin + 2;
-  while( abs(zdotc(*S2) - expectation) > thresh ) {
+  while( fabs(zdotc(*S2) - expectation) > thresh ) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
     zaxpy(factor, *S2);
 
     const double norm = this->norm();
-    const double rescale = (abs(norm*norm) > 1.0e-60) ? 1.0/norm : 0.0;
+    const double rescale = (fabs(norm*norm) > 1.0e-60) ? 1.0/norm : 0.0;
     scale(rescale);
 
     S2 = spin();

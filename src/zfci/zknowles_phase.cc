@@ -89,7 +89,7 @@ void ZKnowlesHandy::mult_phase_factor() {
   }
 
   complex<double> norm = zdotc_(ij*ij, mo2e, 1, mo2e, 1);
-  assert(abs(norm.imag())<1e-8);
+  assert(fabs(norm.imag())<1e-8);
 
 //apply transformation to hamiltonian
   jop_ =  make_shared<ZHtilde>(ref_, 0, 0, mo1e, move(mo2e));
