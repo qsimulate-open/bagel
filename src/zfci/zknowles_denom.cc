@@ -83,11 +83,11 @@ void ZKnowlesHandy::const_denom() {
           const int addj = niab * (nja + njb);
 
           complex<double> med = (jop[j+norb_*i]+jop[i+norb_*j]) * static_cast<double>(addj) - (0.5 * (kop[j+norb_*i]+kop[i+norb_*j]) * (F*Ni*Nj + addj));
-          assert(abs(med.imag()<1e-8));
+          assert(fabs(med.imag()) < 1e-8);
           *iter += med.real();
         }
         complex<double> med = (jop_->mo1e(i,i) + fk[i]) * static_cast<double>(niab) - kop[i+norb_*i] * 0.5 * static_cast<double>(Ni - niab*niab);
-        assert(abs(med.imag()<1e-8));
+        assert(fabs(med.imag()) < 1e-8);
         *iter += med.real();
       }
       ++iter;
