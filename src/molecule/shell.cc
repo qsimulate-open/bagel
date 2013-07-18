@@ -64,11 +64,6 @@ Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angula
 }
 
 
-Shell::~Shell() {
-
-}
-
-
 std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
@@ -163,8 +158,9 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 
 
 // returns uncontracted cartesian shell with one higher or lower angular number if inc is + or - 1 respectively
-shared_ptr<const Shell> Shell::kinetic_balance_uncont(int inc) const {
-  assert(abs(inc)==1);
+template<int inc>
+shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
+  static_assert(abs(inc)==1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
@@ -186,8 +182,8 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 
 void Shell::init_relativistic() {
   relativistic_ = true;
-  aux_dec_ = kinetic_balance_uncont(-1);
-  aux_inc_ = kinetic_balance_uncont(1);
+  aux_dec_ = kinetic_balance_uncont<-1>();
+  aux_inc_ = kinetic_balance_uncont<1>();
 
   // overlap = S^-1 between auxiliary functions
   shared_ptr<const Matrix> overlap = overlap_compute_();

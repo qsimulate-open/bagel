@@ -26,10 +26,10 @@ void MoldenIn::compute_transforms() {
       factorial.push_back(1.0);
       for (int i = 1; i != LEND * 2; ++i)
         factorial.push_back(factorial.back() * i);
-    };
+    }
     double comb(const int i, const int j) const {
       return factorial[i] / factorial[j] / factorial[i - j];
-    };
+    }
   } data;
 
   const double one = 1.0;

@@ -45,7 +45,7 @@ void Jacobi_base::sweep() {
 
 void JacobiDiag::rotate(const int k, const int l) {
   const double kl = A_->element(k,l);
-  if (abs(k) < numerical_zero__) return;
+  if (fabs(k) < numerical_zero__) return;
 
   const double kk = A_->element(k,k);
   const double ll = A_->element(l,l);

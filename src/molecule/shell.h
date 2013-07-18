@@ -65,8 +65,6 @@ class Shell {
     // default constructor for adding null basis
     Shell(const bool sph);
 
-    ~Shell();
-
     bool dummy() const { return dummy_; };
     bool spherical() const { return spherical_; };
     int num_primitive() const { return exponents_.size(); };
@@ -95,7 +93,8 @@ class Shell {
     bool operator==(const Shell& o) const;
 
     // generates a shell that satisfy kinetic balance at the primitive level.
-    std::shared_ptr<const Shell> kinetic_balance_uncont(int) const;
+    template<int inc>
+    std::shared_ptr<const Shell> kinetic_balance_uncont() const;
 
     std::shared_ptr<const Shell> cartesian_shell() const;
 
