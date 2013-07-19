@@ -62,15 +62,14 @@ class Storage_base {
         length_ += i->second;
       }
       initialized_ = std::vector<bool>(cnt, init);
-    };
-    ~Storage_base() {};
+    }
 
     // functions that return protected members
-    size_t length() const { return length_; };
+    size_t length() const { return length_; }
     size_t blocksize(const size_t hash) const {
       auto a = hashtable_.find(hash);
       return a != hashtable_.end() ? a->second.second : 0;
-    };
+    }
 
     // get, move, put, and add a block from the storage and returns unique_ptr<double[]>, which is local
     virtual std::unique_ptr<double[]> get_block(const size_t& key) const = 0;
@@ -83,7 +82,7 @@ class Storage_base {
 
     virtual void initialize() = 0;
 
-    bool initialized(const int i) const { return initialized_[i]; };
+    bool initialized(const int i) const { return initialized_[i]; }
 
 };
 
@@ -93,7 +92,6 @@ class Storage_Incore : public Storage_base {
 
   public:
     Storage_Incore(const std::map<size_t, size_t>& size, bool init);
-    ~Storage_Incore() {};
 
     std::unique_ptr<double[]> get_block(const size_t& key) const;
     std::unique_ptr<double[]> move_block(const size_t& key);
