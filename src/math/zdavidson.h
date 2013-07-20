@@ -99,7 +99,7 @@ class ZDavidsonDiag {
           overlap_->element(size_-1, i) = conj(overlap_->element(i, size_-1));
 
           if (!orthogonalize_) {
-            overlap_row += abs(overlap_->element(i, size_-1));
+            overlap_row += sqrt(norm(overlap_->element(i, size_-1)));
           }
         }
         if ( fabs(overlap_row - 1.0) > 1.0e-8 ) {
