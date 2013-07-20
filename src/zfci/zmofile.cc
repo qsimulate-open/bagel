@@ -29,6 +29,7 @@
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/zfci/zmofile.h>
+#include <src/math/algo.h>
 #include <src/scf/scf.h>
 
 using namespace std;
@@ -83,15 +84,13 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
 
   // h'ij = hij - 0.5 sum_k (ik|kj)
   const int size1e = nocc*nocc;
-  mo1e_nodelta_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
   mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j != nocc; ++j, ++ij) {
-      mo1e_nodelta_[ij] = buf1e->element(j,i);
-      mo1e_[ij] = mo1e_nodelta_[ij];
-      //for (int k = 0; k != nocc; ++k)
-      //  mo1e_[ij] -= 0.5*buf2e[j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc];
+      mo1e_[ij] = buf1e->element(j,i);
+      for (int k = 0; k != nocc; ++k)
+        mo1e_[ij] -= 0.5*buf2e[j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc];
     }
   }
 }

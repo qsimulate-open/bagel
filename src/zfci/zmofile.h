@@ -59,10 +59,6 @@ class ZMOFile {
     std::shared_ptr<DFHalfDist> mo2e_1ext_;
 
     size_t mo2e_1ext_size_;
-    int address_(int i, int j) const {
-      assert(i <= j);
-      return i+((j*(j+1))>>1);
-    };
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int);
     // this sets mo1e_, core_fock_ and returns a core energy
@@ -79,19 +75,20 @@ class ZMOFile {
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     int sizeij() const { return sizeij_; };
+
+    void set_moints(std::shared_ptr<ZMatrix>& mo1e, std::unique_ptr<std::complex<double>[]>& mo2e) {
+      std::copy_n(mo1e->data(), nocc_*nocc_, mo1e_.get());
+      mo2e_ = std::move(mo2e);
+    }
+
     std::complex<double> mo1e(const size_t i) const { return mo1e_[i]; };
     std::complex<double> mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
-#if 0
-    // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
-    // strictly i <= j, k <= l
-    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); };
-#endif
-    std::complex<double> mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
+    std::complex<double> mo1e(const size_t i, const size_t j) const { return mo1e_[i+j*nocc_]; };
+    std::complex<double> mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
     // This is in <ij|kl> == (ik|jl) format
 #if 0
-    std::complex<double> mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[l + nocc_*k + nocc_*nocc_*j + nocc_*nocc_*nocc_*i]; };
+    std::complex<double> mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
 #endif
-    std::complex<double> mo1e(const int i, const int j) const { return mo1e(i + nocc_*j); };
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; };
     double* core_fock_ptr() { return core_fock_->data(); };
     std::complex<double>* mo1e_ptr() { return mo1e_.get(); };
@@ -106,6 +103,14 @@ class ZMOFile {
     std::shared_ptr<const DFHalfDist> mo2e_1ext() const { return mo2e_1ext_; };
     void update_1ext_ints(const std::shared_ptr<const Matrix>& coeff);
 #endif
+
+    void print(const int n = 10) const {
+      for (int i = 0; i != std::min(nocc_,n); ++i)
+        for (int j = 0; j != std::min(nocc_,n); ++j)
+          for (int k = 0; k != std::min(nocc_,n); ++k)
+            for (int l = 0; l != std::min(nocc_,n); ++l)
+              std::cout << i << " " << j << " " << k << " " << l << " " << std::setprecision(8) << mo2e_kh(i,j,k,l) << std::endl;
+    }
 };
 
 class ZJop : public ZMOFile {

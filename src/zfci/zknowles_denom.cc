@@ -99,10 +99,10 @@ void ZKnowlesHandy::update(shared_ptr<const Coeff> c) {
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
   jop_ = make_shared<ZJop>(ref_, ncore_, ncore_+norb_, c, "KH");
+  mult_phase_factor();
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
   const_denom();
-  mult_phase_factor();
 }

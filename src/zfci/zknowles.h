@@ -50,7 +50,7 @@ class ZKnowlesHandy : public ZFCI {
     void sigma_2c2(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
     // multiply copmlex phase factors to each orbitals (TODO only for debugging)
-    void mult_phase_factor() override;
+    void mult_phase_factor();
 
   public:
     // this constructor is ugly... to be fixed some day...

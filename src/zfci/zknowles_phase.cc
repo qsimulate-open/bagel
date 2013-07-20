@@ -32,6 +32,7 @@ using namespace std;
 using namespace bagel;
 
 void ZKnowlesHandy::mult_phase_factor() {
+  jop_->print(2);
 
   cout << "         "  << "Applying random phase factor to integrals" << endl << endl;
   const size_t norb2 = norb_*norb_;
@@ -45,44 +46,37 @@ void ZKnowlesHandy::mult_phase_factor() {
     phase(i,i) = fac;
   }
 
-  ZMatrix test(norb_, norb_);
-  for (int i = 0; i!=norb_; ++i) test(i,i) = 1.0;
-
   //transform 1e integrals.
   auto mo1e = make_shared<ZMatrix>(norb_, norb_);
+  unique_ptr<complex<double>[]> temp(new complex<double>[norb_]);
 
-  copy_n(jop_->mo1e_nodelta_ptr(), norb2, mo1e->data());
-  *mo1e = phase % (*mo1e * phase);
+  copy_n(jop_->mo1e_ptr(), norb2, mo1e->data());
+  *mo1e = phase % *mo1e * phase;
 
   //transforming 4 index mo2e
-#if 0
   unique_ptr<complex<double>[]> mo2e(new complex<double>[norb4]);
   unique_ptr<complex<double>[]> tmp(new complex<double>[norb4]);
   unique_ptr<complex<double>[]> trans(new complex<double>[norb4]);
-  unique_ptr<complex<double>[]> out(new complex<double>[norb4]);
 
-  // 1) make -> out(n, n, n, n')
-  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, jop_->mo2e_ptr(), norb3, phase.data(), norb_, 0.0, tmp.get(), norb3);
+  // 1) make (i*, j, k, l) (left multiply by phase*)
+  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase.data(), norb_, jop_->mo2e_ptr(), norb_, 0.0, trans.get(), norb_);
 
-  // 2) make -> out(n, n, n'(dagger), n')
-  for (int l = 0; l != norb_; ++l)
-    zgemm3m_("n","n", norb2, norb_, norb_, 1.0, tmp.get()+l*norb3, norb2, phase.data(), norb_, 0.0, trans.get()+l*norb3, norb2);
-  copy_n(trans.get(), norb4, mo2e.get());
+  // 2) make (i*, j, k, l') (right multiply by phase)
+  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, trans.get(), norb3, phase.data(), norb_, 0.0, tmp.get(), norb3);
 
-  // 3) transpose to make -> tmp(n', n'(dagger), n, n)
-  mytranspose_complex_(jop_->mo2e_ptr(), norb2 , norb2, trans.get());
+  // 3) transpose to make (k, l', i*, j) now (kl|ij)
+  mytranspose_complex_(tmp.get(), norb2, norb2, trans.get());
 
-  // 4) repeat step 1 to make -> out(n', n'(dagger), n, n')
-  zgemm3m_("n","c", norb3, norb_, norb_, 1.0, trans.get(), norb3, phase.data(), norb_, 0.0, tmp.get(), norb3);
+  // 4) make (k*, l', i*, j) (left multiply by phase*)
+  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase.data(), norb_, trans.get(), norb_, 0.0, tmp.get(), norb_);
 
-  // 5) repeat step 2 to make -> mo2e(n', n', n'(dagger), n')
-  for (int l = 0; l != norb_; ++l)
-    zgemm3m_("n","c", norb2, norb_, norb_, 1.0, tmp.get()+l*norb3, norb2, phase.data(), norb_, 0.0, trans.get()+l*norb3, norb2);
+  // 5) make (k', l', i*, j') (right multiply by phase)
+  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase.data(), norb_, 0.0, trans.get(), norb3);
 
-  // 6) transpose again to return to original
+  // 6) transpose to return indices to (ij|kl)
   mytranspose_complex_(trans.get(), norb2, norb2, mo2e.get());
-#endif
 
 //apply transformation to hamiltonian
-  jop_ =  make_shared<ZHtilde>(ref_, ncore_, ncore_+norb_, mo1e, move(mo2e));
+  jop_->set_moints(mo1e, mo2e);
+  jop_->print(3);
 }

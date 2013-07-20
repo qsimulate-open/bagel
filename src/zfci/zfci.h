@@ -131,7 +131,6 @@ class ZFCI {
     // virtual application of Hamiltonian
     virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const = 0;
 
-    virtual void mult_phase_factor() = 0;
 
 #if 0
     // rdms
