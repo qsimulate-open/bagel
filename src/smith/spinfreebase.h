@@ -524,9 +524,9 @@ class SpinFreeMethod {
       virt_ = v;
       all_ = a;
 
-      rclosed_ = std::shared_ptr<const IndexRange>(new IndexRange(c));
-      ractive_ = std::shared_ptr<const IndexRange>(new IndexRange(act));
-      rvirt_   = std::shared_ptr<const IndexRange>(new IndexRange(v));
+      rclosed_ = std::make_shared<const IndexRange>(c);
+      ractive_ = std::make_shared<const IndexRange>(act);
+      rvirt_   = std::make_shared<const IndexRange>(v);
 
       // f1 tensor.
       {
@@ -553,7 +553,7 @@ class SpinFreeMethod {
       // rdms
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {active_, active_};
-        rdm1_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
+        rdm1_ = std::make_shared<Tensor<T>>(o, false);
         const int nclo = ref_->nclosed();
         for (auto& i1 : active_) {
           for (auto& i0 : active_) {
@@ -570,7 +570,7 @@ class SpinFreeMethod {
       }
       if (!ref_->rdm2().empty()) {
         std::vector<IndexRange> o = {active_, active_, active_, active_};
-        rdm2_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
+        rdm2_ = std::make_shared<Tensor<T>>(o, false);
         const int nclo = ref_->nclosed();
         for (auto& i3 : active_) {
           for (auto& i2 : active_) {
@@ -595,9 +595,9 @@ class SpinFreeMethod {
       if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
         {
           std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
-          rdm3_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(o, false));
+          rdm3_ = std::make_shared<Tensor<T>>(o, false);
           std::vector<IndexRange> p = {active_, active_, active_, active_, active_, active_, active_, active_};
-          rdm4_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(p, false));
+          rdm4_ = std::make_shared<Tensor<T>>(p, false);
         }
 
         // TODO for the time being we hardwire "0" here (but this should be fixed)
@@ -649,17 +649,17 @@ class SpinFreeMethod {
                   }
 
         const int nact = ref_->nact();
-        std::shared_ptr<Matrix> fockact(new Matrix(nact, nact));
+        auto fockact = std::make_shared<Matrix>(nact, nact);
         for (auto& i1 : active_)
           for (auto& i0 : active_)
             fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
         // TODO hardwired 0
-        std::shared_ptr<RDM<1>> rdm1(new RDM<1>(*ref_->rdm1(0)));
-        std::shared_ptr<RDM<2>> rdm2(new RDM<2>(*ref_->rdm2(0)));
+        auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(0));
+        auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(0));
 
         // construct denominator
-        denom_ = std::shared_ptr<const Denom>(new Denom(*rdm1, *rdm2, *rdm3, *rdm4, *fockact));
+        denom_ = std::make_shared<const Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact);
 
       }
 
