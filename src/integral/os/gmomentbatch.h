@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: momentbatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: gmomentbatch.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,23 +24,20 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_OS_MOMENTBATCH_H
-#define __SRC_INTEGRAL_OS_MOMENTBATCH_H
+#ifndef __SRC_INTEGRAL_OS_GMOMENTBATCH_H
+#define __SRC_INTEGRAL_OS_GMOMENTBATCH_H
 
-#include <memory>
 #include <src/integral/os/osint.h>
 
 namespace bagel {
 
-class MomentBatch : public OSInt {
-  protected:
-    void perform_VRR(double*) override;
-
+// computes derivative integrals of moment operator.
+class GMomentBatch : public OSInt {
   public:
-    MomentBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-     : OSInt(basis, -1, stack) { }
+    GMomentBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,3) { }
 
-    void compute() override;
+    void compute();
+
 };
 
 }
