@@ -33,8 +33,12 @@ namespace bagel {
 
 // computes derivative integrals of moment operator.
 class GMomentBatch : public OSInt {
+  protected:
+    int nblocks() const override { return 18; }
+    int nrank() const override { return 2; }
+
   public:
-    GMomentBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,3) { }
+    GMomentBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o) { common_init(); }
 
     void compute();
 

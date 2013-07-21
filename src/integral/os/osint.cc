@@ -35,8 +35,8 @@ using namespace bagel;
 
 static const double pisqrt__ = ::sqrt(pi__);
 
-OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int deriv, std::shared_ptr<StackMem> stack)
- : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()), deriv_rank_(deriv) {
+OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack)
+ : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
 
   if (stack == nullptr) {
     stack_ = resources__->get();
@@ -45,8 +45,11 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
     stack_ = stack;
     allocated_here_ = false;
   }
+}
 
-  assert(basis.size() == 2);
+void OSInt::common_init() {
+
+  assert(basisinfo_.size() == 2);
 
   ang0_ = basisinfo_[0]->angular_number();
   ang1_ = basisinfo_[1]->angular_number();
@@ -112,7 +115,7 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   assert(coeffsx_.size() == prim0_ * prim1_);
   assert(coefftx_.size() == prim0_ * prim1_);
 
-  amax_ = ang0_ + ang1_ + max(deriv_rank_, 0);
+  amax_ = ang0_ + ang1_ + nrank();
   amax1_ = amax_ + 1;
   amin_ = ang0_;
 
@@ -124,18 +127,10 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, const int 
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  if (deriv_rank_ == 0) {
-    size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-    size_block_ = size_alloc_;
-  } else if (deriv_rank_ == -1) {
-    size_block_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
-    size_alloc_ = size_block_ * 3;
-  } else if (deriv_rank_ >= 1) {
-    size_alloc_ = prim0_ * prim1_ * asize_intermediate_ * 6; // 3*2
-    size_block_ = prim0_ * prim1_ * asize_intermediate_;
-  } else {
-    throw logic_error("high-order multipoles and derivatives not implemented yet");
-  }
+  // note: this is larger than what is needed. just to make the code simpler.. 
+  size_block_ = prim0_ * prim1_ * max(asize_intermediate_, asize_);
+  size_alloc_ = size_block_ * nblocks();
+
   stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;
 
