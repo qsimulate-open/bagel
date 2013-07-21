@@ -34,8 +34,7 @@ namespace bagel {
 // computes derivative integrals of kinetic operator.
 class GKineticBatch : public OSInt {
   public:
-    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,3) { };
-    ~GKineticBatch() {};
+    GKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,3) { }
 
     void compute();
 

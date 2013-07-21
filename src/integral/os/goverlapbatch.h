@@ -35,8 +35,7 @@ class GOverlapBatch : public OSInt {
   protected:
 
   public:
-    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,1) { };
-    ~GOverlapBatch() {};
+    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,1) { }
 
     void compute();
 

@@ -37,15 +37,6 @@ using namespace bagel;
 
 const static CarSphList carsphlist;
 
-KineticBatch::KineticBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
- : OSInt(_basis) {
-
-}
-
-
-KineticBatch::~KineticBatch() {
-}
-
 
 void KineticBatch::compute() {
 
