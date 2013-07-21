@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit.cc
+// Filename: breitint.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,14 +24,14 @@
 //
 
 
-#include <src/rel/breit.h>
+#include <src/rel/breitint.h>
 #include <src/rel/alpha.h>
 #include <src/integral/rys/breitbatch.h>
 
 using namespace std;
 using namespace bagel;
 
-Breit::Breit(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->naux(), mol->naux()) {
+BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->naux(), mol->naux()) {
 
   init();
 
@@ -48,7 +48,7 @@ Breit::Breit(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->
 
 
 
-void Breit::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void BreitInt::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   auto dum0 = make_shared<const Shell>(input[0]->spherical());
   auto dum1 = make_shared<const Shell>(input[1]->spherical());
@@ -66,7 +66,7 @@ void Breit::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 }
 
 
-void Breit::init() {
+void BreitInt::init() {
 
   list<shared_ptr<const Shell>> shells;
   for (auto& i : mol_->aux_atoms())

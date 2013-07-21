@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfhalfcomplex.cc
+// Filename: reldf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,23 @@
 //
 
 
-#include <src/rel/dfdata.h>
+#include <src/rel/reldf.h>
 
 using namespace std;
 using namespace bagel;
 
-DFData::DFData(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord), dfdata_(df), swap_(false) {
+RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord), dfdata_(df), swap_(false) {
   for (auto& i : alpha)
     alpha_.push_back(std::make_shared<const Alpha>(i));
   common_init();
 }
 
-DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
+RelDF::RelDF(const RelDF& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
   common_init();
 
   if (coo) {
     swap_ ^= true;
-    vector<std::shared_ptr<const ABcases>> newbas;
+    vector<std::shared_ptr<const SpinorInfo>> newbas;
     for (auto& i : basis_)
       newbas.push_back(i->swap());
     basis_ = newbas;
@@ -51,18 +51,18 @@ DFData::DFData(const DFData& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfda
 
 
 //swap coord
-shared_ptr<const DFData> DFData::swap() const {
-  return make_shared<const DFData>(*this, true);
+shared_ptr<const RelDF> RelDF::swap() const {
+  return make_shared<const RelDF>(*this, true);
 }
 
 
-vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
-  vector<shared_ptr<DFHalfComplex>> out;
+vector<shared_ptr<RelDFHalf>> RelDF::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
+  vector<shared_ptr<RelDFHalf>> out;
 
   // first make a subset
-  vector<vector<shared_ptr<const ABcases>>> subsets;
+  vector<vector<shared_ptr<const SpinorInfo>>> subsets;
   for (int i = 0; i != 4; ++i) {
-    vector<shared_ptr<const ABcases>> tmp;
+    vector<shared_ptr<const SpinorInfo>> tmp;
     for (auto& j : basis())
       if (j->basis(0) == i)
         tmp.push_back(j);
@@ -72,12 +72,12 @@ vector<shared_ptr<DFHalfComplex>> DFData::compute_half_transform(array<shared_pt
 
   // transform
   for (auto& i : subsets)
-    out.push_back(make_shared<DFHalfComplex>(shared_from_this(), i, rc, ic));
+    out.push_back(make_shared<RelDFHalf>(shared_from_this(), i, rc, ic));
   return out;
 }
 
 
-vector<shared_ptr<ZMatrix>> DFData::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
+vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
 
   vector<shared_ptr<ZMatrix>> sum;
   for (auto& b : basis_) {
