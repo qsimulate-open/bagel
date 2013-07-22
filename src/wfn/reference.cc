@@ -42,7 +42,9 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
-  mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+  if (coeff_)
+    mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+
   for (auto& i : rdm1_)
     mpi__->broadcast(i->data(), i->size(), 0);
   for (auto& i : rdm2_)
@@ -118,6 +120,7 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
 
 // This function currently assumes it is being called on a Reference object with no defined active space
 shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const {
+  if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
   const int nbasis = geom_->nbasis();
 
   int nactive = active_indices.size();

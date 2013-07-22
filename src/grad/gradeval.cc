@@ -31,6 +31,18 @@ using namespace std;
 using namespace bagel;
 
 template<>
+shared_ptr<GradFile> GradEval<Dirac>::compute() {
+  Timer timer;
+
+  auto grad = make_shared<GradFile>(geom_->natom());
+  grad->print();
+
+  cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  return grad;
+}
+
+template<>
 shared_ptr<GradFile> GradEval<SCF>::compute() {
   assert(task_->dodf());
   Timer timer;

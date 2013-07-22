@@ -33,11 +33,12 @@
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/werner.h>
 #include <src/casscf/supercigrad.h>
+#include <src/rel/dirac.h>
 
 // T should have
 // o Constructor with the input and geometry
 // o void compute()
-// o std::shared_ptr<Referenc> conv_to_ref()
+// o std::shared_ptr<Reference> conv_to_ref()
 
 namespace bagel {
 
@@ -75,6 +76,7 @@ template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
+template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
 
 }
 

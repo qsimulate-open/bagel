@@ -69,6 +69,13 @@ void Optimize::compute() {
       if (opt->next()) break;
     geom_ = opt->geometry();
 
+  } else if (method == "dhf") {
+
+    auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_);
+    for (int i = 0; i != maxiter_; ++i)
+      if (opt->next()) break;
+    geom_ = opt->geometry();
+
   } else if (method == "mp2") {
 
     auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);

@@ -77,6 +77,8 @@ class Dirac {
 
     void print_eig(const std::unique_ptr<double[]>&);
 
+    double energy() const { return energy_; }
+
 };
 
 }
