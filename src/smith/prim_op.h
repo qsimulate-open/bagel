@@ -110,7 +110,7 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 // CAUTION :: I have changed the convention from that in mpqc.
 template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
 static void sort_indices(const double* unsorted, double* sorted,
-                         const int d,const int c,const int b,const int a) { // according to unsorted
+                         const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
@@ -124,7 +124,7 @@ static void sort_indices(const double* unsorted, double* sorted,
       id[2]=j1;
       for(int j2=0;j2<c;++j2){
         id[1]=j2;
-        for (int j3=0;j3<d;++j3,++iall){
+        for(int j3=0;j3<d;++j3,++iall){
           id[0]=j3;
           long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*id[l]));
           if (an != 0)
@@ -140,8 +140,48 @@ static void sort_indices(const double* unsorted, double* sorted,
 
 template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
-                         const int d,const int c,const int b, const int a) { // according to unsorted
+                         const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b, a);
+}
+
+
+template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd>
+static void sort_indices(const double* unsorted, double* sorted,
+                         const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
+  int id[5];
+  int jd[5] = {e, d, c, b, a};
+
+  long iall=0;
+  for(int j0=0;j0<a;++j0){
+    id[4]=j0;
+    for(int j1=0;j1<b;++j1){
+      id[3]=j1;
+      for(int j2=0;j2<c;++j2){
+        id[2]=j2;
+        for(int j3=0;j3<d;++j3){
+          id[1]=j3;
+          for(int j4=0;j4<e;++j4,++iall){
+            id[0]=j4;
+            long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*id[m])));
+            if (an != 0)
+              sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+            else
+              sorted[ib]=unsorted[iall]*factor;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,m,an,ad,fn,fd>(unsorted.get(), sorted.get(), e, d, c, b, a);
 }
 
 
@@ -184,7 +224,52 @@ static void sort_indices(const double* unsorted, double* sorted,
 template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
-  sort_indices<i,j,k,l,m,n,an,ad,fn,fd>(unsorted.get(), sorted.get(), f,e,d,c,b,a);
+  sort_indices<i,j,k,l,m,n,an,ad,fn,fd>(unsorted.get(), sorted.get(), f, e, d, c, b, a);
+}
+
+
+template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd>
+static void sort_indices(const double* unsorted, double* sorted,
+                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
+  int id[7];
+  int jd[7] = {g, f, e, d, c, b, a};
+
+  long iall=0;
+  for(int j0=0;j0<a;++j0){
+    id[5]=j0;
+    for(int j1=0;j1<b;++j1){
+      id[5]=j1;
+      for(int j2=0;j2<c;++j2){
+        id[4]=j2;
+        for(int j3=0;j3<d;++j3){
+          id[3]=j3;
+          for(int j4=0;j4<e;++j4){
+            id[2]=j4;
+            for(int j5=0;j5<f;++j5){
+              id[1]=j5;
+              for (int j6=0;j6<g;++j6,++iall){
+                id[0]=j6;
+                long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*(id[m]+jd[m]*(id[n]+jd[n]*(id[o]))))));
+                if (an != 0)
+                  sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+                else
+                  sorted[ib]=unsorted[iall]*factor;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,m,n,o,an,ad,fn,fd>(unsorted.get(), sorted.get(), g, f, e, d, c, b, a);
 }
 
 
@@ -195,7 +280,7 @@ static void sort_indices(const double* unsorted, double* sorted,
   const double afac = static_cast<double>(an) / ad;
   const double factor = static_cast<double>(fn) / fd;
   int id[8];
-  int jd[8] = {g, h, f, e, d, c, b, a};
+  int jd[8] = {h, g, f, e, d, c, b, a};
 
   long iall=0;
   for(int j0=0;j0<a;++j0){
@@ -232,8 +317,60 @@ static void sort_indices(const double* unsorted, double* sorted,
 template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
 static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
                          const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
-  sort_indices<i,j,k,l,m,n,o,p,an,ad,fn,fd>(unsorted.get(), sorted.get(), h,g,f,e,d,c,b,a);
+  sort_indices<i,j,k,l,m,n,o,p,an,ad,fn,fd>(unsorted.get(), sorted.get(), h, g, f, e, d, c, b, a);
 }
+
+
+template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd>
+static void sort_indices(const double* unsorted, double* sorted,
+                         const int ia, const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
+  const double afac = static_cast<double>(an) / ad;
+  const double factor = static_cast<double>(fn) / fd;
+  int id[9];
+  int jd[9] = {ia, h, g, f, e, d, c, b, a};
+
+  long iall=0;
+  for(int j0=0;j0<a;++j0){
+    id[8]=j0;
+    for(int j1=0;j1<b;++j1){
+      id[7]=j1;
+      for(int j2=0;j2<c;++j2){
+        id[6]=j2;
+        for(int j3=0;j3<d;++j3){
+          id[5]=j3;
+          for(int j4=0;j4<e;++j4){
+            id[4]=j4;
+            for(int j5=0;j5<f;++j5){
+              id[3]=j5;
+              for (int j6=0;j6<g;++j6){
+                id[2]=j6;
+                for (int j7=0;j7<h;++j7){
+                  id[1]=j7;
+                  for (int j8=0;j8<ia;++j8,++iall){
+                    id[0]=j8;
+                    long ib=id[i]+jd[i]*(id[j]+jd[j]*(id[k]+jd[k]*(id[l]+jd[l]*(id[m]+jd[m]*(id[n]+jd[n]*(id[o]+jd[o]*(id[p]+jd[p]*(id[q]))))))));
+                    if (an != 0)
+                      sorted[ib]=afac*sorted[ib]+unsorted[iall]*factor;
+                    else
+                      sorted[ib]=unsorted[iall]*factor;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd>
+static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+                         const int ia, const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
+  sort_indices<i,j,k,l,m,n,o,p,q,an,ad,fn,fd>(unsorted.get(), sorted.get(), ia, h, g, f, e, d, c, b, a);
+}
+
 
 
 }
