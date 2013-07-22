@@ -41,14 +41,16 @@ const static CarSphList carsphlist;
 // Reused most of the KineticBatch functions
 void GMomentBatch::compute() {
 
-  double* const intermediate_p = stack_->get(prim0_*prim1_*asize_intermediate_);
+  double* const intermediate_p = stack_->get(6*size_block_);
   perform_VRR(intermediate_p);
 
   double* const intermediate_c = stack_->get(cont0_*cont1_*asize_intermediate_);
   double* cdata = data_;
-  for (int iblock = 0; iblock != nblocks(); ++iblock, cdata += size_block_) {
+  const double* csource = intermediate_p;
+  // loop over xx, xy, xz, yy, yz, zz
+  for (int iblock = 0; iblock != 6; ++iblock, cdata += size_block_, csource += size_block_) {
     fill(intermediate_c, intermediate_c+cont0_*cont1_*asize_intermediate_, 0.0);
-    perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c,
+    perform_contraction(asize_intermediate_, csource, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
@@ -67,7 +69,23 @@ void GMomentBatch::compute() {
     }
   }
   stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_c);
-  stack_->release(prim0_*prim1_*asize_intermediate_, intermediate_p);
+  stack_->release(6*size_block_, intermediate_p);
+
+  assert(nblocks() == 18 && size_alloc_/size_block_ == 18);
+  // rearrange date to xx, xy, xz, yx, yy, yz, zx, zy, zz
+  copy_n(data_+size_block_*5, size_block_, data_+size_block_*8); //zz
+  copy_n(data_+size_block_*4, size_block_, data_+size_block_*7); //yz
+  copy_n(data_+size_block_*4, size_block_, data_+size_block_*5); //yz
+  copy_n(data_+size_block_*3, size_block_, data_+size_block_*4); //yy
+  copy_n(data_+size_block_*2, size_block_, data_+size_block_*6); //xz 
+//copy_n(data_+size_block_*2, size_block_, data_+size_block_*2); //xz 
+  copy_n(data_+size_block_*1, size_block_, data_+size_block_*3); //xy 
+//copy_n(data_+size_block_*1, size_block_, data_+size_block_*1); //xy 
+//copy_n(data_+size_block_*0, size_block_, data_+size_block_*0); //xx 
+
+  // derivative with respect to the second center
+  fill_n(data_+size_block_*9, size_block_*9, 0.0);
+  daxpy_(size_block_*9, -1.0, data_, 1, data_+size_block_*9, 1); 
 }
 
 
@@ -113,15 +131,17 @@ void GMomentBatch::perform_VRR(double* intermediate) {
 
       // consistency checks
       assert(fabs(workpx[0] - 2*ca*worksx[1]) < 1.0e-8);
-      assert(fabs(worktx[0] - 2*ca*workpx[1]) < 1.0e-8);
 
       workpx[1] = cxpa*workpx[0]-bop*worksx[0];
       workpy[1] = cypa*workpy[0]-bop*worksy[0];
       workpz[1] = czpa*worksz[0]-bop*worksz[0];
 
-      worktx[1] = cxpa*worktx[0]-bop*workpx[0];
-      workty[1] = cypa*workty[0]-bop*workpy[0];
-      worktz[1] = czpa*worktz[0]-bop*workpz[0];
+      // consistency checks
+      assert(fabs(worktx[0] - 2*ca*workpx[1]) < 1.0e-8);
+
+      worktx[1] = cxpa*worktx[0]-2.0*bop*workpx[0];
+      workty[1] = cypa*workty[0]-2.0*bop*workpy[0];
+      worktz[1] = czpa*worktz[0]-2.0*bop*workpz[0];
 
       for (int i = 2; i != amax1_; ++i) {
         worksx[i] = cxpa*worksx[i-1]+0.5*(i-1)*cop*worksx[i-2];
@@ -141,19 +161,7 @@ void GMomentBatch::perform_VRR(double* intermediate) {
     // peform HRR to obtain S(1, j)
     if (ang1_ > 0) {
       for (int j = 1; j <= ang1_; ++j) {
-        worksx[j*amax1_] = AB_[0]*worksx[(j-1)*amax1_]+worksx[(j-1)*amax1_+1];
-        worksy[j*amax1_] = AB_[1]*worksy[(j-1)*amax1_]+worksy[(j-1)*amax1_+1];
-        worksz[j*amax1_] = AB_[2]*worksz[(j-1)*amax1_]+worksz[(j-1)*amax1_+1];
-
-        workpx[j*amax1_] = AB_[0]*workpx[(j-1)*amax1_]+workpx[(j-1)*amax1_+1]+worksx[(j-1)*amax1_];
-        workpy[j*amax1_] = AB_[1]*workpy[(j-1)*amax1_]+workpy[(j-1)*amax1_+1]+worksy[(j-1)*amax1_];
-        workpz[j*amax1_] = AB_[2]*workpz[(j-1)*amax1_]+workpz[(j-1)*amax1_+1]+worksz[(j-1)*amax1_];
-
-        worktx[j*amax1_] = AB_[0]*worktx[(j-1)*amax1_]+worktx[(j-1)*amax1_+1]+2.0*workpx[(j-1)*amax1_];
-        workty[j*amax1_] = AB_[1]*workty[(j-1)*amax1_]+workty[(j-1)*amax1_+1]+2.0*workpy[(j-1)*amax1_];
-        worktz[j*amax1_] = AB_[2]*worktz[(j-1)*amax1_]+worktz[(j-1)*amax1_+1]+2.0*workpz[(j-1)*amax1_];
-
-        for (int i = 1; i != amax1_-j; ++i) {
+        for (int i = 0; i != amax1_-j; ++i) {
           worksx[j*amax1_+i] = AB_[0]*worksx[(j-1)*amax1_+i]+worksx[(j-1)*amax1_+i+1];
           worksy[j*amax1_+i] = AB_[1]*worksy[(j-1)*amax1_+i]+worksy[(j-1)*amax1_+i+1];
           worksz[j*amax1_+i] = AB_[2]*worksz[(j-1)*amax1_+i]+worksz[(j-1)*amax1_+i+1];
@@ -186,7 +194,7 @@ void GMomentBatch::perform_VRR(double* intermediate) {
                 current_data[cnt              ] = worktx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
                 current_data[cnt+size_block_  ] = workpx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
                 current_data[cnt+size_block_*2] = workpx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
-                current_data[cnt+size_block_*3] = worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worktz[iz+amax1_*jz];
+                current_data[cnt+size_block_*3] = worksx[ix+amax1_*jx]*workty[iy+amax1_*jy]*worksz[iz+amax1_*jz];
                 current_data[cnt+size_block_*4] = worksx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
                 current_data[cnt+size_block_*5] = worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worktz[iz+amax1_*jz];
                 ++cnt;

@@ -35,7 +35,7 @@ namespace bagel {
 class GMomentBatch : public OSInt {
   protected:
     void perform_VRR(double*) override;
-    int nblocks() const override { return 6; }
+    int nblocks() const override { return 18; }
     int nrank() const override { return 0; }
 
   public:
