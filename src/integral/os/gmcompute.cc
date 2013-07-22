@@ -85,6 +85,8 @@ void GMomentBatch::compute() {
 
   // derivative with respect to the second center
   fill_n(data_+size_block_*9, size_block_*9, 0.0);
+
+  if (swap01_) dscal_(size_block_*9, -1.0, data_, 1);
   daxpy_(size_block_*9, -1.0, data_, 1, data_+size_block_*9, 1); 
 }
 
@@ -134,7 +136,7 @@ void GMomentBatch::perform_VRR(double* intermediate) {
 
       workpx[1] = cxpa*workpx[0]-bop*worksx[0];
       workpy[1] = cypa*workpy[0]-bop*worksy[0];
-      workpz[1] = czpa*worksz[0]-bop*worksz[0];
+      workpz[1] = czpa*workpz[0]-bop*worksz[0];
 
       // consistency checks
       assert(fabs(worktx[0] - 2*ca*workpx[1]) < 1.0e-8);
