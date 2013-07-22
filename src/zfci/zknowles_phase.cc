@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 
 void ZKnowlesHandy::mult_phase_factor() {
-  jop_->print(2);
+  //jop_->print(3);
 
   cout << "         "  << "Applying random phase factor to integrals" << endl << endl;
   const size_t norb2 = norb_*norb_;
@@ -78,5 +78,5 @@ void ZKnowlesHandy::mult_phase_factor() {
 
 //apply transformation to hamiltonian
   jop_->set_moints(mo1e, mo2e);
-  jop_->print(3);
+  //jop_->print(3);
 }
