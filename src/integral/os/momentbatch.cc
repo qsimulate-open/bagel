@@ -112,7 +112,7 @@ void MomentBatch::perform_VRR(double* intermediate) {
 
       workpx[1] = cxpa*workpx[0]-bop*worksx[0];
       workpy[1] = cypa*workpy[0]-bop*worksy[0];
-      workpz[1] = czpa*worksz[0]-bop*worksz[0];
+      workpz[1] = czpa*workpz[0]-bop*worksz[0];
 
       for (int i = 2; i != amax1_; ++i) {
         worksx[i] = cxpa*worksx[i-1]+0.5*(i-1)*cop*worksx[i-2];
