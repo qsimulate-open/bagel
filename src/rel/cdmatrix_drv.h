@@ -27,7 +27,7 @@
 #ifndef __SRC_REL_CDMATRIX_DRV_H
 #define __SRC_REL_CDMATRIX_DRV_H
 
-#include <src/rel/dfhalfcomplex.h>
+#include <src/rel/reldfhalf.h>
 #include <src/rel/cdmatrix.h>
 
 namespace bagel {
@@ -36,7 +36,7 @@ class CDMatrix_drv : public CDMatrix {
   protected:
 
   public:
-    CDMatrix_drv(std::shared_ptr<const DFHalfComplex> dfhc, std::shared_ptr<const ABcases> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+    CDMatrix_drv(std::shared_ptr<const RelDFHalf> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
                  std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2)
     : CDMatrix(ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, true)+*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, true),
                        *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, true)-*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, true)),

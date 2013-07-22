@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: breit.h
+// Filename: breitint.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,21 +24,21 @@
 //
 
 
-#ifndef __SRC_REL_BREIT_H
-#define __SRC_REL_BREIT_H
+#ifndef __SRC_REL_BREITINT_H
+#define __SRC_REL_BREITINT_H
 
 #include <src/molecule/molecule.h>
 #include <src/molecule/matrix1earray.h>
 
 namespace bagel {
 
-class Breit : public Matrix1eArray<6> {
+class BreitInt : public Matrix1eArray<6> {
   protected:
     void init() override;
     std::vector<std::pair<const int, const int>> index_;
 
   public:
-    Breit(const std::shared_ptr<const Molecule>);
+    BreitInt(const std::shared_ptr<const Molecule>);
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
@@ -46,7 +46,9 @@ class Breit : public Matrix1eArray<6> {
 
     std::pair<const int, const int> index(const int i) const { return index_[i]; }
     std::vector<std::pair<const int, const int>> index() const { return index_; }
-    bool cross(const int k) const { assert(k >= 0); assert(k <= index_.size()); return index_[k].first != index_[k].second; }
+
+    /// returns if block k is not diagonal
+    bool not_diagonal(const int k) const { assert(k >= 0); assert(k <= index_.size()); return index_[k].first != index_[k].second; }
 
 };
 

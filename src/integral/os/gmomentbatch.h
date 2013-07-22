@@ -1,14 +1,14 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfbreit.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: gmomentbatch.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,29 +24,24 @@
 //
 
 
-#ifndef __SRC_REL_DFBREIT_H
-#define __SRC_REL_DFBREIT_H
+#ifndef __SRC_INTEGRAL_OS_GMOMENTBATCH_H
+#define __SRC_INTEGRAL_OS_GMOMENTBATCH_H
 
-#include <src/df/df.h>
-#include <src/rel/alpha.h>
+#include <src/integral/os/osint.h>
 
 namespace bagel {
 
-class DFBreit {
+// computes derivative integrals of moment operator.
+class GMomentBatch : public OSInt {
   protected:
-    std::vector<std::shared_ptr<const Alpha>> alpha1_;
-    std::vector<std::shared_ptr<const Alpha>> alpha2_;
-    std::shared_ptr<const DFDist> dfbreit_;
-    bool swap_;
-
-    DFBreit(const DFBreit&, bool);
+    void perform_VRR(double*) override;
+    int nblocks() const override { return 18; }
+    int nrank() const override { return 0; }
 
   public:
-    DFBreit(std::shared_ptr<const DFDist>, const int, const int);
-    DFBreit(const DFBreit&) = delete;
-    DFBreit() = delete;
+    GMomentBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o) { common_init(); }
 
-    std::shared_ptr<const DFDist> df() const { return dfbreit_; }
+    void compute();
 
 };
 

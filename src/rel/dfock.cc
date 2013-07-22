@@ -69,7 +69,7 @@ void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool 
 }
 
 
-void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
+void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const CDMatrix>> cd, const double scale) {
 
   const int n = geom_->nbasis();
   vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
@@ -81,8 +81,8 @@ void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const
   }
 
   //if basis1 != basis2, get transpose to fill in opposite corner
-  if (dfdata->cross()) {
-    shared_ptr<const DFData> swap = dfdata->swap();
+  if (dfdata->not_diagonal()) {
+    shared_ptr<const RelDF> swap = dfdata->swap();
     int j = 0;
     for (auto& i : swap->basis()) {
       add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]->transpose());
@@ -91,7 +91,7 @@ void DFock::add_Jop_block(shared_ptr<const DFData> dfdata, list<shared_ptr<const
 }
 
 
-void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComplex> dfc2, const double scale, const bool diag) {
+void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc2, const double scale, const bool diag) {
 
   // minus from -1 in the definition of exchange
   const int n = geom_->nbasis();
@@ -136,41 +136,41 @@ void DFock::add_Exop_block(shared_ptr<DFHalfComplex> dfc1, shared_ptr<DFHalfComp
 }
 
 
-list<shared_ptr<DFData>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool mixed) {
+list<shared_ptr<RelDF>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool mixed) {
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
 
-  list<shared_ptr<DFData>> dfdists;
+  list<shared_ptr<RelDF>> dfdists;
   if (!mixed) { // Regular DHF
     const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)
         if (i <= j)
-          dfdists.push_back(make_shared<DFData>(*k++, make_pair(i,j), vector<int>{Comp::L}));
+          dfdists.push_back(make_shared<RelDF>(*k++, make_pair(i,j), vector<int>{Comp::L}));
     }
     // large-large
-    dfdists.push_back(make_shared<DFData>(*k++, make_pair(Comp::L,Comp::L), vector<int>{Comp::L}));
+    dfdists.push_back(make_shared<RelDF>(*k++, make_pair(Comp::L,Comp::L), vector<int>{Comp::L}));
     assert(k == dfs.end());
 
   } else { // Gaunt Term
     auto k = dfs.begin();
     for (auto& i : xyz)
-      dfdists.push_back(make_shared<DFData>(*k++, make_pair(i,Comp::L), xyz));
+      dfdists.push_back(make_shared<RelDF>(*k++, make_pair(i,Comp::L), xyz));
     assert(k == dfs.end());
   }
   return dfdists;
 }
 
 
-list<shared_ptr<DFHalfComplex>> DFock::make_half_complex(list<shared_ptr<DFData>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
+list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
                                                      array<shared_ptr<const Matrix>,4> iocoeff) {
-  list<shared_ptr<DFHalfComplex>> half_complex;
+  list<shared_ptr<RelDFHalf>> half_complex;
   for (auto& i : dfdists) {
-    vector<shared_ptr<DFHalfComplex>> dat = i->compute_half_transform(rocoeff, iocoeff);
+    vector<shared_ptr<RelDFHalf>> dat = i->compute_half_transform(rocoeff, iocoeff);
     half_complex.insert(half_complex.end(), dat.begin(), dat.end());
 
-    if (i->cross()) {
-      vector<shared_ptr<DFHalfComplex>> dat = i->swap()->compute_half_transform(rocoeff, iocoeff);
+    if (i->not_diagonal()) {
+      vector<shared_ptr<RelDFHalf>> dat = i->swap()->compute_half_transform(rocoeff, iocoeff);
       half_complex.insert(half_complex.end(), dat.begin(), dat.end());
     }
   }
@@ -193,16 +193,16 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     dfs = geom_->dfsl()->split_blocks();
   }
 
-  list<shared_ptr<DFData>> dfdists = make_dfdists(dfs, gaunt);
-  list<shared_ptr<DFHalfComplex>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
+  list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
+  list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
 
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
   timer.tick_print(printtag + ": half trans");
 
   // split
-  list<shared_ptr<DFHalfComplex>> half_complex_exch, half_complex_exch2;
+  list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
-    list<shared_ptr<DFHalfComplex>> tmp = i->split(false);
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
   }
   half_complex.clear();
@@ -217,13 +217,13 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
 
-    auto breit_matrix = make_shared<Breit>(geom_);
+    auto breit_matrix = make_shared<BreitInt>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
     for (int i = 0; i != breit_matrix->nblocks(); ++i) {
       breit_2index.push_back(make_shared<Breit2Index>(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-      if (breit_matrix->cross(i))
+      if (breit_matrix->not_diagonal(i))
         breit_2index.push_back(breit_2index.back()->cross());
     }
 

@@ -33,16 +33,6 @@ using namespace bagel;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-DipoleBatch::DipoleBatch(const array<std::shared_ptr<const Shell>,2>& _basis, const array<double,3>& c)
- : OSInt(_basis, -1), center_(c) {
-
-}
-
-
-DipoleBatch::~DipoleBatch() {
-}
-
-
 void DipoleBatch::compute() {
 
   double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*3);

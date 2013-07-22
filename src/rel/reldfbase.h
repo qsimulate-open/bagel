@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-class ABcases {
+class SpinorInfo {
   protected:
     std::array<std::shared_ptr<const ZMatrix>, 2> spinor_;
     std::pair<int, int> basis_;
@@ -55,23 +55,23 @@ class ABcases {
       fac_ = (z1 % *a->data() * z2).element(0,0);
     }
   public:
-    ABcases(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
+    SpinorInfo(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
       : basis_(b), alpha_comp_(a->comp()) {
       compute_spinor(c, s1, s2, a);
     }
 
-    ABcases(const ABcases& ab, const int alpha = -1)
+    SpinorInfo(const SpinorInfo& ab, const int alpha = -1)
       : spinor_(ab.spinor_), basis_(ab.basis_), fac_(ab.fac_), alpha_comp_(alpha == -1 ? ab.alpha_comp_ : alpha) {
     }
 
     std::complex<double> fac() const { return fac_; }
     bool nonzero() const { return fac_ != std::complex<double>(0.0); }
 
-    bool operator==(const ABcases& o) const { return basis_.first == o.basis_.first && basis_.second == o.basis_.second && fac_ == o.fac_ && alpha_comp_ == o.alpha_comp_; }
-    bool operator!=(const ABcases& o) const { return !(*this == o); }
+    bool operator==(const SpinorInfo& o) const { return basis_.first == o.basis_.first && basis_.second == o.basis_.second && fac_ == o.fac_ && alpha_comp_ == o.alpha_comp_; }
+    bool operator!=(const SpinorInfo& o) const { return !(*this == o); }
 
-    std::shared_ptr<const ABcases> swap() const {
-      auto out = std::make_shared<ABcases>(*this);
+    std::shared_ptr<const SpinorInfo> swap() const {
+      auto out = std::make_shared<SpinorInfo>(*this);
       std::swap(out->basis_.first, out->basis_.second);
       out->fac_ = std::conj(out->fac_);
       std::swap(out->spinor_[0], out->spinor_[1]);
@@ -98,7 +98,7 @@ class ABcases {
 class RelDFBase {
   protected:
     std::pair<int, int> coord_;
-    std::vector<std::shared_ptr<const ABcases>> basis_;
+    std::vector<std::shared_ptr<const SpinorInfo>> basis_;
 
     virtual void set_basis() = 0;
 
@@ -112,7 +112,7 @@ class RelDFBase {
     }
 
     std::pair<int, int> coord() const { return coord_; }
-    const std::vector<std::shared_ptr<const ABcases>>& basis() const { return basis_; }
+    const std::vector<std::shared_ptr<const SpinorInfo>>& basis() const { return basis_; }
 
 };
 

@@ -30,8 +30,8 @@
 #include <src/wfn/reference.h>
 #include <src/wfn/geometry.h>
 #include <src/math/zmatrix.h>
-#include <src/rel/dfhalfcomplex.h>
-#include <src/rel/dfdata.h>
+#include <src/rel/reldf.h>
+#include <src/rel/reldfhalf.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/cdmatrix.h>
 
@@ -45,12 +45,12 @@ class DFock : public ZMatrix {
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
-    std::list<std::shared_ptr<DFData>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
-    std::list<std::shared_ptr<DFHalfComplex>> make_half_complex(std::list<std::shared_ptr<DFData>>, std::array<std::shared_ptr<const Matrix>,4>,
-                                                                std::array<std::shared_ptr<const Matrix>,4>);
+    std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
+    std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
+                                                            std::array<std::shared_ptr<const Matrix>,4>);
 
-    void add_Jop_block(std::shared_ptr<const DFData>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
-    void add_Exop_block(std::shared_ptr<DFHalfComplex>, std::shared_ptr<DFHalfComplex>, const double scale, const bool diag = false);
+    void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
+    void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);

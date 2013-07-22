@@ -60,7 +60,6 @@ class OSInt : public Integral {
 
     const SortList sort_;
 
-    const int deriv_rank_;
     size_t size_alloc_;
     size_t size_block_;
 
@@ -74,12 +73,15 @@ class OSInt : public Integral {
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
 
+    virtual int nblocks() const = 0;
+    virtual int nrank() const = 0;
+    void common_init();
+
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, const int deriv = 0, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
+    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSInt();
 
-    constexpr static int nblocks() { return 1; }
     double* data(const int i) override { return data_; }
     const double* data() const { return data_; }
 

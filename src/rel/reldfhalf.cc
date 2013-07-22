@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfhalfcomplex.cc
+// Filename: reldfhalf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,13 +24,14 @@
 //
 
 
-#include <src/rel/dfhalfcomplex.h>
+#include <src/rel/reldfhalf.h>
 
 using namespace std;
 using namespace bagel;
 
-DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr<const ABcases>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
-                              : RelDFBase(*df) {
+RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+: RelDFBase(*df) {
+
   common_init();
   basis_ = bas;
 
@@ -55,13 +56,13 @@ DFHalfComplex::DFHalfComplex(shared_ptr<const DFData> df, std::vector<shared_ptr
 }
 
 
-DFHalfComplex::DFHalfComplex(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<const ABcases>> bas) : RelDFBase(coord), dfhalf_(data) {
+RelDFHalf::RelDFHalf(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(coord), dfhalf_(data) {
   common_init();
   basis_ = bas;
 }
 
 
-DFHalfComplex::DFHalfComplex(const DFHalfComplex& o) : RelDFBase(o.coord_) {
+RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.coord_) {
   common_init();
   basis_ = o.basis_;
   dfhalf_[0] = o.dfhalf_[0]->copy();
@@ -69,12 +70,7 @@ DFHalfComplex::DFHalfComplex(const DFHalfComplex& o) : RelDFBase(o.coord_) {
 }
 
 
-void DFHalfComplex::set_basis() {
-  // does not have to do anything here
-}
-
-
-void DFHalfComplex::set_sum_diff() {
+void RelDFHalf::set_sum_diff() {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->daxpy(1.0, dfhalf_[1]);
   df2_[1] = dfhalf_[0]->copy();
@@ -82,7 +78,7 @@ void DFHalfComplex::set_sum_diff() {
 }
 
 
-void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfComplex> o) {
+void RelDFHalf::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
     dfhalf_[0]->daxpy(fac, o->dfhalf_[0]);
@@ -102,46 +98,46 @@ void DFHalfComplex::zaxpy(std::complex<double> a, std::shared_ptr<const DFHalfCo
 }
 
 
-bool DFHalfComplex::matches(shared_ptr<const DFHalfComplex> o) const {
+bool RelDFHalf::matches(shared_ptr<const RelDFHalf> o) const {
   return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
 }
 
 
-// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
-bool DFHalfComplex::alpha_matches(shared_ptr<const Breit2Index> o) const {
+// WARNING: This Function assumes you have used the split function to make your RelDFHalf object. TODO
+bool RelDFHalf::alpha_matches(shared_ptr<const Breit2Index> o) const {
   return basis_[0]->comp() == o->index().second;
 }
 
-// WARNING: This Function assumes you have used the split function to make your DFHalfComplex objects. TODO
-bool DFHalfComplex::alpha_matches(shared_ptr<const DFHalfComplex> o) const {
+// WARNING: This Function assumes you have used the split function to make your RelDFHalf objects. TODO
+bool RelDFHalf::alpha_matches(shared_ptr<const RelDFHalf> o) const {
   return basis_[0]->comp() == o->basis()[0]->comp();
 }
 
 
-// WARNING: This Function assumes you have used the split function to make your DFHalfComplex object. TODO
+// WARNING: This Function assumes you have used the split function to make your RelDFHalf object. TODO
 // Another WARNING: basis(bt) assumes you are multiplying breit2index by 2nd integral, not first
-shared_ptr<DFHalfComplex> DFHalfComplex::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
+shared_ptr<RelDFHalf> RelDFHalf::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
-  return make_shared<DFHalfComplex>(d, coord_, new_basis(bt));
+  return make_shared<RelDFHalf>(d, coord_, new_basis(bt));
 }
 
-const vector<shared_ptr<const ABcases>> DFHalfComplex::new_basis(shared_ptr<const Breit2Index> bt) const {
-  vector<shared_ptr<const ABcases>> out;
+const vector<shared_ptr<const SpinorInfo>> RelDFHalf::new_basis(shared_ptr<const Breit2Index> bt) const {
+  vector<shared_ptr<const SpinorInfo>> out;
   for (auto& i : basis_)
-    out.push_back(make_shared<const ABcases>(*i, bt->index().first));
+    out.push_back(make_shared<const SpinorInfo>(*i, bt->index().first));
   return out;
 }
 
 
-list<shared_ptr<DFHalfComplex>> DFHalfComplex::split(const bool docopy) {
-  list<shared_ptr<DFHalfComplex>> out;
+list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
+  list<shared_ptr<RelDFHalf>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
     if (i == basis().begin() && docopy) {
-      out.push_back(make_shared<DFHalfComplex>(dfhalf_, coord_, vector<std::shared_ptr<const ABcases>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(dfhalf_, coord_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     } else {
       // TODO Any way to avoid copying?
       array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
-      out.push_back(make_shared<DFHalfComplex>(d, coord_, vector<std::shared_ptr<const ABcases>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(d, coord_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     }
   }
   return out;

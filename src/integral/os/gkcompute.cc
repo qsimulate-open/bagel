@@ -40,12 +40,12 @@ void GKineticBatch::compute() {
 
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
-  const int a2 = a+1+deriv_rank_;
-  const int b2 = b+1+deriv_rank_;
-  assert(amax_ == a+b+deriv_rank_);
+  const int a2 = a+1+nrank();
+  const int b2 = b+1+nrank();
+  assert(amax_ == a+b+nrank());
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   const size_t acpsize = acsize*prim0_*prim1_;
-  assert(size_alloc_ == acpsize*6);
+  assert(size_alloc_ >= acpsize*6);
 
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
@@ -53,8 +53,8 @@ void GKineticBatch::compute() {
   fill(transx, transx+(amax_+1)*a2*b2, 0.0);
   fill(transy, transy+(amax_+1)*a2*b2, 0.0);
   fill(transz, transz+(amax_+1)*a2*b2, 0.0);
-  for (int ib = 0, k = 0; ib <= b+deriv_rank_; ++ib) {
-    for (int ia = 0; ia <= a+deriv_rank_; ++ia, ++k) {
+  for (int ib = 0, k = 0; ib <= b+nrank(); ++ib) {
+    for (int ia = 0; ia <= a+nrank(); ++ia, ++k) {
       if (ia > a && ib > b) continue;
       for (int i = ia; i <= ia+ib; ++i) {
         transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
@@ -71,12 +71,12 @@ void GKineticBatch::compute() {
   double* const bufx = stack_->get(a2*b2);
   double* const bufy = stack_->get(a2*b2);
   double* const bufz = stack_->get(a2*b2);
-  double* const bufx_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufx_b = stack_->get(a2*b2*deriv_rank_);
-  double* const bufy_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufy_b = stack_->get(a2*b2*deriv_rank_);
-  double* const bufz_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufz_b = stack_->get(a2*b2*deriv_rank_);
+  double* const bufx_a = stack_->get(a2*b2*nrank());
+  double* const bufx_b = stack_->get(a2*b2*nrank());
+  double* const bufy_a = stack_->get(a2*b2*nrank());
+  double* const bufy_b = stack_->get(a2*b2*nrank());
+  double* const bufz_a = stack_->get(a2*b2*nrank());
+  double* const bufz_b = stack_->get(a2*b2*nrank());
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
@@ -105,8 +105,8 @@ void GKineticBatch::compute() {
     const double* tmpx = bufx;
     const double* tmpy = bufy;
     const double* tmpz = bufz;
-    for (int i = 0; i != deriv_rank_; ++i) {
-      const int rem = deriv_rank_-i-1;
+    for (int i = 0; i != nrank(); ++i) {
+      const int rem = nrank()-i-1;
       for (int ib = 0; ib <= b+rem; ++ib) {
         for (int ia = 0; ia <= a+rem; ++ia) {
           bufx_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpx[ia+1+a2*(ib)] - ia*tmpx[ia-1+a2*(ib)];
@@ -121,8 +121,8 @@ void GKineticBatch::compute() {
     tmpx = bufx;
     tmpy = bufy;
     tmpz = bufz;
-    for (int i = 0; i != deriv_rank_; ++i) {
-      const int rem = deriv_rank_-i-1;
+    for (int i = 0; i != nrank(); ++i) {
+      const int rem = nrank()-i-1;
       for (int ib = 0; ib <= b+rem; ++ib) {
         for (int ia = 0; ia <= a+rem; ++ia) {
           bufx_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpx[ia+a2*(ib+1)] - ib*tmpx[ia+a2*(ib-1)];
@@ -138,11 +138,11 @@ void GKineticBatch::compute() {
     /// assembly process
     const int offset_ii = ii * acsize;
     double* current_data0 = data_ + offset_ii;
-    double* current_data1 = data_ + offset_ii + acpsize;
-    double* current_data2 = data_ + offset_ii + acpsize*2;
-    double* current_data3 = data_ + offset_ii + acpsize*3;
-    double* current_data4 = data_ + offset_ii + acpsize*4;
-    double* current_data5 = data_ + offset_ii + acpsize*5;
+    double* current_data1 = data_ + offset_ii + size_block_;
+    double* current_data2 = data_ + offset_ii + size_block_*2;
+    double* current_data3 = data_ + offset_ii + size_block_*3;
+    double* current_data4 = data_ + offset_ii + size_block_*4;
+    double* current_data5 = data_ + offset_ii + size_block_*5;
 
     for (int iaz = 0; iaz <= a; ++iaz) {
       for (int iay = 0; iay <= a - iaz; ++iay) {
@@ -182,12 +182,12 @@ void GKineticBatch::compute() {
 
   } // end of primsize loop
 
-  stack_->release(a2*b2*deriv_rank_, bufz_b);
-  stack_->release(a2*b2*deriv_rank_, bufz_a);
-  stack_->release(a2*b2*deriv_rank_, bufy_b);
-  stack_->release(a2*b2*deriv_rank_, bufy_a);
-  stack_->release(a2*b2*deriv_rank_, bufx_b);
-  stack_->release(a2*b2*deriv_rank_, bufx_a);
+  stack_->release(a2*b2*nrank(), bufz_b);
+  stack_->release(a2*b2*nrank(), bufz_a);
+  stack_->release(a2*b2*nrank(), bufy_b);
+  stack_->release(a2*b2*nrank(), bufy_a);
+  stack_->release(a2*b2*nrank(), bufx_b);
+  stack_->release(a2*b2*nrank(), bufx_a);
 
   stack_->release(a2*b2, bufz);
   stack_->release(a2*b2, bufy);
@@ -203,7 +203,7 @@ void GKineticBatch::compute() {
 
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
-  for (int i = 0; i != 6; ++i, cdata += acpsize) {
+  for (int i = 0; i != 6; ++i, cdata += size_block_) {
     // first, contraction.
     const double* source = cdata;
     double* target = bkup;

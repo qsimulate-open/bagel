@@ -36,9 +36,11 @@ class KineticBatch : public OSInt {
   protected:
     void perform_VRR(double*) override;
 
+    int nblocks() const override { return 1; }
+    int nrank() const override { return 0; }
+
   public:
-    KineticBatch(const std::array<std::shared_ptr<const Shell>,2>&);
-    ~KineticBatch();
+    KineticBatch(const std::array<std::shared_ptr<const Shell>,2>& basis) : OSInt(basis) { common_init(); }
 
     void compute() override;
 };

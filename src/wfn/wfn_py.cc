@@ -22,6 +22,8 @@
 // along with the BAGEL package; see COPYING.  If not, write to
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
+
+#if 0
 #include <boost/python.hpp>
 #include <src/input/input.h>
 
@@ -37,3 +39,4 @@ BOOST_PYTHON_MODULE(bagel){
 
     register_ptr_to_python< std::shared_ptr< PTree > >();
 }
+#endif

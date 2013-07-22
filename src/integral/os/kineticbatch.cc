@@ -37,15 +37,6 @@ using namespace bagel;
 
 const static CarSphList carsphlist;
 
-KineticBatch::KineticBatch(const array<std::shared_ptr<const Shell>,2>& _basis)
- : OSInt(_basis) {
-
-}
-
-
-KineticBatch::~KineticBatch() {
-}
-
 
 void KineticBatch::compute() {
 
@@ -183,10 +174,6 @@ void KineticBatch::perform_VRR(double* intermediate) {
     }
 
     // now we obtain the output
-    const int isize = (ang0_ + 1) * (ang0_ + 2) / 2;
-    const int jsize = (ang1_ + 1) * (ang1_ + 2) / 2;
-    assert(isize * jsize == asize_intermediate_);
-
     int cnt = 0;
     for (int iz = 0; iz <= ang0_; ++iz) {
       for (int iy = 0; iy <= ang0_ - iz; ++iy) {

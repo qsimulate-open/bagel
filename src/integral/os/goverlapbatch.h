@@ -33,10 +33,11 @@ namespace bagel {
 
 class GOverlapBatch : public OSInt {
   protected:
+    int nblocks() const override { return 6; }
+    int nrank() const override { return 1; }
 
   public:
-    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o,1) { };
-    ~GOverlapBatch() {};
+    GOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o) { common_init(); }
 
     void compute();
 

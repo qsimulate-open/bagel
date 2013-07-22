@@ -45,7 +45,7 @@ void GOverlapBatch::compute() {
   assert(amax_ == a+b+1);
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
   const size_t acpsize = acsize*prim0_*prim1_;
-  assert(size_alloc_ == acpsize*6);
+  assert(size_alloc_ >= acpsize*6);
 
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
@@ -114,11 +114,11 @@ void GOverlapBatch::compute() {
     /// assembly process
     const int offset_ii = ii * acsize;
     double* current_data0 = data_ + offset_ii;
-    double* current_data1 = data_ + offset_ii + acpsize;
-    double* current_data2 = data_ + offset_ii + acpsize*2;
-    double* current_data3 = data_ + offset_ii + acpsize*3;
-    double* current_data4 = data_ + offset_ii + acpsize*4;
-    double* current_data5 = data_ + offset_ii + acpsize*5;
+    double* current_data1 = data_ + offset_ii + size_block_;
+    double* current_data2 = data_ + offset_ii + size_block_*2;
+    double* current_data3 = data_ + offset_ii + size_block_*3;
+    double* current_data4 = data_ + offset_ii + size_block_*4;
+    double* current_data5 = data_ + offset_ii + size_block_*5;
 
     for (int iaz = 0; iaz <= a; ++iaz) {
       for (int iay = 0; iay <= a - iaz; ++iay) {
@@ -166,7 +166,7 @@ void GOverlapBatch::compute() {
 
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
-  for (int i = 0; i != 6; ++i, cdata += acpsize) {
+  for (int i = 0; i != 6; ++i, cdata += size_block_) {
     // first, contraction.
     const double* source = cdata;
     double* target = bkup;

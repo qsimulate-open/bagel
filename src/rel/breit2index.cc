@@ -31,23 +31,18 @@ using namespace std;
 using namespace bagel;
 
 Breit2Index::Breit2Index(pair<const int, const int> index, shared_ptr<const Matrix> breit, shared_ptr<const Matrix> dat2)
- : index_(index), k_term_(make_shared<Matrix>(*dat2 % *breit * *dat2)) {
-}
-
-
-// ONLY USE THIS FOR cross()!
-Breit2Index::Breit2Index(pair<const int, const int> index, shared_ptr<const Matrix> k) : index_(index), k_term_(k) {
+ : index_(index), data_(make_shared<Matrix>(*dat2 % *breit * *dat2)) {
 }
 
 
 shared_ptr<Breit2Index> Breit2Index::cross() const {
   int i = index_.first;
   int j = index_.second;
-  return make_shared<Breit2Index>(make_pair(j,i), k_term_);
+  return make_shared<Breit2Index>(make_pair(j,i), data_);
 }
 
 
 void Breit2Index::print() const {
-  cout << " Breit2Index::k_term_" << endl;
-  k_term_->print();
+  cout << " Breit2Index::data_" << endl;
+  data_->print();
 }
