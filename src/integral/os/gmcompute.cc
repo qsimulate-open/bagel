@@ -89,7 +89,6 @@ void GMomentBatch::perform_VRR(double* intermediate) {
     const double cop = 1.0 / xp_[ii];
     const double ca = xa_[ii];
     const double cb = xb_[ii];
-    const double tabop = 2.0*ca*cb*cop;
     const double bop = cb*cop;
     const double cxpa = p_[ii*3  ]-basisinfo_[0]->position(0);
     const double cypa = p_[ii*3+1]-basisinfo_[0]->position(1);
