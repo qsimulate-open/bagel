@@ -145,7 +145,7 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
-  print_eig(eig);
+//print_eig(eig);
 }
 
 
