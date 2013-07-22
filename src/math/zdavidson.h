@@ -93,10 +93,10 @@ class ZDavidsonDiag {
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
           mat(i, size_-1) = (**cciter).zdotc(*isigma);
+          assert(fabs(mat(i,i).imag())<1e-8);
           mat(size_-1, i) = conj(mat(i,size_-1));
 
           overlap_->element(i, size_-1) = (**cciter).zdotc(*icivec);
-          overlap_->element(size_-1, i) = conj(overlap_->element(i, size_-1));
 
           if (!orthogonalize_) {
             overlap_row += sqrt(norm(overlap_->element(i, size_-1)));
