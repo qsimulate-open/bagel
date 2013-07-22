@@ -24,219 +24,190 @@
 //
 
 
-#include <stddef.h>
+#include <cassert>
+#include <cstring>
+#include <iostream>
+#include <iomanip>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/gmomentbatch.h>
-#include <src/math/comb.h>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
 
-const static Comb comb;
+const static CarSphList carsphlist;
 
+
+// Reused most of the KineticBatch functions
 void GMomentBatch::compute() {
 
-#if 0
-  fill(data_, data_+size_alloc_, 0.0);
+  double* const intermediate_p = stack_->get(prim0_*prim1_*asize_intermediate_);
+  perform_VRR(intermediate_p);
 
-  const int a = basisinfo_[0]->angular_number();
-  const int b = basisinfo_[1]->angular_number();
-  const int a2 = a+1+deriv_rank_;
-  const int b2 = b+1+deriv_rank_;
-  assert(amax_ == a+b+deriv_rank_);
-  const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
-  const size_t acpsize = acsize*prim0_*prim1_;
-  assert(size_alloc_ == acpsize*6);
-
-  double* const transx = stack_->get((amax_+1)*a2*b2);
-  double* const transy = stack_->get((amax_+1)*a2*b2);
-  double* const transz = stack_->get((amax_+1)*a2*b2);
-  fill(transx, transx+(amax_+1)*a2*b2, 0.0);
-  fill(transy, transy+(amax_+1)*a2*b2, 0.0);
-  fill(transz, transz+(amax_+1)*a2*b2, 0.0);
-  for (int ib = 0, k = 0; ib <= b+deriv_rank_; ++ib) {
-    for (int ia = 0; ia <= a+deriv_rank_; ++ia, ++k) {
-      if (ia > a && ib > b) continue;
-      for (int i = ia; i <= ia+ib; ++i) {
-        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
-        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
-        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
-      }
-    }
-  }
-  const int worksize = amax_+1;
-  double* const workx = stack_->get(worksize);
-  double* const worky = stack_->get(worksize);
-  double* const workz = stack_->get(worksize);
-
-  double* const bufx = stack_->get(a2*b2);
-  double* const bufy = stack_->get(a2*b2);
-  double* const bufz = stack_->get(a2*b2);
-  double* const bufx_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufx_b = stack_->get(a2*b2*deriv_rank_);
-  double* const bufy_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufy_b = stack_->get(a2*b2*deriv_rank_);
-  double* const bufz_a = stack_->get(a2*b2*deriv_rank_);
-  double* const bufz_b = stack_->get(a2*b2*deriv_rank_);
-
-  // Perform VRR
-  for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
-
-    /// Sx(0 : i+j+1, 0) will be made here
-    workx[0] = coeffsx_[ii];
-    worky[0] = coeffsy_[ii];
-    workz[0] = coeffsz_[ii];
-    workx[1] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
-    worky[1] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
-    workz[1] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];
-    for (int i = 2; i <= amax_; ++i) {
-      workx[i] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
-      worky[i] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
-      workz[i] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
-    }
-    // HRR is done in one shot
-    dgemv_("T", amax_+1, a2*b2, 1.0, transx, amax_+1, workx, 1, 0.0, bufx, 1);
-    dgemv_("T", amax_+1, a2*b2, 1.0, transy, amax_+1, worky, 1, 0.0, bufy, 1);
-    dgemv_("T", amax_+1, a2*b2, 1.0, transz, amax_+1, workz, 1, 0.0, bufz, 1);
-
-
-    // TODO USE translational invariance!!
-    const double alpha = xa_[ii];
-    const double beta_ = xb_[ii];
-    const double* tmpx = bufx;
-    const double* tmpy = bufy;
-    const double* tmpz = bufz;
-    for (int i = 0; i != deriv_rank_; ++i) {
-      const int rem = deriv_rank_-i-1;
-      for (int ib = 0; ib <= b+rem; ++ib) {
-        for (int ia = 0; ia <= a+rem; ++ia) {
-          bufx_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpx[ia+1+a2*(ib)] - ia*tmpx[ia-1+a2*(ib)];
-          bufy_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpy[ia+1+a2*(ib)] - ia*tmpy[ia-1+a2*(ib)];
-          bufz_a[ia+a2*ib+a2*b2*i] = 2.0*alpha*tmpz[ia+1+a2*(ib)] - ia*tmpz[ia-1+a2*(ib)];
-        }
-      }
-      tmpx = bufx_a+a2*b2*i;
-      tmpy = bufy_a+a2*b2*i;
-      tmpz = bufz_a+a2*b2*i;
-    }
-    tmpx = bufx;
-    tmpy = bufy;
-    tmpz = bufz;
-    for (int i = 0; i != deriv_rank_; ++i) {
-      const int rem = deriv_rank_-i-1;
-      for (int ib = 0; ib <= b+rem; ++ib) {
-        for (int ia = 0; ia <= a+rem; ++ia) {
-          bufx_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpx[ia+a2*(ib+1)] - ib*tmpx[ia+a2*(ib-1)];
-          bufy_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpy[ia+a2*(ib+1)] - ib*tmpy[ia+a2*(ib-1)];
-          bufz_b[ia+a2*ib+a2*b2*i] = 2.0*beta_*tmpz[ia+a2*(ib+1)] - ib*tmpz[ia+a2*(ib-1)];
-        }
-      }
-      tmpx = bufx_b+a2*b2*i;
-      tmpy = bufy_b+a2*b2*i;
-      tmpz = bufz_b+a2*b2*i;
-    }
-
-    /// assembly process
-    const int offset_ii = ii * acsize;
-    double* current_data0 = data_ + offset_ii;
-    double* current_data1 = data_ + offset_ii + acpsize;
-    double* current_data2 = data_ + offset_ii + acpsize*2;
-    double* current_data3 = data_ + offset_ii + acpsize*3;
-    double* current_data4 = data_ + offset_ii + acpsize*4;
-    double* current_data5 = data_ + offset_ii + acpsize*5;
-
-    for (int iaz = 0; iaz <= a; ++iaz) {
-      for (int iay = 0; iay <= a - iaz; ++iay) {
-        const int iax = a - iaz - iay;
-        for (int ibz = 0; ibz <= b; ++ibz) {
-          for (int iby = 0; iby <= b - ibz; ++iby) {
-            const int ibx = b - ibz - iby;
-
-            *current_data0 += bufx_a[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx_a[iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
-                            + bufx_a[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
-            *current_data1 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy_a[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
-            *current_data2 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz_a[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*2];
-            *current_data3 += bufx_b[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx_b[iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
-                            + bufx_b[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
-            *current_data4 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy_b[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
-            *current_data5 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz_b[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*2];
-            ++current_data0;
-            ++current_data1;
-            ++current_data2;
-            ++current_data3;
-            ++current_data4;
-            ++current_data5;
-          }
-        }
-      }
-    }
-
-  } // end of primsize loop
-
-  stack_->release(a2*b2*deriv_rank_, bufz_b);
-  stack_->release(a2*b2*deriv_rank_, bufz_a);
-  stack_->release(a2*b2*deriv_rank_, bufy_b);
-  stack_->release(a2*b2*deriv_rank_, bufy_a);
-  stack_->release(a2*b2*deriv_rank_, bufx_b);
-  stack_->release(a2*b2*deriv_rank_, bufx_a);
-
-  stack_->release(a2*b2, bufz);
-  stack_->release(a2*b2, bufy);
-  stack_->release(a2*b2, bufx);
-
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx);
-
-  stack_->release((amax_+1)*a2*b2, transz);
-  stack_->release((amax_+1)*a2*b2, transy);
-  stack_->release((amax_+1)*a2*b2, transx);
-
-  double* const bkup = stack_->get(acpsize);
+  double* const intermediate_c = stack_->get(cont0_*cont1_*asize_intermediate_);
   double* cdata = data_;
-  for (int i = 0; i != 6; ++i, cdata += acpsize) {
-    // first, contraction.
-    const double* source = cdata;
-    double* target = bkup;
-    perform_contraction(acsize, source, prim0_, prim1_, target,
+  for (int iblock = 0; iblock != nblocks(); ++iblock, cdata += size_block_) {
+    fill(intermediate_c, intermediate_c+cont0_*cont1_*asize_intermediate_, 0.0);
+    perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
     if (spherical_) {
-      struct CarSphList carsphlist;
-      const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
-      const int nloops = cont0_ * cont1_;
-      source = bkup;
-      target = cdata;
-      carsphlist.carsphfunc_call(carsph_index, nloops, source, target);
+      double* const intermediate_i = stack_->get(cont0_*cont1_*asize_final_);
+      const unsigned int carsph_index = basisinfo_[0]->angular_number()*ANG_HRR_END+basisinfo_[1]->angular_number();
+      const int nloops = cont0_*cont1_;
+      carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
 
-      const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      source = cdata;
-      target = bkup;
-      sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
-      copy(bkup, bkup+acpsize, cdata);
+      const unsigned int sort_index = basisinfo_[1]->angular_number()*ANG_HRR_END+basisinfo_[0]->angular_number();
+      sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
+      stack_->release(cont0_*cont1_*asize_final_, intermediate_i);
     } else {
-      const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      source = bkup;
-      target = cdata;
-      sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
+      const unsigned int sort_index = basisinfo_[1]->angular_number()*ANG_HRR_END+basisinfo_[0]->angular_number();
+      sort_.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
     }
-    // since this is a kinetic operator
-    dscal_(cont0_*cont1_*acsize, -0.5, cdata, 1);
   }
-
-  stack_->release(acpsize, bkup);
-#endif
-
+  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_c);
+  stack_->release(prim0_*prim1_*asize_intermediate_, intermediate_p);
 }
 
+
+void GMomentBatch::perform_VRR(double* intermediate) {
+  const int worksize = amax1_;
+  double* worktx = stack_->get(worksize*worksize);
+  double* workty = stack_->get(worksize*worksize);
+  double* worktz = stack_->get(worksize*worksize);
+  double* workpx = stack_->get(worksize*worksize);
+  double* workpy = stack_->get(worksize*worksize);
+  double* workpz = stack_->get(worksize*worksize);
+  double* worksx = stack_->get(worksize*worksize);
+  double* worksy = stack_->get(worksize*worksize);
+  double* worksz = stack_->get(worksize*worksize);
+
+  for (int ii = 0; ii != prim0_*prim1_; ++ii) {
+    // Perform VRR
+    int offset_ii = ii*asize_intermediate_;
+    const double cop = 1.0 / xp_[ii];
+    const double ca = xa_[ii];
+    const double cb = xb_[ii];
+    const double tabop = 2.0*ca*cb*cop;
+    const double bop = cb*cop;
+    const double cxpa = p_[ii*3  ]-basisinfo_[0]->position(0);
+    const double cypa = p_[ii*3+1]-basisinfo_[0]->position(1);
+    const double czpa = p_[ii*3+2]-basisinfo_[0]->position(2);
+    double* current_data = &intermediate[offset_ii];
+    worksx[0] = coeffsx_[ii];
+    worksy[0] = coeffsy_[ii];
+    worksz[0] = coeffsz_[ii];
+
+    workpx[0] = coeffsx_[ii]*2.0*ca*cxpa;
+    workpy[0] = coeffsy_[ii]*2.0*ca*cypa;
+    workpz[0] = coeffsz_[ii]*2.0*ca*czpa;
+
+    worktx[0] = coefftx_[ii]*(-2.0);
+    workty[0] = coeffty_[ii]*(-2.0);
+    worktz[0] = coefftz_[ii]*(-2.0);
+
+    if (ang0_+ang1_ > 0) {
+      worksx[1] = cxpa*worksx[0];
+      worksy[1] = cypa*worksy[0];
+      worksz[1] = czpa*worksz[0];
+
+      // consistency checks
+      assert(fabs(workpx[0] - 2*ca*worksx[1]) < 1.0e-8);
+      assert(fabs(worktx[0] - 2*ca*workpx[1]) < 1.0e-8);
+
+      workpx[1] = cxpa*workpx[0]-bop*worksx[0];
+      workpy[1] = cypa*workpy[0]-bop*worksy[0];
+      workpz[1] = czpa*worksz[0]-bop*worksz[0];
+
+      worktx[1] = cxpa*worktx[0]-bop*workpx[0];
+      workty[1] = cypa*workty[0]-bop*workpy[0];
+      worktz[1] = czpa*worktz[0]-bop*workpz[0];
+
+      for (int i = 2; i != amax1_; ++i) {
+        worksx[i] = cxpa*worksx[i-1]+0.5*(i-1)*cop*worksx[i-2];
+        worksy[i] = cypa*worksy[i-1]+0.5*(i-1)*cop*worksy[i-2];
+        worksz[i] = czpa*worksz[i-1]+0.5*(i-1)*cop*worksz[i-2];
+
+        workpx[i] = cxpa*workpx[i-1]+0.5*(i-1)*cop*workpx[i-2]-bop*worksx[i-1];
+        workpy[i] = cypa*workpy[i-1]+0.5*(i-1)*cop*workpy[i-2]-bop*worksy[i-1];
+        workpz[i] = czpa*workpz[i-1]+0.5*(i-1)*cop*workpz[i-2]-bop*worksz[i-1];
+
+        worktx[i] = cxpa*worktx[i-1]+0.5*(i-1)*cop*worktx[i-2]-2.0*bop*workpx[i-1];
+        workty[i] = cypa*workty[i-1]+0.5*(i-1)*cop*workty[i-2]-2.0*bop*workpy[i-1];
+        worktz[i] = czpa*worktz[i-1]+0.5*(i-1)*cop*worktz[i-2]-2.0*bop*workpz[i-1];
+      }
+    }
+
+    // peform HRR to obtain S(1, j)
+    if (ang1_ > 0) {
+      for (int j = 1; j <= ang1_; ++j) {
+        worksx[j*amax1_] = AB_[0]*worksx[(j-1)*amax1_]+worksx[(j-1)*amax1_+1];
+        worksy[j*amax1_] = AB_[1]*worksy[(j-1)*amax1_]+worksy[(j-1)*amax1_+1];
+        worksz[j*amax1_] = AB_[2]*worksz[(j-1)*amax1_]+worksz[(j-1)*amax1_+1];
+
+        workpx[j*amax1_] = AB_[0]*workpx[(j-1)*amax1_]+workpx[(j-1)*amax1_+1]+worksx[(j-1)*amax1_];
+        workpy[j*amax1_] = AB_[1]*workpy[(j-1)*amax1_]+workpy[(j-1)*amax1_+1]+worksy[(j-1)*amax1_];
+        workpz[j*amax1_] = AB_[2]*workpz[(j-1)*amax1_]+workpz[(j-1)*amax1_+1]+worksz[(j-1)*amax1_];
+
+        worktx[j*amax1_] = AB_[0]*worktx[(j-1)*amax1_]+worktx[(j-1)*amax1_+1]+2.0*workpx[(j-1)*amax1_];
+        workty[j*amax1_] = AB_[1]*workty[(j-1)*amax1_]+workty[(j-1)*amax1_+1]+2.0*workpy[(j-1)*amax1_];
+        worktz[j*amax1_] = AB_[2]*worktz[(j-1)*amax1_]+worktz[(j-1)*amax1_+1]+2.0*workpz[(j-1)*amax1_];
+
+        for (int i = 1; i != amax1_-j; ++i) {
+          worksx[j*amax1_+i] = AB_[0]*worksx[(j-1)*amax1_+i]+worksx[(j-1)*amax1_+i+1];
+          worksy[j*amax1_+i] = AB_[1]*worksy[(j-1)*amax1_+i]+worksy[(j-1)*amax1_+i+1];
+          worksz[j*amax1_+i] = AB_[2]*worksz[(j-1)*amax1_+i]+worksz[(j-1)*amax1_+i+1];
+
+          workpx[j*amax1_+i] = AB_[0]*workpx[(j-1)*amax1_+i]+workpx[(j-1)*amax1_+i+1]+worksx[(j-1)*amax1_+i];
+          workpy[j*amax1_+i] = AB_[1]*workpy[(j-1)*amax1_+i]+workpy[(j-1)*amax1_+i+1]+worksy[(j-1)*amax1_+i];
+          workpz[j*amax1_+i] = AB_[2]*workpz[(j-1)*amax1_+i]+workpz[(j-1)*amax1_+i+1]+worksz[(j-1)*amax1_+i];
+
+          worktx[j*amax1_+i] = AB_[0]*worktx[(j-1)*amax1_+i]+worktx[(j-1)*amax1_+i+1]+2.0*workpx[(j-1)*amax1_+i];
+          workty[j*amax1_+i] = AB_[1]*workty[(j-1)*amax1_+i]+workty[(j-1)*amax1_+i+1]+2.0*workpy[(j-1)*amax1_+i];
+          worktz[j*amax1_+i] = AB_[2]*worktz[(j-1)*amax1_+i]+worktz[(j-1)*amax1_+i+1]+2.0*workpz[(j-1)*amax1_+i];
+        }
+      }
+    }
+
+    // now we obtain the output
+    const int isize = (ang0_+1)*(ang0_+2) / 2;
+    const int jsize = (ang1_+1)*(ang1_+2) / 2;
+    assert(isize*jsize == asize_intermediate_);
+
+    int cnt = 0;
+    for (int iz = 0; iz <= ang0_; ++iz) {
+      for (int iy = 0; iy <= ang0_-iz; ++iy) {
+        const int ix = ang0_-iy-iz;
+        if (ix >= 0) {
+          for (int jz = 0; jz <= ang1_; ++jz) {
+            for (int jy = 0; jy <= ang1_-jz; ++jy) {
+              const int jx = ang1_-jy-jz;
+              if (jx >= 0) {
+                current_data[cnt              ] = worktx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
+                current_data[cnt+size_block_  ] = workpx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
+                current_data[cnt+size_block_*2] = workpx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
+                current_data[cnt+size_block_*3] = worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worktz[iz+amax1_*jz];
+                current_data[cnt+size_block_*4] = worksx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
+                current_data[cnt+size_block_*5] = worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worktz[iz+amax1_*jz];
+                ++cnt;
+              }
+            }
+          }
+        }
+      }
+    }
+    assert(cnt == asize_intermediate_);
+
+  } // end of prim exponent loop
+
+  stack_->release(worksize*worksize, worksz);
+  stack_->release(worksize*worksize, worksy);
+  stack_->release(worksize*worksize, worksx);
+  stack_->release(worksize*worksize, workpz);
+  stack_->release(worksize*worksize, workpy);
+  stack_->release(worksize*worksize, workpx);
+  stack_->release(worksize*worksize, worktz);
+  stack_->release(worksize*worksize, workty);
+  stack_->release(worksize*worksize, worktx);
+}
