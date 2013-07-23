@@ -26,6 +26,7 @@
 
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
+#include <src/rel/alpha.h>
 
 using namespace std;
 using namespace bagel;
@@ -43,7 +44,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
   const vector<double>& eig = ref->eig();
   for (int i = 0; i != ref->nocc(); ++i)
-    zscal_(ecoeff->ndim(), eig[i], ecoeff->element_ptr(0, i), 1); 
+    zscal_(ecoeff->ndim(), eig[i], ecoeff->element_ptr(0, i), 1);
   auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
   eden->print("T", "energy-weighted density", 15);
 
@@ -52,7 +53,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   // NAI density (L+L+, L-L-)
   shared_ptr<ZMatrix> nden  =  den->get_submatrix(0, 0, nbasis, nbasis);
                      *nden += *den->get_submatrix(nbasis, nbasis, nbasis, nbasis);
-  // kinetic density [den] 2*(S+L+, S-L-) - (S+S+, S-S-); [eden] -(S+S+, S-S-)/2c^2 
+  // kinetic density [den] 2*(S+L+, S-L-) - (S+S+, S-S-); [eden] -(S+S+, S-S-)/2c^2
   shared_ptr<ZMatrix> kden  =  den->get_submatrix(0, 2*nbasis, nbasis, nbasis);
                      *kden += *den->get_submatrix(nbasis, 3*nbasis, nbasis, nbasis);
                      *kden *= complex<double>(2.0);
@@ -68,6 +69,93 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   // nden, kden, sden (minus sign is taken care of inside)
   vector<GradTask> task = contract_grad1e(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
+
+  // small NAI part..
+  map<int, shared_ptr<Sigma>> sigma;
+  sigma.insert(make_pair(0, make_shared<Sigma>(Comp::X)));
+  sigma.insert(make_pair(1, make_shared<Sigma>(Comp::Y)));
+  sigma.insert(make_pair(2, make_shared<Sigma>(Comp::Z)));
+  auto sp = make_shared<ZMatrix>(4,1,true); sp->element(2,0) = 1;
+  auto sm = make_shared<ZMatrix>(4,1,true); sm->element(3,0) = 1;
+  map<int, shared_ptr<ZMatrix>> XY{ make_pair(2, sp), make_pair(3, sm) };
+
+  // target data area
+  vector<int> xyz{Comp::X, Comp::Y, Comp::Z};
+  map<pair<int,int>, shared_ptr<ZMatrix>> mat;
+  for (auto& i : xyz)
+    for (auto& j : xyz)
+      if (i <= j)
+        mat.insert(make_pair(make_pair(i,j), make_shared<ZMatrix>(nbasis, nbasis)));
+
+  for (auto& s0 : XY) { // bra
+    for (auto& s1 : XY) { // ket
+      shared_ptr<ZMatrix> data = den->get_submatrix(s0.first*nbasis, s1.first*nbasis, nbasis, nbasis);
+      for (auto& w0 : sigma) {
+        for (auto& w1 : sigma) {
+          auto tmp = make_shared<ZMatrix>((*w0.second->data() * *s0.second) % (*w1.second->data() * *s1.second));
+          const complex<double> c = tmp->element(0,0);
+          const int small = min(w0.first, w1.first);
+          const int large = max(w0.first, w1.first);
+          mat[make_pair(small, large)]->zaxpy(c, data);
+        }
+      }
+    }
+  }
+  array<shared_ptr<Matrix>,6> dmat;
+  auto iter = mat.begin();
+  for (auto& i : dmat) {
+    i = iter->second->get_real_part();
+    ++iter;
+  }
+
+  {
+    int mpicnt = 0;
+    int iatom0 = 0;
+    auto oa0 = geom_->offsets().begin();
+    for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+      int iatom1 = 0;
+      auto oa1 = geom_->offsets().begin();
+      for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+
+        auto o0 = oa0->begin();
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+          auto o1 = oa1->begin();
+          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+            // static distribution since this is cheap
+            if (mpicnt++ % mpi__->size() != mpi__->rank()) continue;
+
+            // TODO change the following to tasks
+            array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+            vector<int> atom = {iatom0, iatom1};
+            vector<int> offset_ = {*o0, *o1};
+            // make six blocks
+#if 0
+            GSmallNAIBatch batch(input, geom_, tie(iatom1, iatom0));
+            batch.compute();
+            const double* ndata = batch.data();
+            const int dimb1 = input[0]->nbasis();
+            const int dimb0 = input[1]->nbasis();
+            const size_t s = batch.size_block();
+            const size_t cartblock = s*geom_->natom()*3;
+            for (int ia = 0; ia != geom_->natom()*3; ++ia) {
+              for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+                for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+                  grad_->data(ia) += ndata[cnt+s*ia            ] * dmat[0]->element(j,i);
+                  grad_->data(ia) += ndata[cnt+s*ia+cartblock  ] * dmat[1]->element(j,i);
+                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*2] * dmat[2]->element(j,i);
+                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*3] * dmat[3]->element(j,i);
+                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*4] * dmat[4]->element(j,i);
+                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*5] * dmat[5]->element(j,i);
+                }
+              }
+            }
+#endif
+          }
+        }
+      }
+    }
+  }
 
   // compute
   TaskQueue<GradTask> tq(task);

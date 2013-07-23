@@ -129,8 +129,8 @@ std::shared_ptr<GradFile> GradTask::compute_os(std::shared_ptr<const Matrix> den
       int jatom0 = batch.swap01() ? iatom1 : iatom0;
       int jatom1 = batch.swap01() ? iatom0 : iatom1;
       for (int k = 0; k != 3; ++k) {
-        grad_local->data(k, jatom1) += data[cnt+s*k    ] * den->data(i*nbasis+j);
-        grad_local->data(k, jatom0) += data[cnt+s*(k+3)] * den->data(i*nbasis+j);
+        grad_local->data(k, jatom1) += data[cnt+s*k    ] * den->element(j,i);
+        grad_local->data(k, jatom0) += data[cnt+s*(k+3)] * den->element(j,i);
       }
     }
   }

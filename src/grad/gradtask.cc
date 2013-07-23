@@ -57,7 +57,7 @@ shared_ptr<GradFile> GradTask::compute_nai(shared_ptr<const Matrix> den) const {
   for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
     for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
       for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-        grad_local->data(ia) += ndata[cnt+s*ia] * den->data(i*nbasis+j);
+        grad_local->data(ia) += ndata[cnt+s*ia] * den->element(j,i);
       }
     }
   }
