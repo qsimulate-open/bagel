@@ -93,7 +93,6 @@ class ZDavidsonDiag {
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
           mat(i, size_-1) = (**cciter).zdotc(*isigma);
-          assert(fabs(mat(i,i).imag())<1e-8);
           mat(size_-1, i) = conj(mat(i,size_-1));
 
           overlap_->element(i, size_-1) = (**cciter).zdotc(*icivec);
@@ -115,7 +114,7 @@ class ZDavidsonDiag {
       }
 
       // diagonalize matrix to get
-      *scr_ = orthogonalize_ ? (*ovlp_scr_) % (*mat_ * *ovlp_scr_) : *mat_;
+      *scr_ = orthogonalize_ ? *ovlp_scr_ % *mat_ * *ovlp_scr_ : *mat_;
       std::shared_ptr<ZMatrix> tmp = scr_->get_submatrix(0, 0, size_, size_);
       tmp->diagonalize(vec_.get());
       scr_->copy_block(0, 0, tmp);
@@ -160,8 +159,7 @@ class ZDavidsonDiag {
     }
 
     // make cc orthogonal to cc_ vectors
-    //TODO should this be complex?
-    std::complex<double> orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
+    double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
 };
 

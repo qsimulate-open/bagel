@@ -188,5 +188,5 @@ void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_pt
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
-  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr() , ij, 0.0, e->data(), lenab);
+  zgemm3m_("n", "c", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }

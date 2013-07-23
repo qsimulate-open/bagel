@@ -126,8 +126,8 @@ class ZCivec {
     // assumes that Civec's in c are already orthogonal with each other.
     // returns scaling factor (see implementation)
 
-    std::complex<double> orthog(std::list<std::shared_ptr<const ZCivec>> c);
-    std::complex<double> orthog(std::shared_ptr<const ZCivec> o);
+    double orthog(std::list<std::shared_ptr<const ZCivec>> c);
+    double orthog(std::shared_ptr<const ZCivec> o);
     void project_out(std::shared_ptr<const ZCivec> o) { zaxpy(-zdotc(*o), *o); }
 
     void print(double thresh) const;
@@ -218,8 +218,8 @@ class ZDistCivec {
     void zaxpy(const std::complex<double> a, const ZDistCivec& o);
 
     void project_out(std::shared_ptr<const ZDistCivec> o) { std::logic_error("project_out: not yet implemented"); } // zaxpy(-zdotc(*o), *o); }
-    std::complex<double> orthog(std::list<std::shared_ptr<const ZDistCivec>> c);
-    std::complex<double> orthog(std::shared_ptr<const ZDistCivec> o);
+    double orthog(std::list<std::shared_ptr<const ZDistCivec>> c);
+    double orthog(std::shared_ptr<const ZDistCivec> o);
 
     // mutex
     std::mutex& cimutex(const size_t& i) const { return mutex_[i]; }

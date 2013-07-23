@@ -109,7 +109,7 @@ double ZCivec::variance() const {
 }
 
 
-complex<double> ZCivec::orthog(list<shared_ptr<const ZCivec>> c) {
+double ZCivec::orthog(list<shared_ptr<const ZCivec>> c) {
   for (auto& iter : c)
     project_out(iter);
   const double norm = this->norm();
@@ -118,7 +118,7 @@ complex<double> ZCivec::orthog(list<shared_ptr<const ZCivec>> c) {
   return 1.0/scal;
 }
 
-complex<double> ZCivec::orthog(shared_ptr<const ZCivec> o) {
+double ZCivec::orthog(shared_ptr<const ZCivec> o) {
   list<shared_ptr<const ZCivec>> v = {o};
   return orthog(v);
 }
@@ -307,7 +307,9 @@ void ZCivec::spin_decontaminate(const double thresh) {
   shared_ptr<ZCivec> S2 = spin();
 
   int k = nspin + 2;
-  while( fabs(zdotc(*S2) - expectation) > thresh ) {
+  complex<double> spinv = zdotc(*S2);
+  assert(fabs(spinv.imag())<1e-10);
+  while( fabs(spinv.real() - expectation) > thresh ) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));

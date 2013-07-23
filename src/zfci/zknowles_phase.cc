@@ -51,6 +51,14 @@ void ZKnowlesHandy::mult_phase_factor() {
   unique_ptr<complex<double>[]> temp(new complex<double>[norb_]);
 
   copy_n(jop_->mo1e_ptr(), norb2, mo1e->data());
+
+  //reverting unphased h'kl = hkl - sum k (jk|ki)
+  int ij = 0;
+  for (int i = 0; i != norb_; ++i)
+    for (int j = 0; j != norb_; ++j, ++ij)
+      for (int k = 0; k != norb_; ++k)
+        mo1e->data(ij) += 0.5 * jop_->mo2e_kh(j, k, k, i);
+
   *mo1e = phase % *mo1e * phase;
 
   //transforming 4 index mo2e
@@ -75,6 +83,15 @@ void ZKnowlesHandy::mult_phase_factor() {
 
   // 6) transpose to return indices to (ij|kl)
   mytranspose_complex_(trans.get(), norb2, norb2, mo2e.get());
+
+  // applying phased h'kl = hkl - sum k (jk|ki)
+  ij = 0;
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j != norb_; ++j, ++ij) {
+      for (int k = 0; k != norb_; ++k)
+        mo1e->data(ij) -= 0.5 * mo2e[j+k*norb_+k*norb2+i*norb3];
+    }
+  }
 
 //apply transformation to hamiltonian
   jop_->set_moints(mo1e, mo2e);
