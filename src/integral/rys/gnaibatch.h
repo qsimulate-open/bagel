@@ -57,6 +57,7 @@ class GNAIBatch : public NAIBatch_base {
 
     std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> cden, const int iatom0, const int iatom1, const int natom) const;
 
+    int nblocks() const { return mol_->natom()*3; }
 };
 
 }

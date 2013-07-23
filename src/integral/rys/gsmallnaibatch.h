@@ -35,7 +35,7 @@ namespace bagel {
 // TODO make a base class SmallNAIBatch_base and remove redundancy 
 class GSmallNAIBatch {
   protected:
-    std::array<std::shared_ptr<Matrix>,6> data_;
+    std::vector<std::shared_ptr<Matrix>> data_;
 
     const std::shared_ptr<const Molecule> mol_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
@@ -48,7 +48,12 @@ class GSmallNAIBatch {
     std::shared_ptr<StackMem> stack_;
     bool allocated_here_;
 
-    std::shared_ptr<Matrix> nai_compute() const; // override;
+    size_t a0size_inc_;
+    size_t a0size_dec_;
+    size_t a1size_inc_;
+    size_t a1size_dec_;
+    size_t a0_;
+    size_t a1_;
 
   public:
     GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,

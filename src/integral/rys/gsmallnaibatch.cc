@@ -24,6 +24,7 @@
 //
 
 
+#include <src/rel/alpha.h>
 #include <iostream>
 #include <iomanip>
 #include <src/integral/rys/gnaibatch.h>
@@ -39,15 +40,15 @@ GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, 
   allocated_here_ = stack != stack_;
 
   assert(shells_[0]->relativistic() && shells_[1]->relativistic());
-  const int a0size_inc = shells_[0]->aux_inc()->nbasis();
-  const int a1size_inc = shells_[1]->aux_inc()->nbasis();
-  const int a0size_dec = shells_[0]->aux_dec() ? shells_[0]->aux_dec()->nbasis() : 0;
-  const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
-  const int a0 = a0size_inc + a0size_dec;
-  const int a1 = a1size_inc + a1size_dec;
+  a0size_inc_ = shells_[0]->aux_inc()->nbasis();
+  a1size_inc_ = shells_[1]->aux_inc()->nbasis();
+  a0size_dec_ = shells_[0]->aux_dec() ? shells_[0]->aux_dec()->nbasis() : 0;
+  a1size_dec_ = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
+  a0_ = a0size_inc_ + a0size_dec_;
+  a1_ = a1size_inc_ + a1size_dec_;
 
-  for (int i = 0; i != 6; ++i)
-     data_[i] = make_shared<Matrix>(a0, a1, true);
+  for (int i = 0; i != mol_->natom()*3; ++i)
+     data_.push_back(make_shared<Matrix>(a0_, a1_, true));
 }
 
 
@@ -57,77 +58,48 @@ GSmallNAIBatch::~GSmallNAIBatch() {
 }
 
 
-void GSmallNAIBatch::compute() {
-#if 0
-  // first compute uncontracted NAI with auxiliary basis (cartesian)
-  const shared_ptr<const Matrix> nai = nai_compute();
+shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Matrix>,6> d) const {
+  auto out = make_shared<GradFile>(mol_->natom());
+  static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallNAIBatch::compute_gradient");
+  array<int,3> xyz{{Comp::X, Comp::Y, Comp::Z}};
 
-  std::array<shared_ptr<Matrix>,3> ints;
-  for (int i = 0; i != 3; ++i)
-    ints[i] = make_shared<Matrix>(*shells_[0]->small(i) % *nai);
+  Matrix denc(a0_, a1_, true);
+  int cnt = 0;
+  for (int& i : xyz)
+    for (int& j : xyz)
+      if (i <= j)
+        denc += *shells_[0]->small(i) * *d[cnt++] ^ *shells_[1]->small(j);
 
-  array<int,3> f = {{2,3,1}};
-  array<int,3> b = {{3,1,2}};
-
-  // 0) x^x + y^y + z^z
-  // 1) x^y - y^x
-  // 2) y^z - z^y
-  // 3) z^x - x^z
-
-  // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
-  for (int i = 0; i != 3; ++i) {
-    *data_[0]    += *ints[i]      * *shells_[1]->small(i);
-    *data_[b[i]] += *ints[b[i]-1] * *shells_[1]->small(i);
-    *data_[i+1]  -= *ints[f[i]-1] * *shells_[1]->small(i);
-  }
-#endif
-
+  for (int i = 0; i != mol_->natom()*3; ++i)
+    out->data(i) += data_[i]->ddot(denc);
+  return out;
 }
 
 
-shared_ptr<Matrix> GSmallNAIBatch::nai_compute() const {
-
-#if 0
-  const int s0size = shells_[0]->nbasis();
-  const int s1size = shells_[1]->nbasis();
-  const int a0size_inc = shells_[0]->aux_inc()->nbasis();
-  const int a1size_inc = shells_[1]->aux_inc()->nbasis();
-  const int a0size_dec = shells_[0]->aux_dec() ? shells_[0]->aux_dec()->nbasis() : 0;
-  const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
-  const int a0 = a0size_inc + a0size_dec;
-  const int a1 = a1size_inc + a1size_dec;
-
-  auto nai = make_shared<Matrix>(a0, a1, true);
+void GSmallNAIBatch::compute() {
   {
-    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, mol_);
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, mol_, iatom_);
     naic->compute();
-    nai->copy_block(0, 0, a0size_inc, a1size_inc, naic->data());
+    assert(naic->nblocks() == mol_->natom()*3);
+    for (int i = 0; i != naic->nblocks(); ++i)
+      data_[i]->copy_block(0, 0, a0size_inc_, a1size_inc_, naic->data()+i*naic->size_block());
   }
   if (shells_[0]->aux_dec() && shells_[1]->aux_dec()) {
-    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, mol_);
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, mol_, iatom_);
     naic->compute();
-    nai->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, naic->data());
+    for (int i = 0; i != naic->nblocks(); ++i)
+      data_[i]->copy_block(a0size_inc_, a1size_inc_, a0size_dec_, a1size_dec_, naic->data()+i*naic->size_block());
   }
   if (shells_[0]->aux_dec()) {
-    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, mol_);
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, mol_, iatom_);
     naic->compute();
-    nai->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, naic->data());
+    for (int i = 0; i != naic->nblocks(); ++i)
+      data_[i]->copy_block(a0size_inc_, 0, a0size_dec_, a1size_inc_, naic->data()+i*naic->size_block());
   }
   if (shells_[1]->aux_dec()) {
-    auto naic = make_shared<NAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, mol_);
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, mol_, iatom_);
     naic->compute();
-    nai->copy_block(0, a1size_inc, a0size_inc, a1size_dec, naic->data());
+    for (int i = 0; i != naic->nblocks(); ++i)
+      data_[i]->copy_block(0, a1size_inc_, a0size_inc_, a1size_dec_, naic->data()+i*naic->size_block());
   }
-  return nai;
-#else
-  throw logic_error("not implemented");
-  return shared_ptr<Matrix>();
-#endif
-}
-
-
-shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Matrix>,6> d) const {
-cout << mol_->natom() << endl;
-  auto out = make_shared<GradFile>(mol_->natom());
-  return out;
 }

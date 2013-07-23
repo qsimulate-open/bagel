@@ -102,12 +102,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       }
     }
   }
-  array<shared_ptr<const Matrix>,6> dmat;
-  auto iter = mat.begin();
-  for (auto& i : dmat) {
-    i = iter->second->get_real_part();
-    ++iter;
-  }
+  assert(mat.size() == 6);
 
   {
     int mpicnt = 0;
@@ -129,30 +124,20 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
             // TODO change the following to tasks
             array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
             vector<int> atom = {iatom0, iatom1};
-            vector<int> offset_ = {*o0, *o1};
+            vector<int> offset = {*o0, *o1};
             // make six Cartesian blocks
             GSmallNAIBatch batch(input, geom_, tie(iatom1, iatom0));
             batch.compute();
-            *grad_ += *batch.compute_gradient(dmat);
-#if 0
-            const double* ndata = batch.data();
+
             const int dimb1 = input[0]->nbasis();
             const int dimb0 = input[1]->nbasis();
-            const size_t s = batch.size_block();
-            const size_t cartblock = s*geom_->natom()*3;
-            for (int ia = 0; ia != geom_->natom()*3; ++ia) {
-              for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-                for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-                  grad_->data(ia) += ndata[cnt+s*ia            ] * dmat[0]->element(j,i);
-                  grad_->data(ia) += ndata[cnt+s*ia+cartblock  ] * dmat[1]->element(j,i);
-                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*2] * dmat[2]->element(j,i);
-                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*3] * dmat[3]->element(j,i);
-                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*4] * dmat[4]->element(j,i);
-                  grad_->data(ia) += ndata[cnt+s*ia+cartblock*5] * dmat[5]->element(j,i);
-                }
-              }
+            array<shared_ptr<const Matrix>,6> dmat;
+            auto iter = mat.begin();
+            for (auto& i : dmat) {
+              i = iter->second->get_submatrix(offset[1], offset[0], dimb1, dimb0)->get_real_part();
+              ++iter;
             }
-#endif
+            *grad_ += *batch.compute_gradient(dmat);
           }
         }
       }
