@@ -62,7 +62,9 @@ shared_ptr<GradFile> GradTask::compute_smallnai() const {
   array<shared_ptr<const Matrix>,6> dmat;
   auto iter = rden_.begin();
   for (auto& i : dmat) {
-    i = (*iter)->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+    shared_ptr<Matrix> tmp = (*iter)->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+    tmp->localize();
+    i = tmp;
     ++iter;
   }
   return batch.compute_gradient(dmat);
