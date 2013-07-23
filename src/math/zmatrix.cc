@@ -88,7 +88,7 @@ shared_ptr<ZMatrix> ZMatrix::resize(const int n, const int m) const {
 
 
 shared_ptr<ZMatrix> ZMatrix::slice(const int start, const int fence) const {
-  auto out = make_shared<ZMatrix>(ndim_, fence - start);
+  auto out = make_shared<ZMatrix>(ndim_, fence - start, localized_);
   assert(fence <= ndim_);
 
   std::copy(element_ptr(0, start), element_ptr(0, fence), out->data());
@@ -99,7 +99,7 @@ shared_ptr<ZMatrix> ZMatrix::slice(const int start, const int fence) const {
 shared_ptr<ZMatrix> ZMatrix::merge(const shared_ptr<const ZMatrix> o) const {
   assert(ndim_ == o->ndim_);
 
-  auto out = make_shared<ZMatrix>(ndim_, mdim_ + o->mdim_);
+  auto out = make_shared<ZMatrix>(ndim_, mdim_ + o->mdim_, localized_);
 
   copy_n(data_.get(), ndim_*mdim_, out->data_.get());
   copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
@@ -402,7 +402,7 @@ complex<double> ZMatrix::trace() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_);
+  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
   ZMatrix buf(*this);
   assert(ndim_ == mdim_);
 
@@ -419,7 +419,7 @@ shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
 
 
 shared_ptr<ZMatrix> ZMatrix::log(const int deg) const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_);
+  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
   ZMatrix buf(*this);
   for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
   assert(ndim_ == mdim_);
@@ -446,14 +446,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
-  auto out = make_shared<ZMatrix>(mdim_, ndim_);
+  auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
   mytranspose_complex_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
-  auto out = make_shared<ZMatrix>(mdim_, ndim_);
+  auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
   mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
@@ -726,17 +726,8 @@ void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdi
 }
 
 
-shared_ptr<ZMatrix> ZMatrix::convert_real(const shared_ptr<const Matrix> in) const {
-  auto out = make_shared<ZMatrix>(in->ndim(), in->mdim());
-  for (int i = 0; i != in->size(); ++i) {
-    out->data_[i] = std::complex<double>(in->data(i), 0);
-  }
-  return out;
-}
-
-
 shared_ptr<Matrix> ZMatrix::get_real_part() const {
-  auto out = make_shared<Matrix>(ndim_, mdim_);
+  auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
   for (int i = 0; i != size(); ++i) {
     out->data(i) = real(data(i));
   }
@@ -745,7 +736,7 @@ shared_ptr<Matrix> ZMatrix::get_real_part() const {
 
 
 shared_ptr<Matrix> ZMatrix::get_imag_part() const {
-  auto out = make_shared<Matrix>(ndim_, mdim_);
+  auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
   for (int i = 0; i != size(); ++i) {
     out->data(i) = imag(data(i));
   }
@@ -754,7 +745,7 @@ shared_ptr<Matrix> ZMatrix::get_imag_part() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
-  auto out = make_shared<ZMatrix>(ndim_, mdim_);
+  auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
   for (int i = 0; i != size(); ++i) {
     out->data(i) = conj(data(i));
   }
@@ -763,7 +754,7 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 
 
 shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
-  auto out = make_shared<ZMatrix>(nsize, msize);
+  auto out = make_shared<ZMatrix>(nsize, msize, localized_);
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
     copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));
   return out;
