@@ -30,6 +30,7 @@
 #include <src/grad/gradfile.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/gnaibatch.h>
+#include <src/integral/rys/gsmallnaibatch.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/integral/os/gkineticbatch.h>
 #include <src/smith/prim_op.h>
@@ -41,14 +42,30 @@ using namespace std;
 using namespace bagel;
 
 
-shared_ptr<GradFile> GradTask::compute_nai(shared_ptr<const Matrix> den) const {
+shared_ptr<GradFile> GradTask::compute_nai() const {
   const int dimb1 = shell2_[0]->nbasis();
   const int dimb0 = shell2_[1]->nbasis();
   GNAIBatch batch2(shell2_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
   batch2.compute();
-  shared_ptr<Matrix> cden = den->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  shared_ptr<Matrix> cden = den2_->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
   const int dummy = -1;
   return batch2.compute_gradient(cden, dummy, dummy, ge_->geom_->natom());
+}
+
+
+shared_ptr<GradFile> GradTask::compute_smallnai() const {
+  const int dimb1 = shell2_[0]->nbasis();
+  const int dimb0 = shell2_[1]->nbasis();
+  GSmallNAIBatch batch(shell2_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
+  batch.compute();
+
+  array<shared_ptr<const Matrix>,6> dmat;
+  auto iter = rden_.begin();
+  for (auto& i : dmat) {
+    i = (*iter)->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+    ++iter;
+  }
+  return batch.compute_gradient(dmat);
 }
 
 
@@ -56,10 +73,21 @@ void GradTask::compute() {
 
   if (rank_ == 1) {
     auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
-    *grad_local += *compute_nai(den2_);
+    *grad_local += *compute_nai();
     *grad_local += *compute_os<GKineticBatch>(den3_);
     *grad_local -= *compute_os<GOverlapBatch>(eden_);
 
+    for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+      lock_guard<mutex> lock(ge_->mutex_[iatom]);
+      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
+      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
+      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+    }
+
+  // relativistic one-electron integrals
+  } else if (rank_ == -1) {
+
+    shared_ptr<GradFile> grad_local = compute_smallnai();
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
       ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);

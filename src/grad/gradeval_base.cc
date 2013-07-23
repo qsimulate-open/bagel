@@ -95,6 +95,44 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> n
 }
 
 
+// TODO make a generic code to merge with grad1e (variadic templete? vector?)
+vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matrix>,6> rmat) {
+  vector<GradTask> out;
+  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+  out.reserve(nshell*nshell);
+
+  // TODO perhaps we could reduce operation by a factor of 2
+  int cnt = 0;
+  int iatom0 = 0;
+  auto oa0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = 0;
+    auto oa1 = geom_->offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = oa1->begin();
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+          // static distribution since this is cheap
+          if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+          vector<int> atom = {iatom0, iatom1};
+          vector<int> offset_ = {*o0, *o1};
+
+          GradTask task(input, atom, offset_, rmat, this);
+          out.push_back(task);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+
 vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,

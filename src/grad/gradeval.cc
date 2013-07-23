@@ -103,46 +103,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     }
   }
   assert(mat.size() == 6);
-
-  {
-    int mpicnt = 0;
-    int iatom0 = 0;
-    auto oa0 = geom_->offsets().begin();
-    for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
-      int iatom1 = 0;
-      auto oa1 = geom_->offsets().begin();
-      for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
-
-        auto o0 = oa0->begin();
-        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
-          auto o1 = oa1->begin();
-          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
-
-            // static distribution since this is cheap
-            if (mpicnt++ % mpi__->size() != mpi__->rank()) continue;
-
-            // TODO change the following to tasks
-            array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-            vector<int> atom = {iatom0, iatom1};
-            vector<int> offset = {*o0, *o1};
-            // make six Cartesian blocks
-            GSmallNAIBatch batch(input, geom_, tie(iatom1, iatom0));
-            batch.compute();
-
-            const int dimb1 = input[0]->nbasis();
-            const int dimb0 = input[1]->nbasis();
-            array<shared_ptr<const Matrix>,6> dmat;
-            auto iter = mat.begin();
-            for (auto& i : dmat) {
-              i = iter->second->get_submatrix(offset[1], offset[0], dimb1, dimb0)->get_real_part();
-              ++iter;
-            }
-            *grad_ += *batch.compute_gradient(dmat);
-          }
-        }
-      }
-    }
-  }
+  array<shared_ptr<const Matrix>,6> rmat;
+  auto riter = rmat.begin();
+  for (auto& i : mat) *riter++ = i.second->get_real_part();
+  vector<GradTask> tmp = contract_gradsmall1e(rmat);
+  task.insert(task.end(), tmp.begin(), tmp.end());
 
   // compute
   TaskQueue<GradTask> tq(task);

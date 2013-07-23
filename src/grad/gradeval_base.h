@@ -44,8 +44,18 @@ class GradTask {
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Matrix> den3_;
     std::shared_ptr<const Matrix> eden_;
+
+    // relativistic gradients - TODO not a good interface. We should use polymorph 
+    std::array<std::shared_ptr<const Matrix>,6> rden_;
+
     GradEval_base* ge_;
     int rank_;
+
+    std::shared_ptr<GradFile> compute_nai() const;
+    std::shared_ptr<GradFile> compute_smallnai() const;
+    template<typename TBatch>
+    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
+
 
   public:
     GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
@@ -60,6 +70,12 @@ class GradTask {
              const std::shared_ptr<const Matrix> nmat, const std::shared_ptr<const Matrix> kmat, const std::shared_ptr<const Matrix> omat, GradEval_base* p)
       : shell2_(s), den2_(nmat), den3_(kmat), eden_(omat), ge_(p), rank_(1) { common_init(a,o); }
 
+    // relativistic gradients
+    GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
+             const std::array<std::shared_ptr<const Matrix>,6> rmat, GradEval_base* p)
+      : shell2_(s), rden_(rmat), ge_(p), rank_(-1) { common_init(a,o); }
+
+
     void common_init(const std::vector<int>& a, const std::vector<int>& o) {
       assert(a.size() == o.size());
       int k = 0;
@@ -68,11 +84,6 @@ class GradTask {
         offset_[k] = *j;
       }
     }
-
-    std::shared_ptr<GradFile> compute_nai(std::shared_ptr<const Matrix> den) const;
-
-    template<typename TBatch>
-    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
 
     void compute();
 };
@@ -89,6 +100,8 @@ class GradEval_base {
     std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
     /// same as above, but one can specify density matrices to each integral kernel
     std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
+    // contract small NAI gradient integrals with an array of densities 
+    std::vector<GradTask> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o);
