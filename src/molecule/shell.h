@@ -103,6 +103,7 @@ class Shell {
     void init_relativistic();
 
     // Relativistic
+    bool relativistic() const { return relativistic_; }
     const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
     const std::shared_ptr<const Shell> aux_inc() const { assert(relativistic_); return aux_inc_; }
     const std::shared_ptr<const Shell> aux_dec() const { assert(relativistic_); return aux_dec_; }

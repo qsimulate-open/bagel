@@ -32,31 +32,37 @@
 
 namespace bagel {
 
-class GSmallNAIBatch : public SmallNAIBatch {
+// TODO make a base class SmallNAIBatch_base and remove redundancy 
+class GSmallNAIBatch {
   protected:
+    std::array<std::shared_ptr<Matrix>,6> data_;
+
+    const std::shared_ptr<const Molecule> mol_;
+    const std::array<std::shared_ptr<const Shell>,2> shells_;
+
+    const size_t size_block_;
+
+    // specific to gradients
     std::tuple<int,int> iatom_;
 
     std::shared_ptr<StackMem> stack_;
     bool allocated_here_;
 
+    std::shared_ptr<Matrix> nai_compute() const; // override;
+
   public:
     GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
-                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-    : SmallNAIBatch(info, mol), iatom_(i) {
-      stack_ = stack ? stack : resources__->get();
-      allocated_here_ = stack != stack_;
-    }
+                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
 
-    ~GSmallNAIBatch() {
-      if (allocated_here_)
-        resources__->release(stack_);
-    }
+    ~GSmallNAIBatch();
 
     // computes derivative NAI over Cartesian (i.e., RI) basis functions.
-    void compute() override {}
+    void compute(); // override;
 
     // multiplies S^-1P to density and contracts with cartesian integrals.
-    std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const Matrix>,6> d) const { return std::make_shared<GradFile>(mol_->natom()); }
+    std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const Matrix>,6> d) const;
+
+    size_t size_block() const { return size_block_; }
 
 };
 

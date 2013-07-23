@@ -83,7 +83,7 @@ class GradTask {
 class GradEval_base {
   friend class GradTask;
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
     std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
@@ -101,13 +101,12 @@ class GradEval_base {
     std::vector<std::mutex> mutex_;
 
   public:
-    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(std::make_shared<GradFile>(g->natom())), mutex_(g->natom()) { };
-    ~GradEval_base() {};
+    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(std::make_shared<GradFile>(g->natom())), mutex_(g->natom()) { }
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
                                                 const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2);
-    virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
+    virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); }
 
 };
 

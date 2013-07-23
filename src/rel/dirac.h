@@ -79,6 +79,8 @@ class Dirac {
     void print_eig() const;
     double energy() const { return energy_; }
 
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
+
 };
 
 }

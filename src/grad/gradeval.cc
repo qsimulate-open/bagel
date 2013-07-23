@@ -34,12 +34,13 @@ using namespace bagel;
 
 template<>
 shared_ptr<GradFile> GradEval<Dirac>::compute() {
+  geom_ = task_->geom();
+
   Timer timer;
   // density matrix
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
   shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice(0, ref->nocc());
   auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
-  den->print("T", "density", 15);
 
   // energy-weighted density matrix
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
@@ -47,7 +48,6 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   for (int i = 0; i != ref->nocc(); ++i)
     zscal_(ecoeff->ndim(), eig[i], ecoeff->element_ptr(0, i), 1);
   auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
-  eden->print("T", "energy-weighted density", 15);
 
   const int nbasis = geom_->nbasis();
 
@@ -130,10 +130,10 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
             array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
             vector<int> atom = {iatom0, iatom1};
             vector<int> offset_ = {*o0, *o1};
-            // make six blocks
+            // make six Cartesian blocks
             GSmallNAIBatch batch(input, geom_, tie(iatom1, iatom0));
             batch.compute();
-            *grad_ += *batch.compute_gradient(dmat); 
+            *grad_ += *batch.compute_gradient(dmat);
 #if 0
             const double* ndata = batch.data();
             const int dimb1 = input[0]->nbasis();
