@@ -88,7 +88,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     std::shared_ptr<const Hcore> hcore() const { return hcore_; }
-    const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    virtual const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     void set_coeff(std::shared_ptr<const Coeff> coeff) { coeff_ = coeff; }
     void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }

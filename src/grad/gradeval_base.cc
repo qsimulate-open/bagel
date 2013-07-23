@@ -54,6 +54,11 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
 
 vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
+  return contract_grad1e(d, d, w);
+}
+
+
+vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
@@ -80,7 +85,7 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset_ = {*o0, *o1};
 
-          GradTask task(input, atom, offset_, d, w, this);
+          GradTask task(input, atom, offset_, nmat, kmat, omat, this);
           out.push_back(task);
         }
       }

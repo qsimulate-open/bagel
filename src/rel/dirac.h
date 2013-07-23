@@ -47,6 +47,7 @@ class Dirac {
     int diis_start_;
     double thresh_scf_;
     double energy_;
+    std::unique_ptr<double[]> eig_;
     int ncharge_;
     int nele_;
     int nneg_;
@@ -75,8 +76,7 @@ class Dirac {
 
     std::shared_ptr<RelReference> conv_to_ref() const;
 
-    void print_eig(const std::unique_ptr<double[]>&);
-
+    void print_eig() const;
     double energy() const { return energy_; }
 
 };

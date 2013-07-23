@@ -42,6 +42,7 @@ class GradTask {
     std::array<int,4> offset_;
     std::shared_ptr<const DFDist> den_;
     std::shared_ptr<const Matrix> den2_;
+    std::shared_ptr<const Matrix> den3_;
     std::shared_ptr<const Matrix> eden_;
     GradEval_base* ge_;
     int rank_;
@@ -56,10 +57,8 @@ class GradTask {
       : shell_(s), den2_(d), ge_(p), rank_(2) { common_init(a,o); }
 
     GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
-             const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w, GradEval_base* p)
-      : shell2_(s), den2_(d), eden_(w), ge_(p), rank_(1) { common_init(a,o); }
-
-    ~GradTask() {};
+             const std::shared_ptr<const Matrix> nmat, const std::shared_ptr<const Matrix> kmat, const std::shared_ptr<const Matrix> omat, GradEval_base* p)
+      : shell2_(s), den2_(nmat), den3_(kmat), eden_(omat), ge_(p), rank_(1) { common_init(a,o); }
 
     void common_init(const std::vector<int>& a, const std::vector<int>& o) {
       assert(a.size() == o.size());
@@ -69,6 +68,11 @@ class GradTask {
         offset_[k] = *j;
       }
     }
+
+    std::shared_ptr<GradFile> compute_nai(std::shared_ptr<const Matrix> den) const;
+
+    template<typename TBatch>
+    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
 
     void compute();
 };
@@ -83,6 +87,8 @@ class GradEval_base {
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
     std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
+    /// same as above, but one can specify density matrices to each integral kernel
+    std::vector<GradTask> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o);
@@ -104,6 +110,32 @@ class GradEval_base {
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); };
 
 };
+
+template<typename TBatch>
+std::shared_ptr<GradFile> GradTask::compute_os(std::shared_ptr<const Matrix> den) const {
+  const int iatom0 = atomindex_[0];
+  const int iatom1 = atomindex_[1];
+  const int nbasis = ge_->geom_->nbasis();
+  auto grad_local = std::make_shared<GradFile>(ge_->geom_->natom());
+  const int dimb1 = shell2_[0]->nbasis();
+  const int dimb0 = shell2_[1]->nbasis();
+
+  TBatch batch(shell2_);
+  batch.compute();
+  const double* data = batch.data();
+  const size_t s = batch.size_block();
+  for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+    for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+      int jatom0 = batch.swap01() ? iatom1 : iatom0;
+      int jatom1 = batch.swap01() ? iatom0 : iatom1;
+      for (int k = 0; k != 3; ++k) {
+        grad_local->data(k, jatom1) += data[cnt+s*k    ] * den->data(i*nbasis+j);
+        grad_local->data(k, jatom0) += data[cnt+s*(k+3)] * den->data(i*nbasis+j);
+      }
+    }
+  }
+  return grad_local;
+}
 
 }
 

@@ -33,13 +33,56 @@ using namespace bagel;
 template<>
 shared_ptr<GradFile> GradEval<Dirac>::compute() {
   Timer timer;
+  // density matrix
+  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
+  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice(0, ref->nocc());
+  auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
+  den->print("T", "density", 15);
 
-  auto grad = make_shared<GradFile>(geom_->natom());
-  grad->print();
+  // energy-weighted density matrix
+  shared_ptr<ZMatrix> ecoeff = coeff->copy();
+  const vector<double>& eig = ref->eig();
+  for (int i = 0; i != ref->nocc(); ++i)
+    zscal_(ecoeff->ndim(), eig[i], ecoeff->element_ptr(0, i), 1); 
+  auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
+  eden->print("T", "energy-weighted density", 15);
 
+  const int nbasis = geom_->nbasis();
+
+  // NAI density (L+L+, L-L-)
+  shared_ptr<ZMatrix> nden  =  den->get_submatrix(0, 0, nbasis, nbasis);
+                     *nden += *den->get_submatrix(nbasis, nbasis, nbasis, nbasis);
+  // kinetic density [den] 2*(S+L+, S-L-) - (S+S+, S-S-); [eden] -(S+S+, S-S-)/2c^2 
+  shared_ptr<ZMatrix> kden  =  den->get_submatrix(0, 2*nbasis, nbasis, nbasis);
+                     *kden += *den->get_submatrix(nbasis, 3*nbasis, nbasis, nbasis);
+                     *kden *= complex<double>(2.0);
+                     *kden -= *den->get_submatrix(2*nbasis, 2*nbasis, nbasis, nbasis);
+                     *kden -= *den->get_submatrix(3*nbasis, 3*nbasis, nbasis, nbasis);
+  shared_ptr<ZMatrix> lden  = eden->get_submatrix(2*nbasis, 2*nbasis, nbasis, nbasis);
+                     *lden +=*eden->get_submatrix(3*nbasis, 3*nbasis, nbasis, nbasis);
+                     *lden /= complex<double>(2.0*pow(c__,2));
+                     *kden -= *lden;
+  // overlap density
+  shared_ptr<ZMatrix> sden  = eden->get_submatrix(0, 0, nbasis, nbasis);
+                     *sden +=*eden->get_submatrix(nbasis, nbasis, nbasis, nbasis);
+
+  // nden, kden, sden (minus sign is taken care of inside)
+  vector<GradTask> task = contract_grad1e(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
+
+  // compute
+  TaskQueue<GradTask> tq(task);
+  tq.compute(resources__->max_num_threads());
+
+  // allreduce
+  mpi__->allreduce(grad_->data()->data(), grad_->size());
+
+  // adds nuclear contributions
+  *grad_->data() += *geom_->compute_grad_vnuc();
+
+  grad_->print();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
-  return grad;
+  return grad_;
 }
 
 template<>

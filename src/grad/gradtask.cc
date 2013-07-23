@@ -40,59 +40,39 @@
 using namespace std;
 using namespace bagel;
 
+
+shared_ptr<GradFile> GradTask::compute_nai(shared_ptr<const Matrix> den) const {
+  const int iatom0 = atomindex_[0];
+  const int iatom1 = atomindex_[1];
+  const int nbasis = ge_->geom_->nbasis();
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
+  const int dimb1 = shell2_[0]->nbasis();
+  const int dimb0 = shell2_[1]->nbasis();
+
+  GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
+  batch2.compute();
+
+  const double* ndata = batch2.data();
+  const size_t s = batch2.size_block();
+  for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
+    for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
+      for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
+        grad_local->data(ia) += ndata[cnt+s*ia] * den->data(i*nbasis+j);
+      }
+    }
+  }
+  return grad_local;
+}
+
+
 void GradTask::compute() {
+
   if (rank_ == 1) {
-    const int iatom0 = atomindex_[0];
-    const int iatom1 = atomindex_[1];
-    const int nbasis = ge_->geom_->nbasis();
     auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
-    const int dimb1 = shell2_[0]->nbasis();
-    const int dimb0 = shell2_[1]->nbasis();
-    {
-      GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
-      batch2.compute();
-      const double* ndata = batch2.data();
-      const size_t s = batch2.size_block();
-      for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
-        for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-          for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-            grad_local->data(ia) += ndata[cnt+s*ia] * den2_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
-    {
-      GKineticBatch batch(shell2_);
-      const double* kdata = batch.data();
-      batch.compute();
-      const size_t s = batch.size_block();
-      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-          int jatom0 = batch.swap01() ? iatom1 : iatom0;
-          int jatom1 = batch.swap01() ? iatom0 : iatom1;
-          for (int k = 0; k != 3; ++k) {
-            grad_local->data(k, jatom1) += kdata[cnt+s*k    ] * den2_->data(i*nbasis+j);
-            grad_local->data(k, jatom0) += kdata[cnt+s*(k+3)] * den2_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
-    {
-      GOverlapBatch batch(shell2_);
-      const double* odata = batch.data();
-      batch.compute();
-      const size_t s = batch.size_block();
-      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-          int jatom0 = batch.swap01() ? iatom1 : iatom0;
-          int jatom1 = batch.swap01() ? iatom0 : iatom1;
-          for (int k = 0; k != 3; ++k) {
-            grad_local->data(k, jatom1) -= odata[cnt+s*k    ] * eden_->data(i*nbasis+j);
-            grad_local->data(k, jatom0) -= odata[cnt+s*(k+3)] * eden_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
+    *grad_local += *compute_nai(den2_);
+    *grad_local += *compute_os<GKineticBatch>(den3_);
+    *grad_local -= *compute_os<GOverlapBatch>(eden_);
+
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
       ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
