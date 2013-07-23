@@ -34,6 +34,7 @@
 #include <src/integral/sortlist.h>
 #include <array>
 #include <memory>
+#include <src/grad/gradfile.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>
 
@@ -89,6 +90,8 @@ class OSInt : public Integral {
     bool swap01() const { return swap01_; }
 
     size_t size_block() const { return size_block_; }
+
+    virtual std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const;
 };
 
 }

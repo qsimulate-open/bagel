@@ -42,26 +42,13 @@ using namespace bagel;
 
 
 shared_ptr<GradFile> GradTask::compute_nai(shared_ptr<const Matrix> den) const {
-  const int iatom0 = atomindex_[0];
-  const int iatom1 = atomindex_[1];
-  const int nbasis = ge_->geom_->nbasis();
-  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   const int dimb1 = shell2_[0]->nbasis();
   const int dimb0 = shell2_[1]->nbasis();
-
-  GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
+  GNAIBatch batch2(shell2_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
   batch2.compute();
-
-  const double* ndata = batch2.data();
-  const size_t s = batch2.size_block();
-  for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
-    for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-      for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-        grad_local->data(ia) += ndata[cnt+s*ia] * den->element(j,i);
-      }
-    }
-  }
-  return grad_local;
+  shared_ptr<Matrix> cden = den->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  const int dummy = -1;
+  return batch2.compute_gradient(cden, dummy, dummy, ge_->geom_->natom());
 }
 
 
