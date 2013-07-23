@@ -26,6 +26,8 @@
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/rel/alpha.h>
+#include <src/rel/dfock.h>
+#include <src/rel/cdmatrix_drv.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
 using namespace std;
@@ -108,6 +110,48 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   for (auto& i : mat) *riter++ = i.second->get_real_part();
   vector<GradTask> tmp = contract_gradsmall1e(rmat);
   task.insert(task.end(), tmp.begin(), tmp.end());
+
+  // two-electron contributions.
+  {
+    // make blocks of coefficients
+    array<shared_ptr<const Matrix>, 4> rocoeff;
+    array<shared_ptr<const Matrix>, 4> iocoeff;
+    array<shared_ptr<const Matrix>, 4> trocoeff;
+    array<shared_ptr<const Matrix>, 4> tiocoeff;
+    for (int i = 0; i != 4; ++i) {
+      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), ref->nocc());
+      rocoeff[i] = ocoeff->get_real_part();
+      iocoeff[i] = ocoeff->get_imag_part();
+      trocoeff[i] = rocoeff[i]->transpose();
+      tiocoeff[i] = iocoeff[i]->transpose();
+    }
+    // (0) get AO integras
+    // get individual df dist objects for each block and add df to dfs
+    vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+    dfs.push_back(geom_->df());
+
+    // (1) make RelDF objects from AO integrals
+    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+    // (2) first-transform
+    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+
+    // (3) split and factorize
+    list<shared_ptr<RelDFHalf>> half_complex_exch;
+    for (auto& i : half_complex) {
+      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    }
+    half_complex.clear();
+    DFock::factorize(half_complex_exch);
+
+    // (4) compute C matrix
+    list<shared_ptr<const CDMatrix>> cd;
+    for (auto& j : half_complex_exch)
+      for (auto& i : j->basis())
+        cd.push_back(make_shared<CDMatrix_drv>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+  }
+
 
   // compute
   TaskQueue<GradTask> tq(task);
