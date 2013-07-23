@@ -24,6 +24,7 @@
 //
 
 
+#include <src/integral/rys/gsmallnaibatch.h>
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/rel/alpha.h>
@@ -101,7 +102,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       }
     }
   }
-  array<shared_ptr<Matrix>,6> dmat;
+  array<shared_ptr<const Matrix>,6> dmat;
   auto iter = mat.begin();
   for (auto& i : dmat) {
     i = iter->second->get_real_part();
@@ -130,9 +131,10 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
             vector<int> atom = {iatom0, iatom1};
             vector<int> offset_ = {*o0, *o1};
             // make six blocks
-#if 0
             GSmallNAIBatch batch(input, geom_, tie(iatom1, iatom0));
             batch.compute();
+            *grad_ += *batch.compute_gradient(dmat); 
+#if 0
             const double* ndata = batch.data();
             const int dimb1 = input[0]->nbasis();
             const int dimb0 = input[1]->nbasis();

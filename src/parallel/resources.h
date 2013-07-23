@@ -56,11 +56,11 @@ class StackMem {
     double* get(const size_t size);
     void release(const size_t size, double* p);
 
-    void clear() { pointer_ = 0LU; };
-    size_t pointer() const { return pointer_; };
+    void clear() { pointer_ = 0LU; }
+    size_t pointer() const { return pointer_; }
 
 #ifdef LIBINT_INTERFACE
-    Libint_t* libint_t_ptr(const int i) { return &libint_t_[i]; };
+    Libint_t* libint_t_ptr(const int i) { return &libint_t_[i]; }
 #endif
 
 };
@@ -75,13 +75,12 @@ class Resources {
 
   public:
     Resources(const int max);
-    ~Resources() {};
 
     std::shared_ptr<StackMem> get();
     void release(std::shared_ptr<StackMem> o);
 
-    size_t max_num_threads() const { return max_num_threads_; };
-    std::shared_ptr<Process> proc() { return proc_; };
+    size_t max_num_threads() const { return max_num_threads_; }
+    std::shared_ptr<Process> proc() { return proc_; }
 };
 
 extern Resources* resources__;
