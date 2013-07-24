@@ -161,7 +161,7 @@ void ZCivec::print(const double thr) const {
   for (auto& ia : det_->stringa()) {
     for (auto& ib : det_->stringb()) {
       if (fabs(*i) > thr) {
-        tmp.insert(make_pair(-sqrt(pow((*i).real(),2)+pow((*i).imag(),2)), make_tuple(*i, ia, ib)));
+        tmp.insert(make_pair(-sqrt(std::norm(*i)), make_tuple(*i, ia, ib)));
       }
       ++i;
     }
