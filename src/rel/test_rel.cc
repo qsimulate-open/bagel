@@ -66,7 +66,9 @@ double rel_energy(std::string filename) {
 
 BOOST_AUTO_TEST_SUITE(TEST_REL)
 
-BOOST_AUTO_TEST_CASE(BREIT) {
+BOOST_AUTO_TEST_CASE(DIRAC_FOCK) {
+    BOOST_CHECK(compare(rel_energy("hf_svp_coulomb"),        -99.93791152));
+    BOOST_CHECK(compare(rel_energy("hf_svp_gaunt"),          -99.92699858));
     BOOST_CHECK(compare(rel_energy("hf_svp_breit"),          -99.92755305));
 }
 
