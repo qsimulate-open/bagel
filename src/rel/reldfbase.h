@@ -51,12 +51,12 @@ class SpinorInfo {
       spinor_[0] = tmp0;
       spinor_[1] = tmp1;
 
-      auto s1 = std::make_shared<const Sigma>(cartesian.first);
-      auto s2 = std::make_shared<const Sigma>(cartesian.second);
+      const Sigma s1(cartesian.first);
+      const Sigma s2(cartesian.second);
 
-      ZMatrix z1(*s1->data()**spinor_[0]);
-      ZMatrix z2(*s2->data()**spinor_[1]);
-      fac_ = (z1 % *a->data() * z2).element(0,0);
+      ZMatrix z1(s1**spinor_[0]);
+      ZMatrix z2(s2**spinor_[1]);
+      fac_ = (z1 % *a * z2).element(0,0);
     }
   public:
     SpinorInfo(std::pair<int, int> moblock, std::shared_ptr<const Alpha> alpha, std::pair<int, int> cartesian)

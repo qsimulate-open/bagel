@@ -96,7 +96,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       shared_ptr<ZMatrix> data = den->get_submatrix(s0.first*nbasis, s1.first*nbasis, nbasis, nbasis);
       for (auto& w0 : sigma) {
         for (auto& w1 : sigma) {
-          auto tmp = make_shared<ZMatrix>((*w0.second->data() * *s0.second) % (*w1.second->data() * *s1.second));
+          auto tmp = make_shared<ZMatrix>((*w0.second * *s0.second) % (*w1.second * *s1.second));
           const complex<double> c = tmp->element(0,0);
           const int small = min(w0.first, w1.first);
           const int large = max(w0.first, w1.first);

@@ -35,72 +35,64 @@ namespace bagel {
 enum Comp { X = 0, Y = 1, Z = 2, L = 3 };
 enum Block { LP = 0, LM = 1, SP = 2, SM = 3}; 
 
-class Sigma2 {
+class Sigma2 : public ZMatrix {
   protected:
-    std::shared_ptr<ZMatrix> data_;
   public:
-    Sigma2(const int i) : data_(new ZMatrix(2,2,true)) {
+    Sigma2(const int i) : ZMatrix(2,2,true) {
       if (i == Comp::L) {
-        data_->element(0,0) = data_->element(1,1) = 1.0;
+        element(0,0) = element(1,1) = 1.0;
       } else if (i == Comp::X) {
-        data_->element(0,1) = data_->element(1,0) = 1.0;
+        element(0,1) = element(1,0) = 1.0;
       } else if (i == Comp::Y) {
-        data_->element(1,0) = std::complex<double>(0.0, 1.0);
-        data_->element(0,1) = std::complex<double>(0.0,-1.0);
+        element(1,0) = std::complex<double>(0.0, 1.0);
+        element(0,1) = std::complex<double>(0.0,-1.0);
       } else if (i == Comp::Z) {
-        data_->element(0,0) = 1.0;
-        data_->element(1,1) = -1.0;
+        element(0,0) = 1.0;
+        element(1,1) = -1.0;
       } else {
         assert(false);
       }
     }
-
-    std::shared_ptr<const ZMatrix> data() const { return data_; }
 };
 
 
-class Sigma {
+class Sigma : public ZMatrix {
   protected:
-    std::shared_ptr<ZMatrix> data_;
   public:
-    Sigma(const int i) : data_(new ZMatrix(4,4,true)) {
-      Sigma2 s(i);
+    Sigma(const int i) : ZMatrix(4,4,true) {
+      auto s = std::make_shared<Sigma2>(i);
       if (i == Comp::L) {
-        data_->copy_block(0,0,2,2,s.data());
+        copy_block(0,0,2,2,s);
       } else {
-        data_->copy_block(2,2,2,2,s.data());
-        data_->scale(std::complex<double>(0.0, -0.5/c__));
+        copy_block(2,2,2,2,s);
+        scale(std::complex<double>(0.0, -0.5/c__));
       }
     }
-
-    std::shared_ptr<const ZMatrix> data() const { return data_; }
 };
 
-class Alpha {
+class Alpha : public ZMatrix {
   protected:
-    std::shared_ptr<ZMatrix> data_;
     const int alpha_comp_;
   public:
-    Alpha(const int i) : data_(new ZMatrix(4,4,true)), alpha_comp_(i) {
-      Sigma2 s(i);
+    Alpha(const int i) : ZMatrix(4,4,true), alpha_comp_(i) {
+      auto s = std::make_shared<Sigma2>(i);
       if (i == Comp::L) {
-        data_->copy_block(0,0,2,2,s.data());
-        data_->copy_block(2,2,2,2,s.data());
+        copy_block(0, 0, 2, 2, s);
+        copy_block(2, 2, 2, 2, s);
       } else if (i == Comp::Z) {
-        data_->copy_block(2,0,2,2,s.data());
-        data_->copy_block(0,2,2,2,s.data());
+        copy_block(2, 0, 2, 2, s);
+        copy_block(0, 2, 2, 2, s);
       } else if (i == Comp::X) {
-        data_->copy_block(2,0,2,2,s.data());
-        data_->copy_block(0,2,2,2,s.data());
+        copy_block(2, 0, 2, 2, s);
+        copy_block(0, 2, 2, 2, s);
       } else if (i == Comp::Y) {
-        data_->copy_block(2,0,2,2,s.data());
-        data_->copy_block(0,2,2,2,s.data());
+        copy_block(2, 0, 2, 2, s);
+        copy_block(0, 2, 2, 2, s);
       } else {
         assert(false);
       }
     }
 
-    std::shared_ptr<const ZMatrix> data() const { return data_; }
     const int comp() const { return alpha_comp_; }
 
 };
