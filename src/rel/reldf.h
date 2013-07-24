@@ -37,6 +37,7 @@
 namespace bagel {
 
 class RelDFHalf;
+class CDMatrix;
 
 class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
   protected:

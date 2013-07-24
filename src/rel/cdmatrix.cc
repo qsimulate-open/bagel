@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: cdmatrix.h
-// Copyright (C) 2013 Matthew Kelley
+// Filename: cdmatrix.cc
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,29 +24,16 @@
 //
 
 
-#ifndef __SRC_REL_CDMATRIX_H
-#define __SRC_REL_CDMATRIX_H
+#include <src/rel/cdmatrix.h>
 
-#include <src/rel/reldfhalf.h>
-#include <src/math/zmatrix.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
+CDMatrix::CDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
+                   array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
+ : ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),
+           *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)-*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
+   comp_(abc->comp()) {
 
-class RelDFHalf;
-
-class CDMatrix : public ZMatrix {
-  protected:
-    const int comp_;
-
-  public:
-    CDMatrix(std::shared_ptr<const RelDFHalf> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
-             std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
-    CDMatrix(const ZMatrix& o, const int comp) : ZMatrix(o), comp_(comp) { }
-
-    const int comp() const { return comp_; }
-
-};
-
+  *this *= abc->fac();
 }
-
-#endif

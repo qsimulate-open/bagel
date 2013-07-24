@@ -27,7 +27,7 @@
 #include <src/util/timer.h>
 #include <src/rel/alpha.h>
 #include <src/rel/dfock.h>
-#include <src/rel/cdmatrix_drv.h>
+#include <src/rel/cdmatrix.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
 using namespace std;
@@ -146,10 +146,17 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     DFock::factorize(half_complex_exch);
 
     // (4) compute C matrix
-    list<shared_ptr<const CDMatrix>> cd;
-    for (auto& j : half_complex_exch)
-      for (auto& i : j->basis())
-        cd.push_back(make_shared<CDMatrix_drv>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+    shared_ptr<CDMatrix> cd;
+    assert(half_complex_exch.front()->basis().size() == 1); 
+    for (auto& j : half_complex_exch) {
+      for (auto& i : j->basis()) {
+        if (cd) {
+          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* J^-1 multiplied */);
+        } else {
+          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* J^-1 multiplied */);
+        }
+      }
+    }
   }
 
 

@@ -27,7 +27,7 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/math/matrix.h>
-#include <src/rel/cdmatrix_drv.h>
+#include <src/rel/cdmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -270,7 +270,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_drv>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+      cd.push_back(make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
     }
   }
 
