@@ -169,7 +169,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part(); 
     shared_ptr<Matrix> cdi = cd->get_imag_part(); 
-    auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) + (*cdi ^ *cdi) - *dffull.front()->form_aux_2index_real());
+    auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) - (*cdi ^ *cdi) - *dffull.front()->form_aux_2index_real());
+    gamma2->print();
   }
 
 

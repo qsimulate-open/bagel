@@ -79,7 +79,6 @@ class RelDFHalf : public RelDFBase {
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
     std::list<std::shared_ptr<RelDFHalf>> split(const bool docopy = false);
     bool split_status() const { return split_; }
-    const std::vector<std::shared_ptr<const SpinorInfo>> new_basis(std::shared_ptr<const Breit2Index>) const;
 
 };
 

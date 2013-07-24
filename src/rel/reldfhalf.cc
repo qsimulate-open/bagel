@@ -38,16 +38,18 @@ RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const Sp
   const int index = basis_.front()->basis(0);
   for (auto& i : basis_)
     if (i->basis(0) != index) throw logic_error("basis should have the same first index");
+  // -1 due to dagger
+  auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
 
   shared_ptr<DFHalfDist> rhalfbj;
   shared_ptr<DFHalfDist> ihalfbj;
 
   if (df->swapped()) {
     rhalfbj = df->df()->compute_half_transform_swap(rcoeff[index]);
-    ihalfbj = df->df()->compute_half_transform_swap(icoeff[index]);
+    ihalfbj = df->df()->compute_half_transform_swap(icoeff_scaled);
   } else {
     rhalfbj = df->df()->compute_half_transform(rcoeff[index]);
-    ihalfbj = df->df()->compute_half_transform(icoeff[index]);
+    ihalfbj = df->df()->compute_half_transform(icoeff_scaled);
   }
 
   dfhalf_[0] = rhalfbj->apply_J();
@@ -103,29 +105,25 @@ bool RelDFHalf::matches(shared_ptr<const RelDFHalf> o) const {
 }
 
 
-// WARNING: This Function assumes you have used the split function to make your RelDFHalf object. TODO
 bool RelDFHalf::alpha_matches(shared_ptr<const Breit2Index> o) const {
+  assert(basis_.size() == 1);
   return basis_[0]->comp() == o->index().second;
 }
 
-// WARNING: This Function assumes you have used the split function to make your RelDFHalf objects. TODO
+
 bool RelDFHalf::alpha_matches(shared_ptr<const RelDFHalf> o) const {
+  assert(basis_.size() == 1);
   return basis_[0]->comp() == o->basis()[0]->comp();
 }
 
 
-// WARNING: This Function assumes you have used the split function to make your RelDFHalf object. TODO
-// Another WARNING: basis(bt) assumes you are multiplying breit2index by 2nd integral, not first
+// assumes you are multiplying breit2index by 2nd integral, not first (see alpha_matches)
 shared_ptr<RelDFHalf> RelDFHalf::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
+  assert(basis_.size() == 1);
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
-  return make_shared<RelDFHalf>(d, coord_, new_basis(bt));
-}
 
-const vector<shared_ptr<const SpinorInfo>> RelDFHalf::new_basis(shared_ptr<const Breit2Index> bt) const {
-  vector<shared_ptr<const SpinorInfo>> out;
-  for (auto& i : basis_)
-    out.push_back(make_shared<const SpinorInfo>(*i, bt->index().first));
-  return out;
+  vector<shared_ptr<const SpinorInfo>> spinor = { make_shared<const SpinorInfo>(*basis_[0], bt->index().first) };
+  return make_shared<RelDFHalf>(d, coord_, spinor);
 }
 
 

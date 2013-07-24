@@ -101,20 +101,16 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
-    // plus
     r   =  dfc1->get_real()->form_2index(dfc2->get_real(), 1.0);
-    // plus = minus * minux. (one from i*i, the other from conjugate)
     *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), 1.0);
-    // minus (from conjugate)
-    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(), -1.0);
-    // plus
-    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), 1.0);
+    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(), 1.0);
+    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(),-1.0);
   } else {
     // the same as above
     shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), 0.5);
     shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), 0.5);
     r = make_shared<Matrix>(*ss + *dd);
-    i = make_shared<Matrix>(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), -2.0));
+    i = make_shared<Matrix>(*dd - *ss + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0));
   }
 
   const bool diagonal = diag || dfc1 == dfc2;
