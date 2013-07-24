@@ -157,6 +157,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
         }
       }
     }
+    cd->localize();
 
     // (5) compute (gamma|ij)
     list<shared_ptr<RelDFFull>> dffull;
@@ -164,6 +165,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
     DFock::factorize(dffull);
     assert(dffull.size() == 1);
+
+    // (6) two-index gamma
+    auto gamma2 = make_shared<Matrix>(*(*cd ^ *cd).get_real_part() + *dffull.front()->form_aux_2index_real());
   }
 
 
