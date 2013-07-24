@@ -58,13 +58,13 @@ RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const Sp
 }
 
 
-RelDFHalf::RelDFHalf(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> coord, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(coord), dfhalf_(data) {
+RelDFHalf::RelDFHalf(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> cartesian, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(cartesian), dfhalf_(data) {
   common_init();
   basis_ = bas;
 }
 
 
-RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.coord_) {
+RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.cartesian_) {
   common_init();
   basis_ = o.basis_;
   dfhalf_[0] = o.dfhalf_[0]->copy();
@@ -101,7 +101,7 @@ void RelDFHalf::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o
 
 
 bool RelDFHalf::matches(shared_ptr<const RelDFHalf> o) const {
-  return coord_.second == o->coord().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
+  return cartesian_.second == o->cartesian().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
 }
 
 
@@ -123,7 +123,7 @@ shared_ptr<RelDFHalf> RelDFHalf::multiply_breit2index(shared_ptr<const Breit2Ind
   array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
 
   vector<shared_ptr<const SpinorInfo>> spinor = { make_shared<const SpinorInfo>(*basis_[0], bt->index().first) };
-  return make_shared<RelDFHalf>(d, coord_, spinor);
+  return make_shared<RelDFHalf>(d, cartesian_, spinor);
 }
 
 
@@ -131,11 +131,11 @@ list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
   list<shared_ptr<RelDFHalf>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
     if (i == basis().begin() && docopy) {
-      out.push_back(make_shared<RelDFHalf>(dfhalf_, coord_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(dfhalf_, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     } else {
       // TODO Any way to avoid copying?
       array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
-      out.push_back(make_shared<RelDFHalf>(d, coord_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(d, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     }
   }
   return out;

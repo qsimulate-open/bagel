@@ -33,16 +33,17 @@ namespace bagel {
 
 class SpinorInfo {
   protected:
+    // 4*1 matrix
     std::array<std::shared_ptr<const ZMatrix>, 2> spinor_;
+    // X and Y (L+, L-, S+, S-) 
     std::pair<int, int> basis_;
+    // factor
     std::complex<double> fac_;
     int alpha_comp_;
 
-    void compute_spinor(std::pair<int, int>& coord, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a) {
-      const int start1 = coord.first == Comp::L ? 0 : 2;
-      const int start2 = coord.second == Comp::L ? 0 : 2;
-      const int index1 = start1 + basis_.first;
-      const int index2 = start2 + basis_.second;
+    void compute_spinor(std::pair<int, int>& cartesian, std::shared_ptr<const Alpha> a) {
+      const int index1 = basis_.first;
+      const int index2 = basis_.second;
       auto tmp0 = std::make_shared<ZMatrix>(4,1,true);
       auto tmp1 = std::make_shared<ZMatrix>(4,1,true);
       tmp0->element(index1,0) = 1.0;
@@ -50,14 +51,17 @@ class SpinorInfo {
       spinor_[0] = tmp0;
       spinor_[1] = tmp1;
 
+      auto s1 = std::make_shared<const Sigma>(cartesian.first);
+      auto s2 = std::make_shared<const Sigma>(cartesian.second);
+
       ZMatrix z1(*s1->data()**spinor_[0]);
       ZMatrix z2(*s2->data()**spinor_[1]);
       fac_ = (z1 % *a->data() * z2).element(0,0);
     }
   public:
-    SpinorInfo(std::pair<int, int> b, std::pair<int, int> c, std::shared_ptr<const Sigma> s1, std::shared_ptr<const Sigma> s2, std::shared_ptr<const Alpha> a)
-      : basis_(b), alpha_comp_(a->comp()) {
-      compute_spinor(c, s1, s2, a);
+    SpinorInfo(std::pair<int, int> moblock, std::shared_ptr<const Alpha> alpha, std::pair<int, int> cartesian)
+      : basis_(moblock), alpha_comp_(alpha->comp()) {
+      compute_spinor(cartesian, alpha);
     }
 
     SpinorInfo(const SpinorInfo& ab, const int alpha = -1)
@@ -97,7 +101,9 @@ class SpinorInfo {
 
 class RelDFBase {
   protected:
-    std::pair<int, int> coord_;
+    // l,x,y,z
+    std::pair<int, int> cartesian_;
+    // X,Y, and coefficients
     std::vector<std::shared_ptr<const SpinorInfo>> basis_;
 
     virtual void set_basis() = 0;
@@ -105,13 +111,13 @@ class RelDFBase {
     void common_init() { set_basis(); }
 
   public:
-    RelDFBase(std::pair<int, int> coord) : coord_(coord) {
+    RelDFBase(std::pair<int, int> cartesian) : cartesian_(cartesian) {
     }
 
-    RelDFBase(const RelDFBase& o) : coord_(o.coord_) {
+    RelDFBase(const RelDFBase& o) : cartesian_(o.cartesian_) {
     }
 
-    std::pair<int, int> coord() const { return coord_; }
+    std::pair<int, int> cartesian() const { return cartesian_; }
     const std::vector<std::shared_ptr<const SpinorInfo>>& basis() const { return basis_; }
 
 };

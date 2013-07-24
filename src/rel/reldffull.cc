@@ -50,7 +50,7 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
 }
 
 
-RelDFFull::RelDFFull(const RelDFFull& o) : RelDFBase(o.coord_) {
+RelDFFull::RelDFFull(const RelDFFull& o) : RelDFBase(o.cartesian_) {
   common_init();
   basis_ = o.basis_;
   dffull_[0] = o.dffull_[0]->copy();

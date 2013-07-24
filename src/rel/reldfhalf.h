@@ -54,7 +54,7 @@ class RelDFHalf : public RelDFBase {
     RelDFHalf(std::shared_ptr<const RelDF>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
-    RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<const SpinorInfo>> bas);
+    RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);
     RelDFHalf(const RelDFHalf& o);
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
