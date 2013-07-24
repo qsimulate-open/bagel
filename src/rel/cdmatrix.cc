@@ -29,6 +29,10 @@
 using namespace std;
 using namespace bagel;
 
+
+// TODO Imaginary part of the CDMatrix is scaled implicitly by -1 due to the definition of RelDFHalf. I know it is very confusing...
+// Also, C and D matrices are either real (for Coulomb) or purely imaginary (for Gaunt and Breit) due to symmetry. We are not taking advantage of it.
+
 CDMatrix::CDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
                    array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
  : ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),

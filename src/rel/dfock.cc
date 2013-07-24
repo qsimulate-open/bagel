@@ -85,7 +85,9 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
     shared_ptr<const RelDF> swap = dfdata->swap();
     int j = 0;
     for (auto& i : swap->basis()) {
-      add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]->transpose());
+      add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]->transpose_conjg());
+      // conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero. 
+      // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky! 
     }
   }
 }
@@ -195,6 +197,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
+  // Note that we are NOT using dagger-ed coefficients! -1 factor for imagnary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
 
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
