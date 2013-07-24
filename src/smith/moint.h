@@ -206,6 +206,41 @@ class MOFock {
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 };
 
+
+template <typename T>
+class Ci {
+  protected:
+    std::shared_ptr<const Reference> ref_;
+    std::vector<IndexRange> blocks_;
+    std::shared_ptr<const Civec> civec_;
+    std::size_t ci_size_;
+    std::shared_ptr<Tensor<T>>  coeff_;
+
+
+  public:
+    Ci(std::shared_ptr<const Reference> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), civec_(c), ci_size_(c->size()) {
+      assert(b.size() == 1); 
+    
+      // form ci coefficient tensor
+      coeff_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+
+      for (auto& i0 : blocks_[0]) {
+        const size_t size = i0.size();
+        std::unique_ptr<double[]> cc(new double[size]);
+        int iall = 0;
+        for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+          cc[iall] = civec_->data(j0);
+        }
+        coeff_->put_block(cc, i0);
+      }
+
+    }
+    ~Ci() {}
+
+    std::shared_ptr<Tensor<T>> tensor() { return std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false)); }
+    std::shared_ptr<Tensor<T>> coeff() const { return coeff_; }
+};
+
 }
 }
 
