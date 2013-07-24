@@ -64,6 +64,8 @@ class DFock : public ZMatrix {
     }
 
     // Utility functions. They are static so that it could be used from gradient codes
+
+    // T needs to have "zaxpy" and "matches" functions.
     template<class T> static void factorize(T& m) {
       for (auto i = m.begin(); i != m.end(); ++i)
         for (auto j = i; j != m.end(); ) {

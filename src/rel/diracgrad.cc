@@ -27,6 +27,7 @@
 #include <src/util/timer.h>
 #include <src/rel/alpha.h>
 #include <src/rel/dfock.h>
+#include <src/rel/reldffull.h>
 #include <src/rel/cdmatrix.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
@@ -147,7 +148,6 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // (4) compute C matrix
     shared_ptr<CDMatrix> cd;
-    assert(half_complex_exch.front()->basis().size() == 1); 
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
@@ -157,6 +157,13 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
         }
       }
     }
+
+    // (5) compute (gamma|ij)
+    list<shared_ptr<RelDFFull>> dffull;
+    for (auto& i : half_complex_exch)
+      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
+    DFock::factorize(dffull);
+    assert(dffull.size() == 1);
   }
 
 
