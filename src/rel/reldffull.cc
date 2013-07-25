@@ -74,3 +74,23 @@ void RelDFFull::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o
     dffull_[1]->daxpy( ifac, o->dffull_[0]);
   }
 }
+
+
+list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) const {
+  list<shared_ptr<RelDFHalfB>> out;
+  assert(basis_.size() == 1);
+  const int alpha = basis_[0]->alpha_comp();
+
+  for (int i = 0; i != 4; ++i) {
+    // Note that icoeff should be scaled by -1.0
+
+    shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(rcoeff[i]);
+    real->daxpy( 1.0, dffull_[1]->back_transform(icoeff[i]));
+
+    shared_ptr<DFHalfDist> imag = dffull_[0]->back_transform(icoeff[i]);
+    imag->daxpy(-1.0, dffull_[0]->back_transform(icoeff[i]));
+    
+    out.push_back(make_shared<RelDFHalfB>(array<shared_ptr<DFHalfDist>,2>{{real, imag}}, i, alpha));
+  }
+  return out;
+}

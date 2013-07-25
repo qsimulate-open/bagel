@@ -61,6 +61,9 @@ class RelDFFull : public RelDFBase {
       *out += *dffull_[1]->form_aux_2index(dffull_[1], f.real()); // positive, due to complex conjugate
       return out;
     }
+
+    std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
+                                                          std::array<std::shared_ptr<const Matrix>,4>) const;
 };
 
 }

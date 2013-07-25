@@ -80,6 +80,17 @@ class RelDFHalf : public RelDFBase {
 
 };
 
+
+// Half-transformed DF objects when backtransforming to AO
+class RelDFHalfB {
+  protected:
+    std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
+    const int basis_;
+    const int alpha_;
+  public:
+    RelDFHalfB(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { } 
+};
+
 }
 
 #endif

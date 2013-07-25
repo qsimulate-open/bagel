@@ -171,6 +171,12 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     shared_ptr<Matrix> cdi = cd->get_imag_part(); 
     auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) - (*cdi ^ *cdi) - *dffull.front()->form_aux_2index_real());
     gamma2->print();
+
+    // (7) first back transformation (gamma|is^Y)
+    list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff); 
+
+    // (8) second back transformation (gamma|r^Xs^Y) and immediately rearrange to (gamma|r^w s^Y)
+//TODO
   }
 
 
