@@ -36,8 +36,9 @@
 using namespace std;
 using namespace bagel;
 
-GradBatch::GradBatch(const array<shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy, const bool dum)
- : ERIBatch_base(shells, max_density, 1) {
+GradBatch::GradBatch(const array<shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy, const bool dum,
+                     shared_ptr<StackMem> stack)
+ : ERIBatch_base(shells, max_density, 1, 0, stack) {
 
   centers_ = 4;
   for (auto& i : shells) if (i->dummy()) --centers_;

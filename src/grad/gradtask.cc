@@ -123,7 +123,7 @@ void GradTask::compute() {
       if (jatom[iatom] < 0) continue;
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
-        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        const double* ppt = gradbatch.data(icart+iatom*3);
         sum[icart] += ddot_(sblock, ppt, 1, db1.get(), 1);
         sum[icart] += ddot_(sblock, ppt, 1, db3.get(), 1);
       }
@@ -150,7 +150,7 @@ void GradTask::compute() {
       if (jatom[iatom] < 0) continue;
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
-        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        const double* ppt = gradbatch.data(icart+iatom*3);
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
             sum[icart] += *ppt * den2_->element(j1,j0);

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gsmallnaibatch.h
+// Filename: gsmalleribatch.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,45 +24,46 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_RYS_GSMALLNAIBATCH_H
-#define __SRC_INTEGRAL_RYS_GSMALLNAIBATCH_H
+#ifndef __SRC_INTEGRAL_RYS_GSMALLERIBATCH_H
+#define __SRC_INTEGRAL_RYS_GSMALLERIBATCH_H
 
+#include <src/molecule/shell.h>
 #include <src/grad/gradfile.h>
-#include <src/integral/rys/smallnaibatch.h>
+#include <src/parallel/resources.h>
 
 namespace bagel {
 
-// TODO make a base class SmallNAIBatch_base and remove redundancy 
-class GSmallNAIBatch {
+class GSmallERIBatch {
   protected:
-    std::vector<std::shared_ptr<Matrix>> data_;
+    double* data_;
 
-    const std::shared_ptr<const Molecule> mol_;
-    const std::array<std::shared_ptr<const Shell>,2> shells_;
+    // size info
+    size_t size_block_;
+    size_t size_alloc_;
 
-    const size_t size_block_;
+    const std::array<std::shared_ptr<const Shell>,3> shells_;
 
-    // specific to gradients
-    std::tuple<int,int> iatom_;
+    std::shared_ptr<StackMem> stack_;
 
-    size_t a0size_inc_;
-    size_t a0size_dec_;
+    size_t s0size_;
     size_t a1size_inc_;
     size_t a1size_dec_;
-    size_t a0_;
+    size_t a2size_inc_;
+    size_t a2size_dec_;
     size_t a1_;
+    size_t a2_;
+
+    double* data(const int i) { return data_+i*size_block_; }
 
   public:
-    GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i);
+    GSmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info);
+    ~GSmallERIBatch();
 
-    // computes derivative NAI over Cartesian (i.e., RI) basis functions.
-    void compute(); // override;
-
-    // multiplies S^-1P to density and contracts with cartesian integrals.
-    std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const Matrix>,6> d) const;
+    void compute();
+    std::shared_ptr<GradFile> compute_gradient() const;
 
     size_t size_block() const { return size_block_; }
-
+    constexpr static int nblocks() { return 9; }
 };
 
 }

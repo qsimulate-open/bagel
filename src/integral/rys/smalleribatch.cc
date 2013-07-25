@@ -85,17 +85,6 @@ void SmallERIBatch::compute() {
 }
 
 
-namespace bagel {
-  struct Address {
-    const size_t ld0;
-    const size_t ld1;
-    const size_t ld2;
-    Address(const size_t l0, const size_t l1, const size_t l2) : ld0(l0), ld1(l1), ld2(l2) {}
-    size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
-  };
-}
-
-
 void SmallERIBatch::eri_compute(double* eri) const {
 
   // shells_[0] is aux function, shelles_[1] and [2] are basis
@@ -109,7 +98,11 @@ void SmallERIBatch::eri_compute(double* eri) const {
   const int a2 = a2size_inc + a2size_dec;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
-  Address m(s0size, a1, a2);
+  struct Address {
+    const size_t ld0, ld1, ld2;
+    Address(const size_t l0, const size_t l1, const size_t l2) : ld0(l0), ld1(l1), ld2(l2) {}
+    size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
+  } m(s0size, a1, a2);
 
 #ifndef LIBINT_INTERFACE
   {
