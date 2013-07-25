@@ -122,6 +122,8 @@ class DFDist : public ParallelDF {
     size_t nbasis1() const { return nindex1_; };
     size_t naux() const { return naux_; };
 
+    void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
     void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
@@ -129,6 +131,9 @@ class DFDist : public ParallelDF {
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
+
+    std::shared_ptr<DFDist> copy() const;
+    std::shared_ptr<DFDist> clone() const;
 
     // split up smalleri integrals into 6 dfdist objects
     std::vector<std::shared_ptr<const DFDist>> split_blocks() const {

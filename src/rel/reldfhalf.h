@@ -89,6 +89,9 @@ class RelDFHalfB {
     const int alpha_;
   public:
     RelDFHalfB(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { } 
+
+    int basis() const { return basis_; }
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool imag = false) const;
 };
 
 }

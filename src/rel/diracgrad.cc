@@ -76,9 +76,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   // small NAI part..
   map<int, shared_ptr<Sigma>> sigma;
-  sigma.insert(make_pair(0, make_shared<Sigma>(Comp::X)));
-  sigma.insert(make_pair(1, make_shared<Sigma>(Comp::Y)));
-  sigma.insert(make_pair(2, make_shared<Sigma>(Comp::Z)));
+  sigma.insert(make_pair(Comp::X, make_shared<Sigma>(Comp::X)));
+  sigma.insert(make_pair(Comp::Y, make_shared<Sigma>(Comp::Y)));
+  sigma.insert(make_pair(Comp::Z, make_shared<Sigma>(Comp::Z)));
   auto sp = make_shared<ZMatrix>(4,1,true); sp->element(2,0) = 1;
   auto sm = make_shared<ZMatrix>(4,1,true); sm->element(3,0) = 1;
   map<int, shared_ptr<ZMatrix>> XY{ make_pair(2, sp), make_pair(3, sm) };
@@ -96,8 +96,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       shared_ptr<ZMatrix> data = den->get_submatrix(s0.first*nbasis, s1.first*nbasis, nbasis, nbasis);
       for (auto& w0 : sigma) {
         for (auto& w1 : sigma) {
-          auto tmp = make_shared<ZMatrix>((*w0.second * *s0.second) % (*w1.second * *s1.second));
-          const complex<double> c = tmp->element(0,0);
+          const complex<double> c = ((*w0.second * *s0.second) % (*w1.second * *s1.second)).element(0,0);
           const int small = min(w0.first, w1.first);
           const int large = max(w0.first, w1.first);
           mat[make_pair(small, large)]->zaxpy(c, data);
@@ -168,15 +167,72 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part(); 
-    shared_ptr<Matrix> cdi = cd->get_imag_part(); 
-    auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) - (*cdi ^ *cdi) - *dffull.front()->form_aux_2index_real());
+    assert(cd->get_imag_part()->norm() < 1.0e-10);
+    auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
     gamma2->print();
 
     // (7) first back transformation (gamma|is^Y)
     list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff); 
 
     // (8) second back transformation (gamma|r^Xs^Y) and immediately rearrange to (gamma|r^w s^Y)
-//TODO
+    map<pair<int,int>,shared_ptr<DFDist>> gamma3; 
+    for (auto& half : dfhalfb) {
+      const int cbasis = half->basis();
+      if (cbasis == Basis::LP || cbasis == Basis::LM) {
+        // large component
+        pair<int,int> key = make_pair(Comp::L, Comp::L);
+        auto iter = gamma3.find(key);
+        if (iter == gamma3.end()) {
+          gamma3.insert(make_pair(key, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])));
+        } else {
+          iter->second->daxpy(1.0, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])); // TODO redundant copy, but probably fine
+        }
+      } else {
+        array<int,2> SS {{ Basis::SP, Basis::SM }};
+        for (auto& cbasis1 : SS) {
+          shared_ptr<DFDist> rdf = half->back_transform(rocoeff[cbasis1], iocoeff[cbasis1]);
+          shared_ptr<DFDist> idf = half->back_transform(rocoeff[cbasis1], iocoeff[cbasis1], true);
+          assert(XY.find(cbasis) != XY.end() && XY.find(cbasis1) != XY.end());
+          auto s0 = XY[cbasis];
+          auto s1 = XY[cbasis1];
+          for (auto& w0 : sigma) {
+            for (auto& w1 : sigma) {
+              if (w0.first <= w1.first) {
+                // calculate k^ww'_XY
+                const complex<double> kwwxx = ((*w0.second * *s0) % (*w1.second * *s1)).element(0,0);
+                const bool imag = fabs(kwwxx.imag()) > 1.0e-20;
+                assert(!imag || fabs(kwwxx.real()) < 1.0e-20);
+                const double fac = -1.0 * (imag ? -kwwxx.imag() : kwwxx.real()); // -1 comes from the prefactor of exchange
+
+                // TODO we can use symmetry
+                const int small = min(w0.first, w1.first);
+                const int large = max(w0.first, w1.first);
+
+                pair<int,int> key = make_pair(small, large);
+                auto iter = gamma3.find(key);
+                if (iter == gamma3.end()) {
+                  gamma3.insert(make_pair(key, imag ? idf->copy() : rdf->copy()));
+                  gamma3[key]->scale(fac);
+                } else {
+                  iter->second->daxpy(fac, imag ? idf : rdf);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // (9) direct product contributions
+    map<pair<int,int>,shared_ptr<const Matrix>> wden;
+    for (auto& r : mat)
+      wden.insert(make_pair(r.first, r.second->get_real_part()));
+    wden.insert(make_pair(make_pair(Comp::L,Comp::L), nden->get_real_part())); // large-large case 
+    for (auto& w : wden) {
+      auto iter = gamma3.find(w.first);
+      assert(iter != gamma3.end());
+      iter->second->add_direct_product(cdr, w.second, 1.0);
+    }
   }
 
 

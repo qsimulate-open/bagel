@@ -33,7 +33,7 @@ namespace bagel {
 
 // to make readable
 enum Comp { X = 0, Y = 1, Z = 2, L = 3 };
-enum Block { LP = 0, LM = 1, SP = 2, SM = 3}; 
+enum Basis { LP = 0, LM = 1, SP = 2, SM = 3}; 
 
 class Sigma2 : public ZMatrix {
   protected:

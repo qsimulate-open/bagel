@@ -46,10 +46,10 @@ class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
     bool swap_;
 
     void set_basis() {
-      auto ab0 = cartesian_.first  == Comp::L ? std::array<int,2>{{ Block::LP, Block::LM }}
-                                              : std::array<int,2>{{ Block::SP, Block::SM }};
-      auto ab1 = cartesian_.second == Comp::L ? std::array<int,2>{{ Block::LP, Block::LM }}
-                                              : std::array<int,2>{{ Block::SP, Block::SM }};
+      auto ab0 = cartesian_.first  == Comp::L ? std::array<int,2>{{ Basis::LP, Basis::LM }}
+                                              : std::array<int,2>{{ Basis::SP, Basis::SM }};
+      auto ab1 = cartesian_.second == Comp::L ? std::array<int,2>{{ Basis::LP, Basis::LM }}
+                                              : std::array<int,2>{{ Basis::SP, Basis::SM }};
       for (auto& i : ab0)
         for (auto& j : ab1)
           for (auto& a : alpha_) {

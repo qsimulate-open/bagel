@@ -112,6 +112,23 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+shared_ptr<DFDist> DFDist::copy() const {
+  auto out = make_shared<DFDist>(df_);
+  for (auto& i : block_)
+    out->add_block(i->copy());
+  return out;
+}
+
+
+shared_ptr<DFDist> DFDist::clone() const {
+  auto out = make_shared<DFDist>(df_);
+  for (auto& i : block_)
+    out->add_block(i->clone());
+  return out;
+}
+
+
 void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");

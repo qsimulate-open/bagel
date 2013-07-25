@@ -82,7 +82,7 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
   const int alpha = basis_[0]->alpha_comp();
 
   for (int i = 0; i != 4; ++i) {
-    // Note that icoeff should be scaled by -1.0
+    // Note that icoeff should be scaled by -1.0 !!
 
     shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(rcoeff[i]);
     real->daxpy( 1.0, dffull_[1]->back_transform(icoeff[i]));

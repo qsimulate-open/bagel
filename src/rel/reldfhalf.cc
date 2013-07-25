@@ -138,3 +138,15 @@ list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
   return out;
 }
 
+
+shared_ptr<DFDist> RelDFHalfB::back_transform(shared_ptr<const Matrix> r, shared_ptr<const Matrix> i, const bool imag) const {
+  shared_ptr<DFDist> out;
+  if (!imag) {
+    out = dfhalf_[0]->back_transform(r);
+    out->daxpy(-1.0, dfhalf_[0]->back_transform(i)); 
+  } else {
+    out = dfhalf_[0]->back_transform(i);
+    out->daxpy(1.0, dfhalf_[0]->back_transform(r));
+  }
+  return out;
+}
