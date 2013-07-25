@@ -244,11 +244,19 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     }
 
     // *** adding task here ****
-    {
-      // large-large
+    { // large-large
       auto iter = gamma3.find(make_pair(Comp::L,Comp::L));
       assert(iter != gamma3.end());
       vector<GradTask> task3 = contract_grad2e(iter->second); 
+      task.insert(task.end(), task3.begin(), task3.end());
+    }
+    { // small-small
+      array<shared_ptr<const DFDist>,6> gs;
+      int icnt = 0;
+      for (auto& i : xyz)
+        for (auto& j : xyz)
+          if (i <= j) gs[icnt++] = gamma3[make_pair(i,j)];
+      vector<GradTask> task3 = contract_grad2e(gs);
       task.insert(task.end(), task3.begin(), task3.end());
     }
   }

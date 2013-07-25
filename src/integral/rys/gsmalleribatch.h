@@ -41,7 +41,12 @@ class GSmallERIBatch {
     size_t size_block_;
     size_t size_alloc_;
 
+    // input shells
     const std::array<std::shared_ptr<const Shell>,3> shells_;
+
+    // target atoms
+    const std::array<int,3> atoms_;
+    const int natoms_;
 
     std::shared_ptr<StackMem> stack_;
 
@@ -54,13 +59,14 @@ class GSmallERIBatch {
     size_t a2_;
 
     double* data(const int i) { return data_+i*size_block_; }
+    const double* data(const int i) const { return data_+i*size_block_; }
 
   public:
-    GSmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info);
+    GSmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, std::array<int,3>, const int);
     ~GSmallERIBatch();
 
     void compute();
-    std::shared_ptr<GradFile> compute_gradient() const;
+    std::shared_ptr<GradFile> compute_gradient(std::array<std::unique_ptr<double[]>,6>&) const;
 
     size_t size_block() const { return size_block_; }
     constexpr static int nblocks() { return 9; }

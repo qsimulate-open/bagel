@@ -31,6 +31,7 @@
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/gnaibatch.h>
 #include <src/integral/rys/gsmallnaibatch.h>
+#include <src/integral/rys/gsmalleribatch.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/integral/os/gkineticbatch.h>
 #include <src/smith/prim_op.h>
@@ -71,6 +72,22 @@ shared_ptr<GradFile> GradTask::compute_smallnai() const {
 }
 
 
+shared_ptr<GradFile> GradTask::compute_smalleri() const {
+  GSmallERIBatch batch(shell_, array<int,3>{{atomindex_[0], atomindex_[1], atomindex_[2]}}, ge_->geom_->natom());
+  batch.compute();
+
+  array<unique_ptr<double[]>,6> d = {{
+    rden3_[0]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[1]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[2]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[3]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[4]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[5]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()) }};
+
+  return batch.compute_gradient(d);
+}
+
+
 void GradTask::compute() {
 
   if (rank_ == 1) {
@@ -91,6 +108,21 @@ void GradTask::compute() {
 
     shared_ptr<GradFile> grad_local = compute_smallnai();
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+      lock_guard<mutex> lock(ge_->mutex_[iatom]);
+      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
+      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
+      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+    }
+
+  } else if (rank_ == -3) {
+
+    shared_ptr<GradFile> grad_local = compute_smalleri();
+    list<int> done;
+    for (int i = 0; i != 3; ++i) {
+      const int iatom = atomindex_[i];
+      if (find(done.begin(), done.end(), iatom) != done.end()) continue; // should not add twice
+      done.push_back(iatom);
+
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
       ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
       ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);

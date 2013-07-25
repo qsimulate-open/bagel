@@ -47,6 +47,7 @@ class GradTask {
 
     // relativistic gradients - TODO not a good interface. We should use polymorph 
     std::array<std::shared_ptr<const Matrix>,6> rden_;
+    std::array<std::shared_ptr<const DFDist>,6> rden3_;
 
     GradEval_base* ge_;
     int rank_;
@@ -55,6 +56,7 @@ class GradTask {
     std::shared_ptr<GradFile> compute_smallnai() const;
     template<typename TBatch>
     std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<GradFile> compute_smalleri() const;
 
 
   public:
@@ -74,6 +76,10 @@ class GradTask {
     GradTask(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
              const std::array<std::shared_ptr<const Matrix>,6> rmat, GradEval_base* p)
       : shell2_(s), rden_(rmat), ge_(p), rank_(-1) { common_init(a,o); }
+
+    GradTask(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
+             const std::array<std::shared_ptr<const DFDist>,6> rmat, GradEval_base* p)
+      : shell_(s), rden3_(rmat), ge_(p), rank_(-3) { common_init(a,o); }
 
 
     void common_init(const std::vector<int>& a, const std::vector<int>& o) {
@@ -105,6 +111,7 @@ class GradEval_base {
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o);
+    std::vector<GradTask> contract_grad2e(const std::array<std::shared_ptr<const DFDist>,6> o);
 
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
     std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o);
