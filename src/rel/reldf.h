@@ -41,11 +41,11 @@ class CDMatrix;
 
 class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
   protected:
-    std::vector<std::shared_ptr<const Alpha>> alpha_;
+    std::vector<int> alpha_;
     std::shared_ptr<const DFDist> dfdata_;
     bool swap_;
 
-    void set_basis() override {
+    void set_basis() {
       auto ab0 = cartesian_.first  == Comp::L ? std::array<int,2>{{ Block::LP, Block::LM }}
                                               : std::array<int,2>{{ Block::SP, Block::SM }};
       auto ab1 = cartesian_.second == Comp::L ? std::array<int,2>{{ Block::LP, Block::LM }}
@@ -53,8 +53,8 @@ class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
       for (auto& i : ab0)
         for (auto& j : ab1)
           for (auto& a : alpha_) {
-            auto tmp = std::make_shared<const SpinorInfo>(std::make_pair(i,j), a, cartesian_);
-            if (tmp->nonzero()) basis_.push_back(tmp);
+            auto tmp = std::make_shared<const SpinorInfo>(std::make_pair(i,j), a);
+            if (tmp->nonzero(cartesian_)) basis_.push_back(tmp);
           }
     }
 

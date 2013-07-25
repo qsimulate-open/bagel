@@ -36,7 +36,7 @@ CDMatrix::CDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo
                    array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
  : ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)-*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),
            *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
-   comp_(abc->comp()) {
+   alpha_comp_(abc->alpha_comp()) {
 
-  *this *= abc->fac();
+  *this *= abc->fac(dfhc->cartesian());
 }

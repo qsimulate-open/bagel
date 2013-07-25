@@ -47,7 +47,7 @@ class Breit2Index {
     Breit2Index(std::pair<const int, const int>, std::shared_ptr<const Matrix> breit, std::shared_ptr<const Matrix> data2);
     Breit2Index(std::pair<const int, const int> index, std::shared_ptr<const Matrix> data) : index_(index), data_(data) { }
 
-    std::shared_ptr<const Matrix> k_term() const { return data_; }
+    std::shared_ptr<const Matrix> data() const { return data_; }
     const std::pair<const int, const int>& index() const { return index_; }
 
     /// returning the same quantity with swapped indices

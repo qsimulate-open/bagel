@@ -32,7 +32,6 @@ using namespace bagel;
 RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
 : RelDFBase(*df) {
 
-  common_init();
   basis_ = bas;
 
   const int index = basis_.front()->basis(0);
@@ -59,13 +58,11 @@ RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const Sp
 
 
 RelDFHalf::RelDFHalf(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> cartesian, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(cartesian), dfhalf_(data) {
-  common_init();
   basis_ = bas;
 }
 
 
 RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.cartesian_) {
-  common_init();
   basis_ = o.basis_;
   dfhalf_[0] = o.dfhalf_[0]->copy();
   dfhalf_[1] = o.dfhalf_[1]->copy();
@@ -101,28 +98,28 @@ void RelDFHalf::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o
 
 
 bool RelDFHalf::matches(shared_ptr<const RelDFHalf> o) const {
-  return cartesian_.second == o->cartesian().second && basis_[0]->basis_second() == o->basis_[0]->basis_second() && alpha_matches(o);
+  return cartesian_.second == o->cartesian().second && basis_[0]->basis(1) == o->basis_[0]->basis(1) && alpha_matches(o);
 }
 
 
 bool RelDFHalf::alpha_matches(shared_ptr<const Breit2Index> o) const {
   assert(basis_.size() == 1);
-  return basis_[0]->comp() == o->index().second;
+  return basis_[0]->alpha_comp() == o->index().second;
 }
 
 
 bool RelDFHalf::alpha_matches(shared_ptr<const RelDFHalf> o) const {
   assert(basis_.size() == 1);
-  return basis_[0]->comp() == o->basis()[0]->comp();
+  return basis_[0]->alpha_comp() == o->basis()[0]->alpha_comp();
 }
 
 
 // assumes you are multiplying breit2index by 2nd integral, not first (see alpha_matches)
 shared_ptr<RelDFHalf> RelDFHalf::multiply_breit2index(shared_ptr<const Breit2Index> bt) const {
   assert(basis_.size() == 1);
-  array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->k_term()), dfhalf_[1]->apply_J(bt->k_term())}};
+  array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->data()), dfhalf_[1]->apply_J(bt->data())}};
 
-  vector<shared_ptr<const SpinorInfo>> spinor = { make_shared<const SpinorInfo>(*basis_[0], bt->index().first) };
+  vector<shared_ptr<const SpinorInfo>> spinor = { make_shared<const SpinorInfo>(basis_[0]->basis(), bt->index().first, bt->index().second) };
   return make_shared<RelDFHalf>(d, cartesian_, spinor);
 }
 

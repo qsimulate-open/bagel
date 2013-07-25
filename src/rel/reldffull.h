@@ -37,8 +37,6 @@ class RelDFFull : public RelDFBase {
   protected:
     std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
-    void set_basis() override { /* does not need to do anything */ }
-
   public:
     RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
     RelDFFull(const RelDFFull& o);
@@ -54,7 +52,7 @@ class RelDFFull : public RelDFBase {
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
 
-    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
+    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 
     std::shared_ptr<Matrix> form_aux_2index_real() const {
       const std::complex<double> f = fac() * std::conj(fac());

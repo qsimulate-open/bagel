@@ -77,7 +77,7 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
   //add it twice, once to first basis combo, then once to opposite basis combo
   int j = 0;
   for (auto& i : dfdata->basis()) {
-    add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]);
+    add_block(i->fac(dfdata->cartesian())*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]);
   }
 
   //if basis1 != basis2, get transpose to fill in opposite corner
@@ -85,7 +85,7 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
     shared_ptr<const RelDF> swap = dfdata->swap();
     int j = 0;
     for (auto& i : swap->basis()) {
-      add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]->transpose_conjg());
+      add_block(i->fac(swap->cartesian())*scale, n*i->basis(0), n*i->basis(1), n, n, dat[j++]->transpose_conjg());
       // conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero. 
       // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky! 
     }
@@ -118,7 +118,7 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   auto a = make_shared<ZMatrix>(*r, *i);
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
-      auto out = make_shared<ZMatrix>(*a * (conj(i1->fac())*i2->fac()));
+      auto out = make_shared<ZMatrix>(*a * (conj(i1->fac(dfc1->cartesian()))*i2->fac(dfc2->cartesian())));
 
       const int index0 = i1->basis(1);
       const int index1 = i2->basis(1);
@@ -217,13 +217,13 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
 
-    auto breit_matrix = make_shared<BreitInt>(geom_);
+    auto breitint = make_shared<BreitInt>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
-    for (int i = 0; i != breit_matrix->nblocks(); ++i) {
-      breit_2index.push_back(make_shared<Breit2Index>(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2()));
+    for (int i = 0; i != breitint->nblocks(); ++i) {
+      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-      if (breit_matrix->not_diagonal(i))
+      if (breitint->not_diagonal(i))
         breit_2index.push_back(breit_2index.back()->cross());
     }
 
@@ -241,6 +241,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     half_complex_exch2 = half_complex_exch;
   }
 
+  // this is a necessary condition if we use symmetry below (Exop) 
   assert(half_complex_exch.size() == half_complex_exch2.size());
 
   // will use the zgemm3m-like algorithm

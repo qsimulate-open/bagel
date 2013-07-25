@@ -48,8 +48,6 @@ class RelDFHalf : public RelDFBase {
     std::array<std::shared_ptr<DFHalfDist>,2> df2_;
     bool split_;
 
-    void set_basis() override { /* does not need to do anything */ }
-
   public:
     RelDFHalf(std::shared_ptr<const RelDF>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
@@ -76,7 +74,7 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 
-    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
+    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
     std::list<std::shared_ptr<RelDFHalf>> split(const bool docopy = false);
     bool split_status() const { return split_; }
 

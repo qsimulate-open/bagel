@@ -31,7 +31,6 @@ using namespace bagel;
 
 RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
 
-  common_init();
   basis_ = df->basis();
   if (basis_.size() != 1)
     throw logic_error("RelDFFull should be called with basis_.size() == 1");
@@ -51,7 +50,6 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
 
 
 RelDFFull::RelDFFull(const RelDFFull& o) : RelDFBase(o.cartesian_) {
-  common_init();
   basis_ = o.basis_;
   dffull_[0] = o.dffull_[0]->copy();
   dffull_[1] = o.dffull_[1]->copy();
