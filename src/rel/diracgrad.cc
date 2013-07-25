@@ -111,7 +111,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   // *** adding task here ****
   {
     vector<GradTask> tmp = contract_gradsmall1e(rmat);
-//  task.insert(task.end(), tmp.begin(), tmp.end());
+    task.insert(task.end(), tmp.begin(), tmp.end());
   }
 
   // two-electron contributions.
@@ -166,12 +166,12 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& i : half_complex_exch)
       dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
     DFock::factorize(dffull);
-    dffull.front()->scale(dffull.front()->fac());
+    dffull.front()->scale(dffull.front()->fac()); // take care of the factor
     assert(dffull.size() == 1);
 
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part(); 
-    assert(cd->get_imag_part()->norm() < 1.0e-10);
+    assert(cd->get_imag_part()->norm() < 1.0e-10); // by symmetry the imaginary part is zero
     auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
 
     // *** adding task here ****
@@ -208,7 +208,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
             for (auto& w1 : sigma) {
               if (w0.first <= w1.first) {
                 // calculate k^ww'_XY
-                const complex<double> kwwxx = ((*w0.second * *s0) % (*w1.second * *s1)).element(0,0);
+                const complex<double> kwwxx = conj(((*w0.second * *s0) % (*w1.second * *s1)).element(0,0));
                 const bool imag = fabs(kwwxx.imag()) > 1.0e-20;
                 assert(!imag || fabs(kwwxx.real()) < 1.0e-20);
                 const double fac = -1.0 * (imag ? -kwwxx.imag() : kwwxx.real()); // -1 comes from the prefactor of exchange
@@ -240,7 +240,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& w : wden) {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());
-      iter->second->add_direct_product(cdr, w.second, 1.0);
+      iter->second->add_direct_product(cdr, w.second, 1.0); // TODO prefactor is wrong as there is no kww'_xy multiplied.
     }
 
     // *** adding task here ****
