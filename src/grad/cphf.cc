@@ -72,12 +72,8 @@ shared_ptr<Matrix> CPHF::solve() const {
         (*sigma)(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
 
     // J part
-    auto pbmao = make_shared<Matrix>(nbasis, nbasis);
-    {
-      Matrix pms(nocca, nbasis);
-      dgemm_("T", "T", nocca, nbasis, nvirt, 1.0, t->element_ptr(nocca, 0), nbasis, vcoeff->data(), nbasis, 0.0, pms.data(), nocca);
-      *pbmao = *ocoeff * pms;
-    }
+    shared_ptr<const Matrix> tvo = t->get_submatrix(nocca, 0, nvirt, nocca);
+    auto pbmao = make_shared<Matrix>(*ocoeff ^ (*vcoeff * *tvo));
     pbmao->symmetrize();
     jri = *geom_->df()->compute_Jop(pbmao) * *ocoeff;
     jai = (*vcoeff % jri) * 4.0;

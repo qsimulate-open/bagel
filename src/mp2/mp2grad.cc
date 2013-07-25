@@ -93,8 +93,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   for (size_t i = 0; i != nvirt; ++i) {
     // nocc * nvirt * nocc
     unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
-    copy(data.get(), data.get()+nocc*nvirt*nocc, buf.get());
-    copy(data.get(), data.get()+nocc*nvirt*nocc, buf2.get());
+    copy_n(data.get(), nocc*nvirt*nocc, buf.get());
+    copy_n(data.get(), nocc*nvirt*nocc, buf2.get());
 
     // using SMITH's symmetrizer (src/smith/prim_op.h)
     SMITH::sort_indices<2,1,0,2,1,-1,1>(data, buf, nocc, nvirt, nocc);
@@ -219,8 +219,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   sep3->add_direct_product(cd, dd, 1.0);
 
   // two-index derivatives (seperable part)..
-  auto sep2 = make_shared<Matrix>(naux, naux);
-  dger_(naux, naux, 2.0, cd0->data(), 1, cdbar->data(), 1, sep2->data(), naux);
+  auto sep2 = make_shared<Matrix>((*cd0 ^ *cdbar) * 2.0);
   *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
   *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
 
