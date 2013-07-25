@@ -110,7 +110,7 @@ class DFBlock {
     void scale(const double a);
 
     // add ab^+  to this.
-    void add_direct_product(const double* a, const double* b, const double fac);
+    void add_direct_product(const std::shared_ptr<const Matrix> a, const std::shared_ptr<const Matrix> b, const double fac);
 
     // some additional functions
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)

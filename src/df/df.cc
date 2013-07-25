@@ -112,12 +112,16 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DFDist::add_direct_product(const vector<const double*> cd, const vector<const double*> dd, const double a) {
+void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
 
-  for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
-    block_[0]->add_direct_product(*c+block_[0]->astart(), *d, a);
+  auto d = dd.begin();
+  for (auto& c : cd) {
+    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1); 
+    block_[0]->add_direct_product(aslice, *d++, a);
+  }
+  assert(d == dd.end());
 }
 
 

@@ -205,8 +205,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
 
   // three-index derivatives (seperable part)...
-  vector<const double*> cd = {cd0->data(), cdbar->data()};
-  vector<const double*> dd = {dbarao->data(), d0ao->data()};
+  vector<shared_ptr<const Matrix>> cd {cd0, cdbar};
+  vector<shared_ptr<const Matrix>> dd {dbarao, d0ao};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
   shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat);

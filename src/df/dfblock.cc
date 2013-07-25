@@ -184,8 +184,9 @@ void DFBlock::scale(const double a) {
 }
 
 
-void DFBlock::add_direct_product(const double* a, const double* b, const double fac) {
-  dger_(asize_, b1size_*b2size_, fac, a, 1, b, 1, data_.get(), asize_);
+void DFBlock::add_direct_product(const shared_ptr<const Matrix> a, const shared_ptr<const Matrix> b, const double fac) {
+  assert(asize_ == a->ndim() && b1size_*b2size_ == b->size());
+  dger_(asize_, b1size_*b2size_, fac, a->data(), 1, b->data(), 1, data_.get(), asize_);
 }
 
 
