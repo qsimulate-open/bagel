@@ -56,10 +56,7 @@ class GSmallNAIBatch {
     size_t a1_;
 
   public:
-    GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
-                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
-
-    ~GSmallNAIBatch();
+    GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i);
 
     // computes derivative NAI over Cartesian (i.e., RI) basis functions.
     void compute(); // override;

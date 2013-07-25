@@ -33,11 +33,8 @@
 using namespace std;
 using namespace bagel;
 
-GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i, std::shared_ptr<StackMem> stack)
+GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i)
     : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()), iatom_(i) {
-  // if stackmem is not given, we get one from resources__ 
-  stack_ = stack ? stack : resources__->get();
-  allocated_here_ = stack != stack_;
 
   assert(shells_[0]->relativistic() && shells_[1]->relativistic());
   a0size_inc_ = shells_[0]->aux_inc()->nbasis();
@@ -49,12 +46,6 @@ GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, 
 
   for (int i = 0; i != mol_->natom()*3; ++i)
      data_.push_back(make_shared<Matrix>(a0_, a1_, true));
-}
-
-
-GSmallNAIBatch::~GSmallNAIBatch() {
-  if (allocated_here_)
-    resources__->release(stack_);
 }
 
 
