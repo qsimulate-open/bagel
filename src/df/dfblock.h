@@ -75,8 +75,8 @@ class DFBlock {
     // average the asize between MPI processes (block will be described by dist_)
     void average();
 
-    std::shared_ptr<DFBlock> transform_second(const double* const c, const int nocc, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(const double* const c, const int nocc, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
 
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;

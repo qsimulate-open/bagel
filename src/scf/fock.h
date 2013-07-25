@@ -261,7 +261,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     if (nocc == 0) return;
     pdebug.tick_print("Compute coeff (redundant)");
 
-    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->data(), nocc);
+    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
     pdebug.tick_print("First index transform");
 
     std::shared_ptr<DFHalfDist> half = halfbj->apply_J();

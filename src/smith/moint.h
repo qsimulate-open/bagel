@@ -65,10 +65,10 @@ class K2ext {
 
       // occ loop
       for (auto& i0 : blocks_[0]) {
-        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0.offset(), i0.size())->apply_J();
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->slice(i0.offset(), i0.offset()+i0.size()))->apply_J();
         // virtual loop
         for (auto& i1 : blocks_[1]) {
-          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
           dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
         }
       }

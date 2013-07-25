@@ -127,14 +127,16 @@ if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
   // second term
   {
     Matrix Umat(*cc * *u);
-    shared_ptr<DFHalfDist> half = df->compute_half_transform(Umat.data(), nocc_);
+    // TODO this slice might not be needed - check
+    shared_ptr<DFHalfDist> half = df->compute_half_transform(Umat.slice(0,nocc_));
     tmp = half->form_2index(jvec->jvec(), 2.0);
   }
 
   // third term
   if (t->norm() > 1.0e-15) {
     Matrix Tmat(*cc * *t);
-    shared_ptr<const DFFullDist> full = jvec->half()->compute_second_transform(Tmat.data(), nocc_)->apply_2rdm(jvec->rdm2_all());
+    // TODO this slice might not be needed - check
+    shared_ptr<const DFFullDist> full = jvec->half()->compute_second_transform(Tmat.slice(0,nocc_))->apply_2rdm(jvec->rdm2_all());
     *tmp += *jvec->half()->form_2index(full, 4.0);
   }
 

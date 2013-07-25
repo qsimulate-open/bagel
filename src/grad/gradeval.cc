@@ -92,10 +92,10 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(coeff_occ);
-  shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ->data(), ref_->nocc())->apply_JJ();
+  shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
   shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
-  shared_ptr<const DFDist> qrs = qijd->back_transform(ref_->coeff()->data())->back_transform(ref_->coeff()->data());
+  shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 

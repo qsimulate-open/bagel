@@ -40,7 +40,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const DFDist> df, shared_ptr<con
   shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
 
   // J^{-1}(D|xy)
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->data()+nclosed*nbasis, m)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
 
   // [D|tu] = (D|xy)Gamma_xy,tu
   shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm->data());

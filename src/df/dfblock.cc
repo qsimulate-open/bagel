@@ -127,7 +127,11 @@ void DFBlock::average() {
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int nocc, const bool trans) const {
+shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
+  assert(trans ? cmat->mdim() : cmat->ndim() == b1size_);
+  const double* const c = cmat->data();
+  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+
   // so far I only consider the following case
   assert(b1start_ == 0);
   unique_ptr<double[]> tmp(new double[asize_*nocc*b2size_]);
@@ -143,7 +147,11 @@ shared_ptr<DFBlock> DFBlock::transform_second(const double* const c, const int n
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(const double* const c, const int nocc, const bool trans) const {
+shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat, const bool trans) const {
+  assert(trans ? cmat->mdim() : cmat->ndim() == b2size_);
+  const double* const c = cmat->data();
+  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+
   // so far I only consider the following case
   assert(b2start_ == 0);
   unique_ptr<double[]> tmp(new double[asize_*b1size_*nocc]);

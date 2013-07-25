@@ -32,18 +32,18 @@ using namespace bagel;
 Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclosed, const size_t nact, const size_t nvirt) {
 
   shared_ptr<const DFDist> df = fci->geom()->df();
-  const double* const cc = coeff->data();
   const size_t nocc = nclosed+nact;
+  shared_ptr<const Matrix> cc = coeff->slice(0, nocc);
 
   shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
   shared_ptr<RDM<2>> rdm = fci->rdm2_av();
 
   // half_ = J^{-1/2}(D|ix)
-  half_ = df->compute_half_transform(cc, nocc)->apply_J();
+  half_ = df->compute_half_transform(cc)->apply_J();
 
   // jvec_ = J^{-1/2} (D|ij) Gamma_ij,kl
   {
-    shared_ptr<DFFullDist> in = half_->compute_second_transform(cc,nocc);
+    shared_ptr<DFFullDist> in = half_->compute_second_transform(cc);
 
     // TODO this is not a very efficient implementation, obviously
     // for the time being, I form the entire 2RDM

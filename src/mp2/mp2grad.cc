@@ -156,7 +156,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
   const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * *ocmat * 2.0;
   // -1*K_al(d_rs)
-  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part->data(), -1.0) * *vcmat;
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * *vcmat;
 
   auto grad = make_shared<Matrix>(nbasis, nbasis);
   for (int i = 0; i != nocca; ++i)
@@ -208,7 +208,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<shared_ptr<const Matrix>> cd {cd0, cdbar};
   vector<shared_ptr<const Matrix>> dd {dbarao, d0ao};
 
-  shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao->data());
+  shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao);
   shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat);
   sep3->scale(-2.0);
   /// mp2 two body part ----------------
@@ -240,7 +240,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   wd->add_block(nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
   wd->add_block(nocca, nocca, nvirt, nvirt, *laq * *vcmat);
   wd->add_block(0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao) * *ocmat * 2.0));
-  wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao->data(), -1.0) * *ocmat));
+  wd->add_block(0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao, -1.0) * *ocmat));
 
   wd->symmetrize();
   auto wdao = make_shared<Matrix>(*ref_->coeff() * *wd ^ *ref_->coeff());

@@ -70,16 +70,16 @@ void MP2::compute() {
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const coeff = ref_->coeff()->data() + ncore_*nbasis;
-  const double* const vcoeff = coeff + nocc*nbasis;
+  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
+  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
 
   Timer timer;
 
   // first compute half transformed integrals
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(coeff, nocc);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff);
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
-  shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff, nvirt)->apply_J();
+  shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J();
 
   cout << "    * 3-index integral transformation done" << endl;
 

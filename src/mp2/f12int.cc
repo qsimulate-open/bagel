@@ -104,19 +104,18 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
   const size_t nocc = geom->nele()/2 - ncore;
   const size_t nbasis = geom->nbasis();
   const size_t nvirt = nbasis - nocc - ncore;
-  const double* const oc = ref_->coeff()->data() + ncore*nbasis;
-  const double* const vc = oc + nocc*nbasis;
+  shared_ptr<const Matrix> oc = ref_->coeff()->slice(ncore, ncore+nocc);
 
   const shared_ptr<const DFDist> df = geom_->df();
-  const shared_ptr<const DFHalfDist> dxo = df->compute_half_transform(oc, nocc)->apply_J();
-  const shared_ptr<const DFFullDist> doo = dxo->compute_second_transform(oc, nocc);
+  const shared_ptr<const DFHalfDist> dxo = df->compute_half_transform(oc)->apply_J();
+  const shared_ptr<const DFFullDist> doo = dxo->compute_second_transform(oc);
 
   shared_ptr<F12Mat> ymat;
   {
   // Yukawa integral can be thrown right away
   shared_ptr<DFDist> yukawa = geom->form_fit<YukawaFit>(0.0, false, gamma_);
-  const shared_ptr<const DFHalfDist> yxo = yukawa->compute_half_transform(oc, nocc);
-  const shared_ptr<const DFFullDist> yoo = yxo->compute_second_transform(oc, nocc)->apply_J(geom->df());
+  const shared_ptr<const DFHalfDist> yxo = yukawa->compute_half_transform(oc);
+  const shared_ptr<const DFFullDist> yoo = yxo->compute_second_transform(oc)->apply_J(geom->df());
   ymat = robust_fitting(doo, yoo);
   }
 
