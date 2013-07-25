@@ -76,6 +76,22 @@ void RelDFFull::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o
 }
 
 
+void RelDFFull::scale(std::complex<double> a) {
+  if (imag(a) == 0.0) {
+    const double fac = real(a);
+    dffull_[0]->scale(fac);
+    dffull_[1]->scale(fac);
+  } else if (real(a) == 0.0) {
+    const double fac = imag(a);
+    dffull_[0]->scale( fac);
+    dffull_[1]->scale(-fac);
+    swap(dffull_[0], dffull_[1]);
+  } else {
+    throw logic_error("should not happen..");
+  }
+}
+
+
 list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) const {
   list<shared_ptr<RelDFHalfB>> out;
   assert(basis_.size() == 1);
@@ -87,7 +103,7 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
     shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(rcoeff[i]);
     real->daxpy( 1.0, dffull_[1]->back_transform(icoeff[i]));
 
-    shared_ptr<DFHalfDist> imag = dffull_[0]->back_transform(icoeff[i]);
+    shared_ptr<DFHalfDist> imag = dffull_[1]->back_transform(rcoeff[i]);
     imag->daxpy(-1.0, dffull_[0]->back_transform(icoeff[i]));
     
     out.push_back(make_shared<RelDFHalfB>(array<shared_ptr<DFHalfDist>,2>{{real, imag}}, i, alpha));

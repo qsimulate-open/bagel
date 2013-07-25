@@ -143,10 +143,10 @@ shared_ptr<DFDist> RelDFHalfB::back_transform(shared_ptr<const Matrix> r, shared
   shared_ptr<DFDist> out;
   if (!imag) {
     out = dfhalf_[0]->back_transform(r);
-    out->daxpy(-1.0, dfhalf_[0]->back_transform(i)); 
+    out->daxpy(-1.0, dfhalf_[1]->back_transform(i)); 
   } else {
     out = dfhalf_[0]->back_transform(i);
-    out->daxpy(1.0, dfhalf_[0]->back_transform(r));
+    out->daxpy(1.0, dfhalf_[1]->back_transform(r));
   }
   return out;
 }

@@ -51,6 +51,7 @@ class RelDFFull : public RelDFBase {
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
+    void scale(std::complex<double> a);
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 

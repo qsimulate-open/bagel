@@ -108,8 +108,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   array<shared_ptr<const Matrix>,6> rmat;
   auto riter = rmat.begin();
   for (auto& i : mat) *riter++ = i.second->get_real_part();
-  vector<GradTask> tmp = contract_gradsmall1e(rmat);
-  task.insert(task.end(), tmp.begin(), tmp.end());
+  // *** adding task here ****
+  {
+    vector<GradTask> tmp = contract_gradsmall1e(rmat);
+//  task.insert(task.end(), tmp.begin(), tmp.end());
+  }
 
   // two-electron contributions.
   {
@@ -163,13 +166,19 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& i : half_complex_exch)
       dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
     DFock::factorize(dffull);
+    dffull.front()->scale(dffull.front()->fac());
     assert(dffull.size() == 1);
 
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part(); 
     assert(cd->get_imag_part()->norm() < 1.0e-10);
-    auto gamma2 = make_shared<Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
-    gamma2->print();
+    auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
+
+    // *** adding task here ****
+    {
+      vector<GradTask> task2 = contract_grad2e_2index(gamma2); 
+      task.insert(task.end(), task2.begin(), task2.end());
+    }
 
     // (7) first back transformation (gamma|is^Y)
     list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff); 
@@ -232,6 +241,15 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());
       iter->second->add_direct_product(cdr, w.second, 1.0);
+    }
+
+    // *** adding task here ****
+    {
+      // large-large
+      auto iter = gamma3.find(make_pair(Comp::L,Comp::L));
+      assert(iter != gamma3.end());
+      vector<GradTask> task3 = contract_grad2e(iter->second); 
+      task.insert(task.end(), task3.begin(), task3.end());
     }
   }
 
