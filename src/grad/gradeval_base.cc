@@ -140,7 +140,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
   const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
 
-  out.reserve(nshell*(nshell+1)*nshell2/2);
+  out.reserve(nshell*nshell*nshell2);
 
   int iatom0 = 0;
   auto oa0 = geom_->offsets().begin();
