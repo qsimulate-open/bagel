@@ -153,9 +153,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* J^-1 multiplied */);
+          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2());
         } else {
-          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* J^-1 multiplied */);
+          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2());
         }
       }
     }
@@ -240,7 +240,12 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& w : wden) {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());
-      iter->second->add_direct_product(cdr, w.second, 1.0);
+      iter->second->add_direct_product(cdr, w.second, -1.0);
+    }
+
+    // minus one
+    for (auto& i : gamma3) {
+      i.second->scale(-1.0);
     }
 
     // *** adding task here ****
