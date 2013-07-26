@@ -42,23 +42,26 @@ void ZKnowlesHandy::mult_phase_factor() {
   ZMatrix phase(norb_, norb_);
   for (int i = 0; i != norb_; ++i) {
     const double ran = rand();
-    const complex<double> fac(cos(ran), sin(ran));
+   // const complex<double> fac(cos(ran), sin(ran));
+    const complex<double> fac(1.0, 0.0);
     phase(i,i) = fac;
   }
+//phase(norb_-1, norb_-1) = complex<double>(0.0, 1.0);
 
   //transform 1e integrals.
   auto mo1e = make_shared<ZMatrix>(norb_, norb_);
-  unique_ptr<complex<double>[]> temp(new complex<double>[norb_]);
 
   copy_n(jop_->mo1e_ptr(), norb2, mo1e->data());
-
-  //reverting unphased h'kl = hkl - sum k (jk|ki)
+#if 0
+ //reverting unphased h'kl = hkl - sum k (jk|ki)
   int ij = 0;
-  for (int i = 0; i != norb_; ++i)
-    for (int j = 0; j != norb_; ++j, ++ij)
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j != norb_; ++j, ++ij) {
       for (int k = 0; k != norb_; ++k)
         mo1e->data(ij) += 0.5 * jop_->mo2e_kh(j, k, k, i);
-
+    }
+  }
+#endif
   *mo1e = phase % *mo1e * phase;
 
   //transforming 4 index mo2e
@@ -82,18 +85,36 @@ void ZKnowlesHandy::mult_phase_factor() {
   zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase.data(), norb_, 0.0, trans.get(), norb3);
 
   // 6) transpose to return indices to (ij|kl)
-  mytranspose_complex_(trans.get(), norb2, norb2, mo2e.get());
+  mytranspose_complex_(trans.get(), norb2, norb2, tmp.get());
+
 
   // applying phased h'kl = hkl - sum k (jk|ki)
+#if 0
   ij = 0;
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j, ++ij) {
       for (int k = 0; k != norb_; ++k)
-        mo1e->data(ij) -= 0.5 * mo2e[j+k*norb_+k*norb2+i*norb3];
+        mo1e->data(ij) -= 0.5 * tmp[j+k*norb_+k*norb2+i*norb3];
     }
   }
-
+#endif
+  //pass complex conjugate of 1 and 2 body integrals to account for replacement of 8fold symmetry with 4fold symmetry in complex KH
+  mytranspose_complex_conjg_(tmp.get(), norb2, norb2, mo2e.get());
 //apply transformation to hamiltonian
-  jop_->set_moints(mo1e, mo2e);
+#if 1
+  jop_->set_moints(mo1e->transpose_conjg(), mo2e);
+#else
+  cout << "one body" << endl;
+  complex<double>* a = jop_->mo1e_ptr();
+  auto pt = mo1e->transpose_conjg();
+  complex<double>* b = pt->data();
+  cout << setprecision(10) << zdotc_(norb2, a, 1, a, 1) - 2*zdotc_(norb2, a, 1, b, 1).real() + zdotc_(norb2, b, 1, b, 1) << endl;
+  cout << "two body" << endl;
+  a = jop_->mo2e_ptr();
+  b = mo2e.get();
+  cout << setprecision(10) << zdotc_(norb4, a, 1, a, 1) - 2*zdotc_(norb4, a, 1, b, 1).real() + zdotc_(norb4, b, 1, b, 1) << endl;
+  assert(false);
+
   //jop_->print(3);
+#endif
 }

@@ -76,7 +76,7 @@ class ZMOFile {
 
     int sizeij() const { return sizeij_; };
 
-    void set_moints(std::shared_ptr<ZMatrix>& mo1e, std::unique_ptr<std::complex<double>[]>& mo2e) {
+    void set_moints(std::shared_ptr<ZMatrix> mo1e, std::unique_ptr<std::complex<double>[]>& mo2e) {
       std::copy_n(mo1e->data(), nocc_*nocc_, mo1e_.get());
       mo2e_ = std::move(mo2e);
     }
