@@ -146,7 +146,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
   auto oa0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
     int iatom1 = 0;
-    auto oa1 = geom_->aux_offsets().begin();
+    auto oa1 = geom_->offsets().begin();
     for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
       int iatom2 = 0;
       auto oa2 = geom_->aux_offsets().begin();
