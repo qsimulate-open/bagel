@@ -146,10 +146,9 @@ void GradTask::compute() {
     if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
     if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
-    const unique_ptr<double[]> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
-    const unique_ptr<double[]> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
-    unique_ptr<double[]> db3(new double[sblock]);
-    SMITH::sort_indices<0,2,1,0,1,1,1>(db2, db3, shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
+    unique_ptr<double[]> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
+    unique_ptr<double[]> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
+    SMITH::sort_indices<0,2,1,1,1,1,1>(db2, db1, shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
 
     for (int iatom = 0; iatom != 4; ++iatom) {
       if (jatom[iatom] < 0) continue;
@@ -157,7 +156,6 @@ void GradTask::compute() {
       for (int icart = 0; icart != 3; ++icart) {
         const double* ppt = gradbatch.data(icart+iatom*3);
         sum[icart] += ddot_(sblock, ppt, 1, db1.get(), 1);
-        sum[icart] += ddot_(sblock, ppt, 1, db3.get(), 1);
       }
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
