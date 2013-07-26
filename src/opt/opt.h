@@ -50,8 +50,7 @@ class Opt {
     std::streambuf* backup_stream_;
     std::ofstream* ofs_;
 
-    // TODO make it adjustable from the input
-    const double thresh_;
+    double thresh_;
 
     static const int maxiter_ = 10;
     static const bool nodf = true;
@@ -67,11 +66,12 @@ class Opt {
 
   public:
     Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
       bfgs_ = std::make_shared<BFGS<GradFile>>(std::make_shared<const GradFile>(geom->natom(), 1.0));
       bmat_ = current_->compute_internal_coordinate();
 
       internal_ = inp->get<bool>("internal", true);
+      thresh_ = inp->get<double>("thresh", 1.0e-5);
     }
 
     bool next() {
