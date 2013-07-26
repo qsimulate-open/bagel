@@ -102,8 +102,8 @@ class Opt {
       } else {
         displ = bfgs_->extrapolate(cgrad, cgeom);
       }
-      const double gradnorm = cgrad->norm();
-      const double disnorm = displ->norm();
+      const double gradnorm = cgrad->rms();
+      const double disnorm = displ->rms();
       const bool converged = gradnorm < thresh_ && disnorm < thresh_;
       if (!converged) {
         displ->scale(-1.0);
