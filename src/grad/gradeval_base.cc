@@ -142,13 +142,12 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
 
   out.reserve(nshell*(nshell+1)*nshell2/2);
 
-  // loop over atoms (using symmetry b0 <-> b1)
   int iatom0 = 0;
   auto oa0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
-    int iatom1 = iatom0;
-    auto oa1 = oa0;
-    for (auto a1 = a0; a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+    int iatom1 = 0;
+    auto oa1 = geom_->aux_offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
       int iatom2 = 0;
       auto oa2 = geom_->aux_offsets().begin();
       for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
@@ -157,8 +156,8 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
 
         auto o0 = oa0->begin();
         for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
-          auto o1 = a0!=a1 ? oa1->begin() : o0;
-          for (auto b1 = (a0!=a1 ? (*a1)->shells().begin() : b0); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+          auto o1 = oa1->begin();
+          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
             auto o2 = oa2->begin();
             for (auto b2 = (*a2)->shells().begin(); b2 != (*a2)->shells().end(); ++b2, ++o2) {
               tuple<size_t, size_t> info = o[0]->adist_now()->locate(*o2);

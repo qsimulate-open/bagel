@@ -36,7 +36,7 @@ using namespace bagel;
 
 Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const Reference> re) : ref_(re) {
-  gaunt_ = idata->get<bool>("gaunt", true);
+  gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
@@ -45,7 +45,7 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
 Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
              const shared_ptr<const RelReference> re) : relref_(re) {
-  gaunt_ = idata->get<bool>("gaunt", true);
+  gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
@@ -108,7 +108,7 @@ void Dirac::compute() {
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
-    const complex<double> prod = aodensity->zdotc(*hcore+*distfock);
+    const complex<double> prod = aodensity->zdotc(*hcore+*distfock); // identical to Tr(D^+ F)
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
 //    throw runtime_error(ss.str());

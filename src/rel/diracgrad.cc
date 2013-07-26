@@ -211,7 +211,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
                 const complex<double> kwwxx = conj(((*w0.second * *s0) % (*w1.second * *s1)).element(0,0));
                 const bool imag = fabs(kwwxx.imag()) > 1.0e-20;
                 assert(!imag || fabs(kwwxx.real()) < 1.0e-20);
-                const double fac = -1.0 * (imag ? -kwwxx.imag() : kwwxx.real()); // -1 comes from the prefactor of exchange
+                const double fac = 1.0 * (imag ? -kwwxx.imag() : kwwxx.real()); // -1 comes from the prefactor of exchange
 
                 // TODO we can use symmetry
                 const int small = min(w0.first, w1.first);
