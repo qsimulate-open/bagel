@@ -240,7 +240,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& w : wden) {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());
-      iter->second->add_direct_product(cdr, w.second, 1.0); // TODO prefactor is wrong as there is no kww'_xy multiplied.
+      iter->second->add_direct_product(cdr, w.second, 1.0);
     }
 
     // *** adding task here ****
@@ -255,7 +255,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       int icnt = 0;
       for (auto& i : xyz)
         for (auto& j : xyz)
-          if (i <= j) gs[icnt++] = gamma3[make_pair(i,j)];
+          if (i <= j) {
+            auto iter = gamma3.find(make_pair(i,j));
+            assert(iter != gamma3.end());
+            gs[icnt++] = iter->second; 
+          }
       vector<GradTask> task3 = contract_grad2e(gs);
       task.insert(task.end(), task3.begin(), task3.end());
     }

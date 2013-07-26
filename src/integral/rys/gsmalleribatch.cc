@@ -121,7 +121,7 @@ void GSmallERIBatch::compute() {
       if (jatom[iatom] < 0) continue;
       for (int icart = 0; icart != 3; ++icart) {
         const int sblock = icart + iatom*3;
-        const int iblock = jatom[iatom];
+        const int iblock = icart + jatom[iatom]*3;
         for (int i = 0; i != a2size_inc_; i++)
           copy_n(eric->data(sblock) + i*s0size_*a1size_inc_, s0size_*a1size_inc_, data(iblock) + m(0,0,i));
       }
@@ -139,7 +139,7 @@ void GSmallERIBatch::compute() {
       if (jatom[iatom] < 0) continue;
       for (int icart = 0; icart != 3; ++icart) {
         const int sblock = icart + iatom*3;
-        const int iblock = jatom[iatom];
+        const int iblock = icart + jatom[iatom]*3;
         for (int i = 0; i != a2size_dec_; i++)
           copy_n(eric->data(sblock) + i*s0size_*a1size_dec_, s0size_*a1size_dec_, data(iblock) + m(0,a1size_inc_,a2size_inc_+i));
       }
@@ -157,7 +157,7 @@ void GSmallERIBatch::compute() {
       if (jatom[iatom] < 0) continue;
       for (int icart = 0; icart != 3; ++icart) {
         const int sblock = icart + iatom*3;
-        const int iblock = jatom[iatom];
+        const int iblock = icart + jatom[iatom]*3;
         for (int i = 0; i != a2size_inc_; i++)
           copy_n(eric->data(sblock) + i*s0size_*a1size_dec_, s0size_*a1size_dec_, data(iblock) + m(0,a1size_inc_, i));
       }
@@ -175,7 +175,7 @@ void GSmallERIBatch::compute() {
       if (jatom[iatom] < 0) continue;
       for (int icart = 0; icart != 3; ++icart) {
         const int sblock = icart + iatom*3;
-        const int iblock = jatom[iatom];
+        const int iblock = icart + jatom[iatom]*3;
         for (int i = 0; i != a2size_dec_; i++)
           copy_n(eric->data(sblock) + i*s0size_*a1size_inc_, s0size_*a1size_inc_, data(iblock) + m(0,0,a2size_inc_+i));
       }
