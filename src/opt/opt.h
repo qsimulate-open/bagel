@@ -71,7 +71,7 @@ class Opt {
       bmat_ = current_->compute_internal_coordinate();
 
       internal_ = inp->get<bool>("internal", true);
-      thresh_ = inp->get<double>("thresh", 1.0e-5);
+      thresh_ = idat->get<double>("thresh", 1.0e-5);
     }
 
     bool next() {
