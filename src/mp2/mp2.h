@@ -51,6 +51,7 @@ class MP2 : public Method {
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { assert(false); std::shared_ptr<const Reference>(); } 
 
     double energy() const { return energy_; }
+    int ncore() const { return ncore_; }
 };
 
 }

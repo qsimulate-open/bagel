@@ -53,8 +53,6 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
   ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
-//ref_->set_ncore(ncore_);
-
   if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented in DF");
 
 }

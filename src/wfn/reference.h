@@ -104,7 +104,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nvirt() const { return nvirt_; }
     int nocc() const { return nclosed_ + nact_; }
     int ncore() const { return ncore_; }
-    void set_ncore(const int i) { ncore_ = i; }
 
     int noccA() const { return noccA_; }
     int noccB() const { return noccB_; }

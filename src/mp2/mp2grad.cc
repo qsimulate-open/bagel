@@ -49,7 +49,7 @@ template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   Timer time;
 
-  const size_t ncore = ref_->ncore();
+  const size_t ncore = task_->ncore();
 
   // since this is only for closed shell
   const size_t naux = geom_->naux();
