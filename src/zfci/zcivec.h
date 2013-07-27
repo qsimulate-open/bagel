@@ -91,6 +91,7 @@ class ZCivec {
     void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; }
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); }
+    void conjg() { for (int i = 0; i!= lena_*lenb_; ++i) cc_[i] = std::conj(cc_[i]); } // TODO make it to a one-line code
 
     size_t size() const { return lena_*lenb_; }
 
@@ -128,7 +129,7 @@ class ZCivec {
 
     double orthog(std::list<std::shared_ptr<const ZCivec>> c);
     double orthog(std::shared_ptr<const ZCivec> o);
-    void project_out(std::shared_ptr<const ZCivec> o) { zaxpy(-zdotc(*o), *o); }
+    void project_out(std::shared_ptr<const ZCivec> o) { zaxpy(-std::conj(zdotc(*o)), *o); }
 
     void print(double thresh) const;
 

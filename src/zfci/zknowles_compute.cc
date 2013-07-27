@@ -145,8 +145,9 @@ void ZKnowlesHandy::sigma_2c1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
     const complex<double>* const source_base = e->data(ip)->data();
     for (auto& iter : (e->det())->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
-      complex<double>* const target_array = sigma->element_ptr(0, iter.target);
-      zaxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
+// TODO rename
+      complex<double>* const target_array = sigma->element_ptr(0, iter.source);
+      zaxpy_(lb, sign, source_base + lb*iter.target, 1, target_array, 1);
     }
   }
 }
@@ -160,7 +161,8 @@ void ZKnowlesHandy::sigma_2c2(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
       const complex<double>* const source_array0 = e->data(ip)->element_ptr(0, i);
       for (auto& iter : e->det()->phib(ip)) {
         const double sign = static_cast<double>(iter.sign);
-        target_array0[iter.target] += sign * source_array0[iter.source];
+// TODO rename
+      target_array0[iter.source] += sign * source_array0[iter.target];
       }
     }
   }
@@ -189,6 +191,4 @@ void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_pt
   const int ij = d->ij();
   const int lenab = la*lb;
   zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
-  //complex conjugate of e
-  for (int i = 0; i != ij*ij; ++i) *(e->data()+i) = conj(*(e->data()+i));
 }

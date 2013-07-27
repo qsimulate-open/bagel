@@ -296,7 +296,6 @@ shared_ptr<ZCivec> ZCivec::spin_raise(shared_ptr<const Determinants> target_det)
   return out;
 }
 
-//TODO check this
 void ZCivec::spin_decontaminate(const double thresh) {
 
   const int nspin = det_->nspin();
@@ -313,6 +312,7 @@ void ZCivec::spin_decontaminate(const double thresh) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
+    S2->conjg();
     zaxpy(factor, *S2);
 
     const double norm = this->norm();
