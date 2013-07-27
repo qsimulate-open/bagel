@@ -268,7 +268,7 @@ void ZMatrix::diagonalize(double* eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
 
   //assert that matrix is hermitian to ensure real eigenvalues
-  assert( ( *this - *(this->transpose_conjg()) ).norm() <1e-10 );
+  assert(  abs(this->norm() - (this->transpose_conjg())->norm()) <1e-10 );
 
   const int n = ndim_;
   int info;
