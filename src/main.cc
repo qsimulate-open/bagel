@@ -57,6 +57,7 @@
 #include <src/rel/dirac.h>
 #include <src/smith/smith.h>
 #include <src/meh/meh.h>
+#include <src/wfn/method.h>
 
 #include <bagel_config.h>
 
@@ -67,6 +68,20 @@
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
+
+// function (TODO will be moved to an appropriate place)
+namespace bagel {
+  std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom,
+                                                              std::shared_ptr<const Reference> ref) {
+    std::shared_ptr<Method> out;
+    if (title == "hf")          out = std::make_shared<SCF>(itree, geom, ref);
+    else if (title == "ks")     out = std::make_shared<KS>(itree, geom, ref);
+    else if (title == "uhf")    out = std::make_shared<UHF>(itree, geom, ref);
+    else if (title == "rohf")   out = std::make_shared<ROHF>(itree, geom, ref);
+    else if (title == "mp2")    out = std::make_shared<MP2>(itree, geom, ref);
+    return out;
+  }
+}
 
 using namespace std;
 using namespace bagel;
@@ -90,6 +105,7 @@ int main(int argc, char** argv) {
     bool casscf_done = false;
     shared_ptr<Geometry> geom;
     shared_ptr<SCF_base> scf;
+    shared_ptr<Method> method;
     shared_ptr<const Reference> ref;
     shared_ptr<const RelReference> relref;
     shared_ptr<Dimer> dimer;
@@ -103,11 +119,11 @@ int main(int argc, char** argv) {
 
     for (auto& itree : *keys) {
 
-      string method = itree->get<string>("title", "");
-      transform(method.begin(), method.end(), method.begin(), ::tolower);
-      if (method.empty()) throw runtime_error("title is missing in one of the input blocks");
+      string title = itree->get<string>("title", "");
+      transform(title.begin(), title.end(), title.begin(), ::tolower);
+      if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
-      if (method == "molecule") {
+      if (title == "molecule") {
         if (ref != nullptr) geom->discard_df();
         geom = make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false)) {
@@ -120,46 +136,28 @@ int main(int argc, char** argv) {
         if (geom == nullptr) throw runtime_error("molecule block is missing");
       }
 
-      // TODO we are checking this for non-DF methods...
+      // TODO we are checking this for non-DF method...
       if (geom->df() == nullptr)
         throw runtime_error("It seems that DF basis was not specified in Geometry");
 
-      if (method == "hf") {
+      shared_ptr<Method> method = construct_method(title, itree, geom, ref);
+      if (method) {
 
-        scf = make_shared<SCF>(itree, geom, ref);
-        scf->compute();
-        ref = scf->conv_to_ref();
+        method->compute();
+        ref = method->conv_to_ref();
 
-      } else if (method == "dhf") {
+      } else if (title == "dhf") {
 
         auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
         dirac->compute();
         relref = dirac->conv_to_ref();
 
-      } else if (method == "ks") {
-
-        scf = make_shared<KS>(itree, geom, ref);
-        scf->compute();
-        ref = scf->conv_to_ref();
-
-      } else if (method == "uhf") {
-
-        scf = make_shared<UHF>(itree, geom, ref);
-        scf->compute();
-        ref = scf->conv_to_ref();
-
-      } else if (method == "rohf") {
-
-        scf = make_shared<ROHF>(itree, geom, ref);
-        scf->compute();
-        ref = scf->conv_to_ref();
-
-      } else if (method == "optimize") {
+      } else if (title == "optimize") {
 
         auto opt = make_shared<Optimize>(itree, geom);
         opt->compute();
 
-      } else if (method == "casscf") {
+      } else if (title == "casscf") {
 
         shared_ptr<CASSCF> casscf;
         string algorithm = itree->get<string>("algorithm", "");
@@ -176,18 +174,13 @@ int main(int argc, char** argv) {
         casscf->compute();
         ref = casscf->conv_to_ref();
 
-      } else if (method == "mp2") {
-
-        auto mp2 = make_shared<MP2>(itree, geom);
-        mp2->compute();
-
-      } else if (method == "smith") {
+      } else if (title == "smith") {
 
         if (ref == nullptr) throw runtime_error("SMITH needs a reference");
         auto smith = make_shared<Smith>(itree, ref);
         smith->compute();
 
-      } else if (method == "fci") {
+      } else if (title == "fci") {
         if (ref == nullptr) throw runtime_error("FCI needs a reference");
         shared_ptr<FCI> fci;
 
@@ -212,7 +205,7 @@ int main(int argc, char** argv) {
 
         fci->compute();
 
-      } else if (method == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
+      } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         shared_ptr<const PTree> dimdata = itree;
 
         const string form = dimdata->get<string>("form", "displace");
@@ -247,7 +240,7 @@ int main(int argc, char** argv) {
 
         *geom = *dimer->sgeom();
         ref = dimer->sref();
-      } else if (method == "to-dimer") {
+      } else if (title == "to-dimer") {
 #if 0
         auto inputdata = iter->second;
         auto stringiter = inputdata.find("dimer_active");
@@ -262,12 +255,12 @@ int main(int argc, char** argv) {
 #else
 throw logic_error("broken!");
 #endif
-      } else if (method == "meh") {
+      } else if (title == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
 
           auto meh = make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
           meh->compute();
-      } else if (method == "localize") {
+      } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
         string localizemethod = itree->get<string>("algorithm", "pm");
@@ -286,7 +279,7 @@ throw logic_error("broken!");
         shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize(max_iter,thresh));
         ref = make_shared<const Reference>(ref, new_coeff);
 
-      } else if (method == "print") {
+      } else if (title == "print") {
 
         const bool orbitals = itree->get<bool>("orbitals", false);
         const string out_file = itree->get<string>("file", "out.molden");
@@ -303,7 +296,7 @@ throw logic_error("broken!");
       if (saveref != "") { saved.insert(make_pair(saveref, static_pointer_cast<const void>(ref))); }
 
       cout << endl;
-      timer.tick_print("Method: " + method);
+      timer.tick_print("Method: " + title);
       cout << endl;
 
     }
