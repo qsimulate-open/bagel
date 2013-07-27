@@ -88,6 +88,8 @@ class Opt {
         std::string title = (*m)->get<std::string>("title", ""); 
         std::transform(title.begin(), title.end(), title.begin(), ::tolower);
         std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        c->compute();
+        ref = c->conv_to_ref();
       }
       std::shared_ptr<const PTree> cinput = *m; 
 
