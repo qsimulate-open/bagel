@@ -36,7 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-MP2Grad::MP2Grad(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g) : MP2(input, g, shared_ptr<const Reference>()) {
+MP2Grad::MP2Grad(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : MP2(input, g, ref) {
 
 }
 

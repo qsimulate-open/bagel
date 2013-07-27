@@ -15,10 +15,10 @@
 
 {
   "title" : "optimize",
-  "method" : {
+  "method" : [ {
     "title" : "hf",
     "thresh" : 1.0e-10
-  }
+  } ]
 }
 
 ]}

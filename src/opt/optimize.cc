@@ -37,9 +37,12 @@ Optimize::Optimize(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
 
 void Optimize::compute() {
-  const shared_ptr<const PTree> methodblock = idata_->get_child("method");
-  string method = methodblock->get<string>("title", "");
-  if (method.empty()) throw runtime_error("title is missing in one of the input blocks (opt)");
+  string method = (*idata_->get_child("method")->rbegin())->get<string>("title", "");
+  transform(method.begin(), method.end(), method.begin(), ::tolower);
+  if (method.empty())
+    throw runtime_error("title is missing in one of the input blocks (opt)");
+
+  shared_ptr<const PTree> methodblock = idata_->get_child("method");
 
   if (method == "uhf") {
 

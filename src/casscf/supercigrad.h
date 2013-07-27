@@ -36,8 +36,8 @@ class SuperCIGrad : public SuperCI {
   protected:
 
   public:
-    SuperCIGrad(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom)
-      : SuperCI(idat, geom) { };
+    SuperCIGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
+      : SuperCI(idat, geom, ref) { };
 
     void compute() {
       // compute CASSCF fist

@@ -59,6 +59,28 @@ class PTreeIterator {
     bool operator!=(const PTreeIterator& o) const { return current != o.current; }
 
 };
+class PTreeReverseIterator {
+  private:
+    boost::property_tree::ptree::const_reverse_iterator current;
+  public:
+    PTreeReverseIterator() {}
+    explicit PTreeReverseIterator(boost::property_tree::ptree::const_reverse_iterator curr): current(curr) {}
+
+    //Dereference operator - return the current node's data.
+    const std::shared_ptr<const PTree> operator*();
+
+    //Prefix returns by reference.
+    PTreeReverseIterator& operator++() { ++current; return *this; }
+    PTreeReverseIterator& operator--() { --current; return *this; }
+
+    //Postfix should be implemented in terms of prefix operators
+    PTreeReverseIterator operator++(int) { PTreeReverseIterator out = *this; ++*this; return out; }
+    PTreeReverseIterator operator--(int) { PTreeReverseIterator out = *this; --*this; return out; }
+
+    bool operator==(const PTreeReverseIterator& o) const { return current == o.current; }
+    bool operator!=(const PTreeReverseIterator& o) const { return current != o.current; }
+
+};
 
 class PTree {
   protected:
@@ -97,6 +119,8 @@ class PTree {
 
     PTreeIterator begin() const;
     PTreeIterator end()   const;
+    PTreeReverseIterator rbegin() const;
+    PTreeReverseIterator rend()   const;
 
     void print() const;
 
