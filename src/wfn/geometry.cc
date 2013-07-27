@@ -374,6 +374,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
 
   common_init1();
   if (prevbasis != basisfile_ || prevaux != auxfile_ || atoms) {
+    // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
+    o.discard_df();
     common_init2(true, overlap_thresh_);
   } else {
     df_ = o.df_;

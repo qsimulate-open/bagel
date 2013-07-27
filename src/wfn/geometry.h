@@ -59,7 +59,7 @@ class Geometry : public Molecule {
     double overlap_thresh_;
 
     // for DF calculations
-    std::shared_ptr<DFDist> df_;
+    mutable std::shared_ptr<DFDist> df_;
     // small component
     mutable std::shared_ptr<DFDist> dfs_;
     // small-large component
@@ -119,7 +119,8 @@ class Geometry : public Molecule {
     const std::shared_ptr<const DFDist> df() const { return df_; }
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
     const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
-    void discard_df() { df_ = dfs_ = std::shared_ptr<DFDist>(); }
+    // TODO resolve "mutable" issues
+    void discard_df() const { df_ = dfs_ = dfsl_ = std::shared_ptr<DFDist>(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

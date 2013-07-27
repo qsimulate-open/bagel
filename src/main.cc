@@ -94,8 +94,7 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        if (ref) geom->discard_df();
-        geom = make_shared<Geometry>(itree);
+        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false))
           ref = shared_ptr<const Reference>();
         if (ref) ref = ref->project_coeff(geom);
