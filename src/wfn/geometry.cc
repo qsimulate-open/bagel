@@ -259,7 +259,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
     aux_atoms_ = newauxatoms;
 
     // (3) plane of center of charges, first and second atoms.
-    if (natom() > 1) {
+    if (natom() > 2) {
       assert(natom() == o.natom()); 
       Quatern<double> oa0 = o.atoms(0)->position();
       Quatern<double> ma0 =   atoms(0)->position();
