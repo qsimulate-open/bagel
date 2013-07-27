@@ -32,18 +32,20 @@
 #include <stddef.h>
 #include <map>
 #include <memory>
+#include <src/wfn/method.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
 
-class Smith {
+class Smith : public Method {
   protected:
     std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
 
   public:
-    Smith(const std::shared_ptr<const PTree>, std::shared_ptr<const Reference>);
+    Smith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void compute();
+    void compute() override;
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 
 };
 

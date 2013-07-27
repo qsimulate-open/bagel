@@ -57,8 +57,8 @@ std::vector<double> fci_energy(std::string inp) {
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, ref);
-      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, ref);
+      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
+      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, geom, ref);
       else assert(false);
 
       fci->compute();

@@ -52,8 +52,8 @@ class KnowlesHandy : public FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    KnowlesHandy(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI( a, b, ncore, nocc, nstate){
+    KnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
+        const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, g, b, ncore, nocc, nstate) {
       update(ref_->coeff());
     }
 

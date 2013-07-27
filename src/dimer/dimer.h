@@ -138,7 +138,7 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
   input->put("charge", ss.str());
   input->put("nspin", tt.str());
 
-  auto fci = std::make_shared<HarrisonZarrabian>(input, embedded_ref, ncore, nact, nstates);
+  auto fci = std::make_shared<HarrisonZarrabian>(input, embedded_ref->geom(), embedded_ref, ncore, nact, nstates);
   fci->compute();
 
   return fci->civectors();

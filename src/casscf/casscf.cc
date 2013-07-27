@@ -111,7 +111,7 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  fci_ = make_shared<KnowlesHandy>(idata_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  fci_ = make_shared<KnowlesHandy>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
   resume_stdcout();
 
 

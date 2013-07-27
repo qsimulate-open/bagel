@@ -80,6 +80,23 @@ namespace bagel {
     else if (title == "rohf")   out = std::make_shared<ROHF>(itree, geom, ref);
     else if (title == "mp2")    out = std::make_shared<MP2>(itree, geom, ref);
     else if (title == "dhf")    out = std::make_shared<Dirac>(itree, geom, ref);
+    else if (title == "smith")  out = std::make_shared<Smith>(itree, geom, ref);
+    else if (title == "fci") {
+      const std::string algorithm = itree->get<std::string>("algorithm", "");
+      const bool dokh = (algorithm == "" || algorithm == "auto") && ref->geom()->nele() > ref->geom()->nbasis();
+      if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
+        out = std::make_shared<KnowlesHandy>(itree, geom, ref);
+      } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
+        out = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
+#ifdef HAVE_MPI_H
+      } else if (algorithm == "parallel" || algorithm == "dist") {
+        out = std::make_shared<DistFCI>(itree, geom, ref);
+#endif
+      } else {
+        throw std::runtime_error("unknown FCI algorithm specified.");
+      }
+    }
+
     return out;
   }
 }
@@ -134,6 +151,9 @@ int main(int argc, char** argv) {
       if (geom->df() == nullptr)
         throw runtime_error("It seems that DF basis was not specified in Geometry");
 
+      if ((title == "smith" || title == "fci") && ref == nullptr)
+        throw runtime_error("SMITH needs a reference");
+
       // most methods are constructed here
       shared_ptr<Method> method = construct_method(title, itree, geom, ref);
       if (method) {
@@ -162,37 +182,6 @@ int main(int argc, char** argv) {
         }
         casscf->compute();
         ref = casscf->conv_to_ref();
-
-      } else if (title == "smith") {
-
-        if (ref == nullptr) throw runtime_error("SMITH needs a reference");
-        auto smith = make_shared<Smith>(itree, ref);
-        smith->compute();
-
-      } else if (title == "fci") {
-        if (ref == nullptr) throw runtime_error("FCI needs a reference");
-        shared_ptr<FCI> fci;
-
-        string algorithm = itree->get<string>("algorithm", "");
-        if (algorithm == "" || algorithm == "auto") {
-          // TODO At the moment this doesn't take freezing of orbitals into account
-          const int nele = ref->geom()->nele();
-          const int norb = ref->geom()->nbasis();
-          if ( nele <= norb ) fci = make_shared<HarrisonZarrabian>(itree, ref);
-          else fci = make_shared<KnowlesHandy>(itree, ref);
-        } else if (algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-          fci = make_shared<KnowlesHandy>(itree, ref);
-        } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-          fci = make_shared<HarrisonZarrabian>(itree, ref);
-#ifdef HAVE_MPI_H
-        } else if (algorithm == "parallel" || algorithm == "dist") {
-          fci = make_shared<DistFCI>(itree, ref);
-#endif
-        } else {
-          throw runtime_error("unknown FCI algorithm specified.");
-        }
-
-        fci->compute();
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         shared_ptr<const PTree> dimdata = itree;
