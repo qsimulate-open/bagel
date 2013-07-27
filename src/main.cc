@@ -92,9 +92,19 @@ namespace bagel {
       } else if (algorithm == "parallel" || algorithm == "dist") {
         out = std::make_shared<DistFCI>(itree, geom, ref);
 #endif
-      } else {
-        throw std::runtime_error("unknown FCI algorithm specified.");
-      }
+      } else
+        throw std::runtime_error("unknown FCI algorithm specified." + algorithm);
+    }
+    else if (title == "casscf") {
+      std::string algorithm = itree->get<std::string>("algorithm", "");
+      if (algorithm == "superci" || algorithm == "")
+        out = std::make_shared<SuperCI>(itree, geom, ref);
+      else if (algorithm == "werner" || algorithm == "knowles")
+        out = std::make_shared<WernerKnowles>(itree, geom, ref);
+      else if (algorithm == "bfgs")
+        out = std::make_shared<CASBFGS>(itree, geom, ref);
+      else
+        throw std::runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
 
     return out;
@@ -166,22 +176,6 @@ int main(int argc, char** argv) {
         auto opt = make_shared<Optimize>(itree, geom);
         opt->compute();
 
-      } else if (title == "casscf") {
-
-        shared_ptr<CASSCF> casscf;
-        string algorithm = itree->get<string>("algorithm", "");
-        if (algorithm == "superci" || algorithm == "") {
-          casscf = make_shared<SuperCI>(itree, geom, ref);
-        } else if (algorithm == "werner" || algorithm == "knowles") {
-          casscf = make_shared<WernerKnowles>(itree, geom);
-        } else if (algorithm == "bfgs") {
-          casscf = make_shared<CASBFGS>(itree, geom, ref);
-        } else {
-          stringstream ss; ss << "unknown CASSCF algorithm specified: " << algorithm;
-          throw runtime_error(ss.str());
-        }
-        casscf->compute();
-        ref = casscf->conv_to_ref();
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         shared_ptr<const PTree> dimdata = itree;

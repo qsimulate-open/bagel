@@ -39,14 +39,12 @@ static string tostring(const T i) {
 };
 
 CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : idata_(idat), geom_(geom), hcore_(make_shared<Hcore>(geom)) {
+  : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
-  if (!re) {
+  if (!ref_) {
     auto scf = make_shared<SCF>(idat, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
-  } else {
-    ref_ = re;
   }
 
   common_init();

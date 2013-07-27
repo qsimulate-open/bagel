@@ -44,7 +44,7 @@ class SuperCI : public CASSCF {
       std::cout << "    * Using the Super CI algorithm as noted in Roos (1980) IJQC" << std::endl;
       diis_start_ = idata_->get<int>("diis_start", 5);
       std::cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << std::endl << std::endl;
-    };
+    }
 
     void grad_vc(const std::shared_ptr<Matrix> fock, std::shared_ptr<RotFile> sigma);
     void grad_va(const std::shared_ptr<Matrix> fact, std::shared_ptr<RotFile> sigma);
@@ -62,10 +62,10 @@ class SuperCI : public CASSCF {
     std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
 
   public:
-    SuperCI(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
-      : CASSCF(idat, geom, ref) { common_init(); };
+    SuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+      : CASSCF(idat, geom, ref) { common_init(); }
 
-    void compute();
+    void compute() override;
 
 };
 
