@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mp2.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: construct_method.h
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,36 +24,16 @@
 //
 
 
-#ifndef __SRC_MP2_MP2_H
-#define __SRC_MP2_MP2_H
+#ifndef __SRC_WFN_CONSTRUCT_METHOD_H
+#define __SRC_WFN_CONSTRUCT_METHOD_H
 
-#include <src/mp2/f12int.h>
-#include <src/scf/scf.h>
 #include <src/wfn/method.h>
-#include <mutex>
+#include <src/wfn/reference.h>
+#include <src/input/input.h>
 
 namespace bagel {
-
-class MP2 : public Method {
-  friend class MP2AssemTask;
-  protected:
-    std::shared_ptr<SCF> scf_;
-    int ncore_;
-
-    double energy_;
-    std::mutex mut_;
-
-  public:
-    MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
-        const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
-
-    virtual void compute() override;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; } 
-
-    double energy() const { return energy_; }
-    int ncore() const { return ncore_; }
-};
-
+  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
+                                                  std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
 }
 
 #endif

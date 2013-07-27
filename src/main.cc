@@ -35,18 +35,9 @@
 #include <src/wfn/geometry.h>
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_cispace.h>
-#include <src/scf/rohf.h>
-#include <src/ks/ks.h>
 #include <src/io/moldenout.h>
 #include <src/wfn/reference.h>
-#include <src/rel/relreference.h>
 #include <src/wfn/ciwfn.h>
-#include <src/fci/distfci.h>
-#include <src/fci/harrison.h>
-#include <src/fci/knowles.h>
-#include <src/casscf/superci.h>
-#include <src/casscf/werner.h>
-#include <src/casscf/casbfgs.h>
 #include <src/mp2/mp2grad.h>
 #include <src/global.h>
 #include <src/opt/optimize.h>
@@ -54,62 +45,17 @@
 #include <src/molecule/localization.h>
 #include <src/util/timer.h>
 #include <src/util/lexical_cast.h>
-#include <src/rel/dirac.h>
-#include <src/smith/smith.h>
 #include <src/meh/meh.h>
-#include <src/wfn/method.h>
-
-#include <bagel_config.h>
+#include <src/wfn/construct_method.h>
 
 // input parser
 #include <src/input/input.h>
-
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();
 
 // function (TODO will be moved to an appropriate place)
-namespace bagel {
-  std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom,
-                                                              std::shared_ptr<const Reference> ref) {
-    std::shared_ptr<Method> out;
-    if (title == "hf")          out = std::make_shared<SCF>(itree, geom, ref);
-    else if (title == "ks")     out = std::make_shared<KS>(itree, geom, ref);
-    else if (title == "uhf")    out = std::make_shared<UHF>(itree, geom, ref);
-    else if (title == "rohf")   out = std::make_shared<ROHF>(itree, geom, ref);
-    else if (title == "mp2")    out = std::make_shared<MP2>(itree, geom, ref);
-    else if (title == "dhf")    out = std::make_shared<Dirac>(itree, geom, ref);
-    else if (title == "smith")  out = std::make_shared<Smith>(itree, geom, ref);
-    else if (title == "fci") {
-      const std::string algorithm = itree->get<std::string>("algorithm", "");
-      const bool dokh = (algorithm == "" || algorithm == "auto") && ref->geom()->nele() > ref->geom()->nbasis();
-      if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-        out = std::make_shared<KnowlesHandy>(itree, geom, ref);
-      } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
-        out = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
-#ifdef HAVE_MPI_H
-      } else if (algorithm == "parallel" || algorithm == "dist") {
-        out = std::make_shared<DistFCI>(itree, geom, ref);
-#endif
-      } else
-        throw std::runtime_error("unknown FCI algorithm specified." + algorithm);
-    }
-    else if (title == "casscf") {
-      std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
-        out = std::make_shared<SuperCI>(itree, geom, ref);
-      else if (algorithm == "werner" || algorithm == "knowles")
-        out = std::make_shared<WernerKnowles>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = std::make_shared<CASBFGS>(itree, geom, ref);
-      else
-        throw std::runtime_error("unknown CASSCF algorithm specified: " + algorithm);
-    }
-
-    return out;
-  }
-}
 
 using namespace std;
 using namespace bagel;
@@ -162,7 +108,7 @@ int main(int argc, char** argv) {
         throw runtime_error("It seems that DF basis was not specified in Geometry");
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
-        throw runtime_error("SMITH needs a reference");
+        throw runtime_error(title + " needs a reference");
 
       // most methods are constructed here
       shared_ptr<Method> method = construct_method(title, itree, geom, ref);
