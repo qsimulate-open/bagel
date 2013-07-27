@@ -55,9 +55,9 @@ double rel_energy(std::string filename) {
     } else if (method == "dhf") {
       auto rel = std::make_shared<Dirac>(itree, geom, ref_);
       rel->compute();
-      std::shared_ptr<RelReference> ref = rel->conv_to_ref();
+      ref_ = rel->conv_to_ref();
       std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      return ref_->energy();
     }
   }
   assert(false);

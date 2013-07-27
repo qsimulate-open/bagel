@@ -79,6 +79,7 @@ namespace bagel {
     else if (title == "uhf")    out = std::make_shared<UHF>(itree, geom, ref);
     else if (title == "rohf")   out = std::make_shared<ROHF>(itree, geom, ref);
     else if (title == "mp2")    out = std::make_shared<MP2>(itree, geom, ref);
+    else if (title == "dhf")    out = std::make_shared<Dirac>(itree, geom, ref);
     return out;
   }
 }
@@ -101,13 +102,9 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    bool scf_done = false;
-    bool casscf_done = false;
     shared_ptr<Geometry> geom;
-    shared_ptr<SCF_base> scf;
     shared_ptr<Method> method;
     shared_ptr<const Reference> ref;
-    shared_ptr<const RelReference> relref;
     shared_ptr<Dimer> dimer;
 
     map<string, shared_ptr<const void>> saved;
@@ -124,33 +121,25 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        if (ref != nullptr) geom->discard_df();
+        if (ref) geom->discard_df();
         geom = make_shared<Geometry>(itree);
-        if (itree->get<bool>("restart", false)) {
+        if (itree->get<bool>("restart", false))
           ref = shared_ptr<const Reference>();
-          relref = shared_ptr<const RelReference>();
-        }
-        if (ref != nullptr) ref = ref->project_coeff(geom);
-        if (relref != nullptr) relref = relref->project_coeff(geom);
+        if (ref) ref = ref->project_coeff(geom);
       } else {
-        if (geom == nullptr) throw runtime_error("molecule block is missing");
+        if (!geom) throw runtime_error("molecule block is missing");
       }
 
       // TODO we are checking this for non-DF method...
       if (geom->df() == nullptr)
         throw runtime_error("It seems that DF basis was not specified in Geometry");
 
+      // most methods are constructed here
       shared_ptr<Method> method = construct_method(title, itree, geom, ref);
       if (method) {
 
         method->compute();
         ref = method->conv_to_ref();
-
-      } else if (title == "dhf") {
-
-        auto dirac = relref ? make_shared<Dirac>(itree, geom, relref) : make_shared<Dirac>(itree, geom, ref);
-        dirac->compute();
-        relref = dirac->conv_to_ref();
 
       } else if (title == "optimize") {
 

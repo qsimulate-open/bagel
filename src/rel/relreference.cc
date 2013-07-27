@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<const RelReference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<const RelReference> out;
 
   // in this case we first form overlap matrices

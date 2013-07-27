@@ -29,6 +29,7 @@
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
 #include <src/rel/cdmatrix.h>
+#include <src/rel/relreference.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
 using namespace std;

@@ -30,21 +30,13 @@
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/math/diis.h>
+#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
 
 Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const Reference> re) : ref_(re) {
-  gaunt_ = idata->get<bool>("gaunt", false);
-  breit_ = idata->get<bool>("breit", gaunt_);
-  geom_ = geom->relativistic(gaunt_);
-  common_init(idata);
-}
-
-
-Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const RelReference> re) : relref_(re) {
+             const shared_ptr<const Reference> re) : Method(idata, geom, re) {
   gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
@@ -155,7 +147,7 @@ void Dirac::print_eig() const {
 }
 
 
-shared_ptr<RelReference> Dirac::conv_to_ref() const {
+shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const int npos = geom_->nbasis()*2;
   auto out =  make_shared<RelReference>(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_);
@@ -171,12 +163,12 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
 
   shared_ptr<const DistZMatrix> coeff;
-  if (!ref_ && !relref_) {
+  if (!ref_) {
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
-  } else if (relref_) {
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref_->relcoeff()->slice(0, nele_), gaunt_, breit_);
+  } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->slice(0, nele_), gaunt_, breit_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);

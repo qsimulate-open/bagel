@@ -44,7 +44,7 @@ class RelReference : public Reference {
     const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
     const std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
 
-    std::shared_ptr<const RelReference> project_coeff(std::shared_ptr<const Geometry> geomin) const;
+    std::shared_ptr<const Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 
 };
 
