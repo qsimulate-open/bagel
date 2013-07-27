@@ -33,14 +33,14 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Reference> ref) {
-  string method = idata->get<string>("method", "mp2");
+Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
+  string method = idata_->get<string>("method", "mp2");
   if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(ref);
+    algo_ = make_shared<MP2::MP2<Storage_Incore>>(ref_);
   } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(ref);
+    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(ref_);
   } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(ref);
+    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(ref_);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());

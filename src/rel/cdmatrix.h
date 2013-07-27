@@ -27,17 +27,23 @@
 #ifndef __SRC_REL_CDMATRIX_H
 #define __SRC_REL_CDMATRIX_H
 
+#include <src/rel/reldfhalf.h>
 #include <src/math/zmatrix.h>
 
 namespace bagel {
 
+class RelDFHalf;
+
 class CDMatrix : public ZMatrix {
   protected:
-    const int comp_;
+    const int alpha_comp_;
 
   public:
-    CDMatrix(const ZMatrix& o, const int comp) : ZMatrix(o), comp_(comp) { }
-    const int comp() const { return comp_; }
+    CDMatrix(std::shared_ptr<const RelDFHalf> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+             std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
+    CDMatrix(const ZMatrix& o, const int acomp) : ZMatrix(o), alpha_comp_(acomp) { }
+
+    const int alpha_comp() const { return alpha_comp_; }
 
 };
 

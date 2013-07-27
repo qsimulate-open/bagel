@@ -120,6 +120,7 @@ vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o,
   auto i = data_.begin();
   for (auto& j : o->data_) {
     auto tmp = make_shared<Matrix>(**i++ ^ *j);
+    tmp->scale(a);
     tmp->allreduce();
     out.push_back(tmp);
   }

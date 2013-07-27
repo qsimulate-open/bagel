@@ -37,7 +37,7 @@ using namespace bagel;
 
 
 SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
- : idata_(idat), geom_(geom) {
+ : Method(idat, geom, re) {
 
   Timer scfb;
   overlap_ = make_shared<const Overlap>(geom);

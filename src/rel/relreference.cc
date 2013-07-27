@@ -31,30 +31,27 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<const RelReference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<const RelReference> out;
 
-  if (*geom_ == *geomin) {
-    out = shared_from_this();
-  } else {
-    // in this case we first form overlap matrices
-    RelOverlap snew(geomin, true);
-    ZMatrix sinv = snew * snew;
+  // in this case we first form overlap matrices
+  RelOverlap snew(geomin, true);
+  ZMatrix sinv = snew * snew;
 
-    MixedBasis<OverlapBatch> smixed(geom_, geomin);
-    MixedBasis<KineticBatch> tmixed(geom_, geomin);
-    const int nb = geomin->nbasis();
-    const int mb = geom_->nbasis();
-    const complex<double> one(1.0);
-    const complex<double> sca = one * (0.5/(c__*c__));
-    ZMatrix mixed(nb*4, mb*4);
-    mixed.copy_real_block(one,    0,    0, nb, mb, smixed.data());
-    mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed.data());
-    mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed.data());
-    mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed.data());
+  MixedBasis<OverlapBatch> smixed(geom_, geomin);
+  MixedBasis<KineticBatch> tmixed(geom_, geomin);
+  const int nb = geomin->nbasis();
+  const int mb = geom_->nbasis();
+  const complex<double> one(1.0);
+  const complex<double> sca = one * (0.5/(c__*c__));
+  ZMatrix mixed(nb*4, mb*4);
+  mixed.copy_real_block(one,    0,    0, nb, mb, smixed.data());
+  mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed.data());
+  mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed.data());
+  mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed.data());
 
-    auto c = make_shared<ZMatrix>(sinv * mixed * *coeff_);
-    out = make_shared<const RelReference>(geomin, c, energy_, geomin->nele(), 2*geomin->nbasis()-geomin->nele());
-  }
+  auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
+  out = make_shared<const RelReference>(geomin, c, energy_, geomin->nele(), 2*geomin->nbasis()-geomin->nele());
+
   return out;
 }

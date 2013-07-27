@@ -271,6 +271,26 @@ class Tensor {
     }
 
 
+    void print1(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 1);
+      for (auto& i0 : o[0].range()) {
+        if (!this->get_size(i0)) continue;
+        std::unique_ptr<double[]> data = this->get_block(i0);
+        size_t iall = 0;
+        for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+          if (fabs(data[iall]) > thresh) {
+            std::cout << "   " << std::setw(4) << j0 << " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+          }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
+    }
+
+
     void print2(std::string label, const double thresh = 5.0e-2) {
       std::cout << std::endl << "======================================" << std::endl;
       std::cout << " > debug print out " << label << std::endl << std::endl;

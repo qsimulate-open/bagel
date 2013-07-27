@@ -47,17 +47,14 @@ class SmallNAIBatch {
 
     const size_t size_block_;
 
-    void do_nothing();
+    virtual std::shared_ptr<Matrix> nai_compute() const;
 
   public:
     SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol);
-    ~SmallNAIBatch();
 
-    void compute();
+    virtual void compute();
 
     std::shared_ptr<Matrix> operator[](const int i) { return data_[i]; }
-
-    std::shared_ptr<Matrix> nai_compute() const;
 
     size_t size_block() const { return size_block_; }
 

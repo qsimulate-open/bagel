@@ -29,28 +29,24 @@
 using namespace std;
 using namespace bagel;
 
-RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> coord, const std::vector<int> alpha) : RelDFBase(coord), dfdata_(df), swap_(false) {
-  for (auto& i : alpha)
-    alpha_.push_back(std::make_shared<const Alpha>(i));
-  common_init();
+RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), dfdata_(df), swap_(false) {
+  set_basis();
 }
 
 RelDF::RelDF(const RelDF& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
-  common_init();
-
+  set_basis();
   if (coo) {
     swap_ ^= true;
     vector<std::shared_ptr<const SpinorInfo>> newbas;
     for (auto& i : basis_)
       newbas.push_back(i->swap());
     basis_ = newbas;
-    std::swap(coord_.first, coord_.second);
+    std::swap(cartesian_.first, cartesian_.second);
   }
-
 }
 
 
-//swap coord
+//swap cartesian
 shared_ptr<const RelDF> RelDF::swap() const {
   return make_shared<const RelDF>(*this, true);
 }
@@ -83,7 +79,7 @@ vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>&
   for (auto& b : basis_) {
     sum.push_back(cd.front()->clone());
     for (auto& i : cd) {
-      if(b->comp() == i->comp())
+      if(b->alpha_comp() == i->alpha_comp())
         sum.back()->zaxpy(1.0, *i);
     }
   }

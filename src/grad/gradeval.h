@@ -33,11 +33,12 @@
 #include <src/grad/gradeval_base.h>
 #include <src/casscf/werner.h>
 #include <src/casscf/supercigrad.h>
+#include <src/rel/dirac.h>
 
 // T should have
 // o Constructor with the input and geometry
 // o void compute()
-// o std::shared_ptr<Referenc> conv_to_ref()
+// o std::shared_ptr<Reference> conv_to_ref()
 
 namespace bagel {
 
@@ -52,9 +53,9 @@ class GradEval : public GradEval_base {
 
   public:
     // Constructor performs energy calculation
-    GradEval(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom) : GradEval_base(geom) {
+    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) : GradEval_base(geom) {
       if (geom->external()) throw std::logic_error("Gradients with external fields have not been implemented.");
-      task_ = std::make_shared<T>(idata, geom);
+      task_ = std::make_shared<T>(idata, geom, ref);
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy();
@@ -75,6 +76,7 @@ template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
+template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
 
 }
 

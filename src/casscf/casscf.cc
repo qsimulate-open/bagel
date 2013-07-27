@@ -39,14 +39,12 @@ static string tostring(const T i) {
 };
 
 CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : idata_(idat), geom_(geom), hcore_(make_shared<Hcore>(geom)) {
+  : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
-  if (!re) {
+  if (!ref_) {
     auto scf = make_shared<SCF>(idat, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
-  } else {
-    ref_ = re;
   }
 
   common_init();
@@ -111,7 +109,7 @@ void CASSCF::common_init() {
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
   mute_stdcout();
-  fci_ = make_shared<KnowlesHandy>(idata_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+  fci_ = make_shared<KnowlesHandy>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
   resume_stdcout();
 
 

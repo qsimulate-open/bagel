@@ -46,10 +46,13 @@ class GradBatch : public ERIBatch_base {
     std::unique_ptr<double[]> exponents_;
 
   public:
-    GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true);
+    GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true,
+              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
     ~GradBatch();
 
     void compute() override;
+
+    double* data(const int i) override { return data_ + i*size_block_; }
 
 };
 

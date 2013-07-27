@@ -37,7 +37,7 @@ std::vector<double> fci_energy(std::string inp) {
   auto idata = std::make_shared<const PTree>(filename);
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
-  std::shared_ptr<Reference> ref;
+  std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
@@ -57,8 +57,8 @@ std::vector<double> fci_energy(std::string inp) {
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, ref);
-      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, ref);
+      if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
+      else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, geom, ref);
       else assert(false);
 
       fci->compute();

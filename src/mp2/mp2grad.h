@@ -36,11 +36,11 @@ class MP2Grad : public MP2 {
   protected:
 
   public:
-    MP2Grad(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>);
+    MP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute();
 
-    std::shared_ptr<Reference> conv_to_ref() const { return ref_; }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 };
 
 }

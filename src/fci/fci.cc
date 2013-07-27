@@ -32,8 +32,8 @@
 using namespace std;
 using namespace bagel;
 
-FCI::FCI(const std::shared_ptr<const PTree> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {
+FCI::FCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
 
@@ -163,7 +163,7 @@ void FCI::print_header() const {
   cout << "  ---------------------------" << endl << endl;
 }
 
-shared_ptr<const CIWfn> FCI::conv_to_ciwfn() {
+shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
   return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
 }
 

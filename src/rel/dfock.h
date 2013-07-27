@@ -45,27 +45,12 @@ class DFock : public ZMatrix {
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
 
-    std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
-    std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
-                                                            std::array<std::shared_ptr<const Matrix>,4>);
 
     void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
     void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);
-
-    // utility functions
-    template<class T> void factorize(T& m) const {
-      for (auto i = m.begin(); i != m.end(); ++i)
-        for (auto j = i; j != m.end(); ) {
-          if (i != j && (*i)->matches(*j)) {
-            (*i)->zaxpy(std::conj((*j)->fac() / (*i)->fac()), *j);
-            j = m.erase(j);
-          } else
-            ++j;
-        }
-    }
 
   public:
     DFock(const std::shared_ptr<const Geometry> a,
@@ -77,6 +62,23 @@ class DFock : public ZMatrix {
        assert(breit ? gaunt : true);
        two_electron_part(coeff, rhf, scale_ex);
     }
+
+    // Utility functions. They are static so that it could be used from gradient codes
+
+    // T needs to have "zaxpy" and "matches" functions.
+    template<class T> static void factorize(T& m) {
+      for (auto i = m.begin(); i != m.end(); ++i)
+        for (auto j = i; j != m.end(); ) {
+          if (i != j && (*i)->matches(*j)) {
+            (*i)->zaxpy((*j)->fac() / (*i)->fac(), *j);
+            j = m.erase(j);
+          } else
+            ++j;
+        }
+    }
+    static std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
+    static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
+                                                                   std::array<std::shared_ptr<const Matrix>,4>);
 
 };
 

@@ -48,13 +48,11 @@ class RelDFHalf : public RelDFBase {
     std::array<std::shared_ptr<DFHalfDist>,2> df2_;
     bool split_;
 
-    void set_basis() override { /* does not need to do anything */ }
-
   public:
     RelDFHalf(std::shared_ptr<const RelDF>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
                   std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
-    RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> coord, std::vector<std::shared_ptr<const SpinorInfo>> bas);
+    RelDFHalf(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);
     RelDFHalf(const RelDFHalf& o);
 
     std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
@@ -76,11 +74,24 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 
-    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(); }
+    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
     std::list<std::shared_ptr<RelDFHalf>> split(const bool docopy = false);
     bool split_status() const { return split_; }
-    const std::vector<std::shared_ptr<const SpinorInfo>> new_basis(std::shared_ptr<const Breit2Index>) const;
 
+};
+
+
+// Half-transformed DF objects when backtransforming to AO
+class RelDFHalfB {
+  protected:
+    std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
+    const int basis_;
+    const int alpha_;
+  public:
+    RelDFHalfB(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { } 
+
+    int basis() const { return basis_; }
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool imag = false) const;
 };
 
 }

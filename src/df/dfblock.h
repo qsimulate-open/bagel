@@ -75,8 +75,8 @@ class DFBlock {
     // average the asize between MPI processes (block will be described by dist_)
     void average();
 
-    std::shared_ptr<DFBlock> transform_second(const double* const c, const int nocc, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(const double* const c, const int nocc, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
 
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
@@ -110,7 +110,7 @@ class DFBlock {
     void scale(const double a);
 
     // add ab^+  to this.
-    void add_direct_product(const double* a, const double* b, const double fac);
+    void add_direct_product(const std::shared_ptr<const Matrix> a, const std::shared_ptr<const Matrix> b, const double fac);
 
     // some additional functions
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)

@@ -14,11 +14,11 @@
 
 {
   "title" : "optimize",
-  "method" : {
+  "method" : [ {
     "title" : "mp2",
     "thresh" : 1.0e-10,
     "frozen" : true
-  }
+  } ]
 }
 
 ]}

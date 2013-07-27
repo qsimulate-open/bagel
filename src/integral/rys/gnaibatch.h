@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <tuple>
+#include <src/grad/gradfile.h>
 #include <src/integral/rys/naibatch_base.h>
 
 namespace bagel {
@@ -50,11 +51,13 @@ class GNAIBatch : public NAIBatch_base {
       }
       set_exponents();
     }
-    ~GNAIBatch() {}
 
     /// compute a batch of integrals
     void compute();
 
+    std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> cden, const int iatom0, const int iatom1, const int natom) const;
+
+    int nblocks() const { return mol_->natom()*3; }
 };
 
 }

@@ -76,6 +76,7 @@ class GradFile {
 
     void scale(const double a) { data_->scale(a); }
     double norm() const { return std::sqrt(ddot(*this)); }
+    double rms() const { return std::sqrt(ddot(*this)/size()); }
     void print() const;
 
     // this function assumes that double[] has data_.size()*data_size() elements.

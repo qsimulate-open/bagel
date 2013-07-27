@@ -43,7 +43,7 @@ class SCF : public SCF_base {
 
     void compute() override;
 
-    std::shared_ptr<Reference> conv_to_ref() const;
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 
     bool dodf() const { return dodf_; }
 

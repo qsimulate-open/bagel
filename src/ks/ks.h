@@ -63,7 +63,7 @@ class KS : public SCF_base {
 
     virtual void compute() override;
 
-    std::shared_ptr<Reference> conv_to_ref() const;
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::shared_ptr<const XCFunc> func() const { return func_; }
     std::shared_ptr<const DFTGrid_base> grid() const { return grid_; }

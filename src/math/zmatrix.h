@@ -160,8 +160,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void print_row(const std::string, const std::string in = "", const size_t size = 10, const int row_num = 0) const;
     void print_col(const std::string, const std::string in = "", const size_t size = 10, const int col_num = 0) const;
 
-    std::shared_ptr<ZMatrix> convert_real(const std::shared_ptr<const Matrix>) const;
-
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;
     ZMatrix(const DistZMatrix&);

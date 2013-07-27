@@ -38,7 +38,7 @@ double meh_energy(std::string inp) {
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  std::shared_ptr<Reference> ref;
+  std::shared_ptr<const Reference> ref;
   std::shared_ptr<Dimer> dimer;
 
   std::map<std::string, std::shared_ptr<const void>> saved;

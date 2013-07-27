@@ -33,6 +33,7 @@
 #include <src/smith/moint.h>
 #include <src/smith/denom.h>
 #include <src/math/matrix.h>
+#include <src/fci/dvec.h>
 #include <src/wfn/reference.h>
 #include <src/prop/dipole.h>
 #include <src/grad/cphf.h>
@@ -49,11 +50,13 @@ class SpinFreeMethod {
     IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
+    IndexRange ci_;
 
     // new
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
+    std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<const Reference> ref_;
 
@@ -67,12 +70,16 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm2_;
     std::shared_ptr<Tensor<T>> rdm3_;
     std::shared_ptr<Tensor<T>> rdm4_;
+    std::shared_ptr<Tensor<T>> dci_;
 
     // correlated density matrices
     std::shared_ptr<Tensor<T>> den1_;
     double correct_den1_;
     std::shared_ptr<Tensor<T>> den2_;
 
+    // ci derivative target vector
+    std::shared_ptr<Tensor<T>> deci_; 
+    std::shared_ptr<Tensor<T>> ci_coeff_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -524,9 +531,17 @@ class SpinFreeMethod {
       virt_ = v;
       all_ = a;
 
+      // TODO this should be updated
+      // length of the ci expansion
+      std::shared_ptr<const Civec> ci0 = r->civectors()->data(0);
+      size_t ci_size = ci0->size();
+      IndexRange ci(ci_size, max);
+      ci_ = ci;
+
       rclosed_ = std::make_shared<const IndexRange>(c);
       ractive_ = std::make_shared<const IndexRange>(act);
       rvirt_   = std::make_shared<const IndexRange>(v);
+      rci_     = std::make_shared<const IndexRange>(ci);
 
       // f1 tensor.
       {
@@ -548,6 +563,15 @@ class SpinFreeMethod {
         std::vector<IndexRange> o = {occ, virt, occ, virt};
         K2ext<T> v2k(ref_, coeff_, o);
         v2_ = v2k.tensor();
+      }
+
+      // make a ci tensor.
+      {
+        std::vector<IndexRange> o = {ci_}; 
+        // TODO fix later when referece has civec
+        Ci<T> dci(ref_, o, ci0);
+        dci_ = dci.tensor();
+        ci_coeff_ = dci.coeff();
       }
 
       // rdms
@@ -674,6 +698,8 @@ class SpinFreeMethod {
     std::shared_ptr<const Reference>& ref() { return ref_; };
 
     double e0() const { return e0_; }
+
+    std::shared_ptr<Tensor<T>> ci_coeff() const { return ci_coeff_; }
 
     virtual void solve() = 0;
 

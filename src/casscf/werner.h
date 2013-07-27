@@ -36,7 +36,7 @@ class WernerKnowles : public CASSCF {
   protected:
     virtual void common_init() {
       std::cout << "    * Using the two-step Werner-Knowles algorithm (see JCP 1985)" << std::endl << std::endl;
-    };
+    }
 
     std::shared_ptr<Matrix> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix>, std::shared_ptr<const Coeff>);
     std::shared_ptr<Matrix> compute_bvec(const std::shared_ptr<const Jvec>, std::shared_ptr<Matrix>,
@@ -51,15 +51,15 @@ class WernerKnowles : public CASSCF {
     int max_mmicro_iter_;
 
   public:
-    WernerKnowles(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom)
-      : CASSCF(idat, geom) {common_init();
+    WernerKnowles(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+      : CASSCF(idat, geom, ref) {common_init();
       // get thresh (for micro iteration) from the input
       thresh_mmicro_ = idat->get<double>("thresh_mmicro", thresh_micro_);
       max_mmicro_iter_ = idat->get<int>("maxiter_mmicro", 3);
-    };
-    ~WernerKnowles() {};
+    }
+    ~WernerKnowles() {}
 
-    virtual void compute();
+    void compute() override;
 
 
 };

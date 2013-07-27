@@ -112,12 +112,33 @@ unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DFDist::add_direct_product(const vector<const double*> cd, const vector<const double*> dd, const double a) {
+
+shared_ptr<DFDist> DFDist::copy() const {
+  auto out = make_shared<DFDist>(df_);
+  for (auto& i : block_)
+    out->add_block(i->copy());
+  return out;
+}
+
+
+shared_ptr<DFDist> DFDist::clone() const {
+  auto out = make_shared<DFDist>(df_);
+  for (auto& i : block_)
+    out->add_block(i->clone());
+  return out;
+}
+
+
+void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
 
-  for (auto c = cd.begin(), d = dd.begin(); c != cd.end(); ++c, ++d)
-    block_[0]->add_direct_product(*c+block_[0]->astart(), *d, a);
+  auto d = dd.begin();
+  for (auto& c : cd) {
+    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1); 
+    block_[0]->add_direct_product(aslice, *d++, a);
+  }
+  assert(d == dd.end());
 }
 
 
@@ -255,18 +276,20 @@ shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, sh
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform(const double* c, const size_t nocc) const {
+shared_ptr<DFHalfDist> DFDist::compute_half_transform(const std::shared_ptr<const Matrix> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
   for (auto& i : block_)
-    out->add_block(i->transform_second(c, nocc));
+    out->add_block(i->transform_second(c));
   return out;
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const double* c, const size_t nocc) const {
+shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
   for (auto& i : block_)
-    out->add_block(i->transform_third(c, nocc)->swap());
+    out->add_block(i->transform_third(c)->swap());
   return out;
 }
 
@@ -274,10 +297,11 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const double* c, cons
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const double* c, const size_t nocc) const {
+shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(const std::shared_ptr<const Matrix> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFFullDist>(df_, nindex1_, nocc);
   for (auto& i : block_)
-    out->add_block(i->transform_third(c, nocc));
+    out->add_block(i->transform_third(c));
   return out;
 }
 
@@ -298,29 +322,32 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
-shared_ptr<DFDist> DFHalfDist::back_transform(const double* c) const{
+shared_ptr<DFDist> DFHalfDist::back_transform(const std::shared_ptr<const Matrix> c) const{
+  assert(df_->nindex1() == c->ndim());
   auto out = make_shared<DFDist>(df_);
   for (auto& i : block_)
-    out->add_block(i->transform_second(c, df_->nindex1(), true));
+    out->add_block(i->transform_second(c, true));
   return out;
 }
 
 
-void DFHalfDist::rotate_occ(const double* d) {
+void DFHalfDist::rotate_occ(const std::shared_ptr<const Matrix> d) {
+  assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(d, nindex1_);
+    i = i->transform_second(d);
 }
 
 
-shared_ptr<DFHalfDist> DFHalfDist::apply_density(const double* den) const {
+shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Matrix> den) const {
+  assert(den->mdim() == nindex2_);
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
-    out->add_block(i->transform_third(den, nindex2_));
+    out->add_block(i->transform_third(den));
   return out;
 }
 
 
-shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const double* den, const double a) const {
+shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const {
   return apply_density(den)->form_2index(df_, a);
 }
 
@@ -351,10 +378,11 @@ void DFFullDist::symmetrize() {
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
-shared_ptr<DFHalfDist> DFFullDist::back_transform(const double* c) const {
+shared_ptr<DFHalfDist> DFFullDist::back_transform(const std::shared_ptr<const Matrix> c) const {
+  assert(c->ndim() == df_->nindex2());
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
-    out->add_block(i->transform_third(c, df_->nindex2(), true));
+    out->add_block(i->transform_third(c, true));
   return out;
 }
 

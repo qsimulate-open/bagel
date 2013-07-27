@@ -27,7 +27,7 @@
 #include <src/util/constants.h>
 #include <src/rel/dfock.h>
 #include <src/math/matrix.h>
-#include <src/rel/cdmatrix_drv.h>
+#include <src/rel/cdmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -77,7 +77,7 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
   //add it twice, once to first basis combo, then once to opposite basis combo
   int j = 0;
   for (auto& i : dfdata->basis()) {
-    add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]);
+    add_block(i->fac(dfdata->cartesian())*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]);
   }
 
   //if basis1 != basis2, get transpose to fill in opposite corner
@@ -85,7 +85,9 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
     shared_ptr<const RelDF> swap = dfdata->swap();
     int j = 0;
     for (auto& i : swap->basis()) {
-      add_block(i->fac()*scale, n * i->basis(0), n * i->basis(1), n, n, dat[j++]->transpose());
+      add_block(i->fac(swap->cartesian())*scale, n*i->basis(0), n*i->basis(1), n, n, dat[j++]->transpose_conjg());
+      // conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero. 
+      // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky! 
     }
   }
 }
@@ -99,20 +101,16 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
-    // plus
     r   =  dfc1->get_real()->form_2index(dfc2->get_real(), 1.0);
-    // plus = minus * minux. (one from i*i, the other from conjugate)
     *r += *dfc1->get_imag()->form_2index(dfc2->get_imag(), 1.0);
-    // minus (from conjugate)
-    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(), -1.0);
-    // plus
-    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(), 1.0);
+    i   =  dfc1->get_real()->form_2index(dfc2->get_imag(), 1.0);
+    *i += *dfc1->get_imag()->form_2index(dfc2->get_real(),-1.0);
   } else {
     // the same as above
     shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), 0.5);
     shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), 0.5);
     r = make_shared<Matrix>(*ss + *dd);
-    i = make_shared<Matrix>(*ss - *dd + *dfc1->get_real()->form_2index(dfc2->get_imag(), -2.0));
+    i = make_shared<Matrix>(*dd - *ss + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0));
   }
 
   const bool diagonal = diag || dfc1 == dfc2;
@@ -120,7 +118,7 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
   auto a = make_shared<ZMatrix>(*r, *i);
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
-      auto out = make_shared<ZMatrix>(*a * (conj(i1->fac())*i2->fac()));
+      auto out = make_shared<ZMatrix>(*a * (conj(i1->fac(dfc1->cartesian()))*i2->fac(dfc2->cartesian())));
 
       const int index0 = i1->basis(1);
       const int index1 = i2->basis(1);
@@ -178,6 +176,7 @@ list<shared_ptr<RelDFHalf>> DFock::make_half_complex(list<shared_ptr<RelDF>> dfd
 
 }
 
+
 void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff,
                               array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                               const double scale_exchange)  {
@@ -194,6 +193,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   list<shared_ptr<RelDF>> dfdists = make_dfdists(dfs, gaunt);
+  // Note that we are NOT using dagger-ed coefficients! -1 factor for imagnary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
 
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
@@ -217,13 +217,13 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
 
-    auto breit_matrix = make_shared<BreitInt>(geom_);
+    auto breitint = make_shared<BreitInt>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
-    for (int i = 0; i != breit_matrix->nblocks(); ++i) {
-      breit_2index.push_back(make_shared<Breit2Index>(breit_matrix->index(i), breit_matrix->data(i), geom_->df()->data2()));
+    for (int i = 0; i != breitint->nblocks(); ++i) {
+      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
-      if (breit_matrix->not_diagonal(i))
+      if (breitint->not_diagonal(i))
         breit_2index.push_back(breit_2index.back()->cross());
     }
 
@@ -241,6 +241,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     half_complex_exch2 = half_complex_exch;
   }
 
+  // this is a necessary condition if we use symmetry below (Exop) 
   assert(half_complex_exch.size() == half_complex_exch2.size());
 
   // will use the zgemm3m-like algorithm
@@ -270,7 +271,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_drv>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
+      cd.push_back(make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
     }
   }
 

@@ -28,9 +28,12 @@
 #define __SRC_OPT_OPT_H
 
 #include <fstream>
+#include <string>
+#include <algorithm>
 #include <src/math/bfgs.h>
 #include <src/util/timer.h>
 #include <src/grad/gradeval.h>
+#include <src/wfn/construct_method.h>
 
 namespace bagel {
 
@@ -50,8 +53,7 @@ class Opt {
     std::streambuf* backup_stream_;
     std::ofstream* ofs_;
 
-    // TODO make it adjustable from the input
-    const double thresh_;
+    double thresh_;
 
     static const int maxiter_ = 10;
     static const bool nodf = true;
@@ -67,17 +69,32 @@ class Opt {
 
   public:
     Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), thresh_(1.0e-5), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
       bfgs_ = std::make_shared<BFGS<GradFile>>(std::make_shared<const GradFile>(geom->natom(), 1.0));
       bmat_ = current_->compute_internal_coordinate();
 
       internal_ = inp->get<bool>("internal", true);
+      thresh_ = idat->get<double>("thresh", 1.0e-5);
     }
 
     bool next() {
       if (iter_ > 0) mute_stdcout();
       Timer timer;
-      GradEval<T> eval(input_, current_);
+
+      // first calculate reference (if needed)
+      std::shared_ptr<const Reference> ref; // TODO in principle we can use ref from the previous iteration
+      auto m = input_->begin();
+      for ( ; m != --input_->end(); ++m) {
+        std::string title = (*m)->get<std::string>("title", ""); 
+        std::transform(title.begin(), title.end(), title.begin(), ::tolower);
+        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        c->compute();
+        ref = c->conv_to_ref();
+      }
+      std::shared_ptr<const PTree> cinput = *m; 
+
+      // then calculate gradients
+      GradEval<T> eval(cinput, current_, ref);
       if (iter_ == 0) {
         print_header();
         mute_stdcout();
@@ -102,13 +119,13 @@ class Opt {
       } else {
         displ = bfgs_->extrapolate(cgrad, cgeom);
       }
-      const double gradnorm = cgrad->norm();
-      const double disnorm = displ->norm();
+      const double gradnorm = cgrad->rms();
+      const double disnorm = displ->rms();
       const bool converged = gradnorm < thresh_ && disnorm < thresh_;
       if (!converged) {
         displ->scale(-1.0);
         if (iter_ == 0) displ->scale(0.01);
-        current_ = std::make_shared<const Geometry>(*current_, displ->xyz(), input_);
+        current_ = std::make_shared<const Geometry>(*current_, displ->xyz(), cinput);
         current_->print_atoms();
       }
 

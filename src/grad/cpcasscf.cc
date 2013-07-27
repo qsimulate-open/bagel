@@ -64,13 +64,12 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   const size_t nbasis = geom_->nbasis();
 
-  const double* const ocoeff = ref_->coeff()->data();
-  const double* const vcoeff = ocoeff + nocca*nbasis;
+  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
 
   // some DF vectors
   shared_ptr<const DFDist> df = ref_->geom()->df();
-  shared_ptr<const DFHalfDist> half = df->compute_half_transform(ocoeff, nocca)->apply_J();
-  shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff, nocca);
+  shared_ptr<const DFHalfDist> half = df->compute_half_transform(ocoeff)->apply_J();
+  shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff);
 
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec>> denom;
@@ -153,21 +152,21 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
     // (D|jx) -> (D|jS)
     {
-      shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv->data(), nbasis);
-      shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->data(), nocca)->apply_J();
+      shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
+      shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->slice(0,nocca))->apply_J();
       tmp0->daxpy(1.0, tmp1);
       shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff->data(), nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
     }
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
-    shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->data(), nocca);
+    shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->slice(0,nocca));
     fullz->symmetrize();
     {
       shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff, nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff->data(), nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
     }
 
     // one electron part...
@@ -255,7 +254,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   const int nact = ref_->nact();
 
   const double* const coeff = ref_->coeff()->data();
-  const double* const acoeff = coeff + nclosed*nbasis;
+  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
 
   // compute RDMs
   shared_ptr<const RDM<1>> rdm1t;
@@ -284,7 +283,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   shared_ptr<const Matrix> core_fock = fci_->jop()->core_fock();
   unique_ptr<double[]> buf(new double[nbasis*nact]);
   unique_ptr<double[]> buf2(new double[nbasis*nact]);
-  dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff, nbasis, 0.0, buf.get(), nbasis);
+  dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff->data(), nbasis, 0.0, buf.get(), nbasis);
   dgemm_("N", "N", nbasis, nact, nact, 1.0, buf.get(), nbasis, rdm1->data(), nact, 0.0, buf2.get(), nbasis);
   dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis);
 
@@ -292,9 +291,9 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 #if 0
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
 #else
-  shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(acoeff, nact);
+  shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(acoeff);
 #endif
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff, nact)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
   shared_ptr<const Matrix> jd = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd->data(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);

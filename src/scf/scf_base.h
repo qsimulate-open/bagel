@@ -30,14 +30,12 @@
 #include <src/molecule/hcore.h>
 #include <src/scf/tildex.h>
 #include <src/scf/fock.h>
-#include <src/wfn/reference.h>
+#include <src/wfn/method.h>
 
 namespace bagel {
 
-class SCF_base {
+class SCF_base : public Method {
   protected:
-    const std::shared_ptr<const PTree> idata_;
-    const std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<TildeX> tildex_;
     std::shared_ptr<const Overlap> overlap_;
     std::shared_ptr<const Hcore> hcore_;
@@ -63,11 +61,8 @@ class SCF_base {
   public:
     SCF_base(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
-    ~SCF_base() {};
 
-    virtual void compute() = 0;
-
-    const std::shared_ptr<const Geometry> geom() const { return geom_; };
+    virtual void compute() override = 0;
 
     const std::shared_ptr<const Coeff> coeff() const { return coeff_; };
     void set_coeff(const std::shared_ptr<Coeff> o) { coeff_ = o; };
@@ -79,7 +74,7 @@ class SCF_base {
     int noccB() const { return noccB_; };
     double energy() const { return energy_; };
 
-    virtual std::shared_ptr<Reference> conv_to_ref() const = 0;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     double* eig() { return eig_.get(); };
 };

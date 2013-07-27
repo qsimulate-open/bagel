@@ -30,18 +30,13 @@
 #include <src/fci/mofile.h>
 #include <src/fci/properties.h>
 #include <src/wfn/ciwfn.h>
+#include <src/wfn/method.h>
 
 namespace bagel {
 
-class FCI {
+class FCI : public Method {
 
   protected:
-    // input
-    std::shared_ptr<const PTree> idata_;
-    // reference
-    std::shared_ptr<const Reference> ref_;
-    // geometry file
-    const std::shared_ptr<const Geometry> geom_;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -105,10 +100,10 @@ class FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    FCI(const std::shared_ptr<const PTree>, std::shared_ptr<const Reference>,
+    FCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
-    virtual void compute();
+    virtual void compute() override;
 
     virtual void update(std::shared_ptr<const Coeff> ) = 0;
 
@@ -171,7 +166,8 @@ class FCI {
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 
-    std::shared_ptr<const CIWfn> conv_to_ciwfn();
+    std::shared_ptr<const CIWfn> conv_to_ciwfn() const;
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };
 
 }

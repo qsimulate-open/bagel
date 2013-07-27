@@ -30,22 +30,14 @@
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/math/diis.h>
+#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
 
 Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const Reference> re) : ref_(re) {
-  gaunt_ = idata->get<bool>("gaunt", true);
-  breit_ = idata->get<bool>("breit", gaunt_);
-  geom_ = geom->relativistic(gaunt_);
-  common_init(idata);
-}
-
-
-Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
-             const shared_ptr<const RelReference> re) : relref_(re) {
-  gaunt_ = idata->get<bool>("gaunt", true);
+             const shared_ptr<const Reference> re) : Method(idata, geom, re) {
+  gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
@@ -80,7 +72,7 @@ void Dirac::compute() {
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
   shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();
   shared_ptr<const DistZMatrix> s12 = s12_->distmatrix();
-  unique_ptr<double[]> eig(new double[hcore->ndim()]);
+  eig_ = unique_ptr<double[]>(new double[hcore->ndim()]);
 
   // making initial guess
   shared_ptr<const DistZMatrix> coeff = initial_guess(s12, hcore);
@@ -108,7 +100,7 @@ void Dirac::compute() {
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
-    const complex<double> prod = aodensity->zdotc(*hcore+*distfock);
+    const complex<double> prod = aodensity->zdotc(*hcore+*distfock); // identical to Tr(D^+ F)
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
 //    throw runtime_error(ss.str());
@@ -123,7 +115,7 @@ void Dirac::compute() {
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_
          << "   " << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 
-    if (error < thresh_scf_) {
+    if (error < thresh_scf_ && iter > 0) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       break;
     } else if (iter == max_iter_-1) {
@@ -137,7 +129,7 @@ void Dirac::compute() {
     }
 
     DistZMatrix intermediate(*coeff % *distfock * *coeff);
-    intermediate.diagonalize(eig.get());
+    intermediate.diagonalize(eig_.get());
     coeff = make_shared<DistZMatrix>(*coeff * intermediate);
 
     aodensity = coeff->form_density_rhf(nele_, nneg_);
@@ -145,21 +137,24 @@ void Dirac::compute() {
   }
 
   coeff_ = coeff->matrix();
-  print_eig(eig);
 }
 
 
 //Print non dirac sea eigenvalues
-void Dirac::print_eig(const unique_ptr<double[]>& eig) {
+void Dirac::print_eig() const {
   const int n = geom_->nbasis();
-  for (int i = 0*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig[i] <<  endl;
+  for (int i = 0*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig_[i] <<  endl;
 }
 
 
-shared_ptr<RelReference> Dirac::conv_to_ref() const {
+shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
   const int npos = geom_->nbasis()*2;
-  return make_shared<RelReference>(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_);
+  auto out =  make_shared<RelReference>(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_);
+  vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_*2);
+  assert(nneg_*2 == coeff_->ndim());
+  out->set_eig(eig);
+  return out;
 }
 
 
@@ -168,12 +163,12 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
 
   shared_ptr<const DistZMatrix> coeff;
-  if (!ref_ && !relref_) {
+  if (!ref_) {
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
-  } else if (relref_) {
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref_->coeff()->slice(0, nele_), gaunt_, breit_);
+  } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->slice(0, nele_), gaunt_, breit_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);

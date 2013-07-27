@@ -40,3 +40,11 @@ void GNAIBatch::set_exponents() {
     }
   }
 }
+
+
+shared_ptr<GradFile> GNAIBatch::compute_gradient(shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const {
+  auto out = make_shared<GradFile>(natom);
+  for (int k = 0; k != 3*natom; ++k)
+    out->data(k) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1); 
+  return out;
+}

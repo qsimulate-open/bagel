@@ -29,17 +29,14 @@
 
 #include <src/mp2/f12int.h>
 #include <src/scf/scf.h>
-#include <src/wfn/reference.h>
+#include <src/wfn/method.h>
 #include <mutex>
 
 namespace bagel {
 
-class MP2 {
+class MP2 : public Method {
   friend class MP2AssemTask;
   protected:
-    const std::shared_ptr<const PTree> idata_;
-    const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<Reference> ref_;
     std::shared_ptr<SCF> scf_;
     int ncore_;
 
@@ -50,9 +47,11 @@ class MP2 {
     MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
         const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
 
-    virtual void compute();
+    virtual void compute() override;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; } 
 
     double energy() const { return energy_; }
+    int ncore() const { return ncore_; }
 };
 
 }

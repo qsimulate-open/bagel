@@ -37,14 +37,9 @@
 
 namespace bagel {
 
-class CASSCF {
+class CASSCF : public Method {
 
   protected:
-    // input
-    const std::shared_ptr<const PTree> idata_;
-    const std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Reference> ref_;
-
     // some internal information
     int nocc_; // sum of nact_ + nclosed_
     int nclosed_;
@@ -85,10 +80,10 @@ class CASSCF {
            const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
     virtual ~CASSCF();
 
-    virtual void compute() = 0;
+    virtual void compute() override = 0;
 
     std::shared_ptr<const Reference> ref() const { return ref_; };
-    virtual std::shared_ptr<const Reference> conv_to_ref() const;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::shared_ptr<FCI> fci() { return fci_; };
     std::shared_ptr<const FCI> fci() const { return fci_; };

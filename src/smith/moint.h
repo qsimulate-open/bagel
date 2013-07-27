@@ -65,10 +65,10 @@ class K2ext {
 
       // occ loop
       for (auto& i0 : blocks_[0]) {
-        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->data()+nbasis*i0.offset(), i0.size())->apply_J();
+        std::shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->slice(i0.offset(), i0.offset()+i0.size()))->apply_J();
         // virtual loop
         for (auto& i1 : blocks_[1]) {
-          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->data()+nbasis*i1.offset(), i1.size());
+          std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
           dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
         }
       }
@@ -204,6 +204,41 @@ class MOFock {
     std::shared_ptr<Tensor<T>> tensor() { return data_; }
     std::shared_ptr<Tensor<T>> hcore() { return hcore_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+};
+
+
+template <typename T>
+class Ci {
+  protected:
+    std::shared_ptr<const Reference> ref_;
+    std::vector<IndexRange> blocks_;
+    std::shared_ptr<const Civec> civec_;
+    std::size_t ci_size_;
+    std::shared_ptr<Tensor<T>>  coeff_;
+
+
+  public:
+    Ci(std::shared_ptr<const Reference> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), civec_(c), ci_size_(c->size()) {
+      assert(b.size() == 1); 
+    
+      // form ci coefficient tensor
+      coeff_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+
+      for (auto& i0 : blocks_[0]) {
+        const size_t size = i0.size();
+        std::unique_ptr<double[]> cc(new double[size]);
+        int iall = 0;
+        for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+          cc[iall] = civec_->data(j0);
+        }
+        coeff_->put_block(cc, i0);
+      }
+
+    }
+    ~Ci() {}
+
+    std::shared_ptr<Tensor<T>> tensor() { return std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false)); }
+    std::shared_ptr<Tensor<T>> coeff() const { return coeff_; }
 };
 
 }

@@ -14,12 +14,12 @@
 
 {
   "title" : "optimize",
-  "method" : {
+  "method" : [ {
     "title" : "casscf",
     "nact" : 0,
     "nact_cas" : 6,
     "nclosed" : 0
-  }
+  } ]
 }
 
 ]}

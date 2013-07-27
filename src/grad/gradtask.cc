@@ -30,6 +30,8 @@
 #include <src/grad/gradfile.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/gnaibatch.h>
+#include <src/integral/rys/gsmallnaibatch.h>
+#include <src/integral/rys/gsmalleribatch.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/integral/os/gkineticbatch.h>
 #include <src/smith/prim_op.h>
@@ -40,60 +42,87 @@
 using namespace std;
 using namespace bagel;
 
+
+shared_ptr<GradFile> GradTask::compute_nai() const {
+  const int dimb1 = shell2_[0]->nbasis();
+  const int dimb0 = shell2_[1]->nbasis();
+  GNAIBatch batch2(shell2_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
+  batch2.compute();
+  shared_ptr<Matrix> cden = den2_->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  const int dummy = -1;
+  return batch2.compute_gradient(cden, dummy, dummy, ge_->geom_->natom());
+}
+
+
+shared_ptr<GradFile> GradTask::compute_smallnai() const {
+  const int dimb1 = shell2_[0]->nbasis();
+  const int dimb0 = shell2_[1]->nbasis();
+  GSmallNAIBatch batch(shell2_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
+  batch.compute();
+
+  array<shared_ptr<const Matrix>,6> dmat;
+  auto iter = rden_.begin();
+  for (auto& i : dmat) {
+    shared_ptr<Matrix> tmp = (*iter)->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+    tmp->localize();
+    i = tmp;
+    ++iter;
+  }
+  return batch.compute_gradient(dmat);
+}
+
+
+shared_ptr<GradFile> GradTask::compute_smalleri() const {
+  GSmallERIBatch batch(shell_, array<int,3>{{atomindex_[0], atomindex_[1], atomindex_[2]}}, ge_->geom_->natom());
+  batch.compute();
+
+  array<unique_ptr<double[]>,6> d = {{
+    rden3_[0]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[1]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[2]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[3]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[4]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()),
+    rden3_[5]->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis()) }};
+
+  return batch.compute_gradient(d);
+}
+
+
 void GradTask::compute() {
+
   if (rank_ == 1) {
-    const int iatom0 = atomindex_[0];
-    const int iatom1 = atomindex_[1];
-    const int nbasis = ge_->geom_->nbasis();
     auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
-    const int dimb1 = shell2_[0]->nbasis();
-    const int dimb0 = shell2_[1]->nbasis();
-    {
-      GNAIBatch batch2(shell2_, ge_->geom_, tie(iatom1, iatom0));
-      batch2.compute();
-      const double* ndata = batch2.data();
-      const size_t s = batch2.size_block();
-      for (int ia = 0; ia != ge_->geom_->natom()*3; ++ia) {
-        for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-          for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-            grad_local->data(ia) += ndata[cnt+s*ia] * den2_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
-    {
-      GKineticBatch batch(shell2_);
-      const double* kdata = batch.data();
-      batch.compute();
-      const size_t s = batch.size_block();
-      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-          int jatom0 = batch.swap01() ? iatom1 : iatom0;
-          int jatom1 = batch.swap01() ? iatom0 : iatom1;
-          for (int k = 0; k != 3; ++k) {
-            grad_local->data(k, jatom1) += kdata[cnt+s*k    ] * den2_->data(i*nbasis+j);
-            grad_local->data(k, jatom0) += kdata[cnt+s*(k+3)] * den2_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
-    {
-      GOverlapBatch batch(shell2_);
-      const double* odata = batch.data();
-      batch.compute();
-      const size_t s = batch.size_block();
-      for (int i = offset_[0], cnt = 0; i != dimb0 + offset_[0]; ++i) {
-        for (int j = offset_[1]; j != dimb1 + offset_[1]; ++j, ++cnt) {
-          int jatom0 = batch.swap01() ? iatom1 : iatom0;
-          int jatom1 = batch.swap01() ? iatom0 : iatom1;
-          for (int k = 0; k != 3; ++k) {
-            grad_local->data(k, jatom1) -= odata[cnt+s*k    ] * eden_->data(i*nbasis+j);
-            grad_local->data(k, jatom0) -= odata[cnt+s*(k+3)] * eden_->data(i*nbasis+j);
-          }
-        }
-      }
-    }
+    *grad_local += *compute_nai();
+    *grad_local += *compute_os<GKineticBatch>(den3_);
+    *grad_local -= *compute_os<GOverlapBatch>(eden_);
+
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+      lock_guard<mutex> lock(ge_->mutex_[iatom]);
+      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
+      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
+      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+    }
+
+  // relativistic one-electron integrals
+  } else if (rank_ == -1) {
+
+    shared_ptr<GradFile> grad_local = compute_smallnai();
+    for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+      lock_guard<mutex> lock(ge_->mutex_[iatom]);
+      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
+      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
+      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+    }
+
+  } else if (rank_ == -3) {
+
+    shared_ptr<GradFile> grad_local = compute_smalleri();
+    list<int> done;
+    for (int i = 0; i != 3; ++i) {
+      const int iatom = atomindex_[i];
+      if (find(done.begin(), done.end(), iatom) != done.end()) continue; // should not add twice
+      done.push_back(iatom);
+
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
       ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
       ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
@@ -117,18 +146,16 @@ void GradTask::compute() {
     if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
     if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
 
-    const unique_ptr<double[]> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
-    const unique_ptr<double[]> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
-    unique_ptr<double[]> db3(new double[sblock]);
-    SMITH::sort_indices<0,2,1,0,1,1,1>(db2, db3, shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
+    unique_ptr<double[]> db1 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[1], shell_[2]->nbasis(), offset_[0], shell_[3]->nbasis());
+    unique_ptr<double[]> db2 = den_->get_block(offset_[2], shell_[1]->nbasis(), offset_[0], shell_[3]->nbasis(), offset_[1], shell_[2]->nbasis());
+    SMITH::sort_indices<0,2,1,1,1,1,1>(db2, db1, shell_[1]->nbasis(), shell_[3]->nbasis(), shell_[2]->nbasis());
 
     for (int iatom = 0; iatom != 4; ++iatom) {
       if (jatom[iatom] < 0) continue;
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
-        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        const double* ppt = gradbatch.data(icart+iatom*3);
         sum[icart] += ddot_(sblock, ppt, 1, db1.get(), 1);
-        sum[icart] += ddot_(sblock, ppt, 1, db3.get(), 1);
       }
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
@@ -153,7 +180,7 @@ void GradTask::compute() {
       if (jatom[iatom] < 0) continue;
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
-        const double* ppt = gradbatch.data() + (icart+iatom*3)*block;
+        const double* ppt = gradbatch.data(icart+iatom*3);
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
             sum[icart] += *ppt * den2_->element(j1,j0);

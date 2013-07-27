@@ -71,9 +71,12 @@ PTree::PTree(const string& input) {
 
 //Dereference operator - return the current node's data.
 const shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
+const shared_ptr<const PTree> PTreeReverseIterator::operator*() { return make_shared<const PTree>(current->second); }
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
 PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }
+PTreeReverseIterator PTree::rbegin() const { return PTreeReverseIterator(data_.rbegin()); }
+PTreeReverseIterator PTree::rend()   const { return PTreeReverseIterator(data_.rend());   }
 
 
 size_t PTree::size() const {

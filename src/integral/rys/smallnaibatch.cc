@@ -40,9 +40,6 @@ SmallNAIBatch::SmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, st
 }
 
 
-SmallNAIBatch::~SmallNAIBatch() {
-}
-
 void SmallNAIBatch::compute() {
   // first compute uncontracted NAI with auxiliary basis (cartesian)
   const shared_ptr<const Matrix> nai = nai_compute();

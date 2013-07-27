@@ -51,7 +51,7 @@ double ks_energy(std::string filename) {
     } else if (method == "ks") {
       auto scf = std::make_shared<KS>(itree, geom);
       scf->compute();
-      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();

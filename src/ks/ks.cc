@@ -97,7 +97,7 @@ void KS::compute() {
 }
 
 
-shared_ptr<Reference> KS::conv_to_ref() const {
+shared_ptr<const Reference> KS::conv_to_ref() const {
   auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);

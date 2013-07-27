@@ -39,7 +39,7 @@ double rel_energy(std::string filename) {
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  std::shared_ptr<Reference> ref_;
+  std::shared_ptr<const Reference> ref_;
 
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
@@ -55,9 +55,9 @@ double rel_energy(std::string filename) {
     } else if (method == "dhf") {
       auto rel = std::make_shared<Dirac>(itree, geom, ref_);
       rel->compute();
-      std::shared_ptr<RelReference> ref = rel->conv_to_ref();
+      ref_ = rel->conv_to_ref();
       std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      return ref_->energy();
     }
   }
   assert(false);
@@ -66,7 +66,9 @@ double rel_energy(std::string filename) {
 
 BOOST_AUTO_TEST_SUITE(TEST_REL)
 
-BOOST_AUTO_TEST_CASE(BREIT) {
+BOOST_AUTO_TEST_CASE(DIRAC_FOCK) {
+    BOOST_CHECK(compare(rel_energy("hf_svp_coulomb"),        -99.93791152));
+    BOOST_CHECK(compare(rel_energy("hf_svp_gaunt"),          -99.92699858));
     BOOST_CHECK(compare(rel_energy("hf_svp_breit"),          -99.92755305));
 }
 

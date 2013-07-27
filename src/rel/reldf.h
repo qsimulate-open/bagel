@@ -37,22 +37,24 @@
 namespace bagel {
 
 class RelDFHalf;
+class CDMatrix;
 
 class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
   protected:
-    std::vector<std::shared_ptr<const Alpha>> alpha_;
+    std::vector<int> alpha_;
     std::shared_ptr<const DFDist> dfdata_;
     bool swap_;
 
-    void set_basis() override {
-      auto sigma1 = std::make_shared<const Sigma>(coord_.first);
-      auto sigma2 = std::make_shared<const Sigma>(coord_.second);
-      std::array<int, 2> ab = {{Basis::a, Basis::b}};
-      for (auto& i : ab)
-        for (auto& j : ab)
+    void set_basis() {
+      auto ab0 = cartesian_.first  == Comp::L ? std::array<int,2>{{ Basis::LP, Basis::LM }}
+                                              : std::array<int,2>{{ Basis::SP, Basis::SM }};
+      auto ab1 = cartesian_.second == Comp::L ? std::array<int,2>{{ Basis::LP, Basis::LM }}
+                                              : std::array<int,2>{{ Basis::SP, Basis::SM }};
+      for (auto& i : ab0)
+        for (auto& j : ab1)
           for (auto& a : alpha_) {
-            auto tmp = std::make_shared<const SpinorInfo>(std::make_pair(i,j), coord_, sigma1, sigma2, a);
-            if (tmp->nonzero()) basis_.push_back(tmp);
+            auto tmp = std::make_shared<const SpinorInfo>(std::make_pair(i,j), a);
+            if (tmp->nonzero(cartesian_)) basis_.push_back(tmp);
           }
     }
 
@@ -63,7 +65,7 @@ class RelDF : public RelDFBase, public std::enable_shared_from_this<RelDF> {
     RelDF() = delete;
 
     std::shared_ptr<const DFDist> df() const { return dfdata_; }
-    bool not_diagonal() const { return coord_.first != coord_.second; }
+    bool not_diagonal() const { return cartesian_.first != cartesian_.second; }
     bool swapped() const { return swap_; }
     std::shared_ptr<const RelDF> swap() const;
 

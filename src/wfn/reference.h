@@ -88,7 +88,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     std::shared_ptr<const Hcore> hcore() const { return hcore_; }
-    const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    virtual const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     void set_coeff(std::shared_ptr<const Coeff> coeff) { coeff_ = coeff; }
     void set_coeff(std::shared_ptr<Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }
@@ -104,7 +104,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nvirt() const { return nvirt_; }
     int nocc() const { return nclosed_ + nact_; }
     int ncore() const { return ncore_; }
-    void set_ncore(const int i) { ncore_ = i; }
 
     int noccA() const { return noccA_; }
     int noccB() const { return noccB_; }
@@ -142,7 +141,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> civectors() const;
 
     // basis-set projection based on SVD
-    std::shared_ptr<const Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
+    virtual std::shared_ptr<const Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
 
 };
 

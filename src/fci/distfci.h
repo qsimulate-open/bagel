@@ -69,7 +69,7 @@ class DistFCI : public FCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    DistFCI(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,
+    DistFCI(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
             const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     void update(std::shared_ptr<const Coeff>) override;

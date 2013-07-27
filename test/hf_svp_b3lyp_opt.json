@@ -14,10 +14,10 @@
 
 {
   "title" : "optimize",
-  "method" : {
+  "method" : [ {
     "title" : "ks",
     "xc_func" : "b3lyp"
-  }
+  } ]
 }
 
 ]}

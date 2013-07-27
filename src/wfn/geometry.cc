@@ -257,6 +257,40 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
     }
     atoms_ = newatoms;
     aux_atoms_ = newauxatoms;
+
+    // (3) plane of center of charges, first and second atoms.
+    if (natom() > 2) {
+      assert(natom() == o.natom()); 
+      Quatern<double> oa0 = o.atoms(0)->position();
+      Quatern<double> ma0 =   atoms(0)->position();
+      Quatern<double> oa1 = o.atoms(1)->position();
+      Quatern<double> ma1 =   atoms(1)->position();
+      mc = charge_center();
+      od = (oa0 - oc) * (oa1 - oc);
+      md = (ma0 - mc) * (ma1 - mc);
+      od[0] = 0.0;
+      md[0] = 0.0;
+      od.normalize();
+      md.normalize();
+      op = md * od;
+      op[0] = 1.0 - op[0];
+      op.normalize();
+      opd = op.dagger();
+
+      newatoms.clear();
+      newauxatoms.clear();
+      for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
+        assert((*i)->position() == (*j)->position());
+        Quatern<double> source = (*i)->position();
+        Quatern<double> target = op * (source - mc) * opd + oc;
+        array<double,3> cdispl = (target - source).ijk();
+
+        newatoms.push_back(make_shared<Atom>(**i, cdispl));
+        newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
+      }
+      atoms_ = newatoms;
+      aux_atoms_ = newauxatoms;
+    }
   }
 
   common_init1();
@@ -801,10 +835,16 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
+#if 0 
   geom->df_->average_3index();
   geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
   if (do_gaunt)
     geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+#else
+  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, false);
+  if (do_gaunt)
+    geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, false);
+#endif
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);

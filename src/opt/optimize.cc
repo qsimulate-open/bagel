@@ -37,9 +37,12 @@ Optimize::Optimize(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
 
 void Optimize::compute() {
-  const shared_ptr<const PTree> methodblock = idata_->get_child("method");
-  string method = methodblock->get<string>("title", "");
-  if (method.empty()) throw runtime_error("title is missing in one of the input blocks (opt)");
+  string method = (*idata_->get_child("method")->rbegin())->get<string>("title", "");
+  transform(method.begin(), method.end(), method.begin(), ::tolower);
+  if (method.empty())
+    throw runtime_error("title is missing in one of the input blocks (opt)");
+
+  shared_ptr<const PTree> methodblock = idata_->get_child("method");
 
   if (method == "uhf") {
 
@@ -65,6 +68,13 @@ void Optimize::compute() {
   } else if (method == "ks") {
 
     auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_);
+    for (int i = 0; i != maxiter_; ++i)
+      if (opt->next()) break;
+    geom_ = opt->geometry();
+
+  } else if (method == "dhf") {
+
+    auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_);
     for (int i = 0; i != maxiter_; ++i)
       if (opt->next()) break;
     geom_ = opt->geometry();

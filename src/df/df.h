@@ -122,15 +122,18 @@ class DFDist : public ParallelDF {
     size_t nbasis1() const { return nindex1_; };
     size_t naux() const { return naux_; };
 
-    void add_direct_product(std::vector<const double*> a, std::vector<const double*> b, const double fac);
+    void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
+    void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DFHalfDist> compute_half_transform(const double* c, const size_t nocc) const;
-    std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const { return compute_half_transform(c->data(), c->mdim()); }
+    std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const double* c, const size_t nocc) const;
-    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const { return compute_half_transform_swap(c->data(), c->mdim()); }
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
+
+    std::shared_ptr<DFDist> copy() const;
+    std::shared_ptr<DFDist> clone() const;
 
     // split up smalleri integrals into 6 dfdist objects
     std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
@@ -240,18 +243,16 @@ class DFHalfDist : public ParallelDF {
     size_t nocc() const { return nindex1_; };
     size_t nbasis() const { return nindex2_; };
 
-    std::shared_ptr<DFFullDist> compute_second_transform(const double* c, const size_t nocc) const;
-    std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const { return compute_second_transform(c->data(), c->mdim()); }
-    std::shared_ptr<DFDist> back_transform(const double* c) const;
-    std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex1_); return back_transform(c->data()); }
+    std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     std::shared_ptr<DFHalfDist> copy() const;
     std::shared_ptr<DFHalfDist> clone() const;
 
-    void rotate_occ(const double* d);
-    std::shared_ptr<DFHalfDist> apply_density(const double* d) const;
+    void rotate_occ(const std::shared_ptr<const Matrix> d);
+    std::shared_ptr<DFHalfDist> apply_density(const std::shared_ptr<const Matrix> d) const;
 
-    std::shared_ptr<Matrix> compute_Kop_1occ(const double* den, const double a) const;
+    std::shared_ptr<Matrix> compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const;
 
     std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
@@ -275,8 +276,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> copy() const;
     std::shared_ptr<DFFullDist> clone() const;
 
-    std::shared_ptr<DFHalfDist> back_transform(const double* c) const;
-    std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const { assert(c->mdim() == nindex2_); return back_transform(c->data()); }
+    std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     void symmetrize();
 

@@ -129,7 +129,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2
 void MOFile::update_1ext_ints(const shared_ptr<const Matrix>& coeff) {
   assert(mo2e_1ext_->nocc() == nocc_);
   assert(coeff->ndim() == nocc_);
-  mo2e_1ext_->rotate_occ(coeff->data());
+  mo2e_1ext_->rotate_occ(coeff);
 }
 
 
@@ -159,13 +159,13 @@ unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
   assert(nocc > 0);
-  double* cdata = coeff_->data() + nstart*nbasis_;
+  shared_ptr<const Matrix> cdata = coeff_->slice(nstart, nfence);
 
   // first half transformation
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata, nocc);
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata);
 
   // second index transformation and (D|ii) = J^-1/2_DE (E|ii)
-  shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata, nocc)->apply_J();
+  shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata)->apply_J();
 
   // we want to store half-transformed quantity for latter convenience
   mo2e_1ext_size_ = nocc*geom_->df()->naux()*nbasis_;

@@ -29,24 +29,21 @@
 
 #include <string>
 #include <map>
-#include <src/wfn/reference.h>
-#include <src/rel/relreference.h>
+#include <src/wfn/method.h>
 #include <src/wfn/geometry.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/reloverlap.h>
 
 namespace bagel {
 
-class Dirac {
+class Dirac : public Method {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Reference> ref_;
-    const std::shared_ptr<const RelReference> relref_;
 
     int max_iter_;
     int diis_start_;
     double thresh_scf_;
     double energy_;
+    std::unique_ptr<double[]> eig_;
     int ncharge_;
     int nele_;
     int nneg_;
@@ -66,16 +63,17 @@ class Dirac {
   public:
     Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
-    Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const RelReference> re);
 
     ~Dirac() { geom_->discard_relativistic(); }
 
-    void compute();
+    void compute() override;
 
-    std::shared_ptr<RelReference> conv_to_ref() const;
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 
-    void print_eig(const std::unique_ptr<double[]>&);
+    void print_eig() const;
+    double energy() const { return energy_; }
+
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
 
 };
 

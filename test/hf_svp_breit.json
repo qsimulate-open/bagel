@@ -18,7 +18,9 @@
 },
 
 {
-  "title" : "dhf"
+  "title" : "dhf",
+  "gaunt" : true,
+  "breit" : true
 }
 
 ]}
