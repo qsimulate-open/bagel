@@ -234,8 +234,6 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
-  auto auxgeom = make_shared<Geometry>(geom_->aux_atoms(), std::make_shared<const PTree>());
-
   // using symmetry (b0 <-> b1)
   int cnt = 0;
   int iatom0 = 0;

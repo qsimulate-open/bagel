@@ -303,7 +303,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
 
-  // A member of Molecule
+  // members of Molecule
   symmetry_ = o.symmetry_;
   external_ = o.external_;
 
@@ -318,6 +318,71 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
   common_init1();
   common_init2(false, overlap_thresh_);
+}
+
+
+Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
+  : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
+    auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
+
+  // members of Molecule
+  symmetry_ = o.symmetry_;
+  external_ = o.external_;
+  atoms_ = o.atoms_;
+  aux_atoms_ = o.aux_atoms_;
+
+  // check all the options
+  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
+  symmetry_ = geominfo->get<string>("symmetry", symmetry_);
+  spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
+
+  // check if we need to construct shells and integrals
+  auto atoms = geominfo->get_child_optional("geometry");
+  const string prevbasis = basisfile_;
+  basisfile_ = geominfo->get<string>("basis", basisfile_);
+  transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
+
+  const string prevaux = auxfile_;
+  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
+  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
+  // if so, construct atoms
+  if (prevbasis != basisfile_ || atoms) {
+    atoms_.clear();
+    const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
+    if (atoms) {
+      const bool angstrom = geominfo->get<bool>("angstrom", false);
+      for (auto& a : *atoms)
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata)));
+    } else {
+      for (auto& a : o.atoms_)
+        atoms_.push_back(make_shared<const Atom>(*a, spherical_, bdata));
+    }
+  }
+  if (prevaux != auxfile_ || atoms) {
+    aux_atoms_.clear();
+    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    if (atoms) {
+      const bool angstrom = geominfo->get<bool>("angstrom", false);
+      for (auto& a : *atoms)
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata)));
+    } else {
+      for (auto& a : o.atoms_)
+        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, bdata));
+    }
+  }
+
+  common_init1();
+  if (prevbasis != basisfile_ || prevaux != auxfile_ || atoms) {
+    // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
+    o.discard_df();
+    common_init2(true, overlap_thresh_);
+  } else {
+    df_ = o.df_;
+    dfs_ = o.dfs_;
+    dfsl_ = o.dfsl_;
+  }
+  external_ = o.external_;
 }
 
 /************************************************************
@@ -392,6 +457,8 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
                                                                           << setw(7) << external_[2] << ") a.u." << endl << endl;
 }
 
+
+// used in SCF initial guess.
 Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo)
   : spherical_(true), lmax_(0) {
   atoms_ = atoms;

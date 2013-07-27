@@ -40,39 +40,31 @@ double scf_energy(std::string filename, std::string extension = ".json") {
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
+  std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
     std::transform(method.begin(), method.end(), method.begin(), ::tolower);
 
     if (method == "molecule") {
-      geom = std::make_shared<Geometry>(itree);
-
+      geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
+      if (ref) ref = ref->project_coeff(geom);
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF>(itree, geom);
+      auto scf = std::make_shared<SCF>(itree, geom, ref);
       scf->compute();
-      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
-
-      std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      ref = scf->conv_to_ref();
     } else if (method == "uhf") {
-      auto scf = std::make_shared<UHF>(itree, geom);
+      auto scf = std::make_shared<UHF>(itree, geom, ref);
       scf->compute();
-      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
-
-      std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      ref = scf->conv_to_ref();
     } else if (method == "rohf") {
-      auto scf = std::make_shared<ROHF>(itree, geom);
+      auto scf = std::make_shared<ROHF>(itree, geom, ref);
       scf->compute();
-      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
-
-      std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      ref = scf->conv_to_ref();
     }
   }
-  assert(false);
-  return 0.0;
+  std::cout.rdbuf(backup_stream);
+  return ref->energy();
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_SCF)
@@ -87,6 +79,7 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_mix_dfhf"),        -99.83889304));
     BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),         -75.28410147));
     BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
+    BOOST_CHECK(compare(scf_energy("hf_new_dfhf"),        -99.97989961));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
