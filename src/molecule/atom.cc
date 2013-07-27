@@ -70,6 +70,20 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 }
 
 
+// constructor that uses the old atom and basis
+Atom::Atom(const Atom& old, const bool spherical, shared_ptr<const PTree> defbas)
+ : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_) {
+  if (name_ == "q") {
+    nbasis_ = 0;
+    lmax_ = 0;
+  } else {
+    string na = name_;
+    na[0] = toupper(na[0]);
+    basis_init(defbas->get_child(na));
+  }
+}
+
+
 void Atom::basis_init(shared_ptr<const PTree> basis) {
   // basis_info will be used in the construction of Basis_batch
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -107,17 +121,6 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 
   const vector<shared_ptr<const Shell>> old_shells = old.shells();
   for(auto& s : old_shells)
-    shells_.push_back(s->move_atom(displacement));
-}
-
-
-Atom::Atom(const Atom& old, const double* displacement)
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
-  const array<double,3> opos = old.position();
-  position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
-
-  const vector<shared_ptr<const Shell>> old_shells = old.shells();
-  for (auto& s : old_shells)
     shells_.push_back(s->move_atom(displacement));
 }
 

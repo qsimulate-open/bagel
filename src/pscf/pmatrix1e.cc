@@ -237,7 +237,7 @@ void PMatrix1e::init() {
     for (int m = -K(), mcount = 0; m <= K(); ++m, ++mcount) {
       const int blockoffset = mcount * blocksize_;
       for (int iatom1 = 0; iatom1 != geom_->natom(); ++iatom1) {
-        double disp[3];
+        array<double,3> disp;
         disp[0] = disp[1] = 0.0;
         disp[2] = geom_->A() * m;
         const RefAtom catom1(new Atom(*(atoms[iatom1]), disp));

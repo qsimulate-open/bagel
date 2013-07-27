@@ -62,8 +62,9 @@ class Atom {
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::vector<std::shared_ptr<const Shell>> shell);
-    Atom(const Atom&, const std::array<double,3>&);
-    Atom(const Atom&, const double*);
+
+    Atom(const Atom&, const bool spherical, std::shared_ptr<const PTree> defbas);
+    Atom(const Atom&, const std::array<double,3>& displ);
 
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}
