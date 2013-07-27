@@ -35,15 +35,9 @@
 
 namespace bagel {
 
-class ZFCI {
+class ZFCI : public Method {
 
   protected:
-    // input
-    std::shared_ptr<const PTree> idata_;
-    // reference
-    std::shared_ptr<const Reference> ref_;
-    // geometry file
-    const std::shared_ptr<const Geometry> geom_;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -110,7 +104,7 @@ class ZFCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    ZFCI(const std::shared_ptr<const PTree>, std::shared_ptr<const Reference>,
+    ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     virtual void compute();
@@ -156,8 +150,6 @@ class ZFCI {
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
     // move to natural orbitals
     std::pair<std::shared_ptr<ZMatrix>,std::vector<std::complex<double>>> natorb_convert();
-
-    const std::shared_ptr<const Geometry> geom() const { return geom_; }
 #endif
 
     std::shared_ptr<const Determinants> det() const { return det_; }
@@ -181,6 +173,7 @@ class ZFCI {
     void sigma_2a2(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn();
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };
 
 }

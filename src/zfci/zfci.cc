@@ -33,8 +33,8 @@ using namespace std;
 using namespace bagel;
 
 
-ZFCI::ZFCI(const std::shared_ptr<const PTree> idat, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : idata_(idat), ref_(r), geom_(r->geom()), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
 

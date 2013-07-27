@@ -54,8 +54,8 @@ class ZKnowlesHandy : public ZFCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    ZKnowlesHandy(const std::shared_ptr<const PTree> a, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI( a, b, ncore, nocc, nstate){
+    ZKnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
+        const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, ncore, nocc, nstate) {
       update(ref_->coeff());
     }
     void update(std::shared_ptr<const Coeff>) override;
