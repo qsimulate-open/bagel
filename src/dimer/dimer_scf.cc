@@ -119,7 +119,7 @@ void DimerSCF::compute() {
   //levelshift_->print_mo_data(coeff_);
 }
 
-shared_ptr<Reference> DimerSCF::conv_to_ref() const {
+shared_ptr<const Reference> DimerSCF::conv_to_ref() const {
   // Reorder here?
   auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());

@@ -51,21 +51,21 @@ double scf_energy(std::string filename, std::string extension = ".json") {
     } else if (method == "hf") {
       auto scf = std::make_shared<SCF>(itree, geom);
       scf->compute();
-      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (method == "uhf") {
       auto scf = std::make_shared<UHF>(itree, geom);
       scf->compute();
-      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();
     } else if (method == "rohf") {
       auto scf = std::make_shared<ROHF>(itree, geom);
       scf->compute();
-      std::shared_ptr<Reference> ref = scf->conv_to_ref();
+      std::shared_ptr<const Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
       return ref->energy();

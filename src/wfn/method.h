@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mp2.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: method.h 
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,35 +23,32 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_WFN_METHOD_H
+#define __SRC_WFN_METHOD_H
 
-#ifndef __SRC_MP2_MP2_H
-#define __SRC_MP2_MP2_H
+#include <src/wfn/geometry.h>
+#include <src/wfn/reference.h>
 
-#include <src/mp2/f12int.h>
-#include <src/scf/scf.h>
-#include <src/wfn/method.h>
-#include <mutex>
+// this file should be header only (in order not to introduce additional dependency)
 
 namespace bagel {
 
-class MP2 : public Method {
-  friend class MP2AssemTask;
+class Method {
   protected:
-    std::shared_ptr<SCF> scf_;
-    int ncore_;
-
-    double energy_;
-    std::mutex mut_;
+    std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
 
   public:
-    MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
-        const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r)
+     : idata_(p), geom_(g), ref_(r) { }
 
-    virtual void compute() override;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override { assert(false); std::shared_ptr<const Reference>(); } 
+    virtual void compute() = 0;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
 
-    double energy() const { return energy_; }
-};
+    std::shared_ptr<const Geometry> geom() const { return geom_; };
+
+}; 
 
 }
 

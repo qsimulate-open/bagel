@@ -39,7 +39,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     auto keys = idata->get_child("bagel");
     std::shared_ptr<Geometry> geom;
 
-    std::shared_ptr<Reference> ref;
+    std::shared_ptr<const Reference> ref;
 
     for (auto& itree : *keys) {
       std::string method = itree->get<std::string>("title", "");

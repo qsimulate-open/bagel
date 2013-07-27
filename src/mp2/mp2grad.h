@@ -40,7 +40,7 @@ class MP2Grad : public MP2 {
 
     void compute();
 
-    std::shared_ptr<Reference> conv_to_ref() const { return ref_; }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 };
 
 }

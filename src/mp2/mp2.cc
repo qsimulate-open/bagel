@@ -40,7 +40,7 @@
 using namespace std;
 using namespace bagel;
 
-MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : idata_(input), geom_(g) {
+MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
   scf_ = make_shared<SCF>(input, g, ref);
   scf_->compute();
@@ -53,7 +53,7 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
   ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
-  ref_->set_ncore(ncore_);
+//ref_->set_ncore(ncore_);
 
   if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented in DF");
 

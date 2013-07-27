@@ -146,7 +146,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
 }
 
 
-shared_ptr<Reference> UHF::conv_to_ref() const {
+shared_ptr<const Reference> UHF::conv_to_ref() const {
   shared_ptr<Coeff> natorb;
   int nocc;
   vector<shared_ptr<RDM<1>>> rdm1;

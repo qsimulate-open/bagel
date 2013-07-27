@@ -37,7 +37,7 @@ std::vector<double> fci_energy(std::string inp) {
   auto idata = std::make_shared<const PTree>(filename);
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
-  std::shared_ptr<Reference> ref;
+  std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");

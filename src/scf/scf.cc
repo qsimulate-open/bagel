@@ -167,7 +167,7 @@ void SCF::compute() {
 }
 
 
-shared_ptr<Reference> SCF::conv_to_ref() const {
+shared_ptr<const Reference> SCF::conv_to_ref() const {
   auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
   vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
   out->set_eig(e);

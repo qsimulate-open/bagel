@@ -39,7 +39,7 @@ double rel_energy(std::string filename) {
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
 
-  std::shared_ptr<Reference> ref_;
+  std::shared_ptr<const Reference> ref_;
 
   for (auto& itree : *keys) {
     std::string method = itree->get<std::string>("title", "");
