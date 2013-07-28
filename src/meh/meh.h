@@ -29,7 +29,7 @@
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_jop.h>
 #include <src/util/lexical_cast.h>
-#include <src/meh/quantization.h>
+#include <src/meh/gamma_forest.h>
 
 namespace bagel {
 
@@ -118,6 +118,8 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<DimerJop> jop_;
       std::shared_ptr<DimerCISpace> cispace_;
 
+      std::shared_ptr<GammaForest<2>> gammaforest_;
+
       std::vector<DimerSubspace> subspaces_;
 
       MatrixPtr hamiltonian_;
@@ -205,7 +207,9 @@ class MultiExcitonHamiltonian {
       void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
 
       template<int A, int B, int C, int D> MatrixPtr form_coulomb_matrix() const;
-      MatrixPtr form_gamma(std::shared_ptr<const Dvec> ccvecA, std::shared_ptr<const Dvec> ccvecAp, std::shared_ptr<Quantization> action) const;
+
+      // Gamma Tree building
+      void gamma_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp);
 
       // Off-diagonal stuff
       MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for H

@@ -141,14 +141,12 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   const int nstatesp = nstatesAp * nstatesBp;
 
   // alpha-alpha
-  auto alpha = make_shared<TwoBody<SQ::CreateAlpha,SQ::AnnihilateAlpha>>();
-  Matrix gamma_AA_alpha = *form_gamma(ccvecA, ccvecAp, alpha);
-  Matrix gamma_BB_alpha = *form_gamma(ccvecB, ccvecBp, alpha);
+  Matrix gamma_AA_alpha = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  auto beta = make_shared<TwoBody<SQ::CreateBeta,SQ::AnnihilateBeta>>();
-  Matrix gamma_AA_beta = *form_gamma(ccvecA, ccvecAp, beta);
-  Matrix gamma_BB_beta = *form_gamma(ccvecB, ccvecBp, beta);
+  Matrix gamma_AA_beta = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
   shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,0,1>();

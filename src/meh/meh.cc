@@ -67,6 +67,8 @@ void MultiExcitonHamiltonian::common_init() {
   }
 
   energies_ = vector<double>(nstates_, 0.0);
+
+  gammaforest_ = make_shared<GammaForest<2>>();
 }
 
 const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
@@ -111,6 +113,16 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
 void MultiExcitonHamiltonian::compute() {
   Timer mehtime;
   cout << endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << endl;
+
+  cout << "  o Forming Gamma Tree" << endl;
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      gamma_couple_blocks(*iAB, *jAB);
+    }
+    gamma_couple_blocks(*iAB, *iAB);
+  }
+
+  gammaforest_->compute();
 
   hamiltonian_ = make_shared<Matrix>(dimerstates_, dimerstates_);
 
@@ -366,35 +378,35 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, shared_ptr<const Matrix> hAB) const {
   Coupling term_type = coupling_type(AB,ApBp);
 
-  shared_ptr<Quantization> operatorA;
-  shared_ptr<Quantization> operatorB;
+  GammaSQ operatorA;
+  GammaSQ operatorB;
   int neleA = AB.ci<0>()->det()->nelea() + AB.ci<0>()->det()->neleb();
 
   switch(term_type) {
     case Coupling::aET :
-      operatorA = make_shared<OneBody<SQ::CreateAlpha>>();
-      operatorB = make_shared<OneBody<SQ::AnnihilateAlpha>>();
+      operatorA = GammaSQ::CreateAlpha;
+      operatorB = GammaSQ::AnnihilateAlpha;
       break;
     case Coupling::inv_aET :
-      operatorA = make_shared<OneBody<SQ::AnnihilateAlpha>>();
-      operatorB = make_shared<OneBody<SQ::CreateAlpha>>();
+      operatorA = GammaSQ::AnnihilateAlpha;
+      operatorB = GammaSQ::CreateAlpha;
       --neleA;
       break;
     case Coupling::bET :
-      operatorA = make_shared<OneBody<SQ::CreateBeta>>();
-      operatorB = make_shared<OneBody<SQ::AnnihilateBeta>>();
+      operatorA = GammaSQ::CreateBeta;
+      operatorB = GammaSQ::AnnihilateBeta;
       break;
     case Coupling::inv_bET :
-      operatorA = make_shared<OneBody<SQ::AnnihilateBeta>>();
-      operatorB = make_shared<OneBody<SQ::CreateBeta>>();
+      operatorA = GammaSQ::AnnihilateBeta;
+      operatorB = GammaSQ::CreateBeta;
       --neleA;
       break;
     default :
       return make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   }
 
-  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), operatorA);
-  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), operatorB);
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), operatorA);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), operatorB);
   Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -405,32 +417,6 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSu
   return out;
 }
 
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::form_gamma(shared_ptr<const Dvec> ccvecA, shared_ptr<const Dvec> ccvecAp, shared_ptr<Quantization> action) const {
-  const int nstatesA = ccvecA->ij();
-  const int nstatesAp = ccvecAp->ij();
-
-  shared_ptr<const Determinants> detA = ccvecA->det();
-  const int norb = detA->norb();
-  const int ij = action->ij(norb);
-
-  Matrix tmp(ij, nstatesA*nstatesAp);
-
-  double *edata = tmp.data();
-
-  for (int state = 0; state < nstatesA; ++state) {
-    shared_ptr<Dvec> c = action->compute(ccvecA->data(state));
-
-    // | C > ^A_ac is done
-    for (int statep = 0; statep < nstatesAp; ++statep) {
-      for (int ac = 0; ac < ij; ++ac, ++edata) {
-        *edata = c->data(ac)->ddot(*ccvecAp->data(statep));
-      }
-    }
-  }
-
-  return tmp.transpose();
-}
 
 void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target,
   const int nA, const int nAp, const int nB, const int nBp) const
@@ -453,9 +439,11 @@ void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* targe
   }
 }
 
+
 void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) const {
   hamiltonian_->print(title, nstates);
 }
+
 
 void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
   const int end = min(nstates, adiabats_->mdim());

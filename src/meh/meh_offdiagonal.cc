@@ -75,11 +75,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
 
   // One-body aET
   {
-    auto creation     = make_shared<OneBody<SQ::CreateAlpha>>();
-    auto annihilation = make_shared<OneBody<SQ::AnnihilateAlpha>>();
-
-    Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
-    Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+    Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
+    Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
 
     shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
 
@@ -88,30 +85,24 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
 
   //Two-body aET, type 1
   {
-    auto one         = make_shared<OneBody<SQ::CreateAlpha>>();
-    auto three_alpha = make_shared<ThreeBody<SQ::CreateAlpha,SQ::AnnihilateAlpha,SQ::AnnihilateAlpha>>();
-    auto three_beta  = make_shared<ThreeBody<SQ::CreateBeta,SQ::AnnihilateAlpha,SQ::AnnihilateBeta>>();
-
-    Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), one);
-    Matrix gamma_B = (*form_gamma(AB.ci<1>(), ApBp.ci<1>(), three_alpha)) + (*form_gamma(AB.ci<1>(), ApBp.ci<1>(), three_beta));
+    Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
+    Matrix gamma_B1 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+    Matrix gamma_B2 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
 
     shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,1,1>();
 
-    tmp -= gamma_A * (*Jmatrix) ^ gamma_B;
+    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
   }
 
   //Two-body aET, type 2
   {
-    auto one         = make_shared<OneBody<SQ::AnnihilateAlpha>>();
-    auto three_alpha = make_shared<ThreeBody<SQ::CreateAlpha,SQ::CreateAlpha,SQ::AnnihilateAlpha>>();
-    auto three_beta  = make_shared<ThreeBody<SQ::CreateAlpha,SQ::CreateBeta,SQ::AnnihilateBeta>>();
-
-    Matrix gamma_A = (*form_gamma(AB.ci<0>(), ApBp.ci<0>(), three_alpha)) + (*form_gamma(AB.ci<0>(), ApBp.ci<0>(), three_beta));
-    Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), one);
+    Matrix gamma_A1 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
+    Matrix gamma_A2 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
+    Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
 
     shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,0>();
 
-    tmp += gamma_A * (*Jmatrix) ^ gamma_B;
+    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
@@ -128,11 +119,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
 
   // One-body bET
   {
-    auto creation     = make_shared<OneBody<SQ::CreateBeta>>();
-    auto annihilation = make_shared<OneBody<SQ::AnnihilateBeta>>();
-
-    Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
-    Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+    Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
+    Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
 
     shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
 
@@ -142,30 +130,24 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
 
   //Two-body bET, type 1
   {
-    auto one         = make_shared<OneBody<SQ::CreateBeta>>();
-    auto three_alpha = make_shared<ThreeBody<SQ::CreateAlpha,SQ::AnnihilateBeta,SQ::AnnihilateAlpha>>();
-    auto three_beta  = make_shared<ThreeBody<SQ::CreateBeta,SQ::AnnihilateBeta,SQ::AnnihilateBeta>>();
-
-    Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), one);
-    Matrix gamma_B = (*form_gamma(AB.ci<1>(), ApBp.ci<1>(), three_alpha)) + (*form_gamma(AB.ci<1>(), ApBp.ci<1>(), three_beta));
+    Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
+    Matrix gamma_B1 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
+    Matrix gamma_B2 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
     shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,1,1>();
 
-    tmp -= gamma_A * (*Jmatrix) ^ gamma_B;
+    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
   }
 
   //Two-body aET, type 2
   {
-    auto one         = make_shared<OneBody<SQ::AnnihilateBeta>>();
-    auto three_alpha = make_shared<ThreeBody<SQ::CreateBeta,SQ::CreateAlpha,SQ::AnnihilateAlpha>>();
-    auto three_beta  = make_shared<ThreeBody<SQ::CreateBeta,SQ::CreateBeta,SQ::AnnihilateBeta>>();
-
-    Matrix gamma_A = (*form_gamma(AB.ci<0>(), ApBp.ci<0>(), three_alpha)) + (*form_gamma(AB.ci<0>(), ApBp.ci<0>(), three_beta));
-    Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), one);
+    Matrix gamma_A1 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta);
+    Matrix gamma_A2 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
+    Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
 
     shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,0>();
 
-    tmp += gamma_A * (*Jmatrix) ^ gamma_B;
+    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
 
   reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
@@ -185,11 +167,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, Di
   const int nstatesB = AB.nstates<1>();
   const int nstatesBp = ApBp.nstates<1>();
 
-  auto ab_oper = make_shared<TwoBody<SQ::CreateBeta,SQ::AnnihilateAlpha>>();
-  auto ba_oper = make_shared<TwoBody<SQ::CreateAlpha,SQ::AnnihilateBeta>>();
-
-  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), ab_oper);
-  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), ba_oper);
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
 
   shared_ptr<Matrix> Kmatrix = form_coulomb_matrix<0,1,1,0>();
 
@@ -205,11 +184,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, Di
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  auto creation     = make_shared<TwoBody<SQ::CreateAlpha,SQ::CreateBeta>>();
-  auto annihilation = make_shared<TwoBody<SQ::AnnihilateAlpha,SQ::AnnihilateBeta>>();
-
-  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
-  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
 
   shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
 
@@ -224,11 +200,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, Dime
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  auto creation     = make_shared<TwoBody<SQ::CreateAlpha,SQ::CreateAlpha>>();
-  auto annihilation = make_shared<TwoBody<SQ::AnnihilateAlpha,SQ::AnnihilateAlpha>>();
-
-  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
-  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
 
   shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
 
@@ -243,11 +216,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, Dime
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  auto creation     = make_shared<TwoBody<SQ::CreateBeta,SQ::CreateBeta>>();
-  auto annihilation = make_shared<TwoBody<SQ::AnnihilateBeta,SQ::AnnihilateBeta>>();
-
-  Matrix gamma_A = *form_gamma(AB.ci<0>(), ApBp.ci<0>(), creation);
-  Matrix gamma_B = *form_gamma(AB.ci<1>(), ApBp.ci<1>(), annihilation);
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
 
   shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
 
