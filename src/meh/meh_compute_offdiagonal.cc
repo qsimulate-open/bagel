@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_offdiagonal.cc
+// Filename: meh_compute_offdiagonal.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -27,6 +27,49 @@
 
 using namespace std;
 using namespace bagel;
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, shared_ptr<const Matrix> hAB) const {
+  Coupling term_type = coupling_type(AB,ApBp);
+
+  GammaSQ operatorA;
+  GammaSQ operatorB;
+  int neleA = AB.ci<0>()->det()->nelea() + AB.ci<0>()->det()->neleb();
+
+  switch(term_type) {
+    case Coupling::aET :
+      operatorA = GammaSQ::CreateAlpha;
+      operatorB = GammaSQ::AnnihilateAlpha;
+      break;
+    case Coupling::inv_aET :
+      operatorA = GammaSQ::AnnihilateAlpha;
+      operatorB = GammaSQ::CreateAlpha;
+      --neleA;
+      break;
+    case Coupling::bET :
+      operatorA = GammaSQ::CreateBeta;
+      operatorB = GammaSQ::AnnihilateBeta;
+      break;
+    case Coupling::inv_bET :
+      operatorA = GammaSQ::AnnihilateBeta;
+      operatorB = GammaSQ::CreateBeta;
+      --neleA;
+      break;
+    default :
+      return make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+  }
+
+  Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), operatorA);
+  Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), operatorB);
+  Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
+
+  auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+  reorder_matrix(tmp.data(), out->data(), AB.nstates<0>(), ApBp.nstates<0>(), AB.nstates<1>(), ApBp.nstates<1>());
+
+  if ( (neleA % 2) == 1 ) out->scale(-1.0);
+
+  return out;
+}
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp) {
   Coupling term_type = coupling_type(AB, ApBp);
@@ -68,6 +111,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::couple_blocks(DimerSubspace& AB, Dim
 
   return out;
 }
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -112,6 +156,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
 
   return out;
 }
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -158,6 +203,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
   return out;
 }
 
+
 // Currently defined as an alpha->beta flip in A and a beta->alpha flip in B
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -197,6 +243,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, Dime
   return out;
 }
 
+
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
@@ -212,6 +259,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, Dime
 
   return out;
 }
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp) {
   auto out = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());

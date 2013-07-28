@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_diagonal.cc
+// Filename: meh_compute_diagonal.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,19 +23,50 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <tuple>
-
 #include <iostream>
 #include <iomanip>
-#include <string>
 #include <stdexcept>
-#include <vector>
 
 #include <src/math/matrix.h>
 #include <src/meh/meh.h>
 
 using namespace std;
 using namespace bagel;
+
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubspace& AB, const double* hAA, const double* hBB, const double diag) const {
+  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
+  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
+  shared_ptr<const Dvec> sigmavecA = form_sigma_1e(ccvecA, hAA);
+  shared_ptr<const Dvec> sigmavecB = form_sigma_1e(ccvecB, hBB);
+
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
+  const int dimerstates = AB.dimerstates();
+
+  auto out = make_shared<Matrix>(dimerstates, dimerstates);
+
+  for (int stateAp = 0; stateAp < nstatesA; ++stateAp) {
+    for (int stateBp = 0; stateBp < nstatesB; ++stateBp) {
+      const int stateApBp = AB.dimerindex(stateAp,stateBp);
+      // hAA
+      for(int stateA = 0; stateA < nstatesA; ++stateA) { // stateB = stateBp
+        const int stateAB = AB.dimerindex(stateA,stateBp);
+        out->element(stateAB, stateApBp) += sigmavecA->data(stateA)->ddot(*ccvecA->data(stateAp));
+      }
+
+      // hBB
+      for(int stateB = 0; stateB < nstatesB; ++stateB) { // stateA = stateAp
+        const int stateAB = AB.dimerindex(stateAp, stateB);
+        out->element(stateAB, stateApBp) += sigmavecB->data(stateB)->ddot(*ccvecB->data(stateBp));
+      }
+    }
+  }
+
+  out->add_diag(diag);
+
+  return out;
+}
+
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace& subspace) {
   const int nstates = subspace.dimerstates();
