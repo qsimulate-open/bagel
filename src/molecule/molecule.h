@@ -67,8 +67,8 @@ class Molecule {
     }
 
   public:
-    Molecule() {}
-    Molecule(const std::vector<std::shared_ptr<const Atom>> a, const std::vector<std::shared_ptr<const Atom>> b) : atoms_(a), aux_atoms_(b) { }
+    Molecule() : symmetry_("c1"), nirrep_(1) {}
+    Molecule(const std::vector<std::shared_ptr<const Atom>> a, const std::vector<std::shared_ptr<const Atom>> b) : atoms_(a), aux_atoms_(b), symmetry_("c1"), nirrep_(1) { }
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
     const std::vector<std::shared_ptr<const Atom>>& atoms() const { return atoms_; }

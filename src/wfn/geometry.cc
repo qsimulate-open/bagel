@@ -215,6 +215,8 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
   // Members of Molecule
   symmetry_ = o.symmetry_;
+  plist_    = o.plist_;
+  nirrep_   = o.nirrep_;
   external_ = o.external_;
 
   // first construct atoms using displacements
@@ -305,6 +307,8 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
   // members of Molecule
   symmetry_ = o.symmetry_;
+  plist_    = o.plist_;
+  nirrep_   = o.nirrep_;
   external_ = o.external_;
 
   // first construct atoms using displacements
@@ -382,6 +386,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
     df_ = o.df_;
     dfs_ = o.dfs_;
     dfsl_ = o.dfsl_;
+    common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
   }
   external_ = o.external_;
 }

@@ -87,9 +87,14 @@ class Opt {
       for ( ; m != --input_->end(); ++m) {
         std::string title = (*m)->get<std::string>("title", ""); 
         std::transform(title.begin(), title.end(), title.begin(), ::tolower);
-        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
-        c->compute();
-        ref = c->conv_to_ref();
+        if (title != "molecule") {
+          std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+          if (!c) throw std::runtime_error("unknown method in optimization");
+          c->compute();
+          ref = c->conv_to_ref();
+        } else {
+          current_ = std::make_shared<const Geometry>(*current_, *m); 
+        }
       }
       std::shared_ptr<const PTree> cinput = *m; 
 
