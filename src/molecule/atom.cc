@@ -47,7 +47,7 @@ using namespace bagel;
 static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, const bool aux)
-: spherical_(spherical) {
+: spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = inp->get<string>("atom");
   transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
 
@@ -61,8 +61,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     nbasis_ = 0;
     lmax_ = 0;
   } else {
-    string cbas = inp->get<string>(!aux ? "basis" : "df_basis", defbas.first);
-    shared_ptr<const PTree> basisset = (cbas == defbas.first) ? defbas.second : PTree::read_basis(cbas);
+    shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
     string na = name_;
     na[0] = toupper(na[0]);
     basis_init(basisset->get_child(na));
@@ -71,15 +70,16 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 
 // constructor that uses the old atom and basis
-Atom::Atom(const Atom& old, const bool spherical, shared_ptr<const PTree> defbas)
- : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_) {
+Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas)
+ : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), basis_(bas) {
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
   } else {
     string na = name_;
+    shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
     na[0] = toupper(na[0]);
-    basis_init(defbas->get_child(na));
+    basis_init(basisset->get_child(na));
   }
 }
 
@@ -114,7 +114,7 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
 
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()) {
+: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
@@ -125,8 +125,8 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 }
 
 
-Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
-: name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)) {
+Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell)
+: name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -134,18 +134,19 @@ Atom::Atom(const string nm, vector<shared_ptr<const Shell>> shell)
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const shared_ptr<const PTree> json)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas)
+ : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
 
   string na = name_;
   na[0] = toupper(na[0]);
-  basis_init(json->get_child(na));
+  shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
+  basis_init(basisset->get_child(na));
 
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)) {
+ : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -161,7 +162,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
-: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0) {
+: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
 }
 
 

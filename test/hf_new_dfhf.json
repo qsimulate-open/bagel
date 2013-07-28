@@ -14,7 +14,7 @@
 
 { "title" : "hf", "thresh" : 1.0e-10 },
 
-{ "title" : "molecule", "basis" : "tzvpp", "df_basis" : "tzvpp-jkfit" },
+{ "title" : "molecule", "basis" : "tzvpp", "df_basis" : "cc-pvtz-jkfit" },
 
 { "title" : "hf", "thresh" : 1.0e-10 }
 

@@ -102,7 +102,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
-          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), bdata));
+          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata)));
         } else {
           // we need a dummy atom here to be consistent in gradient computations
           aux_atoms_.push_back(iatom);
@@ -344,10 +344,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
   const string prevbasis = basisfile_;
   basisfile_ = geominfo->get<string>("basis", basisfile_);
   transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
-
-  const string prevaux = auxfile_;
-  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
-  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms) {
     atoms_.clear();
@@ -358,9 +354,12 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
         atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata)));
     } else {
       for (auto& a : o.atoms_)
-        atoms_.push_back(make_shared<const Atom>(*a, spherical_, bdata));
+        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata)));
     }
   }
+  const string prevaux = auxfile_;
+  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
+  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (prevaux != auxfile_ || atoms) {
     aux_atoms_.clear();
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
@@ -370,7 +369,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
         aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata)));
     } else {
       for (auto& a : o.atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, bdata));
+        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata)));
     }
   }
 
@@ -484,7 +483,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
     } else {
       // in the molden case
       for (auto& i : atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), bdata));
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata)));
     }
   }
   // symmetry

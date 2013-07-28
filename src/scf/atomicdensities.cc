@@ -35,8 +35,7 @@ const static AtomMap atommap_;
 
 AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
   // first make a list of unique atoms
-  const string basis = geom_->basisfile();
-  const string dfbasis = geom_->auxfile();
+  const string defbasis = geom_->basisfile();
   map<string, shared_ptr<const Matrix>> atoms;
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
 
@@ -44,7 +43,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
   // TODO AtomicDensities is only using the default basis set.
   // read basis file
-  shared_ptr<const PTree> bdata = PTree::read_basis(basis); 
+  shared_ptr<const PTree> bdata = PTree::read_basis(defbasis); 
 
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) continue;
@@ -54,11 +53,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       std::streambuf* cout_orig = cout.rdbuf();
       cout.rdbuf(ss.rdbuf());
 
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, bdata);
-
       shared_ptr<PTree> geomop = make_shared<PTree>();
+      const string basis = i->basis(); 
       geomop->put("basis", basis);
-      geomop->put("df_basis", dfbasis.empty() ? basis : dfbasis);
+      geomop->put("df_basis", basis);
+
+      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata));
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 
