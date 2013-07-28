@@ -30,6 +30,7 @@
 #include <src/dimer/dimer_jop.h>
 #include <src/util/lexical_cast.h>
 #include <src/meh/gamma_forest.h>
+#include <src/meh/meh_spin.h>
 
 namespace bagel {
 
@@ -85,29 +86,6 @@ class DimerSubspace {
 
 };
 
-struct SpinMap {
-  const int i;
-  const int j;
-  const double value;
-
-  SpinMap(const int ii, const int jj, const double vv) : i(ii), j(jj), value(vv) {}
-};
-
-class SpinMatrix { // extremely sparse matrix of the spins
-  protected:
-    std::vector<double> diagonal_;
-    std::vector<SpinMap> offdiagonal_;
-
-  public:
-    SpinMatrix() {}
-
-    std::vector<double>& diagonal() { return diagonal_; }
-    const std::vector<double>& diagonal() const { return diagonal_; }
-    const std::vector<SpinMap>& offdiagonal() const { return offdiagonal_; }
-
-    void insert_offdiagonal(const int i, const int j, const double val) { offdiagonal_.emplace_back(i,j,val); }
-};
-
 class MultiExcitonHamiltonian {
   using MatrixPtr = std::shared_ptr<Matrix>;
    protected:
@@ -126,7 +104,7 @@ class MultiExcitonHamiltonian {
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
 
-      SpinMatrix spin_;
+      std::shared_ptr<MEHSpin> spin_;
 
       std::vector<double> energies_; // Adiabatic energies
 
@@ -135,7 +113,6 @@ class MultiExcitonHamiltonian {
       const int dimerclosed_;
       const int dimeractive_;
       int dimerstates_;
-      int max_spin_;
 
       // Localized quantities
       std::pair<const int, const int> nact_;
@@ -143,6 +120,7 @@ class MultiExcitonHamiltonian {
 
       // Options
       int nstates_;
+      int nspin_;
       int max_iter_;
       bool dipoles_;
 
@@ -184,16 +162,12 @@ class MultiExcitonHamiltonian {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
-      MatrixPtr spin(const Matrix& o) const;
-      void spin_decontaminate(Matrix& o);
-
       MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;
       MatrixPtr compute_diagonal_1e(const DimerSubspace& subspace, const double* hAA, const double* hBB, const double diag) const;
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-      MatrixPtr compute_diagonal_spin_block(DimerSubspace& subspace);
 
       MatrixPtr compute_intra_2e(DimerSubspace& subspace);
 
@@ -210,10 +184,11 @@ class MultiExcitonHamiltonian {
 
       // Gamma Tree building
       void gamma_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp);
+      void spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for S^2
+      void compute_diagonal_spin_block(DimerSubspace& subspace);
 
       // Off-diagonal stuff
       MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for H
-      MatrixPtr spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for S^2
 
       MatrixPtr compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_aET(DimerSubspace& AB, DimerSubspace& ApBp);
