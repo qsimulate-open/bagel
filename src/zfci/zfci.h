@@ -81,7 +81,6 @@ class ZFCI : public Method {
 
     // some init functions
     void common_init(); // may end up unnecessary
-    void create_Jiiii();
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDvec>);
     // generate spin-adapted guess configurations
@@ -107,7 +106,7 @@ class ZFCI : public Method {
     ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
-    virtual void compute();
+    virtual void compute() override;
 
     virtual void update(std::shared_ptr<const Coeff> ) = 0;
 

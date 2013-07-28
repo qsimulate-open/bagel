@@ -56,7 +56,7 @@ bool compare(const T a, const T b, const double thr = THRESH) {
  bool out = true;
  for (auto i = a.begin(), j = b.begin(); i != a.end(); ++i, ++j) out &= compare(*i, *j, thr);
  return out;
-};
+}
 
 #include <src/scf/test_scf.cc>
 
