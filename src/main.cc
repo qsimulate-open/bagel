@@ -206,6 +206,9 @@ throw logic_error("broken!");
         if(orbitals) mfs << ref;
         mfs.close();
 
+      } else {
+        if (title != "molecule")
+          throw runtime_error("unknown method");
       }
 
       // Save functionality
