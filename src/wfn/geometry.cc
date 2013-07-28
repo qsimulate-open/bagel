@@ -335,6 +335,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
   symmetry_ = geominfo->get<string>("symmetry", symmetry_);
+  transform(symmetry_.begin(), symmetry_.end(), symmetry_.begin(), ::tolower);
+
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
 
   // check if we need to construct shells and integrals
