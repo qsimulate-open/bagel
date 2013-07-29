@@ -100,6 +100,8 @@ class MultiExcitonHamiltonian {
 
       std::vector<DimerSubspace> subspaces_;
 
+      std::unique_ptr<double[]> denom_;
+
       MatrixPtr hamiltonian_;
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
@@ -122,6 +124,7 @@ class MultiExcitonHamiltonian {
       int nstates_;
       int nspin_;
       int max_iter_;
+      bool store_matrix_;
       bool dipoles_;
 
       double thresh_;
@@ -162,13 +165,14 @@ class MultiExcitonHamiltonian {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
       }
 
+      std::shared_ptr<const Matrix> apply_hamiltonian(const Matrix& o);
+
       MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;
       MatrixPtr compute_diagonal_1e(const DimerSubspace& subspace, const double* hAA, const double* hBB, const double diag) const;
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-
       MatrixPtr compute_intra_2e(DimerSubspace& subspace);
 
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* hdata) const;

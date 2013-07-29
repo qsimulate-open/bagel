@@ -50,33 +50,39 @@ void MultiExcitonHamiltonian::compute() {
 
   cout << "  o Computing Gamma trees - " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
-  hamiltonian_ = make_shared<Matrix>(dimerstates_, dimerstates_);
+  if (store_matrix_) hamiltonian_ = make_shared<Matrix>(dimerstates_, dimerstates_);
 
-  cout << "  o Computing diagonal blocks" << endl;
+  denom_ = unique_ptr<double[]>(new double[dimerstates_]);
+
   for (auto& subspace : subspaces_) {
-    hamiltonian_->add_block(subspace.offset(), subspace.offset(), compute_diagonal_block(subspace));
+    shared_ptr<Matrix> block = compute_diagonal_block(subspace);
+    if (store_matrix_)
+      hamiltonian_->add_block(subspace.offset(), subspace.offset(), block);
+    const int n = block->ndim();
+    for ( int i = 0; i < n; ++i ) denom_[subspace.offset() + i] = block->element(i,i);
   }
-  cout << "    - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
+  cout << "  o Computing diagonal blocks and building denominator - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
-  cout << "  o Computing off-diagonal blocks" << endl;
-  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-    const int ioff = iAB->offset();
-    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-      const int joff = jAB->offset();
+  if (store_matrix_) {
+    for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+      const int ioff = iAB->offset();
+      for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+        const int joff = jAB->offset();
 
-      shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
+        shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
 
-      hamiltonian_->add_block(ioff, joff, block);
-      hamiltonian_->add_block(joff, ioff, block->transpose());
+        hamiltonian_->add_block(ioff, joff, block);
+        hamiltonian_->add_block(joff, ioff, block->transpose());
+      }
     }
+    cout << "  o Computing off-diagonal blocks - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
   }
-  cout << "    - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
 
   cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << endl;
   DavidsonDiag<Matrix> davidson(nstates_, max_iter_);
 
   // Generate initial guesses
-  vector<shared_ptr<Matrix>> cc;
+  auto cc = make_shared<Matrix>(dimerstates_, nstates_);
   int trialsize = min(2 * spin_->max() * nstates_, dimerstates_);
   {
     int multiple = 1;
@@ -90,11 +96,11 @@ void MultiExcitonHamiltonian::compute() {
         for (int mult = 0; mult != multiple; ++mult) {
           for (int i = 0; i != nstatesA; ++i) {
             const int dindex = iAB.dimerindex(i,mult) + ioff;
-            seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
+            seeds.insert(make_pair(denom_[dindex], dindex));
           }
           for (int i = mult + 1; i != nstatesB; ++i) {
             const int dindex = iAB.dimerindex(mult,i) + ioff;
-            seeds.insert(make_pair(hamiltonian_->element(dindex,dindex), dindex));
+            seeds.insert(make_pair(denom_[dindex], dindex));
           }
         }
       }
@@ -103,41 +109,46 @@ void MultiExcitonHamiltonian::compute() {
 
     auto iseed = seeds.begin();
     auto initial = make_shared<Matrix>(dimerstates_,trialsize);
-    for (int istate = 0; istate != trialsize; ++istate, ++iseed) {
+    for (int istate = 0; istate != trialsize; ++istate, ++iseed)
       initial->element(iseed->second, istate) = 1.0;
-    }
     spin_->filter(*initial, nspin_);
 
+    // Symmetric orthogonalization to get rid of linear dependencies
     Matrix overlap = *initial % *initial;
     overlap.inverse_half();
     *initial = *initial * overlap;
-    Matrix initialham = *initial % *hamiltonian_ * *initial;
+
+    // Average diagonal elements to pick the best options
     multimap<double, int> tmpmap;
-    for (int i = 0; i < trialsize; ++i) {
-      tmpmap.insert(make_pair(initialham(i,i),i));
+    for (int j = 0; j < trialsize; ++j) {
+      double energy = 0;
+      for (int i = 0; i < dimerstates_; ++i)
+        energy += initial->element(i,j) * initial->element(i,j) * denom_[i];
+      tmpmap.insert(make_pair(energy,j));
     }
 
     auto imap = tmpmap.begin();
     for (int istate = 0; istate < nstates_; ++istate, ++imap) {
       int ii = imap->second;
-      cc.push_back(initial->slice(ii,ii+1));
+      copy_n(initial->element_ptr(0, ii), dimerstates_, cc->element_ptr(0, istate));
     }
   }
-
   cout << "    - initial guess time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl << endl;
 
   vector<int> conv(nstates_, static_cast<int>(false));
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    vector<shared_ptr<const Matrix>> sigma;
+    shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc);
+
+    vector<shared_ptr<const Matrix>> sigman;
     vector<shared_ptr<const Matrix>> ccn;
     for (int i = 0; i != nstates_; ++i) {
       if (!conv[i]) {
-        sigma.push_back(make_shared<const Matrix>(*hamiltonian_ * *cc.at(i)));
-        ccn.push_back(make_shared<const Matrix>(*cc.at(i)));
+        sigman.push_back(sigma->slice(i,i+1));
+        ccn.push_back(cc->slice(i,i+1));
       }
     }
-    const vector<double> energies = davidson.compute(ccn, sigma);
+    const vector<double> energies = davidson.compute(ccn, sigman);
 
     // residual
     vector<shared_ptr<Matrix>> errvec = davidson.residual();
@@ -151,20 +162,22 @@ void MultiExcitonHamiltonian::compute() {
       for (int ist = 0; ist != nstates_; ++ist) {
         if (conv.at(ist)) continue;
         const int size = dimerstates_;
-        double* target_array = cc.at(ist)->data();
+        auto tmp_cc = make_shared<Matrix>(dimerstates_, 1);
+        double* target_array = tmp_cc->data();
         double* source_array = errvec.at(ist)->data();
         const double en = energies.at(ist);
         for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / min(en - hamiltonian_->element(i,i), -0.1);
+          target_array[i] = source_array[i] / min(en - denom_[i], -0.1);
         }
-        davidson.orthog(cc.at(ist));
+        davidson.orthog(tmp_cc);
         list<shared_ptr<const Matrix>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc.at(jst));
-        cc.at(ist)->orthog(tmp);
-        spin_->filter(*cc.at(ist), nspin_);
-        double nrm = cc.at(ist)->norm();
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc->slice(jst, jst+1));
+        tmp_cc->orthog(tmp);
+        spin_->filter(*tmp_cc, nspin_);
+        double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
-        cc.at(ist)->scale(scal);
+        tmp_cc->scale(scal);
+        copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
       }
     }
 
@@ -185,7 +198,7 @@ void MultiExcitonHamiltonian::compute() {
     copy_n(advec.at(i)->data(), dimerstates_, adiabats_->element_ptr(0, i));
   }
 
-  if ( dipoles_ ) {
+  if ( dipoles_ ) { // TODO Redo to make better use of memory
     cout << "  o Computing properties" << endl;
     DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
     array<string,3> mu_labels = {{"x", "y", "z"}};

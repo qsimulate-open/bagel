@@ -25,6 +25,7 @@
 
 #include <src/dimer/dimer_prop.h>
 #include <src/math/davidson.h>
+#include <src/util/f77.h>
 #include <src/meh/meh.h>
 
 using namespace std;
@@ -45,6 +46,7 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(const std::shared_ptr<const PTr
   dipoles_ = input->get<bool>("dipoles", false);
   thresh_ = input->get<double>("thresh", 1.0e-12);
   print_thresh_ = input->get<double>("print_thresh", 0.05);
+  store_matrix_ = input->get<bool>("store_matrix", false);
   nspin_ = 0; // TODO hardcoded to singlets for now
 
   common_init();
@@ -114,6 +116,32 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
   else if ( icouple == coupling_index( 0, 0,+2,-2) ) return Coupling::bbET;
   else if ( icouple == coupling_index( 0, 0,-2,+2) ) return Coupling::inv_bbET;
   else                                               return Coupling::none;
+}
+
+
+shared_ptr<const Matrix> MultiExcitonHamiltonian::apply_hamiltonian(const Matrix& o) {
+  if (store_matrix_) {
+    return make_shared<const Matrix>(*hamiltonian_ * o);
+  }
+  else {
+    auto out = make_shared<Matrix>(o.ndim(), o.mdim());
+    for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+      const int ioff = iAB->offset();
+      for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+        const int joff = jAB->offset();
+
+        shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
+
+        dgemm_("N", "N", block->ndim(), o.mdim(), block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
+        dgemm_("T", "N", block->mdim(), o.mdim(), block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+      }
+
+      shared_ptr<const Matrix> block = compute_diagonal_block(*iAB);
+      dgemm_("N", "N", block->ndim(), o.mdim(), block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
+    }
+
+    return out;
+  }
 }
 
 

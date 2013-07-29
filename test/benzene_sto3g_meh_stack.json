@@ -38,6 +38,7 @@
 
 {
   "title" : "meh",
+  "store_matrix" : false,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 8},
     { "charge" : 0, "spin" : 2, "nstate" : 8},
