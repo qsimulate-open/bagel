@@ -183,17 +183,13 @@ throw logic_error("broken!");
         string localizemethod = itree->get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;
         if (localizemethod == "region") {
-          auto sizes = itree->get_vector<int>("region_sizes");
-          localization = make_shared<RegionLocalization>(ref, sizes);
+          localization = make_shared<RegionLocalization>(itree, ref);
         }
         else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-          localization = make_shared<PMLocalization>(ref);
+          localization = make_shared<PMLocalization>(itree, ref);
         else throw runtime_error("Unrecognized orbital localization method");
 
-        const int max_iter = itree->get<int>("max_iter", 50);
-        const double thresh = itree->get<double>("thresh", 1.0e-6);
-
-        shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize(max_iter,thresh));
+        shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
         ref = make_shared<const Reference>(ref, new_coeff);
 
       } else if (title == "print") {

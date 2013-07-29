@@ -155,7 +155,7 @@ Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeo
 
   vector<int> sizes = {{regions.first, regions.second}}; // a little bit of a hack but can be improved later
   shared_ptr<Matrix> tmpcoeff = superref->coeff()->slice(nclosed, nclosed + nact);
-  auto localization = make_shared<RegionLocalization>(sgeom_, tmpcoeff, sizes, nact, 0, 0);
+  auto localization = make_shared<RegionLocalization>(make_shared<PTree>(), sgeom_, tmpcoeff, sizes, nact, 0, 0);
   auto local_active = localization->localize();
   auto local_coeff = make_shared<Coeff>(*superref->coeff());
   copy_n(local_active->element_ptr(0, 0), dimerbasis_*nact, local_coeff->element_ptr(0,nclosed));
@@ -392,15 +392,15 @@ void Dimer::embed_refs() {
 }
 
 void Dimer::localize(const std::shared_ptr<const PTree> idata) {
-  string localizemethod = idata->get<string>("localization", "pm");
+  string localizemethod = idata->get<string>("algorithm", "pm");
 
   shared_ptr<OrbitalLocalization> localization;
   if (localizemethod == "region") {
     vector<int> sizes = { geoms_.first->natom(), geoms_.second->natom() };
-    localization = make_shared<RegionLocalization>(sref_, sizes);
+    localization = make_shared<RegionLocalization>(idata, sref_, sizes);
   }
   else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey") {
-    localization = make_shared<PMLocalization>(sref_);
+    localization = make_shared<PMLocalization>(idata, sref_);
   }
   else throw std::runtime_error("Unrecognized orbital localization method");
 
@@ -490,7 +490,6 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   const int nclosedA = active_refs.first->nclosed();
   const int nclosedB = active_refs.second->nclosed();
   nclosed_ = nclosedA + nclosedB;
-  //ncore_ = make_pair(nclosedA, nclosedB);
 
   const int nactA = active_refs.first->nact();
   const int nactB = active_refs.second->nact();
@@ -533,10 +532,12 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 }
 
 // RHF and then localize
-void Dimer::scf(const std::shared_ptr<const PTree> idata) {
+void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
+
   // SCF
-  auto rhf = make_shared<SCF>(idata, sgeom_, sref_);
+  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<const PTree>();
+  shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
   set_sref(rhf->conv_to_ref());
   dimertime.tick_print("Dimer SCF");
@@ -549,10 +550,13 @@ void Dimer::scf(const std::shared_ptr<const PTree> idata) {
   else set_active(idata);
 
   // Localize
-  const string localmethod = idata->get<string>("localization", "pm");
+  const string localmethod = idata->get<string>("localization", "default");
   dimertime.tick();
   if (localmethod != "none") {
-    localize(idata);
+    shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
+    if (!localize_data) localize_data = make_shared<const PTree>();
+
+    localize(localize_data);
     dimertime.tick_print("Dimer localization");
 
     // Sub-diagonalize Fock Matrix
@@ -609,6 +613,9 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
   stringstream ss;
   std::streambuf* saved_cout = cout.rdbuf();
 
+  shared_ptr<const PTree> fcidata = idata->get_child_optional("fci");
+  if (!fcidata) fcidata = make_shared<const PTree>();
+
   // Embedded CAS-CI calculations
   cout << "    Starting embedded CAS-CI calculations on monomer A" << endl;
   for (auto& ispace : spaces_A) {
@@ -618,7 +625,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
     const int nstate = ispace.at(2);
 
     cout.rdbuf(ss.rdbuf());
-    out->insert<0>(embedded_casci<0>(idata, charge, spin, nstate));
+    out->insert<0>(embedded_casci<0>(fcidata, charge, spin, nstate));
     cout.rdbuf(saved_cout);
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
@@ -633,7 +640,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
     const int nstate = ispace.at(2);
 
     cout.rdbuf(ss.rdbuf());
-    out->insert<1>(embedded_casci<1>(idata, charge, spin, nstate));
+    out->insert<1>(embedded_casci<1>(fcidata, charge, spin, nstate));
     cout.rdbuf(saved_cout);
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate

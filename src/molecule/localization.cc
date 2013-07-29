@@ -30,10 +30,38 @@
 using namespace bagel;
 using namespace std;
 
+OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
+  const int nclosed, const int nact, const int nvirt) :
+  geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {
+
+  localize_closed_ = input->get<bool>("closed", true);
+  localize_active_ = input->get<bool>("active", (nact_ > 0));
+  localize_virtual_ = input->get<bool>("virtual", false);
+
+  thresh_ = input->get<double>("thresh", 1.0e-8);
+  max_iter_ = input->get<int>("max_iter", 50);
+}
+
 /************************************************************************************
 * Orthogonalize based on regions - follows the implementation in                    *
 *   de Silva, Giebultowski, Korchowiec, PCCP 2011, 14, 546–552                      *
 ************************************************************************************/
+RegionLocalization::RegionLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
+  vector<int> region_sizes, const int nclosed, const int nact, const int nvirt) :
+    OrbitalLocalization(input, geom, coeff, nclosed, nact, nvirt)
+{
+  common_init(region_sizes);
+}
+
+RegionLocalization::RegionLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
+  const int nclosed, const int nact, const int nvirt) :
+    OrbitalLocalization(input, geom, coeff, nclosed, nact, nvirt)
+{
+  vector<int> region_sizes = input->get_vector<int>("region_sizes");
+  if (region_sizes.size() < 2) throw runtime_error("At least two regions should be specified for region localization");
+  common_init(region_sizes);
+}
+
 void RegionLocalization::common_init(vector<int> sizes) {
   int natom = 0;
   for (auto& isize : sizes) {
@@ -51,7 +79,7 @@ void RegionLocalization::common_init(vector<int> sizes) {
   S_inverse_half_ = make_shared<Overlap>(geom_); S_inverse_half_->inverse_half();
 }
 
-shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density) {
+shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> density) {
   const int nbasis = geom_->nbasis();
 
   // Symmetric orthogonalized density matrix
@@ -99,12 +127,9 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
 
   // TODO: here would be the stage 2 jacobi sweeps. This would be necessary for covalently bound regions.
 
-
   // Reorder so that the occupied orbitals come first, separated by fragment
   auto tmp = make_shared<Matrix>((*S_inverse_half_) * (*T) * (*U));
-
   auto out = make_shared<Matrix>(nbasis, nbasis);
-
   {
     int imo = 0;
     for(int& iocc : occupied) {
@@ -124,87 +149,86 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<Matrix> density
   return out;
 }
 
-shared_ptr<const Matrix> RegionLocalization::localize(const int iter, const double thresh) {
+shared_ptr<const Matrix> RegionLocalization::localize() {
   const int nbasis = geom_->nbasis();
 
-  shared_ptr<const Matrix> out;
+  shared_ptr<Matrix> closed = localize_space(coeff_->form_density_rhf(nclosed_));
 
-  shared_ptr<Coeff> coeff = make_shared<Coeff>(*coeff_);
-
-  shared_ptr<Matrix> closed_coeff = localize_space(coeff->form_density_rhf(nclosed_));
-  if (nact_ == 0) { // In this case, I'm done
-    out = make_shared<const Matrix>(*closed_coeff);
+  if (!localize_active_) {
+    coeff_ = closed;
+    return closed;
   }
   else {
-    auto tmp = make_shared<Matrix>(nbasis, nbasis);
+    auto out = make_shared<Matrix>(*coeff_);
+    copy_n(closed->element_ptr(0, 0), nclosed_ * nbasis, out->element_ptr(0, 0));
 
-    vector<double> active_weights(nbasis, 0.0);
-    fill_n(active_weights.begin() + nclosed_, nact_, 1.0);
-    shared_ptr<Matrix> active_coeff = localize_space(coeff->form_weighted_density_rhf(nclosed_+nact_, active_weights));
+    shared_ptr<Matrix> active = localize_space(coeff_->form_density_rhf(nact_, nclosed_));
+    copy_n(active->element_ptr(0, 0), nact_ * nbasis, out->element_ptr(0, nclosed_));
 
-    vector<double> virt_weights(nbasis, 0.0);
-    fill(virt_weights.begin() + nclosed_ + nact_, virt_weights.begin() + nbasis, 1.0);
-    shared_ptr<Matrix> virt_coeff = localize_space(coeff->form_weighted_density_rhf(nbasis, virt_weights));
+    if (localize_virtual_) {
+      shared_ptr<Matrix> virt = localize_space(coeff_->form_density_rhf(nvirt_, nclosed_ + nact_));
+      copy_n(virt->element_ptr(0, 0), nvirt_ * nbasis, out->element_ptr(0, nclosed_ + nact_));
+    }
 
-    tmp->copy_block(0, 0, nbasis, nclosed_, closed_coeff);
-    tmp->copy_block(0, nclosed_, nbasis, nact_, active_coeff);
-    tmp->copy_block(0, nclosed_ + nact_, nbasis, nbasis - (nclosed_ + nact_), virt_coeff);
-
-    out = make_shared<const Matrix>(*tmp);
+    return out;
   }
-
-  return out;
 }
 
-void PMLocalization::common_init(shared_ptr<const Geometry> geom) {
-  S_ = make_shared<Overlap>(geom);
+/************************************************************************************
+* Pipek-Mezey Localization                                                          *
+************************************************************************************/
+PMLocalization::PMLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
+  const int nclosed, const int nact, const int nvirt) : OrbitalLocalization(input, geom, coeff, nclosed, nact, nvirt)
+{
+  common_init();
+}
 
-  vector<vector<int>> offsets = geom->offsets();
+void PMLocalization::common_init() {
+  S_ = make_shared<Overlap>(geom_);
+
+  vector<vector<int>> offsets = geom_->offsets();
   for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
     const int start = ioffset->front();
     int end;
-    if((ioffset+1) == offsets.end()) end = geom->nbasis();
+    if((ioffset+1) == offsets.end()) end = geom_->nbasis();
     else end = (ioffset+1)->front();
 
     atom_bounds_.push_back(make_pair(start, end));
   }
 }
 
-shared_ptr<const Matrix> PMLocalization::localize(const int iter, const double thresh) {
-  iter_ = iter; thresh_ = thresh;
+shared_ptr<const Matrix> PMLocalization::localize() {
+  shared_ptr<Matrix> out = coeff_->copy();
 
-  shared_ptr<Matrix> new_coeff = coeff_->copy();
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
 
-  // Localize occupied space
-  if (nclosed_ != 0) {
-    cout << "  Localizing occupied space" << endl;
-    localize_space(new_coeff, 0, nclosed_);
+  // Localize closed space
+  if (localize_closed_) {
+    cout << "  Localizing closed (occupied) space" << endl;
+    localize_space(out, 0, nclosed_);
   }
   else {
-    cout << "  No closed space to localize" << endl << endl;
+    cout << "  Skipping closed (occupied) space" << endl << endl;
   }
 
   // If there is an active space, localize it
-  if (nact_ != 0) {
+  if (localize_active_) {
     cout << "  Localizing active space" << endl;
-    localize_space(new_coeff, nclosed_, nact_);
+    localize_space(out, nclosed_, nact_);
   }
   else {
-    cout << "  No active space to localize" << endl << endl;
+    cout << "  Skipping active space" << endl << endl;
   }
 
-
   // If there is virtual left, localize it
-  if ( nvirt_ != 0 ) {
+  if ( localize_virtual_ ) {
     cout << "  Localizing virtual space" << endl;
-    localize_space(new_coeff, nclosed_ + nact_, nvirt_);
+    localize_space(out, nclosed_ + nact_, nvirt_);
   }
   else {
     cout << "  No virtual space to localize" << endl << endl;
   }
 
-  auto out = make_shared<const Matrix>(*new_coeff);
   coeff_ = out;
 
   return out;
@@ -219,7 +243,7 @@ void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, 
 
   cout << setw(3) << 0 << setw(16) << setprecision(10) << P << endl;
 
-  for(int i = 0; i < iter_; ++i) {
+  for(int i = 0; i < max_iter_; ++i) {
     jacobi->sweep();
 
     double tmp_P = calc_P(coeff, nstart, norb);

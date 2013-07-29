@@ -59,17 +59,13 @@ double localization(std::string filename) {
       std::string localizemethod = itree->get<std::string>("algorithm", "pm");
       std::shared_ptr<OrbitalLocalization> localization;
       if (localizemethod == "region") {
-        auto sizes = itree->get_vector<int>("region_sizes");
-        localization = std::make_shared<RegionLocalization>(ref, sizes);
+        localization = std::make_shared<RegionLocalization>(itree, ref);
       }
       else if (localizemethod == "pm" || localizemethod == "pipek" || localizemethod == "mezey" || localizemethod == "pipek-mezey")
-        localization = std::make_shared<PMLocalization>(ref);
+        localization = std::make_shared<PMLocalization>(itree, ref);
       else throw std::runtime_error("Unrecognized orbital localization method");
 
-      const int max_iter = itree->get<int>("max_iter", 50);
-      const double thresh = itree->get<double>("thresh", 1.0e-6);
-
-      localization->localize(max_iter, thresh);
+      localization->localize();
 
       std::cout.rdbuf(backup_stream);
       return localization->metric();

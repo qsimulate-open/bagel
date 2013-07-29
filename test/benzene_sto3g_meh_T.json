@@ -62,8 +62,13 @@
   "form" : "refs",
   "refs" : [ "unitA", "unitB" ],
   "dimer_active" : [17, 20, 21, 22, 23, 30],
-  "thresh_scf" : 1.0e-12,
-  "localization" : "pm"
+  "hf" : {
+    "thresh" : 1.0e-12
+  },
+  "localization" : {
+    "max_iter" : 50,
+    "thresh" : 1.0e-8
+  }
 },
 
 {
@@ -75,7 +80,10 @@
     { "charge" : 1, "spin" : 1, "nstate" : 8},
     { "charge" :-1, "spin" : 1, "nstate" : 8}
   ],
-  "thresh_fci" : 1.0e-12
+  "fci" : {
+    "thresh" : 1.0e-12,
+    "algorithm" : "kh"
+  }
 }
 
 ]}
