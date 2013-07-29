@@ -61,7 +61,7 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d
 vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
@@ -99,7 +99,7 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> n
 vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matrix>,6> rmat) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
@@ -136,9 +136,9 @@ vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matr
 vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFDist>,6> o) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*nshell*nshell2);
 
@@ -183,9 +183,9 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
 vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o) {
   vector<GradTask> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*(nshell+1)*nshell2/2);
 
@@ -231,7 +231,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
 vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den) {
   vector<GradTask> out;
   const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->nbasis(); });
+                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells.size(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
   // using symmetry (b0 <-> b1)
