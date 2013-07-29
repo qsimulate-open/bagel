@@ -703,7 +703,7 @@ class Node {
 
 using namespace bagel::geometry;
 
-array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
+array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
 
   vector<vector<double>> out;
@@ -833,13 +833,12 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
   const int primsize = out.size();
   const int cartsize = 3*natom();
 
-  unique_ptr<double[]> bdag(new double[primsize*cartsize]);
-  double* biter = bdag.get();
+  Matrix bdag(cartsize, primsize);
+  double* biter = bdag.data();
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
-  auto bb = make_shared<Matrix>(primsize,primsize,true);
-  dgemm_("T", "N", primsize, primsize, cartsize, -1.0, bdag.get(), cartsize, bdag.get(), cartsize, 0.0, bb->data(), primsize);
+  auto bb = make_shared<Matrix>(bdag % bdag * (-1.0));
   unique_ptr<double[]> eig(new double[primsize]);
   bb->diagonalize(eig.get());
 
@@ -857,39 +856,15 @@ array<unique_ptr<double[]>,2> Geometry::compute_internal_coordinate() const {
     cout << "       ** caution **  the dimention of internal coordinates is not the same as 3*natom" << endl;
 
   // form B = U^+ Bprim
-  unique_ptr<double[]> bnew(new double[cartsize*cartsize]);
-  fill(bnew.get(), bnew.get()+cartsize*cartsize, 0.0);
-  dgemm_("T", "T", ninternal, cartsize, primsize, 1.0, bb->data(), primsize, bdag.get(), cartsize, 0.0, bnew.get(), cartsize);
+  auto bnew = make_shared<Matrix>(bdag * *bb->slice(0,ninternal));
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
-  unique_ptr<double[]> bdmnew(new double[cartsize*cartsize]);
-  fill(bdmnew.get(), bdmnew.get()+cartsize*cartsize, 0.0);
-  for (int j = 0; j != cartsize; ++j)
-    for (int i = 0; i != ninternal; ++i)
-      bdmnew[i+j*cartsize] = bnew[i+j*cartsize] / eig[i];
+  auto bdmnew = make_shared<Matrix>(cartsize, ninternal);
+  for (int i = 0; i != ninternal; ++i)
+    for (int j = 0; j != cartsize; ++j)
+      bdmnew->element(j,i) = bnew->element(j,i) / eig[i];
 
-  // for debug
-  if (false) {
-    unique_ptr<double[]> tmp(new double[cartsize*cartsize]);
-    fill(tmp.get(), tmp.get()+cartsize*cartsize, 0.0);
-    dgemm_("N", "T", cartsize, cartsize, cartsize, 1.0, bdmnew, cartsize, bnew, cartsize, 0.0, tmp, cartsize);
-    for (int i = 0; i != cartsize; ++i) {
-      for (int j = 0; j != cartsize; ++j) {
-        cout << setw(8) << setprecision(3) << tmp[j+i*cartsize];
-      }
-      cout << endl;
-    }
-    cout << "====" << endl;
-    dgemm_("N", "T", cartsize, cartsize, cartsize, 1.0, bnew, cartsize, bdmnew, cartsize, 0.0, tmp, cartsize);
-    for (int i = 0; i != cartsize; ++i) {
-      for (int j = 0; j != cartsize; ++j) {
-        cout << setw(8) << setprecision(3) << tmp[j+i*cartsize];
-      }
-      cout << endl;
-    }
-  }
-
-  return array<unique_ptr<double[]>,2>{{move(bnew), move(bdmnew)}};
+  return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
 
 

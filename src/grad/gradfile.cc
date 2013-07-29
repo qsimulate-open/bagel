@@ -56,13 +56,14 @@ void GradFile::print() const {
   }
 }
 
-shared_ptr<GradFile> GradFile::transform(const unique_ptr<double[]>& a, const bool transpose) const {
+shared_ptr<GradFile> GradFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
+  // a is ncart * ninternal quantity
   shared_ptr<GradFile> out = clone();
-  const int size = data_->size();
+  const size_t size = data_->size();
   if (transpose) {
-    dgemv_("T", size, size, 1.0, a.get(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
   } else {
-    dgemv_("N", size, size, 1.0, a.get(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("N", a->ndim(), a->mdim(), 1.0, a->data(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
   }
   return out;
 }

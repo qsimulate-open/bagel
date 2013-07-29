@@ -80,7 +80,7 @@ class GradFile {
     void print() const;
 
     // this function assumes that double[] has data_.size()*data_size() elements.
-    std::shared_ptr<GradFile> transform(const std::unique_ptr<double[]>&, const bool transpose) const;
+    std::shared_ptr<GradFile> transform(const std::shared_ptr<const Matrix>, const bool transpose) const;
 
 };
 
