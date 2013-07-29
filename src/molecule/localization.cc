@@ -152,7 +152,8 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> d
 shared_ptr<const Matrix> RegionLocalization::localize() {
   const int nbasis = geom_->nbasis();
 
-  shared_ptr<Matrix> closed = localize_space(coeff_->form_density_rhf(nclosed_));
+  shared_ptr<DistMatrix> distcoeff = coeff_->distmatrix();
+  shared_ptr<const Matrix> closed = localize_space(distcoeff->form_density_rhf(nclosed_)->matrix());
 
   if (!localize_active_) {
     coeff_ = closed;
@@ -162,11 +163,11 @@ shared_ptr<const Matrix> RegionLocalization::localize() {
     auto out = make_shared<Matrix>(*coeff_);
     copy_n(closed->element_ptr(0, 0), nclosed_ * nbasis, out->element_ptr(0, 0));
 
-    shared_ptr<Matrix> active = localize_space(coeff_->form_density_rhf(nact_, nclosed_));
+    shared_ptr<Matrix> active = localize_space(distcoeff->form_density_rhf(nact_, nclosed_)->matrix());
     copy_n(active->element_ptr(0, 0), nact_ * nbasis, out->element_ptr(0, nclosed_));
 
     if (localize_virtual_) {
-      shared_ptr<Matrix> virt = localize_space(coeff_->form_density_rhf(nvirt_, nclosed_ + nact_));
+      shared_ptr<Matrix> virt = localize_space(distcoeff->form_density_rhf(nvirt_, nclosed_ + nact_)->matrix());
       copy_n(virt->element_ptr(0, 0), nvirt_ * nbasis, out->element_ptr(0, nclosed_ + nact_));
     }
 
