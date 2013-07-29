@@ -152,7 +152,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> d
 shared_ptr<const Matrix> RegionLocalization::localize() {
   const int nbasis = geom_->nbasis();
 
-  shared_ptr<DistMatrix> distcoeff = coeff_->distmatrix();
+  shared_ptr<const DistMatrix> distcoeff = coeff_->distmatrix();
   shared_ptr<const Matrix> closed = localize_space(distcoeff->form_density_rhf(nclosed_)->matrix());
 
   if (!localize_active_) {
