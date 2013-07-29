@@ -56,7 +56,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "zfci")   out = make_shared<ZKnowlesHandy>(itree, geom, ref);
   else if (title == "fci") {
     const string algorithm = itree->get<string>("algorithm", "");
-    const bool dokh = (algorithm == "" || algorithm == "auto") && ref->geom()->nele() > ref->geom()->nbasis();
+    const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
     if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
       out = make_shared<KnowlesHandy>(itree, geom, ref);
     } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {

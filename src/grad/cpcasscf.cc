@@ -67,13 +67,13 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
 
   // some DF vectors
-  shared_ptr<const DFDist> df = ref_->geom()->df();
+  shared_ptr<const DFDist> df = geom_->df();
   shared_ptr<const DFHalfDist> half = df->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff);
 
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec>> denom;
-  const double core_energy = ref_->geom()->nuclear_repulsion() + fci_->core_energy();
+  const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
   {
     shared_ptr<Matrix> d0 = eig_->copy();
     for (int i = 0; i != d0->size(); ++i)
@@ -291,7 +291,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 #if 0
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
 #else
-  shared_ptr<const DFHalfDist> half = ref_->geom()->df()->compute_half_transform(acoeff);
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acoeff);
 #endif
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());

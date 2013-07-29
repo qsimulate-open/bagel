@@ -95,6 +95,7 @@ class Opt {
           ref = c->conv_to_ref();
         } else {
           current_ = std::make_shared<const Geometry>(*current_, *m); 
+          if (ref) ref = ref->project_coeff(current_);
         }
       }
       std::shared_ptr<const PTree> cinput = *m; 

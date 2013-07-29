@@ -54,7 +54,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nvirt = ref_->nvirt();
 
   // related to denominators
-  const int nbasis = ref_->geom()->nbasis();
+  const int nbasis = geom_->nbasis();
   auto eig = make_shared<Matrix>(nbasis, nbasis);
   {
     // as in Theor Chem Acc (1997) 97:88-95
@@ -70,7 +70,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
     auto fact_ao = make_shared<Fock<1>>(geom_, task_->hcore(), denact, ref_->schwarz());
     auto f = make_shared<Matrix>(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff);
 
-    auto fact = make_shared<Qvec>(nbasis, nact, ref_->geom()->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
+    auto fact = make_shared<Qvec>(nbasis, nact, geom_->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
     for (int i = 0; i != nact; ++i)
       daxpy_(nbasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nbasis, 1);
 
@@ -95,7 +95,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half = ref_->geom()->df()->compute_half_transform(ref_->coeff()->slice(0,nocc))->apply_J();
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ref_->coeff()->slice(0,nocc))->apply_J();
   shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
@@ -139,7 +139,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const RDM<2>> zrdm2;
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
-  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(ref_->geom(), nclosed, false)->resize(nbasis, nbasis);
+  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(geom_, nclosed, false)->resize(nbasis, nbasis);
   zrdm1_mat->symmetrize();
   dtot->daxpy(1.0, zrdm1_mat);
 
