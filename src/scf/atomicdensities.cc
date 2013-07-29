@@ -41,12 +41,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
 
   int offset = 0;
 
-  // TODO AtomicDensities is only using the default basis set.
   // read basis file
   shared_ptr<const PTree> bdata = PTree::read_basis(defbasis); 
 
+  auto ai = geom_->aux_atoms().begin();
   for (auto& i : geom_->atoms()) {
-    if (i->dummy()) continue;
+    if (i->dummy()) { ++ai; continue; }
     if (atoms.find(i->name()) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
@@ -56,9 +56,11 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       shared_ptr<PTree> geomop = make_shared<PTree>();
       const string basis = i->basis(); 
       geomop->put("basis", basis);
-      geomop->put("df_basis", basis);
+      const string dfbasis = (*ai++)->basis();
+      geomop->put("df_basis", !dfbasis.empty() ? dfbasis : basis);
 
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata));
+      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), std::shared_ptr<const PTree>());
+      // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(i->name(), compute_atomic(ga)));
 

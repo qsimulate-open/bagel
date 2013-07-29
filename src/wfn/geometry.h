@@ -69,7 +69,6 @@ class Geometry : public Molecule {
     double gamma_;
 
     // Constructor helpers
-    void construct_from_atoms(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
     void common_init1();
     void common_init2(const bool print, const double thresh, const bool nodf = false);
 

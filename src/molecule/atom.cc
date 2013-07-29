@@ -46,11 +46,17 @@ using namespace bagel;
 
 static const AtomMap atommap_;
 
-Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, const bool aux)
+Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = inp->get<string>("atom");
   transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
 
+  if (elem)
+    for (auto& i : *elem) {
+      string key = i->key();
+      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      if (name_ == key) basis_ = i->data();
+    }
   atom_number_ = atommap_.atom_number(name_);
 
   position_ = inp->get_array<double,3>("xyz");
@@ -70,12 +76,18 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 
 // constructor that uses the old atom and basis
-Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas)
+Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
  : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), basis_(bas) {
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
   } else {
+    if (elem)
+      for (auto& i : *elem) {
+        string key = i->key();
+        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        if (name_ == key) basis_ = i->data();
+      }
     string na = name_;
     shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
     na[0] = toupper(na[0]);
@@ -134,9 +146,15 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
 
+  if (elem)
+    for (auto& i : *elem) {
+      string key = i->key();
+      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      if (name_ == key) basis_ = i->data();
+    }
   string na = name_;
   na[0] = toupper(na[0]);
   shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);

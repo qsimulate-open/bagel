@@ -70,8 +70,8 @@ PTree::PTree(const string& input) {
 
 
 //Dereference operator - return the current node's data.
-const shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second); }
-const shared_ptr<const PTree> PTreeReverseIterator::operator*() { return make_shared<const PTree>(current->second); }
+const shared_ptr<const PTree> PTreeIterator::operator*() { return make_shared<const PTree>(current->second, current->first); }
+const shared_ptr<const PTree> PTreeReverseIterator::operator*() { return make_shared<const PTree>(current->second, current->first); }
 
 PTreeIterator PTree::begin() const { return PTreeIterator(data_.begin()); }
 PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }

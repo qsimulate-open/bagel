@@ -46,7 +46,7 @@ class Atom {
     int lmax_;
 
     // basis set
-    const std::string basis_;
+    std::string basis_;
 
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
@@ -58,15 +58,15 @@ class Atom {
     void common_init();
 
   public:
-    Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, const bool aux= false);
+    Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux= false);
 
-    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> json);
+    Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
 
-    Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas);
+    Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem);
     Atom(const Atom&, const std::array<double,3>& displ);
 
     const std::string name() const { return name_; }

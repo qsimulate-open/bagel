@@ -85,23 +85,24 @@ class PTreeReverseIterator {
 class PTree {
   protected:
     boost::property_tree::ptree data_;
+    std::string key_;
 
   public:
     PTree() : data_() {}
 
-    PTree(const boost::property_tree::ptree& i) : data_(i) { }
+    PTree(const boost::property_tree::ptree& i, const std::string key) : data_(i), key_(key) { }
 
-    PTree(const PTree& o) : data_(o.data_) { }
+    PTree(const PTree& o) : data_(o.data_), key_(o.key_) { }
 
     PTree(const std::string& input);
 
     std::shared_ptr<PTree> get_child(const std::string& key) const {
-      return std::make_shared<PTree>(data_.get_child(key));
+      return std::make_shared<PTree>(data_.get_child(key), key);
     }
 
     std::shared_ptr<PTree> get_child_optional(const std::string& key) const {
       auto out = data_.get_child_optional(key);
-      return out ? std::make_shared<PTree>(*out) : std::shared_ptr<PTree>();
+      return out ? std::make_shared<PTree>(*out, key) : std::shared_ptr<PTree>();
     }
 
     template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
@@ -114,6 +115,7 @@ class PTree {
     void erase(const std::string key) { data_.erase(key); }
 
     std::string data() const { return data_.data(); }
+    std::string key() const { return key_; }
 
     size_t size() const;
 
