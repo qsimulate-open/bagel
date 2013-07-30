@@ -71,7 +71,7 @@ std::vector<double> reference_scf_opt_cart() {
 std::vector<double> reference_scf_opt_mix() {
   std::vector<double> out(6);
   out[2] = 1.755386;
-  out[5] =-0.006975;
+  out[5] =-0.006972;
   return out;
 }
 std::vector<double> reference_uhf_opt() {

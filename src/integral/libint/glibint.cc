@@ -29,8 +29,9 @@
 #include <stddef.h>
 #include <iostream>
 #include <src/util/f77.h>
-#include <src/rysint/carsphlist.h>
-#include <src/rysint/glibint.h>
+#include <src/math/algo.h>
+#include <src/integral/carsphlist.h>
+#include <src/integral/libint/glibint.h>
 #include <boys.h>
 
 using namespace std;
@@ -40,7 +41,7 @@ const static CarSphList carsphlist;
 
 const static libint2::FmEval_Chebyshev3 fmeval(18);
 
-GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells) : RysInt(shells) {
+GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells, std::shared_ptr<StackMem> stack) : RysInt(shells, stack) {
   deriv_rank_ = 1;
 
   tenno_ = 0;

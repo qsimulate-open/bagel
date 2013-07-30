@@ -76,8 +76,8 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),    -99.83765614));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"),   -99.84911270));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_charge"), -99.77381455));
-    BOOST_CHECK(compare(scf_energy("hf_mix_dfhf"),        -99.83889304));
-    BOOST_CHECK(compare(scf_energy("hf_mix2_dfhf"),       -99.83889304));
+    BOOST_CHECK(compare(scf_energy("hf_mix_dfhf"),        -99.83889193));
+    BOOST_CHECK(compare(scf_energy("hf_mix2_dfhf"),       -99.83889193));
     BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),         -75.28410147));
     BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
     BOOST_CHECK(compare(scf_energy("hf_new_dfhf"),        -99.97989929));

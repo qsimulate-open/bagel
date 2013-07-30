@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <src/rel/alpha.h>
 #include <src/integral/rys/gradbatch.h>
-#include <src/integral/libint/libint.h>
+#include <src/integral/libint/glibint.h>
 #include <src/integral/rys/gsmalleribatch.h>
 
 using namespace std;
@@ -108,9 +108,12 @@ void GSmallERIBatch::compute() {
     size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
   } m(s0size_, a1_, a2_);
 
-#ifndef LIBINT_INTERFACE
   {
+#ifndef LIBINT_INTERFACE
     auto eric = make_shared<GradBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_);
+#else
+    auto eric = make_shared<GLibint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, stack_);
+#endif
     eric->compute();
 
     array<int,4> jatom = {{-1, 2, 1, 0}};
@@ -128,7 +131,11 @@ void GSmallERIBatch::compute() {
     }
   }
   if (shells_[1]->aux_dec() && shells_[2]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
     auto eric = make_shared<GradBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
+#else
+    auto eric = make_shared<GLibint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, stack_);
+#endif
     eric->compute();
 
     array<int,4> jatom = {{-1, 2, 1, 0}};
@@ -146,7 +153,11 @@ void GSmallERIBatch::compute() {
     }
   }
   if (shells_[1]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
     auto eric = make_shared<GradBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_);
+#else
+    auto eric = make_shared<GLibint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, stack_);
+#endif
     eric->compute();
 
     array<int,4> jatom = {{-1, 2, 1, 0}};
@@ -164,7 +175,11 @@ void GSmallERIBatch::compute() {
     }
   }
   if (shells_[2]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
     auto eric = make_shared<GradBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
+#else
+    auto eric = make_shared<GLibint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, stack_);
+#endif
     eric->compute();
 
     array<int,4> jatom = {{-1, 2, 1, 0}};
@@ -181,35 +196,4 @@ void GSmallERIBatch::compute() {
       }
     }
   }
-#else
-#if 0
-  // TODO below is completely wrong
-  {
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, 0.0, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_inc_; i++)
-      copy_n(eric->data() + i * s0size_ * a1size_inc_, s0size_ * a1size_inc_, eri + m(0,0,i));
-  }
-  if (shells_[1]->aux_dec() && shells_[2]->aux_dec()) {
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, 0.0, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_dec_; i++)
-      copy_n(eric->data() + i * s0size_ * a1size_dec_, s0size_ * a1size_dec_, eri + m(0,a1size_inc_,a2size_inc_+i));
-  }
-  if (shells_[1]->aux_dec()) {
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, 0.0, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_inc_; i++)
-      copy_n(eric->data() + i * s0size_ * a1size_dec_, s0size_ * a1size_dec_, eri + m(0,a1size_inc_, i));
-  }
-  if (shells_[2]->aux_dec()) {
-    auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, 0.0, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_dec_; i++)
-      copy_n(eric->data() + i * s0size_ * a1size_inc_, s0size_ * a1size_inc_, eri + m(0,0,a2size_inc_+i));
-  }
-#else
-  throw logic_error("GSmallERIBatch::compute not yet implemented with libint");
-#endif
-#endif
 }

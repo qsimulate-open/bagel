@@ -29,21 +29,21 @@
 #ifndef __SRC_RYSINT_GLIBINT_H
 #define __SRC_RYSINT_GLIBINT_H
 
-#include <src/rysint/rysint.h>
+#include <src/integral/rys/rysint.h>
 
 namespace bagel {
 
 class GLibint : public RysInt {
   protected:
-    void root_weight(int){};
-    void compute_ssss(double){};
+    void root_weight(int) override {}
+    void compute_ssss(double) override {}
 
   public:
-    GLibint(const std::array<std::shared_ptr<const Shell>,4>&);
-    ~GLibint() {};
+    GLibint(const std::array<std::shared_ptr<const Shell>,4>&, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
 
-    void compute() {};
+    void compute() override {}
 
+    double* data(const int i) override { return data_ + i*size_block_; }
 };
 
 }

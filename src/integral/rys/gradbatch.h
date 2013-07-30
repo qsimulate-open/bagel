@@ -48,7 +48,6 @@ class GradBatch : public ERIBatch_base {
   public:
     GradBatch(const std::array<std::shared_ptr<const Shell>,4>& shells, const double max_density, const double dummy = 0.0, const bool dum = true,
               std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
-    ~GradBatch();
 
     void compute() override;
 

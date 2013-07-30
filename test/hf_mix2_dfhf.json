@@ -6,7 +6,7 @@
   "basis" : "svp",
   "df_basis" : "svp-jkfit",
   "_basis" : { "h" : "sto-3g" },
-  "_df_basis" : { "H" : "cc-pv5z-jkfit" },
+  "_df_basis" : { "H" : "cc-pvqz-jkfit" },
   "angstrom" : "false",
   "geometry" : [
     { "atom" : "F",  "xyz" : [ -0.000000,     -0.000000,      2.720616]},

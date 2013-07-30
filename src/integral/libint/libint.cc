@@ -29,8 +29,9 @@
 #include <stddef.h>
 #include <iostream>
 #include <src/util/f77.h>
-#include <src/rysint/carsphlist.h>
-#include <src/rysint/libint.h>
+#include <src/math/algo.h>
+#include <src/integral/carsphlist.h>
+#include <src/integral/libint/libint.h>
 #include <boys.h>
 
 using namespace std;

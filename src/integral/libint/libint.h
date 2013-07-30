@@ -29,7 +29,7 @@
 #ifndef __SRC_RYSINT_LIBINT_H
 #define __SRC_RYSINT_LIBINT_H
 
-#include <src/rysint/rysint.h>
+#include <src/integral/rys/rysint.h>
 
 namespace bagel {
 

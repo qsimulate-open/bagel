@@ -104,55 +104,44 @@ void SmallERIBatch::eri_compute(double* eri) const {
     size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
   } m(s0size, a1, a2);
 
+  {
 #ifndef LIBINT_INTERFACE
-  {
     auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_inc; i++)
-      copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
-  }
-  if (shells_[1]->aux_dec() && shells_[2]->aux_dec()) {
-    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_dec; i++)
-      copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_inc+i));
-  }
-  if (shells_[1]->aux_dec()) {
-    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_inc; i++)
-      copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc, i));
-  }
-  if (shells_[2]->aux_dec()) {
-    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
-    eric->compute();
-    for (int i = 0; i != a2size_dec; i++)
-      copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
-  }
 #else
-  {
     auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_inc()}}, 0.0, stack_);
+#endif
     eric->compute();
     for (int i = 0; i != a2size_inc; i++)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
   }
   if (shells_[1]->aux_dec() && shells_[2]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
+    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
+#else
     auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_dec()}}, 0.0, stack_);
+#endif
     eric->compute();
     for (int i = 0; i != a2size_dec; i++)
       copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_inc+i));
   }
   if (shells_[1]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
+    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, 2.0, 0.0, true, stack_);
+#else
     auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_dec(), shells_[2]->aux_inc()}}, 0.0, stack_);
+#endif
     eric->compute();
     for (int i = 0; i != a2size_inc; i++)
       copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc, i));
   }
   if (shells_[2]->aux_dec()) {
+#ifndef LIBINT_INTERFACE
+    auto eric = make_shared<ERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, 2.0, 0.0, true, stack_);
+#else
     auto eric = make_shared<Libint>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_inc(), shells_[2]->aux_dec()}}, 0.0, stack_);
+#endif
     eric->compute();
     for (int i = 0; i != a2size_dec; i++)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
   }
-#endif
 }
