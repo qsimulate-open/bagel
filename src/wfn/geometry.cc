@@ -95,7 +95,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-  auxfile_ = geominfo->get<string>("df_basis");
+  auxfile_ = geominfo->get<string>("df_basis", "");
   transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
   if (!auxfile_.empty()) {
     // read the default aux basis file
@@ -478,7 +478,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
   // basis
-  auxfile_ = geominfo->get<string>("df_basis", "");
+  auxfile_ = geominfo->get<string>("df_basis", ""); // default value for non-DF HF.
   if (!auxfile_.empty()) {
     // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
