@@ -59,7 +59,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
     if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
       out = make_shared<KnowlesHandy>(itree, geom, ref);
-    } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian") {
+    } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian" || algorithm == "") {
       out = make_shared<HarrisonZarrabian>(itree, geom, ref);
 #ifdef HAVE_MPI_H
     } else if (algorithm == "parallel" || algorithm == "dist") {
