@@ -40,6 +40,8 @@ class MP2 : public Method {
     std::shared_ptr<SCF> scf_;
     int ncore_;
 
+    std::string abasis_;
+
     double energy_;
     std::mutex mut_;
 

@@ -27,13 +27,13 @@
 #include <memory>
 #include <src/mp2/mp2.h>
 
-double mp2_energy() {
+double mp2_energy(const std::string job) {
 
-  auto ofs = std::make_shared<std::ofstream>("benzene_svp_mp2.testout", std::ios::trunc);
+  auto ofs = std::make_shared<std::ofstream>(job + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
-  std::string filename = "../../test/benzene_svp_mp2.json";
+  std::string filename = "../../test/" + job + ".json";
   auto idata = std::make_shared<const PTree>(filename);
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
@@ -60,7 +60,8 @@ double mp2_energy() {
 BOOST_AUTO_TEST_SUITE(TEST_MP2)
 
 BOOST_AUTO_TEST_CASE(MP2) {
-    BOOST_CHECK(compare(mp2_energy(), -231.31440958));
+    BOOST_CHECK(compare(mp2_energy("benzene_svp_mp2"),      -231.31440958));
+    BOOST_CHECK(compare(mp2_energy("benzene_svp_mp2_aux"),  -231.31450878));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

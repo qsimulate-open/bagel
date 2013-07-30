@@ -53,7 +53,11 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
   ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
-  if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented in DF");
+  if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented with DF");
+
+  // if three is a aux_basis keyword, we use that basis
+  abasis_ = idata_->get<string>("aux_basis", "");
+  transform(abasis_.begin(), abasis_.end(), abasis_.begin(), ::tolower);
 
 }
 
@@ -74,7 +78,15 @@ void MP2::compute() {
   Timer timer;
 
   // first compute half transformed integrals
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff);
+  shared_ptr<DFHalfDist> half;
+  if (abasis_.empty()) {
+    half = geom_->df()->compute_half_transform(ocoeff);
+  } else {
+    auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
+    auto cgeom = make_shared<Geometry>(*geom_, info);
+    const double thresh = geom_->overlap_thresh();
+    half = cgeom->df()->compute_half_transform(ocoeff);
+  }
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
   shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J();
