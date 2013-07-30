@@ -192,12 +192,12 @@ shared_ptr<Civec> Civec::spin() const {
         daxpy_(lenb, sign, source, 1, target, 1);
       }
 
-      for ( auto& iter : det_->phib(j,i) ) {
-        double* source = intermediate->element_ptr(iter.source, 0);
-        double* target = out->element_ptr(iter.target, 0);
-        double sign = static_cast<double>(-iter.sign);
-
-        daxpy_(lena, sign, source, lenb, target, lenb);
+      for (int ia = 0; ia < lena; ++ia) {
+        double* target_base = out->element_ptr(0, ia);
+        double* source_base = intermediate->element_ptr(0, ia);
+        for ( auto& iter : det_->phib(j,i) ) {
+          target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
+        }
       }
     }
   }
