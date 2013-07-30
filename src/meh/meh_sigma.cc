@@ -52,6 +52,11 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
         daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
       }
     }
+  }
+
+  for (int istate = 0; istate < nstates; ++istate) {
+    shared_ptr<const Civec> cc = ccvec->data(istate);
+    shared_ptr<Civec> sigma = sigmavec->data(istate);
 
     for (int i = 0; i < la; ++i) {
       double* const target_array0 = sigma->element_ptr(0, i);
