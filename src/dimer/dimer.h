@@ -140,8 +140,21 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
   input->erase("norb"); input->put("norb", lexical_cast<std::string>(nact));
   input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
 
-  std::shared_ptr<FCI> fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
-  fci->compute();
+  // Hiding normal cout
+  std::stringstream trash;
+  std::streambuf* saved_cout = std::cout.rdbuf();
+  std::cout.rdbuf(trash.rdbuf());
+
+  std::shared_ptr<FCI> fci;
+  try {
+    fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
+    fci->compute();
+  }
+  catch (...) {
+    std::cout.rdbuf(saved_cout); // Restore cout to throw an error
+    throw; // Rethrow
+  }
+  std::cout.rdbuf(saved_cout);
 
   return fci->civectors();
 }

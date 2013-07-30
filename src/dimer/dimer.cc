@@ -609,9 +609,6 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
   }
 
   Timer castime;
-  // Hide normal cout.
-  stringstream ss;
-  std::streambuf* saved_cout = cout.rdbuf();
 
   shared_ptr<const PTree> fcidata = idata->get_child_optional("fci");
   if (!fcidata) fcidata = make_shared<const PTree>();
@@ -624,9 +621,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    cout.rdbuf(ss.rdbuf());
     out->insert<0>(embedded_casci<0>(fcidata, charge, spin, nstate));
-    cout.rdbuf(saved_cout);
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
@@ -639,9 +634,7 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    cout.rdbuf(ss.rdbuf());
     out->insert<1>(embedded_casci<1>(fcidata, charge, spin, nstate));
-    cout.rdbuf(saved_cout);
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
