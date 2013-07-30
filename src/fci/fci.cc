@@ -52,7 +52,8 @@ void FCI::common_init() {
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
     set<int> tmp;
-    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()));
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()) - 1);
     ref_ = ref_->set_active(tmp);
     ncore_ = ref_->nclosed();
     norb_ = ref_->nact();
