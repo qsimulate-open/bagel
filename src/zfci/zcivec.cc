@@ -172,7 +172,6 @@ void ZCivec::print(const double thr) const {
   }
 }
 
-//TODO check that this is correct
 // S^2 = S_z^2 + S_z + S_-S_+
 shared_ptr<ZCivec> ZCivec::spin() const {
   auto out = make_shared<ZCivec>(det_);
@@ -211,6 +210,7 @@ shared_ptr<ZCivec> ZCivec::spin() const {
 
 // S_- = \sum_i i_beta^\dagger i_alpha
 shared_ptr<ZCivec> ZCivec::spin_lower(shared_ptr<const Determinants> target_det) const {
+throw logic_error("ZCivec::spin_lower not yet implemented.");
   if (target_det == nullptr)
     target_det = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
@@ -255,6 +255,7 @@ shared_ptr<ZCivec> ZCivec::spin_lower(shared_ptr<const Determinants> target_det)
 
 // S_+ = \sum_i i_alpha^\dagger i_beta
 shared_ptr<ZCivec> ZCivec::spin_raise(shared_ptr<const Determinants> target_det) const {
+throw logic_error("ZCivec::spin_raise not yet implemented.");
   if (target_det == nullptr)
     target_det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );

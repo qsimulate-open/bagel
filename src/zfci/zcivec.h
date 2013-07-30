@@ -91,8 +91,7 @@ class ZCivec {
     void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; }
 
     void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); }
-    void conjg() { for (int i = 0; i!= lena_*lenb_; ++i) cc_[i] = std::conj(cc_[i]); } // TODO make it to a one-line code
-
+    void conjg() { std::for_each (cc(), cc()+(lena()*lenb()), [](std::complex<double> a){ a = std::conj(a); } ); }
     size_t size() const { return lena_*lenb_; }
 
     std::shared_ptr<ZCivec> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
