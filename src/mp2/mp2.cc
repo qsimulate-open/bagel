@@ -84,7 +84,6 @@ void MP2::compute() {
   } else {
     auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
     auto cgeom = make_shared<Geometry>(*geom_, info);
-    const double thresh = geom_->overlap_thresh();
     half = cgeom->df()->compute_half_transform(ocoeff);
   }
   // second transform for virtual index
