@@ -34,14 +34,23 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
-                                                      const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2) {
+                                                      const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
+                                                      const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
 
   vector<GradTask> task  = contract_grad2e(o);
-
   vector<GradTask> task2 = contract_grad1e(d, w);
   vector<GradTask> task3 = contract_grad2e_2index(o2);
   task.insert(task.end(), task2.begin(), task2.end());
   task.insert(task.end(), task3.begin(), task3.end());
+
+  if (g2 && g2o) {
+    vector<GradTask> task0 = contract_grad2e(g2o, g2);
+    task.insert(task.end(), task0.begin(), task0.end());
+  }
+  if (g2 && g2o2) {
+    vector<GradTask> task0 = contract_grad2e_2index(g2o2, g2);
+    task.insert(task.end(), task0.begin(), task0.end());
+  }
 
   TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
@@ -133,24 +142,25 @@ vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matr
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFDist>,6> o) {
+vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFDist>,6> o, const shared_ptr<const Geometry> geom) {
+  shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<GradTask> out;
-  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+  const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
-  const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
+  const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*nshell*nshell2);
 
   int iatom0 = 0;
-  auto oa0 = geom_->offsets().begin();
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+  auto oa0 = cgeom->offsets().begin();
+  for (auto a0 = cgeom->atoms().begin(); a0 != cgeom->atoms().end(); ++a0, ++oa0, ++iatom0) {
     int iatom1 = 0;
-    auto oa1 = geom_->offsets().begin();
-    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+    auto oa1 = cgeom->offsets().begin();
+    for (auto a1 = cgeom->atoms().begin(); a1 != cgeom->atoms().end(); ++a1, ++oa1, ++iatom1) {
       int iatom2 = 0;
-      auto oa2 = geom_->aux_offsets().begin();
-      for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
+      auto oa2 = cgeom->aux_offsets().begin();
+      for (auto a2 = cgeom->aux_atoms().begin(); a2 != cgeom->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
         // dummy shell
         auto b3 = make_shared<const Shell>((*a2)->shells().front()->spherical());
 
@@ -180,25 +190,26 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o) {
+vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o, const shared_ptr<const Geometry> geom) {
+  shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<GradTask> out;
-  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+  const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
-  const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
+  const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*(nshell+1)*nshell2/2);
 
   // loop over atoms (using symmetry b0 <-> b1)
   int iatom0 = 0;
-  auto oa0 = geom_->offsets().begin();
-  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+  auto oa0 = cgeom->offsets().begin();
+  for (auto a0 = cgeom->atoms().begin(); a0 != cgeom->atoms().end(); ++a0, ++oa0, ++iatom0) {
     int iatom1 = iatom0;
     auto oa1 = oa0;
-    for (auto a1 = a0; a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+    for (auto a1 = a0; a1 != cgeom->atoms().end(); ++a1, ++oa1, ++iatom1) {
       int iatom2 = 0;
-      auto oa2 = geom_->aux_offsets().begin();
-      for (auto a2 = geom_->aux_atoms().begin(); a2 != geom_->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
+      auto oa2 = cgeom->aux_offsets().begin();
+      for (auto a2 = cgeom->aux_atoms().begin(); a2 != cgeom->aux_atoms().end(); ++a2, ++oa2, ++iatom2) {
         // dummy shell
         auto b3 = make_shared<const Shell>((*a2)->shells().front()->spherical());
 
@@ -228,20 +239,21 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den) {
+vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den, const shared_ptr<const Geometry> geom) {
+  shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<GradTask> out;
-  const size_t nshell2  = std::accumulate(geom_->aux_atoms().begin(), geom_->aux_atoms().end(), 0,
+  const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
   // using symmetry (b0 <-> b1)
   int cnt = 0;
   int iatom0 = 0;
-  auto oa0 = geom_->aux_offsets().begin();
-  for (auto a0 = geom_->aux_atoms().begin(); a0 != geom_->aux_atoms().end(); ++a0, ++oa0, ++iatom0) {
+  auto oa0 = cgeom->aux_offsets().begin();
+  for (auto a0 = cgeom->aux_atoms().begin(); a0 != cgeom->aux_atoms().end(); ++a0, ++oa0, ++iatom0) {
     int iatom1 = iatom0;
     auto oa1 = oa0;
-    for (auto a1 = a0; a1 != geom_->aux_atoms().end(); ++a1, ++oa1, ++iatom1) {
+    for (auto a1 = a0; a1 != cgeom->aux_atoms().end(); ++a1, ++oa1, ++iatom1) {
 
       // dummy shell
       auto b3 = make_shared<const Shell>((*a0)->shells().front()->spherical());

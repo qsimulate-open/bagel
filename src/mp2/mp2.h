@@ -54,6 +54,7 @@ class MP2 : public Method {
 
     double energy() const { return energy_; }
     int ncore() const { return ncore_; }
+    std::string abasis() const { return abasis_; }
 };
 
 }

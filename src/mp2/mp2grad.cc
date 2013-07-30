@@ -68,8 +68,16 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
 
   // first compute half transformed integrals
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acmat);
-  // TODO this is a waste...
+  shared_ptr<DFHalfDist> half;
+  shared_ptr<const Geometry> cgeom;
+  if (task_->abasis().empty()) {
+    cgeom = geom_;
+    half = geom_->df()->compute_half_transform(acmat);
+  } else {
+    auto info = make_shared<PTree>(); info->put("df_basis", task_->abasis());
+    cgeom = make_shared<Geometry>(*geom_, info, false);
+    half = cgeom->df()->compute_half_transform(acmat);
+  }
   shared_ptr<const DFHalfDist> halfjj = geom_->df()->compute_half_transform(ocmat)->apply_JJ();
   // second transform for virtual index
   // this is now (naux, nocc, nvirt)
@@ -140,7 +148,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // Liq = 2 Gip(D) * (D|pq)
   Matrix lia(nocca, nvirt);
   Matrix lif(nocc, max(1lu,ncore));
-  shared_ptr<const Matrix> lip = gip->form_2index(geom_->df(), 2.0);
+  shared_ptr<const Matrix> lip = gip->form_2index(cgeom->df(), 2.0);
   {
     lia.add_block(ncore, 0, nocc, nvirt, *lip * *vcmat);
     if (ncore)
@@ -211,17 +219,25 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao);
   shared_ptr<DFDist> sep3 = sepd->back_transform(ocmat);
   sep3->scale(-2.0);
-  /// mp2 two body part ----------------
-  {
-    shared_ptr<DFDist> sep32 = gip->back_transform(acmat);
-    sep3->daxpy(4.0, sep32);
-  }
   sep3->add_direct_product(cd, dd, 1.0);
+  /// mp2 two body part ----------------
+  shared_ptr<DFDist> sep32;
+  if (geom_ == cgeom) {
+    sep3->daxpy(4.0, gip->back_transform(acmat));
+  } else {
+    sep32 = gip->back_transform(acmat);
+    sep32->scale(4.0);
+  }
 
   // two-index derivatives (seperable part)..
   auto sep2 = make_shared<Matrix>((*cd0 ^ *cdbar) * 2.0);
   *sep2 -= *halfjj->form_aux_2index(sepd, 2.0);
-  *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
+  shared_ptr<const Matrix> sep22;
+  if (geom_ == cgeom) {
+    *sep2 += *gia->form_aux_2index_apply_J(full, 4.0);
+  } else {
+    sep22 = gia->form_aux_2index_apply_J(full, 4.0);
+  }
 
   // energy weighted density
   auto wd = make_shared<Matrix>(nbasis, nbasis);
@@ -248,7 +264,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << endl;
 
   // gradient evaluation
-  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2);
+  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, cgeom, sep32, sep22);
 
   time.tick_print("Gradient integrals contracted");
   cout << endl;

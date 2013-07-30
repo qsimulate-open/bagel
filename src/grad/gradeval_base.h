@@ -110,11 +110,14 @@ class GradEval_base {
     std::vector<GradTask> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
-    std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o);
-    std::vector<GradTask> contract_grad2e(const std::array<std::shared_ptr<const DFDist>,6> o);
+    std::vector<GradTask> contract_grad2e(const std::shared_ptr<const DFDist> o,
+                                          const std::shared_ptr<const Geometry> geom = std::shared_ptr<const Geometry>());
+    std::vector<GradTask> contract_grad2e(const std::array<std::shared_ptr<const DFDist>,6> o,
+                                          const std::shared_ptr<const Geometry> geom = std::shared_ptr<const Geometry>());
 
     /// contract 2-index 2-electron gradient integrals with density matrix "o".
-    std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o);
+    std::vector<GradTask> contract_grad2e_2index(const std::shared_ptr<const Matrix> o,
+                                                 const std::shared_ptr<const Geometry> geom = std::shared_ptr<const Geometry>());
 
     // the results will be stored in grad_
     std::shared_ptr<GradFile> grad_;
@@ -125,7 +128,10 @@ class GradEval_base {
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
-                                                const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2);
+                                                const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2,
+                                                const std::shared_ptr<const Geometry> g2 = std::shared_ptr<const Geometry>(),
+                                                const std::shared_ptr<const DFDist> g2o = std::shared_ptr<const DFDist>(),
+                                                const std::shared_ptr<const Matrix> g2o2 = std::shared_ptr<const Matrix>());
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); }
 
 };

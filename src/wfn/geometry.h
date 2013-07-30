@@ -76,7 +76,7 @@ class Geometry : public Molecule {
     Geometry(const std::string) {}
     Geometry(const std::shared_ptr<const PTree>);
     Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
-    Geometry(const Geometry& o, const std::shared_ptr<const PTree> idata);
+    Geometry(const Geometry& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
     Geometry(const Geometry& o, const std::shared_ptr<const Matrix> disp, const std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);

@@ -83,7 +83,7 @@ void MP2::compute() {
     half = geom_->df()->compute_half_transform(ocoeff);
   } else {
     auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-    auto cgeom = make_shared<Geometry>(*geom_, info);
+    auto cgeom = make_shared<Geometry>(*geom_, info, false);
     half = cgeom->df()->compute_half_transform(ocoeff);
   }
   // second transform for virtual index

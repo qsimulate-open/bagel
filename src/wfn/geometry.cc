@@ -323,7 +323,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 }
 
 
-Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
+Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
   : spherical_(o.spherical_), aux_merged_(o.aux_merged_), basisfile_(o.basisfile_),
     auxfile_(o.auxfile_), schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
 
@@ -380,7 +380,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo)
   common_init1();
   if (prevbasis != basisfile_ || prevaux != auxfile_ || atoms) {
     // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
-    o.discard_df();
+    if (discard)
+      o.discard_df();
     common_init2(true, overlap_thresh_);
   } else {
     df_ = o.df_;

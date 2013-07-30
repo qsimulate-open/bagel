@@ -104,6 +104,12 @@ std::vector<double> reference_mp2_opt() {
   out[5] = 0.195930;
   return out;
 }
+std::vector<double> reference_mp2_aux_opt() {
+  std::vector<double> out(6);
+  out[2] = 1.932841;
+  out[5] = 0.195927;
+  return out;
+}
 std::vector<double> reference_dcf_opt() {
   std::vector<double> out(6);
   out[2] = 0.187050;
@@ -128,6 +134,7 @@ BOOST_AUTO_TEST_CASE(DF_KS_Opt) {
 #endif
 BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_opt"),        reference_mp2_opt(),      1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_aux_opt"),    reference_mp2_aux_opt(),  1.0e-4));
 }
 BOOST_AUTO_TEST_CASE(CASSCF_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_act_opt"),    reference_cas_act_opt(),      1.0e-4));
