@@ -426,21 +426,20 @@ shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DF
 }
 
 
-unique_ptr<double[]> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullDist> o, const double a, const size_t n) const {
+shared_ptr<Matrix> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullDist> o, const double a, const size_t n) const {
   // TODO needs more work
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  unique_ptr<double[]> out = block_[0]->form_4index_1fixed(o->block_[0], a, n);
-  const size_t size = block_[0]->b1size() * block_[0]->b2size() * o->block_[0]->b1size();
+  shared_ptr<Matrix> out = block_[0]->form_4index_1fixed(o->block_[0], a, n);
   if (!serial_)
-    mpi__->allreduce(out.get(), size);
+    out->allreduce();
   return out;
 }
 
 
-void DFFullDist::set_product(const shared_ptr<const DFFullDist> o, const unique_ptr<double[]>& c, const int jdim, const size_t off) {
+void DFFullDist::add_product(const shared_ptr<const DFFullDist> o, const shared_ptr<const Matrix> c, const int jdim, const size_t off, const double fac) {
   // TODO needs more work
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  block_[0]->copy_block(o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize());
+  block_[0]->add_block(o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize(), fac);
 }
 
 

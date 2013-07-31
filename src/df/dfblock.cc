@@ -167,6 +167,7 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
 
 shared_ptr<DFBlock> DFBlock::clone() const {
   unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
+  fill_n(tmp.get(), asize_*b1size_*b2size_, 0.0);
   return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
 }
 
@@ -364,10 +365,10 @@ unique_ptr<double[]> DFBlock::form_4index(const shared_ptr<const DFBlock> o, con
 
 
 // slowest index of o is fixed to n
-unique_ptr<double[]> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o, const double a, const size_t n) const {
+shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o, const double a, const size_t n) const {
   if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index_1fixed");
-  unique_ptr<double[]> target(new double[b2size_*b1size_*o->b1size_]);
-  dgemm_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target.get(), b1size_*b2size_);
+  auto target = make_shared<Matrix>(b2size_*b1size_, o->b1size_);
+  dgemm_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target->data(), b1size_*b2size_);
   return target;
 }
 
@@ -402,14 +403,22 @@ void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_pt
 }
 
 
-void DFBlock::copy_block(const std::unique_ptr<double[]>& o, const int jdim, const size_t offset) {
-  copy_n(o.get(), asize_*jdim, data_.get()+offset);
+void DFBlock::copy_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset) {
+  assert(o->size() == asize_*jdim);
+  copy_n(o->data(), asize_*jdim, data_.get()+offset);
 }
 
 
-unique_ptr<double[]> DFBlock::form_Dj(const unique_ptr<double[]>& o, const int jdim) const {
-  unique_ptr<double[]> out(new double[asize_*jdim]);
-  dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o.get(), b1size_*b2size_, 0.0, out.get(), asize_);
+void DFBlock::add_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset, const double fac) {
+  assert(o->size() == asize_*jdim);
+  daxpy_(asize_*jdim, fac, o->data(), 1, data_.get()+offset, 1);
+}
+
+
+shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int jdim) const {
+  assert(o->size() == b1size_*b2size_*jdim);
+  auto out = make_shared<Matrix>(asize_, jdim);
+  dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o->data(), b1size_*b2size_, 0.0, out->data(), asize_);
   return out;
 }
 

@@ -111,7 +111,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   // (4) compute (gamma|ia)
   list<shared_ptr<RelDFFull>> dffull;
   for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff, false /* apply_j */));
+    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff));
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
@@ -121,21 +121,35 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
 
   // assemble
   vector<double> eig(ref_->eig().begin()+task_->ncore(), ref_->eig().end());
-  unique_ptr<complex<double>[]> buf(new complex<double>[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
-  unique_ptr<complex<double>[]> buf2(new complex<double>[nocc*nvirt*nocc]);
+  auto buf = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
+  auto buf2 = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
+
+  // (\check{gamam}|ia)
+  shared_ptr<RelDFFull> bv = full->apply_J();
+  shared_ptr<RelDFFull> gia = bv->clone();
 
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
-    unique_ptr<complex<double>[]> data = full->form_4index_1fixed(full, 1.0, i);
-    copy_n(data.get(), nocc*nvirt*nocc, buf.get());
+    shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
+    *buf = *data;
+    *buf2 = *data;
     // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,1,1,-1,1>(data.get(), buf.get(), nocc, nvirt, nocc);
-    complex<double>* tdata = buf.get();
+    SMITH::sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    complex<double>* tdata = buf->data();
+    complex<double>* ddata = buf2->data();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)
-        for (size_t l = 0; l != nocc; ++l, ++tdata)
-          *tdata /= sqrt(eig[i+nocc]-eig[j]+eig[k+nocc]-eig[l]); // assumed that the denominator is positive
-    energy_ -= zdotc_(nocc*nvirt*nocc, buf, 1, buf, 1).real() * 0.25;
+        for (size_t l = 0; l != nocc; ++l, ++tdata, ++ddata) {
+          *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
+          *ddata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
+        }
+    energy_ += zdotc_(nocc*nvirt*nocc, data->data(), 1, buf->data(), 1).real() * 0.5;
+
+    // form Gia : TODO distribute
+    // Gia(D|ic) = BV(D|ja) G_c(ja|i)
+    // BV and gia are DFFullDist
+    const size_t offset = i*nocc;
+    gia->add_product(bv, buf, nocc, offset);
   }
 
   cout << "    * assembly done" << endl << endl;

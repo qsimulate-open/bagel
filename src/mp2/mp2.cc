@@ -93,20 +93,19 @@ void MP2::compute() {
 
   // assemble
   vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
-  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
-  unique_ptr<double[]> buf2(new double[nocc*nvirt*nocc]);
+  auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
-    unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
-    copy_n(data.get(), nocc*nvirt*nocc, buf.get());
+    shared_ptr<const Matrix> data = full->form_4index_1fixed(full, 1.0, i);
+    *buf = *data;
     // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data.get(), buf.get(), nocc, nvirt, nocc);
-    double* tdata = buf.get();
+    SMITH::sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    double* tdata = buf->data();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)
         for (size_t l = 0; l != nocc; ++l, ++tdata)
           *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l];
-    energy_ += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
+    energy_ += ddot_(nocc*nvirt*nocc, data->data(), 1, buf->data(), 1);
   }
 
   cout << "    * assembly done" << endl << endl;

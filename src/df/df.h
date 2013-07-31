@@ -290,11 +290,11 @@ class DFFullDist : public ParallelDF {
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
 
-    std::unique_ptr<double[]> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
+    std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
-    void set_product(const std::shared_ptr<const DFFullDist>, const std::unique_ptr<double[]>&, const int jdim, const size_t offset);
+    void add_product(const std::shared_ptr<const DFFullDist>, const std::shared_ptr<const Matrix>, const int jdim, const size_t offset, const double fac = 1.0);
 
     std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }

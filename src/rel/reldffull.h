@@ -38,7 +38,8 @@ class RelDFFull : public RelDFBase {
     std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
   public:
-    RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>, const bool apply_j);
+    RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+    RelDFFull(std::array<std::shared_ptr<DFFullDist>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
     RelDFFull(const RelDFFull& o);
 
     std::array<std::shared_ptr<DFFullDist>, 2> get_data() const { return dffull_; }
@@ -48,10 +49,14 @@ class RelDFFull : public RelDFBase {
     bool matches(std::shared_ptr<const RelDFFull>) const { return true; }
 
     std::shared_ptr<RelDFFull> copy() const { return std::make_shared<RelDFFull>(*this); }
+    std::shared_ptr<RelDFFull> clone() const;
+    std::shared_ptr<RelDFFull> apply_J() const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
     void scale(std::complex<double> a);
+
+    void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset); 
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 
@@ -63,7 +68,7 @@ class RelDFFull : public RelDFBase {
 
     std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
                                                           std::array<std::shared_ptr<const Matrix>,4>) const;
-    std::unique_ptr<std::complex<double>[]> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
+    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 };
 
 }
