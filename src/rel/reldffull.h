@@ -38,7 +38,7 @@ class RelDFFull : public RelDFBase {
     std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
   public:
-    RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+    RelDFFull(std::shared_ptr<const RelDFHalf>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>, const bool apply_j);
     RelDFFull(const RelDFFull& o);
 
     std::array<std::shared_ptr<DFFullDist>, 2> get_data() const { return dffull_; }

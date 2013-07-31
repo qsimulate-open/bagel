@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mp2.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: dmp2.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,30 +24,26 @@
 //
 
 
-#ifndef __SRC_MP2_MP2_H
-#define __SRC_MP2_MP2_H
+#ifndef __SRC_REL_RELMP2_H
+#define __SRC_REL_RELMP2_H
 
-#include <src/mp2/f12int.h>
-#include <src/scf/scf.h>
+#include <src/rel/dirac.h>
 #include <src/wfn/method.h>
-#include <mutex>
 
 namespace bagel {
 
-class MP2 : public Method {
-  friend class MP2AssemTask;
+class DMP2 : public Method {
   protected:
-    std::shared_ptr<SCF> scf_;
+    std::shared_ptr<Dirac> scf_;
     int ncore_;
 
     std::string abasis_;
 
     double energy_;
-    std::mutex mut_;
 
   public:
-    MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
-        const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    DMP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
+         const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; } 

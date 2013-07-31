@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
+RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff, const bool apply_j) : RelDFBase(*df) {
 
   basis_ = df->basis();
   if (basis_.size() != 1)
@@ -44,8 +44,13 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
   shared_ptr<DFFullDist> ifullbj = df->get_imag()->compute_second_transform(rcoeff[index]);
               ifullbj->daxpy( 1.0, df->get_real()->compute_second_transform(icoeff[index]));
 
-  dffull_[0] = rfullbj->apply_J();
-  dffull_[1] = ifullbj->apply_J();
+  if (apply_j) {
+    dffull_[0] = rfullbj->apply_J();
+    dffull_[1] = ifullbj->apply_J();
+  } else {
+    dffull_[0] = rfullbj;
+    dffull_[1] = ifullbj;
+  }
 }
 
 

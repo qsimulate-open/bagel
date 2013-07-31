@@ -1,14 +1,14 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mp2.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: dmp2.cc
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,36 +24,38 @@
 //
 
 
-// implements the MP2-F12 theory
+// implements the 4-component MP2 theory
 
 #include <stddef.h>
-#include <src/mp2/mp2.h>
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
-#include <src/scf/scf.h>
+#include <src/rel/dmp2.h>
+#include <src/rel/dirac.h>
+#include <src/rel/dfock.h>
+#include <src/rel/reldffull.h>
+#include <src/rel/relreference.h>
 #include <src/smith/prim_op.h>
-#include <src/mp2/f12int4.h>
-#include <src/util/taskqueue.h>
 #include <src/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;
 
-MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
+DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
-  scf_ = make_shared<SCF>(input, g, ref);
-  scf_->compute();
-  ref_ = scf_->conv_to_ref();
+  if (!ref) {
+    scf_ = make_shared<Dirac>(input, g, ref);
+    scf_->compute();
+    ref_ = scf_->conv_to_ref();
+    geom_ = ref_->geom();
+  }
 
-  cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
+  cout << endl << "  === Four-Component DF-MP2 calculation ===" << endl << endl;
 
   // checks for frozen core
   const bool frozen = idata_->get<bool>("frozen", false);
-  ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+  ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only() : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
-
-  if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented with DF");
 
   // if three is a aux_basis keyword, we use that basis
   abasis_ = idata_->get<string>("aux_basis", "");
@@ -62,35 +64,73 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
 }
 
 
-void MP2::compute() {
+void DMP2::compute() {
+  const size_t nbasis = geom_->nbasis();
+  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
+
   const size_t nocc = ref_->nocc() - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons");
   const size_t nvirt = geom_->nbasis() - nocc - ncore_;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
-  assert(geom_->nbasis() == ref_->coeff()->mdim());
 
-  const size_t nbasis = geom_->nbasis();
+  assert(nbasis*4 == ref->relcoeff()->ndim());
+  assert(nbasis*2 == ref->relcoeff()->mdim());
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
+  // Separate Coefficients into real and imaginary
+  // correlated occupied orbitals
+  array<shared_ptr<const Matrix>, 4> rocoeff;
+  array<shared_ptr<const Matrix>, 4> iocoeff;
+  // correlated virtual orbitals
+  array<shared_ptr<const Matrix>, 4> rvcoeff;
+  array<shared_ptr<const Matrix>, 4> ivcoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore_, nbasis, nocc);
+    rocoeff[i] = oc->get_real_part();
+    iocoeff[i] = oc->get_imag_part();
+    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc, nbasis, nvirt);
+    rvcoeff[i] = vc->get_real_part();
+    ivcoeff[i] = vc->get_imag_part();
+  }
 
-  Timer timer;
-
-  // first compute half transformed integrals
-  shared_ptr<DFHalfDist> half;
+  // (1) make DFDists
+  shared_ptr<Geometry> cgeom;
+  vector<shared_ptr<const DFDist>> dfs;
   if (abasis_.empty()) {
-    half = geom_->df()->compute_half_transform(ocoeff);
+    dfs = geom_->dfs()->split_blocks();
+    dfs.push_back(geom_->df());
   } else {
     auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-    auto cgeom = make_shared<Geometry>(*geom_, info, false);
-    half = cgeom->df()->compute_half_transform(ocoeff);
+    cgeom = make_shared<Geometry>(*geom_, info, false);
+    cgeom->relativistic(false /* do_gaunt */);
+    dfs = cgeom->dfs()->split_blocks();
+    dfs.push_back(cgeom->df());
   }
-  // second transform for virtual index
-  // this is now (naux, nocc, nvirt)
-  shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J();
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) first-transform
+  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_exch;
+  for (auto& i : half_complex) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  }
+  half_complex.clear();
+  DFock::factorize(half_complex_exch);
+
+  // (4) compute (gamma|ia)
+  list<shared_ptr<RelDFFull>> dffull;
+  for (auto& i : half_complex_exch)
+    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff, false /* apply_j */));
+  DFock::factorize(dffull);
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  assert(dffull.size() == 1);
+  shared_ptr<const RelDFFull> full = dffull.front(); 
 
   cout << "    * 3-index integral transformation done" << endl;
 
+#if 0
   // assemble
   vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
   unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
@@ -114,23 +154,8 @@ void MP2::compute() {
 
   energy_ += ref_->energy();
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+#endif
 
-  // check if F12 is requested.
-  const bool do_f12 = idata_->get<bool>("f12", false);
-  if (do_f12) {
-#ifdef HAVE_LIBSLATER
-    const double gamma = idata_->get<double>("gamma", 1.5);
-    cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
-#if 0
-    auto f12int = make_shared<F12Int>(idata_, geom_, ref_, gamma, ncore_);
-#else
-    auto f12ref = make_shared<F12Ref>(geom_, ref_, ncore_, gamma);
-    f12ref->compute();
-#endif
-#else
-  throw runtime_error("Slater-quadrature library not linked");
-#endif
-  }
 }
 
 

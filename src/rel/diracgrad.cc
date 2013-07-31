@@ -165,7 +165,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     // (5) compute (gamma|ij)
     list<shared_ptr<RelDFFull>> dffull;
     for (auto& i : half_complex_exch)
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
+      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff, true /* apply_j */));
     DFock::factorize(dffull);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
     assert(dffull.size() == 1);

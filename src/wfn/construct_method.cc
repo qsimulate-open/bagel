@@ -34,6 +34,7 @@
 #include <src/casscf/werner.h>
 #include <src/casscf/casbfgs.h>
 #include <src/rel/dirac.h>
+#include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
 #include <src/wfn/construct_method.h>
@@ -52,6 +53,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
   else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
   else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
+  else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
   else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
   else if (title == "zfci")   out = make_shared<ZKnowlesHandy>(itree, geom, ref);
   else if (title == "fci") {
