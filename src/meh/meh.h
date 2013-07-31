@@ -173,16 +173,16 @@ class MultiExcitonHamiltonian {
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-      MatrixPtr compute_intra_2e(DimerSubspace& subspace);
+      MatrixPtr compute_intra(const DimerSubspace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* hdata) const;
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, const double* mo2e_ptr) const;
+      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const;
+      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const;
 
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
+      void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;
+
+      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
       void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
+      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
 
       template<int A, int B, int C, int D> MatrixPtr form_coulomb_matrix() const;
 
