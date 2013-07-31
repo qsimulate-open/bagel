@@ -30,6 +30,8 @@
 #include <src/fci/space.h>
 #include <src/math/davidson.h>
 #include <src/util/constants.h>
+#include <src/util/taskqueue.h>
+#include <src/fci/hztasks.h>
 #include <vector>
 
 // toggle for timing print out.
@@ -89,51 +91,37 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
 void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
 
-  const int ij = nij();
+  shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  // One electron part
-  for (int ip = 0; ip != ij; ++ip) {
-    const double h = jop->mo1e(ip);
-    for (auto& iter : cc->det()->phia(ip)) {
-      const double hc = h * iter.sign;
-      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
+  const int norb = norb_;
+  unique_ptr<double[]> h1(new double[norb*norb]);
+  for (int i = 0, ij = 0; i < norb; ++i) {
+    for (int j = 0; j <= i; ++j, ++ij) {
+      h1[i + j*norb] = h1[j + i*norb] = jop->mo1e(ij);
     }
   }
 
-  // Two electron part
-  shared_ptr<const Determinants> det = cc->det();
-
-  const int norb = norb_;
-
-  const double* const source_base = cc->data();
-  double* target_base = sigma->data();
-
-  for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target_base+=lb) {
-    bitset<nbit__> nstring = *aiter;
-    for (int i = 0; i != norb; ++i) {
-      if (!nstring[i]) continue;
-      for (int j = 0; j < i; ++j) {
-        if(!nstring[j]) continue;
-        const int ij_phase = det->sign(nstring,i,j);
-        bitset<nbit__> string_ij = nstring;
-        string_ij.reset(i); string_ij.reset(j);
-        for (int l = 0; l != norb; ++l) {
-          if (string_ij[l]) continue;
-          for (int k = 0; k < l; ++k) {
-            if (string_ij[k]) continue;
-            const int kl_phase = det->sign(string_ij,l,k);
-            const double phase = -static_cast<double>(ij_phase*kl_phase);
-            bitset<nbit__> string_ijkl = string_ij;
-            string_ijkl.set(k); string_ijkl.set(l);
-            const double temp = phase * ( jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i) );
-            const double* source = source_base + det->lexical<0>(string_ijkl)*lb;
-            daxpy_(lb, temp, source, 1, target_base, 1);
-          }
+  unique_ptr<double[]> h2(new double[norb*norb*norb*norb]);
+  for (int i = 0, ijkl = 0; i < norb; ++i) {
+    for (int j = 0; j < norb; ++j) {
+      for (int k = 0; k < norb; ++k) {
+        for (int l = 0; l < norb; ++l, ++ijkl) {
+          h2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
         }
       }
     }
   }
+
+  vector<HZTaskAA> tasks;
+  tasks.reserve(det->lena());
+
+  double* target = sigma->data();
+  for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
+    tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
+
+  TaskQueue<HZTaskAA> tq(tasks);
+  tq.compute(resources__->max_num_threads());
 }
 
 void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
