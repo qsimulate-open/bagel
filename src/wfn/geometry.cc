@@ -516,8 +516,10 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
 int Geometry::num_count_ncore_only() const {
   int out = 0;
   for (auto& it : atoms_) {
-    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 2;
-    if (it->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
+    if (it->atom_number() >= 2) out += 2;
+    if (it->atom_number() >= 10) out += 8;
+    if (it->atom_number() >= 18) out += 8;
+    if (it->atom_number() > 36) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Kr"); // TODO
   }
   return out;
 }

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mp2grad.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: dmp2grad.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
@@ -24,19 +24,19 @@
 //
 
 
-#ifndef __SRC_MP2_MP2GRAD_H
-#define __SRC_MP2_MP2GRAD_H
+#ifndef __SRC_REL_DMP2GRAD_H
+#define __SRC_REL_DMP2GRAD_H
 
-#include <src/mp2/mp2.h>
+#include <src/rel/dmp2.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
 
-class MP2Grad : public MP2 {
+class DMP2Grad : public DMP2 {
   protected:
 
   public:
-    MP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+    DMP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
 
