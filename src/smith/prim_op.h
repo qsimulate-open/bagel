@@ -37,10 +37,10 @@ namespace bagel {
 namespace SMITH {
 
 
-template <int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted) {
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+template <int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted) {
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   if (an != 0)
     sorted[0] = sorted[0]*afac + unsorted[0]*factor;
   else
@@ -48,12 +48,12 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 }
 
 
-template <int i, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template <int i, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   {
     int id[1];
     int jd[1] = {a};
@@ -71,12 +71,12 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 }
 
 
-template <int i, int j, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template <int i, int j, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   {
     int id[2];
     int jd[2] = {b, a};
@@ -97,12 +97,12 @@ static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_
 }
 
 
-template<int i, int j, int k, int an, int ad, int fn, int fd>
-static void sort_indices(const double* const unsorted, double* const sorted,
+template<int i, int j, int k, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* const unsorted, T* const sorted,
                          const int d,const int c,const int b) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[3];
   int jd[3] = {d, c, b};
 
@@ -124,20 +124,20 @@ static void sort_indices(const double* const unsorted, double* const sorted,
 }
 
 
-template<int i, int j, int k, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int d,const int c,const int b) { // according to unsorted
   sort_indices<i,j,k,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b);
 }
 
 
 // CAUTION :: I have changed the convention from that in mpqc.
-template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[4];
   int jd[4] = {d, c, b, a};
 
@@ -162,19 +162,19 @@ static void sort_indices(const double* unsorted, double* sorted,
 }
 
 
-template<int i, int j, int k, int l, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,an,ad,fn,fd>(unsorted.get(), sorted.get(), d, c, b, a);
 }
 
 
-template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[5];
   int jd[5] = {e, d, c, b, a};
 
@@ -202,19 +202,19 @@ static void sort_indices(const double* unsorted, double* sorted,
 }
 
 
-template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int m, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,m,an,ad,fn,fd>(unsorted.get(), sorted.get(), e, d, c, b, a);
 }
 
 
-template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[6];
   int jd[6] = {f, e, d, c, b, a};
 
@@ -245,19 +245,19 @@ static void sort_indices(const double* unsorted, double* sorted,
 }
 
 
-template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int m, int n, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,m,n,an,ad,fn,fd>(unsorted.get(), sorted.get(), f, e, d, c, b, a);
 }
 
 
-template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[7];
   int jd[7] = {g, f, e, d, c, b, a};
 
@@ -290,19 +290,19 @@ static void sort_indices(const double* unsorted, double* sorted,
   }
 }
 
-template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,m,n,o,an,ad,fn,fd>(unsorted.get(), sorted.get(), g, f, e, d, c, b, a);
 }
 
 
-template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[8];
   int jd[8] = {h, g, f, e, d, c, b, a};
 
@@ -338,19 +338,19 @@ static void sort_indices(const double* unsorted, double* sorted,
   }
 }
 
-template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int p, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,m,n,o,p,an,ad,fn,fd>(unsorted.get(), sorted.get(), h, g, f, e, d, c, b, a);
 }
 
 
-template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd>
-static void sort_indices(const double* unsorted, double* sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const T* unsorted, T* sorted,
                          const int ia, const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
-  const double afac = static_cast<double>(an) / ad;
-  const double factor = static_cast<double>(fn) / fd;
+  const T afac = static_cast<T>(an) /static_cast<T>(ad);
+  const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   int id[9];
   int jd[9] = {ia, h, g, f, e, d, c, b, a};
 
@@ -389,8 +389,8 @@ static void sort_indices(const double* unsorted, double* sorted,
   }
 }
 
-template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd>
-static void sort_indices(const std::unique_ptr<double[]>& unsorted, std::unique_ptr<double[]>& sorted,
+template<int i, int j, int k, int l, int m, int n, int o, int p, int q, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
                          const int ia, const int h, const int g, const int f, const int e, const int d, const int c, const int b, const int a) { // according to unsorted
   sort_indices<i,j,k,l,m,n,o,p,q,an,ad,fn,fd>(unsorted.get(), sorted.get(), ia, h, g, f, e, d, c, b, a);
 }
