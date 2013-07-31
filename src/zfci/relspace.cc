@@ -24,7 +24,6 @@
 //
 
 #include <stdexcept>
-#include <src/fci/determinants.h>
 #include <src/zfci/relspace.h>
 #include <src/math/comb.h>
 #include <src/util/combination.hpp>
@@ -45,10 +44,8 @@ Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, c
 }
 #endif
 void RelSpace::common_init() {
-  if (!mute_) cout << " **Constructing " << nelec()+1 << " determinant spaces by Kramers index" << endl;
-  for (int M_ = -nunbar_ ; M_ <= nbar_; ++M_) {
-    //TODO just to check boundaries -N/2 to N/2
-    assert(abs(kramers(M_))<=abs(nelec())/2);
+  if (!mute_) cout << " **Constructing " << 2*(norb_ - nelec()/2)+1 << " determinant spaces by Kramers index" << endl;
+  for (int M_ = -(norb_-nelec()/2) ; M_ <= norb_ - nelec()/2; ++M_) {
     if (!mute_) cout << " **Constructing space of all determinants with Kramers index "
                      << kramers(M_) << endl << endl;
     // TODO double check that this is putting all of the possible dets with correct Mk in same space
