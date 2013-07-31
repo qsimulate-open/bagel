@@ -28,6 +28,7 @@
 
 #include <utility>
 #include <memory>
+#include <array>
 
 #include <src/fci/dvec.h>
 #include <src/math/matrix.h>
