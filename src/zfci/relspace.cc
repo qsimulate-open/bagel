@@ -45,18 +45,17 @@ Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, c
 }
 #endif
 void RelSpace::common_init() {
-  if (!mute_) cout << "Constructing " << nelec()+1 << " determinant spaces by Kramers index" << endl;
+  if (!mute_) cout << " **Constructing " << nelec()+1 << " determinant spaces by Kramers index" << endl;
   for (int M_ = -nunbar_ ; M_ <= nbar_; ++M_) {
     //TODO just to check boundaries -N/2 to N/2
     assert(abs(kramers(M_))<=abs(nelec())/2);
-    if (!mute_) cout << " Constructing space of all determinants with Kramers index "
+    if (!mute_) cout << " **Constructing space of all determinants with Kramers index "
                      << kramers(M_) << endl << endl;
     // TODO double check that this is putting all of the possible dets with correct Mk in same space
-    auto tmpdet = make_shared<Determinants>(norb_, nunbar_ + M_, nbar_ - M_, /*mute_=*/true);
+    auto tmpdet = make_shared<Determinants>(norb_, nunbar_ + M_, nbar_ - M_, 0, 0);
     detmap_.insert(pair<int,shared_ptr<Determinants>>(kramers(M_), tmpdet));
-
-    if (!mute_) cout << " Total space is made up of " << detmap_.size() << " determinants." << endl;
   }
+    if (!mute_) cout << " **Total space is made up of " << detmap_.size() << " determinants." << endl;
 #if 0
   if (!mute_) cout << "  o forming alpha links" << endl;
 

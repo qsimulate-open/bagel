@@ -63,7 +63,7 @@ class RelSpace {
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
     int nelec() { return nunbar_ + nbar_; }
-    int kramers(int m) { return (nunbar_ - nbar_ - 2*m)/2; }
+    int kramers(int m) { return (nunbar_ - nbar_ + 2*m)/2; }
 
   public:
 #if 0
@@ -80,7 +80,7 @@ class RelSpace {
 
     std::shared_ptr<Determinants> finddet(int m) {
       // TODO only for temporary debugging purposes
-     assert(abs(m)<=abs(nelec()/2));
+      assert(abs(m)<=abs(nelec()/2));
       auto idet = detmap_.find(m); return idet->second; };
 
   private:
