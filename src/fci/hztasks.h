@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_FCI_HZTASKAA_H
-#define __BAGEL_FCI_HZTASKAA_H
+#ifndef __BAGEL_FCI_HZTASKS_H
+#define __BAGEL_FCI_HZTASKS_H
 
 #include <src/util/f77.h>
 
@@ -84,6 +84,36 @@ class HZTaskAA {
               daxpy_(lb, temp, source, 1, target_, 1);
             }
           }
+        }
+      }
+    }
+
+};
+
+class HZTaskAB1 {
+  protected:
+    std::shared_ptr<const Determinants> det_;
+    const int lbs_;
+    const double* const source_base_;
+    double* const target_base_;
+    const int k_;
+    const int l_;
+
+
+  public:
+    HZTaskAB1(std::shared_ptr<const Determinants>& det, const int& lbs, const double* const source_base, double* const target_base,
+      const int& k, const int& l) :
+      det_(det), lbs_(lbs), source_base_(source_base), target_base_(target_base), k_(k), l_(l) {}
+
+    void compute() {
+      const int lbt = det_->lenb();
+
+      for (auto& aiter : det_->phiupa(k_)) {
+        double *target = target_base_ + aiter.source*lbt;
+        const double *source = source_base_ + aiter.target*lbs_;
+        for (auto& biter : det_->phiupb(l_)) {
+          const double sign = aiter.sign * biter.sign;
+          target[biter.source] += sign * source[biter.target];
         }
       }
     }

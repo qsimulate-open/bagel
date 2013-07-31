@@ -136,26 +136,25 @@ void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> s
 void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int norb = norb_;
 
-  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
-  shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  shared_ptr<const Determinants> bdet = cc->det(); // base
+  shared_ptr<const Determinants> tdet = d->det();  // target
 
-  const int lbt = int_det->lenb();
-  const int lbs = base_det->lenb();
+  const int lbt = tdet->lenb();
+  const int lbs = bdet->lenb();
   const double* source_base = cc->data();
+
+  vector<HZTaskAB1> tasks;
+  tasks.reserve(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
       double* target_base = d->data(k*norb + l)->data();
-      for (auto& aiter : int_det->phiupa(k)) {
-        double *target = target_base + aiter.source*lbt;
-        const double *source = source_base + aiter.target*lbs;
-        for (auto& biter : int_det->phiupb(l)) {
-          const double sign = aiter.sign * biter.sign;
-          target[biter.source] += sign * source[biter.target];
-        }
-      }
+      tasks.emplace_back(tdet, lbs, source_base, target_base, k, l);
     }
   }
+
+  TaskQueue<HZTaskAB1> tq(tasks);
+  tq.compute(resources__->max_num_threads());
 }
 
 void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
