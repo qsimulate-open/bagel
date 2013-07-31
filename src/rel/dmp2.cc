@@ -91,7 +91,7 @@ void DMP2::compute() {
     shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore_, nbasis, nocc);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
-    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc, nbasis, nvirt);
+    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc+ncore_, nbasis, nvirt);
     rvcoeff[i] = vc->get_real_part();
     ivcoeff[i] = vc->get_imag_part();
   }
