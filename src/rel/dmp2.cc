@@ -43,7 +43,9 @@ using namespace bagel;
 
 DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
-  if (!ref) {
+  if (geom_->dfs() || (ref && ref->geom()->dfs())) {
+    if (!geom_) geom_ = ref->geom();
+  } else { 
     scf_ = make_shared<Dirac>(input, g, ref);
     scf_->compute();
     ref_ = scf_->conv_to_ref();
@@ -65,12 +67,14 @@ DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry>
 
 
 void DMP2::compute() {
+  Timer timer;
+
   const size_t nbasis = geom_->nbasis();
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   const size_t nocc = ref_->nocc() - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = geom_->nbasis() - nocc - ncore_;
+  const size_t nvirt = nbasis*2 - nocc - ncore_;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
   assert(nbasis*4 == ref->relcoeff()->ndim());
@@ -130,31 +134,30 @@ void DMP2::compute() {
 
   cout << "    * 3-index integral transformation done" << endl;
 
-#if 0
   // assemble
   vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
-  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
-  unique_ptr<double[]> buf2(new double[nocc*nvirt*nocc]);
+  unique_ptr<complex<double>[]> buf(new complex<double>[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
+  unique_ptr<complex<double>[]> buf2(new complex<double>[nocc*nvirt*nocc]);
+
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
-    unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
+    unique_ptr<complex<double>[]> data = full->form_4index_1fixed(full, 1.0, i);
     copy_n(data.get(), nocc*nvirt*nocc, buf.get());
     // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data.get(), buf.get(), nocc, nvirt, nocc);
-    double* tdata = buf.get();
+    SMITH::sort_indices<2,1,0,1,1,-1,1>(data.get(), buf.get(), nocc, nvirt, nocc);
+    complex<double>* tdata = buf.get();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)
         for (size_t l = 0; l != nocc; ++l, ++tdata)
-          *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l];
-    energy_ += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
+          *tdata /= sqrt(eig[i+nocc]-eig[j]+eig[k+nocc]-eig[l]); // assumed that the denominator is positive
+    energy_ -= zdotc_(nocc*nvirt*nocc, buf, 1, buf, 1).real() * 0.25;
   }
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+  cout << "      DMP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
   energy_ += ref_->energy();
-  cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
-#endif
+  cout << "      DMP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
 
