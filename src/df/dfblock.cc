@@ -365,7 +365,7 @@ unique_ptr<double[]> DFBlock::form_4index(const shared_ptr<const DFBlock> o, con
 
 // slowest index of o is fixed to n
 unique_ptr<double[]> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o, const double a, const size_t n) const {
-  if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index");
+  if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index_1fixed");
   unique_ptr<double[]> target(new double[b2size_*b1size_*o->b1size_]);
   dgemm_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target.get(), b1size_*b2size_);
   return target;

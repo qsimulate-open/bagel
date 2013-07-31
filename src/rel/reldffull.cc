@@ -119,14 +119,17 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
 
 unique_ptr<complex<double>[]> RelDFFull::form_4index_1fixed(shared_ptr<const RelDFFull> a, const double fac, const int i) const {
   const size_t size = dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[0]->nocc1();
+  assert(size == dffull_[1]->nocc1() * dffull_[1]->nocc2() * a->dffull_[1]->nocc1());
+  assert(size == dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[1]->nocc1());
+
   unique_ptr<double[]> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
   {
-    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[1], fac, i);
+    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[1], -fac, i);
     daxpy_(size, 1.0, tmp.get(), 1, real.get(), 1);
   }
   unique_ptr<double[]> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
   {
-    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[0], -fac, i);
+    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[0], fac, i);
     daxpy_(size, 1.0, tmp.get(), 1, imag.get(), 1);
   }
   // TODO probably this is not the best implementation...
