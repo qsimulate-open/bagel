@@ -91,7 +91,6 @@ class Opt {
     }
 
     lbfgsfloatval_t evaluate(void *instance, const lbfgsfloatval_t *x, lbfgsfloatval_t *g, const int n, const lbfgsfloatval_t step) {
-      assert(internal_);
       std::shared_ptr<const Matrix> xyz = current_->xyz();
 
       // first convert x to the geometry
@@ -137,8 +136,9 @@ class Opt {
       }
       // current geom and grad in the cartesian coordinate
       std::shared_ptr<const GradFile> cgrad = eval.compute();
-      std::shared_ptr<const GradFile> dgrad = cgrad->transform(bmat_[1], true);
-      std::copy_n(dgrad->data()->data(), n, g);
+      if (internal_)
+        cgrad = cgrad->transform(bmat_[1], true);
+      std::copy_n(cgrad->data()->data(), n, g);
 
       resume_stdcout();
 
