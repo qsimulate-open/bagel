@@ -186,7 +186,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
     int o1 = 0;
     for (auto& b1 : ashell) {
       if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
-        tasks.push_back(DFIntTask_OLD<DFDist>(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this));
+        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this);
       o1 += b1->nbasis();
     }
     o0 += b0->nbasis();
