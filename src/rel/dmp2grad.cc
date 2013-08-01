@@ -34,7 +34,7 @@
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
-#include <src/prop/dipole.h>
+#include <src/rel/reldipole.h>
 #include <src/grad/gradeval.h>
 #include <src/smith/prim_op.h>
 #include <src/parallel/resources.h>
@@ -88,11 +88,11 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   shared_ptr<Geometry> cgeom;
   vector<shared_ptr<const DFDist>> dfs;
   if (task_->abasis().empty()) {
-    dfs = ref->geom()->dfs()->split_blocks();
+    dfs = geom_->dfs()->split_blocks();
     dfs.push_back(geom_->df());
   } else {
     auto info = make_shared<PTree>(); info->put("df_basis", task_->abasis());
-    cgeom = make_shared<Geometry>(*ref->geom(), info, false);
+    cgeom = make_shared<Geometry>(*geom_, info, false);
     cgeom->relativistic(false /* do_gaunt */);
     dfs = cgeom->dfs()->split_blocks();
     dfs.push_back(cgeom->df());
@@ -150,15 +150,18 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
     // BV and gia are DFFullDist
+#if 0
     const size_t offset = i*nocc;
     gia->add_product(bv, buf, nocc, offset);
+#endif
 
     // T(jb|ic) -> T_c(b,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
-    // D_ab = G(ja|ic) T(jb|ic)
-    zgemm3m_("N", "T", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
-    // D_ij = - G(ja|kc) T(ia|kc)
-    zgemm3m_("T", "N", nocc, nocc, nvirt*nocc, -0.5, data->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis*2);
+    // D_ab = T^*(ja|ic) T(jb|ic)
+    zgemm3m_("N", "C", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
+    // D_ij = - T^*(ja|kc) T(ia|kc)
+//  std::for_each(data->data(), data->data()+data->size(), [](std::complex<double> a){ a = std::conj(a); });
+    zgemm3m_("C", "N", nocc, nocc, nvirt*nocc, -0.5, data->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis*2);
   }
 
   timer.tick_print("assembly (+ unrelaxed rdm)");
@@ -171,14 +174,8 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   {
     auto d_unrelaxed = make_shared<ZMatrix>(*dmp2);
     for (int i = 0; i != nocca; ++i) d_unrelaxed->element(i,i) += 1.0;
-    shared_ptr<const Matrix> dao_unrelaxed = (*ref->relcoeff() * *d_unrelaxed ^ *ref->relcoeff()).get_real_part();
-    shared_ptr<Matrix> dao_summed = dao_unrelaxed->get_submatrix(0, 0, nbasis, nbasis);
-    *dao_summed += *dao_unrelaxed->get_submatrix(nbasis, nbasis, nbasis, nbasis);
-#if 0
-    *dao_summed += *dao_unrelaxed->get_submatrix(2*nbasis, 2*nbasis, nbasis, nbasis); // TODO ... wrong
-    *dao_summed += *dao_unrelaxed->get_submatrix(3*nbasis, 3*nbasis, nbasis, nbasis);
-#endif
-    Dipole dipole(geom_, dao_unrelaxed, "MP2 unrelaxed");
+    auto dao_unrelaxed = make_shared<const ZMatrix>(*ref->relcoeff() * *d_unrelaxed ^ *ref->relcoeff());
+    RelDipole dipole(geom_, dao_unrelaxed, "MP2 unrelaxed");
     dipole.compute();
   }
 

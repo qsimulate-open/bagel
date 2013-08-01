@@ -41,7 +41,7 @@ class RelDipole {
   public:
     RelDipole(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> z, const std::string jobname = "") : geom_(g), density_(z), jobname_(jobname) { }
 
-    void compute();
+    std::array<double,3> compute();
 };
 
 }

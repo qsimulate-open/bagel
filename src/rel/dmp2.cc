@@ -51,6 +51,7 @@ DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry>
     ref_ = scf_->conv_to_ref();
     geom_ = ref_->geom();
   }
+  assert(geom_->dfs());
 
   cout << endl << "  === Four-Component DF-MP2 calculation ===" << endl << endl;
 

@@ -94,7 +94,7 @@ class SmallInts1e {
     SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
       : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
 
-      for (int i = 0; i != 4; ++i)
+      for (int i = 0; i != Nblocks(); ++i)
         data_[i] = std::make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
     }
 
