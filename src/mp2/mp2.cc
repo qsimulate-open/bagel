@@ -105,7 +105,7 @@ void MP2::compute() {
       for (size_t k = 0; k != nvirt; ++k)
         for (size_t l = 0; l != nocc; ++l, ++tdata)
           *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l];
-    energy_ += ddot_(nocc*nvirt*nocc, data->data(), 1, buf->data(), 1);
+    energy_ += data->ddot(buf);
   }
 
   cout << "    * assembly done" << endl << endl;

@@ -117,7 +117,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
         }
       }
     }
-    ecorr += ddot_(nocc*nvirt*nocc, data->data(), 1, buf->data(), 1);
+    ecorr += data->ddot(buf);
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
