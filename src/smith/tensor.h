@@ -34,6 +34,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <src/fci/civec.h>
 #include <type_traits>
 #include <src/math/matrix.h>
 #include <src/smith/storage.h>
@@ -267,6 +268,27 @@ class Tensor {
           out->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), target);
         }
       }
+      return out;
+    }
+
+
+    std::shared_ptr<Civec> civec(std::shared_ptr<const Civec> ci0) const {
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 1);
+
+      int dim0 = 0;
+      for (auto& i0 : o[0].range()) dim0 += i0.size();
+      assert(dim0 == ci0->size());
+
+      std::unique_ptr<double[]> deci(new double[dim0]); 
+      auto out = std::make_shared<Civec>(ci0->det());
+      for (auto& i0 : o[0].range()) {
+        std::unique_ptr<double[]> target = get_block(i0);
+        std::copy_n(target.get(), i0.size(), deci.get()+i0.offset());
+      }
+
+      std::copy_n(deci.get(), dim0, out->data());
+
       return out;
     }
 
