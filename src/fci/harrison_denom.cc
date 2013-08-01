@@ -60,7 +60,7 @@ void HarrisonZarrabian::const_denom() {
   vector<HZDenomTask> tasks;
   tasks.reserve(det()->stringa().size());
   for (auto& ia : det()->stringa()) {
-    tasks.push_back(HZDenomTask(iter, ia, det_, jop.get(), kop.get(), h.get()));
+    tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
     iter += det()->stringb().size();
   }
 
