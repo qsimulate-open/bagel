@@ -30,6 +30,7 @@
 #include <array>
 #include <vector>
 #include <src/integral/os/osint.h>
+#include <src/molecule/molecule.h>
 #include <memory>
 
 namespace bagel {
@@ -43,7 +44,7 @@ class DipoleBatch : public OSInt {
     int nrank() const override { return 0; }
 
   public:
-    DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3>& c) : OSInt(basis), center_(c) { common_init(); }
+    DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> c) : OSInt(basis), center_(c->charge_center()) { common_init(); }
 
     void compute() override;
 };

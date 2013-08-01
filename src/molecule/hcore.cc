@@ -61,7 +61,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
   }
 
   if (mol_->external()) {
-    DipoleBatch dipole(input, mol_->charge_center());
+    DipoleBatch dipole(input, mol_);
     dipole.compute();
     const size_t block = dipole.size_block();
     const double* dip = dipole.data();

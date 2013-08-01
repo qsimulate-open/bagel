@@ -40,7 +40,6 @@ Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, const s
 
 array<double,3> Dipole::compute() const {
   array<double,3> out{{0.0, 0.0, 0.0}};
-  array<double,3> center = geom_->charge_center();
 
   const vector<vector<int>> offsets = geom_->offsets();
 
@@ -56,7 +55,7 @@ array<double,3> Dipole::compute() const {
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          DipoleBatch dipole(input, center);
+          DipoleBatch dipole(input, geom_);
           dipole.compute();
 
           const int dimb1 = input[0]->nbasis();

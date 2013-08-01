@@ -29,7 +29,8 @@
 
 #include <src/molecule/hcore.h>
 #include <src/molecule/kinetic.h>
-#include <src/rel/smallnai.h>
+#include <src/integral/rys/naibatch.h>
+#include <src/rel/small1e.h>
 
 namespace bagel {
 
@@ -39,13 +40,13 @@ class RelHcore : public ZMatrix {
     const std::shared_ptr<const Matrix> kinetic_;
     const std::shared_ptr<const Matrix> hcore_;
     const std::shared_ptr<const Matrix> nai_;
-    const std::shared_ptr<const SmallNAI> smallnai_;
+    const std::shared_ptr<const Small1e<NAIBatch>> smallnai_;
 
     void compute_();
 
   public:
     RelHcore(const std::shared_ptr<const Molecule> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
-            kinetic_(new Kinetic(geom_)), hcore_(new Hcore(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new SmallNAI(geom_)) {
+            kinetic_(new Kinetic(geom_)), hcore_(new Hcore(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new Small1e<NAIBatch>(geom_)) {
 
       compute_();
 

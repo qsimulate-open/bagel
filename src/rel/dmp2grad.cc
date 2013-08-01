@@ -34,6 +34,7 @@
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
+#include <src/prop/dipole.h>
 #include <src/grad/gradeval.h>
 #include <src/smith/prim_op.h>
 #include <src/parallel/resources.h>
@@ -57,9 +58,11 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   const size_t nbasis = geom_->nbasis();
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  const size_t nocc = ref_->nocc() - task_->ncore();
+  const size_t ncore = task_->ncore();
+  const size_t nocca = ref_->nocc();
+  const size_t nocc = nocca - ncore;
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = nbasis*2 - nocc - task_->ncore();
+  const size_t nvirt = nbasis*2 - nocc - ncore;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
   assert(nbasis*4 == ref->relcoeff()->ndim());
@@ -73,10 +76,10 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   array<shared_ptr<const Matrix>, 4> rvcoeff;
   array<shared_ptr<const Matrix>, 4> ivcoeff;
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, task_->ncore(), nbasis, nocc);
+    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore, nbasis, nocc);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
-    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc+task_->ncore(), nbasis, nvirt);
+    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocca, nbasis, nvirt);
     rvcoeff[i] = vc->get_real_part();
     ivcoeff[i] = vc->get_imag_part();
   }
@@ -120,29 +123,28 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   cout << "    * 3-index integral transformation done" << endl;
 
   // assemble
-  vector<double> eig(ref_->eig().begin()+task_->ncore(), ref_->eig().end());
+  vector<double> eig(ref_->eig().begin()+ncore, ref_->eig().end());
   auto buf = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  auto buf2 = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
 
   // (\check{gamam}|ia)
   shared_ptr<RelDFFull> bv = full->apply_J();
   shared_ptr<RelDFFull> gia = bv->clone();
 
+  auto dmp2 = make_shared<ZMatrix>(nbasis*2, nbasis*2);
+  complex<double>* optr = dmp2->element_ptr(ncore, ncore);
+  complex<double>* vptr = dmp2->element_ptr(nocca, nocca);
+
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
     shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
     *buf = *data;
-    *buf2 = *data;
     // using SMITH's symmetrizer (src/smith/prim_op.h)
     SMITH::sort_indices<2,1,0,1,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
     complex<double>* tdata = buf->data();
-    complex<double>* ddata = buf2->data();
     for (size_t j = 0; j != nocc; ++j)
       for (size_t k = 0; k != nvirt; ++k)
-        for (size_t l = 0; l != nocc; ++l, ++tdata, ++ddata) {
+        for (size_t l = 0; l != nocc; ++l, ++tdata)
           *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
-          *ddata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
-        }
     energy_ += zdotc_(nocc*nvirt*nocc, data->data(), 1, buf->data(), 1).real() * 0.5;
 
     // form Gia : TODO distribute
@@ -150,13 +152,35 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
     // BV and gia are DFFullDist
     const size_t offset = i*nocc;
     gia->add_product(bv, buf, nocc, offset);
+
+    // T(jb|ic) -> T_c(b,ij)
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
+    // D_ab = G(ja|ic) T(jb|ic)
+    zgemm3m_("N", "T", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
+    // D_ij = - G(ja|kc) T(ia|kc)
+    zgemm3m_("T", "N", nocc, nocc, nvirt*nocc, -0.5, data->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis*2);
   }
 
-  cout << "    * assembly done" << endl << endl;
+  timer.tick_print("assembly (+ unrelaxed rdm)");
+  cout << endl;
   cout << "      DMP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
   energy_ += ref_->energy();
   cout << "      DMP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+
+  {
+    auto d_unrelaxed = make_shared<ZMatrix>(*dmp2);
+    for (int i = 0; i != nocca; ++i) d_unrelaxed->element(i,i) += 1.0;
+    shared_ptr<const Matrix> dao_unrelaxed = (*ref->relcoeff() * *d_unrelaxed ^ *ref->relcoeff()).get_real_part();
+    shared_ptr<Matrix> dao_summed = dao_unrelaxed->get_submatrix(0, 0, nbasis, nbasis);
+    *dao_summed += *dao_unrelaxed->get_submatrix(nbasis, nbasis, nbasis, nbasis);
+#if 0
+    *dao_summed += *dao_unrelaxed->get_submatrix(2*nbasis, 2*nbasis, nbasis, nbasis); // TODO ... wrong
+    *dao_summed += *dao_unrelaxed->get_submatrix(3*nbasis, 3*nbasis, nbasis, nbasis);
+#endif
+    Dipole dipole(geom_, dao_unrelaxed, "MP2 unrelaxed");
+    dipole.compute();
+  }
 
   throw logic_error("not yet implemented");
   return shared_ptr<GradFile>();
