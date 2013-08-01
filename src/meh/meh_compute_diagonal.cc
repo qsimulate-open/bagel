@@ -182,8 +182,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   Matrix gamma_BB_beta = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
-  shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,0,1>();
-  shared_ptr<Matrix> Kmatrix = form_coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
+  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp(nstatesA*nstatesAp, nstatesB*nstatesBp);
 
