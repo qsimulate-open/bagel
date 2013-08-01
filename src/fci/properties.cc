@@ -29,6 +29,7 @@
 #include <cmath>
 #include <src/fci/properties.h>
 #include <src/molecule/dipolematrix.h>
+#include <src/fci/prop1etask.h>
 
 using namespace std;
 using namespace bagel;
@@ -48,13 +49,14 @@ void CIDipole::init(const int nstart, const int nfence) {
     }
   }
 
-  sizeij_ = ( (norb_ + 1) * norb_ ) / 2;
+  sizeij_ = norb_ * norb_;
   for(int i = 0; i < 3; ++i) compressed_dipoles_[i] = unique_ptr<double[]>(new double[sizeij_]);
 
-  int ij = 0;
-  for (int i = 0; i < norb_; ++i) {
-    for (int j = 0; j <= i; ++j, ++ij) {
-      for(int k = 0; k < 3; ++k) compressed_dipoles_[k][ij] = dipole_mo_[k]->element(i + nocc_, j + nocc_);
+  for (int imu = 0; imu < 3; ++imu) {
+    for (int i = 0, ij = 0; i < norb_; ++i) {
+      for (int j = 0; j < norb_; ++j, ++ij) {
+        compressed_dipoles_[imu][ij] = dipole_mo_[imu]->element(i + nocc_, j + nocc_);
+      }
     }
   }
 }
@@ -65,34 +67,39 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
   shared_ptr<const Determinants> det = ccvec->det();
   auto sigma = make_shared<Dvec>(det, nstates);
 
+  shared_ptr<const Determinants> det_trans = det->transpose();
+  shared_ptr<const Dvec> cc_trans = ccvec->spinflip(det_trans);
+  auto sg_trans = make_shared<Dvec>(det, nstates);
+
   const int sizeij = sizeij_;
   const int la = ccvec->lena();
   const int lb = ccvec->lenb();
 
+  vector<Prop1eTask> tasks;
+  tasks.reserve(nstates * (la + lb));
+
   for (int imu = 0; imu < 3; ++imu) {
     sigma->zero();
+    sg_trans->zero();
 
     for (int istate = 0; istate < nstates; ++istate) {
-      for (int ij = 0; ij < sizeij_; ++ij) {
-        const double f = compressed_dipoles_[imu][ij];
-        //alpha
-        for (auto& iter : ccvec->det()->phia(ij)) {
-          const double fc = f * iter.sign;
-          daxpy_(lb, fc, ccvec->data(istate)->element_ptr(0,iter.source), 1, sigma->data(istate)->element_ptr(0,iter.target), 1);
-        }
+      double *target = sigma->data(istate)->data();
+      for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
+        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu].get());
 
-        //beta
-        for (auto& iter : ccvec->det()->phib(ij)) {
-          const double fc = f * iter.sign;
-          daxpy_(la, fc, ccvec->data(istate)->element_ptr(iter.source, 0), lb, sigma->data(istate)->element_ptr(iter.target,0), lb);
-        }
-      }
+      target = sg_trans->data(istate)->data();
+      for (auto aiter = det_trans->stringa().begin(); aiter != det_trans->stringa().end(); ++aiter, target+=la)
+        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu].get());
     }
 
+    TaskQueue<Prop1eTask> tq(tasks);
+    tq.compute(resources__->max_num_threads());
+
     auto tmp = make_shared<Matrix>(nstates, nstates);
-    for (int i = 0; i < nstates; ++i) {
-      for (int j = 0; j < nstates; ++j) {
-        tmp->element(i,j) = sigma->data(i)->ddot(*ccvec->data(j));
+    for (int j = 0; j < nstates; ++j) {
+      for (int i = 0; i < nstates; ++i) {
+        // This saves an extra transpose at the expense of more ddot... which is better?
+        tmp->element(i,j) = sigma->data(i)->ddot(*ccvec->data(j)) + sg_trans->data(i)->ddot(*cc_trans->data(j));
       }
     }
     tmp->add_diag(core_dipole_[imu]);
