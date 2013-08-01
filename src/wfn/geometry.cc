@@ -706,10 +706,12 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    const double radiusi = (*i)->atom()->radius();
     auto j = i;
     for (++j ; j != nodes.end(); ++j) {
       // TODO hardwiring 2.0 is NOT a good practice
-      if ((*i)->atom()->distance((*j)->atom()) < 2.0*ang2bohr__) {
+      const double radiusj = (*j)->atom()->radius();
+      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
