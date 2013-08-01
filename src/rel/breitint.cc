@@ -60,7 +60,7 @@ void BreitInt::computebatch(const array<shared_ptr<const Shell>,2>& input, const
   BreitBatch batch(in, 1.0);
   batch.compute();
 
-  for (int i = 0; i != nblocks(); ++i)
+  for (int i = 0; i != Nblocks(); ++i)
     matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(i));
 
 }

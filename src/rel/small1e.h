@@ -34,11 +34,11 @@
 namespace bagel {
 
 template <typename Batch>
-class Small1e : public Matrix1eArray<4> {
+class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
   protected:
     void init() override {
       std::list<std::shared_ptr<const Shell>> shells;
-      for (auto& i : mol_->atoms())
+      for (auto& i : this->mol_->atoms())
         shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
       // TODO thread, parallel
@@ -55,7 +55,7 @@ class Small1e : public Matrix1eArray<4> {
     }
 
   public:
-    Small1e(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4>(mol) {
+    Small1e(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks()>(mol) {
       init();
     }
 
@@ -64,15 +64,15 @@ class Small1e : public Matrix1eArray<4> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e<Batch> batch(input, mol_);
+      SmallInts1e<Batch> batch(input, this->mol_);
       batch.compute();
 
-      for (int i = 0; i != nblocks(); ++i)
-        matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+      for (int i = 0; i != this->Nblocks(); ++i)
+        this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
     }
 
     void print(const std::string name = "") const override {
-      Matrix1eArray<4>::print(name.empty() ? "Small1e" : name);
+      Matrix1eArray<4*Batch::Nblocks()>::print(name.empty() ? "Small1e" : name);
     }
 
 };

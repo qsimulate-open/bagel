@@ -40,13 +40,15 @@ class DipoleBatch : public OSInt {
     const std::array<double,3> center_;
     void perform_VRR(double*) override;
 
-    int nblocks() const override { return 3; }
+    int nblocks() const override { return Nblocks(); }
     int nrank() const override { return 0; }
 
   public:
     DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> c) : OSInt(basis), center_(c->charge_center()) { common_init(); }
 
     void compute() override;
+
+    constexpr static int Nblocks() { return 3; }
 };
 
 }

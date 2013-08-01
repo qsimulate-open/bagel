@@ -37,12 +37,12 @@ using namespace bagel;
 void CIDipole::init(const int nstart, const int nfence) {
   DipoleMatrix dipole(geom_);
 
-  for(int i = 0; i < dipole.nblocks(); ++i) {
+  for(int i = 0; i < dipole.Nblocks(); ++i) {
     dipole_mo_[i] = make_shared<Matrix>((*coeff_) % (*dipole.data(i)) * (*coeff_));
   }
 
   core_dipole_ = {{0.0, 0.0, 0.0}} ;
-  for(int i = 0; i < dipole.nblocks(); ++i) {
+  for(int i = 0; i < dipole.Nblocks(); ++i) {
     for(int j = 0; j < nocc_; ++j) {
       core_dipole_[i] += 2.0 * dipole_mo_[i]->element(j,j);
     }

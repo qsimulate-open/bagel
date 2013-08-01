@@ -165,24 +165,24 @@ class DFDist_ints : public DFDist {
       Timer time;
 
       // making a task list
-      std::vector<DFIntTask<TBatch,TBatch::nblocks()>> tasks;
+      std::vector<DFIntTask<TBatch,TBatch::Nblocks()>> tasks;
       tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
       // due to performance issue, we need to reshape it to array
-      std::array<std::shared_ptr<DFBlock>,TBatch::nblocks()> blk;
-      for (int i = 0; i != TBatch::nblocks(); ++i) blk[i] = block_[i];
+      std::array<std::shared_ptr<DFBlock>,TBatch::Nblocks()> blk;
+      for (int i = 0; i != TBatch::Nblocks(); ++i) blk[i] = block_[i];
 
       int j2 = 0;
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
           // TODO careful
-          if (TBatch::nblocks() > 1 || j1 <= j2) {
+          if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
-              tasks.push_back(DFIntTask<TBatch,TBatch::nblocks()>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk));
+              tasks.push_back(DFIntTask<TBatch,TBatch::Nblocks()>(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk));
               j0 += i0->nbasis();
             }
           }
@@ -191,7 +191,7 @@ class DFDist_ints : public DFDist {
         j2 += i2->nbasis();
       }
       time.tick_print("3-index ints prep");
-      TaskQueue<DFIntTask<TBatch,TBatch::nblocks()>> tq(tasks);
+      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tq(tasks);
       tq.compute(resources__->max_num_threads());
       time.tick_print("3-index ints");
 
@@ -219,7 +219,7 @@ class DFDist_ints : public DFDist {
       const size_t asize  = std::accumulate(myashell.begin(),myashell.end(),0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
-      for (int i = 0; i != TBatch::nblocks(); ++i)
+      for (int i = 0; i != TBatch::Nblocks(); ++i)
         block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
 
       // 3-index integrals

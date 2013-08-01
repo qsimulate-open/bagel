@@ -219,7 +219,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
 
     auto breitint = make_shared<BreitInt>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
-    for (int i = 0; i != breitint->nblocks(); ++i) {
+    for (int i = 0; i != breitint->Nblocks(); ++i) {
       breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
