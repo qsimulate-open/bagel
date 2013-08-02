@@ -105,7 +105,7 @@ class Opt {
       lbfgs_parameter_init(&param);
       param.epsilon = thresh_;
       param.max_iterations = maxiter_; 
-
+      param.min_step = 1.0e-12;
 
       auto displ = std::make_shared<GradFile>(xyz);
       if (internal_)
@@ -118,6 +118,10 @@ class Opt {
                                                           std::placeholders::_6, std::placeholders::_7, std::placeholders::_8, std::placeholders::_9, std::placeholders::_10);
 
       int ret = lbfgs(size, x, &fx, eval, prog, NULL, &param);
+      if (ret) {
+        std::stringstream ss; ss << "L-BFGS solver failed to converge : " << ret;
+        throw std::runtime_error(ss.str());
+      }
 
       lbfgs_free(x);
     }

@@ -52,7 +52,7 @@ enum {
     /** L-BFGS reaches convergence. */
     LBFGS_SUCCESS = 0,
     LBFGS_CONVERGENCE = 0,
-    LBFGS_STOP,
+    LBFGS_STOP = 0,
     /** The initial variables already minimize the objective function. */
     LBFGS_ALREADY_MINIMIZED,
 
