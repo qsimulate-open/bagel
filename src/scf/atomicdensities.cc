@@ -56,7 +56,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       shared_ptr<PTree> geomop = make_shared<PTree>();
       const string basis = i->basis(); 
       geomop->put("basis", basis);
-      const string dfbasis = (*ai++)->basis();
+      const string dfbasis = (*ai)->basis();
       geomop->put("df_basis", !dfbasis.empty() ? dfbasis : basis);
 
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), std::shared_ptr<const PTree>());
@@ -71,6 +71,8 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
     assert(iter != atoms.end());
     copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second->data());
     offset += i->nbasis();
+
+    ++ai;
   }
 
 }
