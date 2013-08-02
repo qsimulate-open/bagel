@@ -35,6 +35,7 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
 
   const int norbA = nfenceA - nstart;
   const int norbB = nfenceB - nfenceA;
+  nact_ = make_pair(norbA, norbB);
   const int norb = norbA + norbB;
 
   /************************************************************
@@ -110,14 +111,16 @@ DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, cons
   * Package cross_mo1e integrals into a matrix                *
   ************************************************************/
 
-  cross_mo1e_ = make_shared<Matrix>(norbA, norbB);
+  auto cross_mo1e = make_shared<Matrix>(norbA, norbB);
 
   {
-    double* modata = cross_mo1e_->data();
+    double* modata = cross_mo1e->data();
     for (int i = 0; i < norbB; ++i) {
       for (int j = 0; j < norbA; ++j, ++modata) {
         *modata = mo1e(j,i+norbA);
       }
     }
   }
+
+  cross_mo1e_ = cross_mo1e;
 }

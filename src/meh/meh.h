@@ -149,17 +149,6 @@ class MultiExcitonHamiltonian {
       void common_init();
       void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
 
-      template <int A, int B, int C, int D> std::pair<int, int> index(int a, int b, int c, int d) const {
-        int iA = 0, jB = 0;
-        if (A == 0) iA += a; else jB += a;
-        if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
-        if (C == 0) iA = c + iA*nact_.first; else jB = c + jB*nact_.second;
-        if (D == 0) iA = d + iA*nact_.first; else jB = d + jB*nact_.second;
-        return std::make_pair(iA,jB);
-      }
-
-      template <int unit> int active(int a) const { return (a + unit*nact_.first); }
-
       int coupling_index(std::pair<int,int> AT, std::pair<int,int> BT) const { return coupling_index(AT.first,AT.second,BT.first,BT.second); }
       int coupling_index(const int a, const int b, const int c, const int d) const {
         return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
@@ -173,18 +162,16 @@ class MultiExcitonHamiltonian {
 
       // Diagonal block stuff
       MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-      MatrixPtr compute_intra_2e(DimerSubspace& subspace);
+      MatrixPtr compute_intra(const DimerSubspace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* hdata) const;
-      std::shared_ptr<Dvec> form_sigma_2e(std::shared_ptr<const Dvec> ccvec, const double* mo2e_ptr) const;
+      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const;
+      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const;
 
-      void sigma_2aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
-      void sigma_2bb(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* mo2e_ptr, const int nact) const;
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d, const int nact) const;
+      void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;
+
+      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
       void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e, const int nact) const;
-
-      template<int A, int B, int C, int D> MatrixPtr form_coulomb_matrix() const;
+      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
 
       // Gamma Tree building
       void gamma_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp);
@@ -202,37 +189,6 @@ class MultiExcitonHamiltonian {
       MatrixPtr compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp);
       MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
 };
-
-template<int A, int B, int C, int D>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian::form_coulomb_matrix() const {
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  int ijA = 1;
-  int unitA = 4 - (A + B + C + D);
-  for ( int i = 0; i < unitA; ++i ) ijA *= nactA;
-
-  int ijB = 1;
-  int unitB = A + B + C + D;
-  for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
-
-  auto out = std::make_shared<Matrix>(ijA, ijB);
-
-  for(int d = 0; d < (D == 0 ? nactA : nactB); ++d) {
-    for(int c = 0; c < (C == 0 ? nactA : nactB); ++c) {
-      for(int b = 0; b < (B == 0 ? nactA : nactB); ++b) {
-        for(int a = 0; a < (A == 0 ? nactA : nactB); ++a) {
-          int iA, jB;
-          std::tie(iA, jB) = index<A,B,C,D>(a,b,c,d);
-
-          out->element(iA,jB) = jop_->mo2e_hz(active<A>(a), active<B>(b), active<C>(c), active<D>(d));
-        }
-      }
-    }
-  }
-
-  return out;
-}
 
 }
 

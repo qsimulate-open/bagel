@@ -34,6 +34,7 @@
 #include <src/casscf/werner.h>
 #include <src/casscf/supercigrad.h>
 #include <src/rel/dirac.h>
+#include <src/rel/dmp2grad.h>
 
 // T should have
 // o Constructor with the input and geometry
@@ -59,12 +60,15 @@ class GradEval : public GradEval_base {
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy();
+      geom_ = ref_->geom();
     }
 
     // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
 
     double energy() const { return energy_; }
+
+    std::shared_ptr<const Reference> ref() const { return ref_; }
 };
 
 // specialization
@@ -77,6 +81,7 @@ template<> std::shared_ptr<GradFile> GradEval<WernerKnowles>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
+template<> std::shared_ptr<GradFile> GradEval<DMP2Grad>::compute();
 
 }
 

@@ -129,7 +129,7 @@ class DFBlock {
     std::shared_ptr<Matrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
     std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
     // slowest index of o is fixed to n
-    std::unique_ptr<double[]> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
+    std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
     std::unique_ptr<double[]> form_vec(const std::shared_ptr<const Matrix> den) const;
@@ -137,9 +137,10 @@ class DFBlock {
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
 
-    void copy_block(const std::unique_ptr<double[]>& o, const int jdim, const size_t offset);
+    void copy_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset);
+    void add_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset, const double fac = 1.0);
     // compute (D|ia)(ia|j) and set to the location specified by the offset
-    std::unique_ptr<double[]> form_Dj(const std::unique_ptr<double[]>& o, const int jdim) const;
+    std::shared_ptr<Matrix> form_Dj(const std::shared_ptr<const Matrix> o, const int jdim) const;
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k
     std::unique_ptr<double[]> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;

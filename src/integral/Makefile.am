@@ -9,7 +9,7 @@ rys/_breitroot_1.cc rys/_breitroot_2.cc rys/_breitroot_3.cc rys/_breitroot_4.cc 
 rys/_spin2root_1.cc rys/_spin2root_2.cc rys/_spin2root_3.cc rys/_spin2root_4.cc rys/_spin2root_5.cc rys/_spin2root_6.cc rys/_spin2root_7.cc rys/_spin2root_8.cc rys/_spin2root_9.cc rys/_spin2root_10.cc rys/_spin2root_11.cc rys/_spin2root_12.cc rys/_spin2root_13.cc \
 rys/rysint.cc rys/eribatch_base.cc rys/naibatch_base.cc rys/eribatch.cc rys/gradbatch.cc rys/gnaibatch.cc rys/slaterbatch.cc \
 rys/compute.cc rys/bcompute.cc rys/gcompute.cc rys/ncompute.cc rys/gncompute.cc rys/scompute.cc rys/contraction.cc rys/vrr_optim.cc rys/bvrr_optim.cc rys/svrr_optim.cc rys/usvrr_optim.cc \
-rys/smalleribatch.cc rys/smallnaibatch.cc rys/mixederibatch.cc rys/gsmallnaibatch.cc rys/gsmalleribatch.cc \
+rys/smalleribatch.cc rys/mixederibatch.cc rys/gsmallnaibatch.cc rys/gsmalleribatch.cc \
 os/osint.cc os/oscontraction.cc os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/dipolebatch.cc os/momentbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc \
 libint/libint.cc libint/glibint.cc
 libbagel_integral_la_LIBADD = ../util/libbagel_util.la ../parallel/libbagel_parallel.la ../math/libbagel_math.la ../molecule/libbagel_molecule.la

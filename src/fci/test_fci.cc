@@ -84,13 +84,16 @@ std::vector<double> reference_fci_energy2() {
 }
 
 
-BOOST_AUTO_TEST_SUITE(TEST_NEWFCI)
+BOOST_AUTO_TEST_SUITE(TEST_FCI)
 
-BOOST_AUTO_TEST_CASE(NEWFCI_2STATE) {
-    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_hz"), reference_fci_energy()));
+BOOST_AUTO_TEST_CASE(KNOWLES_HANDY) {
     BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_kh"), reference_fci_energy()));
-    BOOST_CHECK(compare(fci_energy("hhe_svp_fci_hz_trip"), reference_fci_energy2()));
     BOOST_CHECK(compare(fci_energy("hhe_svp_fci_kh_trip"), reference_fci_energy2()));
+}
+
+BOOST_AUTO_TEST_CASE(HARRISON_ZARRABIAN) {
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_hz"), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hhe_svp_fci_hz_trip"), reference_fci_energy2()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

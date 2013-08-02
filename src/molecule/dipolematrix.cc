@@ -37,13 +37,12 @@ DipoleMatrix::DipoleMatrix(const shared_ptr<const Molecule> mo) : Matrix1eArray<
 
 void DipoleMatrix::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
   // input = [b1, b0]
-  array<double,3> center = mol_->charge_center();
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  DipoleBatch dipole(input, center);
+  DipoleBatch dipole(input, mol_);
   dipole.compute();
 
-  for (int i = 0; i < nblocks(); ++i) {
+  for (int i = 0; i < Nblocks(); ++i) {
     matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, dipole.data() + i*dipole.size_block());
   }
 }

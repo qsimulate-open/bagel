@@ -516,8 +516,10 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
 int Geometry::num_count_ncore_only() const {
   int out = 0;
   for (auto& it : atoms_) {
-    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 2;
-    if (it->atom_number() > 10) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Ne"); // TODO
+    if (it->atom_number() >= 2) out += 2;
+    if (it->atom_number() >= 10) out += 8;
+    if (it->atom_number() >= 18) out += 8;
+    if (it->atom_number() > 36) throw logic_error("needs to modify Geometry::count_num_ncore for atoms beyond Kr"); // TODO
   }
   return out;
 }
@@ -704,10 +706,12 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    const double radiusi = (*i)->atom()->radius();
     auto j = i;
     for (++j ; j != nodes.end(); ++j) {
       // TODO hardwiring 2.0 is NOT a good practice
-      if ((*i)->atom()->distance((*j)->atom()) < 2.0*ang2bohr__) {
+      const double radiusj = (*j)->atom()->radius();
+      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
@@ -735,8 +739,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
       std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
         const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
+#if 0
         cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
                 "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl;
+#endif
         // I found explicit formulas in http://www.ncsu.edu/chemistry/franzen/public_html/nca/int_coord/int_coord.html (thanking the author)
         // 1=A=i, 2=O=c, 3=B=j
         Quatern<double> op = (*c)->atom()->position();
@@ -772,8 +778,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
           if (*c == *k || *k == *i) continue;
+#if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
+#endif
           // following J. Molec. Spec. 44, 599 (1972)
           // a=i, b=c, c=j, d=k
           Quatern<double> ap = (*i)->atom()->position();

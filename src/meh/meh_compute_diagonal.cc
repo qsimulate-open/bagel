@@ -33,6 +33,63 @@
 using namespace std;
 using namespace bagel;
 
+shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& AB, shared_ptr<const DimerJop> jop, const double diag) {
+  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
+  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
+  shared_ptr<const Dvec> sigmavecA = form_sigma(ccvecA, jop->mo1e_first(), jop->mo2e_first());
+  shared_ptr<const Dvec> sigmavecB = form_sigma(ccvecB, jop->mo1e_second(), jop->mo2e_second());
+
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
+  const int dimerstates = AB.dimerstates();
+
+  auto out = make_shared<Matrix>(dimerstates, dimerstates);
+
+  // first H^{AA}_{AA}
+  for(int stateA = 0; stateA < nstatesA; ++stateA) {
+    shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
+    for(int stateAp = 0; stateAp < stateA; ++stateAp) {
+      shared_ptr<const Civec> icc = ccvecA->data(stateAp);
+      const double dotproduct = isigma->ddot(*icc);
+      for(int stateB = 0; stateB < nstatesB; ++stateB) {
+        const int stateApB = AB.dimerindex(stateAp, stateB);
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        out->element(stateAB, stateApB) += dotproduct;
+        out->element(stateApB, stateAB) += dotproduct;
+      }
+    }
+    const double dotproduct = ccvecA->data(stateA)->ddot(*isigma);
+    for(int stateB = 0; stateB < nstatesB; ++stateB) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      out->element(stateAB,stateAB) += dotproduct;
+    }
+  }
+
+  // H^{BB}_{BB}
+  for(int stateB = 0; stateB < nstatesB; ++stateB) {
+    shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
+    for(int stateBp = 0; stateBp < stateB; ++stateBp) {
+      shared_ptr<const Civec> icc = ccvecB->data(stateBp);
+      const double dotproduct = isigma->ddot(*icc);
+      for(int stateA = 0; stateA < nstatesA; ++stateA) {
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        const int stateABp = AB.dimerindex(stateA, stateBp);
+        out->element(stateAB, stateABp) += dotproduct;
+        out->element(stateABp, stateAB) += dotproduct;
+      }
+    }
+    const double dotproduct = ccvecB->data(stateB)->ddot(*isigma);
+    for(int stateA = 0; stateA < nstatesA; ++stateA) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      out->element(stateAB,stateAB) += dotproduct;
+    }
+  }
+
+  out->add_diag(diag);
+
+  return out;
+}
+
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubspace& AB, const double* hAA, const double* hBB, const double diag) const {
   shared_ptr<const Dvec> ccvecA = AB.ci<0>();
   shared_ptr<const Dvec> ccvecB = AB.ci<1>();
@@ -45,20 +102,43 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 
   auto out = make_shared<Matrix>(dimerstates, dimerstates);
 
-  for (int stateAp = 0; stateAp < nstatesA; ++stateAp) {
-    for (int stateBp = 0; stateBp < nstatesB; ++stateBp) {
-      const int stateApBp = AB.dimerindex(stateAp,stateBp);
-      // hAA
-      for(int stateA = 0; stateA < nstatesA; ++stateA) { // stateB = stateBp
-        const int stateAB = AB.dimerindex(stateA,stateBp);
-        out->element(stateAB, stateApBp) += sigmavecA->data(stateA)->ddot(*ccvecA->data(stateAp));
+  // first H^{AA}_{AA}
+  for(int stateA = 0; stateA < nstatesA; ++stateA) {
+    shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
+    for(int stateAp = 0; stateAp < stateA; ++stateAp) {
+      shared_ptr<const Civec> icc = ccvecA->data(stateAp);
+      const double dotproduct = isigma->ddot(*icc);
+      for(int stateB = 0; stateB < nstatesB; ++stateB) {
+        const int stateApB = AB.dimerindex(stateAp, stateB);
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        out->element(stateAB, stateApB) += dotproduct;
+        out->element(stateApB, stateAB) += dotproduct;
       }
+    }
+    const double dotproduct = isigma->ddot(*ccvecA->data(stateA));
+    for(int stateB = 0; stateB < nstatesB; ++stateB) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      out->element(stateAB,stateAB) += dotproduct;
+    }
+  }
 
-      // hBB
-      for(int stateB = 0; stateB < nstatesB; ++stateB) { // stateA = stateAp
-        const int stateAB = AB.dimerindex(stateAp, stateB);
-        out->element(stateAB, stateApBp) += sigmavecB->data(stateB)->ddot(*ccvecB->data(stateBp));
+  // H^{BB}_{BB}
+  for(int stateB = 0; stateB < nstatesB; ++stateB) {
+    shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
+    for(int stateBp = 0; stateBp < stateB; ++stateBp) {
+      shared_ptr<const Civec> icc = ccvecB->data(stateBp);
+      const double dotproduct = isigma->ddot(*icc);
+      for(int stateA = 0; stateA < nstatesA; ++stateA) {
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        const int stateABp = AB.dimerindex(stateA, stateBp);
+        out->element(stateAB, stateABp) += dotproduct;
+        out->element(stateABp, stateAB) += dotproduct;
       }
+    }
+    const double dotproduct = ccvecB->data(stateB)->ddot(*isigma);
+    for(int stateA = 0; stateA < nstatesA; ++stateA) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      out->element(stateAB,stateAB) += dotproduct;
     }
   }
 
@@ -69,89 +149,11 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 
 
 shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace& subspace) {
-  const int nstates = subspace.dimerstates();
-
-  auto out = make_shared<Matrix>(nstates, nstates);
-
   const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
-  *out += *compute_diagonal_1e(subspace, jop_->mo1e_first(), jop_->mo1e_second(), core);
 
-  *out += *compute_intra_2e(subspace);
+  // Would be better to allocate here and then send to subprocesses
+  shared_ptr<Matrix> out = compute_intra(subspace, jop_, core);
   *out += *compute_inter_2e(subspace, subspace);
-
-  return out;
-}
-
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra_2e(DimerSubspace& subspace) {
-
-  const int nstatesA = subspace.nstates<0>();
-  const int nstatesB = subspace.nstates<1>();
-
-  const int nstates = subspace.dimerstates();
-
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  auto out = make_shared<Matrix>(nstates, nstates);
-
-  // first H^{AA}_{AA}
-  {
-    shared_ptr<const Dvec> ccvecA = subspace.ci<0>();
-    shared_ptr<const Determinants> detA = ccvecA->det();
-
-    const int lenab = detA->lena() * detA->lenb();
-
-    shared_ptr<Dvec> sigmavecAA = form_sigma_2e(ccvecA, jop_->mo2e_first());
-
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      const double* sdataA = sigmavecAA->data(stateA)->data();
-      for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-        const double* cdataAp = ccvecA->data(stateAp)->data();
-        const double dotproduct = ddot_(lenab, sdataA, 1, cdataAp, 1);
-        for(int stateB = 0; stateB < nstatesB; ++stateB) {
-          const int stateApB = subspace.dimerindex(stateAp, stateB);
-          const int stateAB = subspace.dimerindex(stateA, stateB);
-          out->element(stateAB, stateApB) += dotproduct;
-          out->element(stateApB, stateAB) += dotproduct;
-        }
-      }
-      const double* cdataA = ccvecA->data(stateA)->data();
-      const double dotproduct = ddot_(lenab, sdataA, 1, cdataA, 1);
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateAB = subspace.dimerindex(stateA, stateB);
-        out->element(stateAB,stateAB) += dotproduct;
-      }
-    }
-  }
-
-  // now do H^{BB}_{BB} case
-  {
-    shared_ptr<const Dvec> ccvecB = subspace.ci<1>();
-    shared_ptr<const Determinants> detB = ccvecB->det();
-
-    const int lenab = detB->lena() * detB->lenb();
-    shared_ptr<Dvec> sigmavecBB = form_sigma_2e(ccvecB, jop_->mo2e_second());
-
-    for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const double* sdataB = sigmavecBB->data(stateB)->data();
-      for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-        const double* cdataBp = ccvecB->data(stateBp)->data();
-        const double dotproduct = ddot_(lenab, sdataB, 1, cdataBp, 1);
-        for(int stateA = 0; stateA < nstatesA; ++stateA) {
-          const int stateAB = subspace.dimerindex(stateA, stateB);
-          const int stateABp = subspace.dimerindex(stateA, stateBp);
-          out->element(stateAB, stateABp) += dotproduct;
-          out->element(stateABp, stateAB) += dotproduct;
-        }
-      }
-      const double* cdataB = ccvecB->data(stateB)->data();
-      const double dotproduct = ddot_(lenab, sdataB, 1, cdataB, 1);
-      for(int stateA = 0; stateA < nstatesA; ++stateA) {
-        const int stateAB = subspace.dimerindex(stateA, stateB);
-        out->element(stateAB,stateAB) += dotproduct;
-      }
-    }
-  }
 
   return out;
 }
@@ -180,8 +182,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   Matrix gamma_BB_beta = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
-  shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,0,1>();
-  shared_ptr<Matrix> Kmatrix = form_coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
+  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp(nstatesA*nstatesAp, nstatesB*nstatesBp);
 

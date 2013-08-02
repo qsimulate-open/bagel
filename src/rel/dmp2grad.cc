@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dmp2.cc
+// Filename: dmp2grad.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -31,51 +31,38 @@
 #include <iomanip>
 #include <src/util/f77.h>
 #include <src/rel/dmp2.h>
-#include <src/rel/dirac.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
+#include <src/rel/reldipole.h>
+#include <src/grad/gradeval.h>
 #include <src/smith/prim_op.h>
 #include <src/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;
 
-DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
-
-  if (geom_->dfs() || (ref && ref->geom()->dfs())) {
-    if (!geom_) geom_ = ref->geom();
-  } else { 
-    scf_ = make_shared<Dirac>(input, g, ref);
-    scf_->compute();
-    ref_ = scf_->conv_to_ref();
-    geom_ = ref_->geom();
-  }
-  assert(geom_->dfs());
-
-  cout << endl << "  === Four-Component DF-MP2 calculation ===" << endl << endl;
-
-  // checks for frozen core
-  const bool frozen = idata_->get<bool>("frozen", false);
-  ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only() : 0));
-  if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
-
-  // if three is a aux_basis keyword, we use that basis
-  abasis_ = idata_->get<string>("aux_basis", "");
-  transform(abasis_.begin(), abasis_.end(), abasis_.begin(), ::tolower);
+DMP2Grad::DMP2Grad(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : DMP2(input, g, ref) {
 
 }
 
 
-void DMP2::compute() {
+// does nothing.
+void DMP2Grad::compute() { }
+
+
+template<>
+shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   Timer timer;
 
   const size_t nbasis = geom_->nbasis();
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  const size_t nocc = ref_->nocc() - ncore_;
+  const size_t ncore = task_->ncore();
+  const size_t nocca = ref_->nocc();
+  const size_t nocc = nocca - ncore;
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = nbasis*2 - nocc - ncore_;
+  const size_t nvirt = nbasis*2 - nocc - ncore;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
   assert(nbasis*4 == ref->relcoeff()->ndim());
@@ -89,10 +76,10 @@ void DMP2::compute() {
   array<shared_ptr<const Matrix>, 4> rvcoeff;
   array<shared_ptr<const Matrix>, 4> ivcoeff;
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore_, nbasis, nocc);
+    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, ncore, nbasis, nocc);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
-    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocc+ncore_, nbasis, nvirt);
+    shared_ptr<const ZMatrix> vc = ref->relcoeff()->get_submatrix(i*nbasis, nocca, nbasis, nvirt);
     rvcoeff[i] = vc->get_real_part();
     ivcoeff[i] = vc->get_imag_part();
   }
@@ -100,11 +87,11 @@ void DMP2::compute() {
   // (1) make DFDists
   shared_ptr<Geometry> cgeom;
   vector<shared_ptr<const DFDist>> dfs;
-  if (abasis_.empty()) {
+  if (task_->abasis().empty()) {
     dfs = geom_->dfs()->split_blocks();
     dfs.push_back(geom_->df());
   } else {
-    auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
+    auto info = make_shared<PTree>(); info->put("df_basis", task_->abasis());
     cgeom = make_shared<Geometry>(*geom_, info, false);
     cgeom->relativistic(false /* do_gaunt */);
     dfs = cgeom->dfs()->split_blocks();
@@ -136,8 +123,16 @@ void DMP2::compute() {
   cout << "    * 3-index integral transformation done" << endl;
 
   // assemble
-  vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
+  vector<double> eig(ref_->eig().begin()+ncore, ref_->eig().end());
   auto buf = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
+
+  // (\check{gamam}|ia)
+  shared_ptr<RelDFFull> bv = full->apply_J();
+  shared_ptr<RelDFFull> gia = bv->clone();
+
+  auto dmp2 = make_shared<ZMatrix>(nbasis*2, nbasis*2);
+  complex<double>* optr = dmp2->element_ptr(ncore, ncore);
+  complex<double>* vptr = dmp2->element_ptr(nocca, nocca);
 
   energy_ = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
@@ -151,14 +146,41 @@ void DMP2::compute() {
         for (size_t l = 0; l != nocc; ++l, ++tdata)
           *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
     energy_ += data->zdotc(buf).real() * 0.5;
+
+    // form Gia : TODO distribute
+    // Gia(D|ic) = BV(D|ja) G_c(ja|i)
+    // BV and gia are DFFullDist
+#if 0
+    const size_t offset = i*nocc;
+    gia->add_product(bv, buf, nocc, offset);
+#endif
+
+    // T(jb|ic) -> T_c(b,ij)
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
+    // D_ab = T^*(ja|ic) T(jb|ic)
+    zgemm3m_("N", "C", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
+    // D_ij = - T^*(ja|kc) T(ia|kc)
+//  std::for_each(data->data(), data->data()+data->size(), [](std::complex<double> a){ a = std::conj(a); });
+    zgemm3m_("C", "N", nocc, nocc, nvirt*nocc, -0.5, data->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis*2);
   }
 
-  cout << "    * assembly done" << endl << endl;
+  timer.tick_print("assembly (+ unrelaxed rdm)");
+  cout << endl;
   cout << "      DMP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
   energy_ += ref_->energy();
   cout << "      DMP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
+  {
+    auto d_unrelaxed = make_shared<ZMatrix>(*dmp2);
+    for (int i = 0; i != nocca; ++i) d_unrelaxed->element(i,i) += 1.0;
+    auto dao_unrelaxed = make_shared<const ZMatrix>(*ref->relcoeff() * *d_unrelaxed ^ *ref->relcoeff());
+    RelDipole dipole(geom_, dao_unrelaxed, "MP2 unrelaxed");
+    dipole.compute();
+  }
+
+  throw logic_error("not yet implemented");
+  return shared_ptr<GradFile>();
 }
 
 

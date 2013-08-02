@@ -27,13 +27,15 @@
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
+#include <functional> 
+#include <typeinfo>
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include <src/math/bfgs.h>
 #include <src/util/timer.h>
 #include <src/grad/gradeval.h>
 #include <src/wfn/construct_method.h>
+#include <src/math/lbfgs.h>
 
 namespace bagel {
 
@@ -45,7 +47,7 @@ class Opt {
     // options for T
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
-    std::shared_ptr<BFGS<GradFile>> bfgs_;
+    std::shared_ptr<const Reference> prev_ref_;
 
     int iter_;
 
@@ -55,93 +57,73 @@ class Opt {
 
     double thresh_;
 
-    static const int maxiter_ = 10;
+    int maxiter_;
     static const bool nodf = true;
     static const bool rotate = false;
-
-    // reference geometry
-    const std::shared_ptr<const GradFile> refgeom_;
 
     std::array<std::shared_ptr<const Matrix>,2> bmat_;
 
     // whether we use a delocalized internal coordinate or not
     bool internal_;
 
+    Timer timer_;
+
+    double evaluate(void *instance, const double *x, double *g, const int n, const double step);
+    using eval_type = std::function<double(void*, const double*, double*, const int, const double)>;
+
+    int progress(void *instance, const double *x, const double *g, const double fx, const double xnorm, const double gnorm,
+                 const double step, int n, int k, int ls) {
+      print_iteration(fx, gnorm, step, timer_.tick());
+      return 0;
+    }
+    using prog_type = std::function<int(void*, const double*, const double*, const double, const double, const double, const double, int, int, int)>;
+
   public:
     Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
-      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr), refgeom_(std::make_shared<GradFile>(geom->xyz())) {
-      bfgs_ = std::make_shared<BFGS<GradFile>>(std::make_shared<const GradFile>(geom->natom(), 1.0));
+      : idata_(idat), input_(inp), current_(geom), iter_(0), backup_stream_(nullptr) {
 
       internal_ = idat->get<bool>("internal", true);
+      maxiter_ = idat->get<int>("maxiter", 100);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
-      thresh_ = idat->get<double>("thresh", 1.0e-5);
+      thresh_ = idat->get<double>("thresh", 1.0e-6);
     }
 
-    bool next() {
-      if (iter_ > 0) mute_stdcout();
-      Timer timer;
+    ~Opt() {
+      print_footer();
+      current_->print_atoms();
+    }
 
-      // first calculate reference (if needed)
-      std::shared_ptr<const Reference> ref; // TODO in principle we can use ref from the previous iteration
-      auto m = input_->begin();
-      for ( ; m != --input_->end(); ++m) {
-        std::string title = (*m)->get<std::string>("title", ""); 
-        std::transform(title.begin(), title.end(), title.begin(), ::tolower);
-        if (title != "molecule") {
-          std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
-          if (!c) throw std::runtime_error("unknown method in optimization");
-          c->compute();
-          ref = c->conv_to_ref();
-        } else {
-          current_ = std::make_shared<const Geometry>(*current_, *m); 
-          if (ref) ref = ref->project_coeff(current_);
-        }
-      }
-      std::shared_ptr<const PTree> cinput = *m; 
+    void compute() {
+      assert(typeid(double) == typeid(double));
+      std::shared_ptr<const Matrix> xyz = current_->xyz();
+      int size = internal_ ? bmat_[0]->mdim() : xyz->size();
 
-      // then calculate gradients
-      GradEval<T> eval(cinput, current_, ref);
-      if (iter_ == 0) {
-        print_header();
-        mute_stdcout();
-      }
-      // current geom and grad in the cartesian coordinate
-      std::shared_ptr<const GradFile> cgrad = eval.compute();
-      std::shared_ptr<const GradFile> cgeom = std::make_shared<GradFile>(current_->xyz());
-      std::shared_ptr<GradFile> displ;
-      if (internal_) {
-        std::shared_ptr<const GradFile> dgeom = cgeom->transform(bmat_[0], true);
-        std::shared_ptr<const GradFile> dgrad = cgrad->transform(bmat_[1], true);
-        displ = bfgs_->extrapolate(dgrad, dgeom);
-        // TODO  I haven't understood why this update (internal displacement to cartesian) can be iterative!!
-#if 0
-        // self consistent cycle (Eq. 6 of JCP 105,192)
-        std::shared_ptr<GradFile> previous = displ;
-        for (int i = 0; i != maxiter_; ++i) {
-        }
-#else
-        displ = displ->transform(bmat_[1], false);
-#endif
-      } else {
-        displ = bfgs_->extrapolate(cgrad, cgeom);
-      }
-      const double gradnorm = cgrad->rms();
-      const double disnorm = displ->rms();
-      const bool converged = gradnorm < thresh_ && disnorm < thresh_;
-      if (!converged) {
-        displ->scale(-1.0);
-        if (iter_ == 0) displ->scale(0.01);
-        current_ = std::make_shared<const Geometry>(*current_, displ->xyz(), cinput);
-        current_->print_atoms();
+      double fx;
+      double *x = lbfgs_malloc(size);
+      lbfgs_parameter_t param;
+      lbfgs_parameter_init(&param);
+      param.epsilon = thresh_;
+      param.max_iterations = maxiter_; 
+      param.min_step = 1.0e-12;
+
+      auto displ = std::make_shared<GradFile>(xyz);
+      if (internal_)
+        displ = displ->transform(bmat_[0], true);
+
+      std::copy_n(displ->data()->data(), size, x);
+
+      eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
+      prog_type prog = std::bind(&Opt<T>::progress, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5,
+                                                          std::placeholders::_6, std::placeholders::_7, std::placeholders::_8, std::placeholders::_9, std::placeholders::_10);
+
+      int ret = lbfgs(size, x, &fx, eval, prog, NULL, &param);
+      if (ret) {
+        std::stringstream ss; ss << "L-BFGS solver failed to converge : " << ret;
+        throw std::runtime_error(ss.str());
       }
 
-      resume_stdcout();
-      print_iteration(eval.energy(), gradnorm, disnorm, timer.tick());
-
-      ++iter_;
-      if (converged) { print_footer(); current_->print_atoms(); }
-      return gradnorm < thresh_ && disnorm < thresh_;
+      lbfgs_free(x);
     }
 
     void print_footer() const { std::cout << std::endl << std::endl; };
@@ -171,6 +153,72 @@ class Opt {
     std::shared_ptr<const Geometry> geometry() const { return current_; }
 
 };
+
+
+template<class T>
+double Opt<T>::evaluate(void *instance, const double *x, double *g, const int n, const double step) {
+  std::shared_ptr<const Matrix> xyz = current_->xyz();
+
+  // first convert x to the geometry
+  auto displ = std::make_shared<GradFile>(current_->natom());
+  auto xx = x;
+  for (int i = 0; i != n; ++i, ++xx)
+    displ->data()->data(i) = *xx;
+
+  if (internal_)
+    displ = displ->transform(bmat_[1], false);
+
+  for (int i = 0; i != xyz->size(); ++i)
+    displ->data()->data(i) -= xyz->data(i);
+
+  if (iter_ > 0) mute_stdcout();
+
+  // current Geometry
+  current_ = std::make_shared<Geometry>(*current_, displ->data(), std::make_shared<const PTree>()); 
+
+  // first calculate reference (if needed)
+  std::shared_ptr<const PTree> cinput; 
+  std::shared_ptr<const Reference> ref;
+  if (iter_ == 0) {
+    auto m = input_->begin();
+    for ( ; m != --input_->end(); ++m) {
+      std::string title = (*m)->get<std::string>("title", ""); 
+      std::transform(title.begin(), title.end(), title.begin(), ::tolower);
+      if (title != "molecule") {
+        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        if (!c) throw std::runtime_error("unknown method in optimization");
+        c->compute();
+        ref = c->conv_to_ref();
+      } else {
+        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        if (ref) ref = ref->project_coeff(current_);
+      }
+    }
+    cinput = *m;
+  } else {
+    ref = prev_ref_->project_coeff(current_);
+    cinput = *input_->rbegin();
+  }
+
+  // then calculate gradients
+  GradEval<T> eval(cinput, current_, ref);
+  if (iter_ == 0) {
+    print_header();
+    mute_stdcout();
+  }
+  // current geom and grad in the cartesian coordinate
+  std::shared_ptr<const GradFile> cgrad = eval.compute();
+  if (internal_)
+    cgrad = cgrad->transform(bmat_[1], true);
+  std::copy_n(cgrad->data()->data(), n, g);
+
+  resume_stdcout();
+
+  prev_ref_ = eval.ref();
+  ++iter_;
+  return eval.energy(); 
+}
+
 
 }
 

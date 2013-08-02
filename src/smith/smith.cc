@@ -57,4 +57,10 @@ void Smith::compute() {
   // calculate unrelaxed dipole moment from dm
   algo_->dipole().compute();
 
+  // convert ci derivative tensor to civec
+  shared_ptr<Civec> deci = algo_->cider();
+  std::cout << "  * Printing ci derivative civec:" << std::endl;
+  deci->print(0.1e-15);
+  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << deci->ddot(*(algo_->ci0())) << std::endl;
+
 }

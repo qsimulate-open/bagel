@@ -121,6 +121,9 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     static const int Alpha = 0;
     static const int Beta = 1;
 
+    bool operator==(const Determinants& o) const
+      { return (norb_ == o.norb_ && nelea_ == o.nelea_ && neleb_ == o.neleb_ && compress_ == o.compress_); }
+
     // string size
     std::tuple<size_t, size_t> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }
 

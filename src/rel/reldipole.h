@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: naibatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: reldipole.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,33 +23,27 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_NAIBATCH_H
-#define __SRC_INTEGRAL_RYS_NAIBATCH_H
+#ifndef __SRC_REL_RELDIPOLE_H
+#define __SRC_REL_RELDIPOLE_H
 
-#include <src/integral/rys/naibatch_base.h>
+#include <string>
+#include <src/wfn/geometry.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
-class NAIBatch : public NAIBatch_base {
-
+class RelDipole {
   protected:
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const ZMatrix> density_;
+    std::string jobname_;
 
   public:
+    RelDipole(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> z, const std::string jobname = "") : geom_(g), density_(z), jobname_(jobname) { }
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  NAIBatch_base(_info, mol, 0, stack, 0, 0.0) {};
-
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  NAIBatch_base(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
-     ~NAIBatch() {};
-
-    /// compute a batch of integrals
-    void compute() override;
-
-    constexpr static int Nblocks() { return 1; }
+    std::array<double,3> compute();
 };
 
 }
 
 #endif
-

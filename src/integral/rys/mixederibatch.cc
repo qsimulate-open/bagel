@@ -40,7 +40,7 @@ MixedERIBatch::MixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, co
   assert(info[0]->dummy());
 
   size_block_ = shells_[0]->nbasis()*shells_[1]->nbasis()*shells_[2]->nbasis();
-  size_alloc_ = size_block_ * nblocks();
+  size_alloc_ = size_block_ * Nblocks();
   data_ = stack_->get(size_alloc_);
 }
 

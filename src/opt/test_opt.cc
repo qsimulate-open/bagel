@@ -83,7 +83,7 @@ std::vector<double> reference_uhf_opt() {
 std::vector<double> reference_rohf_opt() {
   std::vector<double> out(6);
   out[2] = 2.014163;
-  out[5] =-0.084976;
+  out[5] =-0.084977;
   return out;
 }
 std::vector<double> reference_ks_opt() {

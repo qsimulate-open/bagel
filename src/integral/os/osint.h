@@ -83,7 +83,7 @@ class OSInt : public Integral {
     OSInt(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSInt();
 
-    double* data(const int i) override { return data_; }
+    double* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
     const double* data() const { return data_; }
 
     // since this is convenient for gradient evaluation....

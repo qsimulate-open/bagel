@@ -64,7 +64,7 @@ class MixedERIBatch : public Integral {
     size_t size_alloc() const { return size_alloc_; }
 
     // need to return 3 blocks
-    constexpr static int nblocks() { return 3; }
+    constexpr static int Nblocks() { return 3; }
 };
 
 }

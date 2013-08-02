@@ -1,14 +1,14 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: smallnai.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: dmp2grad.h
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
+// The BAGEL package is free software; you can redistribute it and\/or modify
 // it under the terms of the GNU Library General Public License as published by
 // the Free Software Foundation; either version 2, or (at your option)
 // any later version.
@@ -24,25 +24,23 @@
 //
 
 
-#ifndef __SRC_REL_SMALLNAI_H
-#define __SRC_REL_SMALLNAI_H
+#ifndef __SRC_REL_DMP2GRAD_H
+#define __SRC_REL_DMP2GRAD_H
 
-#include <src/math/zmatrix.h>
-#include <src/molecule/matrix1earray.h>
+#include <src/rel/dmp2.h>
+#include <src/wfn/reference.h>
 
 namespace bagel {
 
-class SmallNAI : public Matrix1eArray<4> {
+class DMP2Grad : public DMP2 {
   protected:
-    void init() override;
 
   public:
-    SmallNAI(const std::shared_ptr<const Molecule>);
+    DMP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
+    void compute() override;
 
-    void print(const std::string n = "") const override;
-
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 };
 
 }

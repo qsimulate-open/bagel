@@ -47,43 +47,43 @@ void Optimize::compute() {
   if (method == "uhf") {
 
     auto opt = make_shared<Opt<UHF>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "rohf") {
 
     auto opt = make_shared<Opt<ROHF>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "hf") {
 
     auto opt = make_shared<Opt<SCF>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "ks") {
 
     auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "dhf") {
 
     auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "mp2") {
 
     auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_);
-    for (int i = 0; i != maxiter_; ++i)
-      if (opt->next()) break;
+    opt->compute();
+    geom_ = opt->geometry();
+
+  } else if (method == "dmp2") {
+
+    auto opt = make_shared<Opt<DMP2Grad>>(idata_, methodblock, geom_);
+    opt->compute();
     geom_ = opt->geometry();
 
   } else if (method == "casscf") {
@@ -92,13 +92,11 @@ void Optimize::compute() {
     if (methodblock->get<int>("nstate", 1) == 1) {
       if (algorithm == "superci" || algorithm == "") {
         auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_);
-        for (int i = 0; i != maxiter_; ++i)
-          if (opt->next()) break;
+        opt->compute();
         geom_ = opt->geometry();
       } else if (algorithm == "werner" || algorithm == "knowles") {
         auto opt = make_shared<Opt<WernerKnowles>>(idata_, methodblock, geom_);
-        for (int i = 0; i != maxiter_; ++i)
-          if (opt->next()) break;
+        opt->compute();
         geom_ = opt->geometry();
       } else {
         throw runtime_error("unknown CASSCF algorithm specified.");
@@ -107,8 +105,7 @@ void Optimize::compute() {
     } else {
       if (algorithm == "superci" || algorithm == "") {
         auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
-        for (int i = 0; i != maxiter_; ++i)
-          if (opt->next()) break;
+        opt->compute();
         geom_ = opt->geometry();
       } else {
         throw runtime_error("unknown CASSCF algorithm specified.");

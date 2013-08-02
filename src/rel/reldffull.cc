@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff, const bool apply_j) : RelDFBase(*df) {
+RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
 
   basis_ = df->basis();
   if (basis_.size() != 1)
@@ -38,20 +38,19 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
   const int index = basis_.front()->basis(1);
 
   // TODO this could be cheaper by using a zgemm3m-type algorithm
-  shared_ptr<DFFullDist> rfullbj = df->get_real()->compute_second_transform(rcoeff[index]);
-              rfullbj->daxpy(-1.0, df->get_imag()->compute_second_transform(icoeff[index]));
+  dffull_[0] = df->get_real()->compute_second_transform(rcoeff[index]);
+  dffull_[0]->daxpy(-1.0, df->get_imag()->compute_second_transform(icoeff[index]));
 
-  shared_ptr<DFFullDist> ifullbj = df->get_imag()->compute_second_transform(rcoeff[index]);
-              ifullbj->daxpy( 1.0, df->get_real()->compute_second_transform(icoeff[index]));
+  dffull_[1] = df->get_imag()->compute_second_transform(rcoeff[index]);
+  dffull_[1]->daxpy( 1.0, df->get_real()->compute_second_transform(icoeff[index]));
 
-  if (apply_j) {
-    dffull_[0] = rfullbj->apply_J();
-    dffull_[1] = ifullbj->apply_J();
-  } else {
-    dffull_[0] = rfullbj;
-    dffull_[1] = ifullbj;
-  }
 }
+
+
+RelDFFull::RelDFFull(array<shared_ptr<DFFullDist>,2> a, pair<int,int> cartesian, vector<shared_ptr<const SpinorInfo>> basis) : RelDFBase(cartesian) {
+  basis_ = basis;
+  dffull_ = a;
+}  
 
 
 RelDFFull::RelDFFull(const RelDFFull& o) : RelDFBase(o.cartesian_) {
@@ -61,7 +60,30 @@ RelDFFull::RelDFFull(const RelDFFull& o) : RelDFBase(o.cartesian_) {
 }
 
 
-void RelDFFull::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o) {
+shared_ptr<RelDFFull> RelDFFull::apply_J() const {
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->apply_J(), dffull_[1]->apply_J()}};
+  return make_shared<RelDFFull>(a, cartesian_, basis_); 
+}
+
+
+shared_ptr<RelDFFull> RelDFFull::clone() const {
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->clone(), dffull_[1]->clone()}};
+  return make_shared<RelDFFull>(a, cartesian_, basis_);
+}
+
+
+void RelDFFull::add_product(shared_ptr<const RelDFFull> o, const shared_ptr<const ZMatrix> a, const int nocc, const int offset) {
+  shared_ptr<const Matrix> ra = a->get_real_part();
+  shared_ptr<const Matrix> ia = a->get_real_part();
+  // taking the complex conjugate of "o"
+  dffull_[0]->add_product(o->dffull_[0], ra, nocc, offset, 1.0);
+  dffull_[0]->add_product(o->dffull_[1], ia, nocc, offset, 1.0);
+  dffull_[1]->add_product(o->dffull_[0], ra, nocc, offset, 1.0);
+  dffull_[1]->add_product(o->dffull_[1], ra, nocc, offset, -1.0);
+}
+
+
+void RelDFFull::zaxpy(complex<double> a, shared_ptr<const RelDFFull> o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
     dffull_[0]->daxpy(fac, o->dffull_[0]);
@@ -81,7 +103,7 @@ void RelDFFull::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o
 }
 
 
-void RelDFFull::scale(std::complex<double> a) {
+void RelDFFull::scale(complex<double> a) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
     dffull_[0]->scale(fac);
@@ -117,22 +139,16 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
 }
 
 
-unique_ptr<complex<double>[]> RelDFFull::form_4index_1fixed(shared_ptr<const RelDFFull> a, const double fac, const int i) const {
+shared_ptr<ZMatrix> RelDFFull::form_4index_1fixed(shared_ptr<const RelDFFull> a, const double fac, const int i) const {
   const size_t size = dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[0]->nocc1();
-  unique_ptr<double[]> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
-  {
-    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[1], fac, i);
-    daxpy_(size, 1.0, tmp.get(), 1, real.get(), 1);
-  }
-  unique_ptr<double[]> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
-  {
-    unique_ptr<double[]> tmp = dffull_[1]->form_4index_1fixed(a->dffull_[0], -fac, i);
-    daxpy_(size, 1.0, tmp.get(), 1, imag.get(), 1);
-  }
-  // TODO probably this is not the best implementation...
-  unique_ptr<complex<double>[]> out(new complex<double>[size]);
-  for (size_t i = 0; i != size; ++i) {
-    out[i] = complex<double>(real[i], imag[i]);
-  }
-  return move(out);
+  assert(size == dffull_[1]->nocc1() * dffull_[1]->nocc2() * a->dffull_[1]->nocc1());
+  assert(size == dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[1]->nocc1());
+
+  shared_ptr<Matrix> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
+  *real += *dffull_[1]->form_4index_1fixed(a->dffull_[1], -fac, i);
+
+  shared_ptr<Matrix> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
+  *imag += *dffull_[1]->form_4index_1fixed(a->dffull_[0], fac, i);
+
+  return make_shared<ZMatrix>(*real, *imag);
 }

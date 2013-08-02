@@ -101,8 +101,8 @@ void Grid::init() {
   vector<GridBasisTask> tasks;
   tasks.reserve(ngrid);
   for (size_t g = 0; g != ngrid; ++g) {
-    tasks.push_back(GridBasisTask(basis_->element_ptr(0,g), gradx_->element_ptr(0,g), grady_->element_ptr(0,g), gradz_->element_ptr(0,g),
-                                  data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_));
+    tasks.emplace_back(basis_->element_ptr(0,g), gradx_->element_ptr(0,g), grady_->element_ptr(0,g), gradz_->element_ptr(0,g),
+                                  data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
   }
   TaskQueue<GridBasisTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -117,9 +117,9 @@ array<shared_ptr<Matrix>,6> Grid::compute_grad2() const {
   vector<GridDeriv2Task> tasks;
   tasks.reserve(size());
   for (size_t g = 0; g != size(); ++g) {
-    tasks.push_back(GridDeriv2Task(out[0]->element_ptr(0,g), out[1]->element_ptr(0,g), out[2]->element_ptr(0,g),
+    tasks.emplace_back(out[0]->element_ptr(0,g), out[1]->element_ptr(0,g), out[2]->element_ptr(0,g),
                                    out[3]->element_ptr(0,g), out[4]->element_ptr(0,g), out[5]->element_ptr(0,g),
-                                   data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_));
+                                   data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
   }
   TaskQueue<GridDeriv2Task> tq(tasks);
   tq.compute(resources__->max_num_threads());

@@ -122,7 +122,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
     Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
     Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
 
-    shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
+    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
 
     tmp += gamma_A * (*Fmatrix) ^ gamma_B;
   }
@@ -133,7 +133,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
     Matrix gamma_B1 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
     Matrix gamma_B2 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
 
-    shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
 
     tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
   }
@@ -144,7 +144,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aET(DimerSubspace& AB, Dimer
     Matrix gamma_A2 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
     Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
 
-    shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
 
     tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
@@ -167,7 +167,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
     Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
     Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
 
-    shared_ptr<Matrix> Fmatrix = jop_->cross_mo1e();
+    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
 
     tmp += gamma_A * (*Fmatrix) ^ gamma_B;
   }
@@ -179,7 +179,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
     Matrix gamma_B1 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
     Matrix gamma_B2 = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
-    shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
 
     tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
   }
@@ -190,7 +190,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bET(DimerSubspace& AB, Dimer
     Matrix gamma_A2 = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
     Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
 
-    shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
 
     tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
@@ -216,7 +216,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abFlip(DimerSubspace& AB, Di
   Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
   Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
 
-  shared_ptr<Matrix> Kmatrix = form_coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp = gamma_A * (*Kmatrix) ^ gamma_B;
   tmp *= -1.0;
@@ -233,7 +233,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_abET(DimerSubspace& AB, Dime
   Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
   Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
 
-  shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
   tmp *= -1.0;
@@ -250,7 +250,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_aaET(DimerSubspace& AB, Dime
   Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
   Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
 
-  shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
   tmp *= -0.5;
@@ -267,7 +267,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_bbET(DimerSubspace& AB, Dime
   Matrix gamma_A = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);
   Matrix gamma_B = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
 
-  shared_ptr<Matrix> Jmatrix = form_coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
   tmp *= -0.5;

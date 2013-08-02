@@ -34,10 +34,15 @@ namespace bagel {
 
 class DimerJop : public Jop {
   protected:
+    // Array is big enough to store all possible coulomb matrices just for simplicity
+    std::array<std::shared_ptr<const Matrix>, 16> matrices_;
+
     std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_;
     std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_;
 
-    std::shared_ptr<Matrix> cross_mo1e_;
+    std::shared_ptr<const Matrix> cross_mo1e_;
+
+    std::pair<int, int> nact_;
 
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
@@ -51,8 +56,66 @@ class DimerJop : public Jop {
     double* mo2e_first() const { return monomer_mo2es_.first.get(); };
     double* mo2e_second() const { return monomer_mo2es_.second.get(); };
 
-    std::shared_ptr<Matrix> cross_mo1e() const { return cross_mo1e_; }
+    std::shared_ptr<const Matrix> cross_mo1e() const { return cross_mo1e_; }
+
+    template<int A, int B, int C, int D>
+    std::shared_ptr<const Matrix> coulomb_matrix();
+
+  private:
+    template <int unit> const int nact() const { return ( unit == 0 ? nact_.first : nact_.second ); }
+    template <int unit> const int active(const int a) const { return a + unit * nact_.first; }
+
+    template <int A, int B, int C, int D>
+    std::pair<int, int> index(const int a, const int b, const int c, const int d) const;
 };
+
+template<int A, int B, int C, int D>
+std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() {
+  // First check to see if it's already stored
+  const int cindex = A + 2*B + 4*C + 8*D;
+  if (matrices_[cindex]) {
+    return matrices_[cindex];
+  }
+  else {
+    const int nactA = nact_.first;
+    const int nactB = nact_.second;
+
+    int ijA = 1;
+    int unitA = 4 - (A + B + C + D);
+    for ( int i = 0; i < unitA; ++i ) ijA *= nactA;
+
+    int ijB = 1;
+    int unitB = A + B + C + D;
+    for ( int i = 0; i < unitB; ++i ) ijB *= nactB;
+
+    auto out = std::make_shared<Matrix>(ijA, ijB);
+
+    for(int d = 0; d < nact<D>(); ++d) {
+      for(int c = 0; c < nact<C>(); ++c) {
+        for(int b = 0; b < nact<B>(); ++b) {
+          for(int a = 0; a < nact<A>(); ++a) {
+            int iA, jB;
+            std::tie(iA, jB) = index<A,B,C,D>(a,b,c,d);
+
+            out->element(iA,jB) = mo2e_hz(active<A>(a), active<B>(b), active<C>(c), active<D>(d));
+          }
+        }
+      }
+    }
+
+    matrices_[cindex] = out;
+    return out;
+  }
+}
+
+template <int A, int B, int C, int D> std::pair<int, int> DimerJop::index(int a, int b, int c, int d) const {
+  int iA = 0, jB = 0;
+  if (A == 0) iA += a; else jB += a;
+  if (B == 0) iA = b + iA*nact_.first; else jB = b + jB*nact_.second;
+  if (C == 0) iA = c + iA*nact_.first; else jB = c + jB*nact_.second;
+  if (D == 0) iA = d + iA*nact_.first; else jB = d + jB*nact_.second;
+  return std::make_pair(iA,jB);
+}
 
 }
 

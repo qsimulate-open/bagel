@@ -88,8 +88,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   time.tick_print("3-index integral transform");
 
   // assemble
-  unique_ptr<double[]> buf(new double[nocc*nvirt*nocc]); // it is implicitly assumed that o^2v can be kept in core in each node
-  unique_ptr<double[]> buf2(new double[nocc*nvirt*nocc]);
+  auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
+  auto buf2 = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
   vector<double> eig_tm = ref_->eig();
   vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
 
@@ -100,14 +100,14 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   double ecorr = 0.0;
   for (size_t i = 0; i != nvirt; ++i) {
     // nocc * nvirt * nocc
-    unique_ptr<double[]> data = full->form_4index_1fixed(full, 1.0, i);
-    copy_n(data.get(), nocc*nvirt*nocc, buf.get());
-    copy_n(data.get(), nocc*nvirt*nocc, buf2.get());
+    shared_ptr<Matrix> data = full->form_4index_1fixed(full, 1.0, i);
+    *buf = *data;
+    *buf2 = *data;
 
     // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data, buf, nocc, nvirt, nocc);
-    double* tdata = buf.get();
-    double* bdata = buf2.get();
+    SMITH::sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
+    double* tdata = buf->data();
+    double* bdata = buf2->data();
     for (size_t j = 0; j != nocc; ++j) {
       for (size_t k = 0; k != nvirt; ++k) {
         for (size_t l = 0; l != nocc; ++l, ++tdata, ++bdata) {
@@ -117,22 +117,22 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
         }
       }
     }
-    ecorr += ddot_(nocc*nvirt*nocc, data, 1, buf, 1);
+    ecorr += data->ddot(buf);
 
     // form Gia : TODO distribute
     // Gia(D|ic) = BV(D|ja) G_c(ja|i)
     // BV and gia are DFFullDist
     const size_t offset = i*nocc;
-    gia->set_product(bv, buf, nocc, offset);
+    gia->add_product(bv, buf, nocc, offset);
 
     // G(ja|ic) -> G_c(a,ij)
-    SMITH::sort_indices<1,2,0,0,1,1,1>(buf, data, nocc, nvirt, nocc);
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf->data(), data->data(), nocc, nvirt, nocc);
     // T(jb|ic) -> T_c(b,ij)
-    SMITH::sort_indices<1,2,0,0,1,1,1>(buf2, buf, nocc, nvirt, nocc);
+    SMITH::sort_indices<1,2,0,0,1,1,1>(buf2->data(), buf->data(), nocc, nvirt, nocc);
     // D_ab = G(ja|ic) T(jb|ic)
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf.get(), nvirt, data.get(), nvirt, 1.0, vptr, nbasis);
+    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis);
     // D_ij = - G(ja|kc) T(ia|kc)
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf.get(), nvirt*nocc, data.get(), nvirt*nocc, 1.0, optr, nbasis);
+    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis);
   }
 
   time.tick_print("assembly (+ unrelaxed rdm)");

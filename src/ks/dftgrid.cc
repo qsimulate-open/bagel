@@ -128,8 +128,8 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   vector<ExcVxcTask> tasks;
   for (auto& i : table) {
     const size_t n = i.first;
-    tasks.push_back(ExcVxcTask(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
-                               exc.get()+n, vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func));
+    tasks.emplace_back(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
+                               exc.get()+n, vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func);
   }
   TaskQueue<ExcVxcTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -182,8 +182,8 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
   vector<VxcTask> tasks;
   for (auto& i : table) {
     const size_t n = i.first;
-    tasks.push_back(VxcTask(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
-                            vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func));
+    tasks.emplace_back(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
+                            vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func);
   }
   TaskQueue<VxcTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -357,7 +357,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
           const double xg = x[j] * rr + a->position(0);
           const double yg = y[j] * rr + a->position(1);
           const double zg = z[j] * rr + a->position(2);
-          tasks.push_back(FuzzyTask(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__, this, cnt++));
+          tasks.emplace_back(combined, a, xg, yg, zg, w[j]*w_ch[i]*pow(rbs,3)*4.0*pi__, this, cnt++);
         }
       }
     }

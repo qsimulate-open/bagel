@@ -240,10 +240,10 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   // two electron part
   for (auto& b : intb)
-    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex));
+    tasks.emplace_back(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex);
   // one electron part
   for (auto& b : int_det->stringb())
-    tasks.push_back(DistBBTask(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex));
+    tasks.emplace_back(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex);
 
   TaskQueue<DistBBTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -399,7 +399,7 @@ void DistFCI::const_denom() {
   vector<HZDenomTask> tasks;
   tasks.reserve(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
-    tasks.push_back(HZDenomTask(iter, denom_->det()->stringa(i), det_, jop.get(), kop.get(), h.get()));
+    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop.get(), kop.get(), h.get());
     iter += det()->stringb().size();
   }
 

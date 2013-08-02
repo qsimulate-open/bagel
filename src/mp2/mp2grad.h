@@ -38,7 +38,7 @@ class MP2Grad : public MP2 {
   public:
     MP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void compute();
+    void compute() override;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 };

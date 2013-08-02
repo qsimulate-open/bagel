@@ -58,7 +58,7 @@ class KS : public SCF_base {
 
       std::cout << std::endl;
 
-      if (re) throw std::runtime_error("we have not implemented DFT with a reference");
+      if (re) std::cout << " **** we have not implemented DFT with a reference ****";
     }
 
     virtual void compute() override;

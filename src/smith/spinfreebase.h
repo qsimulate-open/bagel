@@ -80,6 +80,7 @@ class SpinFreeMethod {
     // ci derivative target vector
     std::shared_ptr<Tensor<T>> deci_; 
     std::shared_ptr<Tensor<T>> ci_coeff_;
+    std::shared_ptr<const Civec> ci0_;     
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -534,6 +535,7 @@ class SpinFreeMethod {
       // TODO this should be updated
       // length of the ci expansion
       std::shared_ptr<const Civec> ci0 = r->civectors()->data(0);
+      ci0_ = ci0;
       size_t ci_size = ci0->size();
       IndexRange ci(ci_size, max);
       ci_ = ci;
@@ -707,6 +709,13 @@ class SpinFreeMethod {
       return den1_->matrix();
     }
 
+    std::shared_ptr<Civec> cider() const {
+      return deci_->civec(ci0_);
+    }
+
+    std::shared_ptr<const Civec> ci0() const {
+      return ci0_;
+    }
 
     Dipole dipole() const {
       std::shared_ptr<const Matrix> dm1 =  den1_->matrix();

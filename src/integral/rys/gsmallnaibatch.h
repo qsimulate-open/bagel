@@ -28,7 +28,7 @@
 #define __SRC_INTEGRAL_RYS_GSMALLNAIBATCH_H
 
 #include <src/grad/gradfile.h>
-#include <src/integral/rys/smallnaibatch.h>
+#include <src/integral/smallints1e.h>
 
 namespace bagel {
 
@@ -56,7 +56,7 @@ class GSmallNAIBatch {
     GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i);
 
     // computes derivative NAI over Cartesian (i.e., RI) basis functions.
-    void compute(); // override;
+    void compute();
 
     // multiplies S^-1P to density and contracts with cartesian integrals.
     std::shared_ptr<GradFile> compute_gradient(std::array<std::shared_ptr<const Matrix>,6> d) const;
