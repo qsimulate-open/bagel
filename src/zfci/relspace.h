@@ -1,10 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: space.h
+// Filename: relspace.h
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Modified by: Shane Parker <shane.parker@u.northwestern.edu>
+// Author: Michael Caldwell <caldwell@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -28,63 +27,22 @@
 #ifndef __SRC_ZFCI_RELSPACE_H
 #define __SRC_ZFCI_RELSPACE_H
 
-#include <memory>
-#include <string>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <map>
-#include <bitset>
-#include <cassert>
-
-#include <src/util/constants.h>
-#include <src/fci/determinants.h>
+#include <src/fci/space_base.h>
 
 namespace bagel {
 
-/************************************************************************************
-*     Note: I've been using as many of the member functions of bitset as possible,  *
-*        not necessarily because I think it will be faster (I have no idea) but     *
-*        because I just want to. I can always change back to faster routines        *
-************************************************************************************/
-
 // implements spaces that contain all determinants |PQ> for a given Kramers index -N/2 to N/2
-class RelSpace {
+class RelSpace : public Space_Base {
   protected:
-    // assuming that the number of active orbitals are the same in "alpha" and "beta."
-    const int norb_;
-
-    const int nunbar_; // reference number of unbarred electrons
-    const int nbar_; // reference number of barred electrons
-
-    const bool mute_;
-
-    std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
-
-    int nelec() { return nunbar_ + nbar_; }
-    int kramers(int m) { return (nunbar_ - nbar_ + 2*m)/2; }
+    int nelec() { return nelea_ + neleb_; }
+    int kramers(int m) { return (nelea_ - neleb_ + 2*m)/2; }
 
   public:
-#if 0
-    Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = true);
-#endif
-    RelSpace(const int norb, const int nunbar, const int nbar, const bool mute = true);
-    ~RelSpace() {};
-
-    // static constants
-    static const int Unbar = 0;
-    static const int Bar = 1;
-
-    std::shared_ptr<Determinants> basedet() { return finddet(0); };
-
-    std::shared_ptr<Determinants> finddet(int m) {
-      // TODO only for temporary debugging purposes
-      assert(abs(m)<=abs(nelec()/2));
-      auto idet = detmap_.find(m); return idet->second; };
+    RelSpace(std::shared_ptr<const Determinants> det, const bool mute = true);
+    RelSpace(const int norb, const int nelea, const int neleb, const bool mute = true);
 
   private:
-    void common_init();
+    void common_init() override;
 };
 
 }
