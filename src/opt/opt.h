@@ -47,6 +47,7 @@ class Opt {
     // options for T
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
+    std::shared_ptr<const Reference> prev_ref_;
 
     int iter_;
 
@@ -85,7 +86,7 @@ class Opt {
       maxiter_ = idat->get<int>("maxiter", 100);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
-      thresh_ = idat->get<double>("thresh", 1.0e-5);
+      thresh_ = idat->get<double>("thresh", 1.0e-6);
     }
 
     ~Opt() {
@@ -172,22 +173,28 @@ double Opt<T>::evaluate(void *instance, const double *x, double *g, const int n,
   current_ = std::make_shared<Geometry>(*current_, displ->data(), std::make_shared<const PTree>()); 
 
   // first calculate reference (if needed)
-  std::shared_ptr<const Reference> ref; // TODO in principle we can use ref from the previous iteration
-  auto m = input_->begin();
-  for ( ; m != --input_->end(); ++m) {
-    std::string title = (*m)->get<std::string>("title", ""); 
-    std::transform(title.begin(), title.end(), title.begin(), ::tolower);
-    if (title != "molecule") {
-      std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
-      if (!c) throw std::runtime_error("unknown method in optimization");
-      c->compute();
-      ref = c->conv_to_ref();
-    } else {
-      current_ = std::make_shared<const Geometry>(*current_, *m); 
-      if (ref) ref = ref->project_coeff(current_);
+  std::shared_ptr<const PTree> cinput; 
+  std::shared_ptr<const Reference> ref;
+  if (iter_ == 0) {
+    auto m = input_->begin();
+    for ( ; m != --input_->end(); ++m) {
+      std::string title = (*m)->get<std::string>("title", ""); 
+      std::transform(title.begin(), title.end(), title.begin(), ::tolower);
+      if (title != "molecule") {
+        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        if (!c) throw std::runtime_error("unknown method in optimization");
+        c->compute();
+        ref = c->conv_to_ref();
+      } else {
+        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        if (ref) ref = ref->project_coeff(current_);
+      }
     }
+    cinput = *m;
+  } else {
+    ref = prev_ref_->project_coeff(current_);
+    cinput = *input_->rbegin();
   }
-  std::shared_ptr<const PTree> cinput = *m; 
 
   // then calculate gradients
   GradEval<T> eval(cinput, current_, ref);
@@ -203,6 +210,7 @@ double Opt<T>::evaluate(void *instance, const double *x, double *g, const int n,
 
   resume_stdcout();
 
+  prev_ref_ = eval.ref();
   ++iter_;
   return eval.energy(); 
 }

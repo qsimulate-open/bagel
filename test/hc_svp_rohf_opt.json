@@ -14,6 +14,7 @@
 
 {
   "title" : "optimize",
+  "thresh" : 1.0e-8,
   "method" : [ {
     "title" : "rohf", 
     "nact" : 1,

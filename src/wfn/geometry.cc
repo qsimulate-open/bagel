@@ -739,8 +739,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
       std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
         const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
+#if 0
         cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
                 "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl;
+#endif
         // I found explicit formulas in http://www.ncsu.edu/chemistry/franzen/public_html/nca/int_coord/int_coord.html (thanking the author)
         // 1=A=i, 2=O=c, 3=B=j
         Quatern<double> op = (*c)->atom()->position();
@@ -776,8 +778,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
           if (*c == *k || *k == *i) continue;
+#if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
+#endif
           // following J. Molec. Spec. 44, 599 (1972)
           // a=i, b=c, c=j, d=k
           Quatern<double> ap = (*i)->atom()->position();
