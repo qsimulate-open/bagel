@@ -55,8 +55,6 @@ ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const C
 }
 
 
-ZMOFile::~ZMOFile() {
-}
 double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
