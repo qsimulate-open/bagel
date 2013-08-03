@@ -24,10 +24,19 @@
 //
 
 
-//plan is to replace zmofile with relmofile because zmofile does not have complex integrals anyway
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <cmath>
+#include <src/util/f77.h>
+#include <src/zfci/relmofile.h>
 
+using namespace std;
+using namespace bagel;
+
+//need to replace core_fock in the constructors
 RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
-: geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(ref_->coeff()) {
+: ZMOFile_Base(ref, method), core_dfock_(make_shared<ZMatrix>(2*geom_->nbasis(), 2*geom_->nbasis())) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -36,7 +45,7 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
 }
 
 RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
-: hz_(false), geom_(ref->geom()), ref_(ref), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
+: hz_(false), ZMOFile_Base(ref, c, method), core_dfock_(make_shared<ZMatrix>(2*geom_->nbasis(), 2*geom_->nbasis())) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -44,11 +53,8 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<con
   hz_ = (method=="HZ");
 }
 
-RelMOFile::~RelMOFile() {
-}
-
 //one line change in order to add a function to block diagonalize
-double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
+double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
@@ -63,20 +69,21 @@ double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   unique_ptr<complex<double>[]> buf2e = compute_mo2e(nstart, nfence);
 
-  //block diaganolize according kramers symmetry
-  //
-  //
+  // TODO block diaganolize according kramers symmetry
+  //kramers_block(buf1e, buf2e);
 
   compress(buf1e, buf2e);
   return core_energy;
 }
 
+void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
 //
-//Function for block diagonalization of integrals
+//block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
 //
+}
 
-//does not need to be changed as long as product of block diagonalization is same type and format
-void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
+//does not need to be changed as long as kramers_block is in the same format
+void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
 
   const int nocc = nocc_;
   sizeij_ = nocc*nocc;
@@ -100,8 +107,7 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
 //Relativistic 1 and 2e functions in progress
 //
 //inputs?
-//ZJOP or ZMOFILE needs Geometry geom and Reference ref
-tuple<shared_ptr<const ZMatrix>, double> ZJop::compute_mo1e(const int nstart, const int nfence) {
+tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
   const size_t nbasis = geom_->nbasis();
 
   double core_energy = 0;
@@ -111,21 +117,19 @@ tuple<shared_ptr<const ZMatrix>, double> ZJop::compute_mo1e(const int nstart, co
   auto relcoeff = ref->relcoeff();
 
   auto tmp = unique_ptr<complex<double>[]>(new complex<double>[8*nbasis*nbasis]);
-  auto out = make_shared<ZMatrix>(2*nbasis, 2*nbasis);
   //TODO conjugated?
   // Hij = relcoeff(T) * relhcore * relcoeff
   zgemm3m(c, n, 2*nbasis, 4*nbasis, 4*nbasis, relcoeff->data(), 2*nbasis, relhcore->data(), 4*nbasis, tmp->get(), 2*nbasis);
-  zgemm3m(n, n, 2*nbasis, 4*nbasis, 4*nbasis, tmp->get(), 2*nbasis, relcoeff->data(), 4*nbasis, out->data(), 2*nbasis);
+  zgemm3m(n, n, 2*nbasis, 4*nbasis, 4*nbasis, tmp->get(), 2*nbasis, relcoeff->data(), 4*nbasis, core_dfock_->data(), 2*nbasis);
 
   //TODO include some density adjustment? see zmofile
   core_energy = relhcore.trace();
 
-  return make_tuple(out, core_energy);
+  return make_tuple(core_dfock_, core_energy);
 }
-
 //inputs?
-unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfence) {
-
+unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
+#if 0
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nbasis = geom_->nbasis();
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
@@ -181,7 +185,7 @@ unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfe
 //end mp2 copied code
 
   // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
-
-
+#endif
+    auto out = unique_ptr<new complex<double>[4*nbasis*4*nbasis]>
+    return out;
 }
-

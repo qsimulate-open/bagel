@@ -32,28 +32,24 @@
 
 namespace bagel {
 
-//TODO Replace core_fock with proper dirac-fock analogue
 class RelMOFile : public ZMOFile_Base {
 
   protected:
-#if 0
-    std::shared_ptr<Matrix> core_fock_;
+    std::shared_ptr<ZMatrix> core_dfock_;
     // creates integral files and returns the core energy.
-#endif
     double create_Jiiii(const int, const int) override;
-    // this sets mo1e_, core_fock_ and returns a core energy
+    // this sets mo1e_, core_dfock_ and returns a core energy
     virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
+    void kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e);
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
-#if 0
-    std::shared_ptr<const Matrix> core_fock() const { return core_fock_; };
-    double* core_fock_ptr() { return core_fock_->data(); };
-    const double* core_fock_ptr() const { return core_fock_->data(); };
-#endif
+    std::shared_ptr<const ZMatrix> core_fock() const { return core_dfock_; };
+    complex<double>* core_dfock_ptr() { return core_dfock_->data(); };
+    const std::complex<double>* core_dfock_ptr() const { return core_dfock_->data(); };
 };
 
 class RelJop : public RelMOFile {
@@ -67,7 +63,7 @@ class RelJop : public RelMOFile {
       : RelMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 
-class RelHtilde : public ZHtilde_Base, RelMOFile {
+class RelHtilde : public ZHtilde_Base, public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };

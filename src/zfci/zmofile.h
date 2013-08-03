@@ -64,7 +64,7 @@ class ZJop : public ZMOFile {
       : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 
-class ZHtilde : public ZHtilde_Base, ZMOFile {
+class ZHtilde : public ZHtilde_Base, public ZMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
