@@ -42,12 +42,6 @@
 
 namespace bagel {
 
-/************************************************************************************
-*     Note: I've been using as many of the member functions of bitset as possible,  *
-*        not necessarily because I think it will be faster (I have no idea) but     *
-*        because I just want to. I can always change back to faster routines        *
-************************************************************************************/
-
 // implements a space that contains multiple determinants made by modification of a reference
 class Space_Base {
   protected:

@@ -24,7 +24,6 @@
 //
 
 
-
 #ifndef __BAGEL_ZFCI_ZMOFILE_H
 #define __BAGEL_ZFCI_ZMOFILE_H
 
@@ -45,7 +44,6 @@ class ZMOFile : public ZMOFile_Base {
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
-    std::shared_ptr<const Coeff> coeff_;
   public:
     ZMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     ZMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
