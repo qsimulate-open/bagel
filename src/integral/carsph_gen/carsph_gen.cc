@@ -136,7 +136,7 @@ int main() {
 //\n\
 // The BAGEL package is free software; you can redistribute it and/or modify\n\
 // it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 2, or (at your option)\n\
+// the Free Software Foundation; either version 3, or (at your option)\n\
 // any later version.\n\
 //\n\
 // The BAGEL package is distributed in the hope that it will be useful,\n\
