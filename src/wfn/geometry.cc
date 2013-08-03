@@ -691,6 +691,44 @@ class Node {
 
 using namespace bagel::geometry;
 
+namespace bagel {
+namespace geometry {
+static double lindh_alpha(int i, int j) {
+  double out = 0.0;
+  if (i <= 2) {
+    if (j <= 2) out = 1.0;
+    else if (j <= 10) out = 0.3949;
+    else out = 0.3949;
+  } else if (i <= 10) {
+    if (j <= 2) out = 0.3949;
+    else if (j <= 10) out = 0.2800;
+    else out = 0.2800;
+  } else {
+    if (j <= 2) out = 0.3949;
+    else if (j <= 10) out = 0.2800;
+    else out = 0.2800;
+  }
+  return out;
+} 
+static double lindh_r(int i, int j) {
+  double out = 0.0;
+  if (i <= 2) {
+    if (j <= 2) out = 1.35;
+    else if (j <= 10) out = 2.10;
+    else out = 2.53;
+  } else if (i <= 10) {
+    if (j <= 2) out = 2.10;
+    else if (j <= 10) out = 2.87;
+    else out = 3.4;
+  } else {
+    if (j <= 2) out = 2.53;
+    else if (j <= 10) out = 3.4;
+    else out = 3.4;
+  }
+  return out;
+} 
+}}
+
 array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
 
@@ -704,13 +742,16 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
     nodes.push_back(make_shared<Node>(*i, n));
   }
 
+  vector<double> hessprim;
+  hessprim.reserve(natom()*3 * 10);
+
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     const double radiusi = (*i)->atom()->radius();
     auto j = i;
     for (++j ; j != nodes.end(); ++j) {
-      // TODO hardwiring 2.0 is NOT a good practice
       const double radiusj = (*j)->atom()->radius();
+
       if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
@@ -728,6 +769,11 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         current[3*(*j)->num()+1] = -jp[2];
         current[3*(*j)->num()+2] = -jp[3];
         out.push_back(current);
+
+        // see Lindh CPL 241 (1995) 423
+        const int ii = (*i)->atom()->atom_number();
+        const int jj = (*j)->atom()->atom_number();
+        hessprim.push_back(0.45 * exp(lindh_alpha(ii,jj)*(pow(lindh_r(ii,jj),2) - pow((*i)->atom()->distance((*j)->atom()), 2))));
       }
     }
   }
@@ -765,6 +811,13 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
           current[3*(*c)->num() + ic] = st2[ic+1];
         }
         out.push_back(current);
+
+        // see Lindh CPL 241 (1995) 423
+        const int ii = (*i)->atom()->atom_number();
+        const int jj = (*j)->atom()->atom_number();
+        const int cc = (*c)->atom()->atom_number();
+        hessprim.push_back(0.15 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
+                                * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2))));
       }
     }
   }
@@ -818,6 +871,15 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
             current[3*(*k)->num() + ic] = sd[ic+1];
           }
           out.push_back(current);
+
+          // see Lindh CPL 241 (1995) 423
+          const int ii = (*i)->atom()->atom_number();
+          const int jj = (*j)->atom()->atom_number();
+          const int cc = (*c)->atom()->atom_number();
+          const int kk = (*k)->atom()->atom_number();
+          hessprim.push_back(0.005 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
+                                   * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2)))
+                                   * exp(lindh_alpha(jj,kk)*(pow(lindh_r(jj,kk),2) - pow((*j)->atom()->distance((*k)->atom()), 2))));
         }
       }
     }
@@ -832,31 +894,40 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
-  auto bb = make_shared<Matrix>(bdag % bdag * (-1.0));
+  Matrix bb = bdag % bdag * (-1.0);
   unique_ptr<double[]> eig(new double[primsize]);
-  bb->diagonalize(eig.get());
+  bb.diagonalize(eig.get());
 
-  int ninternal = 0;
-  for (int i = 0; i != primsize; ++i) {
-    if (fabs(eig[i]) > numerical_zero__*::pow(10.0,5)) {
-      ++ninternal;
-      eig[i] *= -1.0;
-    } else {
-      break;
-    }
+  int ninternal = max(cartsize-6,1);
+  for (int i = 0; i != ninternal; ++i) {
+    eig[i] *= -1.0;
+    if (eig[i] < 1.0e-10)
+      cout << "       ** caution **  small eigenvalue " << eig[i] << endl;
   }
   cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
-  if (ninternal != cartsize-6)
-    cout << "       ** caution **  the dimention of internal coordinates is not the same as 3*natom" << endl;
 
   // form B = U^+ Bprim
-  auto bnew = make_shared<Matrix>(bdag * *bb->slice(0,ninternal));
+  Matrix bbslice = *bb.slice(0,ninternal);
+  auto bnew = make_shared<Matrix>(bdag * bbslice);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
   auto bdmnew = make_shared<Matrix>(cartsize, ninternal);
   for (int i = 0; i != ninternal; ++i)
     for (int j = 0; j != cartsize; ++j)
       bdmnew->element(j,i) = bnew->element(j,i) / eig[i];
+
+  // compute hessian
+  Matrix scale = bbslice;
+  for (int i = 0; i != ninternal; ++i) {
+    for (int j = 0; j != primsize; ++j) {
+      scale.element(j,i) *= hessprim[j];
+    }
+  }
+  Matrix hess = bbslice % scale;
+  hess.sqrt();
+  *bnew = *bnew * hess;
+  hess.inverse();
+  *bdmnew = *bdmnew * hess;
 
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
