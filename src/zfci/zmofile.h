@@ -65,18 +65,13 @@ class ZJop : public ZMOFile {
       : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 
-class ZHtilde : public ZMOFile {
+class ZHtilde : public ZHtilde_Base, ZMOFile {
   protected:
-    // temp storage
-    std::shared_ptr<const ZMatrix> h1_tmp_;
-    std::unique_ptr<std::complex<double>[]> h2_tmp_;
-
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
-
   public:
     ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
-      : ZMOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
+      : ZHtilde_Base(h1, std::move(h2)), ZMOFile(b) {
       core_energy_ = create_Jiiii(c, d);
     }
 };

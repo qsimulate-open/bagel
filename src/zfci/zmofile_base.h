@@ -24,7 +24,6 @@
 //
 
 
-
 #ifndef __BAGEL_ZFCI_ZMOFILE_BASE_H
 #define __BAGEL_ZFCI_ZMOFILE_BASE_H
 
@@ -109,33 +108,19 @@ class ZMOFile_Base {
               std::cout << i << " " << j << " " << k << " " << l << " " << std::setprecision(8) << mo2e_kh(i,j,k,l) << std::endl;
     }
 };
-# if 0
-class ZJop : public ZMOFile {
-  protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
-  public:
-    ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
-    ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
-      : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
-};
-class ZHtilde : public ZMOFile {
+
+class ZHtilde_Base {
   protected:
     // temp storage
     std::shared_ptr<const ZMatrix> h1_tmp_;
     std::unique_ptr<std::complex<double>[]> h2_tmp_;
 
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
-
   public:
-    ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
-      : ZMOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
-      core_energy_ = create_Jiiii(c, d);
-    }
+    ZHtilde_Base(std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
+      : h1_tmp_(h1), h2_tmp_(std::move(h2)) { }
 };
-#endif
+
+
 }
 
 #endif
