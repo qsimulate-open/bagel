@@ -10,9 +10,9 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 2, or (at your option)
+// the Free Software Foundation; either version 3, or (at your option)
 // any later version.
 //
 // The BAGEL package is distributed in the hope that it will be useful,
@@ -32,12 +32,6 @@
 #include <src/fci/space_base.h>
 
 namespace bagel {
-
-/************************************************************************************
-*     Note: I've been using as many of the member functions of bitset as possible,  *
-*        not necessarily because I think it will be faster (I have no idea) but     *
-*        because I just want to. I can always change back to faster routines        *
-************************************************************************************/
 
 // implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
 class Space : public Space_Base {

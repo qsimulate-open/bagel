@@ -3,14 +3,14 @@
 // Filename: bfgs.h
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki.toru@gmail.com>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and\/or modify
+// The BAGEL package is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 2, or (at your option)
+// the Free Software Foundation; either version 3, or (at your option)
 // any later version.
 //
 // The BAGEL package is distributed in the hope that it will be useful,

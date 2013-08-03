@@ -43,7 +43,7 @@ int main() {
   out << "//" << endl;
   out << "// The BAGEL package is free software; you can redistribute it and/or modify" << endl;
   out << "// it under the terms of the GNU Library General Public License as published by" << endl;
-  out << "// the Free Software Foundation; either version 2, or (at your option)" << endl;
+  out << "// the Free Software Foundation; either version 3, or (at your option)" << endl;
   out << "// any later version." << endl;
   out << "//" << endl;
   out << "// The BAGEL package is distributed in the hope that it will be useful," << endl;
