@@ -106,8 +106,8 @@ double meh_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
 BOOST_AUTO_TEST_CASE(MEH_GROUND_STATE) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.319548355058));
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28040890));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.319548355058, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28040890, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

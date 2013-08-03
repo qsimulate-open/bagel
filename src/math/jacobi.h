@@ -33,6 +33,8 @@
 #include <memory>
 #include <list>
 #include <src/math/matrix.h>
+#include <src/math/jacobi_pairs.h>
+#include <src/input/input.h>
 #include <src/util/constants.h>
 
 namespace bagel {
@@ -41,12 +43,22 @@ class Jacobi_base {
   protected:
     std::shared_ptr<Matrix> Q_; // Stores the eigenvectors
 
+    JacobiPairs sweeper_;
+
     const int nbasis_;
     const int nstart_;
     const int norb_;
 
   public:
-    Jacobi_base(std::shared_ptr<Matrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {};
+    Jacobi_base(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {
+      if (norb != 0 ) {
+        std::string pair_generator = input->get<std::string>("pairs", "roundrobin");
+        if ( pair_generator == "roundrobin" || pair_generator == "rr" ) sweeper_ = JacobiRoundRobin(nstart, nstart + norb);
+        else if (pair_generator == "oddeven" || pair_generator == "oe" ) sweeper_ = JacobiOddEven(nstart, nstart + norb);
+        else if (pair_generator == "ring") sweeper_ = JacobiRing(nstart, nstart + norb);
+        else throw std::runtime_error(std::string("Unrecognized input for \"pair\" in Jacobi routine: \"") + pair_generator + std::string("\""));
+      }
+    }
 
     virtual void rotate(const int k, const int l) = 0;
     virtual void sweep();
@@ -63,7 +75,7 @@ class JacobiDiag : public Jacobi_base {
     std::shared_ptr<Matrix> A_; // The matrix to be diagonalized
 
   public:
-    JacobiDiag(std::shared_ptr<Matrix> A, std::shared_ptr<Matrix> Q) : Jacobi_base(Q), A_(A) {};
+    JacobiDiag(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> A, std::shared_ptr<Matrix> Q) : Jacobi_base(input, Q), A_(A) {};
 
     void rotate(const int k, const int l) override;
 };
@@ -74,8 +86,8 @@ class JacobiPM : public Jacobi_base {
     std::vector<std::pair<int, int>> atom_bounds_;
 
   public:
-    JacobiPM(std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
-      Jacobi_base(coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {};
+    JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
+      Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {};
 
     void rotate(const int k, const int l) override;
 };
