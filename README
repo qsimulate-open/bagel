@@ -1,6 +1,12 @@
-BAGEL -- Freshly leavened quantum chemistry
+BAGEL, Brilliantly Advanced General Electronic-structure Library
+(Northwestern University, Evanston, IL, 2012)
 
-Authors: see the AUTHORS file
+https://github.com/nubakery/bagel
+
+Authors:
+See the AUTHORS file
 
 Please check out the BAGEL Wiki
-https://github.com/shiozaki/BAGEL/wiki
+https://github.com/nubakery/bagel/wiki
+
+License: GPLv3
