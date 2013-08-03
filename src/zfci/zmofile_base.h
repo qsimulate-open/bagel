@@ -72,8 +72,6 @@ class ZMOFile_Base {
     ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::shared_ptr<const Coeff> c, const std::string method = std::string("KH")) :
       hz_(false), geom_(ref->geom()), ref_(ref), coeff_(c) { }
 
-    ~ZMOFile_Base();
-
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 
     int sizeij() const { return sizeij_; };

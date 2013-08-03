@@ -47,7 +47,6 @@ class ZMOFile : public ZMOFile_Base {
   public:
     ZMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     ZMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
-    ~ZMOFile();
 
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; };
     double* core_fock_ptr() { return core_fock_->data(); };
