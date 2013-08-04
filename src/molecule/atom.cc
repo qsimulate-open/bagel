@@ -410,7 +410,5 @@ shared_ptr<const Atom> Atom::relativistic() const {
   return atom;
 }
 
-
-double Atom::radius() const {
-  return atommap_.radius(name_);
-}
+double Atom::radius() const { return atommap_.radius(name_); }
+double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
