@@ -742,9 +742,6 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
     nodes.push_back(make_shared<Node>(*i, n));
   }
 
-  vector<double> hessprim;
-  hessprim.reserve(natom()*3 * 10);
-
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     const double radiusi = (*i)->atom()->radius();
@@ -757,23 +754,25 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         (*j)->add_connected(*i);
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
+
+        // see Lindh CPL 241 (1995) 423
+        const int ii = (*i)->atom()->atom_number();
+        const int jj = (*j)->atom()->atom_number();
+        const double modelhess = 0.45 * exp(lindh_alpha(ii,jj)*(pow(lindh_r(ii,jj),2) - pow((*i)->atom()->distance((*j)->atom()), 2)));
+
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
-        current[3*(*i)->num()+0] =  jp[1];
-        current[3*(*i)->num()+1] =  jp[2];
-        current[3*(*i)->num()+2] =  jp[3];
-        current[3*(*j)->num()+0] = -jp[1];
-        current[3*(*j)->num()+1] = -jp[2];
-        current[3*(*j)->num()+2] = -jp[3];
+        const double fac = sqrt(modelhess);
+        current[3*(*i)->num()+0] =  jp[1]*fac;
+        current[3*(*i)->num()+1] =  jp[2]*fac;
+        current[3*(*i)->num()+2] =  jp[3]*fac;
+        current[3*(*j)->num()+0] = -jp[1]*fac;
+        current[3*(*j)->num()+1] = -jp[2]*fac;
+        current[3*(*j)->num()+2] = -jp[3]*fac;
         out.push_back(current);
-
-        // see Lindh CPL 241 (1995) 423
-        const int ii = (*i)->atom()->atom_number();
-        const int jj = (*j)->atom()->atom_number();
-        hessprim.push_back(0.45 * exp(lindh_alpha(ii,jj)*(pow(lindh_r(ii,jj),2) - pow((*i)->atom()->distance((*j)->atom()), 2))));
       }
     }
   }
@@ -805,19 +804,19 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
-        for (int ic = 0; ic != 3; ++ic) {
-          current[3*(*i)->num() + ic] = st1[ic+1];
-          current[3*(*j)->num() + ic] = st3[ic+1];
-          current[3*(*c)->num() + ic] = st2[ic+1];
-        }
-        out.push_back(current);
-
         // see Lindh CPL 241 (1995) 423
         const int ii = (*i)->atom()->atom_number();
         const int jj = (*j)->atom()->atom_number();
         const int cc = (*c)->atom()->atom_number();
-        hessprim.push_back(0.15 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
-                                * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2))));
+        const double modelhess = 0.15 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
+                                      * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2)));
+        const double fac = sqrt(modelhess);
+        for (int ic = 0; ic != 3; ++ic) {
+          current[3*(*i)->num() + ic] = st1[ic+1]*fac;
+          current[3*(*j)->num() + ic] = st3[ic+1]*fac;
+          current[3*(*c)->num() + ic] = st2[ic+1]*fac;
+        }
+        out.push_back(current);
       }
     }
   }
@@ -864,22 +863,22 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
           Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
-          for (int ic = 0; ic != 3; ++ic) {
-            current[3*(*i)->num() + ic] = sa[ic+1];
-            current[3*(*c)->num() + ic] = sb[ic+1];
-            current[3*(*j)->num() + ic] = sc[ic+1];
-            current[3*(*k)->num() + ic] = sd[ic+1];
-          }
-          out.push_back(current);
-
           // see Lindh CPL 241 (1995) 423
           const int ii = (*i)->atom()->atom_number();
           const int jj = (*j)->atom()->atom_number();
           const int cc = (*c)->atom()->atom_number();
           const int kk = (*k)->atom()->atom_number();
-          hessprim.push_back(0.005 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
-                                   * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2)))
-                                   * exp(lindh_alpha(jj,kk)*(pow(lindh_r(jj,kk),2) - pow((*j)->atom()->distance((*k)->atom()), 2))));
+          const double modelhess = 0.005 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
+                                 * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2)))
+                                 * exp(lindh_alpha(jj,kk)*(pow(lindh_r(jj,kk),2) - pow((*j)->atom()->distance((*k)->atom()), 2)));
+          const double fac = sqrt(modelhess);
+          for (int ic = 0; ic != 3; ++ic) {
+            current[3*(*i)->num() + ic] = sa[ic+1]*fac;
+            current[3*(*c)->num() + ic] = sb[ic+1]*fac;
+            current[3*(*j)->num() + ic] = sc[ic+1]*fac;
+            current[3*(*k)->num() + ic] = sd[ic+1]*fac;
+          }
+          out.push_back(current);
         }
       }
     }
@@ -915,19 +914,6 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   for (int i = 0; i != ninternal; ++i)
     for (int j = 0; j != cartsize; ++j)
       bdmnew->element(j,i) = bnew->element(j,i) / eig[i];
-
-  // compute hessian
-  Matrix scale = bbslice;
-  for (int i = 0; i != ninternal; ++i) {
-    for (int j = 0; j != primsize; ++j) {
-      scale.element(j,i) *= hessprim[j];
-    }
-  }
-  Matrix hess = bbslice % scale;
-  hess.sqrt();
-  *bnew = *bnew * hess;
-  hess.inverse();
-  *bdmnew = *bdmnew * hess;
 
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
