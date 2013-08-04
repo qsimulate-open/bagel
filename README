@@ -9,7 +9,11 @@ See the AUTHORS file
 Please check out the BAGEL Wiki
 https://github.com/nubakery/bagel/wiki
 
-License: GPLv3
+License:
+o  BAGEL is distributed under GPLv3+.
+
+o  BAGEL includes a modified version of the ALGLIB package (v3.7.0, under GPLv2+),
+   for CG and L-BFGS optimizers. See http://www.alglib.net.
 
 Disclaimer:
 This is a public pre-alpha version and may have serious bugs and missing pieces.
