@@ -55,9 +55,10 @@ class Opt {
     std::streambuf* backup_stream_;
     std::ofstream* ofs_;
 
-    double thresh_;
+    std::string algorithm_;
 
     int maxiter_;
+    double thresh_;
     double maxstep_;
     static const bool nodf = true;
     static const bool rotate = false;
@@ -83,6 +84,7 @@ class Opt {
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 1.0e-5);
+      algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
     }
 
     ~Opt() {
@@ -102,16 +104,29 @@ class Opt {
       try {
         alglib::real_1d_array x;
         x.setcontent(size_, displ->data()->data()); 
-
-        alglib::mincgstate state;
-        alglib::mincgreport rep;
-
-        alglib::mincgcreate(x, state); 
-        alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
-        alglib::mincgsetstpmax(state, maxstep_);
-
         eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-        alglib::mincgoptimize(state, eval);
+
+        if (algorithm_ == "cg") {
+          alglib::mincgstate state;
+          alglib::mincgreport rep;
+
+          alglib::mincgcreate(x, state); 
+          alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
+          alglib::mincgsetstpmax(state, maxstep_);
+
+          alglib::mincgoptimize(state, eval);
+        } else if (algorithm_ == "lbfgs") {
+          alglib::minlbfgsstate state;
+          alglib::minlbfgsreport rep;
+
+          alglib::minlbfgscreate(1, x, state); 
+          alglib::minlbfgssetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
+          alglib::minlbfgssetstpmax(state, maxstep_);
+
+          alglib::minlbfgsoptimize(state, eval);
+        } else {
+          throw std::runtime_error("geometry optimization is implemented only with \"cg\" and \"lbfgs\"");
+        }
       } catch (alglib::ap_error e) {
         std::cout << e.msg << std::endl;
         throw std::runtime_error("optimization failed");
