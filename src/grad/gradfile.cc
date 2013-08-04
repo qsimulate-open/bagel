@@ -59,11 +59,10 @@ void GradFile::print() const {
 shared_ptr<GradFile> GradFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
   // a is ncart * ninternal quantity
   shared_ptr<GradFile> out = clone();
-  const size_t size = data_->size();
   if (transpose) {
-    dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data()->data(), 1, 0.0, out->data()->data(), 1);
   } else {
-    dgemv_("N", a->ndim(), a->mdim(), 1.0, a->data(), size, data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("N", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data()->data(), 1, 0.0, out->data()->data(), 1);
   }
   return out;
 }
