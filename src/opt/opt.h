@@ -80,7 +80,7 @@ class Opt {
 
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
-      maxstep_ = idat->get<double>("maxstep", 0.05);
+      maxstep_ = idat->get<double>("maxstep", 0.1);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 1.0e-5);
