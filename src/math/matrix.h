@@ -119,6 +119,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     void dscal(const double a) { dscal_(size(), a, data(), 1); }
     void scale(const double a) { dscal(a); }
+    void rotate(const int i, const int j, const double c, const double s) { drot_(ndim_, element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
+    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
 
     void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
@@ -172,6 +174,9 @@ class DistMatrix : public DistMatrix_base<double> {
 
     void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
     void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }
+
+    void rotate(const int i, const int j, const double cs, const double sn);
+    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), cos(sin)); }
 
     double ddot(const DistMatrix&) const;
     double norm() const { return std::sqrt(ddot(*this)); }

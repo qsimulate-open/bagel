@@ -61,6 +61,7 @@ class DistMatrix_base {
     }
 
     const std::unique_ptr<DataType[]>& local() const { return local_; }
+    const std::unique_ptr<int[]>& desc() const { return desc_; }
 
     size_t size() const { return std::get<0>(localsize_)*std::get<1>(localsize_); }
     int ndim() const { return ndim_; }
