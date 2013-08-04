@@ -56,6 +56,8 @@ extern "C" {
                 double*, const int*, int*, const int*, const int*);
   void pzheevd_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
                 std::complex<double>*, const int*, double*, const int*, int*, const int*, int*);
+  void pdrot_(const int* N, const double*, const int*, const int*, const int*, const int*, const double*, const int*, const int*, const int*, const int*,
+                            const double*, const double*, const double*, const int*, const int*);
 }
 
 static void sl_init_(int& i, const int j, const int k) { sl_init_(&i, &j, &k); }
@@ -114,6 +116,13 @@ static void pzheevd_(const char* a, const char* b, const int dim, std::complex<d
   const int one = 1;
   pzheevd_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
 }
+
+static void pdrot_(const int n, const double* x, const int ix, const int jx, const int* descx, const int incx,
+                                const double* y, const int iy, const int jy, const int* descy, const int incy,
+                                const double cs, const double sn, const double* work, const int lwork, const int& info) {
+  pdrot_(&n, x, &ix, &jx, descx, &incx, y, &iy, &jy, descy, &incy, &cs, &sn, work, &lwork, &info);
+}
+
 
 static std::pair<int, int> numgrid(int numproc) {
   int sq = static_cast<int>(std::sqrt(static_cast<double>(numproc)))+1;

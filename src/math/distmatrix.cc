@@ -113,6 +113,17 @@ void DistMatrix::diagonalize(double* eig) {
   *this = tmp;
 }
 
+void DistMatrix::rotate(const int i, const int j, const double cs, const double sn) {
+  const int n = ndim_;
+  const int lwork = 2*blocksize__;
+  unique_ptr<double[]> work(new double[lwork]);
+
+  int info;
+
+  pdrot_(n, local_.get(), 1, 1 + i, desc_.get(), 1, local_.get(), 1, 1 + j, desc_.get(), 1, cs, sn, work.get(), lwork, info);
+  if (info) throw runtime_error("pdrot failed in DistMatrix");
+}
+
 
 shared_ptr<Matrix> DistMatrix::matrix() const {
   return make_shared<Matrix>(*this);
