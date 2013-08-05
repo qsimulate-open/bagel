@@ -55,9 +55,9 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
   TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
 
-  mpi__->allreduce(grad_->data()->data(), grad_->size());
+  grad_->allreduce();
 
-  *grad_->data() += *geom_->compute_grad_vnuc();
+  *grad_ += *geom_->compute_grad_vnuc();
   return grad_;
 }
 

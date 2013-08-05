@@ -38,45 +38,16 @@
 
 namespace bagel {
 
-class GradFile {
+class GradFile : public Matrix {
   protected:
-    // matrix of 3*natom
-    std::shared_ptr<Matrix> data_;
 
   public:
-    GradFile(const size_t natom, const double a = 0.0) : data_(new Matrix(3, natom)) { data_->fill(a); }
-    GradFile(const std::shared_ptr<const Matrix> a) : data_(a->copy()) { }
-    GradFile(const GradFile& o) : data_(o.data_->copy()) {}
-
-    double ddot(const GradFile& o) const { return data_->ddot(o.data_); }
-    double ddot(const std::shared_ptr<const GradFile> o) const { return ddot(*o); }
-
-    std::shared_ptr<Matrix> data() { return data_; }
-    std::shared_ptr<const Matrix> data() const { return data_; }
-    size_t size() const { return data_->size(); }
-
-    double& data(const size_t i) { return *(data_->data()+i); }
-    const double& data(const size_t i) const { return *(data_->data()+i); }
-
-    void daxpy(const double a, const GradFile& o) { data_->daxpy(a, o.data_); }
-    void daxpy(const double a, const std::shared_ptr<const GradFile> o) { daxpy(a, *o); }
-
-    GradFile operator+(const GradFile& o) const;
-    GradFile operator-(const GradFile& o) const;
-    GradFile& operator+=(const GradFile& o) { daxpy( 1.0, o); return *this; }
-    GradFile& operator-=(const GradFile& o) { daxpy(-1.0, o); return *this; }
-    GradFile& operator/=(const GradFile& o) { *data_ /= *o.data_; return *this; }
-    GradFile operator/(const GradFile& o) const { GradFile out(*this); out /= o; return out; }
+    GradFile(const size_t natom, const double a = 0.0) : Matrix(3, natom, true) { fill(a); }
+    GradFile(const GradFile& o) : Matrix(o) { assert(o.ndim() == 3 && localized_); }
+    GradFile(const Matrix& o) : Matrix(o) { localize(); assert(o.ndim() == 3); }
 
     std::shared_ptr<GradFile> clone() const;
 
-    const std::shared_ptr<const Matrix> xyz() const { return data_; }
-    double& data(int i, int j) { return data_->element(i, j); }
-    const double& data(int i, int j) const { return data_->element(i, j); }
-
-    void scale(const double a) { data_->scale(a); }
-    double norm() const { return std::sqrt(ddot(*this)); }
-    double rms() const { return std::sqrt(ddot(*this)/size()); }
     void print() const;
 
     // this function assumes that double[] has data_.size()*data_size() elements.

@@ -97,13 +97,13 @@ class Opt {
       std::shared_ptr<const Matrix> xyz = current_->xyz();
       size_ = internal_ ? bmat_[0]->mdim() : xyz->size();
 
-      auto displ = std::make_shared<GradFile>(xyz);
+      auto displ = std::make_shared<GradFile>(*xyz);
       if (internal_)
         displ = displ->transform(bmat_[0], true);
 
       try {
         alglib::real_1d_array x;
-        x.setcontent(size_, displ->data()->data()); 
+        x.setcontent(size_, displ->data()); 
         eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
         if (algorithm_ == "cg") {
@@ -169,18 +169,18 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   auto displ = std::make_shared<GradFile>(current_->natom());
   assert(size_ == x.length());
   for (int i = 0; i != size_; ++i)
-    displ->data()->data(i) = x[i];
+    displ->data(i) = x[i];
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
 
   for (int i = 0; i != xyz->size(); ++i)
-    displ->data()->data(i) -= xyz->data(i);
+    displ->data(i) -= xyz->data(i);
 
   if (iter_ > 0) mute_stdcout();
 
   // current Geometry
-  current_ = std::make_shared<Geometry>(*current_, displ->data(), std::make_shared<const PTree>()); 
+  current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
   if (iter_ > 0)
     current_->print_atoms();
 
@@ -221,7 +221,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
 
   assert(size_ == grad.length());
   for (int i = 0; i != size_; ++i)
-    grad[i] = cgrad->data()->data(i);
+    grad[i] = cgrad->data(i);
 
   resume_stdcout();
 

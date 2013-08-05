@@ -277,10 +277,10 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   tq.compute(resources__->max_num_threads());
 
   // allreduce
-  mpi__->allreduce(grad_->data()->data(), grad_->size());
+  grad_->allreduce();
 
   // adds nuclear contributions
-  *grad_->data() += *geom_->compute_grad_vnuc();
+  *grad_ += *geom_->compute_grad_vnuc();
 
   grad_->print();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;

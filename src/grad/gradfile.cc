@@ -29,40 +29,30 @@
 using namespace std;
 using namespace bagel;
 
-GradFile GradFile::operator+(const GradFile& o) const {
-  GradFile out(*this);
-  out += o;
-  return out;
-}
-
-GradFile GradFile::operator-(const GradFile& o) const {
-  GradFile out(*this);
-  out -= o;
-  return out;
-}
-
 
 shared_ptr<GradFile> GradFile::clone() const {
-  return make_shared<GradFile>(data_->mdim());
+  return make_shared<GradFile>(mdim_);
 }
+
 
 void GradFile::print() const {
   cout << endl << "  * Nuclear energy gradient" << endl << endl;
-  for (int i = 0; i != data_->mdim(); ++i) {
+  for (int i = 0; i != mdim_; ++i) {
     cout << "    o Atom " << setw(3) << i << endl;
-    cout << "        x  " << setprecision(10) << setw(20) << fixed << data(0,i) << endl;
-    cout << "        y  " << setprecision(10) << setw(20) << fixed << data(1,i) << endl;
-    cout << "        z  " << setprecision(10) << setw(20) << fixed << data(2,i) << endl;
+    cout << "        x  " << setprecision(10) << setw(20) << fixed << element(0,i) << endl;
+    cout << "        y  " << setprecision(10) << setw(20) << fixed << element(1,i) << endl;
+    cout << "        z  " << setprecision(10) << setw(20) << fixed << element(2,i) << endl;
   }
 }
+
 
 shared_ptr<GradFile> GradFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
   // a is ncart * ninternal quantity
   shared_ptr<GradFile> out = clone();
   if (transpose) {
-    dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data(), 1, 0.0, out->data(), 1);
   } else {
-    dgemv_("N", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data()->data(), 1, 0.0, out->data()->data(), 1);
+    dgemv_("N", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data(), 1, 0.0, out->data(), 1);
   }
   return out;
 }

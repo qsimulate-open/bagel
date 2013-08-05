@@ -704,7 +704,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   list<shared_ptr<Node>> nodes;
   int n = 0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
-    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
+    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in general)");
     nodes.push_back(make_shared<Node>(*i, n));
   }
 
