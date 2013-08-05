@@ -177,7 +177,7 @@ class DistMatrix : public DistMatrix_base<double> {
     double dot_product(const DistMatrix& o) const { return this->dot_product_impl(o); }
 
     void rotate(const int i, const int j, const double cs, const double sn);
-    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), cos(sin)); }
+    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
 
     std::shared_ptr<Matrix> matrix() const;
 

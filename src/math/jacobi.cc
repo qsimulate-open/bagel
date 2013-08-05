@@ -47,11 +47,13 @@ void JacobiDiag::subsweep(vector<pair<int,int>> pairlist) {
 }
 
 void JacobiDiag::rotate(const int k, const int l) {
-  const double kl = A_->element(k,l);
+  // This is a hugely wasteful short term solution
+  shared_ptr<Matrix> Alocal = A_->matrix();
+  const double kl = Alocal->element(k,l);
   if (fabs(k) < numerical_zero__) return;
 
-  const double kk = A_->element(k,k);
-  const double ll = A_->element(l,l);
+  const double kk = Alocal->element(k,k);
+  const double ll = Alocal->element(l,l);
 
   const double beta = 0.5*(ll - kk)/kl;
   const double t = copysign(1.0,beta)/(fabs(beta) + sqrt(beta*beta + 1.0));
@@ -59,19 +61,19 @@ void JacobiDiag::rotate(const int k, const int l) {
   const double s = c*t;
   const double rho = (1.0 - c)/s;
 
-  A_->element(k,k) = kk - t * kl;
-  A_->element(l,l) = ll + t * kl;
+  Alocal->element(k,k) = kk - t * kl;
+  Alocal->element(l,l) = ll + t * kl;
 
-  A_->element(k,l) = 0.0;
-  A_->element(l,k) = 0.0;
+  Alocal->element(k,l) = 0.0;
+  Alocal->element(l,k) = 0.0;
 
   // I'm afraid of overwriting data, thus copying some stuff
   unique_ptr<double[]> k_column(new double[nbasis_]);
   double* k_column_data = k_column.get();
-  copy_n(A_->element_ptr(0,k), nbasis_, k_column_data);
+  copy_n(Alocal->element_ptr(0,k), nbasis_, k_column_data);
   unique_ptr<double[]> l_column(new double[nbasis_]);
   double* l_column_data = l_column.get();
-  copy_n(A_->element_ptr(0,l), nbasis_, l_column_data);
+  copy_n(Alocal->element_ptr(0,l), nbasis_, l_column_data);
 
   for(int i = 0; i < nbasis_; ++i) {
     if (i == k || i == l) continue;
@@ -82,10 +84,11 @@ void JacobiDiag::rotate(const int k, const int l) {
     double new_ik = ik - s * (il + rho * ik);
     double new_il = il + s * (ik - rho * il);
 
-    A_->element(i,k) = new_ik; A_->element(k,i) = new_ik;
-    A_->element(i,l) = new_il; A_->element(l,i) = new_il;
+    Alocal->element(i,k) = new_ik; Alocal->element(k,i) = new_ik;
+    Alocal->element(i,l) = new_il; Alocal->element(l,i) = new_il;
   }
 
+  A_ = Alocal->distmatrix();
   Q_->rotate(k, l, c, -s);
 }
 
@@ -94,7 +97,7 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
   auto P_A = make_shared<DistMatrix>(norb_, norb_);
 
 #ifdef HAVE_SCALAPACK
-  pdgemm_("N", "N", nbasis_, norb_, basis_, 1.0, S_->local().get(), 1, nstart_ + 1, S_->desc().get(),
+  pdgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->local().get(), 1, nstart_ + 1, S_->desc().get(),
                                                  Q_->local().get(), 1, nstart_ + 1, Q_->desc().get(),
                                             0.0, mos->local().get(), 1, 1, mos->desc().get());
 #else
