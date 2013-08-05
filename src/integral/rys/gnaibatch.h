@@ -28,7 +28,7 @@
 
 #include <memory>
 #include <tuple>
-#include <src/grad/gradfile.h>
+#include <src/math/xyzfile.h>
 #include <src/integral/rys/naibatch_base.h>
 
 namespace bagel {

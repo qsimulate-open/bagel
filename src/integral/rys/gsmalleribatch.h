@@ -28,7 +28,7 @@
 #define __SRC_INTEGRAL_RYS_GSMALLERIBATCH_H
 
 #include <src/molecule/shell.h>
-#include <src/grad/gradfile.h>
+#include <src/math/xyzfile.h>
 #include <src/parallel/resources.h>
 
 namespace bagel {

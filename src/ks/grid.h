@@ -29,7 +29,7 @@
 #include <array>
 #include <memory>
 #include <src/wfn/geometry.h>
-#include <src/grad/gradfile.h>
+#include <src/math/xyzfile.h>
 
 namespace bagel {
 

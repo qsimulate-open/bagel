@@ -94,10 +94,9 @@ class Opt {
 
     void compute() {
       assert(typeid(double) == typeid(double));
-      std::shared_ptr<const Matrix> xyz = current_->xyz();
-      size_ = internal_ ? bmat_[0]->mdim() : xyz->size();
+      std::shared_ptr<const XYZFile> displ = current_->xyz();
+      size_ = internal_ ? bmat_[0]->mdim() : displ->size();
 
-      auto displ = std::make_shared<GradFile>(*xyz);
       if (internal_)
         displ = displ->transform(bmat_[0], true);
 
@@ -163,10 +162,10 @@ class Opt {
 
 template<class T>
 void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr) {
-  std::shared_ptr<const Matrix> xyz = current_->xyz();
+  std::shared_ptr<const XYZFile> xyz = current_->xyz();
 
   // first convert x to the geometry
-  auto displ = std::make_shared<GradFile>(current_->natom());
+  auto displ = std::make_shared<XYZFile>(current_->natom());
   assert(size_ == x.length());
   for (int i = 0; i != size_; ++i)
     displ->data(i) = x[i];
@@ -174,8 +173,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   if (internal_)
     displ = displ->transform(bmat_[1], false);
 
-  for (int i = 0; i != xyz->size(); ++i)
-    displ->data(i) -= xyz->data(i);
+  *displ -= *xyz;
 
   if (iter_ > 0) mute_stdcout();
 

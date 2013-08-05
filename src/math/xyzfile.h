@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gradfile.h
+// Filename: xyzfile.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,36 +24,33 @@
 //
 
 
-#ifndef __SRC_GRAD_GRADFILE_H
-#define __SRC_GRAD_GRADFILE_H
-
-// a class for using the BFGS solver, which requires
-// "clone, ddot and daxpy, along with overloaded operators and a copy constructor"
+#ifndef __SRC_MATH_XYZFILE_H
+#define __SRC_MATH_XYZFILE_H
 
 #include <cassert>
-#include <iomanip>
 #include <src/math/matrix.h>
-#include <src/wfn/geometry.h>
-#include <src/util/f77.h>
 
 namespace bagel {
 
-class GradFile : public Matrix {
+class XYZFile : public Matrix {
   protected:
 
   public:
-    GradFile(const size_t natom, const double a = 0.0) : Matrix(3, natom, true) { fill(a); }
-    GradFile(const GradFile& o) : Matrix(o) { assert(o.ndim() == 3 && localized_); }
-    GradFile(const Matrix& o) : Matrix(o) { localize(); assert(o.ndim() == 3); }
+    XYZFile(const size_t natom, const double a = 0.0) : Matrix(3, natom, true) { fill(a); }
+    XYZFile(const XYZFile& o) : Matrix(o) { assert(o.ndim() == 3 && localized_); }
+    XYZFile(const Matrix& o) : Matrix(o) { localize(); assert(o.ndim() == 3); }
 
-    std::shared_ptr<GradFile> clone() const;
+    std::shared_ptr<XYZFile> clone() const;
 
-    void print() const;
+    void print(const std::string in = "", const size_t dum = 0) const override;
 
     // this function assumes that double[] has data_.size()*data_size() elements.
-    std::shared_ptr<GradFile> transform(const std::shared_ptr<const Matrix>, const bool transpose) const;
+    std::shared_ptr<XYZFile> transform(const std::shared_ptr<const Matrix>, const bool transpose) const;
 
 };
+
+// to make the code readable
+using GradFile = XYZFile;
 
 }
 

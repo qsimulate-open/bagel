@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gradfile.cc
+// Filename: xyzfile.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,20 +23,21 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
-#include <src/grad/gradfile.h>
+#include <iomanip>
+#include <iostream>
+#include <src/math/xyzfile.h>
 
 using namespace std;
 using namespace bagel;
 
 
-shared_ptr<GradFile> GradFile::clone() const {
-  return make_shared<GradFile>(mdim_);
+shared_ptr<XYZFile> XYZFile::clone() const {
+  return make_shared<XYZFile>(mdim_);
 }
 
 
-void GradFile::print() const {
-  cout << endl << "  * Nuclear energy gradient" << endl << endl;
+void XYZFile::print(const string in, const size_t dummy) const {
+  cout << endl << "  * Nuclear energy gradient" << (in.empty() ? "" : (" " + in)) << endl << endl;
   for (int i = 0; i != mdim_; ++i) {
     cout << "    o Atom " << setw(3) << i << endl;
     cout << "        x  " << setprecision(10) << setw(20) << fixed << element(0,i) << endl;
@@ -46,9 +47,9 @@ void GradFile::print() const {
 }
 
 
-shared_ptr<GradFile> GradFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
+shared_ptr<XYZFile> XYZFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
   // a is ncart * ninternal quantity
-  shared_ptr<GradFile> out = clone();
+  shared_ptr<XYZFile> out = clone();
   if (transpose) {
     dgemv_("T", a->ndim(), a->mdim(), 1.0, a->data(), a->ndim(), data(), 1, 0.0, out->data(), 1);
   } else {

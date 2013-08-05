@@ -571,19 +571,6 @@ void Geometry::merge_obs_aux() {
 }
 
 
-shared_ptr<const Matrix> Geometry::xyz() const {
-  auto out = make_shared<Matrix>(3, natom());
-  int iat = 0;
-  for (auto& i : atoms_) {
-    out->element(0, iat) = i->position(0);
-    out->element(1, iat) = i->position(1);
-    out->element(2, iat) = i->position(2);
-    ++iat;
-  }
-  return out;
-}
-
-
 vector<double> Geometry::schwarz() const {
   vector<shared_ptr<const Shell>> basis;
   for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
