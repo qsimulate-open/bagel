@@ -844,9 +844,18 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
+  // TODO this is needed but I don't know why..
+  bdag.broadcast();
+
   Matrix bb = bdag % bdag * (-1.0);
   unique_ptr<double[]> eig(new double[primsize]);
   bb.diagonalize(eig.get());
+
+  // make them consistent if parallel and not using ScaLapack
+#ifndef HAVE_SCALAPACK
+  bb.broadcast();
+  mpi__->broadcast(eig.get(), primsize, 0);
+#endif
 
   int ninternal = max(cartsize-6,1);
   for (int i = 0; i != ninternal; ++i) {
@@ -878,6 +887,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   *bnew = *bnew * hess;
   hess.inverse();
   *bdmnew = *bdmnew * hess;
+
+  // make them consistent
+  bnew->broadcast();
+  bdmnew->broadcast();
 
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
