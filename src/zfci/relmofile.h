@@ -48,7 +48,7 @@ class RelMOFile : public ZMOFile_Base {
     RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
     std::shared_ptr<const ZMatrix> core_fock() const { return core_dfock_; };
-    complex<double>* core_dfock_ptr() { return core_dfock_->data(); };
+    std::complex<double>* core_dfock_ptr() { return core_dfock_->data(); };
     const std::complex<double>* core_dfock_ptr() const { return core_dfock_->data(); };
 };
 
