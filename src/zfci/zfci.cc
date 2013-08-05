@@ -24,22 +24,32 @@
 //
 
 #include <src/zfci/zfci.h>
-#include <src/fci/space.h>
+#include <src/zfci/relspace.h>
 #include <src/util/combination.hpp>
 #include <src/math/zdavidson.h>
 #include <src/util/lexical_cast.h>
+#include <src/rel/dirac.h>
+#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
 
 
-ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const bool _rel, const int ncore, const int norb, const int nstate)
+ : Method(idat, g, r), rel(false), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
 
 void ZFCI::common_init() {
   print_header();
+
+  //ensure that RelReference has been created
+  if (rel && dynamic_pointer_cast<const RelReference>(ref_) == nullptr) {
+      auto scf_ = make_shared<Dirac>(idata_, geom_, ref_);
+      scf_->compute();
+      ref_ = scf_->conv_to_ref();
+      geom_ = ref_->geom();
+  }
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -88,7 +98,12 @@ void ZFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
+  if (!rel)
   det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0);
+  else if (rel) {
+    auto relspace = make_shared<RelSpace>(norb_, nelea_, neleb_);
+    det_ = relspace->finddet(0,0);
+  }
 }
 
 // generate initial vectors
@@ -164,9 +179,16 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
 
 
 void ZFCI::print_header() const {
-  cout << "  ---------------------------" << endl;
-  cout << "        ZFCI calculation      " << endl;
-  cout << "  ---------------------------" << endl << endl;
+  if (!rel) {
+    cout << "  ---------------------------" << endl;
+    cout << "    Complex FCI calculation  " << endl;
+    cout << "  ---------------------------" << endl << endl;
+  }
+  else if (rel) {
+    cout << "  ----------------------------" << endl;
+    cout << "  Relativistic FCI calculation" << endl;
+    cout << "  ----------------------------" << endl << endl;
+  }
 }
 
 shared_ptr<const CIWfn> ZFCI::conv_to_ciwfn() {

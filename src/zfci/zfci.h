@@ -26,9 +26,9 @@
 #ifndef __BAGEL_ZFCI_ZFCI_H
 #define __BAGEL_ZFCI_ZFCI_H
 
-//#include <src/fci/dvec.h>
 #include <src/zfci/zdvec.h>
 #include <src/zfci/zmofile.h>
+#include <src/zfci/relmofile.h>
 //#include <src/zfci/zproperties.h>
 #include <src/wfn/ciwfn.h>
 #include <src/math/zmatrix.h>
@@ -38,6 +38,8 @@ namespace bagel {
 class ZFCI : public Method {
 
   protected:
+    //relativistic
+    bool rel;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -71,7 +73,8 @@ class ZFCI : public Method {
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
     // MO integrals
-    std::shared_ptr<ZMOFile> jop_;
+    std::shared_ptr<ZMOFile_Base> jop_;
+
 
     // Determinant space
     std::shared_ptr<const Determinants> det_;
@@ -103,7 +106,7 @@ class ZFCI : public Method {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
+    ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool rel,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     virtual void compute() override;
@@ -122,7 +125,7 @@ class ZFCI : public Method {
     double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
-    virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const = 0;
+    virtual std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile_Base> jop, const std::vector<int>& conv) const = 0;
 
 
 #if 0
@@ -154,7 +157,7 @@ class ZFCI : public Method {
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     // returns integral files
-    std::shared_ptr<const ZMOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMOFile_Base> jop() const { return jop_; }
 
     // returns a denominator
     //returns non-complex because denom_ is currently all real because of real mo2e

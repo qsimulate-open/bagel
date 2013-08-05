@@ -107,24 +107,20 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<dou
 //inputs?
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
-  //should do this in the constructor
-  shared_ptr<const RelReference> relref_;
-  relref_ = shared_ptr<const RelReference>();
-  auto rref_ = relref_->project_coeff(geom_);
-
   const size_t nbasis = geom_->nbasis();
 
   complex<double> core_energy = 0.0;
 
   auto relgeom_ = geom_->relativistic( "FALSE" );
   auto relhcore = make_shared<RelHcore>(relgeom_);
-  const std::shared_ptr<const ZMatrix> relcoeff = relref_->relcoeff();
+  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   unique_ptr<complex<double>[]> tmp(new complex<double>[8*nbasis*nbasis]);
   //TODO conjugated?
+
   // Hij = relcoeff(T) * relhcore * relcoeff
-  zgemm3m_("c", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, relcoeff->data(), 2*nbasis, relhcore->data(), 4*nbasis, 0.0, tmp.get(), 2*nbasis);
-  zgemm3m_("n", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, tmp.get(), 2*nbasis, relcoeff->data(), 4*nbasis, 0.0, core_dfock_->data(), 2*nbasis);
+  zgemm3m_("c", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, ref->relcoeff()->data(), 2*nbasis, relhcore->data(), 4*nbasis, 0.0, tmp.get(), 2*nbasis);
+  zgemm3m_("n", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, tmp.get(), 2*nbasis, ref->relcoeff()->data(), 4*nbasis, 0.0, core_dfock_->data(), 2*nbasis);
 
   //TODO include some density adjustment? see zmofile
   core_energy = relhcore->trace();
