@@ -32,7 +32,7 @@ using namespace std;
 
 OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
   const int nclosed, const int nact, const int nvirt) :
-  input_(input), geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {
+  input_(input), geom_(geom), coeff_(coeff->distmatrix()), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {
 
   localize_closed_ = input->get<bool>("closed", true);
   localize_active_ = input->get<bool>("active", (nact_ > 0));
@@ -75,15 +75,18 @@ void RegionLocalization::common_init(vector<int> sizes) {
 
   if (natom != geom_->natom()) throw runtime_error("Improper number of atoms in the defined regions of RegionLocalization");
 
-  sqrt_S_ = make_shared<Overlap>(geom_); sqrt_S_->sqrt();
-  S_inverse_half_ = make_shared<Overlap>(geom_); S_inverse_half_->inverse_half();
+  shared_ptr<Matrix> lsqS = make_shared<Overlap>(geom_); lsqS->sqrt();
+  sqrt_S_ = lsqS->distmatrix();
+  shared_ptr<Matrix> lSih = make_shared<Overlap>(geom_); lSih->inverse_half();
+  S_inverse_half_ = lSih->distmatrix();
 }
 
-shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> density) {
+shared_ptr<DistMatrix> RegionLocalization::localize_space(shared_ptr<const DistMatrix> density) {
   const int nbasis = geom_->nbasis();
+  shared_ptr<const Matrix> den = density->matrix();
 
   // Symmetric orthogonalized density matrix
-  auto ortho_density = make_shared<Matrix>((*sqrt_S_) * (*density) * (*sqrt_S_));
+  auto ortho_density = make_shared<Matrix>((*sqrt_S_) * (*den) * (*sqrt_S_));
 
   // transform will hold the eigenvectors of each block
   vector<double> eigenvalues(nbasis, 0.0);
@@ -113,7 +116,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> d
 
   // Starting rotations
   {
-    auto jacobi = make_shared<JacobiDiag>(make_shared<PTree>(), ortho_density, U);
+    auto jacobi = make_shared<JacobiDiag>(make_shared<PTree>(), ortho_density->distmatrix(), U->distmatrix());
 
     for(int& iocc : occupied) {
       for(int& imixed : mixed) jacobi->rotate(iocc, imixed);
@@ -146,28 +149,27 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> d
     }
   }
 
-  return out;
+  return out->distmatrix();
 }
 
 shared_ptr<const Matrix> RegionLocalization::localize() {
   const int nbasis = geom_->nbasis();
 
-  shared_ptr<const DistMatrix> distcoeff = coeff_->distmatrix();
-  shared_ptr<const Matrix> closed = localize_space(distcoeff->form_density_rhf(nclosed_)->matrix());
+  shared_ptr<const Matrix> closed = localize_space(coeff_->form_density_rhf(nclosed_))->matrix();
 
   if (!localize_active_) {
-    coeff_ = closed;
+    coeff_ = closed->distmatrix();
     return closed;
   }
   else {
     auto out = make_shared<Matrix>(*coeff_);
     copy_n(closed->element_ptr(0, 0), nclosed_ * nbasis, out->element_ptr(0, 0));
 
-    shared_ptr<Matrix> active = localize_space(distcoeff->form_density_rhf(nact_, nclosed_)->matrix());
+    shared_ptr<Matrix> active = localize_space(coeff_->form_density_rhf(nact_, nclosed_))->matrix();
     copy_n(active->element_ptr(0, 0), nact_ * nbasis, out->element_ptr(0, nclosed_));
 
     if (localize_virtual_) {
-      shared_ptr<Matrix> virt = localize_space(distcoeff->form_density_rhf(nvirt_, nclosed_ + nact_)->matrix());
+      shared_ptr<Matrix> virt = localize_space(coeff_->form_density_rhf(nvirt_, nclosed_ + nact_))->matrix();
       copy_n(virt->element_ptr(0, 0), nvirt_ * nbasis, out->element_ptr(0, nclosed_ + nact_));
     }
 
@@ -185,7 +187,8 @@ PMLocalization::PMLocalization(shared_ptr<const PTree> input, shared_ptr<const G
 }
 
 void PMLocalization::common_init() {
-  S_ = make_shared<Overlap>(geom_);
+  shared_ptr<Matrix> lS = make_shared<Overlap>(geom_);
+  S_ = lS->distmatrix();
 
   vector<vector<int>> offsets = geom_->offsets();
   for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
@@ -199,7 +202,7 @@ void PMLocalization::common_init() {
 }
 
 shared_ptr<const Matrix> PMLocalization::localize() {
-  shared_ptr<Matrix> out = coeff_->copy();
+  auto out = make_shared<DistMatrix>(*coeff_);
 
   cout << " === Starting Pipek-Mezey Localization ===" << endl << endl;
 
@@ -232,10 +235,10 @@ shared_ptr<const Matrix> PMLocalization::localize() {
 
   coeff_ = out;
 
-  return out;
+  return out->matrix();
 }
 
-void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, const int norb) {
+void PMLocalization::localize_space(shared_ptr<DistMatrix> coeff, const int nstart, const int norb) {
   auto jacobi = make_shared<JacobiPM>(input_, coeff, nstart, norb, S_, atom_bounds_);
 
   cout << "Iteration          P              dP" << endl;
@@ -260,18 +263,40 @@ void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, 
   cout << endl;
 }
 
-double PMLocalization::calc_P(shared_ptr<const Matrix> coeff, const int nstart, const int norb) const {
-  double out = 0.0;
-
+double PMLocalization::calc_P(shared_ptr<const DistMatrix> coeff, const int nstart, const int norb) const {
   const int nbasis = coeff->ndim();
-  for(int imo = nstart; imo < (norb + nstart); ++imo) {
-    for(auto& ibounds : atom_bounds_) {
-      double QA = 0.0;
-      for(int iao = ibounds.first; iao < ibounds.second; ++iao) {
-        QA += coeff->element(iao,imo) * ddot_(nbasis, coeff->element_ptr(0,imo), 1, S_->element_ptr(0,iao), 1);
-      }
-      out += QA*QA;
-    }
+
+  double out = 0.0;
+  auto mos = make_shared<DistMatrix>(nbasis, norb);
+
+#ifdef HAVE_SCALAPACK
+  pdgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->local().get(), 1, nstart + 1, S_->desc().get(),
+                                                 coeff_->local().get(), 1, nstart + 1, coeff->desc().get(),
+                                            0.0, mos->local().get(), 1, 1, mos->desc().get());
+#else
+  dgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->data(), nbasis, coeff->element_ptr(0, nstart), nbasis, 0.0, mos->data(), nbasis);
+#endif
+
+  const int natom = atom_bounds_.size();
+
+  auto P_A = make_shared<DistMatrix>(norb, norb);
+
+  for (auto& ibounds : atom_bounds_) {
+  const int natombasis = ibounds.second - ibounds.first;
+
+#ifdef HAVE_SCALAPACK
+    pdgemm_("T", "N", norb, norb, natombasis, 1.0, mos->local().get(), ibounds.first + 1, 1, mos->desc().get(),
+                                                         coeff->local().get(), ibounds.first + 1, nstart + 1, coeff->desc().get(),
+                                                    0.0, P_A->local().get(), 1, 1, P_A->desc().get());
+#else
+    dgemm_("T", "N", norb, norb, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis,
+                              coeff->element_ptr(ibounds.first, nstart), nbasis, 0.0, P_A->data(), norb);
+#endif
+
+    shared_ptr<const Matrix> localPA = P_A->matrix();
+
+    for (int imo = 0; imo < norb; ++imo)
+      out += localPA->element(imo, imo) * localPA->element(imo, imo);
   }
 
   return out;

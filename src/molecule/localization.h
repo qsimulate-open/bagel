@@ -37,7 +37,7 @@ class OrbitalLocalization {
   protected:
     std::shared_ptr<const PTree> input_; // Hang on to the input for convenience
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Matrix> coeff_;
+    std::shared_ptr<const DistMatrix> coeff_;
 
     // These are set when the method is constructed
     const int nclosed_;
@@ -64,8 +64,8 @@ class RegionLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int>> bounds_;
     std::vector<int> sizes_;
-    std::shared_ptr<Matrix> sqrt_S_;
-    std::shared_ptr<Matrix> S_inverse_half_;
+    std::shared_ptr<DistMatrix> sqrt_S_;
+    std::shared_ptr<DistMatrix> S_inverse_half_;
     std::vector<std::vector<int>> region_orbitals_;
 
   public:
@@ -88,14 +88,14 @@ class RegionLocalization : public OrbitalLocalization {
 
   private:
     void common_init(std::vector<int> sizes);
-    std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> density);
+    std::shared_ptr<DistMatrix> localize_space(std::shared_ptr<const DistMatrix> density);
 };
 
 // Pipek-Mezey
 class PMLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int>> atom_bounds_;
-    std::shared_ptr<Matrix> S_;
+    std::shared_ptr<DistMatrix> S_;
 
   public:
     PMLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> coeff,
@@ -108,10 +108,10 @@ class PMLocalization : public OrbitalLocalization {
     double metric() const override;
 
   private:
-    double calc_P(std::shared_ptr<const Matrix> coeff, const int nstart, const int norb) const;
+    double calc_P(std::shared_ptr<const DistMatrix> coeff, const int nstart, const int norb) const;
     void common_init();
 
-    void localize_space(std::shared_ptr<Matrix> coeff, const int nstart, const int norb);
+    void localize_space(std::shared_ptr<DistMatrix> coeff, const int nstart, const int norb);
 };
 
 }
