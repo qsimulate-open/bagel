@@ -43,14 +43,6 @@ ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shar
 void ZFCI::common_init() {
   print_header();
 
-  //ensure that RelReference has been created
-  if (rel && dynamic_pointer_cast<const RelReference>(ref_) == nullptr) {
-      auto scf_ = make_shared<Dirac>(idata_, geom_, ref_);
-      scf_->compute();
-      ref_ = scf_->conv_to_ref();
-      geom_ = ref_->geom();
-  }
-
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
@@ -71,6 +63,17 @@ void ZFCI::common_init() {
   else {
     if (ncore_ < 0) ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
     if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
+  }
+
+  //setting up for rel or complex FCI
+  if (rel) {
+    //ensure relreference initialized
+    if (dynamic_pointer_cast<const RelReference>(ref_) == nullptr) {
+      auto scf_ = make_shared<Dirac>(idata_, geom_, ref_);
+      scf_->compute();
+      ref_ = scf_->conv_to_ref();
+      geom_ = ref_->geom();
+    }
   }
 
 #if 0
