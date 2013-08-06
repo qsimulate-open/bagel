@@ -151,6 +151,9 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
 
   // (2) first-transform
   list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+  for (auto& i : half_complex)
+    i = i->apply_J();
+
   // (3) split and factorize
   list<shared_ptr<RelDFHalf>> half_complex_exch;
   for (auto& i : half_complex) {
@@ -166,7 +169,7 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
   shared_ptr<const RelDFFull> full = dffull.front();
-//end mp2 copied code
+//end dmp2 copied code
 
   // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
 //  for (int i = 0; i != 1; ++i)
