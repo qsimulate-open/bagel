@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <src/util/timer.h>
 #include <src/grad/gradeval.h>
+#include <src/io/moldenout.h>
 #include <src/wfn/construct_method.h>
 #include <src/alglib/optimization.h>
 
@@ -146,13 +147,17 @@ class Opt {
     }
 
     void mute_stdcout() {
-      ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
-      backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+      if (mpi__->rank() == 0) {
+        ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
+        backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+      }
     }
 
     void resume_stdcout() {
-      std::cout.rdbuf(backup_stream_);
-      delete ofs_;
+      if (mpi__->rank() == 0) {
+        std::cout.rdbuf(backup_stream_);
+        delete ofs_;
+      }
     }
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }
@@ -227,6 +232,11 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   ++iter_;
   // returns energy
   en = eval.energy(); 
+
+  // current geometry in a molden file
+  MoldenOut mfs("opt.molden");
+  mfs << current_;
+  mfs.close();
 
   print_iteration(en, cgrad->rms(), timer_.tick());
 }
