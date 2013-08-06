@@ -64,12 +64,9 @@ class ZMOFile_Base {
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
     virtual void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) = 0;
-    std::shared_ptr<const Coeff> coeff_;
   public:
     ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::string method = std::string("KH")) :
-      geom_(ref->geom()), ref_(ref) { } //WARNING this constructor does not initialize coeff_, if it is needed pass ref->coeff() to constructor below
-    ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::shared_ptr<const Coeff> c, const std::string method = std::string("KH")) :
-      hz_(false), geom_(ref->geom()), ref_(ref), coeff_(c) { }
+      geom_(ref->geom()), ref_(ref) { }
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
 

@@ -43,6 +43,7 @@ class ZMOFile : public ZMOFile_Base {
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
+    std::shared_ptr<const Coeff> coeff_;
   public:
     ZMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     ZMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
@@ -59,8 +60,6 @@ class ZJop : public ZMOFile {
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
   public:
-//  ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-//    : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
       : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };

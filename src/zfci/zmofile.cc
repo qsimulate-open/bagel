@@ -46,7 +46,7 @@ ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const string method)
 
 
 ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
-: ZMOFile_Base(ref, c, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())) {
+: ZMOFile_Base(ref, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
