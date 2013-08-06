@@ -51,6 +51,7 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   nocc_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
   const int nbasis = nbasis_;
+  relgeom_ = geom_->relativistic(false);
 
   // one electron part
   double core_energy = 0;
@@ -108,7 +109,6 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 
   complex<double> core_energy = 0.0;
 
-  auto relgeom_ = geom_->relativistic( "FALSE" );
   auto relhcore = make_shared<RelHcore>(relgeom_);
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
@@ -148,10 +148,9 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   }
 
   // (1) make DFDists
-  shared_ptr<Geometry> cgeom;
   vector<shared_ptr<const DFDist>> dfs;
-  dfs = geom_->dfs()->split_blocks();
-  dfs.push_back(geom_->df());
+  dfs = relgeom_->dfs()->split_blocks();
+  dfs.push_back(relgeom_->df());
   list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
   // (2) first-transform
@@ -164,6 +163,7 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   }
   half_complex.clear();
   DFock::factorize(half_complex_exch);
+
   // (4) compute (gamma|ia)
   list<shared_ptr<RelDFFull>> dffull;
   DFock::factorize(dffull);
@@ -173,6 +173,9 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
 //end mp2 copied code
 
   // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
+//  for (int i = 0; i != 1; ++i)
+ //   shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
+
     unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
     return out;
 }
