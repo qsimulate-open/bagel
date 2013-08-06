@@ -30,7 +30,8 @@
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/zfci/relmofile.h>
-#include <src/rel/relhcore.h>
+#include <src/rel/dfock.h>
+#include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
 
 using namespace std;
@@ -70,6 +71,9 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
 void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
 //
 //block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
+//
+//1) sort degenerate orbitals into a vector
+//2) loop over vector and apply projection
 //
 }
 
@@ -121,11 +125,13 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 
   return make_tuple(core_dfock_, core_energy.real());
 }
+
+
 //inputs?
 unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nbasis = geom_->nbasis();
-#if 0
+
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   assert(nbasis*4 == ref->relcoeff()->ndim());
@@ -144,21 +150,12 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   // (1) make DFDists
   shared_ptr<Geometry> cgeom;
   vector<shared_ptr<const DFDist>> dfs;
-  if (abasis_.empty()) {
-    dfs = geom_->dfs()->split_blocks();
-    dfs.push_back(geom_->df());
-  } else {
-    auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-    cgeom = make_shared<Geometry>(*geom_, info, false);
-    cgeom->relativistic(false /* do_gaunt */);
-    dfs = cgeom->dfs()->split_blocks();
-    dfs.push_back(cgeom->df());
-  }
+  dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
   list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
   // (2) first-transform
   list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
-
   // (3) split and factorize
   list<shared_ptr<RelDFHalf>> half_complex_exch;
   for (auto& i : half_complex) {
@@ -167,11 +164,8 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   }
   half_complex.clear();
   DFock::factorize(half_complex_exch);
-
   // (4) compute (gamma|ia)
   list<shared_ptr<RelDFFull>> dffull;
-  for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff));
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
@@ -179,7 +173,6 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
 //end mp2 copied code
 
   // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
-#endif
     unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
     return out;
 }
