@@ -154,9 +154,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2());
+          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* multiply J^{-1} */);
         } else {
-          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2());
+          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false);
         }
       }
     }
@@ -165,7 +165,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     // (5) compute (gamma|ij)
     list<shared_ptr<RelDFFull>> dffull;
     for (auto& i : half_complex_exch)
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff)->apply_J());
+      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff)->apply_JJ());
     DFock::factorize(dffull);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
     assert(dffull.size() == 1);
