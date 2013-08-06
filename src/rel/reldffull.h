@@ -51,6 +51,7 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<RelDFFull> copy() const { return std::make_shared<RelDFFull>(*this); }
     std::shared_ptr<RelDFFull> clone() const;
     std::shared_ptr<RelDFFull> apply_J() const;
+    std::shared_ptr<RelDFFull> apply_JJ() const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o);

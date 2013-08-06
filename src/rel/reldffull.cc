@@ -66,6 +66,12 @@ shared_ptr<RelDFFull> RelDFFull::apply_J() const {
 }
 
 
+shared_ptr<RelDFFull> RelDFFull::apply_JJ() const {
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->apply_JJ(), dffull_[1]->apply_JJ()}};
+  return make_shared<RelDFFull>(a, cartesian_, basis_); 
+}
+
+
 shared_ptr<RelDFFull> RelDFFull::clone() const {
   array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->clone(), dffull_[1]->clone()}};
   return make_shared<RelDFFull>(a, cartesian_, basis_);

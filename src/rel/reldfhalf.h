@@ -65,6 +65,7 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<RelDFHalf> multiply_breit2index(std::shared_ptr<const Breit2Index> b2i) const;
 
     std::shared_ptr<RelDFHalf> copy() const { return std::make_shared<RelDFHalf>(*this); }
+    std::shared_ptr<RelDFHalf> apply_J() const;
 
     // zaxpy
     void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
