@@ -52,16 +52,16 @@ class RelMOFile : public ZMOFile_Base {
     const std::complex<double>* core_dfock_ptr() const { return core_dfock_->data(); };
 };
 
+
 class RelJop : public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : RelMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
-      : RelMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
+    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
+      : RelMOFile(b, f) { core_energy_ = create_Jiiii(c, d); }
 };
+
 
 class RelHtilde : public ZHtilde_Base, public RelMOFile {
   protected:

@@ -53,16 +53,18 @@ class ZMOFile : public ZMOFile_Base {
 
 };
 
+
 class ZJop : public ZMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
     std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
   public:
-    ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
+//  ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
+//    : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
       : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
+
 
 class ZHtilde : public ZHtilde_Base, public ZMOFile {
   protected:
