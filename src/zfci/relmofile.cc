@@ -115,12 +115,12 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
   auto relhcore = make_shared<RelHcore>(relgeom_);
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  unique_ptr<complex<double>[]> tmp(new complex<double>[8*nbasis*nbasis]);
-  //TODO conjugated?
 
   // Hij = relcoeff(T) * relhcore * relcoeff
-  zgemm3m_("c", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, ref->relcoeff()->data(), 2*nbasis, relhcore->data(), 4*nbasis, 0.0, tmp.get(), 2*nbasis);
-  zgemm3m_("n", "n", 2*nbasis, 4*nbasis, 4*nbasis, 1.0, tmp.get(), 2*nbasis, ref->relcoeff()->data(), 4*nbasis, 0.0, core_dfock_->data(), 2*nbasis);
+  auto tmp = make_shared<ZMatrix>(2*nbasis, 4*nbasis);
+  //TODO conjugated?
+  *tmp = *(ref->relcoeff()->transpose()) * *relhcore;
+  *core_dfock_ = *tmp * *(ref->relcoeff());
 
   //TODO include some density adjustment? see zmofile
   core_energy = relhcore->trace();
