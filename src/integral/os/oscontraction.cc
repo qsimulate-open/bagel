@@ -34,17 +34,17 @@ using namespace std;
 using namespace bagel;
 
 void OSInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
-                                       const vector<vector<double>>& coeff0, const vector<pair<int, int>>& ranges0, const int cdim0,
-                                       const vector<vector<double>>& coeff1, const vector<pair<int, int>>& ranges1, const int cdim1) {
+                                const vector<vector<double>>& coeff0, const vector<pair<int, int>>& ranges0, const int cdim0,
+                                const vector<vector<double>>& coeff1, const vector<pair<int, int>>& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
   double* const work = stack_->get(worksize);
-  fill(cont, cont+asize*pdim0*pdim1, 0.0);
+  fill_n(cont, asize*cdim0*cdim1, 0.0);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    fill(work, work + worksize, 0.0);
+    fill_n(work, worksize, 0.0);
     for (int j = begin0; j != end0; ++j)
       daxpy_(worksize, coeff0[i][j], prim+j*worksize, 1, work, 1);
 

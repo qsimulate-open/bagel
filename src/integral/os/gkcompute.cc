@@ -44,8 +44,6 @@ void GKineticBatch::compute() {
   const int b2 = b+1+nrank();
   assert(amax_ == a+b+nrank());
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
-  const size_t acpsize = acsize*prim0_*prim1_;
-  assert(size_alloc_ >= acpsize*6);
 
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
@@ -151,30 +149,24 @@ void GKineticBatch::compute() {
           for (int iby = 0; iby <= b - ibz; ++iby) {
             const int ibx = b - ibz - iby;
 
-            *current_data0 += bufx_a[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx_a[iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
-                            + bufx_a[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
-            *current_data1 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy_a[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
-            *current_data2 += bufx_a[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz_a[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*2];
-            *current_data3 += bufx_b[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx_b[iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
-                            + bufx_b[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
-            *current_data4 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy_b[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
-            *current_data5 += bufx_b[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz_b[iaz+a2*ibz        ]
-                            + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*2];
-            ++current_data0;
-            ++current_data1;
-            ++current_data2;
-            ++current_data3;
-            ++current_data4;
-            ++current_data5;
+            *current_data0++ += bufx_a[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                              + bufx_a[iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
+                              + bufx_a[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
+            *current_data1++ += bufx_a[iax+a2*ibx+a2*b2*1] * bufy_a[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*1];
+            *current_data2++ += bufx_a[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_a[iay+a2*iby+a2*b2*1] * bufz_a[iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_a[iaz+a2*ibz+a2*b2*2];
+            *current_data3++ += bufx_b[iax+a2*ibx+a2*b2*2] * bufy  [iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                              + bufx_b[iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz  [iaz+a2*ibz        ]
+                              + bufx_b[iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
+            *current_data4++ += bufx_b[iax+a2*ibx+a2*b2*1] * bufy_b[iay+a2*iby        ] * bufz  [iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*2] * bufz  [iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*1];
+            *current_data5++ += bufx_b[iax+a2*ibx+a2*b2*1] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy_b[iay+a2*iby+a2*b2*1] * bufz_b[iaz+a2*ibz        ]
+                              + bufx  [iax+a2*ibx        ] * bufy  [iay+a2*iby        ] * bufz_b[iaz+a2*ibz+a2*b2*2];
           }
         }
       }
@@ -201,6 +193,7 @@ void GKineticBatch::compute() {
   stack_->release((amax_+1)*a2*b2, transy);
   stack_->release((amax_+1)*a2*b2, transx);
 
+  const size_t acpsize = acsize*cont0_*cont1_;
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
   for (int i = 0; i != 6; ++i, cdata += size_block_) {

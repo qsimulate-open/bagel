@@ -36,7 +36,7 @@ const static Comb comb;
 
 void GOverlapBatch::compute() {
 
-  fill(data_, data_+size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
 
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
@@ -44,15 +44,13 @@ void GOverlapBatch::compute() {
   const int b2 = b+2;
   assert(amax_ == a+b+1);
   const int acsize = (a+1)*(a+2)*(b+1)*(b+2)/4;
-  const size_t acpsize = acsize*prim0_*prim1_;
-  assert(size_alloc_ >= acpsize*6);
 
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
   double* const transz = stack_->get((amax_+1)*a2*b2);
-  fill(transx, transx+(amax_+1)*a2*b2, 0.0);
-  fill(transy, transy+(amax_+1)*a2*b2, 0.0);
-  fill(transz, transz+(amax_+1)*a2*b2, 0.0);
+  fill_n(transx, (amax_+1)*a2*b2, 0.0);
+  fill_n(transy, (amax_+1)*a2*b2, 0.0);
+  fill_n(transz, (amax_+1)*a2*b2, 0.0);
   for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
@@ -127,18 +125,12 @@ void GOverlapBatch::compute() {
           for (int iby = 0; iby <= b - ibz; ++iby) {
             const int ibx = b - ibz - iby;
 
-            *current_data0 += bufx_a[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data1 += bufx  [iax+a2*ibx] * bufy_a[iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data2 += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_a[iaz+a2*ibz];
-            *current_data3 += bufx_b[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data4 += bufx  [iax+a2*ibx] * bufy_b[iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data5 += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_b[iaz+a2*ibz];
-            ++current_data0;
-            ++current_data1;
-            ++current_data2;
-            ++current_data3;
-            ++current_data4;
-            ++current_data5;
+            *current_data0++ += bufx_a[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
+            *current_data1++ += bufx  [iax+a2*ibx] * bufy_a[iay+a2*iby] * bufz  [iaz+a2*ibz];
+            *current_data2++ += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_a[iaz+a2*ibz];
+            *current_data3++ += bufx_b[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
+            *current_data4++ += bufx  [iax+a2*ibx] * bufy_b[iay+a2*iby] * bufz  [iaz+a2*ibz];
+            *current_data5++ += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_b[iaz+a2*ibz];
           }
         }
       }
@@ -164,6 +156,7 @@ void GOverlapBatch::compute() {
   stack_->release((amax_+1)*a2*b2, transy);
   stack_->release((amax_+1)*a2*b2, transx);
 
+  const size_t acpsize = acsize*cont0_*cont1_;
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
   for (int i = 0; i != 6; ++i, cdata += size_block_) {
@@ -186,7 +179,7 @@ void GOverlapBatch::compute() {
       source = cdata;
       target = bkup;
       sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
-      copy(bkup, bkup+acpsize, cdata);
+      copy_n(bkup, acpsize, cdata);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       source = bkup;

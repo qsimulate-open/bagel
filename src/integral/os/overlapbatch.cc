@@ -44,7 +44,6 @@ void OverlapBatch::compute() {
   perform_VRR(intermediate_p);
 
   double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
-  fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_, 0.0);
   perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c,
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
