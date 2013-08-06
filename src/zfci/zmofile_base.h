@@ -67,7 +67,7 @@ class ZMOFile_Base {
     std::shared_ptr<const Coeff> coeff_;
   public:
     ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::string method = std::string("KH")) :
-      geom_(ref->geom()), ref_(ref), coeff_(ref_->coeff()) { }
+      geom_(ref->geom()), ref_(ref) { } //WARNING this constructor does not initialize coeff_, if it is needed pass ref->coeff() to constructor below
     ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::shared_ptr<const Coeff> c, const std::string method = std::string("KH")) :
       hz_(false), geom_(ref->geom()), ref_(ref), coeff_(c) { }
 
