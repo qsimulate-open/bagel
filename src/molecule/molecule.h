@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
+#include <src/math/xyzfile.h>
 
 namespace bagel {
 
@@ -111,6 +112,19 @@ class Molecule {
                                     [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
     virtual size_t naux() const { return std::accumulate(aux_atoms_.begin(), aux_atoms_.end(), 0,
                                     [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
+
+    std::shared_ptr<const XYZFile> xyz() const {
+      auto out = std::make_shared<XYZFile>(natom());
+      int iat = 0;
+      for (auto& i : atoms_) {
+        out->element(0, iat) = i->position(0);
+        out->element(1, iat) = i->position(1);
+        out->element(2, iat) = i->position(2);
+        ++iat;
+      }
+      return out;
+    }
+
 };
 
 }

@@ -27,8 +27,9 @@
 #ifndef __SRC_GRAD_GRADEVAL_BASE_H
 #define __SRC_GRAD_GRADEVAL_BASE_H
 
-#include <src/grad/gradfile.h>
 #include <mutex>
+#include <src/math/xyzfile.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 

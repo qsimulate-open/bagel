@@ -36,9 +36,10 @@ using namespace std;
 using namespace bagel;
 
 void Jacobi_base::sweep() {
-  for(int i = nstart_; i < (norb_ + nstart_); ++i) {
-    for(int j = nstart_; j < i; ++j) {
-      rotate(i,j);
+  for ( auto& isubsweep : sweeper_ ) {
+    // These could all be done independently, in principle
+    for ( auto& iorbpair : isubsweep ) {
+      rotate(iorbpair.first, iorbpair.second);
     }
   }
 }

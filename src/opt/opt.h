@@ -34,8 +34,9 @@
 #include <algorithm>
 #include <src/util/timer.h>
 #include <src/grad/gradeval.h>
+#include <src/io/moldenout.h>
 #include <src/wfn/construct_method.h>
-#include <src/math/lbfgs.h>
+#include <src/alglib/optimization.h>
 
 namespace bagel {
 
@@ -55,9 +56,11 @@ class Opt {
     std::streambuf* backup_stream_;
     std::ofstream* ofs_;
 
-    double thresh_;
+    std::string algorithm_;
 
     int maxiter_;
+    double thresh_;
+    double maxstep_;
     static const bool nodf = true;
     static const bool rotate = false;
 
@@ -65,18 +68,12 @@ class Opt {
 
     // whether we use a delocalized internal coordinate or not
     bool internal_;
+    size_t size_;
 
     Timer timer_;
 
-    double evaluate(void *instance, const double *x, double *g, const int n, const double step);
-    using eval_type = std::function<double(void*, const double*, double*, const int, const double)>;
-
-    int progress(void *instance, const double *x, const double *g, const double fx, const double xnorm, const double gnorm,
-                 const double step, int n, int k, int ls) {
-      print_iteration(fx, gnorm, step, timer_.tick());
-      return 0;
-    }
-    using prog_type = std::function<int(void*, const double*, const double*, const double, const double, const double, const double, int, int, int)>;
+    void evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr);
+    using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
   public:
     Opt(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const PTree> inp, const std::shared_ptr<const Geometry> geom)
@@ -84,9 +81,11 @@ class Opt {
 
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
+      maxstep_ = idat->get<double>("maxstep", 0.1);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 1.0e-5);
+      algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
     }
 
     ~Opt() {
@@ -96,58 +95,69 @@ class Opt {
 
     void compute() {
       assert(typeid(double) == typeid(double));
-      std::shared_ptr<const Matrix> xyz = current_->xyz();
-      int size = internal_ ? bmat_[0]->mdim() : xyz->size();
+      std::shared_ptr<const XYZFile> displ = current_->xyz();
+      size_ = internal_ ? bmat_[0]->mdim() : displ->size();
 
-      double fx;
-      double *x = lbfgs_malloc(size);
-      lbfgs_parameter_t param;
-      lbfgs_parameter_init(&param);
-      param.epsilon = thresh_;
-      param.max_iterations = maxiter_; 
-      param.min_step = 1.0e-12;
-
-      auto displ = std::make_shared<GradFile>(xyz);
       if (internal_)
         displ = displ->transform(bmat_[0], true);
 
-      std::copy_n(displ->data()->data(), size, x);
+      try {
+        alglib::real_1d_array x;
+        x.setcontent(size_, displ->data()); 
+        eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
-      eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
-      prog_type prog = std::bind(&Opt<T>::progress, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5,
-                                                          std::placeholders::_6, std::placeholders::_7, std::placeholders::_8, std::placeholders::_9, std::placeholders::_10);
+        if (algorithm_ == "cg") {
+          alglib::mincgstate state;
+          alglib::mincgreport rep;
 
-      int ret = lbfgs(size, x, &fx, eval, prog, NULL, &param);
-      if (ret) {
-        std::stringstream ss; ss << "L-BFGS solver failed to converge : " << ret;
-        throw std::runtime_error(ss.str());
+          alglib::mincgcreate(x, state); 
+          alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
+          alglib::mincgsetstpmax(state, maxstep_);
+
+          alglib::mincgoptimize(state, eval);
+        } else if (algorithm_ == "lbfgs") {
+          alglib::minlbfgsstate state;
+          alglib::minlbfgsreport rep;
+
+          alglib::minlbfgscreate(1, x, state); 
+          alglib::minlbfgssetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
+          alglib::minlbfgssetstpmax(state, maxstep_);
+
+          alglib::minlbfgsoptimize(state, eval);
+        } else {
+          throw std::runtime_error("geometry optimization is implemented only with \"cg\" and \"lbfgs\"");
+        }
+      } catch (alglib::ap_error e) {
+        std::cout << e.msg << std::endl;
+        throw std::runtime_error("optimization failed");
       }
-
-      lbfgs_free(x);
     }
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {
         std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl <<
-                                  "     iter           energy             res norm      step norm"
+                                  "     iter         energy               grad rms       time"
         << std::endl << std::endl;
     }
 
-    void print_iteration(const double energy, const double residual, const double step, const double time) const {
-      std::cout << std::setw(8) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
+    void print_iteration(const double energy, const double residual, const double time) const {
+      std::cout << std::setw(7) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
                                          << std::setw(20) << std::setprecision(8) << std::fixed << residual
-                                         << std::setw(15) << std::setprecision(8) << std::fixed << step
                                          << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
     }
 
     void mute_stdcout() {
-      ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
-      backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+      if (mpi__->rank() == 0) {
+        ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
+        backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+      }
     }
 
     void resume_stdcout() {
-      std::cout.rdbuf(backup_stream_);
-      delete ofs_;
+      if (mpi__->rank() == 0) {
+        std::cout.rdbuf(backup_stream_);
+        delete ofs_;
+      }
     }
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }
@@ -156,25 +166,24 @@ class Opt {
 
 
 template<class T>
-double Opt<T>::evaluate(void *instance, const double *x, double *g, const int n, const double step) {
-  std::shared_ptr<const Matrix> xyz = current_->xyz();
+void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr) {
+  std::shared_ptr<const XYZFile> xyz = current_->xyz();
 
   // first convert x to the geometry
-  auto displ = std::make_shared<GradFile>(current_->natom());
-  auto xx = x;
-  for (int i = 0; i != n; ++i, ++xx)
-    displ->data()->data(i) = *xx;
+  auto displ = std::make_shared<XYZFile>(current_->natom());
+  assert(size_ == x.length());
+  for (int i = 0; i != size_; ++i)
+    displ->data(i) = x[i];
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
 
-  for (int i = 0; i != xyz->size(); ++i)
-    displ->data()->data(i) -= xyz->data(i);
+  *displ -= *xyz;
 
   if (iter_ > 0) mute_stdcout();
 
   // current Geometry
-  current_ = std::make_shared<Geometry>(*current_, displ->data(), std::make_shared<const PTree>()); 
+  current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
   if (iter_ > 0)
     current_->print_atoms();
 
@@ -212,13 +221,24 @@ double Opt<T>::evaluate(void *instance, const double *x, double *g, const int n,
   std::shared_ptr<const GradFile> cgrad = eval.compute();
   if (internal_)
     cgrad = cgrad->transform(bmat_[1], true);
-  std::copy_n(cgrad->data()->data(), n, g);
+
+  assert(size_ == grad.length());
+  for (int i = 0; i != size_; ++i)
+    grad[i] = cgrad->data(i);
 
   resume_stdcout();
 
   prev_ref_ = eval.ref();
   ++iter_;
-  return eval.energy(); 
+  // returns energy
+  en = eval.energy(); 
+
+  // current geometry in a molden file
+  MoldenOut mfs("opt.molden");
+  mfs << current_;
+  mfs.close();
+
+  print_iteration(en, cgrad->rms(), timer_.tick());
 }
 
 

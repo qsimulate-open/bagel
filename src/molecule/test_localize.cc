@@ -78,7 +78,7 @@ double localization(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_LOCALIZE)
 
 BOOST_AUTO_TEST_CASE(PML) {
-    BOOST_CHECK(compare(localization("benzene_sto3g_pml"),13.2769000957, 1.0e-5));
+    BOOST_CHECK(compare(localization("benzene_sto3g_pml"),13.2770320419, 0.01));
 }
 
 BOOST_AUTO_TEST_CASE(REGION) {

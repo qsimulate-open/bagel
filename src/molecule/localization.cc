@@ -32,7 +32,7 @@ using namespace std;
 
 OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
   const int nclosed, const int nact, const int nvirt) :
-  geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {
+  input_(input), geom_(geom), coeff_(coeff), nclosed_(nclosed), nact_(nact), nvirt_(nvirt) {
 
   localize_closed_ = input->get<bool>("closed", true);
   localize_active_ = input->get<bool>("active", (nact_ > 0));
@@ -113,7 +113,7 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> d
 
   // Starting rotations
   {
-    auto jacobi = make_shared<JacobiDiag>(ortho_density,U);
+    auto jacobi = make_shared<JacobiDiag>(make_shared<PTree>(), ortho_density, U);
 
     for(int& iocc : occupied) {
       for(int& imixed : mixed) jacobi->rotate(iocc, imixed);
@@ -236,7 +236,7 @@ shared_ptr<const Matrix> PMLocalization::localize() {
 }
 
 void PMLocalization::localize_space(shared_ptr<Matrix> coeff, const int nstart, const int norb) {
-  auto jacobi = make_shared<JacobiPM>(coeff, nstart, norb, S_, atom_bounds_);
+  auto jacobi = make_shared<JacobiPM>(input_, coeff, nstart, norb, S_, atom_bounds_);
 
   cout << "Iteration          P              dP" << endl;
 

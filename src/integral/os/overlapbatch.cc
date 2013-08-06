@@ -44,7 +44,6 @@ void OverlapBatch::compute() {
   perform_VRR(intermediate_p);
 
   double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
-  fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_, 0.0);
   perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c,
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
@@ -56,7 +55,7 @@ void OverlapBatch::compute() {
     hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
   } else {
     const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
-    copy(intermediate_c, intermediate_c+array_size, intermediate_fi);
+    copy_n(intermediate_c, array_size, intermediate_fi);
   }
 
   if (spherical_) {

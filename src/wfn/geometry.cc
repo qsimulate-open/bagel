@@ -571,19 +571,6 @@ void Geometry::merge_obs_aux() {
 }
 
 
-shared_ptr<const Matrix> Geometry::xyz() const {
-  auto out = make_shared<Matrix>(3, natom());
-  int iat = 0;
-  for (auto& i : atoms_) {
-    out->element(0, iat) = i->position(0);
-    out->element(1, iat) = i->position(1);
-    out->element(2, iat) = i->position(2);
-    ++iat;
-  }
-  return out;
-}
-
-
 vector<double> Geometry::schwarz() const {
   vector<shared_ptr<const Shell>> basis;
   for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
@@ -687,47 +674,13 @@ class Node {
     };
 
 };
-} }
 
-using namespace bagel::geometry;
-
-namespace bagel {
-namespace geometry {
-static double lindh_alpha(int i, int j) {
-  double out = 0.0;
-  if (i <= 2) {
-    if (j <= 2) out = 1.0;
-    else if (j <= 10) out = 0.3949;
-    else out = 0.3949;
-  } else if (i <= 10) {
-    if (j <= 2) out = 0.3949;
-    else if (j <= 10) out = 0.2800;
-    else out = 0.2800;
-  } else {
-    if (j <= 2) out = 0.3949;
-    else if (j <= 10) out = 0.2800;
-    else out = 0.2800;
-  }
-  return out;
-} 
-static double lindh_r(int i, int j) {
-  double out = 0.0;
-  if (i <= 2) {
-    if (j <= 2) out = 1.35;
-    else if (j <= 10) out = 2.10;
-    else out = 2.53;
-  } else if (i <= 10) {
-    if (j <= 2) out = 2.10;
-    else if (j <= 10) out = 2.87;
-    else out = 3.4;
-  } else {
-    if (j <= 2) out = 2.53;
-    else if (j <= 10) out = 3.4;
-    else out = 3.4;
-  }
-  return out;
+static double adf_rho(shared_ptr<const Node> i, shared_ptr<const Node> j) {
+  return exp(- i->atom()->distance(j->atom()) / (i->atom()->cov_radius()+j->atom()->cov_radius()) + 1.0);
 } 
 }}
+
+using namespace geometry;
 
 array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const {
   cout << "    o Connectivitiy analysis" << endl;
@@ -738,7 +691,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   list<shared_ptr<Node>> nodes;
   int n = 0;
   for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
-    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in genral)");
+    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in general)");
     nodes.push_back(make_shared<Node>(*i, n));
   }
 
@@ -747,33 +700,34 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
-    const double radiusi = (*i)->atom()->radius();
+    const double radiusi = (*i)->atom()->cov_radius();
     auto j = i;
     for (++j ; j != nodes.end(); ++j) {
-      const double radiusj = (*j)->atom()->radius();
+      const double radiusj = (*j)->atom()->cov_radius();
 
       if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
+
+        // see IJQC 106, 2536 (2006) 
+        const double modelhess = 0.35 * adf_rho(*i, *j); 
+        hessprim.push_back(modelhess);
+
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
-        current[3*(*i)->num()+0] =  jp[1];
-        current[3*(*i)->num()+1] =  jp[2];
-        current[3*(*i)->num()+2] =  jp[3];
-        current[3*(*j)->num()+0] = -jp[1];
-        current[3*(*j)->num()+1] = -jp[2];
-        current[3*(*j)->num()+2] = -jp[3];
+        const double fac = adf_rho(*i, *j);
+        current[3*(*i)->num()+0] =  jp[1]*fac;
+        current[3*(*i)->num()+1] =  jp[2]*fac;
+        current[3*(*i)->num()+2] =  jp[3]*fac;
+        current[3*(*j)->num()+0] = -jp[1]*fac;
+        current[3*(*j)->num()+1] = -jp[2]*fac;
+        current[3*(*j)->num()+2] = -jp[3]*fac;
         out.push_back(current);
-
-        // see Lindh CPL 241 (1995) 423
-        const int ii = (*i)->atom()->atom_number();
-        const int jj = (*j)->atom()->atom_number();
-        hessprim.push_back(0.45 * exp(lindh_alpha(ii,jj)*(pow(lindh_r(ii,jj),2) - pow((*i)->atom()->distance((*j)->atom()), 2))));
       }
     }
   }
@@ -805,19 +759,17 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
+        // see IJQC 106, 2536 (2006) 
+        const double modelhess = 0.15 * adf_rho(*i, *c) * adf_rho(*c, *j);
+        hessprim.push_back(modelhess);
+        const double fval = 0.12;
+        const double fac = sqrt(adf_rho(*i, *c) * adf_rho(*c, *j)) * (fval + (1-fval)*sin(rad));
         for (int ic = 0; ic != 3; ++ic) {
-          current[3*(*i)->num() + ic] = st1[ic+1];
-          current[3*(*j)->num() + ic] = st3[ic+1];
-          current[3*(*c)->num() + ic] = st2[ic+1];
+          current[3*(*i)->num() + ic] = st1[ic+1]*fac;
+          current[3*(*j)->num() + ic] = st3[ic+1]*fac;
+          current[3*(*c)->num() + ic] = st2[ic+1]*fac;
         }
         out.push_back(current);
-
-        // see Lindh CPL 241 (1995) 423
-        const int ii = (*i)->atom()->atom_number();
-        const int jj = (*j)->atom()->atom_number();
-        const int cc = (*c)->atom()->atom_number();
-        hessprim.push_back(0.15 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
-                                * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2))));
       }
     }
   }
@@ -864,22 +816,20 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
           Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
+          // see IJQC 106, 2536 (2006) 
+          const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
+          hessprim.push_back(modelhess);
+          const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
+          const double theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
+          const double fval = 0.12;
+          const double fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
           for (int ic = 0; ic != 3; ++ic) {
-            current[3*(*i)->num() + ic] = sa[ic+1];
-            current[3*(*c)->num() + ic] = sb[ic+1];
-            current[3*(*j)->num() + ic] = sc[ic+1];
-            current[3*(*k)->num() + ic] = sd[ic+1];
+            current[3*(*i)->num() + ic] = sa[ic+1]*fac;
+            current[3*(*c)->num() + ic] = sb[ic+1]*fac;
+            current[3*(*j)->num() + ic] = sc[ic+1]*fac;
+            current[3*(*k)->num() + ic] = sd[ic+1]*fac;
           }
           out.push_back(current);
-
-          // see Lindh CPL 241 (1995) 423
-          const int ii = (*i)->atom()->atom_number();
-          const int jj = (*j)->atom()->atom_number();
-          const int cc = (*c)->atom()->atom_number();
-          const int kk = (*k)->atom()->atom_number();
-          hessprim.push_back(0.005 * exp(lindh_alpha(ii,cc)*(pow(lindh_r(ii,cc),2) - pow((*i)->atom()->distance((*c)->atom()), 2)))
-                                   * exp(lindh_alpha(jj,cc)*(pow(lindh_r(jj,cc),2) - pow((*j)->atom()->distance((*c)->atom()), 2)))
-                                   * exp(lindh_alpha(jj,kk)*(pow(lindh_r(jj,kk),2) - pow((*j)->atom()->distance((*k)->atom()), 2))));
         }
       }
     }
@@ -894,9 +844,18 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
     copy(i->begin(), i->end(), biter);
 
+  // TODO this is needed but I don't know why..
+  bdag.broadcast();
+
   Matrix bb = bdag % bdag * (-1.0);
   unique_ptr<double[]> eig(new double[primsize]);
   bb.diagonalize(eig.get());
+
+  // make them consistent if parallel and not using ScaLapack
+#ifndef HAVE_SCALAPACK
+  bb.broadcast();
+  mpi__->broadcast(eig.get(), primsize, 0);
+#endif
 
   int ninternal = max(cartsize-6,1);
   for (int i = 0; i != ninternal; ++i) {
@@ -928,6 +887,10 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   *bnew = *bnew * hess;
   hess.inverse();
   *bdmnew = *bdmnew * hess;
+
+  // make them consistent
+  bnew->broadcast();
+  bdmnew->broadcast();
 
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }

@@ -133,8 +133,6 @@ class Geometry : public Molecule {
       return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
     }
 
-    std::shared_ptr<const Matrix> xyz() const;
-
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
     std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate() const;

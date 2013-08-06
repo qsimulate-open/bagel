@@ -153,6 +153,103 @@ AtomMap::AtomMap () {
   atommap.insert(make_pair("uus", 117));
   atommap.insert(make_pair("uuo", 118));
 
+  cov_radii.insert(make_pair("h",  0.31));
+  cov_radii.insert(make_pair("he", 0.28));
+  cov_radii.insert(make_pair("li", 1.28));
+  cov_radii.insert(make_pair("be", 0.96));
+  cov_radii.insert(make_pair("b",  0.84));
+  cov_radii.insert(make_pair("c",  0.76));
+  cov_radii.insert(make_pair("n",  0.71));
+  cov_radii.insert(make_pair("o",  0.66));
+  cov_radii.insert(make_pair("f",  0.57));
+  cov_radii.insert(make_pair("ne", 0.58));
+  cov_radii.insert(make_pair("na", 1.66));
+  cov_radii.insert(make_pair("mg", 1.41));
+  cov_radii.insert(make_pair("al", 1.21));
+  cov_radii.insert(make_pair("si", 1.11));
+  cov_radii.insert(make_pair("p",  1.07));
+  cov_radii.insert(make_pair("s",  1.05));
+  cov_radii.insert(make_pair("cl", 1.02));
+  cov_radii.insert(make_pair("ar", 1.06));
+  cov_radii.insert(make_pair("k",  2.03));
+  cov_radii.insert(make_pair("ca", 1.76));
+  cov_radii.insert(make_pair("sc", 1.70));
+  cov_radii.insert(make_pair("ti", 1.60));
+  cov_radii.insert(make_pair("v",  1.53));
+  cov_radii.insert(make_pair("cr", 1.39));
+  cov_radii.insert(make_pair("mn", 1.39));
+  cov_radii.insert(make_pair("fe", 1.32));
+  cov_radii.insert(make_pair("co", 1.26));
+  cov_radii.insert(make_pair("ni", 1.24));
+  cov_radii.insert(make_pair("cu", 1.32));
+  cov_radii.insert(make_pair("zn", 1.22));
+  cov_radii.insert(make_pair("ga", 1.22));
+  cov_radii.insert(make_pair("ge", 1.20));
+  cov_radii.insert(make_pair("as", 1.19));
+  cov_radii.insert(make_pair("se", 1.20));
+  cov_radii.insert(make_pair("br", 1.20));
+  cov_radii.insert(make_pair("kr", 1.16));
+  cov_radii.insert(make_pair("rb", 2.20));
+  cov_radii.insert(make_pair("sr", 1.95));
+  cov_radii.insert(make_pair("y",  1.90));
+  cov_radii.insert(make_pair("zr", 1.75));
+  cov_radii.insert(make_pair("nb", 1.64));
+  cov_radii.insert(make_pair("mo", 1.54));
+  cov_radii.insert(make_pair("tc", 1.47));
+  cov_radii.insert(make_pair("ru", 1.46));
+  cov_radii.insert(make_pair("rh", 1.42));
+  cov_radii.insert(make_pair("pd", 1.39));
+  cov_radii.insert(make_pair("ag", 1.45));
+  cov_radii.insert(make_pair("cd", 1.44));
+  cov_radii.insert(make_pair("in", 1.42));
+  cov_radii.insert(make_pair("sn", 1.39));
+  cov_radii.insert(make_pair("sb", 1.39));
+  cov_radii.insert(make_pair("te", 1.38));
+  cov_radii.insert(make_pair("i",  1.39));
+  cov_radii.insert(make_pair("xe", 1.40));
+  cov_radii.insert(make_pair("cs", 2.44));
+  cov_radii.insert(make_pair("ba", 2.15));
+  cov_radii.insert(make_pair("la", 2.07));
+  cov_radii.insert(make_pair("ce", 2.04));
+  cov_radii.insert(make_pair("pr", 2.03));
+  cov_radii.insert(make_pair("nd", 2.01));
+  cov_radii.insert(make_pair("pm", 1.99));
+  cov_radii.insert(make_pair("sm", 1.98));
+  cov_radii.insert(make_pair("eu", 1.98));
+  cov_radii.insert(make_pair("gd", 1.96));
+  cov_radii.insert(make_pair("tb", 1.94));
+  cov_radii.insert(make_pair("dy", 1.92));
+  cov_radii.insert(make_pair("ho", 1.92));
+  cov_radii.insert(make_pair("er", 1.89));
+  cov_radii.insert(make_pair("tm", 1.90));
+  cov_radii.insert(make_pair("yb", 1.87));
+  cov_radii.insert(make_pair("lu", 1.87));
+  cov_radii.insert(make_pair("hf", 1.75));
+  cov_radii.insert(make_pair("ta", 1.70));
+  cov_radii.insert(make_pair("w",  1.62));
+  cov_radii.insert(make_pair("re", 1.51));
+  cov_radii.insert(make_pair("os", 1.44));
+  cov_radii.insert(make_pair("ir", 1.41));
+  cov_radii.insert(make_pair("pt", 1.36));
+  cov_radii.insert(make_pair("au", 1.36));
+  cov_radii.insert(make_pair("hg", 1.32));
+  cov_radii.insert(make_pair("tl", 1.45));
+  cov_radii.insert(make_pair("pb", 1.46));
+  cov_radii.insert(make_pair("bi", 1.48));
+  cov_radii.insert(make_pair("po", 1.40));
+  cov_radii.insert(make_pair("at", 1.50));
+  cov_radii.insert(make_pair("rn", 1.50));
+  cov_radii.insert(make_pair("fr", 2.60));
+  cov_radii.insert(make_pair("ra", 2.21));
+  cov_radii.insert(make_pair("ac", 2.15));
+  cov_radii.insert(make_pair("th", 2.06));
+  cov_radii.insert(make_pair("pa", 2.00));
+  cov_radii.insert(make_pair("u",  1.96));
+  cov_radii.insert(make_pair("np", 1.90));
+  cov_radii.insert(make_pair("pu", 1.87));
+  cov_radii.insert(make_pair("am", 1.80));
+  cov_radii.insert(make_pair("cm", 1.69));
+
   // atom sizes (Bragg-Slater radii)
   bsradii.insert(make_pair("h", 0.25));
   bsradii.insert(make_pair("he", 0.25));
@@ -538,6 +635,13 @@ int AtomMap::angular_number(const string input) const {
 double AtomMap::radius(const string input) const {
   auto miter = bsradii.find(input);
   if (miter == bsradii.end()) throw runtime_error("Unknown atom (Bragg-Slater radii).");
+  return miter->second*ang2bohr__;
+}
+
+
+double AtomMap::cov_radius(const string input) const {
+  auto miter = cov_radii.find(input);
+  if (miter == cov_radii.end()) throw runtime_error("Unknown atom (Covalent radii).");
   return miter->second*ang2bohr__;
 }
 

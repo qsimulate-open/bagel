@@ -39,6 +39,7 @@ struct AtomMap {
 
     std::map<std::string, int> atommap;
     std::map<std::string, double> bsradii;
+    std::map<std::string, double> cov_radii;
     std::map<std::string, int> angmap;
     std::map<std::string, std::tuple<int,int,int,int>> nclosed;
     std::map<std::string, std::tuple<int,int,int,int>> nopen;
@@ -48,6 +49,7 @@ struct AtomMap {
 
     int atom_number(const std::string) const;
     double radius(const std::string) const;
+    double cov_radius(const std::string) const;
 
     std::tuple<int,int,int,int> num_closed(const std::string) const;
     std::tuple<int,int,int,int> num_open(const std::string) const;

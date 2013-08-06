@@ -242,9 +242,9 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
       }
     }
 
-    out->data(0, n) += -4.0*sum[0];
-    out->data(1, n) += -4.0*sum[1];
-    out->data(2, n) += -4.0*sum[2];
+    out->element(0, n) += -4.0*sum[0];
+    out->element(1, n) += -4.0*sum[1];
+    out->element(2, n) += -4.0*sum[2];
 
     offset += b->nbasis();
     ++n;

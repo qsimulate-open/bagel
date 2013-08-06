@@ -27,7 +27,6 @@
 #include <stddef.h>
 #include <array>
 #include <src/grad/gradeval_base.h>
-#include <src/grad/gradfile.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/gnaibatch.h>
 #include <src/integral/rys/gsmallnaibatch.h>
@@ -98,9 +97,9 @@ void GradTask::compute() {
 
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
-      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
-      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
-      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+      ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+      ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+      ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
     }
 
   // relativistic one-electron integrals
@@ -109,9 +108,9 @@ void GradTask::compute() {
     shared_ptr<GradFile> grad_local = compute_smallnai();
     for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
-      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
-      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
-      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+      ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+      ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+      ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
     }
 
   } else if (rank_ == -3) {
@@ -124,9 +123,9 @@ void GradTask::compute() {
       done.push_back(iatom);
 
       lock_guard<mutex> lock(ge_->mutex_[iatom]);
-      ge_->grad_->data(0, iatom) += grad_local->data(0, iatom);
-      ge_->grad_->data(1, iatom) += grad_local->data(1, iatom);
-      ge_->grad_->data(2, iatom) += grad_local->data(2, iatom);
+      ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+      ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+      ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
     }
 
   } else if (rank_ == 3) {
@@ -159,7 +158,7 @@ void GradTask::compute() {
       }
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)
-        ge_->grad_->data(icart, jatom[iatom]) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
+        ge_->grad_->element(icart, jatom[iatom]) += 0.5 * sum[icart] * (shell_[2] == shell_[3] ? 1.0 : 2.0);
     }
   } else if (rank_ == 2) {
 #ifdef LIBINT_INTERFACE
@@ -191,7 +190,7 @@ void GradTask::compute() {
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       // first 0.5 from symmetrization. second 0.5 from the Hamiltonian
       for (int icart = 0; icart != 3; ++icart)
-        ge_->grad_->data(icart, jatom[iatom]) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
+        ge_->grad_->element(icart, jatom[iatom]) -= 0.5 * sum[icart] * 0.5 * (shell_[0] == shell_[2] ? 1.0 : 2.0);
     }
   } else {
     throw logic_error("calling GradTask::compute() with illegal setups");

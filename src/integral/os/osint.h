@@ -34,7 +34,7 @@
 #include <src/integral/sortlist.h>
 #include <array>
 #include <memory>
-#include <src/grad/gradfile.h>
+#include <src/math/xyzfile.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>
 

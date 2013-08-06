@@ -159,8 +159,8 @@ shared_ptr<GradFile> OSInt::compute_gradient(shared_ptr<const Matrix> d, const i
   const int jatom0 = swap01() ? iatom1 : iatom0;
   const int jatom1 = swap01() ? iatom0 : iatom1;
   for (int k = 0; k != 3; ++k) {
-    out->data(k, jatom1) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1); 
-    out->data(k, jatom0) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3), 1); 
+    out->element(k, jatom1) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1); 
+    out->element(k, jatom0) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3), 1); 
   }
   return out;
 }

@@ -35,6 +35,7 @@ namespace bagel {
 
 class OrbitalLocalization {
   protected:
+    std::shared_ptr<const PTree> input_; // Hang on to the input for convenience
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Matrix> coeff_;
 
