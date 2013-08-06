@@ -32,7 +32,6 @@
 #include <src/zfci/relmofile.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
-#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,6 +51,7 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   nbasis_ = geom_->nbasis();
   const int nbasis = nbasis_;
   relgeom_ = geom_->relativistic(false);
+  ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   // one electron part
   double core_energy = 0;
@@ -110,8 +110,6 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
   complex<double> core_energy = 0.0;
 
   auto relhcore = make_shared<RelHcore>(relgeom_);
-  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-
 
   // Hij = relcoeff(T) * relhcore * relcoeff
   auto tmp = make_shared<ZMatrix>(2*nbasis, 4*nbasis);
@@ -131,8 +129,6 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nbasis = geom_->nbasis();
-
-  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
 
   assert(nbasis*4 == ref->relcoeff()->ndim());
   assert(nbasis*2 == ref->relcoeff()->mdim());
