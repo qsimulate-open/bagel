@@ -48,7 +48,7 @@ void MomentBatch::compute() {
     double* const cdata = data_ + i*size_block_;
     const double* const csource = intermediate_p + i*size_block_;
     double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_intermediate_);
-    fill(intermediate_c, intermediate_c + cont0_ * cont1_ * asize_intermediate_, 0.0);
+    fill_n(intermediate_c, cont0_ * cont1_ * asize_intermediate_, 0.0);
     perform_contraction(asize_intermediate_, csource, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);

@@ -70,11 +70,8 @@ void GOverlapBatch::compute() {
   double* const bufy = stack_->get(a2*b2);
   double* const bufz = stack_->get(a2*b2);
   double* const bufx_a = stack_->get(a2*b2);
-  double* const bufx_b = stack_->get(a2*b2);
   double* const bufy_a = stack_->get(a2*b2);
-  double* const bufy_b = stack_->get(a2*b2);
   double* const bufz_a = stack_->get(a2*b2);
-  double* const bufz_b = stack_->get(a2*b2);
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
@@ -97,15 +94,11 @@ void GOverlapBatch::compute() {
     dgemv_("T", amax_+1, a2*b2, 1.0, transz, amax_+1, workz, 1, 0.0, bufz, 1);
 
     const double alpha = xa_[ii];
-    const double beta_ = xb_[ii];
     for (int ib = 0; ib <= b; ++ib) {
       for (int ia = 0; ia <= a; ++ia) {
         bufx_a[ia+a2*ib] = 2.0*alpha*bufx[ia+1+a2*(ib)] - ia*bufx[ia-1+a2*(ib)];
-        bufx_b[ia+a2*ib] = 2.0*beta_*bufx[ia+a2*(ib+1)] - ib*bufx[ia+a2*(ib-1)];
         bufy_a[ia+a2*ib] = 2.0*alpha*bufy[ia+1+a2*(ib)] - ia*bufy[ia-1+a2*(ib)];
-        bufy_b[ia+a2*ib] = 2.0*beta_*bufy[ia+a2*(ib+1)] - ib*bufy[ia+a2*(ib-1)];
         bufz_a[ia+a2*ib] = 2.0*alpha*bufz[ia+1+a2*(ib)] - ia*bufz[ia-1+a2*(ib)];
-        bufz_b[ia+a2*ib] = 2.0*beta_*bufz[ia+a2*(ib+1)] - ib*bufz[ia+a2*(ib-1)];
       }
     }
 
@@ -114,9 +107,6 @@ void GOverlapBatch::compute() {
     double* current_data0 = data_ + offset_ii;
     double* current_data1 = data_ + offset_ii + size_block_;
     double* current_data2 = data_ + offset_ii + size_block_*2;
-    double* current_data3 = data_ + offset_ii + size_block_*3;
-    double* current_data4 = data_ + offset_ii + size_block_*4;
-    double* current_data5 = data_ + offset_ii + size_block_*5;
 
     for (int iaz = 0; iaz <= a; ++iaz) {
       for (int iay = 0; iay <= a - iaz; ++iay) {
@@ -124,13 +114,9 @@ void GOverlapBatch::compute() {
         for (int ibz = 0; ibz <= b; ++ibz) {
           for (int iby = 0; iby <= b - ibz; ++iby) {
             const int ibx = b - ibz - iby;
-
             *current_data0++ += bufx_a[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
             *current_data1++ += bufx  [iax+a2*ibx] * bufy_a[iay+a2*iby] * bufz  [iaz+a2*ibz];
             *current_data2++ += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_a[iaz+a2*ibz];
-            *current_data3++ += bufx_b[iax+a2*ibx] * bufy  [iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data4++ += bufx  [iax+a2*ibx] * bufy_b[iay+a2*iby] * bufz  [iaz+a2*ibz];
-            *current_data5++ += bufx  [iax+a2*ibx] * bufy  [iay+a2*iby] * bufz_b[iaz+a2*ibz];
           }
         }
       }
@@ -138,11 +124,8 @@ void GOverlapBatch::compute() {
 
   } // end of primsize loop
 
-  stack_->release(a2*b2, bufz_b);
   stack_->release(a2*b2, bufz_a);
-  stack_->release(a2*b2, bufy_b);
   stack_->release(a2*b2, bufy_a);
-  stack_->release(a2*b2, bufx_b);
   stack_->release(a2*b2, bufx_a);
   stack_->release(a2*b2, bufz);
   stack_->release(a2*b2, bufy);
@@ -159,7 +142,7 @@ void GOverlapBatch::compute() {
   const size_t acpsize = acsize*cont0_*cont1_;
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
-  for (int i = 0; i != 6; ++i, cdata += size_block_) {
+  for (int i = 0; i != 3; ++i, cdata += size_block_) {
     // first, contraction.
     const double* source = cdata;
     double* target = bkup;
@@ -186,6 +169,10 @@ void GOverlapBatch::compute() {
       target = cdata;
       sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
     }
+  }
+
+  for (int i = 0; i != 3; ++i) {
+    daxpy_(cont0_*cont1_*acsize, -1.0, data_+i*size_block_, 1, data_+(i+3)*size_block_, 1); 
   }
 
   stack_->release(acpsize, bkup);

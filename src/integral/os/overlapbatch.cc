@@ -55,7 +55,7 @@ void OverlapBatch::compute() {
     hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
   } else {
     const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
-    copy(intermediate_c, intermediate_c+array_size, intermediate_fi);
+    copy_n(intermediate_c, array_size, intermediate_fi);
   }
 
   if (spherical_) {
