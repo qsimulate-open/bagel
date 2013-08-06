@@ -96,9 +96,9 @@ void GOverlapBatch::compute() {
     const double alpha = xa_[ii];
     for (int ib = 0; ib <= b; ++ib) {
       for (int ia = 0; ia <= a; ++ia) {
-        bufx_a[ia+a2*ib] = 2.0*alpha*bufx[ia+1+a2*(ib)] - ia*bufx[ia-1+a2*(ib)];
-        bufy_a[ia+a2*ib] = 2.0*alpha*bufy[ia+1+a2*(ib)] - ia*bufy[ia-1+a2*(ib)];
-        bufz_a[ia+a2*ib] = 2.0*alpha*bufz[ia+1+a2*(ib)] - ia*bufz[ia-1+a2*(ib)];
+        bufx_a[ia+a2*ib] = 2.0*alpha*bufx[ia+1+a2*(ib)] - (ia != 0 ? ia*bufx[ia-1+a2*(ib)] : 0);
+        bufy_a[ia+a2*ib] = 2.0*alpha*bufy[ia+1+a2*(ib)] - (ia != 0 ? ia*bufy[ia-1+a2*(ib)] : 0);
+        bufz_a[ia+a2*ib] = 2.0*alpha*bufz[ia+1+a2*(ib)] - (ia != 0 ? ia*bufz[ia-1+a2*(ib)] : 0);
       }
     }
 
