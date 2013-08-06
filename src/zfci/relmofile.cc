@@ -32,7 +32,6 @@
 #include <src/zfci/relmofile.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
-#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,6 +51,7 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   nbasis_ = geom_->nbasis();
   const int nbasis = nbasis_;
   relgeom_ = geom_->relativistic(false);
+  relref = dynamic_pointer_cast<const RelReference>(ref_);
 
   // one electron part
   double core_energy = 0;
@@ -110,14 +110,12 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
   complex<double> core_energy = 0.0;
 
   auto relhcore = make_shared<RelHcore>(relgeom_);
-  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-
 
   // Hij = relcoeff(T) * relhcore * relcoeff
   auto tmp = make_shared<ZMatrix>(2*nbasis, 4*nbasis);
   //TODO conjugated?
-  *tmp = *(ref->relcoeff()->transpose()) * *relhcore;
-  *core_dfock_ = *tmp * *(ref->relcoeff());
+  *tmp = *(relref->relcoeff()->transpose()) * *relhcore;
+  *core_dfock_ = *tmp * *(relref->relcoeff());
 
   //TODO include some density adjustment? see zmofile
   core_energy = relhcore->trace();
@@ -132,17 +130,15 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nbasis = geom_->nbasis();
 
-  shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-
-  assert(nbasis*4 == ref->relcoeff()->ndim());
-  assert(nbasis*2 == ref->relcoeff()->mdim());
+  assert(nbasis*4 == relref->relcoeff()->ndim());
+  assert(nbasis*2 == relref->relcoeff()->mdim());
 
   // Separate Coefficients into real and imaginary
   // correlated occupied orbitals
   array<shared_ptr<const Matrix>, 4> rocoeff;
   array<shared_ptr<const Matrix>, 4> iocoeff;
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = ref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, 4*nbasis);
+    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, 4*nbasis);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
   }

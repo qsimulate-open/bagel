@@ -29,6 +29,7 @@
 
 
 #include <src/zfci/zmofile_base.h>
+#include <src/rel/relreference.h>
 
 namespace bagel {
 
@@ -44,7 +45,9 @@ class RelMOFile : public ZMOFile_Base {
     virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
     void kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e);
+
     std::shared_ptr<const Geometry> relgeom_;
+    std::shared_ptr<const RelReference> relref;
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
