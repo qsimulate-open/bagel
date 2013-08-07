@@ -114,6 +114,8 @@ void DMP2::compute() {
 
   // (2) first-transform
   list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+  for (auto& i : half_complex)
+    i = i->apply_J();
 
   // (3) split and factorize
   list<shared_ptr<RelDFHalf>> half_complex_exch;
