@@ -17,7 +17,7 @@ ss = "\
 //\n\
 // The BAGEL package is free software; you can redistribute it and/or modify\n\
 // it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 2, or (at your option)\n\
+// the Free Software Foundation; either version 3, or (at your option)\n\
 // any later version.\n\
 //\n\
 // The BAGEL package is distributed in the hope that it will be useful,\n\
@@ -30,8 +30,8 @@ ss = "\
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include <src/rysint/breitbatch.h>\n\
-#include <src/rysint/_bvrr_drv.h>\n\
+#include <src/integral/rys/breitbatch.h>\n\
+#include <src/integral/rys/_bvrr_drv.h>\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
@@ -43,7 +43,7 @@ void BreitBatch::perform_VRR() {\n\
   const int b = basisinfo_[1]->angular_number();\n\
   const int c = basisinfo_[2]->angular_number();\n\
   const int d = basisinfo_[3]->angular_number();\n\
-  const int isize = (amax1_+1) * (cmax1_+1); \n\
+  const int isize = (amax1_+1) * (cmax1_+1);\n\
   double* const workx = stack_->get(isize*rank_*9);\n\
   double* const worky = workx + isize*rank_;\n\
   double* const workz = worky + isize*rank_;\n\
@@ -79,7 +79,6 @@ for a in range(0,7):
 ss += "\
   }\n\
   stack_->release(rank_*isize*9, workx);\n\
-\n\
 }"
 
 

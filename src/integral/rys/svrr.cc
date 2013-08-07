@@ -32,7 +32,6 @@ using namespace bagel;
 #ifdef HAVE_LIBSLATER
 
 void SlaterBatch::perform_SVRR() {
-#ifndef LIBINT_INTERFACE
   const int acsize = asize_ * csize_;
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
@@ -5534,7 +5533,6 @@ void SlaterBatch::perform_SVRR() {
     } break;
   }
   stack_->release(rank_*isize*3, workx);
-#endif
 }
 
 #endif
