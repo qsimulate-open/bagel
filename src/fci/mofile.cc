@@ -69,14 +69,14 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
-  unique_ptr<double[]> buf2e = compute_mo2e(nstart, nfence);
+  shared_ptr<const Matrix> buf2e = compute_mo2e(nstart, nfence);
 
   compress(buf1e, buf2e);
   return core_energy;
 }
 
 
-void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2e) {
+void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> buf2e) {
 
   // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
@@ -90,7 +90,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2
         const int ijo = (j + i*nocc)*nocc*nocc;
         for (int k = 0; k != nocc; ++k)
           for (int l = 0; l <= k; ++l, ++ijkl)
-            mo2e_[ijkl] = buf2e[l+k*nocc+ijo];
+            mo2e_[ijkl] = buf2e->data(l+k*nocc+ijo);
       }
     }
   }
@@ -103,7 +103,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2
       for (int k = 0; k != nocc; ++k) {
         for (int j = 0; j != nocc; ++j) {
           for (int l = 0; l != nocc; ++l, ++ijkl) {
-            mo2e_[ijkl] = buf2e[l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc];
+            mo2e_[ijkl] = buf2e->data(l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc);
           }
         }
       }
@@ -119,7 +119,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, unique_ptr<double[]>& buf2
       mo1e_[ij] = buf1e->element(j,i);
       if (!hz_) {
         for (int k = 0; k != nocc; ++k)
-          mo1e_[ij] -= 0.5*buf2e[(k+j*nocc)*nocc*nocc+(k+i*nocc)];
+          mo1e_[ij] -= 0.5*buf2e->data((k+j*nocc)*nocc*nocc+(k+i*nocc));
       }
     }
   }
@@ -155,7 +155,7 @@ tuple<shared_ptr<const Matrix>, double> Jop::compute_mo1e(const int nstart, cons
 }
 
 
-unique_ptr<double[]> Jop::compute_mo2e(const int nstart, const int nfence) {
+shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
   assert(nocc > 0);

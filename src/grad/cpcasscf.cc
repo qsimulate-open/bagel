@@ -187,7 +187,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
     // TODO this is a reference implementation
     // first form 4 index
-    unique_ptr<double[]> buf = fullz->form_4index(fullb, 1.0);
+    shared_ptr<Matrix> buf = fullz->form_4index(fullb, 1.0);
     // TODO Awful code. To be updated. making the code that works in the quickest possible way
     // index swap
     unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
@@ -195,14 +195,14 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     // bra ket symmetrization
     for (int i = 0; i != nocca*nocca; ++i)
       for (int j = 0; j != nocca*nocca; ++j)
-        buf2[j+nocca*nocca*i] = buf[j+nocca*nocca*i] + buf[i+nocca*nocca*j];
+        buf2[j+nocca*nocca*i] = buf->element(j, i) + buf->element(i, j);
 
-    unique_ptr<double[]> Htilde2(new double[nact*nact*nact*nact]);
+    auto Htilde2 = make_shared<Matrix>(nact*nact, nact*nact);
     for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii)
       for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
         for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
           for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
-            Htilde2[ll+nact*(kk+nact*(jj+nact*ii))] = buf2[l+nocca*(k+nocca*(j+nocca*i))];
+            Htilde2->data(ll+nact*(kk+nact*(jj+nact*ii))) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
 
     auto Htilde1 = make_shared<Matrix>(nact,nact, true);
     for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
@@ -214,9 +214,9 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     }
     // factor of 2 in the equation
     *Htilde1 *= 2.0;
-    dscal_(nact*nact*nact*nact, 2.0, Htilde2.get(), 1);
+    *Htilde2 *= 2.0;
 
-    auto top = make_shared<Htilde>(ref_, nclosed, nocca, Htilde1, move(Htilde2));
+    auto top = make_shared<Htilde>(ref_, nclosed, nocca, Htilde1, Htilde2);
     vector<int> tmp(z1->ij(), 0);
     shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
 

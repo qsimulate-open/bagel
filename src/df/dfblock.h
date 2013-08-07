@@ -127,7 +127,7 @@ class DFBlock {
 
     // Form 2- and 4-index integrals
     std::shared_ptr<Matrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
-    std::unique_ptr<double[]> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
+    std::shared_ptr<Matrix> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
     // slowest index of o is fixed to n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;

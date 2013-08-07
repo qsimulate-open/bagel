@@ -139,9 +139,9 @@ unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfe
   mo2e_1ext_ = half;
 
   // assembles (ii|ii) = (ii|D)(D|ii)
-  unique_ptr<double[]> med = buf->form_4index(buf, 1.0);
+  shared_ptr<const Matrix> med = buf->form_4index(buf, 1.0);
   unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
-  for (int i = 0; i != nocc*nocc*nocc*nocc; i++) out[i] = med[i];
+  for (int i = 0; i != nocc*nocc*nocc*nocc; i++) out[i] = med->data(i);
   return out;
 }
 

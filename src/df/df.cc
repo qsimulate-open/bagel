@@ -48,14 +48,13 @@ shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const
 }
 
 
-unique_ptr<double[]> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
+shared_ptr<Matrix> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  unique_ptr<double[]> out = (!swap) ? block_[0]->form_4index(o->block_[0], a) : o->block_[0]->form_4index(block_[0], a);
+  shared_ptr<Matrix> out = (!swap) ? block_[0]->form_4index(o->block_[0], a) : o->block_[0]->form_4index(block_[0], a);
 
   // all reduce
-  const size_t size = block_[0]->b2size()*o->block_[0]->b2size() * block_[0]->b1size()*o->block_[0]->b1size();
   if (!serial_)
-    mpi__->allreduce(out.get(), size);
+    out->allreduce();
   return out;
 }
 

@@ -74,7 +74,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     void add_block(std::shared_ptr<DFBlock> o);
 
     std::shared_ptr<Matrix> form_2index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
-    std::unique_ptr<double[]> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
+    std::shared_ptr<Matrix> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const;
 
     void daxpy(const double a, const std::shared_ptr<const ParallelDF> o);

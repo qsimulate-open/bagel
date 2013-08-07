@@ -27,6 +27,7 @@
 #include <src/mp2/f12mat.h>
 
 using namespace std;
+using namespace bagel;
 
 void F12Mat::symmetrize(const bool braket) {
   // first electron 1-2 symmetry
