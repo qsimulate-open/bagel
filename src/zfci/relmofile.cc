@@ -101,6 +101,7 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<dou
 //
 //Relativistic 1 and 2e functions in progress
 //
+//inputs?
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
   const size_t nbasis = geom_->nbasis();
@@ -124,6 +125,7 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 }
 
 
+//inputs?
 unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nocc = nfence - nstart; 
