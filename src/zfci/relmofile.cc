@@ -36,15 +36,14 @@
 using namespace std;
 using namespace bagel;
 
-//need to replace core_fock in the constructors
 RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
-: ZMOFile_Base(ref, method), core_dfock_(make_shared<ZMatrix>(2*geom_->nbasis(), 2*geom_->nbasis())) {
+: ZMOFile_Base(ref, method) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 }
 
-//one line change in order to add a function to block diagonalize
+// TODO one line change in order to add a function to block diagonalize
 double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
@@ -111,14 +110,15 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 
   auto relhcore = make_shared<RelHcore>(relgeom_);
 
+  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+
   // Hij = relcoeff(T) * relhcore * relcoeff
-  auto tmp = make_shared<ZMatrix>(2*nbasis, 4*nbasis);
-  //TODO conjugated?
-  *tmp = *(relref->relcoeff()->transpose()) * *relhcore;
-  *core_dfock_ = *tmp * *(relref->relcoeff());
+  core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff); 
 
   //TODO include some density adjustment? see zmofile
-  core_energy = relhcore->trace();
+//core_energy = relhcore->trace();
+  // FIXME
+  core_energy = 1.0e100;
   assert(fabs(core_energy.imag())<1e-10);
 
   return make_tuple(core_dfock_, core_energy.real());
@@ -128,19 +128,19 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 //inputs?
 unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
-  const size_t nbasis = geom_->nbasis();
-  const size_t nocc = ref_->nocc();
+  const size_t nocc = nfence - nstart; 
   if (nocc < 1) throw runtime_error("no correlated electrons");
 
-  assert(nbasis*4 == relref->relcoeff()->ndim());
-  assert(nbasis*2 == relref->relcoeff()->mdim());
+  assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
+  assert(geom_->nbasis()*2 == relref->relcoeff()->mdim());
 
   // Separate Coefficients into real and imaginary
   // correlated occupied orbitals
   array<shared_ptr<const Matrix>, 4> rocoeff;
   array<shared_ptr<const Matrix>, 4> iocoeff;
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, nocc);
+    const size_t nbasis = geom_->nbasis();
+    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, nstart, nbasis, nfence);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
   }
