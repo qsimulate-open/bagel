@@ -131,8 +131,6 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   const size_t nbasis = geom_->nbasis();
   const size_t nocc = ref_->nocc();
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = nbasis*2 - nocc;
-  if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
   assert(nbasis*4 == relref->relcoeff()->ndim());
   assert(nbasis*2 == relref->relcoeff()->mdim());
@@ -141,16 +139,10 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   // correlated occupied orbitals
   array<shared_ptr<const Matrix>, 4> rocoeff;
   array<shared_ptr<const Matrix>, 4> iocoeff;
-  // correlated virtual orbitals
-  array<shared_ptr<const Matrix>, 4> rvcoeff;
-  array<shared_ptr<const Matrix>, 4> ivcoeff;
   for (int i = 0; i != 4; ++i) {
     shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, nocc);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
-    shared_ptr<const ZMatrix> vc = relref->relcoeff()->get_submatrix(i*nbasis, nocc, nbasis, nvirt);
-    rvcoeff[i] = vc->get_real_part();
-    ivcoeff[i] = vc->get_imag_part();
   }
 
   // (1) make DFDists
@@ -173,27 +165,24 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   half_complex.clear();
   DFock::factorize(half_complex_exch);
 
-  // (4) compute (gamma|ia)
+  // (4) compute (gamma|ii)
   list<shared_ptr<RelDFFull>> dffull;
   for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff));
+    dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
   shared_ptr<const RelDFFull> full = dffull.front();
-
   cout << "    * 3-index integral transformation done" << endl;
 
+  shared_ptr<ZMatrix> data = full->form_4index(full, 1.0);
 
-  // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
-  auto buf = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  for (size_t i = 0; i != nvirt; ++i) {
-    shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
-    *buf = *data;
-  }
-//end mp2 copied code
-
-    unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
-    copy_n(buf->data(), 16*nbasis*nbasis, out.get());
-    return out;
+  // size is wrong
+#if 0
+  unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
+  copy_n(buf->data(), 16*nbasis*nbasis, out.get());
+  return out;
+#else
+  return unique_ptr<complex<double>[]>();
+#endif
 }
