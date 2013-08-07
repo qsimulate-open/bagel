@@ -62,6 +62,8 @@ void GradBatch::compute() {
   // loop over gradient...
   double* cdata = data_;
   for (int i = 0; i != 9; ++i, cdata += size_block_) {
+    const int iatom = i/3;
+    if (basisinfo_[iatom]->dummy()) continue;
 
     bool swapped = false;
 
@@ -186,9 +188,23 @@ void GradBatch::compute() {
     if (swapped) copy(bkup_, bkup_+size_block_, cdata);
 
   } // end of loop 12
-  daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
-  daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
-  daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
+
+  if (!basisinfo_[3]->dummy()) {
+    // use symmetry for shell3.
+    if (!basisinfo_[0]->dummy())
+      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+    if (!basisinfo_[1]->dummy())
+      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+    if (!basisinfo_[2]->dummy())
+      daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
+  } else {
+    // use symmetry for shell2
+    assert(!basisinfo_[2]->dummy());
+    if (!basisinfo_[0]->dummy())
+      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+    if (!basisinfo_[1]->dummy())
+      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+  }
 
   stack_->release(size_block_, stack_sav);
 }

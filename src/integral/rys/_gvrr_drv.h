@@ -45,7 +45,7 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
                  double* const final_xa, double* const final_xb, double* const final_xc,
                  double* const final_ya, double* const final_yb, double* const final_yc,
                  double* const final_za, double* const final_zb, double* const final_zc,
-                 double* const workx, double* const worky, double* const workz) {
+                 double* const workx, double* const worky, double* const workz, const std::array<bool,4>& dummy) {
 
   constexpr int amax_ = a_+b_+1;
   constexpr int cmax_ = c_+d_+1;
@@ -81,28 +81,40 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz+i*rank_*(amax_+1), rank_, transz, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
   dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2z, cmax_+1, 0.0, final_z, rank_*b2*a2);
 
-  for (int id = 0; id <= d_; ++id) {
-    for (int ic = 0; ic <= c_; ++ic) {
-      for (int ib = 0; ib <= b_; ++ib) {
-        for (int ia = 0; ia <= a_; ++ia) {
+  if (!dummy[2])
+  for (int id = 0; id <= d_; ++id)
+    for (int ic = 0; ic <= c_; ++ic)
+      for (int ib = 0; ib <= b_; ++ib)
+        for (int ia = 0; ia <= a_; ++ia)
           for (int r = 0; r != rank_; ++r) {
-                                                                              // v- this is a little dangerous, but perhaps the best
-            final_xa[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_x[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_x[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
-            final_xb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_x[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_x[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
             final_xc[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[2]*final_x[r+rank_*(ia+a2*(ib+b2*(ic+1+c2*id)))] - (ic == 0 ? 0.0 : ic*final_x[r+rank_*(ia+a2*(ib+b2*(ic-1+c2*id)))]);
-
-            final_ya[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_y[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_y[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
-            final_yb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_y[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_y[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
             final_yc[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[2]*final_y[r+rank_*(ia+a2*(ib+b2*(ic+1+c2*id)))] - (ic == 0 ? 0.0 : ic*final_y[r+rank_*(ia+a2*(ib+b2*(ic-1+c2*id)))]);
-
-            final_za[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_z[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_z[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
-            final_zb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_z[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_z[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
             final_zc[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[2]*final_z[r+rank_*(ia+a2*(ib+b2*(ic+1+c2*id)))] - (ic == 0 ? 0.0 : ic*final_z[r+rank_*(ia+a2*(ib+b2*(ic-1+c2*id)))]);
           }
-        }
-      }
-    }
-  }
+
+  assert(!dummy[3] || !dummy[2]);
+  if (!dummy[1])
+  for (int id = 0; id <= d_; ++id)
+    for (int ic = 0; ic <= c_; ++ic)
+      for (int ib = 0; ib <= b_; ++ib)
+        for (int ia = 0; ia <= a_; ++ia)
+          for (int r = 0; r != rank_; ++r) {
+            final_xb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_x[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_x[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
+            final_yb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_y[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_y[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
+            final_zb[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[1]*final_z[r+rank_*(ia+a2*(ib+1+b2*(ic+c2*id)))] - (ib == 0 ? 0.0 : ib*final_z[r+rank_*(ia+a2*(ib-1+b2*(ic+c2*id)))]);
+          }
+
+  if (!dummy[0])
+  for (int id = 0; id <= d_; ++id)
+    for (int ic = 0; ic <= c_; ++ic)
+      for (int ib = 0; ib <= b_; ++ib)
+        for (int ia = 0; ia <= a_; ++ia)
+          for (int r = 0; r != rank_; ++r) {
+            final_xa[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_x[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_x[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
+            final_ya[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_y[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_y[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
+            final_za[r+rank_*(ia+a2*(ib+b2*(ic+c2*id)))] = 2.0*expo[0]*final_z[r+rank_*(ia+1+a2*(ib+b2*(ic+c2*id)))] - (ia == 0 ? 0.0 : ia*final_z[r+rank_*(ia-1+a2*(ib+b2*(ic+c2*id)))]);
+          }
+
 
   double* current_data0  = out;
   double* current_data1  = out + size_block;
@@ -116,48 +128,83 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
 
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
+  if (!dummy[2])
   for (int icz = 0; icz <= c_; ++icz) {
   for (int icy = 0; icy <= c_ - icz; ++icy) {
   const int icx = c_ - icz - icy;
-
     for (int idz = 0; idz <= d_; ++idz) {
     for (int idy = 0; idy <= d_ - idz; ++idy) {
     const int idx = d_ - idz - idy;
-
       for (int iaz = 0; iaz <= a_; ++iaz) {
       for (int iay = 0; iay <= a_ - iaz; ++iay) {
       const int iax = a_ - iaz - iay;
-
         for (int ibz = 0; ibz <= b_; ++ibz) {
         for (int iby = 0; iby <= b_ - ibz; ++iby) {
         const int ibx = b_ - ibz - iby;
-
           for (int i = 0; i != rank_; ++i) {
-            *current_data0  += final_xa[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-            *current_data1  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_ya[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-            *current_data2  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_za[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-            *current_data3  += final_xb[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-            *current_data4  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_yb[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
-            *current_data5  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_zb[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
             *current_data6  += final_xc[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
             *current_data7  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_yc[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
             *current_data8  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_zc[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
           }
-          ++current_data0;
-          ++current_data1;
-          ++current_data2;
-          ++current_data3;
-          ++current_data4;
-          ++current_data5;
           ++current_data6;
           ++current_data7;
           ++current_data8;
-
         }}
       }}
     }}
   }}
 
+  if (!dummy[1])
+  for (int icz = 0; icz <= c_; ++icz) {
+  for (int icy = 0; icy <= c_ - icz; ++icy) {
+  const int icx = c_ - icz - icy;
+    for (int idz = 0; idz <= d_; ++idz) {
+    for (int idy = 0; idy <= d_ - idz; ++idy) {
+    const int idx = d_ - idz - idy;
+      for (int iaz = 0; iaz <= a_; ++iaz) {
+      for (int iay = 0; iay <= a_ - iaz; ++iay) {
+      const int iax = a_ - iaz - iay;
+        for (int ibz = 0; ibz <= b_; ++ibz) {
+        for (int iby = 0; iby <= b_ - ibz; ++iby) {
+        const int ibx = b_ - ibz - iby;
+          for (int i = 0; i != rank_; ++i) {
+            *current_data3  += final_xb[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+            *current_data4  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_yb[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+            *current_data5  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_zb[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+          }
+          ++current_data3;
+          ++current_data4;
+          ++current_data5;
+        }}
+      }}
+    }}
+  }}
+
+  if (!dummy[0])
+  for (int icz = 0; icz <= c_; ++icz) {
+  for (int icy = 0; icy <= c_ - icz; ++icy) {
+  const int icx = c_ - icz - icy;
+    for (int idz = 0; idz <= d_; ++idz) {
+    for (int idy = 0; idy <= d_ - idz; ++idy) {
+    const int idx = d_ - idz - idy;
+      for (int iaz = 0; iaz <= a_; ++iaz) {
+      for (int iay = 0; iay <= a_ - iaz; ++iay) {
+      const int iax = a_ - iaz - iay;
+        for (int ibz = 0; ibz <= b_; ++ibz) {
+        for (int iby = 0; iby <= b_ - ibz; ++iby) {
+        const int ibx = b_ - ibz - iby;
+          for (int i = 0; i != rank_; ++i) {
+            *current_data0  += final_xa[i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+            *current_data1  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_ya[i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_z [i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+            *current_data2  += final_x [i+rank_*(iax+a2*(ibx+b2*(icx+c2*idx)))] * final_y [i+rank_*(iay+a2*(iby+b2*(icy+c2*idy)))] * final_za[i+rank_*(iaz+a2*(ibz+b2*(icz+c2*idz)))];
+          }
+          ++current_data0;
+          ++current_data1;
+          ++current_data2;
+        }}
+      }}
+    }}
+  }}
 }
 
 }
