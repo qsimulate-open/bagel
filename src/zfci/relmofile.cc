@@ -181,12 +181,19 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
   shared_ptr<const RelDFFull> full = dffull.front();
-//end dmp2 copied code
+
+  cout << "    * 3-index integral transformation done" << endl;
+
 
   // use form_4index function to product 4 index (ij|kl) = sum (ij|gamma)(gamma|kl)
-//  for (int i = 0; i != 1; ++i)
- //   shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
+  auto buf = make_shared<ZMatrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
+  for (size_t i = 0; i != nvirt; ++i) {
+    shared_ptr<ZMatrix> data = full->form_4index_1fixed(full, 1.0, i);
+    *buf = *data;
+  }
+//end mp2 copied code
 
     unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
+    copy_n(buf->data(), 16*nbasis*nbasis, out.get());
     return out;
 }
