@@ -129,6 +129,10 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t nbasis = geom_->nbasis();
+  const size_t nocc = ref_->nocc();
+  if (nocc < 1) throw runtime_error("no correlated electrons");
+  const size_t nvirt = nbasis*2 - nocc;
+  if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
   assert(nbasis*4 == relref->relcoeff()->ndim());
   assert(nbasis*2 == relref->relcoeff()->mdim());
@@ -137,10 +141,16 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   // correlated occupied orbitals
   array<shared_ptr<const Matrix>, 4> rocoeff;
   array<shared_ptr<const Matrix>, 4> iocoeff;
+  // correlated virtual orbitals
+  array<shared_ptr<const Matrix>, 4> rvcoeff;
+  array<shared_ptr<const Matrix>, 4> ivcoeff;
   for (int i = 0; i != 4; ++i) {
-    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, 4*nbasis);
+    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, 0, nbasis, nocc);
     rocoeff[i] = oc->get_real_part();
     iocoeff[i] = oc->get_imag_part();
+    shared_ptr<const ZMatrix> vc = relref->relcoeff()->get_submatrix(i*nbasis, nocc, nbasis, nvirt);
+    rvcoeff[i] = vc->get_real_part();
+    ivcoeff[i] = vc->get_imag_part();
   }
 
   // (1) make DFDists
@@ -165,6 +175,8 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
 
   // (4) compute (gamma|ia)
   list<shared_ptr<RelDFFull>> dffull;
+  for (auto& i : half_complex_exch)
+    dffull.push_back(make_shared<RelDFFull>(i, rvcoeff, ivcoeff));
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
