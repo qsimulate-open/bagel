@@ -175,14 +175,10 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   shared_ptr<const RelDFFull> full = dffull.front();
   cout << "    * 3-index integral transformation done" << endl;
 
-  shared_ptr<ZMatrix> data = full->form_4index(full, 1.0);
-
-  // size is wrong
-#if 0
-  unique_ptr<complex<double>[]> out(new complex<double>[16*nbasis*nbasis]);
-  copy_n(buf->data(), 16*nbasis*nbasis, out.get());
+  unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
+  {
+    shared_ptr<const ZMatrix> buf = full->form_4index(full, 1.0);
+    copy_n(buf->data(), nocc*nocc*nocc*nocc, out.get());
+  }
   return out;
-#else
-  return unique_ptr<complex<double>[]>();
-#endif
 }
