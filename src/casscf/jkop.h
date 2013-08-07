@@ -35,8 +35,8 @@ namespace bagel {
 class JKop {
   protected:
     // CAUTION packing is different between J and K ops
-    std::unique_ptr<double[]> jdata_;
-    std::unique_ptr<double[]> data_;
+    std::shared_ptr<Matrix> jdata_;
+    std::shared_ptr<Matrix> data_;
     const std::shared_ptr<FCI> fci_;
     const std::shared_ptr<const Coeff> coeff_;
     const size_t nocc_;
@@ -53,11 +53,11 @@ class JKop {
       assert(df->nbasis0() == df->nbasis1());
       // K operator // (ai|ai)
       std::shared_ptr<DFHalfDist> half = df->compute_half_transform(ocoeff)->apply_J();
-      data_ = std::move(half->form_4index(half, 1.0));
+      data_ = half->form_4index(half, 1.0);
 
       // J operator // (aa|ii)
       std::shared_ptr<DFFullDist> full = half->compute_second_transform(ocoeff);
-      jdata_ = std::move(full->form_4index(df, 1.0));
+      jdata_ = full->form_4index(df, 1.0);
 
       // contruct 2RDM
       std::shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
@@ -106,23 +106,23 @@ class JKop {
         for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nbasis_; ++k) {
             for (int l = 0; l != nbasis_; ++l) {
-              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_[j+nocc*(l+nbasis_*(i+nocc*k))];
+              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_->data(j+nocc*(l+nbasis_*(i+nocc*k)));
             }
           }
         }
       }
       // first K contribution to G operator
-      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 2.0, buf, nbasis_*nbasis_, rdm2allk, nocc*nocc, 0.0, data_, nbasis_*nbasis_);
+      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 2.0, buf.get(), nbasis_*nbasis_, rdm2allk.get(), nocc*nocc, 0.0, data_->data(), nbasis_*nbasis_);
       // second J contribution to G operator
-      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 1.0, jdata_, nbasis_*nbasis_, rdm2all, nocc*nocc, 1.0, data_, nbasis_*nbasis_);
+      dgemm_("N", "N", nbasis_*nbasis_, nocc*nocc, nocc*nocc, 1.0, jdata_->data(), nbasis_*nbasis_, rdm2all.get(), nocc*nocc, 1.0, data_->data(), nbasis_*nbasis_);
       // last h contribution
       size_t icnt = 0lu;
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j, icnt += nbasis_*nbasis_) {
           if (i >= nclosed && j >= nclosed) {
-            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_.get()+icnt, 1);
+            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_->data()+icnt, 1);
           } else if (i == j) {
-            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_.get()+icnt, 1);
+            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_->data()+icnt, 1);
           }
         }
       }
@@ -135,7 +135,7 @@ class JKop {
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nbasis_; ++k) {
-            out->element(k, i) += 2.0*ddot_(nbasis_, in->element_ptr(0,j), 1, data_.get()+nbasis_*(k+nbasis_*(j+nocc*i)), 1);
+            out->element(k, i) += 2.0*ddot_(nbasis_, in->element_ptr(0,j), 1, data_->data()+nbasis_*(k+nbasis_*(j+nocc*i)), 1);
           }
         }
       }
@@ -152,10 +152,10 @@ class JKop {
       // first transform to MO
       {
         std::unique_ptr<double[]> buf(new double[nocc*nocc*nbasis*nbasis]);
-        dgemm_("T", "N", nbasis, nocc*nocc*nbasis, nbasis, 1.0, coeff_->data(), nbasis, data_.get(), nbasis, 0.0, buf.get(), nbasis);
+        dgemm_("T", "N", nbasis, nocc*nocc*nbasis, nbasis, 1.0, coeff_->data(), nbasis, data_->data(), nbasis, 0.0, buf.get(), nbasis);
         for (int i = 0; i != nocc*nocc; ++i) {
           dgemm_("N", "N", nbasis, nbasis, nbasis, 1.0, buf.get()+i*nbasis*nbasis, nbasis, coeff_->data(), nbasis,
-                                                   0.0, data_.get()+i*nbasis*nbasis, nbasis);
+                                                   0.0, data_->data()+i*nbasis*nbasis, nbasis);
         }
       }
 
@@ -163,15 +163,13 @@ class JKop {
       out->fill(1.0e100);
       for (int i = 0; i != nocc; ++i) {
         for (int j = nocc; j != nbasis; ++j) {
-          out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))];
+          out->element(j, i) = out->element(i, j) = 2.0*data_->data(j+nbasis*(j+nbasis*(i+nocc*i))); // FIXME -- is this right?? looks as if it accesses to Jop
         }
       }
       // occ-occ part
       for (int i = 0; i != nclosed; ++i) {
         for (int j = nclosed; j != nocc; ++j) {
-//        out->element(j, i) = out->element(i, j) = 2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] + 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]
-//                                                  - 4.0*data_[j+nbasis*(i+nbasis*(j+nocc*i))];
-          out->element(j, i) = out->element(i, j) = (2.0*data_[j+nbasis*(j+nbasis*(i+nocc*i))] - 2.0*data_[i+nbasis*(i+nbasis*(j+nocc*j))]);
+          out->element(j, i) = out->element(i, j) = (2.0*data_->data(j+nbasis*(j+nbasis*(i+nocc*i))) - 2.0*data_->data(i+nbasis*(i+nbasis*(j+nocc*j))));
         }
       }
       return out;

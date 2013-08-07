@@ -68,9 +68,9 @@ class MOFile {
     // this sets mo1e_, core_fock_ and returns a core energy
     virtual std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) = 0;
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<double[]> compute_mo2e(const int, const int) = 0;
+    virtual std::shared_ptr<const Matrix> compute_mo2e(const int, const int) = 0;
 
-    void compress(std::shared_ptr<const Matrix> buf1e, std::unique_ptr<double[]>& buf2e);
+    void compress(std::shared_ptr<const Matrix> buf1e, std::shared_ptr<const Matrix> buf2e);
 
     std::shared_ptr<const Coeff> coeff_;
 
@@ -108,7 +108,7 @@ class MOFile {
 class Jop : public MOFile {
   protected:
     std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override;
-    std::unique_ptr<double[]> compute_mo2e(const int, const int) override;
+    std::shared_ptr<const Matrix> compute_mo2e(const int, const int) override;
   public:
     Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
       : MOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
@@ -120,14 +120,14 @@ class Htilde : public MOFile {
   protected:
     // temp storage
     std::shared_ptr<const Matrix> h1_tmp_;
-    std::unique_ptr<double[]> h2_tmp_;
+    std::shared_ptr<const Matrix> h2_tmp_;
 
     std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); }
-    std::unique_ptr<double[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); }
+    std::shared_ptr<const Matrix> compute_mo2e(const int, const int) override { return h2_tmp_; }
 
   public:
-    Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> h1, std::unique_ptr<double[]> h2)
-      : MOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
+    Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> h1, std::shared_ptr<const Matrix> h2)
+      : MOFile(b), h1_tmp_(h1), h2_tmp_(h2) {
       core_energy_ = create_Jiiii(c, d);
     }
 };

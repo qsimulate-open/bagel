@@ -99,7 +99,9 @@ class K2ext {
 
               // contract
               // TODO form_4index function now generates global 4 index tensor. This should be localized.
-              std::unique_ptr<double[]> target = df01->form_4index(df23, 1.0);
+              std::shared_ptr<Matrix> tmp = df01->form_4index(df23, 1.0);
+              std::unique_ptr<double[]> target(new double[tmp->size()]);
+              std::copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
 
               // move in place
               if (hashkey23 != hashkey01) {

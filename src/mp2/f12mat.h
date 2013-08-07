@@ -34,6 +34,9 @@
 #include <algorithm>
 #include <src/util/f77.h>
 #include <stdexcept>
+#include <src/math/matrix.h>
+
+namespace bagel {
 
 class F12Mat;
 
@@ -48,6 +51,8 @@ class F12Ten {
     F12Ten(const size_t i, const size_t d0, const size_t d1) : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[i*i*d0*d1]) {}
     F12Ten(const size_t i, const size_t d0, const size_t d1, std::unique_ptr<double[]> b)
      : nocc_(i), dim0_(d0), dim1_(d1), data_(std::move(b)) {}
+    F12Ten(const size_t i, const size_t d0, const size_t d1, std::shared_ptr<const Matrix> b)
+     : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[b->size()]) { std::copy_n(b->data(), b->size(), data_.get()); }
     F12Ten(const F12Ten& o) : nocc_(o.nocc_), dim0_(o.dim0_), dim1_(o.dim1_), data_(new double[o.size()]) {
       std::copy(o.data(), o.data()+o.size(), data_.get());
     }
@@ -95,6 +100,7 @@ class F12Mat : public F12Ten {
   public:
     F12Mat(const size_t i) : F12Ten(i,i,i) { }
     F12Mat(const size_t i, std::unique_ptr<double[]> b) : F12Ten(i, i, i, std::move(b)) { }
+    F12Mat(const size_t i, std::shared_ptr<const Matrix> b) : F12Ten(i, i, i, b) { }
     F12Mat(const F12Mat& o) : F12Ten(o) { }
     ~F12Mat() {}
 
@@ -155,6 +161,8 @@ class F12Mat : public F12Ten {
 
     void symmetrize(const bool braket = true);
 };
+
+}
 
 #endif
 
