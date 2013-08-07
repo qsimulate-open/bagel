@@ -82,16 +82,14 @@ RysInt::~RysInt() {
 
 void RysInt::set_swap_info(const bool swap_bra_ket) {
   // swap 01 indices when needed: Larger angular momentum function comes first
-  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number()
-   || (basisinfo_[0]->angular_number() == 0 && basisinfo_[1]->angular_number() == 0)) {
+  if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->angular_number() == 0) {
     swap(basisinfo_[0], basisinfo_[1]);
     swap01_ = true;
   } else {
     swap01_ = false;
   }
   // swap 23 indices when needed
-  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number()
-   || (basisinfo_[2]->angular_number() == 0 && basisinfo_[3]->angular_number() == 0)) {
+  if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number() || basisinfo_[2]->angular_number() == 0) {
     swap(basisinfo_[2], basisinfo_[3]);
     swap23_ = true;
   } else {
