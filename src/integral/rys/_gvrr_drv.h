@@ -81,7 +81,8 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
     dgemm_("N", "N", rank_, b2*a2, amax_+1, 1.0, workz+i*rank_*(amax_+1), rank_, transz, amax_+1, 0.0, intermediate+i*rank_*b2*a2, rank_);
   dgemm_("N", "N", rank_*b2*a2, c2*d2, cmax_+1, 1.0, intermediate, rank_*b2*a2, trans2z, cmax_+1, 0.0, final_z, rank_*b2*a2);
 
-  if (!dummy[2])
+  // if 3 is dummy, 2 is skipped
+  if (!(dummy[2] || dummy[3]))
   for (int id = 0; id <= d_; ++id)
     for (int ic = 0; ic <= c_; ++ic)
       for (int ib = 0; ib <= b_; ++ib)
@@ -128,7 +129,7 @@ void gvrr_driver(double* out, const double* const roots, const double* const wei
 
   // CAUTION!
   // integrals in the 0(1(2(3(x2(x3(x0(x1))))))) order
-  if (!dummy[2])
+  if (!(dummy[2] || dummy[3]))
   for (int icz = 0; icz <= c_; ++icz) {
   for (int icy = 0; icy <= c_ - icz; ++icy) {
   const int icx = c_ - icz - icy;

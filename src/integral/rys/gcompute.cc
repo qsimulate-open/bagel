@@ -201,9 +201,9 @@ void GradBatch::compute() {
     // use symmetry for shell2
     assert(!basisinfo_[2]->dummy());
     if (!basisinfo_[0]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*6, 1);
     if (!basisinfo_[1]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*6, 1);
   }
 
   stack_->release(size_block_, stack_sav);
