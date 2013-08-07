@@ -17,7 +17,7 @@ ss = "\
 //\n\
 // The BAGEL package is free software; you can redistribute it and/or modify\n\
 // it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 2, or (at your option)\n\
+// the Free Software Foundation; either version 3, or (at your option)\n\
 // any later version.\n\
 //\n\
 // The BAGEL package is distributed in the hope that it will be useful,\n\
@@ -30,9 +30,9 @@ ss = "\
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include <src/rysint/gradbatch.h>\n\
-#include <src/rysint/_gvrr_drv.h>\n\
-#include <src/util/comb.h>\n\
+#include <src/integral/rys/gradbatch.h>\n\
+#include <src/integral/rys/_gvrr_drv.h>\n\
+#include <src/math/comb.h>\n\
 #include <src/util/f77.h>\n\
 \n\
 using namespace std;\n\
@@ -49,7 +49,7 @@ void GradBatch::perform_VRR() {\n\
   const int c = basisinfo_[2]->angular_number();\n\
   const int d = basisinfo_[3]->angular_number();\n\
 \n\
-  const int isize = (amax_ + 1) * (cmax_ + 1); \n\
+  const int isize = (amax_ + 1) * (cmax_ + 1);\n\
   double* const workx = stack_->get(isize*rank_*3);\n\
   double* const worky = workx + isize*rank_;\n\
   double* const workz = worky + isize*rank_;\n\
@@ -105,6 +105,7 @@ void GradBatch::perform_VRR() {\n\
   double* const final_za = stack_->get(b2*a2*c2*d2*rank_);\n\
   double* const final_zb = stack_->get(b2*a2*c2*d2*rank_);\n\
   double* const final_zc = stack_->get(b2*a2*c2*d2*rank_);\n\
+  const array<bool,4> dummy{{basisinfo_[0]->dummy(), basisinfo_[1]->dummy(), basisinfo_[2]->dummy(), basisinfo_[3]->dummy()}};\n\
   const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
 for a in range(0,7):
@@ -128,7 +129,7 @@ for a in range(0,7):
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
                     p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_,\n\
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\
-                    final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz);\n\
+                    final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);\n\
     } break;\n"
 ss += "\
   }\n\
