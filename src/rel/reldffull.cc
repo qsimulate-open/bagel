@@ -164,7 +164,7 @@ shared_ptr<ZMatrix> RelDFFull::form_4index(shared_ptr<const RelDFFull> a, const 
   shared_ptr<Matrix> real = dffull_[0]->form_4index(a->dffull_[0], fac);
   *real += *dffull_[1]->form_4index(a->dffull_[1], -fac);
 
-  shared_ptr<Matrix> imag = dffull_[0]->form_4index(a->dffull_[1], fac);
+  shared_ptr<Matrix> imag = dffull_[0]->form_4index(a->dffull_[1], -fac);
   *imag += *dffull_[1]->form_4index(a->dffull_[0], fac);
 
   return make_shared<ZMatrix>(*real, *imag);
