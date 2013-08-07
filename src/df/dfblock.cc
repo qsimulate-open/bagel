@@ -76,7 +76,7 @@ void DFBlock::average() {
     sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
     const size_t retsize = asize_ - asendsize;
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
-      task.push_back(CopyBlockTask(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_));
+      task.emplace_back(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
 
     TaskQueue<CopyBlockTask> tq(task);
     tq.compute(resources__->max_num_threads());
@@ -116,7 +116,7 @@ void DFBlock::average() {
     vector<CopyBlockTask> task;
     task.reserve(b2size_);
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
-      task.push_back(CopyBlockTask(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_));
+      task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
     TaskQueue<CopyBlockTask> tq(task);
     tq.compute(resources__->max_num_threads());
   }
