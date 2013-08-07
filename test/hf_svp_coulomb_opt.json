@@ -14,7 +14,6 @@
 
 {
   "title" : "optimize",
-  "thresh" : 1.0e-7,
   "method" : [
     { "title" : "hf" },
     { "title" : "dhf" }
