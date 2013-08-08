@@ -62,8 +62,8 @@ class ZMOFile_Base {
     // this sets mo1e_, core_fock_ and returns a core energy
     virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
-    virtual void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) = 0;
+    virtual std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) = 0;
+    virtual void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) = 0;
   public:
     ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::string method = std::string("KH")) :
       geom_(ref->geom()), ref_(ref) { }
@@ -110,11 +110,11 @@ class ZHtilde_Base {
   protected:
     // temp storage
     std::shared_ptr<const ZMatrix> h1_tmp_;
-    std::unique_ptr<std::complex<double>[]> h2_tmp_;
+    std::shared_ptr<const ZMatrix> h2_tmp_;
 
   public:
-    ZHtilde_Base(std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
-      : h1_tmp_(h1), h2_tmp_(std::move(h2)) { }
+    ZHtilde_Base(std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
+      : h1_tmp_(h1), h2_tmp_(h2) { }
 };
 
 

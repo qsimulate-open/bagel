@@ -111,10 +111,10 @@ void ZKnowlesHandy::relupdate() {
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
   auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_, "KH");
-  throw logic_error("testing...");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
+  throw logic_error("testing...");
   const_denom();
 }

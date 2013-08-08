@@ -59,7 +59,7 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
-  unique_ptr<complex<double>[]> buf2e = compute_mo2e(nstart, nfence);
+  shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
 
   // TODO block diaganolize according kramers symmetry
   //kramers_block(buf1e, buf2e);
@@ -68,7 +68,7 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   return core_energy;
 }
 
-void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
+void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 //
 //block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
 //
@@ -78,12 +78,12 @@ void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, unique_ptr<comple
 }
 
 //does not need to be changed as long as kramers_block is in the same format
-void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
+void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 
   const int nocc = nocc_;
   sizeij_ = nocc*nocc;
   mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-  copy_n(buf2e.get(), sizeij_*sizeij_, mo2e_.get());
+  copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
 
   // h'ij = hij - 0.5 sum_k (ik|kj)
   const int size1e = nocc*nocc;
@@ -93,15 +93,11 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<dou
     for (int j = 0; j != nocc; ++j, ++ij) {
       mo1e_[ij] = buf1e->element(j,i);
       for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e[j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc];
+        mo1e_[ij] -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
     }
   }
 }
 
-//
-//Relativistic 1 and 2e functions in progress
-//
-//inputs?
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
   const size_t nbasis = geom_->nbasis();
@@ -113,11 +109,10 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
   shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
 
   // Hij = relcoeff(T) * relhcore * relcoeff
-  core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff); 
+  core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff);
 
   //TODO include some density adjustment? see zmofile
 //core_energy = relhcore->trace();
-  // FIXME
   core_energy = 1.0e100;
   assert(fabs(core_energy.imag())<1e-10);
 
@@ -125,10 +120,9 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 }
 
 
-//inputs?
-unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int nfence) {
+shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
-  const size_t nocc = nfence - nstart; 
+  const size_t nocc = nfence - nstart;
   if (nocc < 1) throw runtime_error("no correlated electrons");
 
   assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
@@ -173,12 +167,8 @@ unique_ptr<complex<double>[]> RelJop::compute_mo2e(const int nstart, const int n
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
   shared_ptr<const RelDFFull> full = dffull.front();
-  cout << "    * 3-index integral transformation done" << endl;
 
-  unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
-  {
-    shared_ptr<const ZMatrix> buf = full->form_4index(full, 1.0);
-    copy_n(buf->data(), nocc*nocc*nocc*nocc, out.get());
-  }
-  return out;
+  shared_ptr<const ZMatrix> buf = full->form_4index(full, 1.0);
+
+  return buf;
 }

@@ -39,12 +39,8 @@ class RelMOFile : public ZMOFile_Base {
     std::shared_ptr<ZMatrix> core_dfock_;
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int) override;
-    // this sets mo1e_, core_dfock_ and returns a core energy
-    virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
-    // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
-    void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
-    void kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e);
+    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
+    void kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
 
     std::shared_ptr<const Geometry> relgeom_;
     std::shared_ptr<const RelReference> relref;
@@ -60,7 +56,7 @@ class RelMOFile : public ZMOFile_Base {
 class RelJop : public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override;
   public:
     RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
       : RelMOFile(b, f) { core_energy_ = create_Jiiii(c, d); }
@@ -70,9 +66,9 @@ class RelJop : public RelMOFile {
 class RelHtilde : public ZHtilde_Base, public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { return h2_tmp_; };
   public:
-    RelHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
+    RelHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
       : ZHtilde_Base(h1, std::move(h2)), RelMOFile(b) {
       core_energy_ = create_Jiiii(c, d);
     }

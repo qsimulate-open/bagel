@@ -68,17 +68,17 @@ double ZMOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
-  unique_ptr<complex<double>[]> buf2e = compute_mo2e(nstart, nfence);
+  shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
   compress(buf1e, buf2e);
   return core_energy;
 }
 
-void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<double>[]>& buf2e) {
+void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 
   const int nocc = nocc_;
   sizeij_ = nocc*nocc;
   mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-  copy_n(buf2e.get(), sizeij_*sizeij_, mo2e_.get());
+  copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
 
   // h'ij = hij - 0.5 sum_k (ik|kj)
   const int size1e = nocc*nocc;
@@ -88,7 +88,7 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, unique_ptr<complex<doubl
     for (int j = 0; j != nocc; ++j, ++ij) {
       mo1e_[ij] = buf1e->element(j,i);
       for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e[j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc];
+        mo1e_[ij] -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
     }
   }
 }
@@ -122,7 +122,7 @@ tuple<shared_ptr<const ZMatrix>, double> ZJop::compute_mo1e(const int nstart, co
   return make_tuple(mat, core_energy);
 }
 //NOTE because complex df is not yet implemented this returns all zero imaginary terms
-unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfence) {
+shared_ptr<const ZMatrix> ZJop::compute_mo2e(const int nstart, const int nfence) {
 
   const int nocc = nfence - nstart;
   assert(nocc > 0);
@@ -140,8 +140,7 @@ unique_ptr<complex<double>[]> ZJop::compute_mo2e(const int nstart, const int nfe
 
   // assembles (ii|ii) = (ii|D)(D|ii)
   shared_ptr<const Matrix> med = buf->form_4index(buf, 1.0);
-  unique_ptr<complex<double>[]> out(new complex<double>[nocc*nocc*nocc*nocc]);
-  for (int i = 0; i != nocc*nocc*nocc*nocc; i++) out[i] = med->data(i);
+  auto out = make_shared<const ZMatrix>(*med, 1.0);
   return out;
 }
 
