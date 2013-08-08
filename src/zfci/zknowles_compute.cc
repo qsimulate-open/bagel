@@ -103,8 +103,8 @@ void ZFCI::sigma_2a1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
     complex<double>* const target_base = d->data(ip)->data();
     for (auto& iter : cc->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
-      complex<double>* const target_array = target_base + iter.source*lb;
-      zaxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
+      complex<double>* const target_array = target_base + iter.target*lb;
+      zaxpy_(lb, sign, source_base + iter.source*lb, 1, target_array, 1);
     }
   }
 }
@@ -119,7 +119,7 @@ void ZFCI::sigma_2a2(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
       complex<double>* const target_array0 = d->data(ip)->element_ptr(0, i);
       for (auto& iter : cc->det()->phib(ip)) {
         const double sign = static_cast<double>(iter.sign);
-        target_array0[iter.source] += sign * source_array0[iter.target];
+        target_array0[iter.target] += sign * source_array0[iter.source];
       }
     }
   }
@@ -146,8 +146,8 @@ void ZKnowlesHandy::sigma_2c1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
     for (auto& iter : (e->det())->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
 // TODO rename
-      complex<double>* const target_array = sigma->element_ptr(0, iter.source);
-      zaxpy_(lb, sign, source_base + lb*iter.target, 1, target_array, 1);
+      complex<double>* const target_array = sigma->element_ptr(0, iter.target);
+      zaxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
     }
   }
 }
@@ -162,7 +162,7 @@ void ZKnowlesHandy::sigma_2c2(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
       for (auto& iter : e->det()->phib(ip)) {
         const double sign = static_cast<double>(iter.sign);
 // TODO rename
-      target_array0[iter.source] += sign * source_array0[iter.target];
+      target_array0[iter.target] += sign * source_array0[iter.source];
       }
     }
   }
