@@ -39,18 +39,18 @@ void ZKnowlesHandy::mult_phase_factor() {
   const size_t norb3 = norb2*norb_;
   const size_t norb4 = norb3*norb_;
 
-  ZMatrix phase(norb_, norb_);
+  auto phase = make_shared<ZMatrix>(norb_, norb_);
   for (int i = 0; i != norb_; ++i) {
     const double ran = rand();
     const complex<double> fac(cos(ran), sin(ran));
-    phase(i,i) = fac;
+    phase->element(i,i) = fac;
   }
 
   //transform 1e integrals.
   auto mo1e = make_shared<ZMatrix>(norb_, norb_);
 
   copy_n(jop_->mo1e_ptr(), norb2, mo1e->data());
-  *mo1e = phase % *mo1e * phase;
+  *mo1e = *phase % *mo1e * *phase;
 
   //transforming 4 index mo2e
   unique_ptr<complex<double>[]> mo2e(new complex<double>[norb4]);
@@ -58,26 +58,20 @@ void ZKnowlesHandy::mult_phase_factor() {
   unique_ptr<complex<double>[]> trans(new complex<double>[norb4]);
 
   // 1) make (i*, j, k, l) (left multiply by phase*)
-  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase.data(), norb_, jop_->mo2e_ptr(), norb_, 0.0, trans.get(), norb_);
+  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase->data(), norb_, jop_->mo2e_ptr(), norb_, 0.0, trans.get(), norb_);
 
   // 2) make (i*, j, k, l') (right multiply by phase)
-  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, trans.get(), norb3, phase.data(), norb_, 0.0, tmp.get(), norb3);
+  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, trans.get(), norb3, phase->data(), norb_, 0.0, tmp.get(), norb3);
 
   // 3) transpose to make (k, l', i*, j) now (kl|ij)
   mytranspose_complex_(tmp.get(), norb2, norb2, trans.get());
 
   // 4) make (k*, l', i*, j) (left multiply by phase*)
-  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase.data(), norb_, trans.get(), norb_, 0.0, tmp.get(), norb_);
+  zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase->data(), norb_, trans.get(), norb_, 0.0, tmp.get(), norb_);
 
-  // 5) make (k', l', i*, j') (right multiply by phase)
-  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase.data(), norb_, 0.0, trans.get(), norb3);
-
-  // 6) transpose to return indices to (ij|kl)
-  mytranspose_complex_(trans.get(), norb2, norb2, tmp.get());
-
-  //pass complex conjugate of 1 and 2 body integrals to account for replacement of 8fold symmetry with 4fold symmetry in complex KH
-  mytranspose_complex_conjg_(tmp.get(), norb2, norb2, mo2e.get());
+  // 5) make (k*, l', i*, j') (right multiply by phase)
+  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase->data(), norb_, 0.0, mo2e.get(), norb3);
 
   // set mo1e and mo2e
-  jop_->set_moints(mo1e->transpose_conjg(), mo2e);
+  jop_->set_moints(mo1e, mo2e);
 }
