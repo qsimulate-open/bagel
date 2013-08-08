@@ -140,23 +140,31 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     }
     // (0) get AO integras
     // get individual df dist objects for each block and add df to dfs
-    vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
-    dfs.push_back(geom_->df());
-
-    // (1) make RelDF objects from AO integrals
-    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
-
-    // (2) first-transform
-    list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
-
-    // (3) split and factorize
     list<shared_ptr<RelDFHalf>> half_complex_exch;
-    for (auto& i : half_complex) {
-      list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-      half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+
+    const bool external_half = !task_->half().empty();
+    if (external_half) {
+      // (1-3) Reuse half-transform integrals if possible
+      half_complex_exch = task_->half();
+      task_->discard_half();
+    } else {
+      vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+      dfs.push_back(geom_->df());
+
+      // (1) make RelDF objects from AO integrals
+      list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+      // (2) first-transform
+      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+
+      // (3) split and factorize
+      for (auto& i : half_complex) {
+        list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+        half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+      }
+      half_complex.clear();
+      DFock::factorize(half_complex_exch);
     }
-    half_complex.clear();
-    DFock::factorize(half_complex_exch);
 #ifdef LOCAL_TIMING
     mpi__->barrier();
     ptime.tick_print("first transformed");
@@ -167,9 +175,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false /* multiply J^{-1} */);
+          *cd += CDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half /* false = multiply J^{-1} */);
         } else {
-          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), false);
+          cd = make_shared<CDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half);
         }
       }
     }
@@ -177,8 +185,10 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // (5) compute (gamma|ij)
     list<shared_ptr<RelDFFull>> dffull;
-    for (auto& i : half_complex_exch)
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff)->apply_JJ());
+    for (auto& i : half_complex_exch) {
+      auto tmp = make_shared<RelDFFull>(i, rocoeff, iocoeff);
+      dffull.push_back(external_half ? tmp->apply_J() : tmp->apply_JJ());
+    }
     DFock::factorize(dffull);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
     assert(dffull.size() == 1);
