@@ -58,6 +58,11 @@ class SCF_base : public Method {
 
     const std::string indent = "  ";
 
+    // when gradient is requested, we store half-transformed integrals
+    // TODO so far only implemented in closed-shell SCF
+    bool do_grad_;
+    std::shared_ptr<DFHalfDist> half_; 
+
   public:
     SCF_base(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
@@ -77,6 +82,9 @@ class SCF_base : public Method {
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     double* eig() { return eig_.get(); };
+
+    std::shared_ptr<DFHalfDist> half() const { return half_; }
+    void discard_half() { half_ = std::shared_ptr<DFHalfDist>(); }
 };
 
 }

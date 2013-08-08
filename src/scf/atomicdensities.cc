@@ -139,8 +139,9 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   const int maxiter = 100;
   double prev_energy = 0.0;
   for (; iter != maxiter; ++iter) {
-    shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), true) : hcore->copy();
-    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false, 0.0);
+    shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), false/*store*/, true/*rhf*/)
+                                      : hcore->copy();
+    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false/*store*/, false/*rhf*/, 0.0/*exch*/);
     *fock += *fock2 - *hcore;
 
     auto aodensity = make_shared<const Matrix>((*ocoeff^*ocoeff)*2.0 + *vden);

@@ -40,11 +40,15 @@ class Fock : public Fock_base {
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = std::shared_ptr<Matrix>());
     void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
 
+    // when DF gradients are requested
+    bool store_half_;
+    std::shared_ptr<DFHalfDist> half_;
+
   public:
     // Fock operator for DF cases
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
-         const std::shared_ptr<const Matrix> ocoeff, const bool rhf = false, const double scale_ex = 1.0)
-     : Fock_base(a,b,c) {
+         const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+     : Fock_base(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
@@ -55,13 +59,12 @@ class Fock : public Fock_base {
     // Fock operator with a different density matrix for exchange
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, std::shared_ptr<const Matrix> ex,
          const std::vector<double>& d)
-     : Fock_base(a,b,c,d) {
+     : Fock_base(a,b,c,d), store_half_(false) {
       fock_two_electron_part(ex);
       fock_one_electron_part();
     }
 
-//  Fock(const std::shared_ptr<const Geometry> a) : Fock_base(a) {}
-
+    std::shared_ptr<DFHalfDist> half() const { return half_; }
 };
 
 
@@ -300,10 +303,14 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
     } else {
       *this += *df->compute_Jop(density_);
     }
+    // when gradient is requested..
+    if (store_half_)
+      half_ = half;
   } else {
     *this += *df->compute_Jop(density_);
   }
   pdebug.tick_print("Coulomb build");
+
 }
 
 }

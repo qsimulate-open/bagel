@@ -43,9 +43,7 @@ class Fock_base : public Matrix1e {
     virtual void fock_two_electron_part(std::shared_ptr<const Matrix>) = 0;
     void fock_one_electron_part();
 
-//  for debug
-//  void slater_two_electron_part();
-
+    // for non-DF Fock builds
     std::vector<double> schwarz_;
     double schwarz_thresh_;
 

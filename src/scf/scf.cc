@@ -75,7 +75,7 @@ void SCF::compute() {
       aodensity_ = coeff_->form_density_rhf(nocc_);
       focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
     } else {
-      focka = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
+      focka = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
     intermediate.diagonalize(eig());
@@ -109,7 +109,7 @@ void SCF::compute() {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), true);
+      previous_fock = make_shared<Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -125,6 +125,7 @@ void SCF::compute() {
 
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
+      if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1>>(previous_fock)->half();
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;

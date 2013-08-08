@@ -50,12 +50,21 @@ shared_ptr<GradFile> GradEval<SCF>::compute() {
 #endif
 
   //- TWO ELECTRON PART -//
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
+  const bool external_half = static_cast<bool>(task_->half());
+  shared_ptr<const DFHalfDist> half;
+  if (external_half) {
+    half = task_->half(); 
+    task_->discard_half();
+  } else {
+    half = geom_->df()->compute_half_transform(coeff_occ);
 #ifdef LOCAL_TIMING
-  mpi__->barrier();
-  ptime.tick_print("first transform");
+    mpi__->barrier();
+    ptime.tick_print("first transform");
 #endif
-  shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
+  }
+
+  shared_ptr<const DFFullDist> qij = external_half ? half->compute_second_transform(coeff_occ)->apply_J()
+                                                   : half->compute_second_transform(coeff_occ)->apply_JJ();
 #ifdef LOCAL_TIMING
   mpi__->barrier();
   ptime.tick_print("second transform");
