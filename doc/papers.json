@@ -1,0 +1,54 @@
+[
+  {
+    "year" : "2009",
+    "references" : [
+      {
+        "author"  : "T. Shiozaki",
+        "journal" : "Chemical Physics Letters",
+        "volume"  : "479",
+        "pages"   : "160&ndash;164",
+        "title"   : "Evaluation of Slater-type geminal integrals using tailored Gaussian quadrature",
+        "doi"     : "j.cplett.2009.07.108",
+        "type"    : "article"
+      }, {
+        "author"  : "T. Shiozaki and S. Hirata",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "132",
+        "pages"   : "151101",
+        "title"   : "Explicitly correlated second-order M&oslash;ller&ndash;Plesset perturbation method for extended systems",
+        "doi"     : "10.1063/1.3396079",
+        "type"    : "article"
+      }
+    ]
+  },
+  {
+    "year" : "2013",
+    "references" : [
+      {
+        "author"  : "T. Shiozaki",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "138",
+        "pages"   : "111101",
+        "title"   : "An efficient algorithm for evaluating the Breit and spin&ndash;spin coupling integrals",
+        "doi"     : "10.1063/1.4795430",
+        "type"    : "article"
+      }, {
+        "author"  : "M. S. Kelley and T. Shiozaki",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "138",
+        "pages"   : "204113",
+        "title"   : "Large-scale Dirac&ndash;Fock&ndash;Breit method using density fitting and 2-spinor basis functions",
+        "doi"     : "10.1063/1.4807612",
+        "type"    : "article"
+      }, {
+        "author"  : "S. M. Parker, T. Seideman, M. A. Ratner, and T. Shiozaki",
+        "journal" : "The Journal of Chemical Physics",
+        "volume"  : "139",
+        "pages"   : "021108",
+        "title"   : "Active-space decomposition for molecular dimers",
+        "doi"     : "10.1063/1.4813827",
+        "type"    : "article"
+      }
+    ]
+  }
+]

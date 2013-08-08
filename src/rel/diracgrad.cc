@@ -35,12 +35,16 @@
 using namespace std;
 using namespace bagel;
 
+#define LOCAL_TIMING
 
 template<>
 shared_ptr<GradFile> GradEval<Dirac>::compute() {
   geom_ = task_->geom();
 
   Timer timer;
+#ifdef LOCAL_TIMING
+  Timer ptime(0);
+#endif
   // density matrix
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
   shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice(0, ref->nocc());
@@ -114,6 +118,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     vector<GradTask> tmp = contract_gradsmall1e(rmat);
     task.insert(task.end(), tmp.begin(), tmp.end());
   }
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("Onebody part");
+#endif
+ 
 
   // two-electron contributions.
   {
@@ -148,6 +157,10 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     }
     half_complex.clear();
     DFock::factorize(half_complex_exch);
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("first transformed");
+#endif
 
     // (4) compute C matrix
     shared_ptr<CDMatrix> cd;
@@ -169,11 +182,20 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     DFock::factorize(dffull);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
     assert(dffull.size() == 1);
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("second transformed");
+#endif
 
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part(); 
     assert(cd->get_imag_part()->norm() < 1.0e-10); // by symmetry the imaginary part is zero
     auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
+
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("gamma2");
+#endif
 
     // *** adding task here ****
     {
@@ -183,6 +205,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // (7) first back transformation (gamma|is^Y)
     list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff); 
+
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("first backtransformed");
+#endif
 
     // (8) second back transformation (gamma|r^Xs^Y) and immediately rearrange to (gamma|r^w s^Y)
     map<pair<int,int>,shared_ptr<DFDist>> gamma3; 
@@ -249,6 +276,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       i.second->scale(-1.0);
     }
 
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("second backtransformed");
+#endif
+
     // *** adding task here ****
     { // large-large
       auto iter = gamma3.find(make_pair(Comp::L,Comp::L));
@@ -271,7 +303,6 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     }
   }
 
-
   // compute
   TaskQueue<GradTask> tq(task);
   tq.compute(resources__->max_num_threads());
@@ -281,6 +312,11 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   // adds nuclear contributions
   *grad_ += *geom_->compute_grad_vnuc();
+
+#ifdef LOCAL_TIMING
+    mpi__->barrier();
+    ptime.tick_print("gradient computation");
+#endif
 
   grad_->print();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;

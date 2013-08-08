@@ -183,9 +183,10 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   if (iter_ > 0) mute_stdcout();
 
   // current Geometry
-  current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
-  if (iter_ > 0)
+  if (iter_ > 0) {
+    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
     current_->print_atoms();
+  }
 
   // first calculate reference (if needed)
   std::shared_ptr<const PTree> cinput; 

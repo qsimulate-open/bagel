@@ -29,24 +29,59 @@
 using namespace std;
 using namespace bagel;
 
+#define LOCAL_TIMING
+
 template<>
 shared_ptr<GradFile> GradEval<SCF>::compute() {
   assert(task_->dodf());
   Timer timer;
+#ifdef LOCAL_TIMING
+  Timer ptime(0);
+#endif
 
   //- One ELECTRON PART -//
   shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("densities");
+#endif
+
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("first transform");
+#endif
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("second transform");
+#endif
   shared_ptr<const DFFullDist> qijd = qij->apply_closed_2RDM();
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
-  shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("aux 2index");
+#endif
+  shared_ptr<const DFHalfDist> qrs_1 = qijd->back_transform(coeff_occ);
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("first back transform");
+#endif
+  shared_ptr<const DFDist> qrs = qrs_1->back_transform(coeff_occ);
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("second back transform");
+#endif
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+#ifdef LOCAL_TIMING
+  mpi__->barrier();
+  ptime.tick_print("integral contraction");
+#endif
   grad->print();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;

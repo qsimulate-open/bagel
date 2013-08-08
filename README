@@ -1,20 +1,45 @@
 BAGEL, Brilliantly Advanced General Electronic-structure Library
-(Northwestern University, Evanston, IL, 2012)
 
-https://github.com/nubakery/bagel
+*** Website ***
 
-Authors:
-See the AUTHORS file
+  http://nubakery.org
 
-Please check out the BAGEL Wiki
-https://github.com/nubakery/bagel/wiki
 
-License:
-o  BAGEL is distributed under GPLv3+.
+*** Authors ***
 
-o  BAGEL includes a modified version of the ALGLIB package (v3.7.0, under GPLv2+),
-   for CG and L-BFGS optimizers. See http://www.alglib.net.
+  See the AUTHORS file
 
-Disclaimer:
-This is a public pre-alpha version and may have serious bugs and missing pieces.
-If you find a problem, please open an issue or make a pull request with a patch.
+
+*** Citation ***
+
+  Please cite as:
+  "BAGEL, Brilliantly Advanced General Electronic-structure Library, 
+  distributed at http://nubakery.org under the GNU General Public License."
+
+  See doc/papers.json for BAGEL-related publications, which are also
+  listed on our website. If you contributed or used BAGEL and cited above,
+  feel free to update this file so that your papers appear on the website. 
+
+
+*** License ***
+
+  BAGEL is distributed under the GPLv3+.
+
+
+*** Special Thanks ***
+
+  BAGEL includes a modified version of the ALGLIB package (under the GPLv2+),
+  for CG and L-BFGS optimizers. See http://www.alglib.net.
+
+
+*** Disclaimer ***
+
+  This is a public pre-alpha version and may have serious bugs.
+  If you find problems that persist for an extended period of time,
+  please open an issue or make a pull request with a patch.
+  The BAGEL developers are trying their best, but are not commited to fix
+  all the reported bugs in a timely manner due to time constraints.
+
+  Developers are likely to have newer code in their private branches.
+  If you want to gain access to a program that implements a published work
+  you do not find it in the public repository, please write to the authors.
