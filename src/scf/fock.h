@@ -243,7 +243,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     const int naux = df->naux();
     assert(ndim_ == df->nbasis0());
 
-    Timer pdebug(2);
+    Timer pdebug(3);
 
     std::shared_ptr<Matrix> coeff = den_ex->copy();
     *coeff *= -1.0;
@@ -280,7 +280,7 @@ template<int DF>
 void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
-  Timer pdebug(2);
+  Timer pdebug(3);
 
   std::shared_ptr<const DFDist> df = geom_->df();
 
