@@ -189,7 +189,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   }
 
   // first calculate reference (if needed)
-  std::shared_ptr<const PTree> cinput; 
+  std::shared_ptr<PTree> cinput; 
   std::shared_ptr<const Reference> ref;
   if (iter_ == 0) {
     auto m = input_->begin();
@@ -206,11 +206,12 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
         if (ref) ref = ref->project_coeff(current_);
       }
     }
-    cinput = *m;
+    cinput = std::make_shared<PTree>(**m);
   } else {
     ref = prev_ref_->project_coeff(current_);
-    cinput = *input_->rbegin();
+    cinput = std::make_shared<PTree>(**input_->rbegin());
   }
+  cinput->put("gradient", true);
 
   // then calculate gradients
   GradEval<T> eval(cinput, current_, ref);

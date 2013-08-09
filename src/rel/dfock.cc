@@ -282,5 +282,13 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
     add_Jop_block(i, cd, gscale);
   }
 
+  // this is for gradient calculations
+  if (store_half_) {
+    assert(!gaunt_);
+    for (auto& i : half_complex_exch)
+      i->discard_sum_diff();
+    half_ = half_complex_exch;
+  }
+
   timer.tick_print(printtag + ": J operator");
 }

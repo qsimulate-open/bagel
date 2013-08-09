@@ -156,10 +156,11 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Mat
 
       shared_ptr<Matrix> out_block = compute_offdiagonal_1e(*iAB, *jAB, hAB);
 
-      out->add_block(ioff, joff, out_block);
-      out->add_block(joff, ioff, out_block->transpose());
+      out->add_block(ioff, joff, out_block->ndim(), out_block->mdim(), out_block);
+      out->add_block(joff, ioff, out_block->mdim(), out_block->ndim(), out_block->transpose());
     }
-    out->add_block(ioff, ioff, compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core));
+    shared_ptr<const Matrix> tmp = compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core);
+    out->add_block(ioff, ioff, tmp->ndim(), tmp->mdim(), tmp);
   }
 
   return out;

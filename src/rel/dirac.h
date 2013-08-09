@@ -33,6 +33,7 @@
 #include <src/wfn/geometry.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/reloverlap.h>
+#include <src/rel/reldfhalf.h>
 
 namespace bagel {
 
@@ -60,6 +61,10 @@ class Dirac : public Method {
     void common_init(const std::shared_ptr<const PTree>);
     std::shared_ptr<const DistZMatrix> initial_guess(const std::shared_ptr<const DistZMatrix> s12, const std::shared_ptr<const DistZMatrix> hcore) const;
 
+    // if gradient is requested, half-transformed integrals will be reused
+    bool do_grad_;
+    std::list<std::shared_ptr<RelDFHalf>> half_; 
+
   public:
     Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
@@ -74,6 +79,9 @@ class Dirac : public Method {
     double energy() const { return energy_; }
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
+
+    std::list<std::shared_ptr<RelDFHalf>> half() const { return half_; }
+    void discard_half() { half_.clear(); }
 
 };
 

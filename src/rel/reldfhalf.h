@@ -72,6 +72,7 @@ class RelDFHalf : public RelDFBase {
 
     // for the zgemm3m-like algorithm
     void set_sum_diff();
+    void discard_sum_diff() { df2_ = std::array<std::shared_ptr<DFHalfDist>,2>(); }
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 

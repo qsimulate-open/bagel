@@ -52,12 +52,16 @@ class DFock : public ZMatrix {
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);
 
+    // when gradient is requested, we store half-transformed integrals
+    bool store_half_; 
+    std::list<std::shared_ptr<RelDFHalf>> half_; 
+
   public:
     DFock(const std::shared_ptr<const Geometry> a,
           const std::shared_ptr<const RelHcore> h,
           const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
-          const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit) {
+          const bool store_half, const bool rhf = true, const double scale_ex = 1.0)
+     : ZMatrix(*h), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half) {
 
        assert(breit ? gaunt : true);
        two_electron_part(coeff, rhf, scale_ex);
@@ -79,6 +83,8 @@ class DFock : public ZMatrix {
     static std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
     static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
+
+    std::list<std::shared_ptr<RelDFHalf>> half() const { assert(store_half_); return half_; }
 
 };
 

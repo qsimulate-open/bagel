@@ -39,6 +39,9 @@ using namespace bagel;
 SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
  : Method(idat, geom, re) {
 
+  // if this is called by Opt
+  do_grad_ = idata_->get<bool>("gradient", false);
+
   Timer scfb;
   overlap_ = make_shared<const Overlap>(geom);
   scfb.tick_print("Overlap matrix");

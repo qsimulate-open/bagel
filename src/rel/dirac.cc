@@ -39,6 +39,10 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
              const shared_ptr<const Reference> re) : Method(idata, geom, re) {
   gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
+
+  // when computing gradient, we store half-transform integrals
+  do_grad_ = idata->get<bool>("gradient", false);
+
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
@@ -90,8 +94,8 @@ void Dirac::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    // fock construction
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_);
+    auto fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_);
+
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
     fock->hermite();
@@ -117,10 +121,12 @@ void Dirac::compute() {
 
     if (error < thresh_scf_ && iter > 0) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
+      // when computing gradient, we store half-transform integrals to avoid recomputation
+      if (do_grad_) half_ = fock->half();
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
-      break;
+      throw runtime_error("Max iteration reached in Dirac--Fock SCF");
     }
 
     if (iter >= diis_start_) {
@@ -168,7 +174,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->slice(0, nele_), gaunt_, breit_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, dynamic_pointer_cast<const RelReference>(ref_)->relcoeff()->slice(0, nele_), gaunt_, breit_, false);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -180,7 +186,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
@@ -188,7 +194,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());

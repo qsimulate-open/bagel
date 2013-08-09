@@ -305,7 +305,7 @@ shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
     if (block_size == 0) continue;
     shared_ptr<Matrix> submat = this->get_submatrix(location, location, block_size, block_size);
     submat->diagonalize(eig + location);
-    out->copy_block(location,location,submat);
+    out->copy_block(location, location, block_size, block_size, submat);
     location += block_size;
   }
 
@@ -595,16 +595,6 @@ void Matrix::print(const string name, const size_t size) const {
 }
 
 
-void Matrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> data) {
-  copy_block(nstart, mstart, nsize, msize, data->data());
-}
-
-
-void Matrix::copy_block(const int nstart, const int mstart, const shared_ptr<const Matrix> mat) {
-  copy_block(nstart, mstart, mat->ndim(), mat->mdim(), mat->data());
-}
-
-
 shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
   auto out = make_shared<Matrix>(nsize, msize, localized_);
   for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
@@ -619,13 +609,15 @@ void Matrix::add_block(const int nstart, const int mstart, const int nsize, cons
 }
 
 
+void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> o) {
+  assert(nsize == o->ndim() && msize == o->mdim());
+  add_block(nstart, mstart, nsize, msize, o->data());
+}
+
+
 void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
   assert(nsize == o.ndim() && msize == o.mdim());
   add_block(nstart, mstart, nsize, msize, o.data());
-}
-
-void Matrix::add_block(const int nstart, const int mstart, const Matrix& o) {
-  add_block(nstart, mstart, o.ndim(), o.mdim(), o.data());
 }
 
 

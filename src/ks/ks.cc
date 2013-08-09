@@ -51,7 +51,7 @@ void KS::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // fock operator without DFT xc
-    fock = make_shared<Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), true, func_->scale_ex());
+    fock = make_shared<Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_), false /*store*/, true /*rhf*/, func_->scale_ex());
 
     // add xc
     shared_ptr<const Matrix> xc;

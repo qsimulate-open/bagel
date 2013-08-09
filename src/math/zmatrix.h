@@ -68,20 +68,23 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     using Matrix_base<std::complex<double>>::copy_block;
     using Matrix_base<std::complex<double>>::get_block;
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
-    // copy a block from a Matrix object to ZMatrix object and mutliply by coefficient coeff. If type = 0, coeff is purely real, else purely imaginary
-    void copy_block(const int nstart, const int mstart, const std::shared_ptr<const ZMatrix> o);
+
+    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o);
+
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
+    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
     void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
     void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
+    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o);
 
     std::shared_ptr<Matrix> get_real_part() const;
     std::shared_ptr<Matrix> get_imag_part() const;

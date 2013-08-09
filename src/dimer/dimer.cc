@@ -178,7 +178,7 @@ Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeo
   vector<double> subeigs(dimerbasis_, 0.0);
 
   shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
-  transform.copy_block(0,0,diag_blocks);
+  transform.copy_block(0,0,subsize,subsize,diag_blocks);
 
   multimap<double, int> active_fock;
   for (int i = nclosed_; i < nact + nclosed_; ++i) {
@@ -571,7 +571,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     vector<double> subeigs(dimerbasis_, 0.0);
 
     shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
-    transform.copy_block(0,0,diag_blocks);
+    transform.copy_block(0,0,subsize,subsize,diag_blocks);
 
     auto ncoeff = make_shared<Matrix>(*scoeff_ * transform);
     set_coeff(ncoeff);
