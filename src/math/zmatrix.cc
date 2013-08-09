@@ -665,12 +665,6 @@ void ZMatrix::print_col(const string component, const string name, const size_t 
 }
 
 
-void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const ZMatrix& data) {
-  assert(data.ndim() == nsize && data.mdim() == msize);
-  copy_block(nstart, mstart, nsize, msize, data.data());
-}
-
-
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
     for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
@@ -720,29 +714,6 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
   add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    zaxpy_(ndim, a, data + j*ndim, 1, element_ptr(ndim_i, i), 1);
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) {
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const ZMatrix& data) {
-  assert(ndim == data.ndim() && mdim == data.mdim());
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
 }
 
 

@@ -603,24 +603,6 @@ shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, con
 }
 
 
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* data) {
-  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-    daxpy_(nsize, 1.0, data + j*nsize, 1, data_.get() + nstart + i*ndim_, 1);
-}
-
-
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> o) {
-  assert(nsize == o->ndim() && msize == o->mdim());
-  add_block(nstart, mstart, nsize, msize, o->data());
-}
-
-
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
-  assert(nsize == o.ndim() && msize == o.mdim());
-  add_block(nstart, mstart, nsize, msize, o.data());
-}
-
-
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistMatrix> Matrix::distmatrix() const {
   return make_shared<DistMatrix>(*this);

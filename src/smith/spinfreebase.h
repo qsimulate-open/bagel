@@ -732,7 +732,7 @@ class SpinFreeMethod {
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
-      dtot->add_block(nclo, nclo, nact, nact, ref_->rdm1(0)->data());
+      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
       // convert to ao basis
       auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
       Dipole dipole(ref_->geom(), dtotao);

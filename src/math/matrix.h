@@ -71,14 +71,18 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     using Matrix_base<double>::copy_block;
     using Matrix_base<double>::get_block;
+    using Matrix_base<double>::add_block;
 
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
+      assert(o.ndim() == nsize && o.mdim() == msize);
+      this->copy_block(nstart, mstart, nsize, msize, o.data());
+    }
+    void add_block(const double a, const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
+      assert(o.ndim() == nsize && o.mdim() == msize);
+      this->add_block(a, nstart, mstart, nsize, msize, o.data());
+    }
 
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
-
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* o);
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);
