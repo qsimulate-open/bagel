@@ -83,6 +83,31 @@ class Matrix_base {
     }
 #endif
 
+    // some functions for implementation in derived classes
+    template<class T>
+    std::shared_ptr<T> get_submatrix_impl(const int nstart, const int mstart, const int nsize, const int msize) const {
+      auto out = std::make_shared<T>(nsize, msize, localized_);
+      for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
+        std::copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));
+      return out;
+    }
+    template<class T>
+    std::shared_ptr<T> resize_impl(const int n, const int m) const {
+    assert(n >= ndim_ && m >= mdim_);
+      auto out = std::make_shared<T>(n, m, localized_);
+      for (int i = 0; i != mdim_; ++i)
+        std::copy_n(data()+i*ndim_, ndim_, out->data()+i*n);
+      return out;
+    }
+    template<class T>
+    std::shared_ptr<T> merge_impl(const std::shared_ptr<const T> o) const {
+      assert(ndim_ == o->ndim_ && localized_ == o->localized_);
+      auto out = std::make_shared<T>(ndim_, mdim_ + o->mdim_, localized_);
+      std::copy_n(data_.get(), ndim_*mdim_, out->data_.get());
+      std::copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
+      return out;
+    }
+
   public:
     Matrix_base(const size_t n, const size_t m, const bool local = false) : data_(new DataType[n*m]), ndim_(n), mdim_(m), localized_(local) {
 #ifdef HAVE_SCALAPACK
@@ -127,6 +152,7 @@ class Matrix_base {
 
     void zero() { DataType z(0.0); fill(z); }
     void fill(const DataType a) { std::fill_n(data(), size(), a); }
+    void unit() { zero(); for (int i = 0; i != ndim_; ++i) element(i,i) = DataType(1.0); assert(ndim_ == mdim_);}
 
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
