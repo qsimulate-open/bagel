@@ -106,21 +106,7 @@ shared_ptr<Dvec> FCI::rdm1deriv() const {
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
-#if 0
-  const int nri = dbra->lena()*dbra->lenb();
-  const int ij  = norb_*norb_;
-  const double* ndata = dbra->data(0)->data();
-  auto rdm1I0 = make_shared<RDM<1>>(norb_);
-#if 1
-  copy_n(ndata, nri, rdm1I0->data());
-#else // debug/check by multipling coeff, should recover rdm1
-  dgemv_("T", nri, ij, 1.0, ndata, nri, cbra->data(), 1, 0.0, rdm1I0->data(), 1);
-#endif
-
-  return rdm1I0;
-#else
   return dbra;
-#endif
 }
 
 
