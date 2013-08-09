@@ -45,10 +45,10 @@ shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometr
   const complex<double> one(1.0);
   const complex<double> sca = one * (0.5/(c__*c__));
   ZMatrix mixed(nb*4, mb*4);
-  mixed.copy_real_block(one,    0,    0, nb, mb, smixed.data());
-  mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed.data());
-  mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed.data());
-  mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed.data());
+  mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
+  mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
+  mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
+  mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
   out = make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()));

@@ -137,6 +137,11 @@ class Matrix_base {
       copy_block(nstart, mstart, nsize, msize, o.get());
     }
 
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>>& o) {
+      assert(nsize == o->ndim() && msize == o->mdim()); 
+      copy_block(nstart, mstart, nsize, msize, o->data());
+    }
+
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
       std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)

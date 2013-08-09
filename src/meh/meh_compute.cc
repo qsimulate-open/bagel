@@ -57,7 +57,7 @@ void MultiExcitonHamiltonian::compute() {
   for (auto& subspace : subspaces_) {
     shared_ptr<Matrix> block = compute_diagonal_block(subspace);
     if (store_matrix_)
-      hamiltonian_->add_block(subspace.offset(), subspace.offset(), block);
+      hamiltonian_->add_block(subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
     const int n = block->ndim();
     for ( int i = 0; i < n; ++i ) denom_[subspace.offset() + i] = block->element(i,i);
   }
@@ -71,8 +71,8 @@ void MultiExcitonHamiltonian::compute() {
 
         shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
 
-        hamiltonian_->add_block(ioff, joff, block);
-        hamiltonian_->add_block(joff, ioff, block->transpose());
+        hamiltonian_->add_block(ioff, joff, block->ndim(), block->mdim(), block);
+        hamiltonian_->add_block(joff, ioff, block->mdim(), block->ndim(), block->transpose());
       }
     }
     cout << "  o Computing off-diagonal blocks - time " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
