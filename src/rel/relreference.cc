@@ -51,7 +51,7 @@ shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometr
   mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed.data());
 
   auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
-  out = make_shared<const RelReference>(geomin, c, energy_, geomin->nele(), 2*geomin->nbasis()-geomin->nele());
+  out = make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()));
 
   return out;
 }
