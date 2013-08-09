@@ -92,6 +92,38 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 }
 
 
+shared_ptr<Dvec> FCI::rdm1deriv() const {
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(0);  
+
+  // 1RDM ci derivative
+  // <I|E_ij|0>
+
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+#if 0
+  const int nri = dbra->lena()*dbra->lenb();
+  const int ij  = norb_*norb_;
+  const double* ndata = dbra->data(0)->data();
+  auto rdm1I0 = make_shared<RDM<1>>(norb_);
+#if 1
+  copy_n(ndata, nri, rdm1I0->data());
+#else // debug/check by multipling coeff, should recover rdm1
+  dgemv_("T", nri, ij, 1.0, ndata, nri, cbra->data(), 1, 0.0, rdm1I0->data(), 1);
+#endif
+
+  return rdm1I0;
+#else
+  return dbra;
+#endif
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 

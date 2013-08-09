@@ -71,11 +71,20 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
 }
 
 
+// TODO should be updated to remove redundant FCI iterations
 shared_ptr<Dvec> Reference::civectors() const {
   // Default to HarrisonZarrabian method
   shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
   fci->compute();
   return fci->civectors();
+}
+
+
+shared_ptr<Dvec> Reference::rdm1deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm1deriv();
+  return out;
 }
 
 

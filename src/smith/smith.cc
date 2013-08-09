@@ -50,17 +50,18 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 void Smith::compute() {
   algo_->solve();
 
-  shared_ptr<const Matrix> dm1 = algo_->rdm1();
+  shared_ptr<const Matrix> dm1 = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1();
   dm1->print("dm1", 20);
   cout << dm1->ndim() << " " << dm1->mdim() << endl;
 
   // calculate unrelaxed dipole moment from dm
-  algo_->dipole().compute();
+  double correction = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1_correction();
+  algo_->dipole(dm1,correction).compute();
 
   // convert ci derivative tensor to civec
-  shared_ptr<Civec> deci = algo_->cider();
+  shared_ptr<const Civec> cider = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->ci_deriv();
   std::cout << "  * Printing ci derivative civec:" << std::endl;
-  deci->print(0.1e-15);
-  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << deci->ddot(*(algo_->ci0())) << std::endl;
+  cider->print(0.1e-15);
+  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << cider->ddot(*(algo_->civec())) << std::endl;
 
 }

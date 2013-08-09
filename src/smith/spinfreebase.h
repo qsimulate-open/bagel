@@ -70,17 +70,13 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm2_;
     std::shared_ptr<Tensor<T>> rdm3_;
     std::shared_ptr<Tensor<T>> rdm4_;
-    std::shared_ptr<Tensor<T>> dci_;
 
-    // correlated density matrices
-    std::shared_ptr<Tensor<T>> den1_;
-    double correct_den1_;
-    std::shared_ptr<Tensor<T>> den2_;
+    // original determinants (for use in output)
+    std::shared_ptr<const Determinants> det_;     
 
-    // ci derivative target vector
-    std::shared_ptr<Tensor<T>> deci_; 
-    std::shared_ptr<Tensor<T>> ci_coeff_;
-    std::shared_ptr<const Civec> ci0_;     
+    // rdm ci derivatives
+    std::shared_ptr<Tensor<T>> civec_;
+    std::shared_ptr<Tensor<T>> rdm1deriv_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -532,18 +528,19 @@ class SpinFreeMethod {
       virt_ = v;
       all_ = a;
 
-      // TODO this should be updated
+      std::shared_ptr<const Dvec> dci0 = r->civectors();
+      // TODO this should be updated when reference has civec
+      std::shared_ptr<const Civec> bagel_civec = dci0->data(0);
+      det_ = bagel_civec->det();
+
       // length of the ci expansion
-      std::shared_ptr<const Civec> ci0 = r->civectors()->data(0);
-      ci0_ = ci0;
-      size_t ci_size = ci0->size();
-      IndexRange ci(ci_size, max);
-      ci_ = ci;
+      const size_t ci_size = r->civectors()->data(0)->size();
+      ci_ = IndexRange(ci_size, max);
 
       rclosed_ = std::make_shared<const IndexRange>(c);
       ractive_ = std::make_shared<const IndexRange>(act);
       rvirt_   = std::make_shared<const IndexRange>(v);
-      rci_     = std::make_shared<const IndexRange>(ci);
+      rci_     = std::make_shared<const IndexRange>(ci_);
 
       // f1 tensor.
       {
@@ -571,12 +568,35 @@ class SpinFreeMethod {
       {
         std::vector<IndexRange> o = {ci_}; 
         // TODO fix later when referece has civec
-        Ci<T> dci(ref_, o, ci0);
-        dci_ = dci.tensor();
-        ci_coeff_ = dci.coeff();
+        Ci<T> dci(ref_, o, bagel_civec);
+        civec_ = dci.tensor();
       }
 
-      // rdms
+      // rdm derivatives.
+      {
+        std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv();
+
+        std::vector<IndexRange> o = {ci_, active_, active_};
+        rdm1deriv_ = std::make_shared<Tensor<T>>(o, false);
+        const int nclo = ref_->nclosed();
+        for (auto& i0 : active_) {
+          for (auto& i1 : active_) {
+            for (auto& ci0 : ci_) {
+              const size_t size = i0.size() * i1.size() * ci0.size();
+              std::unique_ptr<double[]> data(new double[size]);
+              int iall = 0;
+              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is creation
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
+                  for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
+                    // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
+                    data[iall] = rdm1d->data(j1-nclo+r->nact()*(j0-nclo))->data(j2); 
+              rdm1deriv_->put_block(data, ci0, i1, i0);
+            }
+          }
+        }
+      }
+
+      // rdms.
       if (!ref_->rdm1().empty()) {
         std::vector<IndexRange> o = {active_, active_};
         rdm1_ = std::make_shared<Tensor<T>>(o, false);
@@ -701,24 +721,13 @@ class SpinFreeMethod {
 
     double e0() const { return e0_; }
 
-    std::shared_ptr<Tensor<T>> ci_coeff() const { return ci_coeff_; }
-
     virtual void solve() = 0;
 
-    std::shared_ptr<const Matrix> rdm1() const {
-      return den1_->matrix();
+    std::shared_ptr<const Civec> civec() const {
+      return civec_->civec(det_);
     }
 
-    std::shared_ptr<Civec> cider() const {
-      return deci_->civec(ci0_);
-    }
-
-    std::shared_ptr<const Civec> ci0() const {
-      return ci0_;
-    }
-
-    Dipole dipole() const {
-      std::shared_ptr<const Matrix> dm1 =  den1_->matrix();
+    Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction) const {
       const size_t nclo = ref_->nclosed();
       const size_t nact = ref_->nact();
 
@@ -727,7 +736,7 @@ class SpinFreeMethod {
       auto dtot = std::make_shared<Matrix>(*dm1);
 
       // add correction to active space
-      for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correct_den1_*2.0;
+      for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correction*2.0;
       dtot->print("dm1 post correction", 20);
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
