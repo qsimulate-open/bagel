@@ -29,7 +29,6 @@
 #include <stdexcept>
 #include <src/zfci/zfci.h>
 #include <src/zfci/zknowles.h>
-#include <src/math/zdavidson.h>
 #include <src/util/constants.h>
 #include <vector>
 

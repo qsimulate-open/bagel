@@ -26,7 +26,7 @@
 #include <src/zfci/zfci.h>
 #include <src/zfci/relspace.h>
 #include <src/util/combination.hpp>
-#include <src/math/zdavidson.h>
+#include <src/math/davidson.h>
 #include <src/util/lexical_cast.h>
 #include <src/rel/dirac.h>
 #include <src/rel/relreference.h>
@@ -219,7 +219,7 @@ void ZFCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  ZDavidsonDiag<ZCivec> davidson(nstate_, max_iter_);
+  DavidsonDiag<ZCivec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
   cout << "  === ZFCI iteration ===" << endl << endl;

@@ -297,8 +297,10 @@ shared_ptr<ZCivec> ZCivec::spin_raise(shared_ptr<const Determinants> target_det)
   return out;
 }
 
+// TODO Spin adaptation is meaning less in relativistic theories. Should be removed
 void ZCivec::spin_decontaminate(const double thresh) {
 
+#if 0
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
@@ -324,4 +326,5 @@ void ZCivec::spin_decontaminate(const double thresh) {
 
     k += 2;
   }
+#endif
 }
