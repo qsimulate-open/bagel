@@ -51,7 +51,7 @@ class GradBatch : public ERIBatch_base {
 
     void compute() override;
 
-    double* data(const int i) override { return data_ + i*size_block_; }
+    double* data(const int i) override { assert(i < 12); return data_ + i*size_block_; }
 
 };
 

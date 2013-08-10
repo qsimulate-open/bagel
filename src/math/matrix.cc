@@ -55,50 +55,6 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 #endif
 
 
-shared_ptr<Matrix> Matrix::cut(const int start, const int fence) const {
-  const int n = fence - start;
-  assert(fence <= ndim_ && n > 0);
-  auto out = make_shared<Matrix>(n, mdim_, localized_);
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = 0; j != n; ++j)
-      out->data_[j+i*n] = data_[(j+start)+i*ndim_];
-  return out;
-}
-
-
-
-shared_ptr<Matrix> Matrix::resize(const int n, const int m) const {
-  assert(n >= ndim_ && m >= mdim_);
-  auto out = make_shared<Matrix>(n, m, localized_);
-  for (int i = 0; i != mdim_; ++i) {
-    for (int j = 0; j != ndim_; ++j) {
-      out->data_[j+i*n] = data_[j+i*ndim_];
-    }
-  }
-  return out;
-}
-
-
-shared_ptr<Matrix> Matrix::slice(const int start, const int fence) const {
-  auto out = make_shared<Matrix>(ndim_, fence - start, localized_);
-  assert(fence <= mdim_);
-
-  std::copy(data_.get()+start*ndim_, data_.get()+fence*ndim_, out->data_.get());
-  return out;
-}
-
-
-shared_ptr<Matrix> Matrix::merge(const shared_ptr<const Matrix> o) const {
-  assert(ndim_ == o->ndim_ && localized_ == o->localized_);
-
-  auto out = make_shared<Matrix>(ndim_, mdim_ + o->mdim_, localized_);
-
-  copy_n(data_.get(), ndim_*mdim_, out->data_.get());
-  copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
-  return out;
-}
-
-
 Matrix Matrix::operator+(const Matrix& o) const {
   Matrix out(*this);
   out.daxpy(1.0, o);
@@ -592,32 +548,6 @@ void Matrix::print(const string name, const size_t size) const {
     cout << endl;
   }
 
-}
-
-
-shared_ptr<Matrix> Matrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
-  auto out = make_shared<Matrix>(nsize, msize, localized_);
-  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-    copy_n(data_.get() + nstart + i*ndim_, nsize, out->data_.get() + j*nsize);
-  return out;
-}
-
-
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* data) {
-  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-    daxpy_(nsize, 1.0, data + j*nsize, 1, data_.get() + nstart + i*ndim_, 1);
-}
-
-
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const shared_ptr<const Matrix> o) {
-  assert(nsize == o->ndim() && msize == o->mdim());
-  add_block(nstart, mstart, nsize, msize, o->data());
-}
-
-
-void Matrix::add_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
-  assert(nsize == o.ndim() && msize == o.mdim());
-  add_block(nstart, mstart, nsize, msize, o.data());
 }
 
 

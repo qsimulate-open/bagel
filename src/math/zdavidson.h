@@ -63,9 +63,6 @@ class ZDavidsonDiag {
     std::shared_ptr<ZMatrix> overlap_;
     std::shared_ptr<ZMatrix> ovlp_scr_;
 
-    // for convenience below
-    std::complex<double>& mat(int i, int j) { return mat_->element(i,j); }
-
   public:
     ZDavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(std::make_shared<ZMatrix>(max_,max_,true)),
                                  scr_(std::make_shared<ZMatrix>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<ZMatrix>(max_,max_,true)),
@@ -92,13 +89,14 @@ class ZDavidsonDiag {
         double overlap_row = 0.0;
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
-          mat(i, size_-1) = (**cciter).zdotc(*isigma);
-          mat(size_-1, i) = conj(mat(i,size_-1));
+          mat_->element(i, size_-1) = (**cciter).zdotc(*isigma);
+          mat_->element(size_-1, i) = std::conj(mat_->element(i,size_-1));
 
           overlap_->element(i, size_-1) = (**cciter).zdotc(*icivec);
+          overlap_->element(size_-1, i) = std::conj(overlap_->element(i, size_-1));
 
           if (!orthogonalize_) {
-            overlap_row += sqrt(norm(overlap_->element(i, size_-1)));
+            overlap_row += std::abs(overlap_->element(i, size_-1));
           }
         }
         if ( fabs(overlap_row - 1.0) > 1.0e-8 ) {
@@ -132,11 +130,11 @@ class ZDavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->zaxpy(-vec_[i]*eig_->element(k,i), **iter);
+          tmp->daxpy(-vec_[i]*eig_->element(k,i), **iter);
         }
         k = 0;
         for (auto iter = sigma_.begin(); iter != sigma_.end(); ++iter, ++k) {
-          tmp->zaxpy(eig_->element(k,i), **iter);
+          tmp->daxpy(eig_->element(k,i), **iter);
         }
         out.push_back(tmp);
       }
@@ -151,7 +149,7 @@ class ZDavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->zaxpy((*eig_)[i*max_+k], **iter);
+          tmp->daxpy((*eig_)[i*max_+k], **iter);
         }
         out.push_back(tmp);
       }

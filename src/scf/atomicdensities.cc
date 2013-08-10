@@ -69,7 +69,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
     }
     auto iter = atoms.find(i->name());
     assert(iter != atoms.end());
-    copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second->data());
+    copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
     offset += i->nbasis();
 
     ++ai;

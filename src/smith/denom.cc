@@ -203,14 +203,13 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
 
   Matrix work(dim, dim);
   sort_indices<3,0,2,1,0,1,1,1>(ovl1.data(), work.data(), nact, nact, nact, nact);
-  shalf.add_block(dim, dim, dim, dim, work);
+  shalf.add_block(1.0, dim, dim, dim, dim, work);
 
   sort_indices<0,1,3,2,0,1,2,1>(ovl4.data(), work.data(), nact, nact, nact, nact);
-  shalf.add_block(0, 0, dim, dim, work);
+  shalf.add_block(1.0, 0, 0, dim, dim, work);
 
-  work.scale(-0.5);
-  shalf.add_block(dim, 0, dim, dim, work);
-  shalf.add_block(0, dim, dim, dim, work);
+  shalf.add_block(-0.5, dim, 0, dim, dim, work);
+  shalf.add_block(-0.5, 0, dim, dim, dim, work);
 
   shalf.inverse_half(thresh_);
 
@@ -245,14 +244,13 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   dgemv_("N", size, nact*nact, 1.0, d0.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
   sort_indices<3,0,2,1,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   Matrix num(dim*2, dim*2);
-  num.add_block(dim, dim, dim, dim, work);
+  num.add_block(1.0, dim, dim, dim, dim, work);
 
   dgemv_("N", size, nact*nact, 1.0, d3.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
   sort_indices<0,1,3,2,0,1,2,1>(work2.data(), work.data(), nact, nact, nact, nact);
-  num.add_block(0, 0, dim, dim, work);
-  work.scale(-0.5);
-  num.add_block(dim, 0, dim, dim, work);
-  num.add_block(0, dim, dim, dim, work);
+  num.add_block(1.0, 0, 0, dim, dim, work);
+  num.add_block(-0.5, dim, 0, dim, dim, work);
+  num.add_block(-0.5, 0, dim, dim, dim, work);
 
   Matrix fss = shalf % num * shalf;
   denom_xh_ = unique_ptr<double[]>(new double[2*dim]);

@@ -52,10 +52,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     void antisymmetrize();
     void hermite();
-    std::shared_ptr<ZMatrix> cut(const int) const;
-    std::shared_ptr<ZMatrix> resize(const int, const int) const;
-    std::shared_ptr<ZMatrix> slice(const int, const int) const;
-    std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix>) const;
+    std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
+    std::shared_ptr<ZMatrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
+    std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
+    std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(double* vec);
     void diagonalize_skew(double* vec);
@@ -68,8 +68,16 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     using Matrix_base<std::complex<double>>::copy_block;
     using Matrix_base<std::complex<double>>::get_block;
+    using Matrix_base<std::complex<double>>::add_block;
 
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o);
+    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
+      assert(o.ndim() == ndim && o.mdim() == mdim);
+      this->copy_block(nstart, mstart, ndim, mdim, o.data());
+    }
+    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
+      assert(o.ndim() == ndim && o.mdim() == mdim);
+      this->add_block(a, nstart, mstart, ndim, mdim, o.data());
+    }
 
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
@@ -81,17 +89,14 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::complex<double>* data);
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<std::complex<double>[]> o);
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const ZMatrix> o);
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o);
-
     std::shared_ptr<Matrix> get_real_part() const;
     std::shared_ptr<Matrix> get_imag_part() const;
 
     std::shared_ptr<ZMatrix> get_conjg() const;
 
-    std::shared_ptr<ZMatrix> get_submatrix(const int, const int, const int, const int) const;
+    std::shared_ptr<ZMatrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
+      return this->get_submatrix_impl<ZMatrix>(nstart, mstart, ndim, mdim);
+    }
 
     ZMatrix operator*(const ZMatrix&) const;
     ZMatrix& operator*=(const ZMatrix&);
@@ -134,8 +139,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void daxpy(const std::complex<double> a, const ZMatrix& o) { zaxpy(a, o); }
     void daxpy(const std::complex<double> a, const std::shared_ptr<const ZMatrix> o) { zaxpy(a, o); }
 
-    void zscal(const std::complex<double> a) { zscal_(size(), a, data(), 1); }
-    void scale(const std::complex<double> a) { zscal(a); }
+    void scale(const std::complex<double> a) { zscal_(size(), a, data(), 1); }
     std::complex<double> ddot(const ZMatrix& o) const { return zdotc(o); }
     std::complex<double> ddot(const std::shared_ptr<const ZMatrix> o) const { return zdotc(o); }
 
@@ -147,9 +151,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // returns diagonal elements
     std::unique_ptr<std::complex<double>[]> diag() const;
 
-    void unit() { fill(std::complex<double>(0.0, 0.0)); for (int i = 0; i != ndim_; ++i) element(i,i) = std::complex<double>(1.0, 0.0); assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
-
     void purify_unitary();
     void purify_idempotent(const ZMatrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);

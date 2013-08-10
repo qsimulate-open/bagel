@@ -32,8 +32,6 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometry> geomin) const {
-  shared_ptr<const RelReference> out;
-
   // in this case we first form overlap matrices
   RelOverlap snew(geomin, true);
   ZMatrix sinv = snew * snew;
@@ -51,7 +49,5 @@ shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometr
   mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
-  out = make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()));
-
-  return out;
+  return make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()));
 }

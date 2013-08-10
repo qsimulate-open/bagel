@@ -101,6 +101,8 @@ class ZCivec {
 
     // some functions for convenience
     void zaxpy(std::complex<double> a, const ZCivec& other);
+    // for generic functions
+    void daxpy(std::complex<double> a, const ZCivec& other) { zaxpy(a, other); }
     std::complex<double> zdotc(const ZCivec& other) const;
     std::complex<double> zdotc(std::shared_ptr<const ZCivec>& other) const { return zdotc(*other); }
     double norm() const;

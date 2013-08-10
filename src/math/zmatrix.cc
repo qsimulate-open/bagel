@@ -65,48 +65,6 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 #endif
 
 
-shared_ptr<ZMatrix> ZMatrix::cut(const int n) const {
-  assert(n <= ndim_);
-  auto out = make_shared<ZMatrix>(n, mdim_);
-  for (int i = 0; i != mdim_; ++i)
-    for (int j = 0; j != n; ++j)
-      out->data_[j+i*n] = data_[j+i*ndim_];
-  return out;
-}
-
-
-shared_ptr<ZMatrix> ZMatrix::resize(const int n, const int m) const {
-  assert(n >= ndim_ && m >= mdim_);
-  auto out = make_shared<ZMatrix>(n, m);
-  for (int i = 0; i != mdim_; ++i) {
-    for (int j = 0; j != ndim_; ++j) {
-      out->data_[j+i*n] = data_[j+i*ndim_];
-    }
-  }
-  return out;
-}
-
-
-shared_ptr<ZMatrix> ZMatrix::slice(const int start, const int fence) const {
-  auto out = make_shared<ZMatrix>(ndim_, fence - start, localized_);
-  assert(fence <= ndim_);
-
-  std::copy(element_ptr(0, start), element_ptr(0, fence), out->data());
-  return out;
-}
-
-
-shared_ptr<ZMatrix> ZMatrix::merge(const shared_ptr<const ZMatrix> o) const {
-  assert(ndim_ == o->ndim_);
-
-  auto out = make_shared<ZMatrix>(ndim_, mdim_ + o->mdim_, localized_);
-
-  copy_n(data_.get(), ndim_*mdim_, out->data_.get());
-  copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
-  return out;
-}
-
-
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
   ZMatrix out(*this);
   out.zaxpy(complex<double>(1.0,0.0), o);
@@ -665,12 +623,6 @@ void ZMatrix::print_col(const string component, const string name, const size_t 
 }
 
 
-void ZMatrix::copy_block(const int nstart, const int mstart, const int nsize, const int msize, const ZMatrix& data) {
-  assert(data.ndim() == nsize && data.mdim() == msize);
-  copy_block(nstart, mstart, nsize, msize, data.data());
-}
-
-
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
     for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
@@ -723,29 +675,6 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 }
 
 
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const complex<double>* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
-    zaxpy_(ndim, a, data + j*ndim, 1, element_ptr(ndim_i, i), 1);
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<complex<double>[]> data) {
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const ZMatrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const ZMatrix& data) {
-  assert(ndim == data.ndim() && mdim == data.mdim());
-  add_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
-}
-
-
 shared_ptr<Matrix> ZMatrix::get_real_part() const {
   auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
   for (int i = 0; i != size(); ++i) {
@@ -769,14 +698,6 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
   for (int i = 0; i != size(); ++i) {
     out->data(i) = conj(data(i));
   }
-  return out;
-}
-
-
-shared_ptr<ZMatrix> ZMatrix::get_submatrix(const int nstart, const int mstart, const int nsize, const int msize) const {
-  auto out = make_shared<ZMatrix>(nsize, msize, localized_);
-  for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-    copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));
   return out;
 }
 

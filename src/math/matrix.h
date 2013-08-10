@@ -51,11 +51,14 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 #endif
     Matrix(const Matrix&);
 
+    std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
+    std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
+    std::shared_ptr<Matrix> resize(const int n, const int m) const { return this->resize_impl<Matrix>(n, m); }
+    std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix> o) const { return this->merge_impl<Matrix>(o); }
+
+    // antisymmetrize
     void antisymmetrize();
-    std::shared_ptr<Matrix> cut(const int, const int) const;
-    std::shared_ptr<Matrix> resize(const int, const int) const;
-    std::shared_ptr<Matrix> slice(const int, const int) const;
-    std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix>) const;
+
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(double* vec) override;
     std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks);
@@ -71,14 +74,20 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     using Matrix_base<double>::copy_block;
     using Matrix_base<double>::get_block;
+    using Matrix_base<double>::add_block;
 
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
+      assert(o.ndim() == nsize && o.mdim() == msize);
+      this->copy_block(nstart, mstart, nsize, msize, o.data());
+    }
+    void add_block(const double a, const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
+      assert(o.ndim() == nsize && o.mdim() == msize);
+      this->add_block(a, nstart, mstart, nsize, msize, o.data());
+    }
 
-    std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const;
-
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
-    void add_block(const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void add_block(const int nstart, const int mstart, const int nsize, const int msize, const double* o);
+    std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
+      return this->get_submatrix_impl<Matrix>(nstart, mstart, ndim, mdim);
+    }
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);
@@ -116,8 +125,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     double variance() const;
     double trace() const;
 
-    void dscal(const double a) { dscal_(size(), a, data(), 1); }
-    void scale(const double a) { dscal(a); }
+    void scale(const double a) { dscal_(size(), a, data(), 1); }
 
     void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary

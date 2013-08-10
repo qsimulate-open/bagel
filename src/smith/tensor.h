@@ -272,22 +272,21 @@ class Tensor {
     }
 
 
-    std::shared_ptr<Civec> civec(std::shared_ptr<const Civec> ci0) const {
+    std::shared_ptr<Civec> civec(std::shared_ptr<const Determinants> det) const {
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 1);
 
       int dim0 = 0;
       for (auto& i0 : o[0].range()) dim0 += i0.size();
-      assert(dim0 == ci0->size());
 
-      std::unique_ptr<double[]> deci(new double[dim0]); 
-      auto out = std::make_shared<Civec>(ci0->det());
+      std::unique_ptr<double[]> civ(new double[dim0]); 
+      auto out = std::make_shared<Civec>(det);
       for (auto& i0 : o[0].range()) {
         std::unique_ptr<double[]> target = get_block(i0);
-        std::copy_n(target.get(), i0.size(), deci.get()+i0.offset());
+        std::copy_n(target.get(), i0.size(), civ.get()+i0.offset());
       }
 
-      std::copy_n(deci.get(), dim0, out->data());
+      std::copy_n(civ.get(), dim0, out->data());
 
       return out;
     }
@@ -332,6 +331,33 @@ class Tensor {
                                " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
               }
             }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
+    }
+
+    void print3(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 3);
+      for (auto& i2 : o[2].range()) {
+        for (auto& i1 : o[1].range()) {
+          for (auto& i0 : o[0].range()) {
+            // if this block is not included in the current wave function, skip it
+            if (!this->get_size(i0, i1, i2)) continue;
+            std::unique_ptr<double[]> data = this->get_block(i0, i1, i2);
+            size_t iall = 0;
+            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                  if (fabs(data[iall]) > thresh) {
+                    std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 << " " << std::setw(4) << j2 <<
+                                   " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+                  }
+                }
+          }
         }
       }
       std::cout << "======================================" << std::endl << std::endl;

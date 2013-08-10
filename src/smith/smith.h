@@ -35,6 +35,8 @@
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
 
+#include <src/smith/CAS_test.h>
+
 namespace bagel {
 
 class Smith : public Method {

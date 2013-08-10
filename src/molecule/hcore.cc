@@ -57,7 +57,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     NAIBatch nai(input, mol_);
     nai.compute();
 
-    add_block(offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
   if (mol_->external()) {
