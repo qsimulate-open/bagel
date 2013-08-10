@@ -40,7 +40,14 @@
 
 namespace bagel {
 
-template <typename T>
+namespace davidson_detail {
+  template<typename T>
+  static T conj(const T& a) { throw std::logic_error("davidson_detail::conj"); }
+  template<> double conj(const double& a) { return a; }
+  template<> std::complex<double> conj(const std::complex<double>& a) { return std::conj(a); }
+}
+
+template <typename T, class MatType = Matrix>
 class DavidsonDiag {
   protected:
     const int nstate_;
@@ -52,23 +59,20 @@ class DavidsonDiag {
     std::list<std::shared_ptr<const T>> sigma_;
 
     // contains
-    std::shared_ptr<Matrix> mat_;
+    std::shared_ptr<MatType> mat_;
     // scratch area for diagonalization
-    std::shared_ptr<Matrix> scr_;
+    std::shared_ptr<MatType> scr_;
     std::unique_ptr<double[]> vec_;
     // an eigenvector
-    std::shared_ptr<Matrix> eig_;
+    std::shared_ptr<MatType> eig_;
     // overlap matrix
-    std::shared_ptr<Matrix> overlap_;
-    std::shared_ptr<Matrix> ovlp_scr_;
-
-    // for convenience below
-    double& mat(int i, int j) { return mat_->element(i,j); }
+    std::shared_ptr<MatType> overlap_;
+    std::shared_ptr<MatType> ovlp_scr_;
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(std::make_shared<Matrix>(max_,max_,true)),
-                                 scr_(std::make_shared<Matrix>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<Matrix>(max_,max_,true)),
-                                 ovlp_scr_(std::make_shared<Matrix>(max_,max_,true)) {
+    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(std::make_shared<MatType>(max_,max_,true)),
+                                 scr_(std::make_shared<MatType>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)),
+                                 ovlp_scr_(std::make_shared<MatType>(max_,max_,true)) {
     }
     ~DavidsonDiag(){}
 
@@ -91,15 +95,23 @@ class DavidsonDiag {
         double overlap_row = 0.0;
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
-          mat(i, size_-1) = mat(size_-1,i) = (*isigma)->ddot(**cciter);
-          overlap_->element(i, size_-1) = overlap_->element(size_-1,i) = (*icivec)->ddot(**cciter);
-          if (!orthogonalize_) overlap_row += fabs(overlap_->element(i, size_-1));
+          mat_->element(i, size_-1) = (*cciter)->ddot(**isigma);
+          mat_->element(size_-1, i) = davidson_detail::conj(mat_->element(i, size_-1));
+
+          overlap_->element(i, size_-1) = (*cciter)->ddot(**icivec);
+          overlap_->element(size_-1, i) = davidson_detail::conj(overlap_->element(i, size_-1));
+
+          if (!orthogonalize_) {
+            overlap_row += std::abs(overlap_->element(i, size_-1));
+          }
         }
-        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) orthogonalize_ = true;
+        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) {
+          orthogonalize_ = true;
+        }
       }
 
       if (orthogonalize_) {
-        std::shared_ptr<Matrix> tmp = overlap_->get_submatrix(0, 0, size_, size_);
+        std::shared_ptr<MatType> tmp = overlap_->get_submatrix(0, 0, size_, size_);
         tmp->inverse_half();
 
         ovlp_scr_->copy_block(0, 0, size_, size_, tmp);
@@ -107,7 +119,7 @@ class DavidsonDiag {
 
       // diagonalize matrix to get
       *scr_ = orthogonalize_ ? *ovlp_scr_ % *mat_ * *ovlp_scr_ : *mat_;
-      std::shared_ptr<Matrix> tmp = scr_->get_submatrix(0, 0, size_, size_);
+      std::shared_ptr<MatType> tmp = scr_->get_submatrix(0, 0, size_, size_);
       tmp->diagonalize(vec_.get());
       scr_->copy_block(0, 0, size_, size_, tmp);
       if ( orthogonalize_ ) *scr_ = *ovlp_scr_ * *scr_;
