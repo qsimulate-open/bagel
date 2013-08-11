@@ -38,13 +38,13 @@ extern void mytranspose_conjg_(const std::complex<double>* a, const int b, const
 namespace detail {
   // conj function
   template<typename T>
-  static T conj(const T& a) { throw std::logic_error("davidson_detail::conj"); }
+  static T conj(const T& a) { throw std::logic_error("detail::conj"); }
   template<> double conj(const double& a) { return a; }
   template<> std::complex<double> conj(const std::complex<double>& a) { return std::conj(a); }
 
   // real function
   template<typename T>
-  static double real(const T& a) { throw std::logic_error("davidson_detail::real"); }
+  static double real(const T& a) { throw std::logic_error("detail::real"); }
   template<> double real(const double& a) { return a; }
   template<> double real(const std::complex<double>& a) { return a.real(); }
 }
