@@ -142,8 +142,8 @@ class DistCivec {
 };
 
 
-// DataType is double or complex<double> (default to double)
-template<typename DataType = double>
+// DataType is double or complex<double>
+template<typename DataType>
 class Civector {
   protected:
     // The determinant space in which this Civec object is defined
@@ -233,10 +233,14 @@ class Civector {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       std::transform(other.data(), other.data()+size(), cc(), cc(), [&a](DataType p, DataType q){ return a*p+q; });
     }
+    void ax_plus_y(DataType a, std::shared_ptr<const Civector> other) { ax_plus_y(a, *other); } 
+
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; }); 
     }
+    DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
+
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / size(); }
 
