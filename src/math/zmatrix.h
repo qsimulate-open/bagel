@@ -189,22 +189,12 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
 
     std::shared_ptr<DistZMatrix> clone() const { return std::make_shared<DistZMatrix>(ndim_, mdim_); }
 
-    void ax_plus_y(const double a, const DistZMatrix& o) { const std::complex<double> b(a); ax_plus_y(b,o); }
-    void ax_plus_y(const double a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a,*o); }
-    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { assert(size() == o.size()); zaxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
-    void ax_plus_y(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a, *o); }
+    using DistMatrix_base<std::complex<double>>::scale;
+    using DistMatrix_base<std::complex<double>>::ax_plus_y;
+    using DistMatrix_base<std::complex<double>>::dot_product;
 
-    std::complex<double> dot_product(const DistZMatrix&) const;
-    std::complex<double> dot_product(const std::shared_ptr<const DistZMatrix> o) const { return dot_product(*o); }
-    double norm() const { return std::sqrt(dot_product(*this).real()); }
-    double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
-
-    // for generic algorithms
-    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { ax_plus_y(a, o); }
-    void ax_plus_y(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a, o); }
-
-    void scale(const std::complex<double> a) { zscal_(size(), a, local_.get(), 1); }
-    void scale(const double a) { const std::complex<double> b(a); scale(b); }
+    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { this->ax_plus_y_impl(a, o); } 
+    std::complex<double> dot_product(const DistZMatrix& o) const { return this->dot_product_impl(o); }
 
     std::shared_ptr<ZMatrix> matrix() const;
 

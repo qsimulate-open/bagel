@@ -50,11 +50,28 @@ class DistMatrix_base {
     const std::unique_ptr<int[]> desc_;
     const std::tuple<int, int> localsize_;
 
+    template<class T>
+    void ax_plus_y_impl(const DataType a, const T& o) {
+      assert(size() == o.size());
+      std::transform(o.local_.get(), o.local_.get()+size(), local_.get(), local_.get(),
+                     [&a](DataType p, DataType q) { return a*p+q; });
+    }
+    template<class T>
+    DataType dot_product_impl(const T& o) const {
+      assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
+      DataType sum = size() ? inner_product(local_.get(), local_.get()+size(), o.local_.get(), DataType(0.0), std::plus<DataType>(),
+                                            [](DataType p, DataType q){ return detail::conj(p)*q; })
+                            : 0.0; 
+      mpi__->allreduce(&sum, 1);
+      return sum;
+    }
+
   public:
     DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       zero();
     }
+
     DistMatrix_base(const DistMatrix_base& o) : ndim_(o.ndim_), mdim_(o.mdim_), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       std::copy_n(o.local_.get(), size(), local_.get());
@@ -101,6 +118,15 @@ class DistMatrix_base {
           }
     }
 
+    void ax_plus_y(const double a, const std::shared_ptr<const DistMatrix_base<DataType>> o) { ax_plus_y_impl(a, *o); }
+
+    DataType dot_product(const std::shared_ptr<const DistMatrix_base<DataType>> o) const { return dot_product_impl(*o); }
+
+    double norm() const { return std::sqrt(detail::real(dot_product_impl(*this))); }
+    double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
+
+    void scale(const DataType a) { std::for_each(local_.get(), local_.get()+size(), [&a](DataType p) { p *= a; }); }  
+
     void scale(const double* vec) {
       const int localrow = std::get<0>(localsize_);
       const int localcol = std::get<1>(localsize_);
@@ -133,6 +159,8 @@ class DistMatrix_base {
           std::for_each(c, c+(localrow%blocksize__), [&x = vec[mypcol+i*mstride+id]](DataType& a) { a*= x; });
         }
     }
+
+
 };
 #endif
 

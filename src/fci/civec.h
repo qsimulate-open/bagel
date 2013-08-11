@@ -40,9 +40,8 @@ namespace bagel {
 
 template<typename DataType> class Civector;
 
-class DistCivec {
-  // TODO generalize to copmlex using template.
-  using DataType = double;
+template<typename DataType>
+class DistCivector {
   protected:
     mutable std::shared_ptr<const Determinants> det_;
 
@@ -51,7 +50,7 @@ class DistCivec {
     size_t lenb_;
 
     // local storage
-    std::unique_ptr<double[]> local_;
+    std::unique_ptr<DataType[]> local_;
 
     // local alpha strings
     size_t astart_;
@@ -73,20 +72,37 @@ class DistCivec {
     mutable std::vector<std::mutex> mutex_;
 
     // for transpose, buffer can be appended
-    mutable std::shared_ptr<DistCivec> buf_;
+    mutable std::shared_ptr<DistCivector<DataType>> buf_;
     mutable std::vector<int> transp_;
 
   public:
-    DistCivec(std::shared_ptr<const Determinants> det);
-    DistCivec(const DistCivec& o);
+    DistCivector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()) {
+      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
+      alloc_ = size();
+      local_ = std::unique_ptr<DataType[]>(new DataType[alloc_]);
+      std::fill_n(local_.get(), alloc_, 0.0);
+      mutex_ = std::vector<std::mutex>(asize());
+    }
 
-    DistCivec& operator=(const DistCivec& o);
+    DistCivector(const DistCivector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), dist_(lena_, mpi__->size()) {
+      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
+      alloc_ = size();
+      local_ = std::unique_ptr<DataType[]>(new DataType[alloc_]);
+      std::copy_n(o.local_.get(), alloc_, local_.get());
+      mutex_ = std::vector<std::mutex>(asize());
+    }
 
-    double& local(const size_t i) { return local_[i]; }
-    const double& local(const size_t i) const { return local_[i]; }
+    DistCivector<DataType>& operator=(const DistCivector<DataType>& o) {
+      assert(o.size() == size());
+      std::copy_n(o.local_.get(), alloc_, local_.get());
+      return *this;
+    }
 
-    double* local() { return local_.get(); }
-    const double* local() const { return local_.get(); }
+    DataType& local(const size_t i) { return local_[i]; }
+    const DataType& local(const size_t i) const { return local_[i]; }
+
+    DataType* local() { return local_.get(); }
+    const DataType* local() const { return local_.get(); }
 
     size_t size() const { return lenb_*(aend_-astart_); }
     size_t global_size() const { return lena_*lenb_; }
@@ -97,32 +113,134 @@ class DistCivec {
     size_t aend() const { return aend_; }
     size_t asize() const { return aend_ - astart_; }
 
-    void zero() { std::fill_n(local_.get(), size(), 0.0); }
+    void zero() { std::fill_n(local_.get(), size(), DataType(0.0)); }
 
-    std::shared_ptr<Civector<DataType>> civec() const;
+    std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
 
-    std::shared_ptr<DistCivec> clone() const { return std::make_shared<DistCivec>(det_); }
+    std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
 
     // MPI Isend Irecv
-    void init_mpi_accumulate() const;
-    void accumulate_bstring_buf(std::unique_ptr<double[]>& buf, const size_t a) const;
-    void terminate_mpi_accumulate() const;
+    void init_mpi_accumulate() const {
+      send_  = std::make_shared<SendRequest>();
+      accum_ = std::make_shared<AccRequest>(local_.get(), &mutex_);
+    }
 
-    void init_mpi_recv() const;
-    int get_bstring_buf(double* buf, const size_t a) const;
-    void terminate_mpi_recv() const;
+    void accumulate_bstring_buf(std::unique_ptr<DataType[]>& buf, const size_t a) const {
+      assert(accum_ && send_);
+      const size_t mpirank = mpi__->rank();
+      size_t rank, off;
+      std::tie(rank, off) = dist_.locate(a);
+
+      if (mpirank == rank) {
+        std::lock_guard<std::mutex> lock(mutex_[off]);
+        std::transform(buf.get(), buf.get()+lenb_, local_.get()+off*lenb_, local_.get()+off*lenb_,
+                       [](DataType p, DataType q){ return p+q; });
+      } else {
+        send_->request_send(std::move(buf), lenb_, rank, off*lenb_);
+      }
+    }
+
+    void terminate_mpi_accumulate() const {
+      assert(accum_ && send_);
+      bool done;
+      do {
+        done = send_->test();
+        done &= accum_->test();
+#ifndef USE_SERVER_THREAD
+        // in case no thread is running behind, we need to cycle this to flush
+        size_t d = done ? 0 : 1;
+        mpi__->soft_allreduce(&d, 1);
+        done = d == 0;
+        if (!done) send_->flush();
+        if (!done) accum_->flush();
+#endif
+        if (!done) std::this_thread::sleep_for(sleeptime__);
+      } while (!done);
+      // cancel all MPI calls
+      send_  = std::shared_ptr<SendRequest>();
+      accum_ = std::shared_ptr<AccRequest>();
+    }
+
+    void init_mpi_recv() const {
+      put_   = std::make_shared<PutRequest>(local_.get());
+      recv_  = std::make_shared<RecvRequest>();
+    }
+
+    int get_bstring_buf(double* buf, const size_t a) const {
+      assert(put_ && recv_);
+      const size_t mpirank = mpi__->rank();
+      size_t rank, off;
+      std::tie(rank, off) = dist_.locate(a);
+
+      int out = -1;
+      if (mpirank == rank) {
+        std::copy_n(local_.get()+off*lenb_, lenb_, buf);
+      } else {
+        out = recv_->request_recv(buf, lenb_, rank, off*lenb_);
+      }
+      return out;
+    }
+
+    void terminate_mpi_recv() const {
+      assert(put_ && recv_);
+      bool done;
+      do {
+        done = recv_->test();
+#ifndef USE_SERVER_THREAD
+        // in case no thread is running behind, we need to cycle this to flush
+        size_t d = done ? 0 : 1;
+        mpi__->soft_allreduce(&d, 1);
+        done = d == 0;
+        if (!done) put_->flush();
+#endif
+        if (!done) std::this_thread::sleep_for(sleeptime__);
+      } while (!done);
+      // cancel all MPI calls
+      recv_  = std::shared_ptr<RecvRequest>();
+      put_   = std::shared_ptr<PutRequest>();
+    }
 
     // utility functions
-    double norm() const;
-    double variance() const;
-    double dot_product(const DistCivec& o) const;
-    void scale(const double a);
-    void ax_plus_y(const double a, const DistCivec& o);
+    DataType dot_product(const DistCivector<DataType>& o) const {
+      assert(size() == o.size());
+      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; })
+                            : 0.0; 
+      mpi__->allreduce(&sum, 1);
+      return sum;
+    }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double variance() const { return detail::real(dot_product(*this)) / (lena_*lenb_); }
 
-    void project_out(std::shared_ptr<const DistCivec> o) { ax_plus_y(-dot_product(*o), *o); }
-    double orthog(std::list<std::shared_ptr<const DistCivec>> c);
-    double orthog(std::shared_ptr<const DistCivec> o);
+    void scale(const DataType a) {
+      for (size_t i = 0; i != asize(); ++i) {
+        std::lock_guard<std::mutex> lock(mutex_[i]);
+        std::transform(local()+i*lenb_, local()+(i+1)*lenb_, local()+i*lenb_, [&a](DataType p){ return a*p; });
+      }
+    }
+
+    void ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
+      assert(size() == o.size());
+      for (size_t i = 0; i != asize(); ++i) {
+        std::lock_guard<std::mutex> lock(mutex_[i]);
+        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](DataType p, DataType q){ return a*p+q; });
+      }
+    }
+
+    void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
+
+    double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
+      for (auto& iter : c)
+        project_out(iter);
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
+    }
+
+    double orthog(std::shared_ptr<const DistCivector<DataType>> o) {
+      return orthog(std::list<std::shared_ptr<const DistCivector<DataType>>>{o});
+    }
 
     // mutex
     std::mutex& cimutex(const size_t& i) const { return mutex_[i]; }
@@ -136,11 +254,50 @@ class DistCivec {
     }
 #endif
 
-    std::shared_ptr<DistCivec> transpose() const;
-    void transpose_wait();
+    std::shared_ptr<DistCivector<DataType>> transpose() const {
+      auto out = std::make_shared<DistCivector<DataType>>(det_->transpose());
+      const size_t myrank = mpi__->rank();
+
+      // transpose each segment
+      std::shared_ptr<DistCivector<DataType>> trans = clone();
+      for (int i = 0; i != mpi__->size(); ++i) {
+        std::tuple<size_t, size_t> outrange = out->dist_.range(i);
+        std::tuple<size_t, size_t> thisrange = dist_.range(i);
+
+        std::unique_ptr<DataType[]> tmp(new DataType[out->dist_.size(i)*asize()]);
+        for (size_t j = 0; j != asize(); ++j)
+          std::copy_n(local()+std::get<0>(outrange)+j*lenb_, out->dist_.size(i), tmp.get()+j*out->dist_.size(i));
+
+        const size_t off = std::get<0>(outrange)*asize();
+        std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
+        if (i != myrank) {
+          out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
+          out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*std::get<0>(thisrange), out->asize()*dist_.size(i), i, i));
+        } else {
+          std::copy_n(trans->local()+off, out->asize()*asize(), out->local()+astart()*out->asize());
+        }
+      }
+      // keep trans
+      out->buf_ = trans;
+      return out;
+    }
+
+    void transpose_wait() {
+      for (auto& i : transp_)
+        mpi__->wait(i);
+      buf_ = std::shared_ptr<DistCivector<DataType>>();
+      buf_ = clone();
+      mytranspose_(local(), asize(), lenb_, buf_->local());
+      std::copy_n(buf_->local(), asize()*lenb_, local());
+      buf_ = std::shared_ptr<DistCivector<DataType>>();
+    }
 
 };
 
+using DistCivec = DistCivector<double>;
+using ZDistCivec = DistCivector<std::complex<double>>;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // DataType is double or complex<double>
 template<typename DataType>
@@ -185,8 +342,7 @@ class Civector {
     }
 
     // from a distribtued Civec  TODO not efficient TODO only works for double
-    Civector(const DistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
-      assert(typeid(DataType) == typeid(double));
+    Civector(const DistCivector<DataType>& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       cc_ptr_ = cc_.get();
       std::fill_n(cc_ptr_, size(), 0.0);
@@ -309,10 +465,8 @@ class Civector {
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 
-    // TODO only works for double
-    std::shared_ptr<DistCivec> distcivec() const {
-      assert(typeid(DataType) == typeid(double));
-      auto dist = std::make_shared<DistCivec>(det_);
+    std::shared_ptr<DistCivector<DataType>> distcivec() const {
+      auto dist = std::make_shared<DistCivector<DataType>>(det_);
       std::copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
       return dist;
     }
