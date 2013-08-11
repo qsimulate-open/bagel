@@ -50,7 +50,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
     shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
     for(int stateAp = 0; stateAp < stateA; ++stateAp) {
       shared_ptr<const Civec> icc = ccvecA->data(stateAp);
-      const double dotproduct = isigma->ddot(*icc);
+      const double dotproduct = isigma->dot_product(*icc);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
         const int stateAB = AB.dimerindex(stateA, stateB);
@@ -58,7 +58,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
         out->element(stateApB, stateAB) += dotproduct;
       }
     }
-    const double dotproduct = ccvecA->data(stateA)->ddot(*isigma);
+    const double dotproduct = ccvecA->data(stateA)->dot_product(*isigma);
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
       const int stateAB = AB.dimerindex(stateA, stateB);
       out->element(stateAB,stateAB) += dotproduct;
@@ -70,7 +70,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
     shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
     for(int stateBp = 0; stateBp < stateB; ++stateBp) {
       shared_ptr<const Civec> icc = ccvecB->data(stateBp);
-      const double dotproduct = isigma->ddot(*icc);
+      const double dotproduct = isigma->dot_product(*icc);
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
         const int stateABp = AB.dimerindex(stateA, stateBp);
@@ -78,7 +78,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
         out->element(stateABp, stateAB) += dotproduct;
       }
     }
-    const double dotproduct = ccvecB->data(stateB)->ddot(*isigma);
+    const double dotproduct = ccvecB->data(stateB)->dot_product(*isigma);
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       const int stateAB = AB.dimerindex(stateA, stateB);
       out->element(stateAB,stateAB) += dotproduct;
@@ -107,7 +107,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
     shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
     for(int stateAp = 0; stateAp < stateA; ++stateAp) {
       shared_ptr<const Civec> icc = ccvecA->data(stateAp);
-      const double dotproduct = isigma->ddot(*icc);
+      const double dotproduct = isigma->dot_product(*icc);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
         const int stateAB = AB.dimerindex(stateA, stateB);
@@ -115,7 +115,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
         out->element(stateApB, stateAB) += dotproduct;
       }
     }
-    const double dotproduct = isigma->ddot(*ccvecA->data(stateA));
+    const double dotproduct = isigma->dot_product(*ccvecA->data(stateA));
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
       const int stateAB = AB.dimerindex(stateA, stateB);
       out->element(stateAB,stateAB) += dotproduct;
@@ -127,7 +127,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
     shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
     for(int stateBp = 0; stateBp < stateB; ++stateBp) {
       shared_ptr<const Civec> icc = ccvecB->data(stateBp);
-      const double dotproduct = isigma->ddot(*icc);
+      const double dotproduct = isigma->dot_product(*icc);
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
         const int stateABp = AB.dimerindex(stateA, stateBp);
@@ -135,7 +135,7 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
         out->element(stateABp, stateAB) += dotproduct;
       }
     }
-    const double dotproduct = ccvecB->data(stateB)->ddot(*isigma);
+    const double dotproduct = ccvecB->data(stateB)->dot_product(*isigma);
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       const int stateAB = AB.dimerindex(stateA, stateB);
       out->element(stateAB,stateAB) += dotproduct;

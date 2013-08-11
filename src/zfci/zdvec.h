@@ -27,7 +27,7 @@
 #ifndef BAGEL_ZFCI_ZDVEC_H
 #define BAGEL_ZFCI_ZDVEC_H
 
-#include <src/zfci/zcivec.h>
+#include <src/fci/civec.h>
 
 // I forgot why I named this class "Dvec"...
 // Basically Dvec is a vector of Civec, with some utility functions.
@@ -90,7 +90,7 @@ class ZDvec {
     void set_det(std::shared_ptr<const Determinants> o) const;
 
     // some functions for convenience
-    std::complex<double> zdotc(const ZDvec& other) const;
+    std::complex<double> dot_product(const ZDvec& other) const;
     void zaxpy(std::complex<double> a, const ZDvec& other);
     ZDvec& operator+=(const ZDvec& o) { zaxpy(1.0, o); return *this; }
     ZDvec& operator-=(const ZDvec& o) { zaxpy(-1.0, o); return *this; }
@@ -101,7 +101,7 @@ class ZDvec {
     ZDvec& operator/=(const ZDvec& o);
     ZDvec operator/(const ZDvec& o) const;
 
-    double norm() const { const std::complex<double> n = zdotc(*this); assert(fabs(n.imag()) < 1.0e-8); return std::sqrt(n.real()); }
+    double norm() const { const std::complex<double> n = dot_product(*this); assert(fabs(n.imag()) < 1.0e-8); return std::sqrt(n.real()); }
     void scale(const std::complex<double> a);
     ZDvec& operator*=(const std::complex<double>& a) { scale(a); return *this; }
 

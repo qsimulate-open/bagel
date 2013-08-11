@@ -333,18 +333,18 @@ void ZMatrix::zaxpy(const complex<double> a, const shared_ptr<const ZMatrix> o) 
 }
 
 
-complex<double> ZMatrix::zdotc(const ZMatrix& o) const {
+complex<double> ZMatrix::dot_product(const ZMatrix& o) const {
   return zdotc_(ndim_*mdim_, data(), 1, o.data(), 1);
 }
 
 
-complex<double> ZMatrix::zdotc(const shared_ptr<const ZMatrix> o) const {
-  return zdotc(*o);
+complex<double> ZMatrix::dot_product(const shared_ptr<const ZMatrix> o) const {
+  return dot_product(*o);
 }
 
 
 double ZMatrix::norm() const {
-  complex<double> n = zdotc(*this);
+  complex<double> n = dot_product(*this);
   assert(fabs(n.imag()) < 1.0e-10);
   return std::sqrt(n.real());
 }
@@ -409,14 +409,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_complex_(data_.get(), ndim_, mdim_, out->data());
+  mytranspose_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_complex_conjg_(data_.get(), ndim_, mdim_, out->data());
+  mytranspose_conjg_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
 
@@ -502,7 +502,7 @@ void ZMatrix::purify_idempotent(const ZMatrix& s) {
 
 complex<double> ZMatrix::orthog(const list<shared_ptr<const ZMatrix>> o) {
   for (auto& it : o) {
-    const complex<double> m = this->zdotc(it);
+    const complex<double> m = this->dot_product(it);
     this->zaxpy(-m, it);
   }
   const complex<double> n = norm();

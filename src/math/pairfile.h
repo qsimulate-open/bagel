@@ -77,12 +77,12 @@ class PairFile {
     // lapack functions
     void daxpy(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
 #ifndef DEBUG_ORBITAL
-    double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()) + second()->ddot(*o.second()); };
+    double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()) + second()->dot_product(*o.second()); };
 #else
-    double ddot(const PairFile<T, U>& o) const { return first()->ddot(*o.first()); };
+    double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()); };
 #endif
-    double ddot(const std::shared_ptr<const PairFile<T, U>> o) const { return ddot(*o); };
-    double norm() const { return std::sqrt(ddot(*this)); };
+    double dot_product(const std::shared_ptr<const PairFile<T, U>> o) const { return dot_product(*o); };
+    double norm() const { return std::sqrt(dot_product(*this)); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
 
     void zero() { first()->zero(); second()->zero(); };
@@ -92,7 +92,7 @@ class PairFile {
     // assumes that c is already orthogonal with each other.
     double orthog(std::list<std::shared_ptr<const PairFile<T, U>>> c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
-        const double scal = - this->ddot(**iter);
+        const double scal = - this->dot_product(**iter);
         daxpy(scal, *iter);
       }
       const double scal = 1.0/this->norm();

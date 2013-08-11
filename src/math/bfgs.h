@@ -83,12 +83,12 @@ class BFGS {
 
         // (4)
         for (int i = 0; i < n; ++i) {
-          const double s1 = 1.0 / delta[i]->ddot(D[i]);
-          const double s2 = 1.0 / D[i]->ddot(y[i]);
-          const double s3 = delta[i]->ddot(grad);
-          const double s4 =     y[i]->ddot(grad);
-          const double s5 = delta[i]->ddot(D[n]);
-          const double s6 =     y[i]->ddot(D[n]);
+          const double s1 = 1.0 / delta[i]->dot_product(D[i]);
+          const double s2 = 1.0 / D[i]->dot_product(y[i]);
+          const double s3 = delta[i]->dot_product(grad);
+          const double s4 =     y[i]->dot_product(grad);
+          const double s5 = delta[i]->dot_product(D[n]);
+          const double s6 =     y[i]->dot_product(D[n]);
           const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           const double t2 = s1 * s3;
           const double t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
@@ -99,10 +99,10 @@ class BFGS {
           yy->daxpy(-t4, y[i]);
         }
         { // (5)
-          const double s1 = 1.0 / delta[n]->ddot(D[n]);
-          const double s2 = 1.0 /     D[n]->ddot(std::shared_ptr<const T>(yy));
-          const double s3 = delta[n]->ddot(grad);
-          const double s4 =       yy->ddot(grad);
+          const double s1 = 1.0 / delta[n]->dot_product(D[n]);
+          const double s2 = 1.0 /     D[n]->dot_product(std::shared_ptr<const T>(yy));
+          const double s3 = delta[n]->dot_product(grad);
+          const double s4 =       yy->dot_product(grad);
           const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           const double t2 = s1 * s3;
           out->daxpy(t1, delta[n]);

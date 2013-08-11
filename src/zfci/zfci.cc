@@ -138,7 +138,8 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDv
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-    out->data(oindex)->spin_decontaminate();
+// TODO remove or replace
+//  out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
@@ -265,7 +266,8 @@ void ZFCI::compute() {
         list<shared_ptr<const ZCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
-        cc_->data(ist)->spin_decontaminate();
+// TODO remove or repalace
+//      cc_->data(ist)->spin_decontaminate();
       }
     }
     pdebug.tick_print("denominator");

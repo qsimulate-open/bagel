@@ -29,9 +29,9 @@
 #include <src/zfci/zdvec.h>
 #include <src/zfci/zmofile.h>
 #include <src/zfci/relmofile.h>
-//#include <src/zfci/zproperties.h>
 #include <src/wfn/ciwfn.h>
 #include <src/math/zmatrix.h>
+#include <src/fci/civec.h>
 
 namespace bagel {
 

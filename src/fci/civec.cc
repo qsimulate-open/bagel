@@ -35,7 +35,7 @@ using namespace bagel;
 template<>
 double Civector<double>::spin_expectation() const {
   shared_ptr<Civec> S2 = spin();
-  double out = ddot(*S2);
+  double out = dot_product(*S2);
 
   return out;
 }
@@ -182,7 +182,7 @@ void Civector<double>::spin_decontaminate(const double thresh) {
   shared_ptr<Civec> S2 = spin();
 
   int k = nspin + 2;
-  while( fabs(ddot(*S2) - expectation) > thresh ) {
+  while( fabs(dot_product(*S2) - expectation) > thresh ) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));

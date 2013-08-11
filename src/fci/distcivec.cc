@@ -151,7 +151,7 @@ void DistCivec::terminate_mpi_recv() const {
 }
 
 
-double DistCivec::ddot(const DistCivec& o) const {
+double DistCivec::dot_product(const DistCivec& o) const {
   assert(size() == o.size());
   double sum = size() ? ddot_(size(), local(), 1, o.local(), 1) : 0.0;
   mpi__->allreduce(&sum, 1);
@@ -160,7 +160,7 @@ double DistCivec::ddot(const DistCivec& o) const {
 
 
 double DistCivec::norm() const {
-  return sqrt(ddot(*this));
+  return sqrt(dot_product(*this));
 }
 
 
@@ -198,7 +198,7 @@ double DistCivec::orthog(shared_ptr<const DistCivec> o) {
 
 
 double DistCivec::variance() const {
-  return ddot(*this) / (lena_*lenb_);
+  return dot_product(*this) / (lena_*lenb_);
 }
 
 

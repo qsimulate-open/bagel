@@ -299,22 +299,22 @@ void Matrix::daxpy(const double a, const shared_ptr<const Matrix> o) {
 }
 
 
-double Matrix::ddot(const Matrix& o) const {
+double Matrix::dot_product(const Matrix& o) const {
   return ddot_(ndim_*mdim_, data(), 1, o.data(), 1);
 }
 
 
-double Matrix::ddot(const shared_ptr<const Matrix> o) const {
-  return ddot(*o);
+double Matrix::dot_product(const shared_ptr<const Matrix> o) const {
+  return dot_product(*o);
 }
 
 
 double Matrix::rms() const {
-  return std::sqrt(ddot(*this) / (ndim_ * mdim_));
+  return std::sqrt(dot_product(*this) / (ndim_ * mdim_));
 }
 
 double Matrix::variance() const {
-  return ddot(*this) / (ndim_ * mdim_);
+  return dot_product(*this) / (ndim_ * mdim_);
 }
 
 
@@ -419,7 +419,7 @@ void Matrix::purify_idempotent(const Matrix& s) {
 
 double Matrix::orthog(const list<shared_ptr<const Matrix>> o) {
   for (auto& it : o) {
-    const double m = this->ddot(it);
+    const double m = this->dot_product(it);
     this->daxpy(-m, it);
   }
   const double n = norm();

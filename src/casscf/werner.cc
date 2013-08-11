@@ -75,7 +75,7 @@ void WernerKnowles::compute() {
       auto grad = make_shared<Matrix>(*U%*bvec-*bvec%*U);
       grad->purify_redrotation(nclosed_,nact_,nvirt_);
 
-      const double error_micro = grad->ddot(*grad)/grad->size();
+      const double error_micro = grad->dot_product(*grad)/grad->size();
       if (miter == 0) error = error_micro;
       cout << "   -- iter " << setw(4) << miter << "  residual norm : " << setw(20) << setprecision(10) << error_micro << endl;
 

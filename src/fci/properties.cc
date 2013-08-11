@@ -99,7 +99,7 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
     for (int j = 0; j < nstates; ++j) {
       for (int i = 0; i < nstates; ++i) {
         // This saves an extra transpose at the expense of more ddot... which is better?
-        tmp->element(i,j) = sigma->data(i)->ddot(*ccvec->data(j)) + sg_trans->data(i)->ddot(*cc_trans->data(j));
+        tmp->element(i,j) = sigma->data(i)->dot_product(*ccvec->data(j)) + sg_trans->data(i)->dot_product(*cc_trans->data(j));
       }
     }
     tmp->add_diag(core_dipole_[imu]);

@@ -103,12 +103,12 @@ void ZDvec::set_det(shared_ptr<const Determinants> o) const {
 }
 
 
-complex<double> ZDvec::zdotc(const ZDvec& other) const {
+complex<double> ZDvec::dot_product(const ZDvec& other) const {
   assert(ij() == other.ij());
   complex<double> sum = 0.0;
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    sum += i->zdotc(**j);
+    sum += i->dot_product(**j);
     ++j;
   }
   return sum;
@@ -118,7 +118,7 @@ complex<double> ZDvec::zdotc(const ZDvec& other) const {
 void ZDvec::zaxpy(complex<double> a, const ZDvec& other) {
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    i->zaxpy(a, **j);
+    i->daxpy(a, **j);
     ++j;
   }
 }
@@ -216,7 +216,8 @@ void ZDvec::print(const double thresh) const {
   int j = 0;
   for (auto& iter : dvec_) {
     cout << endl;
-    cout << "     * ci vector, state " << setw(3) << j++ << ", <S^2> = " << setw(6) << setprecision(4) << iter->spin_expectation() << endl;
+    cout << "     * ci vector, state " << setw(3) << j++ << endl;
+    // TODO spin_expectation is not correct for relativistic cases << ", <S^2> = " << setw(6) << setprecision(4) << iter->spin_expectation() << endl;
     iter->print(thresh);
   }
 }

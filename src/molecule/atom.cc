@@ -376,7 +376,7 @@ double Atom::angle(const shared_ptr<const Atom> a, const shared_ptr<const Atom> 
   bp -= op;
   Quatern<double> rot = ap * bp;
   rot[0] = 0;
-  return ::atan2(rot.norm(), ap.ddot(bp)) * rad2deg__;
+  return ::atan2(rot.norm(), ap.dot_product(bp)) * rad2deg__;
 }
 
 
@@ -392,7 +392,7 @@ double Atom::dihedral_angle(const shared_ptr<const Atom> a, const shared_ptr<con
   Quatern<double> b3 = bp - op;
   Quatern<double> b12 = b1 * b2; b12[0] = 0.0;
   Quatern<double> b23 = b2 * b3; b23[0] = 0.0;
-  return ::atan2(b2.norm()*b1.ddot(b23), b12.ddot(b23)) * rad2deg__;
+  return ::atan2(b2.norm()*b1.dot_product(b23), b12.dot_product(b23)) * rad2deg__;
 }
 
 

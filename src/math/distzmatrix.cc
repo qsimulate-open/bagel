@@ -114,7 +114,7 @@ void DistZMatrix::diagonalize(double* eig) {
 }
 
 
-complex<double> DistZMatrix::zdotc(const DistZMatrix& o) const {
+complex<double> DistZMatrix::dot_product(const DistZMatrix& o) const {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   complex<double> sum = size() ? zdotc_(size(), local_.get(), 1, o.local_.get(), 1) : std::complex<double>(0.0,0.0);
   mpi__->allreduce(&sum, 1);

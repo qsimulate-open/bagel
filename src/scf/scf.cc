@@ -113,7 +113,7 @@ void SCF::compute() {
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
-    energy_  = 0.5*aodensity->ddot(*hcore+*fock) + geom_->nuclear_repulsion();
+    energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
 
     pdebug.tick_print("Fock build");
 

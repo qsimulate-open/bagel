@@ -33,7 +33,7 @@
 using namespace std;
 
 namespace bagel {
-void mytranspose_complex_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
+void mytranspose_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
 #ifdef HAVE_MKL_H
   mkl_zomatcopy('c', 't', m, n, 1.0, h, m, vec, n);
 #else
@@ -178,7 +178,7 @@ void mytranspose_complex_(const complex<double>* h, const int m, const int n, co
 }
 
 
-void mytranspose_complex_conjg_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
+void mytranspose_conjg_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
 #ifdef HAVE_MKL_H
   mkl_zomatcopy('c', 'c', m, n, 1.0, h, m, vec, n);
 #else

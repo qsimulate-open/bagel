@@ -24,7 +24,7 @@
 //
 
 // T should have
-//  - double ddot(const T&)
+//  - double dot_product(const T&)
 //  - void daxpy(double, const T&) // added to self
 //  - copy constructor (values are not used, though).
 //  - void orthog(list<shared_ptr<T>>)
@@ -89,10 +89,10 @@ class DavidsonDiag {
         double overlap_row = 0.0;
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
-          mat_->element(i, size_-1) = (*cciter)->ddot(**isigma);
+          mat_->element(i, size_-1) = (*cciter)->dot_product(**isigma);
           mat_->element(size_-1, i) = detail::conj(mat_->element(i, size_-1));
 
-          overlap_->element(i, size_-1) = (*cciter)->ddot(**icivec);
+          overlap_->element(i, size_-1) = (*cciter)->dot_product(**icivec);
           overlap_->element(size_-1, i) = detail::conj(overlap_->element(i, size_-1));
 
           if (!orthogonalize_) {

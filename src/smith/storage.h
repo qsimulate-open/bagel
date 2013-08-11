@@ -104,7 +104,7 @@ class Storage_Incore : public Storage_base {
     Storage_Incore& operator=(const Storage_Incore& o);
     void daxpy(const double a, const Storage_Incore& o);
     void daxpy(const double a, const std::shared_ptr<Storage_Incore> o) { daxpy(a, *o); };
-    double ddot(const Storage_Incore& o) const;
+    double dot_product(const Storage_Incore& o) const;
 
     void initialize();
 };

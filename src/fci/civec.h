@@ -116,11 +116,11 @@ class DistCivec {
     // utility functions
     double norm() const;
     double variance() const;
-    double ddot(const DistCivec& o) const;
+    double dot_product(const DistCivec& o) const;
     void scale(const double a);
     void daxpy(const double a, const DistCivec& o);
 
-    void project_out(std::shared_ptr<const DistCivec> o) { daxpy(-ddot(*o), *o); }
+    void project_out(std::shared_ptr<const DistCivec> o) { daxpy(-dot_product(*o), *o); }
     double orthog(std::list<std::shared_ptr<const DistCivec>> c);
     double orthog(std::shared_ptr<const DistCivec> o);
 
@@ -233,12 +233,12 @@ class Civector {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       std::transform(other.data(), other.data()+size(), cc(), cc(), [&a](DataType p, DataType q){ return a*p+q; });
     }
-    DataType ddot(const Civector<DataType>& other) const {
+    DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; }); 
     }
-    double norm() const { return std::sqrt(detail::real(ddot(*this))); }
-    double variance() const { return detail::real(ddot(*this)) / size(); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double variance() const { return detail::real(dot_product(*this)) / size(); }
 
     void scale(const DataType a) {
       std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; }); 
@@ -287,7 +287,7 @@ class Civector {
       return orthog(std::list<std::shared_ptr<const Civector<DataType>>>{o});
     }
 
-    void project_out(std::shared_ptr<const Civector<DataType>> o) { daxpy(-ddot(*o), *o); }
+    void project_out(std::shared_ptr<const Civector<DataType>> o) { daxpy(-detail::conj(dot_product(*o)), *o); }
 
     void print(const double thr) const {
       const DataType* i = cc();
@@ -321,7 +321,7 @@ template<> std::shared_ptr<Civector<double>> Civector<double>::spin_raise(std::s
 template<> void Civector<double>::spin_decontaminate(const double thresh);
 
 using Civec = Civector<double>;
-//using ZCivec = Civector<std::complex<double>>;
+using ZCivec = Civector<std::complex<double>>;
 
 }
 

@@ -152,7 +152,7 @@ void DMP2::compute() {
       for (size_t k = 0; k != nvirt; ++k)
         for (size_t l = 0; l != nocc; ++l, ++tdata)
           *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]; // assumed that the denominator is positive
-    energy_ += data->zdotc(buf).real() * 0.5;
+    energy_ += data->dot_product(buf).real() * 0.5;
   }
 
   cout << "    * assembly done" << endl << endl;

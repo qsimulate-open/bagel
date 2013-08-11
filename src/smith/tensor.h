@@ -133,14 +133,14 @@ class Tensor {
 
     void scale(const double a) { data_->scale(a); }
 
-    double ddot(const Tensor<T>& o) { return data_->ddot(*o.data_); }
-    double ddot(const std::shared_ptr<Tensor<T>>& o) { return data_->ddot(*o->data_); }
+    double dot_product(const Tensor<T>& o) { return data_->dot_product(*o.data_); }
+    double dot_product(const std::shared_ptr<Tensor<T>>& o) { return data_->dot_product(*o->data_); }
 
     size_t size() const { return data_->length(); }
     size_t length() const { return data_->length(); }
 
-    double norm() { return std::sqrt(ddot(*this)); }
-    double rms() { return std::sqrt(ddot(*this)/size()); }
+    double norm() { return std::sqrt(dot_product(*this)); }
+    double rms() { return std::sqrt(dot_product(*this)/size()); }
 
     std::vector<IndexRange> indexrange() const { return range_; }
 

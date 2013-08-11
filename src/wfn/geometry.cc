@@ -806,8 +806,8 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
           ecb.normalize();
           Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
           Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
-          const double tabc = ::atan2(rotabc.norm(), -eab.ddot(ebc));
-          const double tbcd = ::atan2(rotbcd.norm(), -edc.ddot(ecb));
+          const double tabc = ::atan2(rotabc.norm(), -eab.dot_product(ebc));
+          const double tbcd = ::atan2(rotbcd.norm(), -edc.dot_product(ecb));
 
           Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
           Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));

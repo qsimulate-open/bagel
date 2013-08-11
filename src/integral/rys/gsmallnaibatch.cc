@@ -62,7 +62,7 @@ shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Mat
         denc += *shells_[0]->small(i) * *d[cnt++] ^ *shells_[1]->small(j);
 
   for (int i = 0; i != mol_->natom()*3; ++i)
-    out->data(i) += data_[i]->ddot(denc);
+    out->data(i) += data_[i]->dot_product(denc);
   return out;
 }
 

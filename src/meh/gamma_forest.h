@@ -106,7 +106,7 @@ class GammaTree {
     static const int Annihilate = 1;
 
     std::shared_ptr<const Dvec> apply(std::shared_ptr<const Dvec> kets, const GammaSQ operation, const int orbital) const;
-    std::unique_ptr<double[]> ddot(std::shared_ptr<const Dvec> bras, std::shared_ptr<const Dvec> kets) const;
+    std::unique_ptr<double[]> dot_product(std::shared_ptr<const Dvec> bras, std::shared_ptr<const Dvec> kets) const;
 };
 
 class GammaTask; // Forward declaration of GammaTask
@@ -229,7 +229,7 @@ class GammaTask {
       std::shared_ptr<const Dvec> avec = apply(tree_->ket(), operation_, a_);
       for (auto& ibra : first->bras()) {
         const int nstates = avec->ij() * ibra.second->ij();
-        std::unique_ptr<double[]> tmp = ddot(ibra.second, avec);
+        std::unique_ptr<double[]> tmp = dot_product(ibra.second, avec);
         double* target = first->gammas().find(ibra.first)->second->element_ptr(0,a_);
         std::copy_n(tmp.get(), nstates, target);
       }
@@ -242,7 +242,7 @@ class GammaTask {
           std::shared_ptr<const Dvec> bvec = apply(avec, GammaSQ(j), b);
           for (auto& jbra : second->bras()) {
             const int nstates = bvec->ij() * jbra.second->ij();
-            std::unique_ptr<double[]> tmp = ddot(jbra.second, bvec);
+            std::unique_ptr<double[]> tmp = dot_product(jbra.second, bvec);
             double* target = second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b);
             std::copy_n(tmp.get(), nstates, target);
           }
@@ -255,7 +255,7 @@ class GammaTask {
               std::shared_ptr<const Dvec> cvec = apply(bvec, GammaSQ(k), c);
               for (auto& kbra : third->bras()) {
                 const int nstates = cvec->ij() * kbra.second->ij();
-                std::unique_ptr<double[]> tmp = ddot(kbra.second, cvec);
+                std::unique_ptr<double[]> tmp = dot_product(kbra.second, cvec);
                 double* target = third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c);
                 std::copy_n(tmp.get(), nstates, target);
               }
@@ -327,7 +327,7 @@ class GammaTask {
         }
       }
 
-      std::unique_ptr<double[]> ddot(std::shared_ptr<const Dvec> bras, std::shared_ptr<const Dvec> kets) const {
+      std::unique_ptr<double[]> dot_product(std::shared_ptr<const Dvec> bras, std::shared_ptr<const Dvec> kets) const {
         const int nbras = bras->ij();
         const int nkets = kets->ij();
 
@@ -336,7 +336,7 @@ class GammaTask {
 
         for (int iket = 0; iket < nkets; ++iket) {
           for (int jbra = 0; jbra < nbras; ++jbra, ++odata) {
-            *odata = bras->data(jbra)->ddot(*kets->data(iket));
+            *odata = bras->data(jbra)->dot_product(*kets->data(iket));
           }
         }
 

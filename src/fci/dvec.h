@@ -90,7 +90,7 @@ class Dvec {
     void set_det(std::shared_ptr<const Determinants> o) const;
 
     // some functions for convenience
-    double ddot(const Dvec& other) const;
+    double dot_product(const Dvec& other) const;
     void daxpy(double a, const Dvec& other);
     Dvec& operator+=(const Dvec& o) { daxpy(1.0, o); return *this; }
     Dvec& operator-=(const Dvec& o) { daxpy(-1.0, o); return *this; }
@@ -101,7 +101,7 @@ class Dvec {
     Dvec& operator/=(const Dvec& o);
     Dvec operator/(const Dvec& o) const;
 
-    double norm() const { return std::sqrt(ddot(*this)); }
+    double norm() const { return std::sqrt(dot_product(*this)); }
     void scale(const double a);
     Dvec& operator*=(const double& a) { scale(a); return *this; }
 
