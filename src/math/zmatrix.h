@@ -199,10 +199,6 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     double norm() const { return std::sqrt(dot_product(*this).real()); }
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
-    // for generic algorithms
-    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { ax_plus_y(a, o); }
-    void ax_plus_y(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a, o); }
-
     void scale(const std::complex<double> a) { zscal_(size(), a, local_.get(), 1); }
     void scale(const double a) { const std::complex<double> b(a); scale(b); }
 

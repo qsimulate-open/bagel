@@ -136,7 +136,6 @@ class DistCivector {
         std::lock_guard<std::mutex> lock(mutex_[off]);
         std::transform(buf.get(), buf.get()+lenb_, local_.get()+off*lenb_, local_.get()+off*lenb_,
                        [](DataType p, DataType q){ return p+q; });
-//      daxpy_(lenb_, 1.0, buf.get(), 1, local_.get()+off*lenb_, 1);
       } else {
         send_->request_send(std::move(buf), lenb_, rank, off*lenb_);
       }
@@ -205,7 +204,6 @@ class DistCivector {
     // utility functions
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
-//    DataType sum = size() ? ddot_(size(), local(), 1, o.local(), 1) : 0.0;
       DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; })
                             : 0.0; 
       mpi__->allreduce(&sum, 1);
