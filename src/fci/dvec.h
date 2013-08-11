@@ -100,8 +100,8 @@ class Dvector {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
 
-    double* data() { return data_.get(); }
-    const double* data() const { return data_.get(); }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
 
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
@@ -206,7 +206,7 @@ template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_lower(std::sha
 template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_raise(std::shared_ptr<const Determinants> det) const;
 
 using Dvec = Dvector<double>;
-//using ZDvec = Dvector<std::complex<double>>;
+using ZDvec = Dvector<std::complex<double>>;
 
 }
 
