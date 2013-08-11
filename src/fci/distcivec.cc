@@ -160,7 +160,7 @@ double DistCivec::ddot(const DistCivec& o) const {
 
 
 double DistCivec::norm() const {
-  return std::sqrt(ddot(*this));
+  return sqrt(ddot(*this));
 }
 
 
@@ -247,3 +247,5 @@ void DistCivec::transpose_wait() {
 
   buf_ = shared_ptr<DistCivec>();
 }
+
+shared_ptr<Civector<double>> DistCivec::civec() const { return make_shared<Civector<double>>(*this); }

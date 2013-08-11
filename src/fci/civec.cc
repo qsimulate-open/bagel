@@ -31,114 +31,9 @@
 using namespace std;
 using namespace bagel;
 
-Civec::Civec(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
-  cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
-  cc_ptr_ = cc_.get();
-  fill_n(cc(), lena_*lenb_, 0.0);
-}
 
-
-Civec::Civec(shared_ptr<const Determinants> det, double* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
-  cc_ptr_ = din_;
-  fill_n(cc(), lena_*lenb_, 0.0);
-}
-
-
-Civec::Civec(const Civec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
-  cc_ = unique_ptr<double[]>(new double[lena_*lenb_]);
-  cc_ptr_ = cc_.get();
-  copy_n(o.cc(), lena_*lenb_, cc());
-}
-
-
-// TODO Not efficient.
-Civec::Civec(const DistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
-  cc_ = unique_ptr<double[]>(new double[size()]);
-  cc_ptr_ = cc_.get();
-  fill_n(cc_ptr_, size(), 0.0);
-  copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
-  mpi__->allreduce(cc_ptr_, size());
-}
-
-
-Civec::Civec(shared_ptr<Civec> o, shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
-  assert(lena_ == det->lena() && lenb_ == det->lenb());
-  cc_ = move(o->cc_);
-  cc_ptr_ = cc_.get();
-}
-
-
-shared_ptr<Civec> Civec::transpose(shared_ptr<const Determinants> det) const {
-  if (det == nullptr) det = det_->transpose();
-  auto ct = make_shared<Civec>(det);
-  double* cct = ct->data();
-  mytranspose_(cc(), lenb_, lena_, cct);
-  return ct;
-}
-
-
-double Civec::ddot(const Civec& other) const {
-  assert( (lena_ == other.lena_) && (lenb_ == other.lenb_) );
-  return ddot_(lena_*lenb_, cc(), 1, other.data(), 1);
-}
-
-
-void Civec::daxpy(double a, const Civec& other) {
-  daxpy_(lena_*lenb_, a, other.data(), 1, cc(), 1);
-}
-
-
-double Civec::norm() const {
-  return sqrt(ddot(*this));
-}
-
-
-void Civec::scale(const double a) {
-  dscal_(lena_*lenb_, a, cc(), 1);
-}
-
-
-double Civec::variance() const {
-  return ddot(*this) / (lena_*lenb_);
-}
-
-
-double Civec::orthog(list<shared_ptr<const Civec>> c) {
-  for (auto& iter : c)
-    project_out(iter);
-  const double norm = this->norm();
-  const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-  scale(scal);
-  return 1.0/scal;
-}
-
-double Civec::orthog(shared_ptr<const Civec> o) {
-  list<shared_ptr<const Civec>> v = {o};
-  return orthog(v);
-}
-
-
-Civec& Civec::operator/=(const Civec& o) {
-  for (int i = 0; i != size(); ++i) {
-    data(i) /= o.data(i);
-  }
-  return *this;
-}
-
-Civec Civec::operator/(const Civec& o) const {
-  Civec out(*this);
-  out /= o;
-  return out;
-}
-
-
-shared_ptr<DistCivec> Civec::distcivec() const {
-  auto dist = make_shared<DistCivec>(det_);
-  copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
-  return dist;
-}
-
-double Civec::spin_expectation() const {
+template<>
+double Civector<double>::spin_expectation() const {
   shared_ptr<Civec> S2 = spin();
   double out = ddot(*S2);
 
@@ -146,27 +41,9 @@ double Civec::spin_expectation() const {
 }
 
 
-void Civec::print(const double thr) const {
-  const double* i = cc();
-  // multimap sorts elements so that they will be shown in the descending order in magnitude
-  multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
-  for (auto& ia : det_->stringa()) {
-    for (auto& ib : det_->stringb()) {
-      if (fabs(*i) > thr) {
-        tmp.insert(make_pair(-fabs(*i), make_tuple(*i, ia, ib)));
-      }
-      ++i;
-    }
-  }
-  for (auto& iter : tmp) {
-    cout << "       " << det_->print_bit(get<1>(iter.second), get<2>(iter.second))
-         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
-  }
-}
-
-
 // S^2 = S_z^2 + S_z + S_-S_+
-shared_ptr<Civec> Civec::spin() const {
+template<>
+shared_ptr<Civector<double>> Civector<double>::spin() const {
   auto out = make_shared<Civec>(det_);
 
   // First the easy part, S_z^2 + S_z
@@ -206,7 +83,8 @@ shared_ptr<Civec> Civec::spin() const {
 }
 
 // S_- = \sum_i i_beta^\dagger i_alpha
-shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) const {
+template<>
+shared_ptr<Civector<double>> Civector<double>::spin_lower(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
     target_det = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
@@ -250,7 +128,8 @@ shared_ptr<Civec> Civec::spin_lower(shared_ptr<const Determinants> target_det) c
 }
 
 // S_+ = \sum_i i_alpha^\dagger i_beta
-shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) const {
+template<>
+shared_ptr<Civector<double>> Civector<double>::spin_raise(shared_ptr<const Determinants> target_det) const {
   if (target_det == nullptr)
     target_det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
   assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );
@@ -292,7 +171,9 @@ shared_ptr<Civec> Civec::spin_raise(shared_ptr<const Determinants> target_det) c
   return out;
 }
 
-void Civec::spin_decontaminate(const double thresh) {
+
+template<>
+void Civector<double>::spin_decontaminate(const double thresh) {
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
