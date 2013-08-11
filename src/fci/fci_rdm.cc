@@ -110,6 +110,44 @@ shared_ptr<Dvec> FCI::rdm1deriv() const {
 }
 
 
+shared_ptr<Dvec> FCI::rdm2deriv() const {
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(0);  
+
+  // 1RDM ci derivative
+  // <I|E_ij|0>
+
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
+  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
+  auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  int ijkl = 0;
+  int ij = 0;
+  for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
+    tmp->zero();
+    sigma_2a1(*iter, tmp);
+    sigma_2a2(*iter, tmp);
+    int kl = 0;
+    for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+      *ebra->data(ijkl) = **t;
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      if (l == i) *ebra->data(ijkl) -= *dbra->data(k+j*norb_);
+    }
+  }
+
+  return ebra;
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 

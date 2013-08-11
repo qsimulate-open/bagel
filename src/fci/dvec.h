@@ -29,94 +29,184 @@
 
 #include <src/fci/civec.h>
 
-// I forgot why I named this class "Dvec"...
-// Basically Dvec is a vector of Civec, with some utility functions.
+// I forgot why I named this class "Dvector"...
+// Basically Dvector is a vector of Civec, with some utility functions.
 // It is used as intermediates in FCI, or eigenvectors in multistate CASSCF.
 
 // I decided to make this class, in order to ensure that the date area
 // in a FCI intermediate be consecutive so that I can use DGEMM etc.
 
 
-// TODO The Dvec class is NOT yet flexible for Civectors with different Determinants objects.
+// TODO The Dvector class is NOT yet flexible for Civectors with different Determinants objects.
 // This can be easily done by modifing what follows.
 
 namespace bagel {
 
-class Dvec {
+template <typename DataType>
+class Dvector {
+  // only for use in lambdas
+  using CiPtr = std::shared_ptr<Civector<DataType>>;
+
   protected:
-    // the determinant space where Dvec's are sitting
+    // the determinant space where Dvector's are sitting
     mutable std::shared_ptr<const Determinants> det_;
 
     size_t lena_;
     size_t lenb_;
-    // the size of the vector<shared_ptr<Civec>>
+    // the size of the vector<shared_ptr<Civector<DataType>>>
     size_t ij_;
-    std::vector<std::shared_ptr<Civec>> dvec_;
-    std::unique_ptr<double[]> data_;
+    std::vector<std::shared_ptr<Civector<DataType>>> dvec_;
+    std::unique_ptr<DataType[]> data_;
 
   public:
-    Dvec(std::shared_ptr<const Determinants> det, const size_t ij);
+    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
+      // data should be in a contiguous area to call dgemm.
+      data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
+      DataType* tmp = data_.get();
+      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+    }
 
-    Dvec(const Dvec& o);
+    Dvector(const Dvector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
+      data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij_]);
+      DataType* tmp = data_.get();
+      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+      std::copy_n(o.data(), lena_*lenb_*ij_, data());
+    }
 
-    Dvec(std::shared_ptr<const Civec> e, const size_t ij);
+    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
+      data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij]);
+      DataType* tmp = data();
+      for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
+        auto c = std::make_shared<Civector<DataType>>(det_, tmp);
+        std::copy_n(e->data(), lenb_*lena_, c->data());
+        dvec_.push_back(c);
+      }
+    }
 
-    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted.
-    Dvec(std::shared_ptr<const Dvec> o);
+    // I think this is very confusiong... this is done this way in order not to delete Civec when Dvector is deleted.
+    Dvector(std::shared_ptr<const Dvector<DataType>> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
+      for (int i = 0; i != ij_; ++i)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o->data(i))));
+    }
 
-    Dvec(std::vector<std::shared_ptr<Civec>> o);
-
-    ~Dvec() { }
+    Dvector(std::vector<std::shared_ptr<Civector<DataType>>> o) : det_(o.front()->det()), ij_(o.size()) {
+      lena_ = det_->lena();
+      lenb_ = det_->lenb();
+      for (int i = 0; i != ij_; ++i)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o.at(i))));
+    }
 
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     double* data() { return data_.get(); }
     const double* data() const { return data_.get(); }
 
-    std::shared_ptr<Civec>& data(const size_t i) { return dvec_[i]; }
-    std::shared_ptr<const Civec> data(const size_t i) const { return dvec_[i]; }
+    std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
+    std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
     void zero() { std::fill(data(), data()+lena_*lenb_*ij_, 0.0); }
 
-    std::vector<std::shared_ptr<Civec>>& dvec() { return dvec_; }
-    const std::vector<std::shared_ptr<Civec>>& dvec() const { return dvec_; }
-    std::vector<std::shared_ptr<Civec>> dvec(const std::vector<int>& conv);
-    std::vector<std::shared_ptr<const Civec>> dvec(const std::vector<int>& conv) const;
+    std::vector<std::shared_ptr<Civector<DataType>>>& dvec() { return dvec_; }
+    const std::vector<std::shared_ptr<Civector<DataType>>>& dvec() const { return dvec_; }
+
+    // returns a vector of Civec's which correspond to an unconverged state
+    std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
+      std::vector<std::shared_ptr<Civector<DataType>>> out;
+      auto c = conv.begin();
+      for (auto& iter : dvec_)
+        if (*c++ == 0) out.push_back(iter);
+      return out;
+    }
+    std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
+      std::vector<std::shared_ptr<const Civector<DataType>>> out;
+      auto c = conv.begin();
+      for (auto& iter : dvec_)
+        if (*c++ == 0) out.push_back(iter);
+      return out;
+    }
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
     size_t ij() const { return ij_; }
     size_t size() const { return lena_*lenb_*ij_; }
 
-    void set_det(std::shared_ptr<const Determinants> o) const;
+    void set_det(std::shared_ptr<const Determinants> o) const {
+      det_ = o;
+      std::for_each(dvec_.begin(), dvec_.end(), [&o](CiPtr p){ p->set_det(o); });
+    }
 
     // some functions for convenience
-    double dot_product(const Dvec& other) const;
-    void ax_plus_y(double a, const Dvec& other);
-    Dvec& operator+=(const Dvec& o) { ax_plus_y(1.0, o); return *this; }
-    Dvec& operator-=(const Dvec& o) { ax_plus_y(-1.0, o); return *this; }
+    DataType dot_product(const Dvector<DataType>& other) const {
+      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), 0.0, std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
+    }
+    void ax_plus_y(double a, const Dvector<DataType>& other) {
+      std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
+    }
+    Dvector<DataType>& operator+=(const Dvector<DataType>& o) { ax_plus_y(1.0, o); return *this; }
+    Dvector<DataType>& operator-=(const Dvector<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
 
-    Dvec operator+(const Dvec& o) const { Dvec out(*this); return out += o; }
-    Dvec operator-(const Dvec& o) const { Dvec out(*this); return out -= o; }
+    Dvector<DataType> operator+(const Dvector<DataType>& o) const { Dvector<DataType> out(*this); return out += o; }
+    Dvector<DataType> operator-(const Dvector<DataType>& o) const { Dvector<DataType> out(*this); return out -= o; }
 
-    Dvec& operator/=(const Dvec& o);
-    Dvec operator/(const Dvec& o) const;
+    Dvector<DataType>& operator/=(const Dvector<DataType>& o) {
+      assert(dvec().size() == o.dvec().size());
+      std::transform(o.dvec_.begin(), o.dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ *q / *p; return q; });
+      return *this;
+    }
+    Dvector<DataType> operator/(const Dvector<DataType>& o) const {
+      Dvector<DataType> out(*this);
+      out /= o;
+      return out;
+    }
 
     double norm() const { return std::sqrt(dot_product(*this)); }
-    void scale(const double a);
-    Dvec& operator*=(const double& a) { scale(a); return *this; }
 
-    std::shared_ptr<Dvec> clone() const { return std::make_shared<Dvec>(det_, ij_); }
-    std::shared_ptr<Dvec> copy() const { return std::make_shared<Dvec>(*this); }
-    std::shared_ptr<Dvec> spin() const;
-    std::shared_ptr<Dvec> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
-    std::shared_ptr<Dvec> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
-    std::shared_ptr<Dvec> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
+    void scale(const double a) {
+      std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
+    }
 
-    void orthog(std::shared_ptr<const Dvec> o);
-    void project_out(std::shared_ptr<const Dvec> o);
+    Dvector& operator*=(const double& a) { scale(a); return *this; }
 
-    void print(const double thresh = 0.05) const;
+    std::shared_ptr<Dvector<DataType>> clone() const { return std::make_shared<Dvector<DataType>>(det_, ij_); }
+    std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
+
+    // for double versions
+    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+
+    void orthog(std::shared_ptr<const Dvector<DataType>> o) {
+      if (o->ij() != ij()) throw std::logic_error("Dvector<DataType>::orthog called inconsistently");
+      std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
+    }
+
+    void project_out(std::shared_ptr<const Dvector<DataType>> o) {
+      if (o->ij() != ij()) throw std::logic_error("Dvec::project_out called inconsistently");
+      auto j = o->dvec().begin();
+      // simply project out each CI vector
+      for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
+    }
+
+    void print(const double thresh = 0.05) const {
+      int j = 0;
+      for (auto& iter : dvec_) {
+        std::cout << std::endl << "     * ci vector, state " << std::setw(3) << j++;
+        if (typeid(DataType) == typeid(double)) std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
+        std::cout << std::endl;
+        iter->print(thresh);
+      }
+    }
 };
+
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin() const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spinflip(std::shared_ptr<const Determinants> det) const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_lower(std::shared_ptr<const Determinants> det) const;
+template<> std::shared_ptr<Dvector<double>> Dvector<double>::spin_raise(std::shared_ptr<const Determinants> det) const;
+
+using Dvec = Dvector<double>;
+//using ZDvec = Dvector<std::complex<double>>;
 
 }
 

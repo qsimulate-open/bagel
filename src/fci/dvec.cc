@@ -29,155 +29,19 @@
 using namespace std;
 using namespace bagel;
 
-Dvec::Dvec(shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-  // data should be in a consecutive area to call dgemm.
-  data_ = unique_ptr<double[]>(new double[lenb_*lena_*ij_]);
-  double* tmp = data_.get();
-  for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_) {
-    dvec_.push_back(make_shared<Civec>(det_, tmp));
-  }
-}
 
-
-Dvec::Dvec(const Dvec& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-  data_ = unique_ptr<double[]>(new double[lena_*lenb_*ij_]);
-  double* tmp = data_.get();
-  for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_) {
-    dvec_.push_back(make_shared<Civec>(det_, tmp));
-  }
-  copy_n(o.data(), lena_*lenb_*ij_, data());
-}
-
-
-Dvec::Dvec(shared_ptr<const Civec> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
-  data_ = unique_ptr<double[]>(new double[lena_*lenb_*ij]);
-  double* tmp = data();
-  for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
-    auto c = make_shared<Civec>(det_, tmp);
-    copy_n(e->data(), lenb_*lena_, c->data());
-    dvec_.push_back(c);
-  }
-}
-
-
-// I think this is very confusiong... this is done this way in order not to delete Civec when Dvec is deleted.
-Dvec::Dvec(shared_ptr<const Dvec> o) : det_(o->det_), lena_(o->lena_), lenb_(o->lenb_), ij_(o->ij_) {
-  for (int i = 0; i != ij_; ++i) {
-    dvec_.push_back(make_shared<Civec>(*(o->data(i))));
-  }
-}
-
-
-Dvec::Dvec(vector<shared_ptr<Civec>> o) : det_(o.front()->det()), ij_(o.size()) {
-  lena_ = det_->lena();
-  lenb_ = det_->lenb();
-  for (int i = 0; i != ij_; ++i) {
-    dvec_.push_back(make_shared<Civec>(*(o.at(i))));
-  }
-}
-
-
-// returns a vector of Civec's which correspond to an unconverged state
-vector<shared_ptr<Civec>> Dvec::dvec(const vector<int>& conv) {
-  vector<shared_ptr<Civec>> out;
-  int i = 0;
-  for (auto& iter : dvec_)
-    if (conv[i++] == 0) out.push_back(iter);
-  return out;
-}
-
-
-vector<shared_ptr<const Civec>> Dvec::dvec(const vector<int>& conv) const {
-  vector<shared_ptr<const Civec>> out;
-  int i = 0;
-  for (auto& iter : dvec_)
-    if (conv[i++] == 0) out.push_back(iter);
-  return out;
-}
-
-
-void Dvec::set_det(shared_ptr<const Determinants> o) const {
-  det_ = o;
-  for (auto& i : dvec_)
-    i->set_det(o);
-}
-
-
-double Dvec::dot_product(const Dvec& other) const {
-  assert(ij() == other.ij());
-  double sum = 0.0;
-  auto j = other.dvec_.begin();
-  for (auto& i : dvec_) {
-    sum += i->dot_product(**j);
-    ++j;
-  }
-  return sum;
-}
-
-
-void Dvec::ax_plus_y(double a, const Dvec& other) {
-  auto j = other.dvec_.begin();
-  for (auto& i : dvec_) {
-    i->ax_plus_y(a, **j);
-    ++j;
-  }
-}
-
-
-void Dvec::scale(const double a) {
-  for (auto& i : dvec_)
-    i->scale(a);
-}
-
-
-Dvec& Dvec::operator/=(const Dvec& o) {
-  assert(dvec().size() == o.dvec().size());
-  auto j = o.dvec().begin();
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
-    **i /= **j;
-  return *this;
-}
-
-
-Dvec Dvec::operator/(const Dvec& o) const {
-  Dvec out(*this);
-  out /= o;
-  return out;
-}
-
-
-void Dvec::orthog(shared_ptr<const Dvec> o) {
-  if (o->ij() != ij()) throw logic_error("Dvec::orthog called inconsistently");
-  auto j = o->dvec().begin();
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
-    (*i)->orthog(*j);
-}
-
-
-void Dvec::project_out(shared_ptr<const Dvec> o) {
-  if (o->ij() != ij()) throw logic_error("Dvec::project_out called inconsistently");
-#if 1
-  auto j = o->dvec().begin();
-  // simply project out each CI vector
-  for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j)
-    (*i)->project_out(*j);
-#else
-  for (auto i = dvec().begin(); i != dvec().end(); ++i)
-    for (auto j = o->dvec().begin(); j != o->dvec().end(); ++j)
-      (*i)->project_out(*j);
-#endif
-}
-
-shared_ptr<Dvec> Dvec::spin() const {
+template<>
+shared_ptr<Dvector<double>> Dvector<double>::spin() const {
   vector<shared_ptr<Civec>> ccvec;
   for (auto& cc : dvec_) {
     ccvec.push_back(cc->spin());
   }
 
-  return make_shared<Dvec>(ccvec);
+  return make_shared<Dvector<double>>(ccvec);
 }
 
-shared_ptr<Dvec> Dvec::spinflip(shared_ptr<const Determinants> det) const {
+template<>
+shared_ptr<Dvector<double>> Dvector<double>::spinflip(shared_ptr<const Determinants> det) const {
   if(det == nullptr) det = det_->transpose();
 
   vector<shared_ptr<Civec>> ccvec;
@@ -185,10 +49,11 @@ shared_ptr<Dvec> Dvec::spinflip(shared_ptr<const Determinants> det) const {
     ccvec.push_back(cc->transpose(det));
   }
 
-  return make_shared<Dvec>(ccvec);
+  return make_shared<Dvector<double>>(ccvec);
 }
 
-shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<const Determinants> det) const {
+template<>
+shared_ptr<Dvector<double>> Dvector<double>::spin_lower(shared_ptr<const Determinants> det) const {
   if (det == nullptr)
     det = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
 
@@ -197,10 +62,11 @@ shared_ptr<Dvec> Dvec::spin_lower(shared_ptr<const Determinants> det) const {
     ccvec.push_back(cc->spin_lower(det));
   }
 
-  return make_shared<Dvec>(ccvec);
+  return make_shared<Dvector<double>>(ccvec);
 }
 
-shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<const Determinants> det) const {
+template<>
+shared_ptr<Dvector<double>> Dvector<double>::spin_raise(shared_ptr<const Determinants> det) const {
   if(det == nullptr)
     det = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
 
@@ -209,14 +75,6 @@ shared_ptr<Dvec> Dvec::spin_raise(shared_ptr<const Determinants> det) const {
     ccvec.push_back(cc->spin_raise(det));
   }
 
-  return make_shared<Dvec>(ccvec);
+  return make_shared<Dvector<double>>(ccvec);
 }
 
-void Dvec::print(const double thresh) const {
-  int j = 0;
-  for (auto& iter : dvec_) {
-    cout << endl;
-    cout << "     * ci vector, state " << setw(3) << j++ << ", <S^2> = " << setw(6) << setprecision(4) << iter->spin_expectation() << endl;
-    iter->print(thresh);
-  }
-}
