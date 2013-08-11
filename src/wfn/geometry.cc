@@ -828,6 +828,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
             current[3*(*c)->num() + ic] = sb[ic+1]*fac;
             current[3*(*j)->num() + ic] = sc[ic+1]*fac;
             current[3*(*k)->num() + ic] = sd[ic+1]*fac;
+            assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
           }
           out.push_back(current);
         }

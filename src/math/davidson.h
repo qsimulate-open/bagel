@@ -36,16 +36,10 @@
 #include <list>
 #include <memory>
 #include <stdexcept>
+#include <src/math/algo.h>
 #include <src/util/f77.h>
 
 namespace bagel {
-
-namespace davidson_detail {
-  template<typename T>
-  static T conj(const T& a) { throw std::logic_error("davidson_detail::conj"); }
-  template<> double conj(const double& a) { return a; }
-  template<> std::complex<double> conj(const std::complex<double>& a) { return std::conj(a); }
-}
 
 template <typename T, class MatType = Matrix>
 class DavidsonDiag {
@@ -96,10 +90,10 @@ class DavidsonDiag {
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
           mat_->element(i, size_-1) = (*cciter)->ddot(**isigma);
-          mat_->element(size_-1, i) = davidson_detail::conj(mat_->element(i, size_-1));
+          mat_->element(size_-1, i) = detail::conj(mat_->element(i, size_-1));
 
           overlap_->element(i, size_-1) = (*cciter)->ddot(**icivec);
-          overlap_->element(size_-1, i) = davidson_detail::conj(overlap_->element(i, size_-1));
+          overlap_->element(size_-1, i) = detail::conj(overlap_->element(i, size_-1));
 
           if (!orthogonalize_) {
             overlap_row += std::abs(overlap_->element(i, size_-1));

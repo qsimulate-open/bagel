@@ -28,7 +28,9 @@
 #define BAGEL_FCI_CIVEC_H
 
 #include <list>
+#include <numeric>
 #include <src/parallel/staticdist.h>
+#include <src/math/algo.h>
 #include <src/util/f77.h>
 #include <src/fci/determinants.h>
 #include <src/parallel/accrequest.h>
@@ -36,101 +38,11 @@
 
 namespace bagel {
 
-class DistCivec;
-
-class Civec {
-  protected:
-    // The determinant space in which this Civec object is defined
-    mutable std::shared_ptr<const Determinants> det_;
-
-    size_t lena_;
-    size_t lenb_;
-
-    // !!CAUTION!!
-    // cc is formated so that B runs first.
-    // Also, cc_ can be null if this is constructed by Dvec.
-    std::unique_ptr<double[]> cc_;
-
-    double* cc_ptr_;
-
-    double& cc(const size_t& i) { return *(cc_ptr_+i); }
-    const double& cc(const size_t& i) const { return *(cc_ptr_+i); }
-    double* cc() { return cc_ptr_; }
-    const double* cc() const { return cc_ptr_; }
-
-  public:
-    Civec(std::shared_ptr<const Determinants> det);
-
-    // constructor that is called by Dvec.
-    Civec(std::shared_ptr<const Determinants> det, double* din_);
-
-    // copy constructor
-    Civec(const Civec& o);
-    // from a distribtued Civec
-    Civec(const DistCivec& o);
-
-    // this is not a copy constructor.
-    Civec(std::shared_ptr<Civec> o, std::shared_ptr<const Determinants> det);
-
-    double* data() { return cc(); }
-    double& element(size_t i, size_t j) { return cc(i+j*lenb_); }
-    double* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }
-
-    double& data(const size_t& i) { return cc(i); }
-    const double& data(const size_t& i) const { return cc(i); }
-
-    const double* data() const { return cc(); }
-    const double* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }
-
-    std::shared_ptr<const Determinants> det() const { return det_; }
-    void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; }
-
-    void zero() { std::fill(cc(), cc()+lena_*lenb_, 0.0); }
-
-    size_t size() const { return lena_*lenb_; }
-
-    std::shared_ptr<Civec> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const;
-
-    size_t lena() const { return lena_; }
-    size_t lenb() const { return lenb_; }
-
-    // some functions for convenience
-    void daxpy(double a, const Civec& other);
-    double ddot(const Civec& other) const;
-    double norm() const;
-    double variance() const;
-    void scale(const double a);
-
-    double spin_expectation() const; // returns < S^2 >
-    std::shared_ptr<Civec> spin() const; // returns S^2 | civec >
-    std::shared_ptr<Civec> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_-
-    std::shared_ptr<Civec> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const; // S_+
-    void spin_decontaminate(const double thresh = 1.0e-12);
-
-    Civec& operator*=(const double& a) { scale(a); return *this; }
-    Civec& operator+=(const double& a) { daxpy_(size(),  1.0, &a, 0, data(), 1); return *this; }
-    Civec& operator-=(const double& a) { daxpy_(size(), -1.0, &a, 0, data(), 1); return *this; }
-
-    Civec& operator=(const Civec& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; }
-    Civec& operator+=(const Civec& o) { daxpy( 1.0, o); return *this; }
-    Civec& operator-=(const Civec& o) { daxpy(-1.0, o); return *this; }
-    Civec& operator/=(const Civec& o);
-    Civec operator/(const Civec& o) const;
-
-    // assumes that Civec's in c are already orthogonal with each other.
-    // returns scaling factor (see implementation)
-
-    double orthog(std::list<std::shared_ptr<const Civec>> c);
-    double orthog(std::shared_ptr<const Civec> o);
-    void project_out(std::shared_ptr<const Civec> o) { daxpy(-ddot(*o), *o); }
-
-    void print(const double thresh) const;
-
-    std::shared_ptr<DistCivec> distcivec() const;
-};
-
+template<typename DataType> class Civector;
 
 class DistCivec {
+  // TODO generalize to copmlex using template.
+  using DataType = double;
   protected:
     mutable std::shared_ptr<const Determinants> det_;
 
@@ -187,7 +99,7 @@ class DistCivec {
 
     void zero() { std::fill_n(local_.get(), size(), 0.0); }
 
-    std::shared_ptr<Civec> civec() const { return std::make_shared<Civec>(*this); }
+    std::shared_ptr<Civector<DataType>> civec() const;
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     std::shared_ptr<DistCivec> clone() const { return std::make_shared<DistCivec>(det_); }
@@ -228,6 +140,188 @@ class DistCivec {
     void transpose_wait();
 
 };
+
+
+// DataType is double or complex<double> (default to double)
+template<typename DataType = double>
+class Civector {
+  protected:
+    // The determinant space in which this Civec object is defined
+    mutable std::shared_ptr<const Determinants> det_;
+
+    size_t lena_;
+    size_t lenb_;
+
+    // !!CAUTION!!
+    // cc is formated so that B runs first.
+    // Also, cc_ can be null if this is constructed by Dvec.
+    std::unique_ptr<DataType[]> cc_;
+
+    DataType* cc_ptr_;
+
+    DataType& cc(const size_t& i) { return *(cc_ptr_+i); }
+    const DataType& cc(const size_t& i) const { return *(cc_ptr_+i); }
+    DataType* cc() { return cc_ptr_; }
+    const DataType* cc() const { return cc_ptr_; }
+
+  public:
+    Civector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
+      cc_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_]);
+      cc_ptr_ = cc_.get();
+      std::fill_n(cc(), lena_*lenb_, 0.0);
+    }
+
+    // constructor that is called by Dvec.
+    Civector(std::shared_ptr<const Determinants> det, DataType* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
+      cc_ptr_ = din_;
+      std::fill_n(cc(), lena_*lenb_, 0.0);
+    }
+
+    // copy constructor
+    Civector(const Civector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_) {
+      cc_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_]);
+      cc_ptr_ = cc_.get();
+      std::copy_n(o.cc(), lena_*lenb_, cc());
+    }
+
+    // from a distribtued Civec  TODO not efficient TODO only works for double
+    Civector(const DistCivec& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
+      assert(typeid(DataType) == typeid(double));
+      cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      cc_ptr_ = cc_.get();
+      std::fill_n(cc_ptr_, size(), 0.0);
+      std::copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
+      mpi__->allreduce(cc_ptr_, size());
+    }
+
+    // this is not a copy constructor.
+    Civector(std::shared_ptr<Civector<DataType>> o, std::shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
+      assert(lena_ == det->lena() && lenb_ == det->lenb());
+      cc_ = std::move(o->cc_);
+      cc_ptr_ = cc_.get();
+    }
+
+    DataType* data() { return cc(); }
+    DataType& element(size_t i, size_t j) { return cc(i+j*lenb_); }
+    DataType* element_ptr(size_t i, size_t j) { return cc()+i+j*lenb_; }
+
+    DataType& data(const size_t& i) { return cc(i); }
+    const DataType& data(const size_t& i) const { return cc(i); }
+
+    const DataType* data() const { return cc(); }
+    const DataType* element_ptr(size_t i, size_t j) const { return cc()+i+j*lenb_; }
+
+    std::shared_ptr<const Determinants> det() const { return det_; }
+    void set_det(std::shared_ptr<const Determinants> o) const { det_ = o; }
+
+    void zero() { std::fill(cc(), cc()+lena_*lenb_, DataType(0.0)); }
+
+    size_t size() const { return lena_*lenb_; }
+
+    std::shared_ptr<Civector<DataType>> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const {
+      if (det == nullptr) det = det_->transpose();
+      auto ct = std::make_shared<Civector<DataType>>(det);
+      mytranspose_(cc(), lenb_, lena_, ct->data());
+      return ct;
+    }
+
+    size_t lena() const { return lena_; }
+    size_t lenb() const { return lenb_; }
+
+    // some functions for convenience
+    void daxpy(DataType a, const Civector<DataType>& other) {
+      assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
+      std::transform(other.data(), other.data()+size(), cc(), cc(), [&a](DataType p, DataType q){ return a*p+q; });
+    }
+    DataType ddot(const Civector<DataType>& other) const {
+      assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
+      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; }); 
+    }
+    double norm() const { return std::sqrt(detail::real(ddot(*this))); }
+    double variance() const { return detail::real(ddot(*this)) / size(); }
+
+    void scale(const DataType a) {
+      std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; }); 
+    }
+
+    // Spin functions are only implememted as specialized functions for double (see civec.cc)
+    double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
+    std::shared_ptr<Civector<DataType>> spin() const { assert(false); return std::shared_ptr<Civector<DataType>>();} // returns S^2 | civec >
+    std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
+      { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_-
+    std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
+      { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_+
+    void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
+
+    Civector<DataType>& operator*=(const double& a) { scale(a); return *this; }
+    Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }
+    Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
+
+    Civector<DataType>& operator=(const Civector<DataType>& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; }
+    Civector<DataType>& operator+=(const Civector<DataType>& o) { daxpy( 1.0, o); return *this; }
+    Civector<DataType>& operator-=(const Civector<DataType>& o) { daxpy(-1.0, o); return *this; }
+    Civector<DataType>& operator/=(const Civector<DataType>& o) {
+      for (size_t i = 0; i != size(); ++i)
+        data(i) /= o.data(i);
+      return *this;
+    }
+    Civector<DataType> operator/(const Civector<DataType>& o) const {
+      Civector<DataType> out(*this);
+      out /= o;
+      return out;
+    }
+
+    // assumes that Civec's in c are already orthogonal with each other.
+    // returns scaling factor (see implementation)
+
+    double orthog(std::list<std::shared_ptr<const Civector<DataType>>> c) {
+      for (auto& iter : c)
+        project_out(iter);
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(scal);
+      return 1.0/scal;
+    }
+
+    double orthog(std::shared_ptr<const Civector<DataType>> o) {
+      return orthog(std::list<std::shared_ptr<const Civector<DataType>>>{o});
+    }
+
+    void project_out(std::shared_ptr<const Civector<DataType>> o) { daxpy(-ddot(*o), *o); }
+
+    void print(const double thr) const {
+      const DataType* i = cc();
+      // multimap sorts elements so that they will be shown in the descending order in magnitude
+      std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
+      for (auto& ia : det_->stringa()) {
+        for (auto& ib : det_->stringb()) {
+          if (std::abs(*i) > thr)
+            tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
+          ++i;
+        }
+      }
+      for (auto& iter : tmp)
+        std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
+                  << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
+    }
+
+    // TODO only works for double
+    std::shared_ptr<DistCivec> distcivec() const {
+      assert(typeid(DataType) == typeid(double));
+      auto dist = std::make_shared<DistCivec>(det_);
+      std::copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
+      return dist;
+    }
+};
+
+template<> double Civector<double>::spin_expectation() const; // returns < S^2 >
+template<> std::shared_ptr<Civector<double>> Civector<double>::spin() const; // returns S^2 | civec >
+template<> std::shared_ptr<Civector<double>> Civector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
+template<> std::shared_ptr<Civector<double>> Civector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+
+template<> void Civector<double>::spin_decontaminate(const double thresh);
+
+using Civec = Civector<double>;
+//using ZCivec = Civector<std::complex<double>>;
 
 }
 
