@@ -71,7 +71,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma(shared_ptr<const Dvec> ccve
     // sigma_bb
     sigma_aa(cc_trans, sg_trans, h1, h2);
 
-    sigma->daxpy(1.0, *sg_trans->transpose());
+    sigma->ax_plus_y(1.0, *sg_trans->transpose());
 
     d->zero();
 
@@ -112,7 +112,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
   TaskQueue<Prop1eTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
 
-  sigma->daxpy(1.0, *sg_trans->spinflip());
+  sigma->ax_plus_y(1.0, *sg_trans->spinflip());
 
   return sigma;
 }

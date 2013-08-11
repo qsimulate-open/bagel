@@ -49,8 +49,8 @@ class RDM_base {
     const double* data() const { return data_.get(); }
 
     void zero() { std::fill(data(), data()+dim_*dim_, 0.0); }
-    void daxpy(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); }
-    void daxpy(const double a, const std::shared_ptr<RDM_base>& o) { this->daxpy(a, *o); }
+    void ax_plus_y(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); }
+    void ax_plus_y(const double a, const std::shared_ptr<RDM_base>& o) { this->ax_plus_y(a, *o); }
     void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
     size_t size() const { return dim_*dim_; }
 

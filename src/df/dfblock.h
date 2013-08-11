@@ -105,8 +105,8 @@ class DFBlock {
     // some math functions
     DFBlock& operator+=(const DFBlock& o);
     DFBlock& operator-=(const DFBlock& o);
-    void daxpy(const double a, const DFBlock& o);
-    void daxpy(const double a, const std::shared_ptr<const DFBlock> o) { daxpy(a, *o); }
+    void ax_plus_y(const double a, const DFBlock& o);
+    void ax_plus_y(const double a, const std::shared_ptr<const DFBlock> o) { ax_plus_y(a, *o); }
     void scale(const double a);
 
     // add ab^+  to this.

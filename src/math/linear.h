@@ -92,7 +92,7 @@ class Linear {
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
-        out->daxpy(vec_[cnt], *j);
+        out->ax_plus_y(vec_[cnt], *j);
       assert(cnt == size_);
       return out;
     };
@@ -101,7 +101,7 @@ class Linear {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->daxpy(vec_[cnt], *i);
+        out->ax_plus_y(vec_[cnt], *i);
       }
       return out;
     };

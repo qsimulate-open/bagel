@@ -191,8 +191,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
     shared_ptr<RDM<1>> r1;
     shared_ptr<RDM<2>> r2;
     tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
-    rdm1->daxpy(weight_[i], r1);
-    rdm2->daxpy(weight_[i], r2);
+    rdm1->ax_plus_y(weight_[i], r1);
+    rdm2->ax_plus_y(weight_[i], r2);
   }
 
   if (o != nullptr) {
@@ -215,8 +215,8 @@ void FCI::compute_rdm12(const int ist) {
   rdm1_[ist] = rdm1;
   rdm2_[ist] = rdm2;
   if (nstate_ != 1) {
-    rdm1_av_->daxpy(weight_[ist], rdm1);
-    rdm2_av_->daxpy(weight_[ist], rdm2);
+    rdm1_av_->ax_plus_y(weight_[ist], rdm1);
+    rdm2_av_->ax_plus_y(weight_[ist], rdm2);
   } else {
     rdm1_av_ = rdm1;
     rdm2_av_ = rdm2;

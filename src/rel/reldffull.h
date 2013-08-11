@@ -54,7 +54,7 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<RelDFFull> apply_JJ() const;
 
     // zaxpy
-    void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
+    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
     void scale(std::complex<double> a);
 
     void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset); 

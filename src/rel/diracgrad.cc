@@ -104,7 +104,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
           const complex<double> c = ((*w0.second * *s0.second) % (*w1.second * *s1.second)).element(0,0);
           const int small = min(w0.first, w1.first);
           const int large = max(w0.first, w1.first);
-          mat[make_pair(small, large)]->zaxpy(c, data);
+          mat[make_pair(small, large)]->ax_plus_y(c, data);
         }
       }
     }
@@ -232,7 +232,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
         if (iter == gamma3.end()) {
           gamma3.insert(make_pair(key, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])));
         } else {
-          iter->second->daxpy(1.0, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])); // TODO redundant copy, but probably fine
+          iter->second->ax_plus_y(1.0, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])); // TODO redundant copy, but probably fine
         }
       } else {
         array<int,2> SS {{ Basis::SP, Basis::SM }};
@@ -261,7 +261,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
                   gamma3.insert(make_pair(key, imag ? idf->copy() : rdf->copy()));
                   gamma3[key]->scale(fac);
                 } else {
-                  iter->second->daxpy(fac, imag ? idf : rdf);
+                  iter->second->ax_plus_y(fac, imag ? idf : rdf);
                 }
               }
             }

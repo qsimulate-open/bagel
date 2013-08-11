@@ -75,7 +75,7 @@ class PairFile {
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; };
 
     // lapack functions
-    void daxpy(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->daxpy(a, o->first()); second()->daxpy(a, o->second()); };
+    void ax_plus_y(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->ax_plus_y(a, o->first()); second()->ax_plus_y(a, o->second()); };
 #ifndef DEBUG_ORBITAL
     double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()) + second()->dot_product(*o.second()); };
 #else
@@ -93,7 +93,7 @@ class PairFile {
     double orthog(std::list<std::shared_ptr<const PairFile<T, U>>> c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter) {
         const double scal = - this->dot_product(**iter);
-        daxpy(scal, *iter);
+        ax_plus_y(scal, *iter);
       }
       const double scal = 1.0/this->norm();
       scale(scal);

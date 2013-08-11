@@ -57,19 +57,19 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 
 Matrix Matrix::operator+(const Matrix& o) const {
   Matrix out(*this);
-  out.daxpy(1.0, o);
+  out.ax_plus_y(1.0, o);
   return out;
 }
 
 
 Matrix& Matrix::operator+=(const Matrix& o) {
-  daxpy(1.0, o);
+  ax_plus_y(1.0, o);
   return *this;
 }
 
 
 Matrix& Matrix::operator-=(const Matrix& o) {
-  daxpy(-1.0, o);
+  ax_plus_y(-1.0, o);
   return *this;
 }
 
@@ -83,7 +83,7 @@ Matrix& Matrix::operator=(const Matrix& o) {
 
 Matrix Matrix::operator-(const Matrix& o) const {
   Matrix out(*this);
-  out.daxpy(-1.0, o);
+  out.ax_plus_y(-1.0, o);
   return out;
 }
 
@@ -251,22 +251,6 @@ void Matrix::diagonalize(double* eig) {
   if (info) throw runtime_error("dsyev/pdsyevd failed in Matrix");
 }
 
-shared_ptr<Matrix> Matrix::diagonalize_blocks(double* eig, vector<int> blocks) {
-  if ( !( (ndim_ == mdim_) && (ndim_ == accumulate(blocks.begin(), blocks.end(), 0))) ) throw logic_error("illegal call of Matrix::diagonalize_blocks");
-
-  auto out = make_shared<Matrix>(ndim_,ndim_);
-
-  int location = 0;
-  for(auto& block_size : blocks) {
-    if (block_size == 0) continue;
-    shared_ptr<Matrix> submat = this->get_submatrix(location, location, block_size, block_size);
-    submat->diagonalize(eig + location);
-    out->copy_block(location, location, block_size, block_size, submat);
-    location += block_size;
-  }
-
-  return out;
-}
 
 void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
@@ -284,45 +268,6 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   int info = 0;
   dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
-}
-
-
-void Matrix::daxpy(const double a, const Matrix& o) {
-  assert(ndim_ == o.ndim_);
-  assert(mdim_ == o.mdim_);
-  daxpy_(ndim_*mdim_, a, o.data(), 1, data(), 1);
-}
-
-
-void Matrix::daxpy(const double a, const shared_ptr<const Matrix> o) {
-  daxpy(a, *o);
-}
-
-
-double Matrix::dot_product(const Matrix& o) const {
-  return ddot_(ndim_*mdim_, data(), 1, o.data(), 1);
-}
-
-
-double Matrix::dot_product(const shared_ptr<const Matrix> o) const {
-  return dot_product(*o);
-}
-
-
-double Matrix::rms() const {
-  return std::sqrt(dot_product(*this) / (ndim_ * mdim_));
-}
-
-double Matrix::variance() const {
-  return dot_product(*this) / (ndim_ * mdim_);
-}
-
-
-double Matrix::trace() const {
-  double out = 0.0;
-  assert(ndim_ == mdim_);
-  for (int i = 0; i != ndim_; ++i) out += data_[i * ndim_ + i];
-  return out;
 }
 
 
@@ -414,17 +359,6 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
 
 void Matrix::purify_idempotent(const Matrix& s) {
   *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0;
-}
-
-
-double Matrix::orthog(const list<shared_ptr<const Matrix>> o) {
-  for (auto& it : o) {
-    const double m = this->dot_product(it);
-    this->daxpy(-m, it);
-  }
-  const double n = norm();
-  *this /= n;
-  return n;
 }
 
 

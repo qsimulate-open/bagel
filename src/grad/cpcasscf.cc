@@ -154,7 +154,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     {
       shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
       shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->slice(0,nocca))->apply_J();
-      tmp0->daxpy(1.0, tmp1);
+      tmp0->ax_plus_y(1.0, tmp1);
       shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
       dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff->data(), nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);

@@ -80,7 +80,7 @@ vector<shared_ptr<ZMatrix>> RelDF::compute_Jop(list<shared_ptr<const CDMatrix>>&
     sum.push_back(cd.front()->clone());
     for (auto& i : cd) {
       if(b->alpha_comp() == i->alpha_comp())
-        sum.back()->zaxpy(1.0, *i);
+        sum.back()->ax_plus_y(1.0, *i);
     }
   }
 

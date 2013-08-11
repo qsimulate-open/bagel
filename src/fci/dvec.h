@@ -91,9 +91,9 @@ class Dvec {
 
     // some functions for convenience
     double dot_product(const Dvec& other) const;
-    void daxpy(double a, const Dvec& other);
-    Dvec& operator+=(const Dvec& o) { daxpy(1.0, o); return *this; }
-    Dvec& operator-=(const Dvec& o) { daxpy(-1.0, o); return *this; }
+    void ax_plus_y(double a, const Dvec& other);
+    Dvec& operator+=(const Dvec& o) { ax_plus_y(1.0, o); return *this; }
+    Dvec& operator-=(const Dvec& o) { ax_plus_y(-1.0, o); return *this; }
 
     Dvec operator+(const Dvec& o) const { Dvec out(*this); return out += o; }
     Dvec operator-(const Dvec& o) const { Dvec out(*this); return out -= o; }

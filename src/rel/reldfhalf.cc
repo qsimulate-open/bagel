@@ -69,28 +69,28 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_J() const {
 
 void RelDFHalf::set_sum_diff() {
   df2_[0] = dfhalf_[0]->copy();
-  df2_[0]->daxpy(1.0, dfhalf_[1]);
+  df2_[0]->ax_plus_y(1.0, dfhalf_[1]);
   df2_[1] = dfhalf_[0]->copy();
-  df2_[1]->daxpy(-1.0, dfhalf_[1]);
+  df2_[1]->ax_plus_y(-1.0, dfhalf_[1]);
 }
 
 
-void RelDFHalf::zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o) {
+void RelDFHalf::ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
-    dfhalf_[0]->daxpy(fac, o->dfhalf_[0]);
-    dfhalf_[1]->daxpy(fac, o->dfhalf_[1]);
+    dfhalf_[0]->ax_plus_y(fac, o->dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y(fac, o->dfhalf_[1]);
   } else if (real(a) == 0.0) {
     const double fac = imag(a);
-    dfhalf_[0]->daxpy(-fac, o->dfhalf_[1]);
-    dfhalf_[1]->daxpy( fac, o->dfhalf_[0]);
+    dfhalf_[0]->ax_plus_y(-fac, o->dfhalf_[1]);
+    dfhalf_[1]->ax_plus_y( fac, o->dfhalf_[0]);
   } else {
     const double rfac = real(a);
-    dfhalf_[0]->daxpy(rfac, o->dfhalf_[0]);
-    dfhalf_[1]->daxpy(rfac, o->dfhalf_[1]);
+    dfhalf_[0]->ax_plus_y(rfac, o->dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y(rfac, o->dfhalf_[1]);
     const double ifac = imag(a);
-    dfhalf_[0]->daxpy(-ifac, o->dfhalf_[1]);
-    dfhalf_[1]->daxpy( ifac, o->dfhalf_[0]);
+    dfhalf_[0]->ax_plus_y(-ifac, o->dfhalf_[1]);
+    dfhalf_[1]->ax_plus_y( ifac, o->dfhalf_[0]);
   }
 }
 
@@ -141,10 +141,10 @@ shared_ptr<DFDist> RelDFHalfB::back_transform(shared_ptr<const Matrix> r, shared
   shared_ptr<DFDist> out;
   if (!imag) {
     out = dfhalf_[0]->back_transform(r);
-    out->daxpy(-1.0, dfhalf_[1]->back_transform(i)); 
+    out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(i)); 
   } else {
     out = dfhalf_[0]->back_transform(i);
-    out->daxpy(1.0, dfhalf_[1]->back_transform(r));
+    out->ax_plus_y(1.0, dfhalf_[1]->back_transform(r));
   }
   return out;
 }

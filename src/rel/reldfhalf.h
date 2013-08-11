@@ -68,7 +68,7 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<RelDFHalf> apply_J() const;
 
     // zaxpy
-    void zaxpy(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
+    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
 
     // for the zgemm3m-like algorithm
     void set_sum_diff();

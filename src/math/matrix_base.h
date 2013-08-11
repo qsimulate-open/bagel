@@ -28,7 +28,9 @@
 #define __SRC_UTIL_MATRIX_BASE_H
 
 #include <cassert>
+#include <numeric>
 #include <algorithm>
+#include <src/math/algo.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -107,6 +109,41 @@ class Matrix_base {
       std::copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
       return out;
     }
+
+    template<class T>
+    void ax_plus_y_impl(const DataType& a, const T& o) {
+      std::transform(o.data(), o.data()+size(), data(), data(), [&a](DataType p, DataType q){ return a*p+q; }); 
+    }
+    template<class T>
+    DataType dot_product_impl(const T& o) const {
+      return std::inner_product(data(), data()+size(), o.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
+    }
+    template<class T>
+    double orthog_impl(const std::list<std::shared_ptr<const T>> o) { 
+      for (auto& it : o) {
+        const DataType m = detail::conj(this->dot_product(it));
+        ax_plus_y(-m, it);
+      }
+      const double n = norm();
+      scale(1.0/n);
+      return n;
+    }
+    template<class T>
+    std::shared_ptr<T> diagonalize_blocks_impl(double* eig, std::vector<int> blocks) {
+      if (!((ndim_ == mdim_) && (ndim_ == std::accumulate(blocks.begin(), blocks.end(), 0))))
+        throw std::logic_error("illegal call of Matrix::diagonalize_blocks");
+      auto out = std::make_shared<T>(ndim_,ndim_);
+      int location = 0;
+      for (auto& block_size : blocks) {
+        if (block_size == 0) continue;
+        auto submat = get_submatrix_impl<T>(location, location, block_size, block_size);
+        submat->diagonalize(eig + location);
+        out->copy_block(location, location, block_size, block_size, submat);
+        location += block_size;
+      }
+      return out;
+    }
+
 
   public:
     Matrix_base(const size_t n, const size_t m, const bool local = false) : data_(new DataType[n*m]), ndim_(n), mdim_(m), localized_(local) {
@@ -199,6 +236,23 @@ class Matrix_base {
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }
     const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
     const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim_; }
+
+    void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); } 
+    DataType dot_product(const std::shared_ptr<const Matrix_base<DataType>> o) const { return dot_product_impl(*o); }
+
+    double norm() const { return std::sqrt(detail::real(dot_product_impl(*this))); }
+    double variance() const { return detail::real(dot_product_impl(*this)) / (ndim_ * mdim_); }
+    double rms() const { return std::sqrt(variance()); }
+
+    DataType trace() const {
+      DataType out(0.0);
+      assert(ndim_ == mdim_);
+      for (int i = 0; i != ndim_; ++i)
+        out += data_[i * ndim_ + i];
+      return out;
+    }
+
+    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
 
     void allreduce() {
       mpi__->allreduce(data_.get(), size());

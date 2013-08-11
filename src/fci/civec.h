@@ -118,9 +118,9 @@ class DistCivec {
     double variance() const;
     double dot_product(const DistCivec& o) const;
     void scale(const double a);
-    void daxpy(const double a, const DistCivec& o);
+    void ax_plus_y(const double a, const DistCivec& o);
 
-    void project_out(std::shared_ptr<const DistCivec> o) { daxpy(-dot_product(*o), *o); }
+    void project_out(std::shared_ptr<const DistCivec> o) { ax_plus_y(-dot_product(*o), *o); }
     double orthog(std::list<std::shared_ptr<const DistCivec>> c);
     double orthog(std::shared_ptr<const DistCivec> o);
 
@@ -229,7 +229,7 @@ class Civector {
     size_t lenb() const { return lenb_; }
 
     // some functions for convenience
-    void daxpy(DataType a, const Civector<DataType>& other) {
+    void ax_plus_y(DataType a, const Civector<DataType>& other) {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       std::transform(other.data(), other.data()+size(), cc(), cc(), [&a](DataType p, DataType q){ return a*p+q; });
     }
@@ -258,8 +258,8 @@ class Civector {
     Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
 
     Civector<DataType>& operator=(const Civector<DataType>& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; }
-    Civector<DataType>& operator+=(const Civector<DataType>& o) { daxpy( 1.0, o); return *this; }
-    Civector<DataType>& operator-=(const Civector<DataType>& o) { daxpy(-1.0, o); return *this; }
+    Civector<DataType>& operator+=(const Civector<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
+    Civector<DataType>& operator-=(const Civector<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
     Civector<DataType>& operator/=(const Civector<DataType>& o) {
       for (size_t i = 0; i != size(); ++i)
         data(i) /= o.data(i);
@@ -287,7 +287,7 @@ class Civector {
       return orthog(std::list<std::shared_ptr<const Civector<DataType>>>{o});
     }
 
-    void project_out(std::shared_ptr<const Civector<DataType>> o) { daxpy(-detail::conj(dot_product(*o)), *o); }
+    void project_out(std::shared_ptr<const Civector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
     void print(const double thr) const {
       const DataType* i = cc();

@@ -223,7 +223,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   /// mp2 two body part ----------------
   shared_ptr<DFDist> sep32;
   if (geom_ == cgeom) {
-    sep3->daxpy(4.0, gip->back_transform(acmat));
+    sep3->ax_plus_y(4.0, gip->back_transform(acmat));
   } else {
     sep32 = gip->back_transform(acmat);
     sep32->scale(4.0);

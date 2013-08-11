@@ -61,7 +61,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(double* vec) override;
-    std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks);
+    std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<Matrix>(eig, blocks); }
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
@@ -116,25 +116,17 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     // returns transpose(*this)
     std::shared_ptr<Matrix> transpose(const double a = 1.0) const;
 
-    void daxpy(const double, const Matrix&);
-    void daxpy(const double, const std::shared_ptr<const Matrix>);
-    double dot_product(const Matrix&) const;
-    double norm() const { return std::sqrt(dot_product(*this)); }
-    double dot_product(const std::shared_ptr<const Matrix>) const;
-    double rms() const;
-    double variance() const;
-    double trace() const;
+    using Matrix_base<double>::ax_plus_y;
+    using Matrix_base<double>::dot_product;
+    void ax_plus_y(const double a, const Matrix& o) { this->ax_plus_y_impl(a, o); }
+    double dot_product(const Matrix& o) const { return this->dot_product_impl(o); }
 
-    void scale(const double a) { dscal_(size(), a, data(), 1); }
+    double orthog(const std::list<std::shared_ptr<const Matrix>> o) { return this->orthog_impl(o); } 
 
-    void unit() { fill(0.0); for (int i = 0; i != ndim_; ++i) element(i,i) = 1.0; assert(ndim_ == mdim_);}
     // purify a (near unitary) matrix to be unitary
-
     void purify_unitary();
     void purify_idempotent(const Matrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
-
-    double orthog(const std::list<std::shared_ptr<const Matrix>> o);
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 
@@ -167,18 +159,18 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix& operator*=(const DistMatrix&);
     DistMatrix operator%(const DistMatrix&) const; // caution
     DistMatrix operator^(const DistMatrix&) const; // caution
-    DistMatrix operator+(const DistMatrix& o) const { DistMatrix out(*this); out.daxpy(1.0, o); return out; }
-    DistMatrix operator-(const DistMatrix& o) const { DistMatrix out(*this); out.daxpy(-1.0, o); return out; }
-    DistMatrix& operator+=(const DistMatrix& o) { daxpy(1.0, o); return *this; }
-    DistMatrix& operator-=(const DistMatrix& o) { daxpy(-1.0, o); return *this; }
+    DistMatrix operator+(const DistMatrix& o) const { DistMatrix out(*this); out.ax_plus_y(1.0, o); return out; }
+    DistMatrix operator-(const DistMatrix& o) const { DistMatrix out(*this); out.ax_plus_y(-1.0, o); return out; }
+    DistMatrix& operator+=(const DistMatrix& o) { ax_plus_y(1.0, o); return *this; }
+    DistMatrix& operator-=(const DistMatrix& o) { ax_plus_y(-1.0, o); return *this; }
     DistMatrix& operator=(const DistMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
 
     std::shared_ptr<DistMatrix> clone() const { return std::make_shared<DistMatrix>(ndim_, mdim_); }
 
     using DistMatrix_base<double>::scale;
 
-    void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
-    void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }
+    void ax_plus_y(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
+    void ax_plus_y(const double a, const std::shared_ptr<const DistMatrix> o) { ax_plus_y(a, *o); }
 
     double dot_product(const DistMatrix&) const;
     double norm() const { return std::sqrt(dot_product(*this)); }

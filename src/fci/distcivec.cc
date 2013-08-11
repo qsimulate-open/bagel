@@ -164,7 +164,7 @@ double DistCivec::norm() const {
 }
 
 
-void DistCivec::daxpy(const double a, const DistCivec& o) {
+void DistCivec::ax_plus_y(const double a, const DistCivec& o) {
   assert(size() == o.size());
   for (size_t i = 0; i != asize(); ++i) {
     lock_guard<mutex> lock(mutex_[i]);

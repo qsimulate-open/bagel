@@ -186,7 +186,7 @@ void Civector<double>::spin_decontaminate(const double thresh) {
     if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
-    daxpy(factor, *S2);
+    ax_plus_y(factor, *S2);
 
     const double norm = this->norm();
     const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
