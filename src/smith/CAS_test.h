@@ -803,7 +803,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
         dec->next_compute();
       deci->print1("CI derivative tensor: ", 1.0e-15); 
       std::cout << std::endl;
-      std::cout << "CI derivative * cI  = " << std::setprecision(10) <<  deci->ddot(dci) << std::endl; 
+      std::cout << "CI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(dci) << std::endl; 
       std::cout << std::endl;
 
       std::cout << " === Unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl; 

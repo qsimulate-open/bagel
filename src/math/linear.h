@@ -78,10 +78,10 @@ class Linear {
       ++size_;
       auto citer = c_.begin();
       for (int i = 0; i != size_; ++i, ++citer) {
-        mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
+        mat(i,size_-1) = mat(size_-1,i) = s->dot_product(**citer);
       }
       // NOTE THE MINUS SIGN HERE!!
-      prod_[size_-1] = - c->ddot(*grad_);
+      prod_[size_-1] = - c->dot_product(*grad_);
 
       // set to scr_
       std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());

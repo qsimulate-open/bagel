@@ -103,12 +103,12 @@ void Dvec::set_det(shared_ptr<const Determinants> o) const {
 }
 
 
-double Dvec::ddot(const Dvec& other) const {
+double Dvec::dot_product(const Dvec& other) const {
   assert(ij() == other.ij());
   double sum = 0.0;
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    sum += i->ddot(**j);
+    sum += i->dot_product(**j);
     ++j;
   }
   return sum;

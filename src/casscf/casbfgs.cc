@@ -140,7 +140,7 @@ void CASBFGS::compute() {
     }
 
     // setting error of macro iteration
-    const double gradient = sigma->ddot(*sigma) / sigma->size();
+    const double gradient = sigma->dot_product(*sigma) / sigma->size();
 
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 

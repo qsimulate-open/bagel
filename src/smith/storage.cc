@@ -168,7 +168,7 @@ void Storage_Incore::daxpy(const double a, const Storage_Incore& o) {
 }
 
 
-double Storage_Incore::ddot(const Storage_Incore& o) const {
+double Storage_Incore::dot_product(const Storage_Incore& o) const {
   double out = 0.0;
   if (data_.size() == o.data_.size()) {
     auto i = data_.begin();

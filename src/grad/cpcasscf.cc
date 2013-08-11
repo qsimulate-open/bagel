@@ -134,7 +134,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
-    const double norm = sqrt(z->ddot(*z));
+    const double norm = sqrt(z->dot_product(*z));
     cout << setw(4) <<  iter << " " << setprecision(14) << norm << endl;
 
     shared_ptr<const Matrix> z0 = z->first();
@@ -235,7 +235,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
-    if (sqrt(z->ddot(*z)) < CPHF_THRESH) break;
+    if (sqrt(z->dot_product(*z)) < CPHF_THRESH) break;
 
   }
 

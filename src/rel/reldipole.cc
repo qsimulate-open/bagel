@@ -66,9 +66,9 @@ array<double,3> RelDipole::compute() {
     auto data = make_shared<ZMatrix>(n*4, n*4);
     data->copy_block(0, 0, 2*n, 2*n, zdip);
     data->copy_block(2*n, 2*n, 2*n, 2*n, smalldip);
-    out[x] = density_->zdotc(data).real();
-cout << density_->zdotc(data).real() << " " << density_->zdotc(data).imag() << endl;
-    assert(fabs(density_->zdotc(data).imag()) < 1.0e-6);
+    out[x] = density_->dot_product(data).real();
+cout << density_->dot_product(data).real() << " " << density_->dot_product(data).imag() << endl;
+    assert(fabs(density_->dot_product(data).imag()) < 1.0e-6);
   }
 
   cout << "    * Permanent dipole moment:" << (jobname_.empty() ? "" : " " + jobname_) << endl;

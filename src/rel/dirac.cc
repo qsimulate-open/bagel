@@ -104,7 +104,7 @@ void Dirac::compute() {
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
-    const complex<double> prod = aodensity->zdotc(*hcore+*distfock); // identical to Tr(D^+ F)
+    const complex<double> prod = aodensity->dot_product(*hcore+*distfock); // identical to Tr(D^+ F)
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
 //    throw runtime_error(ss.str());

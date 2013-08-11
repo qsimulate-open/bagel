@@ -110,8 +110,8 @@ class PMatrix1e {
 
     void zaxpy(const std::complex<double>, const PMatrix1e&);
     void zaxpy(const std::complex<double>, const std::shared_ptr<PMatrix1e>);
-    const std::complex<double> zdotc(const PMatrix1e&) const;
-    const std::complex<double> zdotc(const std::shared_ptr<PMatrix1e>) const;
+    const std::complex<double> dot_product(const PMatrix1e&) const;
+    const std::complex<double> dot_product(const std::shared_ptr<PMatrix1e>) const;
 
     double rms() const;
     double trace() const;

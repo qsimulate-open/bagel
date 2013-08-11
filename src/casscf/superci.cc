@@ -102,7 +102,7 @@ void SuperCI::compute() {
     sigma_->ele_ref() = 0.0;
 
     // setting error of macro iteration
-    gradient = sigma_->ddot(*sigma_) / sigma_->size();
+    gradient = sigma_->dot_product(*sigma_) / sigma_->size();
 
     if (gradient < thresh_) break;
 
@@ -130,7 +130,7 @@ void SuperCI::compute() {
 
         // projection to reference
         cc_->ele_ref()=0.0;
-        sigma_->ele_ref() = init_sigma->ddot(*cc_);
+        sigma_->ele_ref() = init_sigma->dot_product(*cc_);
       }
 
       // enters davidson iteration
@@ -140,7 +140,7 @@ void SuperCI::compute() {
 
       // residual vector and error
       shared_ptr<RotFile> residual = davidson.residual().front();
-      const double error = residual->ddot(*residual) / residual->size();
+      const double error = residual->dot_product(*residual) / residual->size();
 
       if (miter == 0) cout << endl << "     == micro iteration == " << endl;
       cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
@@ -184,8 +184,8 @@ void SuperCI::compute() {
     // checking orthonormaligy of orbitals.
     auto o = make_shared<Overlap>(geom_);
     auto m = make_shared<Matrix>(*coeff_ % *o * *coeff_);
-    if (fabs(m->trace() - m->ddot(m)) > 1.0e-10) {
-      stringstream ss; ss << "orbitals are not orthogonal with each other " << scientific << setprecision(3) << fabs(m->trace() - m->ddot(m));
+    if (fabs(m->trace() - m->dot_product(m)) > 1.0e-10) {
+      stringstream ss; ss << "orbitals are not orthogonal with each other " << scientific << setprecision(3) << fabs(m->trace() - m->dot_product(m));
       throw logic_error(ss.str());
     }
 #endif

@@ -59,13 +59,13 @@ void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspac
 
     for (int iAp = 0; iAp < nAp; ++iAp) {
       for (int iA = 0; iA < nA; ++iA) {
-        AdotAp.push_back(SA->data(iA)->ddot(*Ap->data(iAp)));
+        AdotAp.push_back(SA->data(iA)->dot_product(*Ap->data(iAp)));
       }
     }
 
     for (int iBp = 0; iBp < nBp; ++iBp) {
       for (int iB = 0; iB < nB; ++iB) {
-        BdotBp.push_back(SB->data(iB)->ddot(*Bp->data(iBp)));
+        BdotBp.push_back(SB->data(iB)->dot_product(*Bp->data(iBp)));
       }
     }
 
@@ -116,12 +116,12 @@ void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspac
 
   for (int iAp = 0; iAp < nA; ++iAp) {
     for (int iA = 0; iA < nA; ++iA)
-      AdotAp.push_back(SA->data(iA)->ddot(*Ap->data(iAp)));
+      AdotAp.push_back(SA->data(iA)->dot_product(*Ap->data(iAp)));
   }
 
   for (int iBp = 0; iBp < nB; ++iBp) {
     for (int iB = 0; iB < nB; ++iB)
-      BdotBp.push_back(SB->data(iB)->ddot(*Bp->data(iBp)));
+      BdotBp.push_back(SB->data(iB)->dot_product(*Bp->data(iBp)));
   }
 
   for (int iBp = 0; iBp < nB; ++iBp) {

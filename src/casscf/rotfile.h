@@ -73,10 +73,10 @@ class RotFile {
     void zero() { fill(0.0); }
     void fill(const double a) { std::fill_n(data(), size_, a); }
     // returns dot product
-    double ddot(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); }
-    double ddot(const std::shared_ptr<const RotFile> o) const { return ddot(*o); }
+    double dot_product(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); }
+    double dot_product(const std::shared_ptr<const RotFile> o) const { return dot_product(*o); }
     // returns norm of the vector
-    double norm() const { return std::sqrt(ddot(*this)); }
+    double norm() const { return std::sqrt(dot_product(*this)); }
     // daxpy added to self
     void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }
     void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy(a, *o); }

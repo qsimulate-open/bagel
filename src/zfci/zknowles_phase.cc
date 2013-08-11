@@ -64,7 +64,7 @@ void ZKnowlesHandy::mult_phase_factor() {
   zgemm3m_("n","n", norb3, norb_, norb_, 1.0, trans.get(), norb3, phase->data(), norb_, 0.0, tmp.get(), norb3);
 
   // 3) transpose to make (k, l', i*, j) now (kl|ij)
-  mytranspose_complex_(tmp.get(), norb2, norb2, trans.get());
+  mytranspose_(tmp.get(), norb2, norb2, trans.get());
 
   // 4) make (k*, l', i*, j) (left multiply by phase*)
   zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase->data(), norb_, trans.get(), norb_, 0.0, tmp.get(), norb_);

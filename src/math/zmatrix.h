@@ -129,8 +129,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     void zaxpy(const std::complex<double>, const ZMatrix&);
     void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);
-    std::complex<double> zdotc(const ZMatrix&) const;
-    std::complex<double> zdotc(const std::shared_ptr<const ZMatrix>) const;
+    std::complex<double> dot_product(const ZMatrix&) const;
+    std::complex<double> dot_product(const std::shared_ptr<const ZMatrix>) const;
     double norm() const;
     double rms() const;
     std::complex<double> trace() const;
@@ -140,8 +140,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void daxpy(const std::complex<double> a, const std::shared_ptr<const ZMatrix> o) { zaxpy(a, o); }
 
     void scale(const std::complex<double> a) { zscal_(size(), a, data(), 1); }
-    std::complex<double> ddot(const ZMatrix& o) const { return zdotc(o); }
-    std::complex<double> ddot(const std::shared_ptr<const ZMatrix> o) const { return zdotc(o); }
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
       assert(ndim_ == mdim_);
@@ -203,14 +201,12 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     void zaxpy(const std::complex<double> a, const DistZMatrix& o) { assert(size() == o.size()); zaxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
     void zaxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, *o); }
 
-    std::complex<double> zdotc(const DistZMatrix&) const;
-    std::complex<double> zdotc(const std::shared_ptr<const DistZMatrix> o) const { return zdotc(*o); }
-    double norm() const { return std::sqrt(zdotc(*this).real()); }
+    std::complex<double> dot_product(const DistZMatrix&) const;
+    std::complex<double> dot_product(const std::shared_ptr<const DistZMatrix> o) const { return dot_product(*o); }
+    double norm() const { return std::sqrt(dot_product(*this).real()); }
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
     // for generic algorithms
-    std::complex<double> ddot(const DistZMatrix& o) const { return zdotc(o); }
-    std::complex<double> ddot(const std::shared_ptr<const DistZMatrix> o) const { return zdotc(o); }
     void daxpy(const std::complex<double> a, const DistZMatrix& o) { zaxpy(a, o); }
     void daxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, o); }
 

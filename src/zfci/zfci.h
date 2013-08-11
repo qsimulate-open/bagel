@@ -26,12 +26,12 @@
 #ifndef __BAGEL_ZFCI_ZFCI_H
 #define __BAGEL_ZFCI_ZFCI_H
 
-//#include <src/fci/dvec.h>
 #include <src/zfci/zdvec.h>
 #include <src/zfci/zmofile.h>
-//#include <src/zfci/zproperties.h>
+#include <src/zfci/relmofile.h>
 #include <src/wfn/ciwfn.h>
 #include <src/math/zmatrix.h>
+#include <src/fci/civec.h>
 
 namespace bagel {
 

@@ -32,8 +32,8 @@
 namespace bagel {
 
 extern void mytranspose_(const double* a, const int b, const int c, double* d, const double fac = 1.0);
-extern void mytranspose_complex_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
-extern void mytranspose_complex_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
+extern void mytranspose_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
+extern void mytranspose_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
 
 namespace detail {
   // conj function

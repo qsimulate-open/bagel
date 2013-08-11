@@ -118,9 +118,9 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     void daxpy(const double, const Matrix&);
     void daxpy(const double, const std::shared_ptr<const Matrix>);
-    double ddot(const Matrix&) const;
-    double norm() const { return std::sqrt(ddot(*this)); }
-    double ddot(const std::shared_ptr<const Matrix>) const;
+    double dot_product(const Matrix&) const;
+    double norm() const { return std::sqrt(dot_product(*this)); }
+    double dot_product(const std::shared_ptr<const Matrix>) const;
     double rms() const;
     double variance() const;
     double trace() const;
@@ -180,9 +180,9 @@ class DistMatrix : public DistMatrix_base<double> {
     void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
     void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }
 
-    double ddot(const DistMatrix&) const;
-    double norm() const { return std::sqrt(ddot(*this)); }
-    double ddot(const std::shared_ptr<const DistMatrix> o) const { return ddot(*o); }
+    double dot_product(const DistMatrix&) const;
+    double norm() const { return std::sqrt(dot_product(*this)); }
+    double dot_product(const std::shared_ptr<const DistMatrix> o) const { return dot_product(*o); }
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
     void scale(const double a) { dscal_(size(), a, local_.get(), 1); }

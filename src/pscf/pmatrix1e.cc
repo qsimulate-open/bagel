@@ -531,7 +531,7 @@ void PMatrix1e::zaxpy(const Complex a, const shared_ptr<PMatrix1e> o) {
 }
 
 
-const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
+const Complex PMatrix1e::dot_product(const PMatrix1e& o) const {
   assert(o.totalsize() == totalsize_);
   const int unit = 1;
   const Complex* odata = o.data()->front();
@@ -545,7 +545,7 @@ const Complex PMatrix1e::zdotc(const PMatrix1e& o) const {
 }
 
 
-const Complex PMatrix1e::zdotc(const shared_ptr<PMatrix1e> o) const {
+const Complex PMatrix1e::dot_product(const shared_ptr<PMatrix1e> o) const {
   assert(o->totalsize() == totalsize_);
   const int unit = 1;
   const Complex* odata = o->data()->front();

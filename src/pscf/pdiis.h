@@ -99,8 +99,8 @@ class PDIIS {
       iterator data_iter = data_.begin();
 
       for (int i = 0; i != cnum - 1; ++i, ++data_iter)
-        matrix_[(cnum - 1) + i * nld_] = matrix_[i + (cnum - 1) * nld_] = (e->zdotc(*(data_iter->second))).real();
-      matrix_[(cnum - 1) + (cnum - 1) * nld_] = (e->zdotc(e)).real();
+        matrix_[(cnum - 1) + i * nld_] = matrix_[i + (cnum - 1) * nld_] = (e->dot_product(*(data_iter->second))).real();
+      matrix_[(cnum - 1) + (cnum - 1) * nld_] = (e->dot_product(e)).real();
       for (int i = 0; i != cnum; ++i)
         matrix_[cnum + i * nld_] = matrix_[i + cnum * nld_] = -1.0;
       matrix_[cnum + cnum * nld_] = 0.0;

@@ -123,7 +123,7 @@ shared_ptr<Matrix> RotFile::unpack_sym(const double a) const {
 
 double RotFile::orthog(list<shared_ptr<const RotFile>> c) {
   for (auto iter = c.begin(); iter != c.end(); ++iter)
-    this->daxpy(- this->ddot(**iter), **iter);
+    this->daxpy(- this->dot_product(**iter), **iter);
   const double scal = 1.0/this->norm();
   dscal_(size_, scal, data(), 1);
   return 1.0/scal;

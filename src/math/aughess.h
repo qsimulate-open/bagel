@@ -79,9 +79,9 @@ class AugHess {
       ++size_;
       auto citer = c_.begin();
       for (int i = 0; i != size_; ++i, ++citer) {
-        mat(i,size_-1) = mat(size_-1,i) = s->ddot(**citer);
+        mat(i,size_-1) = mat(size_-1,i) = s->dot_product(**citer);
       }
-      prod_[size_-1] = c->ddot(*grad_);
+      prod_[size_-1] = c->dot_product(*grad_);
 
       // set to scr_
       *scr_ = *mat_;

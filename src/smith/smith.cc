@@ -62,6 +62,6 @@ void Smith::compute() {
   shared_ptr<const Civec> cider = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->ci_deriv();
   std::cout << "  * Printing ci derivative civec:" << std::endl;
   cider->print(0.1e-15);
-  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << cider->ddot(*(algo_->civec())) << std::endl;
+  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << cider->dot_product(*(algo_->civec())) << std::endl;
 
 }
