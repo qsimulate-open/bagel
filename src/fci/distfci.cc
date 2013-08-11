@@ -94,7 +94,7 @@ vector<shared_ptr<DistCivec>> DistFCI::form_sigma(vector<shared_ptr<DistCivec>>&
     fcitime.tick_print("beta-beta");
 
     sigma_aa->transpose_wait();
-    sigma->daxpy(1.0, *sigma_aa);
+    sigma->ax_plus_y(1.0, *sigma_aa);
     fcitime.tick_print("wait1");
 
     sigma->terminate_mpi_accumulate();

@@ -130,7 +130,7 @@ void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> s
 
   sigma_aa(cc_trans, sig_trans, jop);
 
-  sigma->daxpy(1.0, *sig_trans->transpose(sigma->det()));
+  sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
 
 void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {

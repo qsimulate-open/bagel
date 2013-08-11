@@ -115,10 +115,10 @@ complex<double> ZDvec::dot_product(const ZDvec& other) const {
 }
 
 
-void ZDvec::zaxpy(complex<double> a, const ZDvec& other) {
+void ZDvec::ax_plus_y(complex<double> a, const ZDvec& other) {
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    i->daxpy(a, **j);
+    i->ax_plus_y(a, **j);
     ++j;
   }
 }

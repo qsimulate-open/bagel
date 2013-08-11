@@ -152,7 +152,7 @@ Storage_Incore& Storage_Incore::operator=(const Storage_Incore& o) {
 }
 
 
-void Storage_Incore::daxpy(const double a, const Storage_Incore& o) {
+void Storage_Incore::ax_plus_y(const double a, const Storage_Incore& o) {
   if (data_.size() == o.data_.size()) {
     auto i = data_.begin();
     auto k = hashtable_.begin();

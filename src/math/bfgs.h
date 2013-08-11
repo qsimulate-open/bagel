@@ -93,10 +93,10 @@ class BFGS {
           const double t2 = s1 * s3;
           const double t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
           const double t4 = s1 * s5;
-          out->daxpy(t1, delta[i]);
-          out->daxpy(-t2, y[i]);
-          yy->daxpy(t3, delta[i]);
-          yy->daxpy(-t4, y[i]);
+          out->ax_plus_y(t1, delta[i]);
+          out->ax_plus_y(-t2, y[i]);
+          yy->ax_plus_y(t3, delta[i]);
+          yy->ax_plus_y(-t4, y[i]);
         }
         { // (5)
           const double s1 = 1.0 / delta[n]->dot_product(D[n]);
@@ -105,8 +105,8 @@ class BFGS {
           const double s4 =       yy->dot_product(grad);
           const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           const double t2 = s1 * s3;
-          out->daxpy(t1, delta[n]);
-          out->daxpy(-t2, std::shared_ptr<const T>(yy));
+          out->ax_plus_y(t1, delta[n]);
+          out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }
         y.push_back(yy);
         assert(y.size() == n+1);

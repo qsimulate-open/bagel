@@ -60,6 +60,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     virtual void diagonalize(double* vec);
     void diagonalize_skew(double* vec);
 
+    std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
+
     void svd(std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
@@ -127,19 +129,12 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     // returns hermite-conjugate(*this)
     std::shared_ptr<ZMatrix> transpose_conjg() const;
 
-    void zaxpy(const std::complex<double>, const ZMatrix&);
-    void zaxpy(const std::complex<double>, const std::shared_ptr<const ZMatrix>);
-    std::complex<double> dot_product(const ZMatrix&) const;
-    std::complex<double> dot_product(const std::shared_ptr<const ZMatrix>) const;
-    double norm() const;
-    double rms() const;
-    std::complex<double> trace() const;
+    using Matrix_base<std::complex<double>>::ax_plus_y;
+    using Matrix_base<std::complex<double>>::dot_product;
+    void ax_plus_y(const std::complex<double> a, const ZMatrix& o) { this->ax_plus_y_impl(a, o); }
+    std::complex<double> dot_product(const ZMatrix& o) const { return this->dot_product_impl(o); }
 
-    // for generic algorithms
-    void daxpy(const std::complex<double> a, const ZMatrix& o) { zaxpy(a, o); }
-    void daxpy(const std::complex<double> a, const std::shared_ptr<const ZMatrix> o) { zaxpy(a, o); }
-
-    void scale(const std::complex<double> a) { zscal_(size(), a, data(), 1); }
+    double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); } 
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
       assert(ndim_ == mdim_);
@@ -153,8 +148,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void purify_unitary();
     void purify_idempotent(const ZMatrix& s);
     void purify_redrotation(const int nclosed, const int nact, const int nvirt);
-
-    std::complex<double> orthog(const std::list<std::shared_ptr<const ZMatrix>> o);
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
@@ -188,18 +181,18 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     DistZMatrix& operator*=(const DistZMatrix&);
     DistZMatrix operator%(const DistZMatrix&) const; // caution
     DistZMatrix operator^(const DistZMatrix&) const; // caution
-    DistZMatrix operator+(const DistZMatrix& o) const { DistZMatrix out(*this); out.zaxpy(1.0, o); return out; }
-    DistZMatrix operator-(const DistZMatrix& o) const { DistZMatrix out(*this); out.zaxpy(-1.0, o); return out; }
-    DistZMatrix& operator+=(const DistZMatrix& o) { zaxpy(1.0, o); return *this; }
-    DistZMatrix& operator-=(const DistZMatrix& o) { zaxpy(-1.0, o); return *this; }
+    DistZMatrix operator+(const DistZMatrix& o) const { DistZMatrix out(*this); out.ax_plus_y(1.0, o); return out; }
+    DistZMatrix operator-(const DistZMatrix& o) const { DistZMatrix out(*this); out.ax_plus_y(-1.0, o); return out; }
+    DistZMatrix& operator+=(const DistZMatrix& o) { ax_plus_y(1.0, o); return *this; }
+    DistZMatrix& operator-=(const DistZMatrix& o) { ax_plus_y(-1.0, o); return *this; }
     DistZMatrix& operator=(const DistZMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
 
     std::shared_ptr<DistZMatrix> clone() const { return std::make_shared<DistZMatrix>(ndim_, mdim_); }
 
-    void zaxpy(const double a, const DistZMatrix& o) { const std::complex<double> b(a); zaxpy(b,o); }
-    void zaxpy(const double a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a,*o); }
-    void zaxpy(const std::complex<double> a, const DistZMatrix& o) { assert(size() == o.size()); zaxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
-    void zaxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, *o); }
+    void ax_plus_y(const double a, const DistZMatrix& o) { const std::complex<double> b(a); ax_plus_y(b,o); }
+    void ax_plus_y(const double a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a,*o); }
+    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { assert(size() == o.size()); zaxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
+    void ax_plus_y(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a, *o); }
 
     std::complex<double> dot_product(const DistZMatrix&) const;
     std::complex<double> dot_product(const std::shared_ptr<const DistZMatrix> o) const { return dot_product(*o); }
@@ -207,8 +200,8 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
     // for generic algorithms
-    void daxpy(const std::complex<double> a, const DistZMatrix& o) { zaxpy(a, o); }
-    void daxpy(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { zaxpy(a, o); }
+    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { ax_plus_y(a, o); }
+    void ax_plus_y(const std::complex<double> a, const std::shared_ptr<const DistZMatrix> o) { ax_plus_y(a, o); }
 
     void scale(const std::complex<double> a) { zscal_(size(), a, local_.get(), 1); }
     void scale(const double a) { const std::complex<double> b(a); scale(b); }

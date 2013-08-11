@@ -115,10 +115,10 @@ double Dvec::dot_product(const Dvec& other) const {
 }
 
 
-void Dvec::daxpy(double a, const Dvec& other) {
+void Dvec::ax_plus_y(double a, const Dvec& other) {
   auto j = other.dvec_.begin();
   for (auto& i : dvec_) {
-    i->daxpy(a, **j);
+    i->ax_plus_y(a, **j);
     ++j;
   }
 }

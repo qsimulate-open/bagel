@@ -99,8 +99,8 @@ class AugHess {
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
-        out->daxpy(vec_[cnt], *j);
-        out->daxpy(-vec_[cnt]*eig_[0], *i);
+        out->ax_plus_y(vec_[cnt], *j);
+        out->ax_plus_y(-vec_[cnt]*eig_[0], *i);
       }
       assert(cnt == size_);
       return out;
@@ -112,7 +112,7 @@ class AugHess {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
       for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->daxpy(vec_[cnt], *i);
+        out->ax_plus_y(vec_[cnt], *i);
       }
       return out;
     }

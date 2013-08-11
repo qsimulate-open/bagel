@@ -128,8 +128,8 @@ class Tensor {
       return out;
     }
 
-    void daxpy(const double a, const Tensor<T>& o) { data_->daxpy(a, o.data_); }
-    void daxpy(const double a, const std::shared_ptr<Tensor<T>> o) { data_->daxpy(a, o->data_); }
+    void ax_plus_y(const double a, const Tensor<T>& o) { data_->ax_plus_y(a, o.data_); }
+    void ax_plus_y(const double a, const std::shared_ptr<Tensor<T>> o) { data_->ax_plus_y(a, o->data_); }
 
     void scale(const double a) { data_->scale(a); }
 

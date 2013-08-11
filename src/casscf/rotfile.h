@@ -58,10 +58,10 @@ class RotFile {
     std::shared_ptr<RotFile> copy() const;
 
     // overloaded operators
-    RotFile operator+(const RotFile& o) const { RotFile out(*this); out.daxpy(1.0, o); return out; }
-    RotFile operator-(const RotFile& o) const { RotFile out(*this); out.daxpy(-1.0, o); return out; }
-    RotFile& operator+=(const RotFile& o) { daxpy(1.0, o); return *this; }
-    RotFile& operator-=(const RotFile& o) { daxpy(-1.0, o); return *this; }
+    RotFile operator+(const RotFile& o) const { RotFile out(*this); out.ax_plus_y(1.0, o); return out; }
+    RotFile operator-(const RotFile& o) const { RotFile out(*this); out.ax_plus_y(-1.0, o); return out; }
+    RotFile& operator+=(const RotFile& o) { ax_plus_y(1.0, o); return *this; }
+    RotFile& operator-=(const RotFile& o) { ax_plus_y(-1.0, o); return *this; }
     RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; }
     RotFile& operator/=(const RotFile& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
     RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; }
@@ -78,8 +78,8 @@ class RotFile {
     // returns norm of the vector
     double norm() const { return std::sqrt(dot_product(*this)); }
     // daxpy added to self
-    void daxpy(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }
-    void daxpy(double a, const std::shared_ptr<const RotFile> o) { daxpy(a, *o); }
+    void ax_plus_y(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }
+    void ax_plus_y(double a, const std::shared_ptr<const RotFile> o) { ax_plus_y(a, *o); }
     // orthogonalize to the liset of RotFile's
     double orthog(std::list<std::shared_ptr<const RotFile>> c);
 

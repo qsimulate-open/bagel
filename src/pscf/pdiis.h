@@ -118,8 +118,8 @@ class PDIIS {
 
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)
-        out->zaxpy((coeff_[i]).real() * (1.0 - dumping_), *(data_iter->first));
-      out->zaxpy(dumping_, *(input.first));
+        out->ax_plus_y((coeff_[i]).real() * (1.0 - dumping_), *(data_iter->first));
+      out->ax_plus_y(dumping_, *(input.first));
       out->real();
 
       return out;

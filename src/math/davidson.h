@@ -25,7 +25,7 @@
 
 // T should have
 //  - double dot_product(const T&)
-//  - void daxpy(double, const T&) // added to self
+//  - void ax_plus_y(double, const T&) // added to self
 //  - copy constructor (values are not used, though).
 //  - void orthog(list<shared_ptr<T>>)
 //
@@ -130,11 +130,11 @@ class DavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->daxpy(-vec_[i]*eig_->element(k,i), **iter);
+          tmp->ax_plus_y(-vec_[i]*eig_->element(k,i), **iter);
         }
         k = 0;
         for (auto iter = sigma_.begin(); iter != sigma_.end(); ++iter, ++k) {
-          tmp->daxpy(eig_->element(k,i), **iter);
+          tmp->ax_plus_y(eig_->element(k,i), **iter);
         }
         out.push_back(tmp);
       }
@@ -149,7 +149,7 @@ class DavidsonDiag {
         tmp->zero(); // <- waste of time
         int k = 0;
         for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->daxpy((*eig_)[i*max_+k], **iter);
+          tmp->ax_plus_y((*eig_)[i*max_+k], **iter);
         }
         out.push_back(tmp);
       }

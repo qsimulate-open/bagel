@@ -102,8 +102,8 @@ class Storage_Incore : public Storage_base {
     void scale(const double a);
 
     Storage_Incore& operator=(const Storage_Incore& o);
-    void daxpy(const double a, const Storage_Incore& o);
-    void daxpy(const double a, const std::shared_ptr<Storage_Incore> o) { daxpy(a, *o); };
+    void ax_plus_y(const double a, const Storage_Incore& o);
+    void ax_plus_y(const double a, const std::shared_ptr<Storage_Incore> o) { ax_plus_y(a, *o); };
     double dot_product(const Storage_Incore& o) const;
 
     void initialize();

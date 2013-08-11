@@ -74,7 +74,7 @@ class DFock : public ZMatrix {
       for (auto i = m.begin(); i != m.end(); ++i)
         for (auto j = i; j != m.end(); ) {
           if (i != j && (*i)->matches(*j)) {
-            (*i)->zaxpy((*j)->fac() / (*i)->fac(), *j);
+            (*i)->ax_plus_y((*j)->fac() / (*i)->fac(), *j);
             j = m.erase(j);
           } else
             ++j;

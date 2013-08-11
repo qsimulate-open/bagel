@@ -108,8 +108,8 @@ class PMatrix1e {
     void print() const;
     void rprint(const int precision=6) const;
 
-    void zaxpy(const std::complex<double>, const PMatrix1e&);
-    void zaxpy(const std::complex<double>, const std::shared_ptr<PMatrix1e>);
+    void ax_plus_y(const std::complex<double>, const PMatrix1e&);
+    void ax_plus_y(const std::complex<double>, const std::shared_ptr<PMatrix1e>);
     const std::complex<double> dot_product(const PMatrix1e&) const;
     const std::complex<double> dot_product(const std::shared_ptr<PMatrix1e>) const;
 

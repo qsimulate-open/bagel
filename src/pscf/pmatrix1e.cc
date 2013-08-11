@@ -517,14 +517,14 @@ void PMatrix1e::scale(const Complex a) {
 }
 
 
-void PMatrix1e::zaxpy(const Complex a, const PMatrix1e& o) {
+void PMatrix1e::ax_plus_y(const Complex a, const PMatrix1e& o) {
   const int unit = 1;
   const Complex* odata = o.data()->front();
   zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit);
 }
 
 
-void PMatrix1e::zaxpy(const Complex a, const shared_ptr<PMatrix1e> o) {
+void PMatrix1e::ax_plus_y(const Complex a, const shared_ptr<PMatrix1e> o) {
   const int unit = 1;
   const Complex* odata = o->data()->front();
   zaxpy_(&totalsize_, &a, odata, &unit, data_->front(), &unit);

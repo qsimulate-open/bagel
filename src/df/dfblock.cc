@@ -179,10 +179,10 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 }
 
 
-DFBlock& DFBlock::operator+=(const DFBlock& o) { daxpy( 1.0, o); return *this; }
-DFBlock& DFBlock::operator-=(const DFBlock& o) { daxpy(-1.0, o); return *this; }
+DFBlock& DFBlock::operator+=(const DFBlock& o) { ax_plus_y( 1.0, o); return *this; }
+DFBlock& DFBlock::operator-=(const DFBlock& o) { ax_plus_y(-1.0, o); return *this; }
 
-void DFBlock::daxpy(const double a, const DFBlock& o) {
+void DFBlock::ax_plus_y(const double a, const DFBlock& o) {
   if (size() != o.size()) throw logic_error("DFBlock::daxpy called illegally");
   daxpy_(size(), a, o.data_.get(), 1, data_.get(), 1);
 }
@@ -226,7 +226,7 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   shared_ptr<DFBlock> out = clone();
   out->zero();
   // exchange contributions
-  out->daxpy(-2.0*scale_exch, *this);
+  out->ax_plus_y(-2.0*scale_exch, *this);
   // coulomb contributions (diagonal to diagonal)
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);

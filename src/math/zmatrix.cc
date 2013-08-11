@@ -67,19 +67,19 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
   ZMatrix out(*this);
-  out.zaxpy(complex<double>(1.0,0.0), o);
+  out.ax_plus_y(complex<double>(1.0,0.0), o);
   return out;
 }
 
 
 ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
-  zaxpy(complex<double>(1.0,0.0), o);
+  ax_plus_y(complex<double>(1.0,0.0), o);
   return *this;
 }
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  zaxpy(complex<double>(-1.0,0.0), o);
+  ax_plus_y(complex<double>(-1.0,0.0), o);
   return *this;
 }
 
@@ -93,7 +93,7 @@ ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
 
 ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
   ZMatrix out(*this);
-  out.zaxpy(complex<double>(-1.0,0.0), o);
+  out.ax_plus_y(complex<double>(-1.0,0.0), o);
   return out;
 }
 
@@ -323,46 +323,6 @@ shared_ptr<ZMatrix> ZMatrix::solve(shared_ptr<const ZMatrix> A, const int n) con
 }
 
 
-void ZMatrix::zaxpy(const complex<double> a, const ZMatrix& o) {
-  zaxpy_(ndim_*mdim_, a, o.data(), 1, data(), 1);
-}
-
-
-void ZMatrix::zaxpy(const complex<double> a, const shared_ptr<const ZMatrix> o) {
-  zaxpy(a, *o);
-}
-
-
-complex<double> ZMatrix::dot_product(const ZMatrix& o) const {
-  return zdotc_(ndim_*mdim_, data(), 1, o.data(), 1);
-}
-
-
-complex<double> ZMatrix::dot_product(const shared_ptr<const ZMatrix> o) const {
-  return dot_product(*o);
-}
-
-
-double ZMatrix::norm() const {
-  complex<double> n = dot_product(*this);
-  assert(fabs(n.imag()) < 1.0e-10);
-  return std::sqrt(n.real());
-}
-
-
-double ZMatrix::rms() const {
-  return norm()/sqrt(ndim_ * mdim_);
-}
-
-
-complex<double> ZMatrix::trace() const {
-  complex<double> out = 0.0;
-  assert(ndim_ == mdim_);
-  for (int i = 0; i != ndim_; ++i) out += data_[i * ndim_ + i];
-  return out;
-}
-
-
 shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
   auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
   ZMatrix buf(*this);
@@ -497,17 +457,6 @@ void ZMatrix::purify_redrotation(const int nclosed, const int nact, const int nv
 
 void ZMatrix::purify_idempotent(const ZMatrix& s) {
   *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0;
-}
-
-
-complex<double> ZMatrix::orthog(const list<shared_ptr<const ZMatrix>> o) {
-  for (auto& it : o) {
-    const complex<double> m = this->dot_product(it);
-    this->zaxpy(-m, it);
-  }
-  const complex<double> n = norm();
-  *this /= n;
-  return n;
 }
 
 

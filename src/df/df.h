@@ -77,7 +77,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const;
 
-    void daxpy(const double a, const std::shared_ptr<const ParallelDF> o);
+    void ax_plus_y(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
 
     std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;

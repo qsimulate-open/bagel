@@ -91,9 +91,9 @@ class ZDvec {
 
     // some functions for convenience
     std::complex<double> dot_product(const ZDvec& other) const;
-    void zaxpy(std::complex<double> a, const ZDvec& other);
-    ZDvec& operator+=(const ZDvec& o) { zaxpy(1.0, o); return *this; }
-    ZDvec& operator-=(const ZDvec& o) { zaxpy(-1.0, o); return *this; }
+    void ax_plus_y(std::complex<double> a, const ZDvec& other);
+    ZDvec& operator+=(const ZDvec& o) { ax_plus_y(1.0, o); return *this; }
+    ZDvec& operator-=(const ZDvec& o) { ax_plus_y(-1.0, o); return *this; }
 
     ZDvec operator+(const ZDvec& o) const { ZDvec out(*this); return out += o; }
     ZDvec operator-(const ZDvec& o) const { ZDvec out(*this); return out -= o; }

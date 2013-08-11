@@ -94,7 +94,7 @@ class DIIS {
       std::shared_ptr<T> out = input.first->clone();
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)
-        out->daxpy(coeff_->element(i,0), *(data_iter->first));
+        out->ax_plus_y(coeff_->element(i,0), *(data_iter->first));
 
       return out;
     }

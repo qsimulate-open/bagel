@@ -75,11 +75,11 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 }
 
 
-void ParallelDF::daxpy(const double a, const shared_ptr<const ParallelDF> o) {
+void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o) {
   assert(block_.size() == o->block_.size());
   auto j = o->block_.begin();
   for (auto& i : block_)
-    i->daxpy(a, *j++);
+    i->ax_plus_y(a, *j++);
 }
 
 
