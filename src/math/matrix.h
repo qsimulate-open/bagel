@@ -168,16 +168,11 @@ class DistMatrix : public DistMatrix_base<double> {
     std::shared_ptr<DistMatrix> clone() const { return std::make_shared<DistMatrix>(ndim_, mdim_); }
 
     using DistMatrix_base<double>::scale;
+    using DistMatrix_base<double>::ax_plus_y;
+    using DistMatrix_base<double>::dot_product;
 
-    void ax_plus_y(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
-    void ax_plus_y(const double a, const std::shared_ptr<const DistMatrix> o) { ax_plus_y(a, *o); }
-
-    double dot_product(const DistMatrix&) const;
-    double norm() const { return std::sqrt(dot_product(*this)); }
-    double dot_product(const std::shared_ptr<const DistMatrix> o) const { return dot_product(*o); }
-    double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
-
-    void scale(const double a) { dscal_(size(), a, local_.get(), 1); }
+    void ax_plus_y(const double a, const DistMatrix& o) { this->ax_plus_y_impl(a,o); }
+    double dot_product(const DistMatrix& o) const { return this->dot_product_impl(o); }
 
     std::shared_ptr<Matrix> matrix() const;
 

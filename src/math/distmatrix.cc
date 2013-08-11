@@ -114,14 +114,6 @@ void DistMatrix::diagonalize(double* eig) {
 }
 
 
-double DistMatrix::dot_product(const DistMatrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  double sum = size() ? ddot_(size(), local_.get(), 1, o.local_.get(), 1) : 0.0;
-  mpi__->allreduce(&sum, 1);
-  return sum;
-}
-
-
 shared_ptr<Matrix> DistMatrix::matrix() const {
   return make_shared<Matrix>(*this);
 }
