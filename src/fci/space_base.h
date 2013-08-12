@@ -42,12 +42,6 @@
 
 namespace bagel {
 
-/************************************************************************************
-*     Note: I've been using as many of the member functions of bitset as possible,  *
-*        not necessarily because I think it will be faster (I have no idea) but     *
-*        because I just want to. I can always change back to faster routines        *
-************************************************************************************/
-
 // implements a space that contains multiple determinants made by modification of a reference
 class Space_Base {
   protected:
@@ -77,6 +71,7 @@ class Space_Base {
     std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
     std::shared_ptr<Determinants> finddet(const int i, const int j) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
+
   private:
     virtual void common_init() = 0;
 };
