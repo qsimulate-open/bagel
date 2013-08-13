@@ -115,6 +115,5 @@ void ZKnowlesHandy::relupdate() {
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
-  throw logic_error("testing...");
   const_denom();
 }

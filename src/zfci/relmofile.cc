@@ -62,19 +62,68 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
 
   // TODO block diaganolize according kramers symmetry
-  //kramers_block(buf1e, buf2e);
+  shared_ptr<const ZMatrix> mo1e_;
+  shared_ptr<const ZMatrix> mo2e_;
+  tie(mo1e_, mo2e_) = kramers_block(buf1e, buf2e);
 
-  compress(buf1e, buf2e);
+  throw logic_error("testing...");
+
+  compress(mo1e_, mo2e_);
   return core_energy;
 }
 
-void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
+tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 //
 //block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
 //
-//1) sort degenerate orbitals into a vector
-//2) loop over vector and apply projection
-//
+  const size_t n = buf1e->ndim();
+  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
+
+  std::unique_ptr<double[]> vec_(new double[n]);
+  op_->diagonalize(vec_.get());
+//rearrange eigenvectors
+  auto op1 = op_->slice(0,1);
+  auto op2 = op_->slice(1,2);
+  auto op3 = op_->slice(2,3);
+  auto op4 = op_->slice(3,4);
+  auto op5 = op_->slice(4,5);
+  auto op6 = op_->slice(5,6);
+  auto S = make_shared<ZMatrix>(*op1);
+  S = S->merge(op3);
+  S = S->merge(op5);
+  S = S->merge(op2);
+  S = S->merge(op4);
+  S = S->merge(op6);
+  //for_each (op1->data()+n*(n-1), op1->data()+n*n, [](complex<double>& a){ a += 1.0; } );
+//take blocks of eigenvector matrix
+  auto op12 = S->get_submatrix(0,n/2,n/2,n/2);
+  auto op22 = S->get_submatrix(n/2,n/2,n/2,n/2);
+//form X
+  op22->inverse();
+  auto X = make_shared<ZMatrix>(*op12 * *op22);
+//form U
+  shared_ptr<ZMatrix> U = make_shared<ZMatrix>(n,n);
+  for (int i = 0; i != n; ++i) U->element(i,i) = 1.0;
+  for (int i = 0; i != n/2; ++i) {
+    for (int j = 0; j != n/2; ++j) {
+      U->element(i,j+n/2) = X->element(i,j);
+      U->element(i+n/2,j) = -1.0 * conj(X->element(j,i));
+    }
+  }
+//form T= U(U*U)^-1/2
+  auto uni = make_shared<ZMatrix>( *(U->transpose_conjg()) * *U);
+  uni->inverse_half();
+  auto T = make_shared<ZMatrix>( *U * *uni);
+  //Apply T to buf1e
+  //TODO put const back
+  shared_ptr<ZMatrix> mo1e = make_shared<ZMatrix>(*T % *buf1e * *T);
+  mo1e->print("R");
+  std::unique_ptr<double[]> dec_(new double[n]);
+  mo1e->diagonalize(dec_.get());
+  for (int i = 0; i != n; ++i) assert(abs(*(vec_.get()+i)-*(dec_.get()+i))<1e-6);
+
+  shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1, 1);
+  return make_tuple(mo1e, mo2e);
 }
 
 //does not need to be changed as long as kramers_block is in the same format
@@ -101,20 +150,15 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
   const size_t nbasis = geom_->nbasis();
-
   complex<double> core_energy = 0.0;
-
   auto relhcore = make_shared<RelHcore>(relgeom_);
-
-  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+  //TODO implement core_energy like zmofile...
+  core_energy = 1e100;
+  assert(fabs(core_energy.imag())<1e-10);
 
   // Hij = relcoeff(T) * relhcore * relcoeff
+  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
   core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff);
-
-  //TODO include some density adjustment? see zmofile
-//core_energy = relhcore->trace();
-  core_energy = 1.0e100;
-  assert(fabs(core_energy.imag())<1e-10);
 
   return make_tuple(core_dfock_, core_energy.real());
 }
