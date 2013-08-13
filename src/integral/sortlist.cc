@@ -89,9 +89,3 @@ SortList::SortList(const bool spherical) {
     sortfunc[ANG_HRR_END * 6 + 6] = &sort_indices_66;
   }
 }
-
-
-SortList::~SortList() {
-
-}
-

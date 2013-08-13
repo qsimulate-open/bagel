@@ -44,9 +44,8 @@ class Queue {
     std::list<std::shared_ptr<Task<T>>> tasklist_;
 
   public:
-    Queue() {};
-    Queue(std::list<std::shared_ptr<Task<T>>> d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); };
-    ~Queue() {};
+    Queue() {}
+    Queue(std::list<std::shared_ptr<Task<T>>> d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); }
 
     // TODO parallel version to be implemented (need to WAIT!)
     std::shared_ptr<Task<T>> next_compute() {
@@ -63,15 +62,15 @@ class Queue {
       // delete this task from the queue
       tasklist_.erase(i);
       return out;
-    };
+    }
 
-    void add_task(std::shared_ptr<Task<T>> a) { tasklist_.push_back(a); };
+    void add_task(std::shared_ptr<Task<T>> a) { tasklist_.push_back(a); }
 
-    bool done() const { return tasklist_.empty(); };
+    bool done() const { return tasklist_.empty(); }
 
     void initialize() {
       for (auto& i : tasklist_) i->initialize();
-    };
+    }
 };
 
 }

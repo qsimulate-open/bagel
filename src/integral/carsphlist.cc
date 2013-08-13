@@ -60,9 +60,3 @@ CarSphList::CarSphList() {
       carsphfunc[ANG_HRR_END * 6 + 5] = &carsph_65;
       carsphfunc[ANG_HRR_END * 6 + 6] = &carsph_66;
 }
-
-
-CarSphList::~CarSphList() {
-
-}
-
