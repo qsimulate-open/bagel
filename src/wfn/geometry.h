@@ -135,7 +135,7 @@ class Geometry : public Molecule {
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate() const;
+    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = std::shared_ptr<const Matrix>()) const;
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool) const;
