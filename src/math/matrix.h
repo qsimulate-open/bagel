@@ -177,8 +177,8 @@ class DistMatrix : public DistMatrix_base<double> {
     void daxpy(const double a, const DistMatrix& o) { assert(size() == o.size()); daxpy_(size(), a, o.local_.get(), 1, local_.get(), 1); }
     void daxpy(const double a, const std::shared_ptr<const DistMatrix> o) { daxpy(a, *o); }
 
-    void rotate(const int i, const int j, const double cs, const double sn);
-    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
+    void rotate(std::vector<std::tuple<int, int, double>> rotations);
+    void rotate(const int i, const int j, const double gamma);
 
     double ddot(const DistMatrix&) const;
     double norm() const { return std::sqrt(ddot(*this)); }

@@ -39,6 +39,7 @@ extern "C" {
   void blacs_gridinfo_(const int*, const int*, const int*, int*, int*);
   void blacs_gridexit_(const int*);
   void blacs_exit_(int*);
+  int blacs_pnum_(int*, int*, int*);
 
   int numroc_(const int* globalsize, const int* blocksize, const int* myrow, const int* startproc, const int* nproc);
   void descinit_(int* desc, const int* dimr, const int* dimc, const int* nbr, const int* nbc, const int* nsr, const int* nsc, const int* context, const int* ld, int* info);
@@ -56,14 +57,13 @@ extern "C" {
                 double*, const int*, int*, const int*, const int*);
   void pzheevd_(const char*, const char*, const int*, std::complex<double>*, const int*, const int*, const int*, double*, std::complex<double>*, const int*, const int*, const int*,
                 std::complex<double>*, const int*, double*, const int*, int*, const int*, int*);
-  void pdrot_(const int* N, const double*, const int*, const int*, const int*, const int*, const double*, const int*, const int*, const int*, const int*,
-                            const double*, const double*, const double*, const int*, const int*);
 }
 
 static void sl_init_(int& i, const int j, const int k) { sl_init_(&i, &j, &k); }
 static void blacs_gridinfo_(const int a, const int b, const int c, int& d, int& e) { blacs_gridinfo_(&a, &b, &c, &d, &e); }
 static void blacs_gridexit_(const int i) { blacs_gridexit_(&i); }
 static void blacs_exit_(int i) { blacs_exit_(&i); }
+static int blacs_pnum_(const int a, const int b, const int c) { return blacs_pnum_(&a, &b, &c); }
 
 static int numroc_(const int a, const int b, const int c, const int d, const int e)
   { return numroc_(&a, &b, &c, &d, &e); }
@@ -116,13 +116,6 @@ static void pzheevd_(const char* a, const char* b, const int dim, std::complex<d
   const int one = 1;
   pzheevd_(a, b, &dim, mat, &one, &one, descm, eig, coeff, &one, &one, descc, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
 }
-
-static void pdrot_(const int n, const double* x, const int ix, const int jx, const int* descx, const int incx,
-                                const double* y, const int iy, const int jy, const int* descy, const int incy,
-                                const double cs, const double sn, const double* work, const int lwork, const int& info) {
-  pdrot_(&n, x, &ix, &jx, descx, &incx, y, &iy, &jy, descy, &incy, &cs, &sn, work, &lwork, &info);
-}
-
 
 static std::pair<int, int> numgrid(int numproc) {
   int sq = static_cast<int>(std::sqrt(static_cast<double>(numproc)))+1;
