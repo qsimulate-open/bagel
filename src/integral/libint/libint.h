@@ -43,7 +43,7 @@ class Libint : public RysInt {
 
     void compute() {}
 
-    constexpr static int nblocks() { return 1; }
+    constexpr static int Nblocks() { return 1; }
 
 };
 
