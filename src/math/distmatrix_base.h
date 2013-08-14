@@ -66,6 +66,25 @@ class DistMatrix_base {
       return sum;
     }
 
+    std::pair<int, int> locate_row(const int i) { // Returns prow and local row offset for ith row
+      const int rowstride = mpi__->nprow() * blocksize__;
+      const int istride = i/rowstride;
+
+      const int prow = (i - rowstride * istride) / blocksize__;
+      const int off = i - rowstride * istride - prow * blocksize__ + istride * blocksize__;
+
+      return std::make_pair(prow, off);
+    }
+    std::pair<int, int> locate_column(const int j) { // Returns pcol and local col offset for jth col
+      const int colstride = mpi__->npcol() * blocksize__;
+      const int jstride = j/colstride;
+
+      const int pcol = (j - colstride * jstride) / blocksize__;
+      const int off = j - colstride * jstride - pcol * blocksize__ + istride * blocksize__;
+
+      return std::make_pair(pcol, off);
+    }
+
   public:
     DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);

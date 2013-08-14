@@ -113,15 +113,96 @@ void DistMatrix::diagonalize(double* eig) {
   *this = tmp;
 }
 
-void DistMatrix::rotate(const int i, const int j, const double cs, const double sn) {
-  const int n = ndim_;
-  const int lwork = 2*blocksize__;
-  unique_ptr<double[]> work(new double[lwork]);
+// Caution: assumes no repetition of rotation indices (each orbital is involved in at most one rotation)
+void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
-  int info;
+  const int nblock = localrow/blocksize__;
+  const int mblock = localcol/blocksize__;
 
-  pdrot_(n, local_.get(), 1, 1 + i, desc_.get(), 1, local_.get(), 1, 1 + j, desc_.get(), 1, cs, sn, work.get(), lwork, info);
-  if (info) throw runtime_error("pdrot failed in DistMatrix");
+  const int nstride = blocksize__ * mpi__->nprow();
+  const int mstride = blocksize__ * mpi__->npcol();
+
+  const int myprow = mpi__->myprow();
+  const int mypcol = mpi__->mypcol();
+
+  vector<mutex> mt(localcol);
+  for (auto &imt : mt) imt.lock();
+
+  auto sender = make_shared<SendRequest>();
+  auto accumer = make_shared<AccRequest>(local_.get(), &mt);
+
+  for (auto& irot : rotations) {
+    const int i = get<0>(irot);
+    const int j = get<1>(irot);
+    const double gamma = get<2>(irot);
+
+    int ipcol, ioffset;
+    tie(ipcol, ioffset) = locate_column(i);
+
+    int jpcol, joffset;
+    tie(jpcol, joffset) = locate_column(j);
+
+    const bool iloc = (ipcol == mypcol);
+    const bool jloc = (jpcol == mypcol);
+
+    if ( iloc && jloc ) {
+      // rotate locally
+      double* const idata = local_.get() + ioffset * localrow;
+      double* const jdata = local_.get() + joffset * localrow;
+
+      drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
+
+      mt[ioffset].unlock();
+      mt[joffset].unlock();
+    }
+    else if ( iloc || jloc ) {
+      const int localoffset = iloc ? ioffset : joffset;
+      double* const localdata = local_.get() + localoffset * localrow;
+
+      const int remoteoffset = ( iloc ? joffset : ioffset ) * localrow;
+      const int remoterank = mpi__->pnum( myprow, ( iloc ? ipcol : jpcol ) );
+
+      unique_ptr<double[]> sbuf(new double[localrow]);
+      const double sendfactor = ( iloc ? -sin(gamma) : sin(gamma) ); // double check
+      daxpy_(localrow, sendfactor, ldata, 1, sbuf.get(), 1);
+
+      sender->request_send(move(sbuf), localrow, remoterank, remoteoffset);
+
+      transform(localdata, localdata + localrow, localdata, [](double a) { return cos(gamma) * a; });
+
+      // ready to receive now
+      mt[ioffset].unlock();
+      mt[joffset].unlock();
+    }
+
+#ifndef USE_SERVER_THREAD
+    sender->flush();
+    accumer->flush();
+#endif
+  }
+
+  // terminate accumulate
+  bool done;
+  do {
+    done = sender->test();
+    done &= accumer->test();
+#ifndef USE_SERVER_THREAD
+    // in case no thread is running behind, we need to cycle this to flush
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0;
+    if (!done) sender->flush();
+    if (!done) accumer->flush();
+#endif
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+}
+
+
+void DistMatrix::rotate(const int i, const int j, const double gamma) {
+  rotate(vector<tuple<int, int, double>>(1, make_tuple(i, j, gamma)));
 }
 
 
