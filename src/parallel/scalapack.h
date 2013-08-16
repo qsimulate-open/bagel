@@ -39,7 +39,7 @@ extern "C" {
   void blacs_gridinfo_(const int*, const int*, const int*, int*, int*);
   void blacs_gridexit_(const int*);
   void blacs_exit_(int*);
-  int blacs_pnum_(int*, int*, int*);
+  int blacs_pnum_(const int*, const int*, const int*);
 
   int numroc_(const int* globalsize, const int* blocksize, const int* myrow, const int* startproc, const int* nproc);
   void descinit_(int* desc, const int* dimr, const int* dimc, const int* nbr, const int* nbc, const int* nsr, const int* nsc, const int* context, const int* ld, int* info);

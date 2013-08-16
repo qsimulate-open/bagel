@@ -89,7 +89,7 @@ void JacobiDiag::rotate(const int k, const int l) {
   }
 
   A_ = Alocal->distmatrix();
-  Q_->rotate(k, l, c, -s);
+  Q_->rotate(k, l, acos(c));
 }
 
 void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
@@ -97,7 +97,7 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
   auto P_A = make_shared<DistMatrix>(norb_, norb_);
 
 #ifdef HAVE_SCALAPACK
-  pdgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->local().get(), 1, nstart_ + 1, S_->desc().get(),
+  pdgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->local().get(), 1, 1, S_->desc().get(),
                                                  Q_->local().get(), 1, nstart_ + 1, Q_->desc().get(),
                                             0.0, mos->local().get(), 1, 1, mos->desc().get());
 #else
@@ -135,6 +135,7 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
   }
 
   // This loop could be threaded
+  vector<tuple<int, int, double>> rotations;
   for (int ipair = 0; ipair < npairs; ++ipair) {
     const double Akl = AA[ipair];
     const double Bkl = BB[ipair];
@@ -146,6 +147,8 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
 
     double gamma = copysign(0.25, Bkl) * acos( -Akl/hypot(Akl,Bkl) );
 
-    Q_->rotate(kk, ll, gamma);
+    rotations.emplace_back(kk, ll, gamma);
   }
+
+  Q_->rotate(rotations);
 }

@@ -28,6 +28,7 @@
 #include <src/math/matrix.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/parallel/accrequest.h>
 
 using namespace std;
 using namespace bagel;
@@ -118,17 +119,11 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
   const int localrow = get<0>(localsize_);
   const int localcol = get<1>(localsize_);
 
-  const int nblock = localrow/blocksize__;
-  const int mblock = localcol/blocksize__;
-
-  const int nstride = blocksize__ * mpi__->nprow();
-  const int mstride = blocksize__ * mpi__->npcol();
-
-  const int myprow = mpi__->myprow();
   const int mypcol = mpi__->mypcol();
+  const int myprow = mpi__->myprow();
 
   vector<mutex> mt(localcol);
-  for (auto &imt : mt) imt.lock();
+  for (auto& imt : mt) imt.lock();
 
   auto sender = make_shared<SendRequest>();
   auto accumer = make_shared<AccRequest>(local_.get(), &mt);
@@ -149,39 +144,37 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
 
     if ( iloc && jloc ) {
       // rotate locally
+      mt[ioffset].unlock();
+      mt[joffset].unlock();
+
       double* const idata = local_.get() + ioffset * localrow;
       double* const jdata = local_.get() + joffset * localrow;
 
       drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
-
-      mt[ioffset].unlock();
-      mt[joffset].unlock();
     }
     else if ( iloc || jloc ) {
       const int localoffset = iloc ? ioffset : joffset;
       double* const localdata = local_.get() + localoffset * localrow;
 
       const int remoteoffset = ( iloc ? joffset : ioffset ) * localrow;
-      const int remoterank = mpi__->pnum( myprow, ( iloc ? ipcol : jpcol ) );
+      const int remoterank = mpi__->pnum( myprow, ( iloc ? jpcol : ipcol ) );
 
       unique_ptr<double[]> sbuf(new double[localrow]);
       const double sendfactor = ( iloc ? -sin(gamma) : sin(gamma) ); // double check
-      daxpy_(localrow, sendfactor, ldata, 1, sbuf.get(), 1);
+      transform(localdata, localdata + localrow, sbuf.get(), [&sendfactor](const double a) { return sendfactor * a; });
 
       sender->request_send(move(sbuf), localrow, remoterank, remoteoffset);
 
-      transform(localdata, localdata + localrow, localdata, [](double a) { return cos(gamma) * a; });
+      const double localfactor = cos(gamma);
+      transform(localdata, localdata + localrow, localdata, [&localfactor](double a) { return localfactor * a; });
 
       // ready to receive now
-      mt[ioffset].unlock();
-      mt[joffset].unlock();
+      mt[localoffset].unlock();
     }
-
-#ifndef USE_SERVER_THREAD
-    sender->flush();
-    accumer->flush();
-#endif
   }
+
+  // Make sure everything (even unused) is unlocked
+  for (auto& imt : mt) imt.unlock();
 
   // terminate accumulate
   bool done;

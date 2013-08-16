@@ -94,8 +94,6 @@ class JacobiPM : public Jacobi_base {
   public:
     JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<DistMatrix> coeff, const int nstart, const int norb, std::shared_ptr<DistMatrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
       Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {}
-
-    //void rotate(const int k, const int l) override;
 };
 
 }

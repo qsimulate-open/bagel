@@ -75,12 +75,13 @@ class DistMatrix_base {
 
       return std::make_pair(prow, off);
     }
+
     std::pair<int, int> locate_column(const int j) { // Returns pcol and local col offset for jth col
       const int colstride = mpi__->npcol() * blocksize__;
       const int jstride = j/colstride;
 
       const int pcol = (j - colstride * jstride) / blocksize__;
-      const int off = j - colstride * jstride - pcol * blocksize__ + istride * blocksize__;
+      const int off = j - colstride * jstride - pcol * blocksize__ + jstride * blocksize__;
 
       return std::make_pair(pcol, off);
     }

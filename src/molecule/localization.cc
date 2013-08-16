@@ -270,8 +270,8 @@ double PMLocalization::calc_P(shared_ptr<const DistMatrix> coeff, const int nsta
   auto mos = make_shared<DistMatrix>(nbasis, norb);
 
 #ifdef HAVE_SCALAPACK
-  pdgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->local().get(), 1, nstart + 1, S_->desc().get(),
-                                                 coeff_->local().get(), 1, nstart + 1, coeff->desc().get(),
+  pdgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->local().get(), 1, 1, S_->desc().get(),
+                                                 coeff->local().get(), 1, nstart + 1, coeff->desc().get(),
                                             0.0, mos->local().get(), 1, 1, mos->desc().get());
 #else
   dgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->data(), nbasis, coeff->element_ptr(0, nstart), nbasis, 0.0, mos->data(), nbasis);
