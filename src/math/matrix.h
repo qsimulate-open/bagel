@@ -125,7 +125,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void rotate(const int i, const int j, const double c, const double s) { drot_(ndim_, element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
     void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
     void rotate(std::vector<std::tuple<int, int, double>> rotations) 
-      { for (auto& irot : rotations) rotate(std::get<0>(rotations), std::get<1>(rotations), std::get<2>(rotations)); }
+      { for (auto& irot : rotations) rotate(std::get<0>(irot), std::get<1>(irot), std::get<2>(irot)); }
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
