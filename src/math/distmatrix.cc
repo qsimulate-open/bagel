@@ -122,37 +122,25 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
   const int mypcol = mpi__->mypcol();
   const int myprow = mpi__->myprow();
 
+  vector<tuple<int, int, double>> local_rotations;
+
   vector<mutex> mt(localcol);
-  for (auto& imt : mt) imt.lock();
 
   auto sender = make_shared<SendRequest>();
   auto accumer = make_shared<AccRequest>(local_.get(), &mt);
 
   for (auto& irot : rotations) {
-    const int i = get<0>(irot);
-    const int j = get<1>(irot);
-    const double gamma = get<2>(irot);
-
     int ipcol, ioffset;
-    tie(ipcol, ioffset) = locate_column(i);
+    tie(ipcol, ioffset) = locate_column(get<0>(irot));
 
     int jpcol, joffset;
-    tie(jpcol, joffset) = locate_column(j);
+    tie(jpcol, joffset) = locate_column(get<1>(irot));
 
-    const bool iloc = (ipcol == mypcol);
-    const bool jloc = (jpcol == mypcol);
+    const double gamma = get<2>(irot);
 
-    if ( iloc && jloc ) {
-      // rotate locally
-      mt[ioffset].unlock();
-      mt[joffset].unlock();
+    if ( (ipcol == mypcol) != (jpcol == mypcol) ) {
+      const bool iloc = (ipcol == mypcol);
 
-      double* const idata = local_.get() + ioffset * localrow;
-      double* const jdata = local_.get() + joffset * localrow;
-
-      drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
-    }
-    else if ( iloc || jloc ) {
       const int localoffset = iloc ? ioffset : joffset;
       double* const localdata = local_.get() + localoffset * localrow;
 
@@ -167,14 +155,29 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
 
       const double localfactor = cos(gamma);
       transform(localdata, localdata + localrow, localdata, [&localfactor](double a) { return localfactor * a; });
-
-      // ready to receive now
-      mt[localoffset].unlock();
+    }
+    else if ( (ipcol == mypcol) && (jpcol == mypcol) ) {
+      local_rotations.emplace_back(ioffset, joffset, gamma);
     }
   }
 
-  // Make sure everything (even unused) is unlocked
-  for (auto& imt : mt) imt.unlock();
+  accumer->flush();
+  sender->flush();
+
+  //rotate locally
+  for (auto& irot : local_rotations) {
+    const int ioffset = get<0>(irot);
+    const int joffset = get<1>(irot);
+    const double gamma = get<2>(irot);
+
+    double* const idata = local_.get() + ioffset * localrow;
+    double* const jdata = local_.get() + joffset * localrow;
+
+    drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
+
+    accumer->flush();
+    sender->flush();
+  }
 
   // terminate accumulate
   bool done;
