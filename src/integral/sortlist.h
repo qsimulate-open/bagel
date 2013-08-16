@@ -38,7 +38,6 @@ namespace bagel {
 
 struct SortList {
   SortList(const bool);
-  ~SortList();
 
   static void sort_indices_00(double*, const double*, const int, const int, const int, const bool);
   static void sort_indices_01(double*, const double*, const int, const int, const int, const bool);

@@ -34,7 +34,6 @@ namespace bagel {
 
 struct CarSphList {
   CarSphList();
-  ~CarSphList();
 
   static void carsph_00(const int, const double*, double*);
   static void carsph_10(const int, const double*, double*);

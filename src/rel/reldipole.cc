@@ -67,7 +67,6 @@ array<double,3> RelDipole::compute() {
     data->copy_block(0, 0, 2*n, 2*n, zdip);
     data->copy_block(2*n, 2*n, 2*n, 2*n, smalldip);
     out[x] = density_->dot_product(data).real();
-cout << density_->dot_product(data).real() << " " << density_->dot_product(data).imag() << endl;
     assert(fabs(density_->dot_product(data).imag()) < 1.0e-6);
   }
 

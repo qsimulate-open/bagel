@@ -682,7 +682,7 @@ static double adf_rho(shared_ptr<const Node> i, shared_ptr<const Node> j) {
 
 using namespace geometry;
 
-array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const {
+array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
   cout << "    o Connectivitiy analysis" << endl;
 
   vector<vector<double>> out;
@@ -888,6 +888,20 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   *bnew = *bnew * hess;
   hess.inverse();
   *bdmnew = *bdmnew * hess;
+
+  // if this is not the first time, make sure that the change is minimum
+  if (prev) {
+    // internal--internal matrix
+    Matrix approx1 = *prev % *bdmnew;
+    assert(approx1.ndim() == ninternal && approx1.mdim() == ninternal);
+    *bnew = *prev;
+    try {
+      approx1.inverse();
+    } catch (const runtime_error& error) {
+      throw runtime_error("It seems that the geometry has changed substantially. Start over the optimization.");
+    }
+    *bdmnew *= approx1;
+  }
 
   // make them consistent
   bnew->broadcast();
