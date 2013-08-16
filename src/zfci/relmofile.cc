@@ -76,28 +76,17 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
 //
 //block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
 //
+#if 0
+  //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
   const size_t n = buf1e->ndim();
   shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
 
   std::unique_ptr<double[]> vec_(new double[n]);
   op_->diagonalize(vec_.get());
-//rearrange eigenvectors
-  auto op1 = op_->slice(0,1);
-  auto op2 = op_->slice(1,2);
-  auto op3 = op_->slice(2,3);
-  auto op4 = op_->slice(3,4);
-  auto op5 = op_->slice(4,5);
-  auto op6 = op_->slice(5,6);
-  auto S = make_shared<ZMatrix>(*op1);
-  S = S->merge(op3);
-  S = S->merge(op5);
-  S = S->merge(op2);
-  S = S->merge(op4);
-  S = S->merge(op6);
-  //for_each (op1->data()+n*(n-1), op1->data()+n*n, [](complex<double>& a){ a += 1.0; } );
+
 //take blocks of eigenvector matrix
-  auto op12 = S->get_submatrix(0,n/2,n/2,n/2);
-  auto op22 = S->get_submatrix(n/2,n/2,n/2,n/2);
+  auto op12 = op_->get_submatrix(0,n/2,n/2,n/2);
+  auto op22 = op_->get_submatrix(n/2,n/2,n/2,n/2);
 //form X
   op22->inverse();
   auto X = make_shared<ZMatrix>(*op12 * *op22);
@@ -117,11 +106,9 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   //Apply T to buf1e
   //TODO put const back
   shared_ptr<ZMatrix> mo1e = make_shared<ZMatrix>(*T % *buf1e * *T);
-  mo1e->print("R");
-  std::unique_ptr<double[]> dec_(new double[n]);
-  mo1e->diagonalize(dec_.get());
-  for (int i = 0; i != n; ++i) assert(abs(*(vec_.get()+i)-*(dec_.get()+i))<1e-6);
+#endif
 
+  shared_ptr<ZMatrix> mo1e = make_shared<ZMatrix>(1,1);
   shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1, 1);
   return make_tuple(mo1e, mo2e);
 }
