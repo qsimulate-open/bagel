@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_SRC_UTIL_LinearRM_H
-#define __BAGEL_SRC_UTIL_LinearRM_H
+#ifndef __BAGEL_SRC_MATH_LINEARRM_H
+#define __BAGEL_SRC_MATH_LINEARRM_H
 
 #include <src/math/matrix.h>
 
@@ -77,8 +77,8 @@ class LinearRM {
 
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
-      for (auto j = sigma_.begin(); j != sigma_.end(); ++j)
-        out->ax_plus_y(vec_->element(cnt++, 0), *j);
+      for (auto& j : sigma_)
+        out->ax_plus_y(vec_->element(cnt++, 0), j);
       assert(cnt == size_);
       return out;
     }
@@ -86,9 +86,8 @@ class LinearRM {
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
-      for (auto i = c_.begin(); i != c_.end(); ++i) {
-        out->ax_plus_y(vec_->element(cnt++, 0), *i);
-      }
+      for (auto& i : c_)
+        out->ax_plus_y(vec_->element(cnt++, 0), i);
       return out;
     }
 
