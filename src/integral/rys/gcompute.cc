@@ -40,7 +40,7 @@ void GradBatch::compute() {
 
   double* stack_sav = stack_->get(size_block_);
   bkup_ = stack_sav;
-  fill(data_, data_ + size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
   assert(size_block_*12 == size_alloc_);
 
   const int ang0 = basisinfo_[0]->angular_number();

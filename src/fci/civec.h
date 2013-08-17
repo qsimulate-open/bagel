@@ -417,7 +417,7 @@ class Civector {
     Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }
     Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
 
-    Civector<DataType>& operator=(const Civector<DataType>& o) { assert(size() == o.size()); std::copy(o.cc(), o.cc()+size(), cc()); return *this; }
+    Civector<DataType>& operator=(const Civector<DataType>& o) { assert(size() == o.size()); std::copy_n(o.cc(), size(), cc()); return *this; }
     Civector<DataType>& operator+=(const Civector<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
     Civector<DataType>& operator-=(const Civector<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
     Civector<DataType>& operator/=(const Civector<DataType>& o) {

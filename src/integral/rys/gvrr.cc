@@ -58,12 +58,12 @@ void GradBatch::perform_VRR() {
   double* const trans2x = stack_->get((cmax_+1)*c2*d2);
   double* const trans2y = stack_->get((cmax_+1)*c2*d2);
   double* const trans2z = stack_->get((cmax_+1)*c2*d2);
-  fill(transx,  transx +(amax_+1)*a2*b2, 0.0);
-  fill(transy,  transy +(amax_+1)*a2*b2, 0.0);
-  fill(transz,  transz +(amax_+1)*a2*b2, 0.0);
-  fill(trans2x, trans2x+(cmax_+1)*c2*d2, 0.0);
-  fill(trans2y, trans2y+(cmax_+1)*c2*d2, 0.0);
-  fill(trans2z, trans2z+(cmax_+1)*c2*d2, 0.0);
+  fill_n(transx,  (amax_+1)*a2*b2, 0.0);
+  fill_n(transy,  (amax_+1)*a2*b2, 0.0);
+  fill_n(transz,  (amax_+1)*a2*b2, 0.0);
+  fill_n(trans2x, (cmax_+1)*c2*d2, 0.0);
+  fill_n(trans2y, (cmax_+1)*c2*d2, 0.0);
+  fill_n(trans2z, (cmax_+1)*c2*d2, 0.0);
   // for usual integrals
   for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {

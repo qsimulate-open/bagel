@@ -77,8 +77,8 @@ void Determinants::const_string_lists_() {
   const int lengthb = comb.c(norb_, neleb_);
   stringa_.resize(lengtha);
   stringb_.resize(lengthb);
-  fill(stringa_.begin(), stringa_.end(),bitset<nbit__>(0));
-  fill(stringb_.begin(), stringb_.end(),bitset<nbit__>(0));
+  fill(stringa_.begin(), stringa_.end(), bitset<nbit__>(0));
+  fill(stringb_.begin(), stringb_.end(), bitset<nbit__>(0));
 
   vector<bitset<nbit__>>::iterator sa = stringa_.begin();
   do {
