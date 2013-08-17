@@ -101,12 +101,9 @@ void GSmallERIBatch::compute() {
 
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
-
-  struct Address {
-    const size_t ld0, ld1, ld2;
-    Address(const size_t l0, const size_t l1, const size_t l2) : ld0(l0), ld1(l1), ld2(l2) {}
-    size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
-  } m(s0size_, a1_, a2_);
+  const size_t s0size = s0size_;
+  const size_t a1 = a1_;
+  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); }; 
 
   {
 #ifndef LIBINT_INTERFACE
