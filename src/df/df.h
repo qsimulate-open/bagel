@@ -117,10 +117,10 @@ class DFDist : public ParallelDF {
 
     DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }
 
-    bool has_2index() const { return data2_.get() != nullptr; };
-    size_t nbasis0() const { return nindex2_; };
-    size_t nbasis1() const { return nindex1_; };
-    size_t naux() const { return naux_; };
+    bool has_2index() const { return data2_.get() != nullptr; }
+    size_t nbasis0() const { return nindex2_; }
+    size_t nbasis1() const { return nindex1_; }
+    size_t naux() const { return naux_; }
 
     void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
        { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
@@ -240,8 +240,8 @@ class DFHalfDist : public ParallelDF {
   public:
     DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2(), df) { }
 
-    size_t nocc() const { return nindex1_; };
-    size_t nbasis() const { return nindex2_; };
+    size_t nocc() const { return nindex1_; }
+    size_t nbasis() const { return nindex2_; }
 
     std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
     std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;

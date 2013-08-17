@@ -43,6 +43,7 @@ using namespace bagel;
 #ifdef HAVE_LIBSLATER
 
 const static HRRList hrr;
+const static CarSphList carsphlist;
 
 void SlaterBatch::compute() {
   bool swapped = false;
@@ -128,7 +129,6 @@ void SlaterBatch::compute() {
 
   // Cartesian to spherical 01 if necesarry
   // data will be stored in data_
-  struct CarSphList carsphlist;
   if (spherical1_) {
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_ * csize_;

@@ -66,7 +66,7 @@ struct CarSphList {
 
   void carsphfunc_call(const unsigned int i, const int a0, const double* a1, double* a2) const {
     return (carsphfunc[i])(a0, a1, a2);
-  };
+  }
 
   std::function<void (const int, const double*, double*)> carsphfunc[ANG_HRR_END * ANG_HRR_END];
 };

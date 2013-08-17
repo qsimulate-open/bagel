@@ -32,6 +32,7 @@ using namespace std;
 using namespace bagel;
 
 const static Comb comb;
+const static CarSphList carsphlist;
 
 void GNAIBatch::compute() {
 
@@ -261,7 +262,6 @@ void GNAIBatch::compute() {
     target = cdata;
     source = bkup_;
     if (spherical1_) {
-      struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
       carsphlist.carsphfunc_call(carsphindex, nloops, source, target);
