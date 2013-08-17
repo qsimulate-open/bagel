@@ -73,17 +73,57 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
 }
 
 tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
-//
-//block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
-//
-#if 0
-  //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
+//constructing K (this assumes a kramers basis and a specific form of relcoeff, both of which are unconfirmed)
+  //TODO replace with new nomenclature according to norb_rel_
   const size_t n = buf1e->ndim();
-  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
 
-  std::unique_ptr<double[]> vec_(new double[n]);
+  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
+  unique_ptr<double[]> vec_(new double[n]);
   op_->diagonalize(vec_.get());
 
+//constructing U (unitary rotation of K without complex conjugation operator)
+  shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
+  for (int i = 0; i != n/4; ++i) {
+    block->element(i,i+n/4) = -1.0;
+    block->element(i+n/4,i) = 1.0;
+  }
+  shared_ptr<ZMatrix> uni = make_shared<ZMatrix>(n,n);
+  uni->copy_block(0, 0,n/2,n/2,block);
+  uni->copy_block(n/2, n/2,n/2,n/2,block);
+
+//divide eigenvectors of Fock matrix into vector and form a base K operator for each(to allow for inclusion of complex conjugation in K matrix)
+  vector<shared_ptr<ZMatrix>> eig_;
+  vector<shared_ptr<ZMatrix>> kramer;
+  for (int i = 0; i != n-1; i++) {
+    eig_.push_back(op_->slice(i,i+1));
+    kramer.push_back(make_shared<ZMatrix>(*uni));
+  }
+
+//K = U * K0
+  auto kramiter = kramer.begin();
+  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter, ++kramiter) {
+      shared_ptr<ZMatrix> conj_ = make_shared<ZMatrix>(n,n);
+      for (int i = 0; i != n; ++i)
+        conj_->element(i,i) = conj((**iter).data(i))/(**iter).data(i);
+      **kramiter = **kramiter * *conj_;
+  }
+
+  //next need to generate projections (K-i) and (K+i)
+  shared_ptr<ZMatrix> imat = make_shared<ZMatrix>(n,n);
+  for (int i = 0; i != n; ++i)
+    imat->element(i,i) = complex<double>(0.0,1.0);
+
+  //in practice I may not even need to store these...
+  vector<shared_ptr<ZMatrix>> project_down, project_up;
+  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter) {
+    project_down.push_back(make_shared<ZMatrix>(**iter - *imat));
+    project_up.push_back(make_shared<ZMatrix>(**iter + *imat));
+  }
+
+  //finally use those projections to make new eigenvector matrix
+
+#if 0
+  //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
 //take blocks of eigenvector matrix
   auto op12 = op_->get_submatrix(0,n/2,n/2,n/2);
   auto op22 = op_->get_submatrix(n/2,n/2,n/2,n/2);

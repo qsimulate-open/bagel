@@ -110,7 +110,9 @@ void ZKnowlesHandy::relupdate() {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_, "KH");
+  //TODO clean up norb/nocc notation in relativistic code to account for additional size due to time reversal symmetry
+  const size_t norb_rel_ = 2*norb_;
+  auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_rel_, "KH");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
