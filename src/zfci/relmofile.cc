@@ -73,7 +73,6 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
 }
 
 tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
-//constructing K (this assumes a kramers basis and a specific form of relcoeff, both of which are unconfirmed)
   //TODO replace with new nomenclature according to norb_rel_
   const size_t n = buf1e->ndim();
 
@@ -91,21 +90,19 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   uni->copy_block(0, 0,n/2,n/2,block);
   uni->copy_block(n/2, n/2,n/2,n/2,block);
 
-//divide eigenvectors of Fock matrix into vector and form a base K operator for each(to allow for inclusion of complex conjugation in K matrix)
+//divide eigenvectors of Fock matrix into vector
   vector<shared_ptr<ZMatrix>> eig_;
-  vector<shared_ptr<ZMatrix>> kramer;
   for (int i = 0; i != n-1; i++) {
     eig_.push_back(op_->slice(i,i+1));
-    kramer.push_back(make_shared<ZMatrix>(*uni));
   }
 
-//K = U * K0
-  auto kramiter = kramer.begin();
-  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter, ++kramiter) {
-      shared_ptr<ZMatrix> conj_ = make_shared<ZMatrix>(n,n);
-      for (int i = 0; i != n; ++i)
-        conj_->element(i,i) = conj((**iter).data(i))/(**iter).data(i);
-      **kramiter = **kramiter * *conj_;
+//K = U * K0 (there are n K matrices because no general complex conjugation matrix exists, so individual ones are calculated for each eigenvector)
+  vector<shared_ptr<ZMatrix>> kramer;
+  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter) {
+    shared_ptr<ZMatrix> conj_ = make_shared<ZMatrix>(n,n);
+    for (int i = 0; i != n; ++i)
+      conj_->element(i,i) = conj((**iter).data(i))/(**iter).data(i);
+    kramer.push_back(make_shared<ZMatrix>(*uni * *conj_));
   }
 
   //next need to generate projections (K-i) and (K+i)
@@ -113,14 +110,15 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   for (int i = 0; i != n; ++i)
     imat->element(i,i) = complex<double>(0.0,1.0);
 
-  //in practice I may not even need to store these...
   vector<shared_ptr<ZMatrix>> project_down, project_up;
-  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter) {
-    project_down.push_back(make_shared<ZMatrix>(**iter - *imat));
-    project_up.push_back(make_shared<ZMatrix>(**iter + *imat));
+  auto kramiter = kramer.begin();
+  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter, ++kramiter) {
+    project_down.push_back(make_shared<ZMatrix>((**kramiter - *imat) * **iter));
+    project_up.push_back(make_shared<ZMatrix>((**kramiter + *imat) * **iter));
   }
 
-  //finally use those projections to make new eigenvector matrix
+  //finally use these projections to make new eigenvector matrix
+  //need to find 3 linearly independent from each and merge to form new eigenvector matrix? or use results to sort existing?
 
 #if 0
   //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
