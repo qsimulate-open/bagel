@@ -38,6 +38,9 @@ class RASLexical {
     const int norb_;
     const int nele_;
 
+    const int offset_;
+    int size_;
+
     struct RASGraph {
       const int ndim_;
       const int mdim_;
@@ -49,10 +52,13 @@ class RASLexical {
       }
 
       int& operator()(const int i, const int j) { return data_[j*ndim_ + i]; }
+      const int max() const { return *std::max_element(data_.get(), data_.get() * ndim_ * mdim_); }
     };
 
   public:
-    RASLexical(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3);
+    RASLexical(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset = 0);
+
+    const int size() const { return size_; }
 
     // Assumes bit is within this graph
     unsigned int address(std::bitset<nbit__> bit) const {
@@ -60,7 +66,7 @@ class RASLexical {
       int nele = 0;
       for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += weights_[offsets_[nele] + i]; ++nele; }
-      return out;
+      return out + offset_;
     }
 };
 

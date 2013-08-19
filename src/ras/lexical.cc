@@ -26,8 +26,8 @@
 using namespace std;
 using namespace bagel;
 
-RASLexical::RASLexical(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3) :
-  ras_{ make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3) }, nele_( nele1 + nele2 + nele3 ), norb_(norb1 + norb2 + norb3)
+RASLexical::RASLexical(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset) :
+  ras_{ make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3) }, nele_( nele1 + nele2 + nele3 ), norb_(norb1 + norb2 + norb3), offset_(offset)
 {
   RASGraph graph(norb_ + 1, nele_ + 1);
 
@@ -46,6 +46,8 @@ RASLexical::RASLexical(const int nele1, const int norb1, const int nele2, const 
   fill_ras_graph(0, 0, norb1, nele1);
   fill_ras_graph(norb1, nele1, norb2, nele2);
   fill_ras_graph(norb1 + norb2, nele1 + nele2, norb3, nele3);
+
+  size_ = graph.max();
 
   weights_.reserve( (norb1 - nele1)*nele1 + (norb2 - nele2)*nele2 + (norb3 - nele3)*nele3 );
   offsets_.reserve( nele_ );
