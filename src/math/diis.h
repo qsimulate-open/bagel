@@ -40,21 +40,16 @@ namespace bagel {
 
 template <class T, typename Mat = Matrix>
 class DIIS {
-  using Container_type_ = std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>>;
-  using iterator = typename Container_type_::iterator;
-
   protected:
     const int ndiis_;
 
-    Container_type_ data_;
+    std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>> data_;
 
     std::shared_ptr<Mat> matrix_;
     std::shared_ptr<Mat> coeff_;
 
   public:
     DIIS(const int ndiis) : ndiis_(ndiis), matrix_(new Mat(ndiis+1, ndiis+1, true)), coeff_(new Mat(ndiis+1, 1)) { }
-
-    ~DIIS() { }
 
     std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>> input) {
       std::shared_ptr<const T> v = input.first;
@@ -63,19 +58,16 @@ class DIIS {
 
       if (data_.size() > ndiis_) {
         data_.pop_front();
-        for (int i = 1; i != ndiis_; ++i) {
-          for (int j = 1; j != ndiis_; ++j)
-            matrix_->element(j-1, i-1) = matrix_->element(j, i);
-        }
+        matrix_->copy_block(0, 0, ndiis_-1, ndiis_-1,
+                            matrix_->get_submatrix(1, 1, ndiis_-1, ndiis_-1));
       }
       const int cnum = data_.size();
-      iterator data_iter = data_.begin();
+      auto data_iter = data_.begin();
 
       // left hand side
       for (int i = 0; i != cnum - 1; ++i, ++data_iter) {
-        matrix_->element(cnum-1, i) = matrix_->element(i, cnum-1) = e->dot_product(*(data_iter->second));
-        if (std::is_same<ZMatrix, Mat>::value)
-          matrix_->element(i, cnum-1) = std::conj(matrix_->element(i, cnum-1));
+        matrix_->element(cnum-1, i) = e->dot_product(*(data_iter->second));
+        matrix_->element(i, cnum-1) = detail::conj(matrix_->element(cnum-1, i));
       }
       matrix_->element(cnum-1, cnum-1)= e->dot_product(e);
       for (int i = 0; i != cnum; ++i)
@@ -90,12 +82,11 @@ class DIIS {
       // solve the linear equation
       coeff_ = coeff_->solve(matrix_, cnum+1);
 
-      // take a linear combination
+      // return a linear combination
       std::shared_ptr<T> out = input.first->clone();
       data_iter = data_.begin();
       for (int i = 0; i != cnum; ++i, ++data_iter)
         out->ax_plus_y(coeff_->element(i,0), *(data_iter->first));
-
       return out;
     }
 
