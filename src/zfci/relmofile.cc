@@ -80,30 +80,40 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   unique_ptr<double[]> vec_(new double[n]);
   op_->diagonalize(vec_.get());
 
-//constructing U (unitary rotation of K without complex conjugation operator)
-  shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
+//divide eigenvectors of Fock matrix into vector
+  vector< pair<shared_ptr<Matrix>,shared_ptr<Matrix>> > eig_;
+  for (int i = 0; i != n-1; i++) {
+    eig_.push_back(make_pair(op_->slice(i,i+1)->get_real_part(), op_->slice(i,i+1)->get_imag_part()));
+  }
+
+//building K matrices
+  //working with U = real part = first and K0 = im = second
+  pair<shared_ptr<Matrix>, shared_ptr<Matrix>> kramer;
+
+  //constructing U (unitary rotation of K without complex conjugation operator)
+  shared_ptr<Matrix> block = make_shared<Matrix>(n/2,n/2);
   for (int i = 0; i != n/4; ++i) {
     block->element(i,i+n/4) = -1.0;
     block->element(i+n/4,i) = 1.0;
   }
-  shared_ptr<ZMatrix> uni = make_shared<ZMatrix>(n,n);
-  uni->copy_block(0, 0,n/2,n/2,block);
-  uni->copy_block(n/2, n/2,n/2,n/2,block);
 
-//divide eigenvectors of Fock matrix into vector
-  vector<shared_ptr<ZMatrix>> eig_;
-  for (int i = 0; i != n-1; i++) {
-    eig_.push_back(op_->slice(i,i+1));
-  }
+  kramer.first = make_shared<Matrix>(n,n);
+  kramer.first->copy_block(0, 0,n/2,n/2,block);
+  kramer.first->copy_block(n/2, n/2,n/2,n/2,block);
 
-//K = U * K0 (there are n K matrices because no general complex conjugation matrix exists, so individual ones are calculated for each eigenvector)
-  vector<shared_ptr<ZMatrix>> kramer;
+  //constructing K0
+  kramer.second = make_shared<Matrix>(n,n);
+  kramer.second->unit();
+  *kramer.second *= -1.0;
+
+  shared_ptr<Matrix> imat = make_shared<Matrix>(n,n);
+  imat->unit();
+
   for (auto iter = eig_.begin(); iter != eig_.end(); ++iter) {
-    shared_ptr<ZMatrix> conj_ = make_shared<ZMatrix>(n,n);
-    for (int i = 0; i != n; ++i)
-      conj_->element(i,i) = conj((**iter).data(i))/(**iter).data(i);
-    kramer.push_back(make_shared<ZMatrix>(*uni * *conj_));
-  }
+    auto re = make_shared<Matrix>(*kramer.first * *(iter->first));
+    auto im = make_shared<Matrix>(*kramer.first * *kramer.second * *(iter->second));
+    auto scr = make_shared<ZMatrix>(*re, *im);
+    scr->print("T","KPhi",6);
 
   //next need to generate projections (K-i) and (K+i)
   shared_ptr<ZMatrix> imat = make_shared<ZMatrix>(n,n);
