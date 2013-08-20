@@ -114,7 +114,8 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
     auto im = make_shared<Matrix>(*kramer.first * *kramer.second * *(iter->second));
     auto scr = make_shared<ZMatrix>(*re, *im);
     scr->print("T","KPhi",6);
-
+  }
+#if 0
   //next need to generate projections (K-i) and (K+i)
   shared_ptr<ZMatrix> imat = make_shared<ZMatrix>(n,n);
   for (int i = 0; i != n; ++i)
@@ -129,7 +130,7 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
 
   //finally use these projections to make new eigenvector matrix
   //need to find 3 linearly independent from each and merge to form new eigenvector matrix? or use results to sort existing?
-
+#endif
 #if 0
   //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
 //take blocks of eigenvector matrix
