@@ -34,6 +34,8 @@
 
 namespace bagel {
 
+#if 0
+// this solver seems unstable. use LinearRM
 template<typename T>
 class Linear {
 
@@ -84,8 +86,8 @@ class Linear {
       prod_[size_-1] = - c->dot_product(*grad_);
 
       // set to scr_
-      std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
-      std::copy(prod_.get(), prod_.get()+max_, vec_.get());
+      std::copy_n(mat_.get(), max_*max_, scr_.get());
+      std::copy_n(prod_.get(), max_, vec_.get());
       dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
       if (info) throw std::runtime_error("dgesv failed in Linear");
 
@@ -110,6 +112,7 @@ class Linear {
     double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
 
 };
+#endif
 
 }
 

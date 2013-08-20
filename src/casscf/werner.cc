@@ -26,7 +26,6 @@
 
 #include <src/casscf/werner.h>
 #include <src/math/aughess.h>
-#include <src/math/linear.h>
 #include <src/casscf/jkop.h>
 #include <src/math/bfgs.h>
 
@@ -35,7 +34,7 @@ using namespace bagel;
 
 static const vector<double> zero(1,0.0);
 
-//#define SOLVER Linear
+//#define SOLVER LinearRM
 #define SOLVER AugHess
 
 void WernerKnowles::compute() {

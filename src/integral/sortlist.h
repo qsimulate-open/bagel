@@ -99,7 +99,7 @@ struct SortList {
 
   void sortfunc_call(const unsigned int i, double* a1, const double* a2, const int a3, const int a4, const int a5, const bool a6) const {
     return (sortfunc[i])(a1, a2, a3, a4, a5, a6);
-  };
+  }
 
   std::function<void (double*, const double*, const int, const int, const int, const bool)> sortfunc[ANG_HRR_END * ANG_HRR_END];
 };

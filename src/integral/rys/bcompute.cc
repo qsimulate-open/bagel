@@ -44,7 +44,7 @@ void BreitBatch_base::compute() {
 
   double* const stack_save = stack_->get(size_block_);
   bkup_ = stack_save;
-  fill(data_, data_ + size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }

@@ -236,7 +236,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   // denominator
   auto denom = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-  fill(denom->data(), denom->data()+denom->size(), 1.0e100);
+  fill_n(denom->data(), denom->size(), 1.0e100);
 
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i) {

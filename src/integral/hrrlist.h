@@ -39,7 +39,6 @@ namespace bagel {
 
 struct HRRList {
   HRRList();
-  ~HRRList();
 
   static void perform_HRR_20_11(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_30_21(const int, const double*, const std::array<double,3>&, double*);
@@ -65,7 +64,7 @@ struct HRRList {
 
   void hrrfunc_call(const unsigned int i, const int a0, const double* a1, const std::array<double,3>& a2, double* a3) const {
     return hrrfunc[i](a0, a1, a2, a3);
-  };
+  }
 
   std::function<void (const int, const double*, const std::array<double,3>&, double*)> hrrfunc[ANG_HRR_END * ANG_HRR_END];
 };

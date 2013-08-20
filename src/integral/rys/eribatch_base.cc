@@ -88,9 +88,9 @@ void ERIBatch_base::root_weight(const int ps) {
         if (T_[i] < T_thresh__) {
           weights_[i] = 1.0;
         } else {
-          const double sqrtt = ::sqrt(T_[i]);
+          const double sqrtt = sqrt(T_[i]);
           const double erfsqt = inline_erf(sqrtt);
-          weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
+          weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
         }
       }
     } else {
@@ -112,9 +112,9 @@ void NAIBatch_base::root_weight(const int ps) {
       if (T_[i] < T_thresh__) {
         weights_[i] = 1.0;
       } else {
-        const double sqrtt = ::sqrt(T_[i]);
+        const double sqrtt = sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * ::sqrt(pi__) * 0.5 / sqrtt;
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else {
@@ -185,7 +185,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
   {
     const double cxp_min = minexp0 + minexp1;
     const double cxp_inv_min = 1.0 / cxp_min;
-    const double min_Eab = ::exp(-r01_sq * min_abp * cxp_inv_min);
+    const double min_Eab = exp(-r01_sq * min_abp * cxp_inv_min);
     int index23 = 0;
     for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) {
       for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) {
@@ -193,18 +193,18 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
         const double cdp = *expi2 * *expi3;
         const double cd = rnd(*expi2) * rnd(*expi3);
         const double cxq_inv = 1.0 / cxq;
-        Ecd_save[index23] = ::exp(-r23_sq * (cdp * cxq_inv) );
+        Ecd_save[index23] = exp(-r23_sq * (cdp * cxq_inv) );
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
         if (integral_thresh != 0.0) {
           const double rho = cxp_min * cxq / (cxp_min + cxq);
           const double T = rho * min_pq_sq;
-          const double onepqp_q = 1.0 / (::sqrt(cxp_min + cxq) * cxp_min * cxq);
+          const double onepqp_q = 1.0 / (sqrt(cxp_min + cxq) * cxp_min * cxq);
           const double abcd_sc = min_ab * cd;
           const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-          const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
-          const double tsqrt = ::sqrt(T);
+          const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
+          const double tsqrt = sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                               * (T > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
           if (ssss > integral_thresh) {
@@ -225,19 +225,19 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
 
   int index = 0;
   int index01 = 0;
-  fill(T_, T_ + primsize_, -1.0);
+  fill_n(T_, primsize_, -1.0);
   screening_size_ = 0;
 
   const double cxq_min = minexp2 + minexp3;
   const double cxq_inv_min = 1.0 / cxq_min;
-  const double min_Ecd = ::exp(-r23_sq * min_cdp * cxq_inv_min);
+  const double min_Ecd = exp(-r23_sq * min_cdp * cxq_inv_min);
   for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) {
     for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) {
       const double cxp = *expi0 + *expi1;
       const double abp = *expi0 * *expi1;
       const double ab = rnd(*expi0) * rnd(*expi1);
       const double cxp_inv = 1.0 / cxp;
-      const double Eab = ::exp(-r01_sq * (abp * cxp_inv) );
+      const double Eab = exp(-r01_sq * (abp * cxp_inv) );
       const double coeff_half = 2 * Eab * pitwohalf__;
       const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
@@ -245,11 +245,11 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
       if (integral_thresh != 0.0) {
         const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
         const double T_sc = rho_sc * min_pq_sq;
-        const double onepqp_q_sc = 1.0 / (::sqrt(cxp + cxq_min) * cxp * cxq_min);
-        const double tsqrt = ::sqrt(T_sc);
+        const double onepqp_q_sc = 1.0 / (sqrt(cxp + cxq_min) * cxp * cxq_min);
+        const double tsqrt = sqrt(T_sc);
         const double abcd_sc = ab * min_cd;
         const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-        const double abcd_sc_3_4 = ::sqrt(::sqrt(abcd_sc_3));
+        const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
         const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
                           * (T_sc > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
         if (ssss < integral_thresh) continue;
@@ -266,7 +266,7 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
           xp_[index] = cxp;
           xq_[index] = cxq;
           const double cxpxq = cxp * cxq;
-          const double onepqp_q = 1.0 / (::sqrt(cxp + cxq) * cxpxq);
+          const double onepqp_q = 1.0 / (sqrt(cxp + cxq) * cxpxq);
           coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
           const double rho = cxpxq / (cxp + cxq);
           const double xpq = qx_save[index23] - px;

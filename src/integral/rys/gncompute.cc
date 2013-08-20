@@ -32,10 +32,11 @@ using namespace std;
 using namespace bagel;
 
 const static Comb comb;
+const static CarSphList carsphlist;
 
 void GNAIBatch::compute() {
 
-  fill(data_, data_ + size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
 
   // temp are for VRR
   const int worksize = rank_ * amax1_;
@@ -63,9 +64,9 @@ void GNAIBatch::compute() {
   double* const transx = stack_->get((amax_+1)*a2*b2);
   double* const transy = stack_->get((amax_+1)*a2*b2);
   double* const transz = stack_->get((amax_+1)*a2*b2);
-  fill(transx, transx+(amax_+1)*a2*b2, 0.0);
-  fill(transy, transy+(amax_+1)*a2*b2, 0.0);
-  fill(transz, transz+(amax_+1)*a2*b2, 0.0);
+  fill_n(transx, (amax_+1)*a2*b2, 0.0);
+  fill_n(transy, (amax_+1)*a2*b2, 0.0);
+  fill_n(transz, (amax_+1)*a2*b2, 0.0);
   for (int ib = 0, k = 0; ib <= b+1; ++ib) {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
@@ -261,7 +262,6 @@ void GNAIBatch::compute() {
     target = cdata;
     source = bkup_;
     if (spherical1_) {
-      struct CarSphList carsphlist;
       const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = contsize_;
       carsphlist.carsphfunc_call(carsphindex, nloops, source, target);
