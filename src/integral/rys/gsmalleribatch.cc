@@ -60,7 +60,7 @@ GSmallERIBatch::~GSmallERIBatch() {
 }
 
 
-std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<unique_ptr<double[]>,6>& d) const {
+std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const Matrix>,6>& d) const {
   auto out = make_shared<GradFile>(natoms_);
   static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallERIBatch::compute_gradient");
 
@@ -77,7 +77,7 @@ std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<unique_ptr<doub
   for (int& i : xyz) {
     for (int& j : xyz) {
       if (i <= j) {
-        dgemm_("N", "T", s0size_*s1size, a2_, s2size, 1.0, d[cnt++].get(), s0size_*s1size, shells_[2]->small(j)->data(), a2_, 0.0, tmp, s0size_*s1size);
+        dgemm_("N", "T", s0size_*s1size, a2_, s2size, 1.0, d[cnt++]->data(), s0size_*s1size, shells_[2]->small(j)->data(), a2_, 0.0, tmp, s0size_*s1size);
         for (int a = 0; a != a2_; ++a) {
           dgemm_("N", "T", s0size_, a1_, s1size, 1.0, tmp+a*s0size_*s1size, s0size_, shells_[1]->small(i)->data(), a1_, 1.0, denc+a*s0size_*a1_, s0size_); 
         }
