@@ -279,7 +279,7 @@ class Tensor {
       int dim0 = 0;
       for (auto& i0 : o[0].range()) dim0 += i0.size();
 
-      std::unique_ptr<double[]> civ(new double[dim0]); 
+      std::unique_ptr<double[]> civ(new double[dim0]);
       auto out = std::make_shared<Civec>(det);
       for (auto& i0 : o[0].range()) {
         std::unique_ptr<double[]> target = get_block(i0);

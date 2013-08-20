@@ -142,7 +142,7 @@ class FCI : public Method {
     std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
-    
+
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv() const;
     std::shared_ptr<Dvec> rdm2deriv() const;

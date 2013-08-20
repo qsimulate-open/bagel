@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: method.h 
+// Filename: method.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -48,7 +48,7 @@ class Method {
 
     std::shared_ptr<const Geometry> geom() const { return geom_; };
 
-}; 
+};
 
 }
 

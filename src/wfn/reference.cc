@@ -126,8 +126,8 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
   auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_);
   if (coeffA_) {
     assert(coeffB_);
-    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_); 
-    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_); 
+    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);
+    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_);
   }
   return out;
 }

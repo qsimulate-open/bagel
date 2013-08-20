@@ -72,7 +72,7 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm4_;
 
     // original determinants (for use in output)
-    std::shared_ptr<const Determinants> det_;     
+    std::shared_ptr<const Determinants> det_;
 
     // rdm ci derivatives
     std::shared_ptr<Tensor<T>> civec_;
@@ -568,13 +568,13 @@ class SpinFreeMethod {
 
       // make a ci tensor.
       {
-        std::vector<IndexRange> o = {ci_}; 
+        std::vector<IndexRange> o = {ci_};
         // TODO fix later when referece has civec
         Ci<T> dci(ref_, o, bagel_civec);
         civec_ = dci.tensor();
       }
 
-      // rdm ci derivatives. 
+      // rdm ci derivatives.
       {
         std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv();
 
@@ -591,7 +591,7 @@ class SpinFreeMethod {
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
                   for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
                     // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
-                    data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2); 
+                    data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2);
               rdm1deriv_->put_block(data, ci0, i1, i0);
             }
           }
@@ -617,7 +617,7 @@ class SpinFreeMethod {
                       for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = ci0.offset(); j4 != ci0.offset()+ci0.size(); ++j4, ++iall)
-                            data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4); 
+                            data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4);
                   rdm2deriv_->put_block(data, ci0, i3, i2, i1, i0);
                 }
               }
@@ -649,7 +649,7 @@ class SpinFreeMethod {
                               for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
                                 for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
                                   for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall)
-                                    data[iall] = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6); 
+                                    data[iall] = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
                       rdm3deriv_->put_block(data, ci0, i5, i4, i3, i2, i1, i0);
                     }
                   }

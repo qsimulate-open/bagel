@@ -96,7 +96,7 @@ shared_ptr<Dvec> FCI::rdm1deriv() const {
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);  
+  shared_ptr<Civec> cbra = cc_->data(0);
 
   // 1RDM ci derivative
   // <I|E_ij|0>
@@ -114,7 +114,7 @@ shared_ptr<Dvec> FCI::rdm2deriv() const {
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);  
+  shared_ptr<Civec> cbra = cc_->data(0);
 
   // make  <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
@@ -148,7 +148,7 @@ shared_ptr<Dvec> FCI::rdm2deriv() const {
 shared_ptr<Dvec> FCI::rdm3deriv() const {
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);  
+  shared_ptr<Civec> cbra = cc_->data(0);
 
   // first make <I|i+j|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
@@ -197,7 +197,7 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
         const int n = mn/norb_;
         const int m = mn-n*norb_;
         *fbra->data(ijklmn) = **t;
-        if (n == k) *fbra->data(ijklmn) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j)))); 
+        if (n == k) *fbra->data(ijklmn) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
         if (n == i) *fbra->data(ijklmn) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
       }
     }
