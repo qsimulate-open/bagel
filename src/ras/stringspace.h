@@ -27,35 +27,55 @@
 #ifndef BAGEL_RAS_STRINGSPACE_H
 #define BAGEL_RAS_STRINGSPACE_H
 
-#include <src/ras/lexical.h>
-
 namespace bagel {
 
-// Different RAS strings are internally stored in a matrix form
-//  where the location (i,j) is for i holes in RAS-I and j particles in RAS-III
-class RASStringSpace {
+// Contains all the strings and information for lexical ordering for one particular graph (set of strings)
+class StringSpace {
   protected:
-    std::vector<std::shared_ptr<RASLexical>> lexical_;
+    std::array<const std::pair<const int, const int>, 3> ras_;
+
     std::vector<std::bitset<nbit__>> strings_;
 
-    const std::array<const int, 3> norb_;
+    // Lexical ordering
+    std::vector<double> weights_;
+    std::vector<int> offsets_;
 
+    const int norb_;
     const int nele_;
 
-    const int max_holes_;
-    const int max_particles_;
+    const int offset_;
+    int size_;
 
-    const int subspace(const int nholes, const int nparticles) const { return nholes + nparticles * max_holes_; }
-    const int subspace(const std::bitset<nbit__> string) const { return nholes(string) + nparticles(string) * max_holes_; }
+    struct RASGraph {
+      const int ndim_;
+      const int mdim_;
+      std::unique_ptr<int[]> data_;
 
-    const int nholes(const std::bitset<nbit__> string) const { return ( (string & std::bitset<nbit__>((1ul << norb_[0]) - 1)).count() ); }
-    const int nparticles(const std::bitset<nbit__> string) const { return ( (string & std::bitset<nbit__>(((1ul << norb_[2]) - 1) << (norb_[0] + norb_[1]))).count() ); }
+      RASGraph(const int n, const int m) : ndim_(n), mdim_(m) {
+        data_ = std::unique_ptr<int[]>(new int[n*m]);
+        std::fill_n(data_.get(), ndim_*mdim_, -1);
+      }
+
+      int& operator()(const int i, const int j) { return data_[j*ndim_ + i]; }
+      const int max() const { return *std::max_element(data_.get(), data_.get() * ndim_ * mdim_); }
+    };
 
   public:
-    RASStringSpace(const int nele, const int max_holes, const int max_particles, const int norb1, const int norb2, const int norb3);
+    StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset = 0);
 
-    size_t lexical(const int nholes, const int nparticles, const std::bitset<nbit__> string) const { return lexical_[subspace(nholes,nparticles)]->address(string); }
-    size_t lexical(const std::bitset<nbit__> string) const { return lexical_[subspace(string)]->address(string); }
+    const int size() const { return size_; }
+
+    const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
+    const std::bitset<nbit__> strings(const int i) const { return strings_[i]; }
+
+    // Assumes bit is within this graph
+    unsigned int lexical(std::bitset<nbit__> bit) const {
+      unsigned int out = 0;
+      int nele = 0;
+      for (int i = 0; i != norb_; ++i)
+        if (bit[i]) { out += weights_[offsets_[nele] + i]; ++nele; }
+      return out + offset_;
+    }
 };
 
 }

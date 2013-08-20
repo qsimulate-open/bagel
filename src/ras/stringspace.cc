@@ -28,46 +28,63 @@
 using namespace std;
 using namespace bagel;
 
-RASStringSpace(const int nele, const int max_holes, const int max_particles, const int norb1, const int norb2, const int norb3) :
-  norb_{norb1, norb2, norb3}, nele_(nele), max_holes_(max_holes), max_particles_(max_particles)
+StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset) :
+  ras_{ make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3) }, nele_( nele1 + nele2 + nele3 ), norb_(norb1 + norb2 + norb3), offset_(offset)
 {
-  lexical_.reserve( (max_holes_ + 1) * (max_particles_ + 1) );
+  RASGraph graph(norb_ + 1, nele_ + 1);
 
-  for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
-    for (int nholes = 0; nholes <= max_holes_; ++nholes) {
-      const int nele1 = norb1 - nholes;
-      const int nele2 = nele_ - (nparticles - nholes);
-      const int nele3 = nparticles;
+  auto fill_ras_graph = [&graph](const int istart, const int jstart, const int norb, const int nele) {
+    const int nholes = norb - nele;
 
-      lexical_.push_back(make_shared<RASLexical>(nele1, norb_[0], nele2, norb_[1], nele3, norb_[2], strings_.size()));
+    for (int i = 0; i <= nholes; ++i) {
+      for (int j = 0; j <= nele; ++j) {
+        if (i + j + istart == 0) graph(i+j+istart,j+jstart) = 1;
+        else if (j + jstart == 0) graph(i+j+istart,j+jstart) = graph(i+j+istart-1,j+jstart);
+        else graph(i+j+istart,j+jstart) = max(0, graph(i+j+istart-1,j+jstart-1)) + max(0,graph(i+j+istart-1,j+jstart));
+      }
+    }
+  };
 
-      // Generate all possible strings
-      vector<bitset<nbit__>> tmpstrings(strings->size(), bitset<nbit__>(0));
+  fill_ras_graph(0, 0, norb1, nele1);
+  fill_ras_graph(norb1, nele1, norb2, nele2);
+  fill_ras_graph(norb1 + norb2, nele1 + nele2, norb3, nele3);
 
-      vector<int> holes(norb_[0]);
-      iota(holes.begin(), holes.end(), 0);
+  size_ = graph.max();
 
-      auto istring = tmpstrings.begin();
-      do {
-        vector<int> active(norb_[1]);
-        iota(active.begin(), active.end(), norb_[0]);
-        do {
-          vector<int> particles(norb_[2]);
-          iota(particles.begin(), particles.end(), norb_[0] + norb_[1]);
-          do {
-            for (int i = 0; i != nele1; ++i) istring->set(holes[i]);
-            for (int i = 0; i != nele2; ++i) istring->set(active[i]);
-            for (int i = 0; i != nele3; ++i) istring->set(particles[i]);
+  weights_.reserve( (norb1 - nele1)*nele1 + (norb2 - nele2)*nele2 + (norb3 - nele3)*nele3 );
+  offsets_.reserve( nele_ );
 
-            ++istring;
-          } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
-        } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
-      } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
-      // boost::next_combination should produce combinations in the same ordering as the lexical ordering,
-      // but it could be worthwhile to double check this at some point
+  for (int j = 0; j < nele_; ++j) {
+    int i = 0;
+    while ( (graph(i+1,j+1) < 0) || (graph(i,j) < 0) ) ++i;
 
-      strings_.insert(strings_.end(), tmpstrings.begin(), tmpstrings.end());
+    offsets_.push_back( weights_.size() - i );
+
+    for ( ; i < norb_; ++i) {
+      if (graph(i+1,j+1) < 0 || graph(i,j) < 0) break;
+      weights_.push_back( max(0, graph(i,j+1)) );
     }
   }
-}
 
+  // Lexical ordering done, now fill in all the strings
+  strings_ = vector<bitset<nbiti__>>(size_, bitset<nbit__>(0ul));
+  auto istring = strings_.begin();
+
+  vector<int> holes(norb1);
+  iota(holes.begin(), holes.end(), 0);
+  do {
+    vector<int> active(norb2);
+    iota(active.begin(), active.end(), norb1);
+    do {
+      vector<int> particles(norb3);
+      iota(particles.begin(), particles.end(), norb1 + norb2);
+      do {
+        for (int i = 0; i != nele1; ++i) istring->set(holes[i]);
+        for (int i = 0; i != nele2; ++i) istring->set(active[i]);
+        for (int i = 0; i != nele3; ++i) istring->set(particles[i]);
+
+        ++istring;
+      } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
+    } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
+  } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
+}
