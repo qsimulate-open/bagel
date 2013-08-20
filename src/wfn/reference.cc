@@ -98,6 +98,15 @@ shared_ptr<Dvec> Reference::rdm2deriv() const {
 }
 
 
+// TODO should be updated to remove redundant FCI iterations
+shared_ptr<Dvec> Reference::rdm3deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm3deriv();
+  return out;
+}
+
+
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method

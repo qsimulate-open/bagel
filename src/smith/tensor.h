@@ -394,6 +394,44 @@ class Tensor {
       }
       std::cout << "======================================" << std::endl << std::endl;
     }
+
+    void print6(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 6);
+      for (auto& i5 : o[5].range()) {
+        for (auto& i4 : o[4].range()) {
+           for (auto& i3 : o[3].range()) {
+             for (auto& i2 : o[2].range()) {
+               for (auto& i1 : o[1].range()) {
+                 for (auto& i0 : o[0].range()) {
+                   // if this block is not included in the current wave function, skip it
+                   if (!this->get_size(i0, i1, i2, i3, i4, i5)) continue;
+                   std::unique_ptr<double[]> data = this->get_block(i0, i1, i2, i3, i4, i5);
+                   size_t iall = 0;
+                   for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5)
+                     for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                       for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                         for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                           for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                             for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                               if (fabs(data[iall]) > thresh) {
+                                  std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
+                                                 " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
+                                                 " " << std::setw(4) << j4 << " " << std::setw(4) << j5 <<
+                                                 " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+                               }
+                             }
+                }
+              }
+            }
+          }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
+    }
 };
 
 }
