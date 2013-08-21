@@ -68,6 +68,11 @@ class StringSpace {
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__> strings(const int i) const { return strings_[i]; }
 
+    std::vector<std::bitset<nbit__>>::iterator begin() const { return strings_.begin(); }
+    std::vector<std::bitset<nbit__>>::iterator end() const { return strings_.end(); }
+    std::vector<std::bitset<nbit__>>::const_iterator cbegin() const { return strings_.cbegin(); }
+    std::vector<std::bitset<nbit__>>::const_iterator cend() const { return strings_.cend(); }
+
     // Assumes bit is within this graph
     unsigned int lexical(std::bitset<nbit__> bit) const {
       unsigned int out = 0;

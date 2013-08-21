@@ -66,6 +66,8 @@ class RASDeterminants {
     std::vector<std::bitset<nbit__>> stringa_;
     std::vector<std::bitset<nbit__>> stringb_;
 
+    std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>> stringpairs_;
+
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
       std::vector<int> out;
       for (int i = 0; i != norb_; ++i) if (bit[i]) out.push_back(i);
@@ -134,6 +136,8 @@ class RASDeterminants {
     const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
     const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
     const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
+
+    const std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>> stringpairs() const { return string_pairs_; }
 
     const int nspin() const { return nelea_ - neleb_; }
     const int norb()  const { return norb_; }
