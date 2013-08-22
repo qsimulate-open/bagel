@@ -89,7 +89,10 @@ class RASDeterminants {
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
   public:
-    RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = true);
+    RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
+
+    RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false) :
+      RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute) {}
 
     static const int Alpha = 0;
     static const int Beta = 1;
@@ -137,7 +140,7 @@ class RASDeterminants {
     const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
     const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
 
-    const std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>> stringpairs() const { return string_pairs_; }
+    const std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>>& stringpairs() const { return string_pairs_; }
 
     const int nspin() const { return nelea_ - neleb_; }
     const int norb()  const { return norb_; }

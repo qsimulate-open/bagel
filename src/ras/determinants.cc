@@ -59,6 +59,24 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - alpha lists: " << phia_.size() * phia_.front().size() << endl;
   construct_phis_<1>(stringb_, phib_);
   if (!mute) cout << "   - beta lists: " << phib_.size() * phib_.front().size() << endl;
+
+  if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
+  size_ = 0;
+  for (int nholesa = 0; nholesa <= max_holes_; ++nholesa) {
+    for (int nholesb = 0; nholesb <= max_holes_ - nholesa; ++nholesb) {
+      for (int nparta = 0; nparta <= max_particles_; ++nparta) {
+        for (int npartb = 0; nparb <= max_particles - nparta; ++npartb) {
+          shared_ptr<const StringSpace> sa = space<0>(nholesa, nparta);
+          shared_ptr<const StringSpace> sb = space<1>(nholesb, npartb);
+
+          stringpairs_.emplace_back(sa, sb);
+
+          size_ += sa->size() * sb->size();
+        }
+      }
+    }
+  }
+  if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 
 #endif
