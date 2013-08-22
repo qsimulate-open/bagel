@@ -43,7 +43,6 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 }
 
-// TODO one line change in order to add a function to block diagonalize
 double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
@@ -82,9 +81,8 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
 
 //divide eigenvectors of Fock matrix into vector
   vector< pair<shared_ptr<Matrix>,shared_ptr<Matrix>> > eig_;
-  for (int i = 0; i != n-1; i++) {
+  for (int i = 0; i != n; i++)
     eig_.push_back(make_pair(op_->slice(i,i+1)->get_real_part(), op_->slice(i,i+1)->get_imag_part()));
-  }
 
 //building K matrices
   //working with U = real part = first and K0 = im = second
@@ -106,59 +104,10 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   kramer.second->unit();
   *kramer.second *= -1.0;
 
-  shared_ptr<Matrix> imat = make_shared<Matrix>(n,n);
-  imat->unit();
+  throw logic_error("kramers_block still in progress...");
 
-  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter) {
-    auto re = make_shared<Matrix>(*kramer.first * *(iter->first));
-    auto im = make_shared<Matrix>(*kramer.first * *kramer.second * *(iter->second));
-    auto scr = make_shared<ZMatrix>(*re, *im);
-    scr->print("T","KPhi",6);
-  }
-#if 0
-  //next need to generate projections (K-i) and (K+i)
-  shared_ptr<ZMatrix> imat = make_shared<ZMatrix>(n,n);
-  for (int i = 0; i != n; ++i)
-    imat->element(i,i) = complex<double>(0.0,1.0);
-
-  vector<shared_ptr<ZMatrix>> project_down, project_up;
-  auto kramiter = kramer.begin();
-  for (auto iter = eig_.begin(); iter != eig_.end(); ++iter, ++kramiter) {
-    project_down.push_back(make_shared<ZMatrix>((**kramiter - *imat) * **iter));
-    project_up.push_back(make_shared<ZMatrix>((**kramiter + *imat) * **iter));
-  }
-
-  //finally use these projections to make new eigenvector matrix
-  //need to find 3 linearly independent from each and merge to form new eigenvector matrix? or use results to sort existing?
-#endif
-#if 0
-  //code that block diagonalizes a matrix A into A11, A22 given its eigenvectors will this ever be useful?
-//take blocks of eigenvector matrix
-  auto op12 = op_->get_submatrix(0,n/2,n/2,n/2);
-  auto op22 = op_->get_submatrix(n/2,n/2,n/2,n/2);
-//form X
-  op22->inverse();
-  auto X = make_shared<ZMatrix>(*op12 * *op22);
-//form U
-  shared_ptr<ZMatrix> U = make_shared<ZMatrix>(n,n);
-  for (int i = 0; i != n; ++i) U->element(i,i) = 1.0;
-  for (int i = 0; i != n/2; ++i) {
-    for (int j = 0; j != n/2; ++j) {
-      U->element(i,j+n/2) = X->element(i,j);
-      U->element(i+n/2,j) = -1.0 * conj(X->element(j,i));
-    }
-  }
-//form T= U(U*U)^-1/2
-  auto uni = make_shared<ZMatrix>( *(U->transpose_conjg()) * *U);
-  uni->inverse_half();
-  auto T = make_shared<ZMatrix>( *U * *uni);
-  //Apply T to buf1e
-  //TODO put const back
-  shared_ptr<ZMatrix> mo1e = make_shared<ZMatrix>(*T % *buf1e * *T);
-#endif
-
-  shared_ptr<ZMatrix> mo1e = make_shared<ZMatrix>(1,1);
-  shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1, 1);
+  shared_ptr<const ZMatrix> mo1e = make_shared<const ZMatrix>(1,1);
+  shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1,1);
   return make_tuple(mo1e, mo2e);
 }
 
