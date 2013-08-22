@@ -64,6 +64,7 @@ class StringSpace {
     StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset = 0);
 
     const int size() const { return size_; }
+    const int offset() const { return offset_; }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__> strings(const int i) const { return strings_[i]; }
@@ -74,12 +75,13 @@ class StringSpace {
     std::vector<std::bitset<nbit__>>::const_iterator cend() const { return strings_.cend(); }
 
     // Assumes bit is within this graph
+    template <int off = 1>
     unsigned int lexical(std::bitset<nbit__> bit) const {
       unsigned int out = 0;
       int nele = 0;
       for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += weights_[offsets_[nele] + i]; ++nele; }
-      return out + offset_;
+      return out + off * offset_;
     }
 };
 

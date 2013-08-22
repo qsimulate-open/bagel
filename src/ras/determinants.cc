@@ -30,7 +30,8 @@ using namespace bagel;
 
 RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
     const int max_holes, const int max_particles, const bool mute) :
-  ras_{ norb1, norb2, norb3 }, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles)
+  ras_{ norb1, norb2, norb3 }, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
+    lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
 {
   // Construct spaces and with them, a list of strings
   alphaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
@@ -62,12 +63,17 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
   if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
   size_ = 0;
-  for (int nholesa = 0; nholesa <= max_holes_; ++nholesa) {
-    for (int nholesb = 0; nholesb <= max_holes_ - nholesa; ++nholesb) {
-      for (int nparta = 0; nparta <= max_particles_; ++nparta) {
-        for (int npartb = 0; nparb <= max_particles - nparta; ++npartb) {
-          shared_ptr<const StringSpace> sa = space<0>(nholesa, nparta);
-          shared_ptr<const StringSpace> sb = space<1>(nholesb, npartb);
+  stringpairs_.reserve( lenholes_ * lenparts_ );
+  for (int nholes = 0; nholes <= max_holes_; ++nholes) {
+    for (int nha = nholes; nholes >= 0; --nha) {
+      const int nhb = nholes - nha;
+
+      for (int npart = 0; npart <= max_particles_; ++npart) {
+        for (int npa = npart; npa >= 0; --npa) {
+          const int npb = npart - npa;
+
+          shared_ptr<const StringSpace> sa = space<0>(nha, npa);
+          shared_ptr<const StringSpace> sb = space<1>(nhb, npb);
 
           stringpairs_.emplace_back(sa, sb);
 

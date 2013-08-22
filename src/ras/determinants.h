@@ -57,6 +57,9 @@ class RASDeterminants {
     const int max_holes_;
     const int max_particles_;
 
+    const int lenholes_; // number of combinations of holes
+    const int lenparts_; // number of combinations of particles
+
     std::vector<std::vector<DMap>> phia_;
     std::vector<std::vector<DMap>> phib_;
 
@@ -148,6 +151,9 @@ class RASDeterminants {
     const int neleb() const { return neleb_; }
     const std::array<int, 3> ras() const { return ras_; }
     const int ras(const int i) const { return ras_[i]; }
+
+    const int lenholes() const { return lenholes_; }
+    const int lenparts() const { return lenparts_; }
 
     const std::vector<DMap>& phia(const size_t ij) const { return phia_[ij]; }
     const std::vector<DMap>& phib(const size_t ij) const { return phib_[ij]; }

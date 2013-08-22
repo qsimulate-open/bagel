@@ -63,6 +63,14 @@ class RASBlock {
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
 
+    DataType& element(const int i) { return data_ptr_[i]; }
+    const DataType& element(const int i) const { return data_ptr_[i]; }
+
+    DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+      return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
+    const DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
+      return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
+
     std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
     std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
 };
@@ -75,6 +83,11 @@ class RASCivector {
     std::vector<RASBlock<DataType>> blocks_;
 
     const size_t size_;
+
+    const int hpaddress(const int na, const int nb) {
+      const int N = na + nb;
+      return ( (N*(N+1))/2 + nb );
+    }
 
   public:
     RASCivector(std::shared_ptr<const RASDeterminants> det) : size_(det->size()) {
@@ -89,6 +102,28 @@ class RASCivector {
 
     DataType* data() const { return data_.get(); }
     const DataType* data() const { return data_.get(); }
+
+    DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+      return block(astring, bstring).element(astring, bstring);
+    }
+    const DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
+      return block(astring, bstring).element(astring, bstring);
+    }
+
+    const std::vector<RASBlock>& blocks() const { return blocks_; }
+
+    // Shortcut to get pointer to first element of block. Should work with any method that returns a block
+    template <typename ...Args>
+    DataType* block_ptr(Args... args) const { return blocks(args...).data(); }
+
+    const RASBlock& block(const int i) const { return block_[i]; }
+    const RASBlock& block(const int nha, const int nhb, const int npa, const int npb) {
+      const int lp = det_->lenparts();
+      return block( hpaddress(npa, npb) + lp * hpaddress(nha, nhb) );
+    }
+    const RASBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+      return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    }
 
     const size_t size() const { return size_; }
 
