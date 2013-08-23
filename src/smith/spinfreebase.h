@@ -75,7 +75,7 @@ class SpinFreeMethod {
     std::shared_ptr<const Determinants> det_;
 
     // rdm ci derivatives
-    std::shared_ptr<Tensor<T>> civec_;
+    std::shared_ptr<Tensor<T>> rdm0deriv_;
     std::shared_ptr<Tensor<T>> rdm1deriv_;
     std::shared_ptr<Tensor<T>> rdm2deriv_;
     std::shared_ptr<Tensor<T>> rdm3deriv_;
@@ -571,7 +571,7 @@ class SpinFreeMethod {
         std::vector<IndexRange> o = {ci_};
         // TODO fix later when referece has civec
         Ci<T> dci(ref_, o, bagel_civec);
-        civec_ = dci.tensor();
+        rdm0deriv_ = dci.tensor();
       }
 
       // rdm ci derivatives.
@@ -789,7 +789,7 @@ class SpinFreeMethod {
     virtual void solve() = 0;
 
     std::shared_ptr<const Civec> civec() const {
-      return civec_->civec(det_);
+      return rdm0deriv_->civec(det_);
     }
 
     Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction) const {
