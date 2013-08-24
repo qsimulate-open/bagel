@@ -97,7 +97,7 @@ void RASCI::common_init() {
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void RASCI::generate_guess(const int nspin, const int nstate, RASDvec out) {
+void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
   int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);

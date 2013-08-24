@@ -88,7 +88,7 @@ class RASCI : public Method {
     void common_init(); // may end up unnecessary
     void create_Jiiii();
     // obtain determinants for guess generation
-    void generate_guess(const int nspin, const int nstate, RASDvec);
+    void generate_guess(const int nspin, const int nstate, RASDvec& out);
     // generate spin-adapted guess configurations
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 

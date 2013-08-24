@@ -163,11 +163,13 @@ class RASDeterminants {
 
     template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles)
       { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * max_holes_]; }
-
     template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__> bit)
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
     template <int spin> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical(bit); }
+
+    std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
+                                                                   const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
     template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<DMap>>& phi);

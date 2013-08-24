@@ -85,4 +85,55 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 
+pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
+  vector<tuple<bitset<nbit__>, bitset<nbit__>, int>> out;
+
+  // bit pattern for doubly occupied orbitals
+  bitset<nbit__> common = (alpha & beta);
+
+  bitset<nbit__> alpha_without_common = alpha ^ common;
+  bitset<nbit__> beta_without_common = beta ^ common;
+
+  // alpha pattern without highest spin orbitals
+  vector<int> salpha_array = bit_to_numbers(alpha_without_common);
+  vector<int> ualpha_array;
+  if (salpha_array.size() < spin) throw logic_error("Something is wrong? Determinants::spin_adapt");
+  for (int i = 0; i != spin; ++i) {
+    ualpha_array.push_back(salpha_array.back());
+    salpha_array.pop_back();
+  }
+  bitset<nbit__> salpha = numbers_to_bit(salpha_array);
+  bitset<nbit__> ualpha = numbers_to_bit(ualpha_array);
+  bitset<nbit__> common_plus_alpha(common.to_ulong() + ualpha.to_ulong());
+
+  // number of unpaired alpha orbitals (minus Ms)
+  const int nalpha = salpha.count();
+
+  // a vector of number that specify open orbitals
+  vector<int> open = bit_to_numbers(salpha^beta_without_common);
+  assert((salpha^beta_without_common) == (salpha|beta_without_common));
+
+  // take a linear combination to make a vector singlet coupled.
+  // TODO for the time being, we just leave Ms highest orbitals and singlet-couple other orbitals
+  assert(nalpha*2 == open.size());
+  int icnt = 0;
+  do {
+    bitset<nbit__> ialpha = common_plus_alpha;
+    bitset<nbit__> ibeta = common;
+    for (int i =0; i!=nalpha; ++i) ialpha.flip(open[i]);
+    for (int i=nalpha; i!=open.size(); ++i) ibeta.flip(open[i]);
+
+    // sign is always compensated by moving alpha to the left and beta to the right
+    // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
+    const double sign = 1.0;
+
+    out.push_back(make_tuple(ibeta, ialpha, sign));
+    ++icnt;
+  } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
+
+  // scale to make the vector normalized
+  const double factor = 1.0/sqrt(static_cast<double>(icnt));
+  return make_pair(out, factor);
+}
+
 #endif
