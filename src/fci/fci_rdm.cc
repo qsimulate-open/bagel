@@ -178,7 +178,7 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
     }
   }
 
-  // now make target  <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_ml<K|k+i+jn|0> - delta_mj<K|k+i+nl|0>
+  // now make target  <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
   auto fbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_);
   {
     auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
@@ -204,6 +204,96 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
   }
 
   return fbra;
+}
+
+
+shared_ptr<Dvec> FCI::rdm4deriv() const {
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(0);
+
+  // first make <I|i+j|0>
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
+  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
+  {
+    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
+    int ijkl = 0;
+    int ij = 0;
+    for (auto iter = dbra->dvec().begin(); iter != dbra->dvec().end(); ++iter, ++ij) {
+      const int j = ij/norb_;
+      const int i = ij-j*norb_;
+      tmp->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      int kl = 0;
+      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+        *ebra->data(ijkl) = **t;
+        const int l = kl/norb_;
+        const int k = kl-l*norb_;
+        if (l == i) *ebra->data(ijkl) -= *dbra->data(k+norb_*j);
+      }
+    }
+  }
+
+  // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
+  auto fbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_);
+  {
+    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
+    int ijklmn = 0;
+    int ijkl = 0;
+    for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
+      const int j = ijkl/(norb_*norb_*norb_);
+      const int i = ijkl/(norb_*norb_)-j*norb_;
+      const int l = ijkl/norb_-i*norb_-j*norb_*norb_;
+      const int k = ijkl-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
+      tmp->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      int mn = 0;
+      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmn, ++mn) {
+        const int n = mn/norb_;
+        const int m = mn-n*norb_;
+        *fbra->data(ijklmn) = **t;
+        if (n == k) *fbra->data(ijklmn) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
+        if (n == i) *fbra->data(ijklmn) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
+      }
+    }
+  }
+
+  // now make target:  <L|o+m+k+i+jlnp|0>  =  <L|o+p|K><K|m+k+i+jln|0> - delta_pm<L|o+k+i+jln|0> - delta_pk<L|m+o+i+jln|0> - delta_pi<L|m+k+o+jln|0>
+  auto gbra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_*norb_*norb_*norb_*norb_);
+  {
+    auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
+    int ijklmnop = 0;
+    int ijklmn = 0;
+    for (auto iter = fbra->dvec().begin(); iter != fbra->dvec().end(); ++iter, ++ijklmn) {
+      const int j = ijklmn/(norb_*norb_*norb_*norb_*norb_);
+      const int i = ijklmn/(norb_*norb_*norb_*norb_)-j*norb_;
+      const int l = ijklmn/(norb_*norb_*norb_)-i*norb_-j*norb_*norb_;
+      const int k = ijklmn/(norb_*norb_)-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
+      const int n = ijklmn/norb_-k*norb_-l*norb_*norb_-i*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_;
+      const int m = ijklmn-n*norb_-k*norb_*norb_-l*norb_*norb_*norb_-i*norb_*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_*norb_;
+      tmp->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      int op = 0;
+      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmnop, ++op) {
+        const int p = op/norb_;
+        const int o = op-p*norb_;
+        *gbra->data(ijklmnop) = **t;
+        if (p == m) *gbra->data(ijklmnop) -= *fbra->data(o+norb_*(n+norb_*(k+norb_*(l+norb_*(i+norb_*(j))))));
+        if (p == k) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(o+norb_*(l+norb_*(i+norb_*(j))))));
+        if (p == i) *gbra->data(ijklmnop) -= *fbra->data(m+norb_*(n+norb_*(k+norb_*(l+norb_*(o+norb_*(j))))));
+      }
+    }
+  }
+
+  return gbra;
 }
 
 

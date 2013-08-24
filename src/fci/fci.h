@@ -147,6 +147,7 @@ class FCI : public Method {
     std::shared_ptr<Dvec> rdm1deriv() const;
     std::shared_ptr<Dvec> rdm2deriv() const;
     std::shared_ptr<Dvec> rdm3deriv() const;
+    std::shared_ptr<Dvec> rdm4deriv() const;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
