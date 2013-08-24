@@ -158,6 +158,9 @@ class RASDeterminants {
     const std::vector<DMap>& phia(const size_t ij) const { return phia_[ij]; }
     const std::vector<DMap>& phib(const size_t ij) const { return phib_[ij]; }
 
+    std::vector<std::shared_ptr<const StringSpace>>& stringspacea() { return alphaspaces_; }
+    std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() { return betaspaces_; }
+
     template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles)
       { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * max_holes_]; }
 

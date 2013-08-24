@@ -116,13 +116,28 @@ class RASCivector {
     template <typename ...Args>
     DataType* block_ptr(Args... args) const { return blocks(args...).data(); }
 
-    const RASBlock& block(const int i) const { return block_[i]; }
-    const RASBlock& block(const int nha, const int nhb, const int npa, const int npb) {
+    const RASBlock<DataType>& block(const int i) const { return block_[i]; }
+    const RASBlock<DataType>& block(const int nha, const int nhb, const int npa, const int npb) {
       const int lp = det_->lenparts();
       return block( hpaddress(npa, npb) + lp * hpaddress(nha, nhb) );
     }
-    const RASBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+    const RASBlock<DataType>& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
       return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    }
+
+    template <int spin>
+    const std::vector<RASBlock<DataType>> allowed_blocks(const std::bitset<nbit__> bit) {
+      const int nh = det_->nholes(bit);
+      const int np = det_->nparticles(bit);
+
+      std::vector<RASBlock<DataType>> out;
+      for (int jp = 0; jp + np < det_->max_particles(); ++p) {
+        for (int ih = 0; ih + nh < det_->max_holes(); ++ih) {
+          if (spin == 0) out.push_back(block(nh, ih, np, jp));
+          else           out.push_back(block(ih, nh, jp, np));
+        }
+      }
+      return out;
     }
 
     const size_t size() const { return size_; }
@@ -187,13 +202,11 @@ class RASCivector {
 
 };
 
-#if 0
 template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+
 template<> void RASCivector<double>::spin_decontaminate(const double thresh);
-#endif
 
 using RASCivec = RASCivector<double>;
 // RASZCivec may come at some later time
