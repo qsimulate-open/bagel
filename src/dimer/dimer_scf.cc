@@ -27,7 +27,7 @@
 
 #include <src/dimer/dimer_scf.h>
 #include <src/math/diis.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;

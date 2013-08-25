@@ -24,23 +24,30 @@
 //
 
 
-#ifndef __SRC_PROP_DIPOLE_H
-#define __SRC_PROP_DIPOLE_H
+#ifndef __SRC_PROP_MULTIPOLE_H
+#define __SRC_PROP_MULTIPOLE_H
 
 #include <src/wfn/geometry.h>
 
 namespace bagel {
 
-class Dipole {
+class Multipole {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Matrix> den_;
-    std::string jobname_;
+    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Matrix> den_;
+    const int rank_;
+    const std::string jobname_;
 
   public:
-    Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, const std::string jobname = "");
+    Multipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, const int maxrank, const std::string jobname = "");
 
-    std::array<double,3> compute() const;
+    std::vector<double> compute() const;
+};
+
+
+class Dipole : public Multipole {
+  public:
+    Dipole(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix> m, const std::string jobname = "") : Multipole(g, m, 1, jobname) { }
 };
 
 }

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipole.cc
+// Filename: multipole.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -27,19 +27,20 @@
 #include <iostream>
 #include <iomanip>
 #include <array>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/integral/os/mmbatch.h>
 
 using namespace std;
 using namespace bagel;
 
-Dipole::Dipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, const string jobn) : geom_(g), den_(d), jobname_(jobn) {
+Multipole::Multipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, const int rank, const string jobn)
+  : geom_(g), den_(d), rank_(rank), jobname_(jobn) {
 
 }
 
 
-array<double,3> Dipole::compute() const {
-  array<double,3> out{{0.0, 0.0, 0.0}};
+vector<double> Multipole::compute() const {
+  vector<double> out;
 
   const vector<vector<int>> offsets = geom_->offsets();
 
@@ -55,19 +56,23 @@ array<double,3> Dipole::compute() const {
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          DipoleBatch dipole(input, geom_);
-          dipole.compute();
+          MMBatch mpole(input, geom_, rank_);
+          mpole.compute();
+
+          if (out.empty())
+            out.resize(mpole.num_blocks());
 
           const int dimb1 = input[0]->nbasis();
           const int dimb0 = input[1]->nbasis();
-          const double* dat0 = dipole.data();
-          const double* dat1 = dipole.data() + dipole.size_block();
-          const double* dat2 = dipole.data() + dipole.size_block()*2;
+          vector<const double*> dat(mpole.num_blocks());
+          for (int i = 0; i != mpole.num_blocks(); ++i)
+            dat[i] = mpole.data() + mpole.size_block()*i;
+
           for (int i = *offset0; i != dimb0 + *offset0; ++i) {
-            for (int j = *offset1; j != dimb1 + *offset1; ++j, ++dat0, ++dat1, ++dat2) {
-              out[0] += *dat0 * den_->element(j,i);
-              out[1] += *dat1 * den_->element(j,i);
-              out[2] += *dat2 * den_->element(j,i);
+            for (int j = *offset1; j != dimb1 + *offset1; ++j) {
+              for (int k = 0; k != mpole.num_blocks(); ++k) {
+                out[k] += *dat[k]++ * den_->element(j,i);
+              }
             }
           }
 
@@ -77,7 +82,26 @@ array<double,3> Dipole::compute() const {
   }
 
   cout << "    * Permanent dipole moment:" << (jobname_.empty() ? "" : " " + jobname_) << endl;
-  cout << "           (" << setw(12) << setprecision(6) << out[0] << ", " << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl;
+  cout << "           (" << setw(12) << setprecision(6) << out[0] << ", " << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl << endl;
+
+  if (rank_ >= 2) {
+    // we need to add nuclear contribution
+    // \hat xx = -\sum_i x_i^2 + \sum_N Z_N X_N^2 (same as Molpro's convention).
+    array<double,6> sm = geom_->quadrupole();
+    for (int i = 0; i != 6; ++i)
+      out[i+3] = sm[i] - out[i+3];
+    cout << "    * Permanent quadrupole moment (around the center of charge):" << (jobname_.empty() ? "" : " " + jobname_) << endl;
+    cout << "          Qxx " << setw(12) << setprecision(6) << out[3] << endl;
+    cout << "          Qxy " << setw(12) << setprecision(6) << out[4] << endl;
+    cout << "          Qxz " << setw(12) << setprecision(6) << out[5] << endl;
+    cout << "          Qyy " << setw(12) << setprecision(6) << out[6] << endl;
+    cout << "          Qyz " << setw(12) << setprecision(6) << out[7] << endl;
+    cout << "          Qzz " << setw(12) << setprecision(6) << out[8] << endl << endl;
+  }
+
+  if (rank_ >= 3) {
+    throw logic_error("higher-order multipole integrals are implemented, but post-processing is missing");
+  }
 
   return out;
 }

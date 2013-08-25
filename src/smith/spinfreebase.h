@@ -35,7 +35,7 @@
 #include <src/math/matrix.h>
 #include <src/fci/dvec.h>
 #include <src/wfn/reference.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/grad/cphf.h>
 #include <chrono>
 

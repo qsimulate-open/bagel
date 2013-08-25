@@ -24,7 +24,7 @@
 //
 
 #include <src/scf/uhf.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/math/diis.h>
 
 using namespace std;

@@ -51,6 +51,8 @@ class MMBatch : public OSInt {
 
     void compute() override;
 
+    int num_blocks() const { return nblocks(); }
+
 };
 
 class DipoleBatch : public MMBatch {

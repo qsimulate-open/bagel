@@ -46,6 +46,7 @@ class SCF_base : public Method {
     int diis_size_;
     double thresh_overlap_;
     double thresh_scf_;
+    int multipole_print_;
 
     std::vector<double> schwarz_;
     void init_schwarz();
