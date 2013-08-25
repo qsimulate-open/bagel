@@ -40,7 +40,6 @@ class Momentum {
 
   public:
     Momentum(std::shared_ptr<const Geometry>);
-    ~Momentum();
 
     std::array<std::shared_ptr<Matrix>,3> compute() const;
 };
