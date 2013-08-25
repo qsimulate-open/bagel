@@ -118,7 +118,7 @@ void ROHF::compute() {
   print_S2("ROHF");
   // by default we compute dipoles
   if (!geom_->external()) {
-    Dipole mu(geom_, aodensity_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 }
