@@ -34,6 +34,7 @@ namespace bagel {
 
 // specialized matrix for 1e integrals
 class Matrix1e : public Matrix {
+  friend class Matrix1eTask;
   protected:
     std::shared_ptr<const Molecule> mol_;
 
