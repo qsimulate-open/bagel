@@ -63,6 +63,9 @@ class StringSpace {
   public:
     StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset = 0);
 
+    const int nele() const { return nele_; }
+    const int norb() const { return norb_; }
+
     const int size() const { return size_; }
     const int offset() const { return offset_; }
 
