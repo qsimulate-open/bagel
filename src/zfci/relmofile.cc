@@ -65,8 +65,6 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   shared_ptr<const ZMatrix> mo2e_;
   tie(mo1e_, mo2e_) = kramers_block(buf1e, buf2e);
 
-  throw logic_error("testing...");
-
   compress(mo1e_, mo2e_);
   return core_energy;
 }
@@ -75,34 +73,20 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   //TODO replace with new nomenclature according to norb_rel_
   const size_t n = buf1e->ndim();
 
-  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
-  unique_ptr<double[]> vec_(new double[n]);
-  op_->diagonalize(vec_.get());
-
-//divide eigenvectors of Fock matrix into vector
-  vector< pair<shared_ptr<Matrix>,shared_ptr<Matrix>> > eig_;
-  for (int i = 0; i != n; i++)
-    eig_.push_back(make_pair(op_->slice(i,i+1)->get_real_part(), op_->slice(i,i+1)->get_imag_part()));
-
-//building K matrices
-  //working with U = real part = first and K0 = im = second
-  pair<shared_ptr<Matrix>, shared_ptr<Matrix>> kramer;
-
   //constructing U (unitary rotation of K without complex conjugation operator)
-  shared_ptr<Matrix> block = make_shared<Matrix>(n/2,n/2);
+  shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
   for (int i = 0; i != n/4; ++i) {
-    block->element(i,i+n/4) = -1.0;
-    block->element(i+n/4,i) = 1.0;
+    block->element(i,i+n/4) = complex<double>(0,-1.0);
+    block->element(i+n/4,i) = complex<double>(0,1.0);
   }
+  //will need to multiply by i somewhere after diagonalization
+  shared_ptr<ZMatrix> kramer = make_shared<ZMatrix>(n,n);
+  kramer->copy_block(0, 0,n/2,n/2,block);
+  kramer->copy_block(n/2, n/2,n/2,n/2,block);
 
-  kramer.first = make_shared<Matrix>(n,n);
-  kramer.first->copy_block(0, 0,n/2,n/2,block);
-  kramer.first->copy_block(n/2, n/2,n/2,n/2,block);
+  unique_ptr<double[]> vec_(new double[n]);
+  kramer->diagonalize(vec_.get());
 
-  //constructing K0
-  kramer.second = make_shared<Matrix>(n,n);
-  kramer.second->unit();
-  *kramer.second *= -1.0;
 
   throw logic_error("kramers_block still in progress...");
 
