@@ -60,7 +60,6 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
 
-  // TODO block diaganolize according kramers symmetry
   shared_ptr<const ZMatrix> mo1e_;
   shared_ptr<const ZMatrix> mo2e_;
   tie(mo1e_, mo2e_) = kramers_block(buf1e, buf2e);
@@ -79,14 +78,36 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
     block->element(i,i+n/4) = complex<double>(0,-1.0);
     block->element(i+n/4,i) = complex<double>(0,1.0);
   }
-  //will need to multiply by i somewhere after diagonalization
-  shared_ptr<ZMatrix> kramer = make_shared<ZMatrix>(n,n);
-  kramer->copy_block(0, 0,n/2,n/2,block);
-  kramer->copy_block(n/2, n/2,n/2,n/2,block);
 
-  unique_ptr<double[]> vec_(new double[n]);
-  kramer->diagonalize(vec_.get());
+  vector< shared_ptr<ZMatrix> > kramer;
+  //real version
+  kramer.push_back(make_shared<ZMatrix>(n,n));
+  kramer.front()->copy_block(0, 0,n/2,n/2,block);
+  kramer.front()->copy_block(n/2, n/2,n/2,n/2,block);
+  //imaginary version
+  kramer.push_back(make_shared<ZMatrix>(*kramer.front() * -1.0));
 
+  //TODO how to build U bar??
+  //constructing U bar
+  vector< shared_ptr<ZMatrix> > bar;
+  //real version
+  bar.push_back(make_shared<ZMatrix>(n,n));
+  //imaginary version
+  bar.push_back(make_shared<ZMatrix>(n,n));
+
+  //TODO will need to multiply by i somewhere after diagonalizations (factored scalar i out of kramer)
+  auto biter = bar.begin();
+  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter, ++biter) {
+    unique_ptr<double[]> eigu(new double[n]);
+    unique_ptr<double[]> eig (new double[n]);
+    (*iter)->diagonalize(eigu.get());
+    (*biter)->diagonalize(eig.get());
+    //TODO temporary debugging. when not, both can overwrite the same unique_ptr because eigenvalues are not needed
+    for (int i = 0; i != n; ++i) assert( fabs(*(eig.get()+i)-*(eigu.get()+i)) < 1e-10);
+    // S = C*T, C=S*T^-1
+    (*iter)->inverse();
+    **biter = **biter * **iter;
+  }
 
   throw logic_error("kramers_block still in progress...");
 
@@ -95,7 +116,7 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   return make_tuple(mo1e, mo2e);
 }
 
-//does not need to be changed as long as kramers_block is in the same format
+//TODO input matrices are now in block diagonal form and the sizes must be checked
 void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 
   const int nocc = nocc_;
@@ -120,15 +141,24 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 
   const size_t nbasis = geom_->nbasis();
   complex<double> core_energy = 0.0;
-  auto relhcore = make_shared<RelHcore>(relgeom_);
-  //TODO implement core_energy like zmofile...
   core_energy = 1e100;
-  assert(fabs(core_energy.imag())<1e-10);
+
+  shared_ptr<ZMatrix> dfock0 = make_shared<RelHcore>(relgeom_);
+  //TODO density matrix as in ZMOFile...
+#if 0
+  shared_ptr<RelHcore> relhcore = make_shared<RelHcore>(relgeom_);
+  if (nstart != 0) {
+    dfock0 = make_shared<DFock>(geom_, relhcore, relref->relcoeff(),true,true,true);
+    core_energy = (****RHF DENSITY MATRIX HERE *** (*relhcore+*dfock0)).trace() * 0.5;
+  }
+  dfock0->fill_upper();
+#endif
 
   // Hij = relcoeff(T) * relhcore * relcoeff
   shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
-  core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff);
+  core_dfock_ = make_shared<ZMatrix>(*coeff % *dfock0 * *coeff);
 
+  assert(fabs(core_energy.imag())<1e-10);
   return make_tuple(core_dfock_, core_energy.real());
 }
 
