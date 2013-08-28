@@ -157,15 +157,16 @@ shared_ptr<Reference> Reference::set_active(set<int> active_indices) const {
     else --nvirt;
   }
 
+  auto coeff = coeff_;
   auto tmp_coeff = make_shared<Matrix>(nbasis, nbasis);
 
   int iclosed = 0;
   int iactive = nclosed;
   int ivirt = nclosed + nactive;
 
-  auto cp = [&coeff_, &tmp_coeff, &nbasis] (const int i, int& pos) { copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0, pos)); ++pos; }
+  auto cp = [&tmp_coeff, &nbasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
 
-  for (int i = 0; i < nbasis_; ++i) {
+  for (int i = 0; i < nbasis; ++i) {
     if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
     else if ( i < nclosed_ ) cp(i, iclosed);
     else cp(i, ivirt);
@@ -198,6 +199,7 @@ shared_ptr<Reference> Reference::set_ractive(set<int> ras1, set<int> ras2, set<i
     else --nvirt;
   }
 
+  auto coeff = coeff_;
   auto tmp_coeff = make_shared<Matrix>(nbasis, nbasis);
 
   int iclosed = 0;
@@ -206,9 +208,9 @@ shared_ptr<Reference> Reference::set_ractive(set<int> ras1, set<int> ras2, set<i
   int iras3 = iras2 + nras2;
   int ivirt = nclosed + nactive;
 
-  auto cp = [&coeff_, &tmp_coeff, &nbasis] (const int i, int& pos) { copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0, pos)); ++pos; }
+  auto cp = [&tmp_coeff, &nbasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
 
-  for (int i = 0; i < nbasis_; ++i) {
+  for (int i = 0; i < nbasis; ++i) {
     if ( total_active.find(i) != total_active.end() ) {
       if (ras1.find(i) != ras1.end()) cp(i, iras1);
       else if (ras2.find(i) != ras2.end()) cp(i, iras2);

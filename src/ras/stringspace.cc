@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 
 StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset) :
-  ras_{ make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3) }, nele_( nele1 + nele2 + nele3 ), norb_(norb1 + norb2 + norb3), offset_(offset)
+  ras_{ make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3) }, norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
 {
   RASGraph graph(norb_ + 1, nele_ + 1);
 
@@ -68,7 +68,7 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
   }
 
   // Lexical ordering done, now fill in all the strings
-  strings_ = vector<bitset<nbiti__>>(size_, bitset<nbit__>(0ul));
+  strings_ = vector<bitset<nbit__>>(size_, bitset<nbit__>(0ul));
   auto istring = strings_.begin();
 
   vector<int> holes(norb1);

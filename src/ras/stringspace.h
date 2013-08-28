@@ -29,8 +29,11 @@
 
 #include <vector>
 #include <array>
-#include <pair>
 #include <memory>
+#include <bitset>
+#include <algorithm>
+
+#include <src/util/constants.h>
 
 namespace bagel {
 
@@ -62,7 +65,7 @@ class StringSpace {
       }
 
       int& operator()(const int i, const int j) { return data_[j*ndim_ + i]; }
-      const int max() const { return *std::max_element(data_.get(), data_.get() * ndim_ * mdim_); }
+      const int max() const { return *std::max_element(data_.get(), data_.get() + ndim_ * mdim_); }
     };
 
   public:
@@ -82,8 +85,8 @@ class StringSpace {
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__> strings(const int i) const { return strings_[i]; }
 
-    std::vector<std::bitset<nbit__>>::iterator begin() const { return strings_.begin(); }
-    std::vector<std::bitset<nbit__>>::iterator end() const { return strings_.end(); }
+    std::vector<std::bitset<nbit__>>::iterator begin() { return strings_.begin(); }
+    std::vector<std::bitset<nbit__>>::iterator end() { return strings_.end(); }
     std::vector<std::bitset<nbit__>>::const_iterator cbegin() const { return strings_.cbegin(); }
     std::vector<std::bitset<nbit__>>::const_iterator cend() const { return strings_.cend(); }
 
