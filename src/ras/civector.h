@@ -32,9 +32,13 @@
 #include <memory>
 #include <tuple>
 #include <vector>
+#include <list>
 #include <map>
 #include <bitset>
 #include <algorithm>
+#include <cassert>
+
+#include <src/ras/determinants.h>
 #include <src/util/constants.h>
 
 namespace bagel {
@@ -76,24 +80,24 @@ class RASBlock {
     std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
 };
 
-using RBlock = RASBlock<double>;
-
 template <typename DataType>
 class RASCivector {
+  using RBlock = RASBlock<DataType>;
   protected:
     std::unique_ptr<DataType[]> data_;
+    std::vector<RBlock> blocks_;
 
-    std::vector<RASBlock<DataType>> blocks_;
+    std::shared_ptr<const RASDeterminants> det_;
 
     const size_t size_;
 
-    const int hpaddress(const int na, const int nb) {
+    const int hpaddress(const int na, const int nb) const {
       const int N = na + nb;
       return ( (N*(N+1))/2 + nb );
     }
 
   public:
-    RASCivector(std::shared_ptr<const RASDeterminants> det) : size_(det->size()) {
+    RASCivector(std::shared_ptr<const RASDeterminants> det) : det_(det), size_(det->size()) {
       data_ = std::unique_ptr<DataType[]>(new DataType[size_]);
       std::fill_n(data_.get(), size_, 0.0);
 
@@ -103,7 +107,7 @@ class RASCivector {
       }
     }
 
-    DataType* data() const { return data_.get(); }
+    DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
 
     DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
@@ -113,26 +117,37 @@ class RASCivector {
       return block(astring, bstring).element(astring, bstring);
     }
 
-    std::vector<RASBlock>& blocks() const { return blocks_; }
+    std::vector<RBlock>& blocks() const { return blocks_; }
 
-    RASBlock<DataType>& block(const int nha, const int nhb, const int npa, const int npb) {
+    RBlock& block(const int nha, const int nhb, const int npa, const int npb) {
       const int lp = det_->lenparts();
-      return block( hpaddress(npa, npb) + lp * hpaddress(nha, nhb) );
+      return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
     }
-    RASBlock<DataType>& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+    RBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
       return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
     }
-    RASBlock<DataType>& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
+    RBlock& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
+      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
+    }
+
+    const RBlock& block(const int nha, const int nhb, const int npa, const int npb) const {
+      const int lp = det_->lenparts();
+      return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+    }
+    const RBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
+      return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    }
+    const RBlock& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) const {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
     template <int spin>
-    const std::vector<RASBlock<DataType>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
+    const std::vector<RBlock> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
 
     template <int spin>
-    const std::vector<RASBlock<DataType>> allowed_blocks(const int nh, const int np) {
-      std::vector<RASBlock<DataType>> out;
-      for (int jp = 0; jp + np < det_->max_particles(); ++p) {
+    const std::vector<RBlock> allowed_blocks(const int nh, const int np) {
+      std::vector<RBlock> out;
+      for (int jp = 0; jp + np < det_->max_particles(); ++jp) {
         for (int ih = 0; ih + nh < det_->max_holes(); ++ih) {
           if (spin == 0) out.push_back(block(nh, ih, np, jp));
           else           out.push_back(block(ih, nh, jp, np));
@@ -149,7 +164,7 @@ class RASCivector {
     std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
       if (!det) det = det_->transpose();
-      auto out = make_shared<RASCivector<DataType>>(det);
+      auto out = std::make_shared<RASCivector<DataType>>(det);
       for (auto& iblock : blocks_)
         mytranspose_(iblock.data(), iblock.lenb(), iblock.lena(), out->block(iblock.stringa(), iblock.stringb()).data(), 1.0);
 
@@ -158,21 +173,21 @@ class RASCivector {
 
     DataType dot_product(const RASCivector<DataType>& o) const {
       assert( (*det_) == (*o.det_) );
-      std::inner_product(data_.get(), data_.get() + size_, o->data(), 0.0);
+      return std::inner_product(data_.get(), data_.get() + size_, o.data(), 0.0);
     }
 
     DataType norm() const { return std::sqrt(std::inner_product(data_.get(), data_.get() + size_, data_.get(), 0.0)); }
     DataType variance() const { return norm() / size_; }
 
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
-    void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { std::transform( o.data(), o.data() + size_, data(), [&a] (DataType p, DataType q) { return a*p + q; } ); }
+    void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return a*p + q; } ); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
     std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return std::shared_ptr<RASCivector<DataType>>();} // returns S^2 | civec >
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
       { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_-
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
       { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_+
     void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
 
@@ -213,8 +228,8 @@ class RASCivector {
 
 template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin() const; // returns S^2 | civec >
-template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
-template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+
+template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
+template<> std::shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
 template<> void RASCivector<double>::spin_decontaminate(const double thresh);
 
 using RASCivec = RASCivector<double>;

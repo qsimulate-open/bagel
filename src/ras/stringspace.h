@@ -87,8 +87,8 @@ class StringSpace {
 
     std::vector<std::bitset<nbit__>>::iterator begin() { return strings_.begin(); }
     std::vector<std::bitset<nbit__>>::iterator end() { return strings_.end(); }
-    std::vector<std::bitset<nbit__>>::const_iterator cbegin() const { return strings_.cbegin(); }
-    std::vector<std::bitset<nbit__>>::const_iterator cend() const { return strings_.cend(); }
+    std::vector<std::bitset<nbit__>>::const_iterator begin() const { return strings_.cbegin(); }
+    std::vector<std::bitset<nbit__>>::const_iterator end() const { return strings_.cend(); }
 
     // Assumes bit is within this graph
     template <int off = 1>

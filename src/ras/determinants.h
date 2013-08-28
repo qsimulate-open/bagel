@@ -88,11 +88,6 @@ class RASDeterminants {
       return out;
     }
 
-    const int nholes(const std::bitset<nbit__> bit) const { return ( ras_[0] - (bit & std::bitset<nbit__>((1ul << ras_[0]) - 1)).count() ); }
-    const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
-
-    const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
-
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
 
@@ -141,6 +136,12 @@ class RASDeterminants {
       return 1 - ((bit.count() & 1) << 1);
     }
 
+    const int nholes(const std::bitset<nbit__> bit) const { return ( ras_[0] - (bit & std::bitset<nbit__>((1ul << ras_[0]) - 1)).count() ); }
+    const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
+
+    const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
+
+
     // These access the global string lists
     const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
     const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
@@ -156,10 +157,14 @@ class RASDeterminants {
     const std::array<int, 3> ras() const { return ras_; }
     const int ras(const int i) const { return ras_[i]; }
 
+    const int max_holes() const { return max_holes_; }
+    const int max_particles() const { return max_particles_; }
+
     const int lena() const { return stringa_.size(); }
     const int lenb() const { return stringb_.size(); }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
+    const int size() const { return size_; }
 
     const std::vector<RAS::DMap>& phia(const size_t ij) const { return phia_[ij]; }
     const std::vector<RAS::DMap>& phib(const size_t ij) const { return phib_[ij]; }

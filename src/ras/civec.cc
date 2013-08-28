@@ -29,7 +29,11 @@
 #include <iomanip>
 #include <vector>
 #include <bitset>
+
+#include <src/ras/civector.h>
+#include <src/parallel/resources.h> // This is maybe only necessary because I am missing something else?
 #include <src/util/constants.h>
+#include <src/util/taskqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,11 +49,11 @@ namespace bagel {
   namespace RAS {
     struct SpinTask {
       const std::bitset<nbit__> target_;
-      RASCivector<double>* this_;
+      const RASCivector<double>* this_;
       shared_ptr<RASCivector<double>> out_;
       shared_ptr<const RASDeterminants> det_;
 
-      SpinTask(const std::bitset<nbit__> t, RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d) :
+      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d) :
         target_(t), this_(th), out_(o), det_(d) {}
 
       void compute() {
@@ -59,10 +63,10 @@ namespace bagel {
           const int jj = iter.ij / norb;
           const int ii = iter.ij - norb * jj;
 
-          vector<RASBlock<double>> allowedblocks = out->allowed_blocks<0>(target_);
+          vector<RASBlock<double>> allowedblocks = out_->allowed_blocks<0>(target_);
           for (auto& iblock : allowedblocks) {
             for (auto& btstring : *iblock.stringb()) {
-              if ( !btstring[jj] || ( ii != jj && tbstring[ii] ) ) continue;
+              if ( !btstring[jj] || ( ii != jj && btstring[ii] ) ) continue;
               bitset<nbit__> bsostring = btstring; bsostring.reset(jj); bsostring.set(ii);
               out_->element(target_, btstring) -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * this_->element(iter.source, bsostring);
             }
@@ -83,7 +87,7 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   tasks.reserve( det_->stringa().size() );
 
   for (auto& istring : det_->stringa())
-    tasks.emplace_back(istring, det_, this, out);
+    tasks.emplace_back(istring, this, out, det_);
 
   TaskQueue<RAS::SpinTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
@@ -92,13 +96,13 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
 }
 
 // S_-
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const Determinants>) const {
+template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const RASDeterminants>) const {
   assert(false);
   return shared_ptr<RASCivector<double>>();
 }
 
 // S_+
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(shared_ptr<const Determinants>) const {
+template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(shared_ptr<const RASDeterminants>) const {
   assert(false);
   return shared_ptr<RASCivector<double>>();
 }
@@ -109,7 +113,7 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
 
   const double expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
-  shared_ptr<Civec> S2 = spin();
+  shared_ptr<RASCivec> S2 = spin();
 
   int k = nspin + 2;
   while( fabs(dot_product(*S2) - expectation) > thresh ) {
