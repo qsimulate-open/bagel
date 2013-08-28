@@ -48,19 +48,20 @@ void RASCI::common_init() {
 
   nstate_ = idata_->get<int>("nstate", 1);
 
-  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-  if (iactive) {
-    set<int> tmp;
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()) - 1);
-    ref_ = ref_->set_active(tmp);
-    ncore_ = ref_->nclosed();
+  // No defaults for RAS, must set "active"
+  const shared_ptr<const PTree> iactive = idata_->get_child("active");
+  if (iactive->size() != 3) throw runtime_error("Must specify three active spaces in RAS calculations.");
+  vector<set<int>> acts;
+  for (auto& i : *iactive) {
+    set<int> tmpset;
+    for (auto& j : *i)
+      if (!tmpset.insert(j->data() - 1).second) throw runtime_error("Duplicate orbital in list of active orbitals.");
+    acts.push_back(tmpset);
   }
-  else {
-    ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-  }
+  ref_ = ref_->set_ractive(acts[0], acts[1], acts[2]);
+  ncore_ = ref_->nclosed();
 
-  ras_ = idata_->get_array<int, 3>("ras");
+  ras_ = {{ acts[0].size(), acts[1].size(), acts[2].size() }};
   norb_ = ras_[0] + ras_[1] + ras_[2];
 
   max_holes_ = idata_->get<int>("max_holes", 0);

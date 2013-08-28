@@ -23,6 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <iostream>
+#include <iomanip>
+
+#include <src/util/combination.hpp>
 #include <src/ras/determinants.h>
 
 using namespace std;

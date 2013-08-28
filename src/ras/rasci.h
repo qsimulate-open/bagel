@@ -28,8 +28,9 @@
 
 #include <src/fci/mofile.h>
 #include <src/fci/properties.h>
-#include <src/wfn/ciwfn.h>
 #include <src/wfn/method.h>
+#include <src/wfn/reference.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 
@@ -179,9 +180,9 @@ class RASCI : public Method {
     RASDvec civectors() const { return cc_; }
 
     // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma) const;
-    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma) const;
-    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma) const;
+    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };

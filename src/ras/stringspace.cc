@@ -24,6 +24,7 @@
 //
 
 #include <src/ras/stringspace.h>
+#include <src/util/combination.hpp>
 
 using namespace std;
 using namespace bagel;

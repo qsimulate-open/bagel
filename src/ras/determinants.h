@@ -27,13 +27,12 @@
 #ifndef __SRC_RAS_DETERMINANTS_H
 #define __SRC_RAS_DETERMINANTS_H
 
+//#include <string>
+//#include <iostream>
+//#include <iomanip>
 #include <memory>
 #include <tuple>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <vector>
-#include <map>
 #include <bitset>
 #include <algorithm>
 #include <src/util/constants.h>

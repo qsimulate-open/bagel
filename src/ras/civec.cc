@@ -59,7 +59,7 @@ namespace bagel {
           const int jj = iter.ij / norb;
           const int ii = iter.ij - norb * jj;
 
-          vector<RASBlock<DataType>> allowedblocks = out->allowed_blocks<0>(target_);
+          vector<RASBlock<double>> allowedblocks = out->allowed_blocks<0>(target_);
           for (auto& iblock : allowedblocks) {
             for (auto& btstring : *iblock.stringb()) {
               if ( !btstring[jj] || ( ii != jj && tbstring[ii] ) ) continue;

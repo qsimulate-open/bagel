@@ -27,6 +27,11 @@
 #ifndef BAGEL_RAS_STRINGSPACE_H
 #define BAGEL_RAS_STRINGSPACE_H
 
+#include <vector>
+#include <array>
+#include <pair>
+#include <memory>
+
 namespace bagel {
 
 // Contains all the strings and information for lexical ordering for one particular graph (set of strings)

@@ -24,14 +24,13 @@
 //
 
 
-#ifndef __SRC_RAS_RASCIVECTOR_H
-#define __SRC_RAS_RASCIVECTOR_H
+#ifndef __BAGEL_RAS_RASCIVECTOR_H
+#define __BAGEL_RAS_RASCIVECTOR_H
 
+//#include <iostream>
+//#include <iomanip>
 #include <memory>
 #include <tuple>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <vector>
 #include <map>
 #include <bitset>
@@ -76,6 +75,8 @@ class RASBlock {
     std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
     std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
 };
+
+using RBlock = RASBlock<double>;
 
 template <typename DataType>
 class RASCivector {
