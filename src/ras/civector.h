@@ -59,6 +59,8 @@ class RASBlock {
     { }
 
     const int size() const { return lena_ * lenb_; }
+    const int lena() const { return lena_; }
+    const int lenb() const { return lenb_; }
 
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
@@ -110,26 +112,24 @@ class RASCivector {
       return block(astring, bstring).element(astring, bstring);
     }
 
-    const std::vector<RASBlock>& blocks() const { return blocks_; }
+    std::vector<RASBlock>& blocks() const { return blocks_; }
 
-    // Shortcut to get pointer to first element of block. Should work with any method that returns a block
-    template <typename ...Args>
-    DataType* block_ptr(Args... args) const { return blocks(args...).data(); }
-
-    const RASBlock<DataType>& block(const int i) const { return block_[i]; }
-    const RASBlock<DataType>& block(const int nha, const int nhb, const int npa, const int npb) {
+    RASBlock<DataType>& block(const int nha, const int nhb, const int npa, const int npb) {
       const int lp = det_->lenparts();
       return block( hpaddress(npa, npb) + lp * hpaddress(nha, nhb) );
     }
-    const RASBlock<DataType>& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+    RASBlock<DataType>& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
       return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    }
+    RASBlock<DataType>& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
+      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
     template <int spin>
-    const std::vector<RASBlock<DataType>> allowed_blocks(const std::bitset<nbit__> bit) {
-      const int nh = det_->nholes(bit);
-      const int np = det_->nparticles(bit);
+    const std::vector<RASBlock<DataType>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
 
+    template <int spin>
+    const std::vector<RASBlock<DataType>> allowed_blocks(const int nh, const int np) {
       std::vector<RASBlock<DataType>> out;
       for (int jp = 0; jp + np < det_->max_particles(); ++p) {
         for (int ih = 0; ih + nh < det_->max_holes(); ++ih) {
@@ -146,6 +146,14 @@ class RASCivector {
 
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
     std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
+    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
+      if (!det) det = det_->transpose();
+      auto out = make_shared<RASCivector<DataType>>(det);
+      for (auto& iblock : blocks_)
+        mytranspose_(iblock.data(), iblock.lenb(), iblock.lena(), out->block(iblock.stringa(), iblock.stringb()).data(), 1.0);
+
+      return out;
+    }
 
     DataType dot_product(const RASCivector<DataType>& o) const {
       assert( (*det_) == (*o.det_) );

@@ -97,6 +97,8 @@ class RASDeterminants {
     RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false) :
       RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute) {}
 
+    std::shared_ptr<RASDeterminants> transpose() const;
+
     static const int Alpha = 0;
     static const int Beta = 1;
 
@@ -152,6 +154,8 @@ class RASDeterminants {
     const std::array<int, 3> ras() const { return ras_; }
     const int ras(const int i) const { return ras_[i]; }
 
+    const int lena() const { return stringa_.size(); }
+    const int lenb() const { return stringb_.size(); }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
 
