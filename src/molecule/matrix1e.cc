@@ -107,10 +107,11 @@ void Matrix1e::init() {
     }
     oa0 += (*a0)->nbasis();
   }
-  TaskQueue<Matrix1eTask> queue(task);
-  queue.compute(resources__->max_num_threads());
-  mpi__->allreduce(data_.get(), size());
-
+  if (!task.empty()) {
+    TaskQueue<Matrix1eTask> queue(task);
+    queue.compute(resources__->max_num_threads());
+  }
+  allreduce();
 }
 
 
