@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 
 #include <src/util/combination.hpp>
 #include <src/ras/determinants.h>
@@ -46,13 +47,13 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
     const int nele1 = norb1 - nholes;
     for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
       const int nele3 = nparticles;
-      const int nele2a = nelea_ - (nele1 + nele2);
-      const int nele2b = neleb_ - (nele1 + nele2);
+      const int nele2a = nelea_ - (nele1 + nele3);
+      const int nele2b = neleb_ - (nele1 + nele3);
 
-      alphaspaces_.push_back( make_shared<const StringSpace(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
+      alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
       stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
 
-      betaspaces_.push_back( make_shared<const StringSpace(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
+      betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
       stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
     }
   }
@@ -143,5 +144,3 @@ pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
   return make_pair(out, factor);
 }
-
-#endif

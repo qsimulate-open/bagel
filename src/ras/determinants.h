@@ -35,12 +35,12 @@
 #include <vector>
 #include <bitset>
 #include <algorithm>
+
 #include <src/util/constants.h>
+#include <src/ras/stringspace.h>
 
 namespace bagel {
-
-class RASDeterminants {
-  protected:
+  namespace RAS {
     struct DMap {
       const size_t source; // target is to be inferred from its location
       const size_t ij;     // displacement operators
@@ -48,6 +48,10 @@ class RASDeterminants {
 
       DMap(const size_t s, const size_t ii, const int sn) : source(s), ij(ii), sign(sn) {}
     };
+  }
+
+class RASDeterminants {
+  protected:
 
     std::array<int, 3> ras_;
     const int norb_;
@@ -59,8 +63,10 @@ class RASDeterminants {
     const int lenholes_; // number of combinations of holes
     const int lenparts_; // number of combinations of particles
 
-    std::vector<std::vector<DMap>> phia_;
-    std::vector<std::vector<DMap>> phib_;
+    int size_;
+
+    std::vector<std::vector<RAS::DMap>> phia_;
+    std::vector<std::vector<RAS::DMap>> phib_;
 
     std::vector<std::shared_ptr<const StringSpace>> alphaspaces_;
     std::vector<std::shared_ptr<const StringSpace>> betaspaces_;
@@ -82,11 +88,8 @@ class RASDeterminants {
       return out;
     }
 
-    const int subspace(const int nholes, const int nparticles) const { return nholes + nparticles * max_holes_; }
-    const int subspace(const std::bitset<nbit__> bit) const { return nholes(bit) + nparticles(bit) * max_holes_; }
-
-    const int nholes(const std::bitset<nbit__> bit) const { return ( norb_[0] - (bit & std::bitset<nbit__>((1ul << norb_[0]) - 1)).count() ); }
-    const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << norb_[2]) - 1) << (norb_[0] + norb_[1]))).count() ); }
+    const int nholes(const std::bitset<nbit__> bit) const { return ( ras_[0] - (bit & std::bitset<nbit__>((1ul << ras_[0]) - 1)).count() ); }
+    const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
@@ -144,7 +147,7 @@ class RASDeterminants {
     const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
     const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
 
-    const std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>>& stringpairs() const { return string_pairs_; }
+    const std::vector<std::pair<std::shared_ptr<const StringSpace>, std::shared_ptr<const StringSpace>>>& stringpairs() const { return stringpairs_; }
 
     const int nspin() const { return nelea_ - neleb_; }
     const int norb()  const { return norb_; }
@@ -158,15 +161,15 @@ class RASDeterminants {
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
 
-    const std::vector<DMap>& phia(const size_t ij) const { return phia_[ij]; }
-    const std::vector<DMap>& phib(const size_t ij) const { return phib_[ij]; }
+    const std::vector<RAS::DMap>& phia(const size_t ij) const { return phia_[ij]; }
+    const std::vector<RAS::DMap>& phib(const size_t ij) const { return phib_[ij]; }
 
     std::vector<std::shared_ptr<const StringSpace>>& stringspacea() { return alphaspaces_; }
     std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() { return betaspaces_; }
 
-    template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles)
+    template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles) const
       { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * max_holes_]; }
-    template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__> bit)
+    template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__> bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
     template <int spin> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical(bit); }
@@ -175,11 +178,11 @@ class RASDeterminants {
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<DMap>>& phi);
+    template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi);
 };
 
 template <int spin>
-void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<DMap>>& phi) {
+void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi) {
 
   phi.clear();
   phi.resize( strings.size() );
