@@ -28,8 +28,6 @@
 #include <src/math/davidson.h>
 #include <src/util/lexical_cast.h>
 
-#define NORDMS
-
 using namespace std;
 using namespace bagel;
 

@@ -29,6 +29,7 @@
 #include <src/fci/distfci.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
+#include <src/ras/rasci.h>
 #include <src/zfci/zknowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
@@ -56,6 +57,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
   else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
   else if (title == "zfci")   out = make_shared<ZKnowlesHandy>(itree, geom, ref);
+  else if (title == "ras")    out = make_shared<RASCI>(itree, geom, ref);
   else if (title == "fci") {
     const string algorithm = itree->get<string>("algorithm", "");
     const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();

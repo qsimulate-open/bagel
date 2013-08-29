@@ -26,6 +26,8 @@
 #ifndef __BAGEL_RAS_RASCI_H
 #define __BAGEL_RAS_RASCI_H
 
+#define NORDMS
+
 #include <src/fci/mofile.h>
 #include <src/fci/properties.h>
 #include <src/wfn/method.h>
@@ -66,7 +68,7 @@ class RASCI : public Method {
     // CI vector at convergence
     RASDvec cc_;
 
-#if 0
+#ifndef NORDMS
     // RDMs; should be resized in constructors
     std::vector<std::shared_ptr<RDM<1>>> rdm1_;
     std::vector<std::shared_ptr<RDM<2>>> rdm2_;
@@ -99,7 +101,7 @@ class RASCI : public Method {
     // functions related to natural orbitals
     void update_rdms(const std::shared_ptr<Matrix>& coeff);
 
-#if 0
+#ifndef NORDMS
     // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_last_step(RASDvec, cRASDvec, std::shared_ptr<const RASCivec>) const;
@@ -114,7 +116,7 @@ class RASCI : public Method {
 
     void compute() override;
 
-    void update(std::shared_ptr<const Coeff> );
+    void update(std::shared_ptr<const Coeff>);
 
     // returns members
     int norb() const { return norb_; }
@@ -131,7 +133,7 @@ class RASCI : public Method {
     // virtual application of Hamiltonian
     RASDvec form_sigma(const RASDvec& c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
-    #if 0
+#ifndef NORDMS
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int istate);
@@ -160,7 +162,7 @@ class RASCI : public Method {
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
-    #endif
+#endif
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
