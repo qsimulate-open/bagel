@@ -140,6 +140,8 @@ class RASDeterminants {
     const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
+    const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
+      { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
 
 
     // These access the global string lists
@@ -171,6 +173,8 @@ class RASDeterminants {
 
     std::vector<std::shared_ptr<const StringSpace>>& stringspacea() { return alphaspaces_; }
     std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() { return betaspaces_; }
+    const std::vector<std::shared_ptr<const StringSpace>>& stringspacea() const { return alphaspaces_; }
+    const std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() const { return betaspaces_; }
 
     template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles) const
       { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * max_holes_]; }

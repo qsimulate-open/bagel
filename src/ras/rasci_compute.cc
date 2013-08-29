@@ -38,7 +38,7 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Olsen */
-vector<shared_ptr<RASCivec>> RASCI::form_sigma(vector<shared_ptr<const RASCivec>>& ccvec, shared_ptr<const MOFile> jop,
+vector<shared_ptr<RASCivec>> RASCI::form_sigma(const vector<shared_ptr<RASCivec>>& ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const {
   const int ij = norb_*norb_;
 
@@ -51,7 +51,7 @@ vector<shared_ptr<RASCivec>> RASCI::form_sigma(vector<shared_ptr<const RASCivec>
     Timer pdebug(0);
     if (conv[istate]) continue;
     shared_ptr<const RASCivec> cc = ccvec.at(istate);
-    shared_ptr<Civec> sigma = sigmavec.at(istate);
+    shared_ptr<RASCivec> sigma = sigmavec.at(istate);
 
     // (taskaa)
     sigma_aa(cc, sigma, jop);
@@ -71,10 +71,10 @@ vector<shared_ptr<RASCivec>> RASCI::form_sigma(vector<shared_ptr<const RASCivec>
 
 // sigma_2 in the Olsen paper
 void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
-  assert(cc->det() == sigma->det());
+  shared_ptr<const RASDeterminants> det = cc->det();
+  assert(det == sigma->det());
 
   const int la = det->lena();
-  shared_ptr<const RASDeterminants> det = cc->det();
 
   const int norb = norb_;
   unique_ptr<double[]> g(new double[norb*norb]);
@@ -102,7 +102,7 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   for (auto& ispace : det->stringspacea()) {
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     double* data = F.get();
-    for (int ia = 0; ia < ispace->size(); ++ia, ++aiter, data+=la)
+    for (int ia = 0; ia < ispace->size(); ++ia, ++aiter, data+=la) {
       for (auto& iterkl : det->phia(aiter)) {
         data[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phia(iterkl.source)) {
@@ -114,9 +114,9 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
     // F is finished, matrix-matrix multiply (but to the right place)
     for (auto& iblock : cc->blocks()) {
-      const RASBlock<double>& target_block = sigma->block(ispace->nholes(), iblock.stringa()->nholes(), ispace->nparticles(), iblock.stringb()->nparticles());
+      RASBlock<double>& target_block = sigma->block(ispace->nholes(), iblock.stringa()->nholes(), ispace->nparticles(), iblock.stringb()->nparticles());
 
-      dgemm_('N', 'N', target_block.lenb(), ispace->size(), iblock.lena(), 1.0, iblock.data(), iblock.lenb(),
+      dgemm_("N", "N", target_block.lenb(), ispace->size(), iblock.lena(), 1.0, iblock.data(), iblock.lenb(),
         F.get() + iblock.stringa()->offset(), la, 1.0, target_block.data(), target_block.lenb());
     }
   }
@@ -133,8 +133,9 @@ void RASCI::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
 void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
-
   shared_ptr<const RASDeterminants> det = cc->det();
+
+  const int norb = norb_;
 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j < norb; ++j, ++ij) {
@@ -144,7 +145,7 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         if ( !bbit[i] || ( i!=j && bbit[j]) ) continue;
         bitset<nbit__> sourcebbit = bbit; sourcebbit.reset(i); sourcebbit.set(j);
         int sign = det->sign(bbit, i, j);
-        philist.push_back(emplace_back(sourcebit, bbit, sign));
+        philist.emplace_back(sourcebbit, bbit, sign);
       }
 
       unique_ptr<double[]> Cp(new double[philist.size() * det->lena()]);
@@ -168,11 +169,11 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         double* fdata = F.get();
         for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
           for (auto& iter : det->phia(ia + ispace->offset()))
-            *fdata[det->lexical<0>(iter.source)] += static_cast<double>(iter.sign) * jop->mo2e_hz(ij, iter.ij);
+            fdata[det->lexical<0>(iter.source)] += static_cast<double>(iter.sign) * jop->mo2e_hz(ij, iter.ij);
         }
 
         unique_ptr<double[]> VI(new double[ la * philist.size() ]);
-        dgemm_('N', 'N', philist.size(), la, det->lena(), 1.0, Cp.get(), philist.size(), F.get(), det->lena(), 0.0, VI.get(), philist.size());
+        dgemm_("N", "N", philist.size(), la, det->lena(), 1.0, Cp.get(), philist.size(), F.get(), det->lena(), 0.0, VI.get(), philist.size());
 
         // scatter
         double* vdata = VI.get();

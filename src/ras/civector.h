@@ -167,7 +167,7 @@ class RASCivector {
 
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
     std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
-    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
+    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<RASCivector<DataType>>(det);
       for (auto& iblock : blocks_)

@@ -129,7 +129,7 @@ class RASCI : public Method {
     //double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
-    RASDvec form_sigma(const RASDvec c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    RASDvec form_sigma(const RASDvec& c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
     #if 0
     // rdms
