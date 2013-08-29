@@ -121,7 +121,8 @@ class RASCivector {
       return block(astring, bstring).element(astring, bstring);
     }
 
-    std::vector<RBlock>& blocks() const { return blocks_; }
+    const std::vector<RBlock>& blocks() const { return blocks_; }
+    std::vector<RBlock>& blocks() { return blocks_; }
 
     RBlock& block(const int nha, const int nhb, const int npa, const int npb) {
       const int lp = det_->lenparts();

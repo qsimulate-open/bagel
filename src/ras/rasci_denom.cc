@@ -49,14 +49,14 @@ namespace bagel {
         data_(o), abit_(ia), stringb_(sb), jop_(j), kop_(k), h_(h) {}
 
       void compute() {
-        const int nspin = abit_.count() - sb->nele();
+        const int nspin = abit_.count() - stringb_->nele();
         const int nspin2 = nspin*nspin;
-        const int norb = sb->norb();
+        const int norb = stringb_->norb();
 
         double* iter = data_;
         const bitset<nbit__> ia = abit_;
-        for (auto& ib : *stringb) {
-          const int nopen (ia^ib).count();
+        for (auto& ib : *stringb_) {
+          const int nopen = (ia^ib).count();
           const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
           *iter = 0.0;
           for (int i = 0; i < norb; ++i) {
