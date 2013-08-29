@@ -107,6 +107,10 @@ class RASCivector {
       }
     }
 
+    RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
+      std::copy_n(o.data_.get(), size_, data_.get());
+    }
+
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
 

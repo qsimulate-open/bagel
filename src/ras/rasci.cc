@@ -28,11 +28,13 @@
 #include <src/math/davidson.h>
 #include <src/util/lexical_cast.h>
 
+#define NORDMS
+
 using namespace std;
 using namespace bagel;
 
 RASCI::RASCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ : Method(idat, g, r) {
   common_init();
 }
 
@@ -55,13 +57,13 @@ void RASCI::common_init() {
   for (auto& i : *iactive) {
     set<int> tmpset;
     for (auto& j : *i)
-      if (!tmpset.insert(j->data() - 1).second) throw runtime_error("Duplicate orbital in list of active orbitals.");
+      if (!tmpset.insert(lexical_cast<int>(j->data()) - 1).second) throw runtime_error("Duplicate orbital in list of active orbitals.");
     acts.push_back(tmpset);
   }
   ref_ = ref_->set_ractive(acts[0], acts[1], acts[2]);
   ncore_ = ref_->nclosed();
 
-  ras_ = {{ acts[0].size(), acts[1].size(), acts[2].size() }};
+  ras_ = {{ static_cast<int>(acts[0].size()), static_cast<int>(acts[1].size()), static_cast<int>(acts[2].size()) }};
   norb_ = ras_[0] + ras_[1] + ras_[2];
 
   max_holes_ = idata_->get<int>("max_holes", 0);
@@ -80,17 +82,17 @@ void RASCI::common_init() {
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   // TODO allow for zero electron (quick return)
-  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in RASCI");
+  //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
 
-#if 0
+#ifndef NORDMS
   // resizing rdm vectors (with null pointers)
   rdm1_.resize(nstate_);
   rdm2_.resize(nstate_);
 #endif
   energy_.resize(nstate_);
 
-  // construct a determinant space in which this FCI will be performed.
+  // construct a determinant space in which this RASCI will be performed.
   det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_);
 }
 
@@ -134,7 +136,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
     if (oindex == nstate) break;
   }
   if (oindex < nstate) {
-    out->zero();
+    for (auto& io : out) io->zero();
     ndet *= 4;
     goto start_over;
   }
@@ -142,14 +144,14 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
 }
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
-  for (auto& iblock : blocks_) {
-    for (auto& aiter : iblock.stringa()) {
-      for (auto& biter : iblock.stringb()) {
+  for (auto& istringpair : det_->stringpairs()) {
+    for (auto& aiter : *istringpair.first) {
+      for (auto& biter : *istringpair.second) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
           tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -159,21 +161,21 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
       }
     }
   }
-  assert(tmp.size() == ndet || ndet > size_);
+  assert(tmp.size() == ndet || ndet > det_->size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
   return out;
 }
 
-void FCI::print_header() const {
+void RASCI::print_header() const {
   cout << "  ---------------------------" << endl;
   cout << "        RASCI calculation      " << endl;
   cout << "  ---------------------------" << endl << endl;
 }
 
 
-void FCI::compute() {
+void RASCI::compute() {
   Timer pdebug(2);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
@@ -194,7 +196,7 @@ void FCI::compute() {
   DavidsonDiag<RASCivec> davidson(nstate_, max_iter_);
 
   // main iteration starts here
-  cout << "  === FCI iteration ===" << endl << endl;
+  cout << "  === RAS-CI iteration ===" << endl << endl;
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
@@ -206,11 +208,11 @@ void FCI::compute() {
     pdebug.tick_print("sigma vector");
 
     // constructing Dvec's for Davidson
-    RASDvec ccn, sigman;
+    cRASDvec ccn, sigman;
     for (int i = 0; i < nstate_; ++i) {
       if (!conv[i]) {
-        ccn.push_back(make_shared<const RASCivec>(cc_.at(i)));
-        sigman.push_back(make_shared<const RASCivec>(sigma.at(i)));
+        ccn.push_back(make_shared<const RASCivec>(*cc_.at(i)));
+        sigman.push_back(make_shared<const RASCivec>(*sigma.at(i)));
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -239,11 +241,11 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const Civec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
-        cc_->data(ist)->spin_decontaminate();
+        davidson.orthog(cc_.at(ist));
+        list<shared_ptr<const RASCivec>> tmp;
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_.at(jst));
+        cc_.at(ist)->orthog(tmp);
+        cc_.at(ist)->spin_decontaminate();
       }
     }
     pdebug.tick_print("denominator");
@@ -264,9 +266,9 @@ void FCI::compute() {
   cc_ = davidson.civec();
 
   for (int istate = 0; istate < nstate_; ++istate) {
-    cout << endl << "     * ci vector " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) << cc_.at(i)->spin_expectation()
-                 << ", E = " << setw(17) << fixed << setprecision(8) << energies[i] + nuc_core << endl;
-    cc_.at(i).print(print_thresh_);
+    cout << endl << "     * ci vector " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) << cc_.at(istate)->spin_expectation()
+                 << ", E = " << setw(17) << fixed << setprecision(8) << energy_[istate] << endl;
+    cc_.at(istate)->print(print_thresh_);
   }
 
 #if 0
