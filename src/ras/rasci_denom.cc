@@ -104,8 +104,8 @@ void RASCI::const_denom() {
   tasks.reserve(tasksize);
 
   for (auto& iblock : denom_->blocks()) {
-  if ( !iblock ) continue;
-  double* iter = iblock->data();
+    if ( !iblock ) continue;
+    double* iter = iblock->data();
     for (auto& ia : *iblock->stringa()) {
       tasks.emplace_back(iter, ia, iblock->stringb(), jop.get(), kop.get(), h.get());
       iter += iblock->stringb()->size();
