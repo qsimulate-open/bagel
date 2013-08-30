@@ -63,9 +63,9 @@ namespace bagel {
           const int jj = iter.ij / norb;
           const int ii = iter.ij - norb * jj;
 
-          vector<RASBlock<double>> allowedblocks = out_->allowed_blocks<0>(target_);
+          vector<shared_ptr<RASBlock<double>>> allowedblocks = out_->allowed_blocks<0>(target_);
           for (auto& iblock : allowedblocks) {
-            for (auto& btstring : *iblock.stringb()) {
+            for (auto& btstring : *iblock->stringb()) {
               if ( !btstring[jj] || ( ii != jj && btstring[ii] ) ) continue;
               bitset<nbit__> bsostring = btstring; bsostring.reset(jj); bsostring.set(ii);
               out_->element(target_, btstring) -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * this_->element(iter.source, bsostring);

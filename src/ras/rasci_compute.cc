@@ -89,35 +89,45 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
       { // g_lk
         double val = jop->mo1e(kl);
         for (int j = 0; j < l; ++j) val -= jop->mo2e_hz(l,j,j,k);
+        g[k + l * norb] = val;
       }
     }
     // g_kk
     double val = jop->mo1e(kl) - 0.5*jop->mo2e_hz(k,k,k,k);
     for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,k);
+    g[k + k * norb] = val;
     ++kl;
   }
 
   // Let's just get it working first, thread it later
   int aiter = 0;
   for (auto& ispace : det->stringspacea()) {
+    if (!ispace) continue;
     unique_ptr<double[]> F(new double[la * ispace->size()]);
+    fill_n(F.get(), la * ispace->size(), 0.0);
     double* data = F.get();
     for (int ia = 0; ia < ispace->size(); ++ia, ++aiter, data+=la) {
       for (auto& iterkl : det->phia(aiter)) {
         data[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phia(iterkl.source)) {
           if (iterij.ij < iterkl.ij) continue;
-          data[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * jop->mo2e_hz(iterij.ij, iterkl.ij);
+          const int ii = iterij.ij/norb;
+          const int jj = iterij.ij%norb;
+          const int kk = iterkl.ij/norb;
+          const int ll = iterkl.ij%norb;
+          data[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * jop->mo2e_hz(ii, kk, jj, ll);
         }
       }
     }
 
     // F is finished, matrix-matrix multiply (but to the right place)
     for (auto& iblock : cc->blocks()) {
-      RASBlock<double>& target_block = sigma->block(ispace->nholes(), iblock.stringa()->nholes(), ispace->nparticles(), iblock.stringb()->nparticles());
+      if (!iblock) continue;
+      shared_ptr<RASBlock<double>> target_block = sigma->block(ispace->nholes(), iblock->stringb()->nholes(), ispace->nparticles(), iblock->stringb()->nparticles());
+      if (!target_block) continue;
 
-      dgemm_("N", "N", target_block.lenb(), ispace->size(), iblock.lena(), 1.0, iblock.data(), iblock.lenb(),
-        F.get() + iblock.stringa()->offset(), la, 1.0, target_block.data(), target_block.lenb());
+      dgemm_("N", "N", iblock->lenb(), ispace->size(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
+        F.get() + ispace->offset(), la, 1.0, target_block->data(), target_block->lenb());
     }
   }
 }
@@ -163,13 +173,20 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
       // build F, block by block
       for (auto& ispace : det->stringspacea()) {
+        if (!ispace) continue;
         const int la = ispace->size();
 
         unique_ptr<double[]> F(new double[ la * det->lena() ]);
         double* fdata = F.get();
+        fill_n(fdata, la * det->lena(), 0.0);
         for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
-          for (auto& iter : det->phia(ia + ispace->offset()))
-            fdata[det->lexical<0>(iter.source)] += static_cast<double>(iter.sign) * jop->mo2e_hz(ij, iter.ij);
+          for (auto& iter : det->phia(ia + ispace->offset())) {
+            const int ii = ij/norb;
+            const int jj = ij%norb;
+            const int kk = iter.ij/norb;
+            const int ll = iter.ij%norb;
+            fdata[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(ii, kk, jj, ll);
+          }
         }
 
         unique_ptr<double[]> VI(new double[ la * philist.size() ]);

@@ -42,7 +42,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   alphaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
   betaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
 
-  if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << "holes and " << max_particles_ << "particles" << endl;
+  if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << " holes and " << max_particles_ << " particles" << endl;
   for (int nholes = 0; nholes <= max_holes_; ++nholes) {
     const int nele1 = norb1 - nholes;
     for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
@@ -50,11 +50,17 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       const int nele2a = nelea_ - (nele1 + nele3);
       const int nele2b = neleb_ - (nele1 + nele3);
 
-      alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
-      stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
+      if ( (nele1 >= 0) && (nele3 <= norb3) && (nele2a >= 0) && (nele2b >= 0) && (nele2a <= norb2) && (nele2b <= norb2) ) {
+        alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
+        stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
 
-      betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
-      stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
+        betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
+        stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
+      }
+      else {
+        alphaspaces_.push_back( shared_ptr<const StringSpace>() );
+        betaspaces_.push_back( shared_ptr<const StringSpace>() );
+      }
     }
   }
   if (!mute) cout << "   - alpha strings: " << stringa_.size() << endl;
@@ -70,7 +76,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   size_ = 0;
   stringpairs_.reserve( lenholes_ * lenparts_ );
   for (int nholes = 0; nholes <= max_holes_; ++nholes) {
-    for (int nha = nholes; nholes >= 0; --nha) {
+    for (int nha = nholes; nha >= 0; --nha) {
       const int nhb = nholes - nha;
 
       for (int npart = 0; npart <= max_particles_; ++npart) {
@@ -82,7 +88,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
           stringpairs_.emplace_back(sa, sb);
 
-          size_ += sa->size() * sb->size();
+          if ( sa && sb ) size_ += sa->size() * sb->size();
         }
       }
     }

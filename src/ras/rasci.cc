@@ -34,6 +34,7 @@ using namespace bagel;
 RASCI::RASCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r)
  : Method(idat, g, r) {
   common_init();
+  update(ref_->coeff());
 }
 
 void RASCI::common_init() {
@@ -125,7 +126,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
     for (auto& iter : adapt.first) {
       out.at(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-    out.at(oindex)->spin_decontaminate();
+    //out.at(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
@@ -146,10 +147,11 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
-  double* diter = denom_->data();
-  for (auto& istringpair : det_->stringpairs()) {
-    for (auto& aiter : *istringpair.first) {
-      for (auto& biter : *istringpair.second) {
+  for (auto& iblock : denom_->blocks()) {
+    if (!iblock) continue;
+    double* diter = iblock->data();
+    for (auto& aiter : *iblock->stringa()) {
+      for (auto& biter : *iblock->stringb()) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
           tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -174,7 +176,7 @@ void RASCI::print_header() const {
 
 
 void RASCI::compute() {
-  Timer pdebug(2);
+  Timer pdebug(0);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
@@ -243,7 +245,7 @@ void RASCI::compute() {
         list<shared_ptr<const RASCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_.at(jst));
         cc_.at(ist)->orthog(tmp);
-        cc_.at(ist)->spin_decontaminate();
+        //cc_.at(ist)->spin_decontaminate();
       }
     }
     pdebug.tick_print("denominator");

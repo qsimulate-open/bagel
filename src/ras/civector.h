@@ -27,8 +27,6 @@
 #ifndef __BAGEL_RAS_RASCIVECTOR_H
 #define __BAGEL_RAS_RASCIVECTOR_H
 
-//#include <iostream>
-//#include <iomanip>
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -85,7 +83,7 @@ class RASCivector {
   using RBlock = RASBlock<DataType>;
   protected:
     std::unique_ptr<DataType[]> data_;
-    std::vector<RBlock> blocks_;
+    std::vector<std::shared_ptr<RBlock>> blocks_;
 
     std::shared_ptr<const RASDeterminants> det_;
 
@@ -103,7 +101,8 @@ class RASCivector {
 
       DataType* cc_ptr = data_.get();
       for (auto& ipair : det->stringpairs()) {
-        blocks_.emplace_back(ipair.first, ipair.second, cc_ptr); cc_ptr += blocks_.back().size();
+        if ( ipair.first && ipair.second ) { blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, cc_ptr)); cc_ptr += blocks_.back()->size(); }
+        else                               { blocks_.push_back(std::shared_ptr<RBlock>()); }
       }
     }
 
@@ -115,47 +114,50 @@ class RASCivector {
     const DataType* data() const { return data_.get(); }
 
     DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
-      return block(astring, bstring).element(astring, bstring);
+      return block(astring, bstring)->element(astring, bstring);
     }
     const DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
-      return block(astring, bstring).element(astring, bstring);
+      return block(astring, bstring)->element(astring, bstring);
     }
 
-    const std::vector<RBlock>& blocks() const { return blocks_; }
-    std::vector<RBlock>& blocks() { return blocks_; }
+    const std::vector<std::shared_ptr<RBlock>>& blocks() const { return blocks_; }
+    std::vector<std::shared_ptr<RBlock>>& blocks() { return blocks_; }
 
-    RBlock& block(const int nha, const int nhb, const int npa, const int npb) {
+    std::shared_ptr<RBlock> block(const int nha, const int nhb, const int npa, const int npb) {
       const int lp = det_->lenparts();
       return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
     }
-    RBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+    std::shared_ptr<RBlock> block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
       return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
     }
-    RBlock& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
+    std::shared_ptr<RBlock> block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
-    const RBlock& block(const int nha, const int nhb, const int npa, const int npb) const {
+    std::shared_ptr<const RBlock> block(const int nha, const int nhb, const int npa, const int npb) const {
       const int lp = det_->lenparts();
       return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
     }
-    const RBlock& block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
+    std::shared_ptr<const RBlock> block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
       return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
     }
-    const RBlock& block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) const {
+    std::shared_ptr<const RBlock> block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) const {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
     template <int spin>
-    const std::vector<RBlock> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
+    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
 
     template <int spin>
-    const std::vector<RBlock> allowed_blocks(const int nh, const int np) {
-      std::vector<RBlock> out;
+    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const int nh, const int np) {
+      std::vector<std::shared_ptr<RBlock>> out;
       for (int jp = 0; jp + np < det_->max_particles(); ++jp) {
         for (int ih = 0; ih + nh < det_->max_holes(); ++ih) {
-          if (spin == 0) out.push_back(block(nh, ih, np, jp));
-          else           out.push_back(block(ih, nh, jp, np));
+          std::shared_ptr<RBlock> blk;
+          if (spin == 0) blk = block(nh, ih, np, jp);
+          else           blk = block(ih, nh, jp, np);
+
+          if (blk) out.push_back(blk);
         }
       }
       return out;
@@ -170,8 +172,10 @@ class RASCivector {
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<RASCivector<DataType>>(det);
-      for (auto& iblock : blocks_)
-        mytranspose_(iblock.data(), iblock.lenb(), iblock.lena(), out->block(iblock.stringa(), iblock.stringb()).data(), 1.0);
+      for (auto& iblock : blocks_) {
+        if (iblock)
+          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
+      }
 
       return out;
     }
@@ -216,8 +220,8 @@ class RASCivector {
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {
-        for (auto& ia : *iblock.stringa()) {
-          for (auto& ib : *iblock.stringb()) {
+        for (auto& ia : *iblock->stringa()) {
+          for (auto& ib : *iblock->stringb()) {
             if (std::abs(*i) > thr)
               tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
             ++i;

@@ -99,15 +99,16 @@ void RASCI::const_denom() {
   denom_ = make_shared<RASCivec>(det());
 
   int tasksize = 0;
-  for (auto& iblock : denom_->blocks()) tasksize += iblock.stringa()->size();
+  for (auto& iblock : denom_->blocks()) { if (iblock) tasksize += iblock->stringa()->size(); }
   vector<RAS::DenomTask> tasks;
   tasks.reserve(tasksize);
 
   for (auto& iblock : denom_->blocks()) {
-  double* iter = iblock.data();
-    for (auto& ia : *iblock.stringa()) {
-      tasks.emplace_back(iter, ia, iblock.stringb(), jop.get(), kop.get(), h.get());
-      iter += iblock.stringb()->size();
+  if ( !iblock ) continue;
+  double* iter = iblock->data();
+    for (auto& ia : *iblock->stringa()) {
+      tasks.emplace_back(iter, ia, iblock->stringb(), jop.get(), kop.get(), h.get());
+      iter += iblock->stringb()->size();
     }
   }
 
