@@ -69,9 +69,9 @@ class RASBlock {
     DataType& element(const int i) { return data_ptr_[i]; }
     const DataType& element(const int i) const { return data_ptr_[i]; }
 
-    DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
+    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
-    const DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
+    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
 
     std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
@@ -113,11 +113,11 @@ class RASCivector {
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
 
-    DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
-      return block(astring, bstring)->element(astring, bstring);
+    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
+      return block(bstring, astring)->element(bstring, astring);
     }
-    const DataType& element(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
-      return block(astring, bstring)->element(astring, bstring);
+    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
+      return block(bstring, astring)->element(bstring, astring);
     }
 
     const std::vector<std::shared_ptr<RBlock>>& blocks() const { return blocks_; }
@@ -127,10 +127,10 @@ class RASCivector {
       const int lp = det_->lenparts();
       return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
     }
-    std::shared_ptr<RBlock> block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) {
-      return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    std::shared_ptr<RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
+      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
     }
-    std::shared_ptr<RBlock> block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) {
+    std::shared_ptr<RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
@@ -138,10 +138,10 @@ class RASCivector {
       const int lp = det_->lenparts();
       return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
     }
-    std::shared_ptr<const RBlock> block(const std::bitset<nbit__> astring, const std::bitset<nbit__> bstring) const {
-      return block( det_->nholes(astring), det_->nparticles(astring), det_->nholes(bstring), det_->nparticles(bstring) );
+    std::shared_ptr<const RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
+      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
     }
-    std::shared_ptr<const RBlock> block(std::shared_ptr<const StringSpace> alpha, std::shared_ptr<const StringSpace> beta) const {
+    std::shared_ptr<const RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) const {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
@@ -174,7 +174,7 @@ class RASCivector {
       auto out = std::make_shared<RASCivector<DataType>>(det);
       for (auto& iblock : blocks_) {
         if (iblock)
-          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
+          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringb(), iblock->stringa())->data(), 1.0);
       }
 
       return out;
@@ -220,6 +220,7 @@ class RASCivector {
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {
+        if (!iblock) continue;
         for (auto& ia : *iblock->stringa()) {
           for (auto& ib : *iblock->stringb()) {
             if (std::abs(*i) > thr)

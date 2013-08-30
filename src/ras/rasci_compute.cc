@@ -127,7 +127,7 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
       if (!target_block) continue;
 
       dgemm_("N", "N", iblock->lenb(), ispace->size(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
-        F.get() + ispace->offset(), la, 1.0, target_block->data(), target_block->lenb());
+        F.get() + iblock->stringa()->offset(), la, 1.0, target_block->data(), target_block->lenb());
     }
   }
 }
@@ -150,10 +150,11 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j < norb; ++j, ++ij) {
       vector<tuple<bitset<nbit__>, bitset<nbit__>, int>> philist;
-      // L(I), R(I), sign(I) built
+      // L(I), R(I), sign(I) building
       for (auto& bbit : det->stringb()) {
         if ( !bbit[i] || ( i!=j && bbit[j]) ) continue;
         bitset<nbit__> sourcebbit = bbit; sourcebbit.reset(i); sourcebbit.set(j);
+        if ( !det->allowed(sourcebbit) ) continue;
         int sign = det->sign(bbit, i, j);
         philist.emplace_back(sourcebbit, bbit, sign);
       }
@@ -181,11 +182,9 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         fill_n(fdata, la * det->lena(), 0.0);
         for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
           for (auto& iter : det->phia(ia + ispace->offset())) {
-            const int ii = ij/norb;
-            const int jj = ij%norb;
             const int kk = iter.ij/norb;
             const int ll = iter.ij%norb;
-            fdata[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(ii, kk, jj, ll);
+            fdata[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(i, kk, j, ll);
           }
         }
 
@@ -194,7 +193,7 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
         // scatter
         double* vdata = VI.get();
-        for ( auto& abit : det->stringa() ) {
+        for ( auto& abit : *ispace ) {
           for (auto& iphi : philist) {
             if (det->allowed(abit, get<1>(iphi))) sigma->element(get<1>(iphi), abit) += *vdata;
             ++vdata;

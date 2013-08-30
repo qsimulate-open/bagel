@@ -177,7 +177,7 @@ class RASDeterminants {
     const std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() const { return betaspaces_; }
 
     template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles) const
-      { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * max_holes_]; }
+      { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nholes + nparticles * (max_holes_ + 1)]; }
     template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__> bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 

@@ -42,6 +42,11 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   alphaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
   betaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
 
+  if (!mute) cout << " o Restricted Active Spaces:" << endl;
+  if (!mute) cout << "   - RAS1 -> " << ras_[0] << endl;
+  if (!mute) cout << "   - RAS2 -> " << ras_[1] << endl;
+  if (!mute) cout << "   - RAS3 -> " << ras_[2] << endl << endl;
+
   if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << " holes and " << max_particles_ << " particles" << endl;
   for (int nholes = 0; nholes <= max_holes_; ++nholes) {
     const int nele1 = norb1 - nholes;
@@ -50,12 +55,22 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       const int nele2a = nelea_ - (nele1 + nele3);
       const int nele2b = neleb_ - (nele1 + nele3);
 
-      if ( (nele1 >= 0) && (nele3 <= norb3) && (nele2a >= 0) && (nele2b >= 0) && (nele2a <= norb2) && (nele2b <= norb2) ) {
-        alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
-        stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
+      if ( (nele1 >= 0) && (nele3 <= norb3) ) {
+        if ( (nele2a >= 0) && (nele2a <= norb2) ) {
+          alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
+          stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
+        }
+        else {
+          alphaspaces_.push_back( shared_ptr<const StringSpace>() );
+        }
 
-        betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
-        stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
+        if ( (nele2b >= 0) && (nele2b <= norb2) ) {
+          betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
+          stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
+        }
+        else {
+          betaspaces_.push_back( shared_ptr<const StringSpace>() );
+        }
       }
       else {
         alphaspaces_.push_back( shared_ptr<const StringSpace>() );
