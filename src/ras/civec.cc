@@ -86,8 +86,9 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   vector<RAS::SpinTask> tasks;
   tasks.reserve( det_->stringa().size() );
 
-  for (auto& istring : det_->stringa())
+  for (auto& istring : det_->stringa()) {
     tasks.emplace_back(istring, this, out, det_);
+  }
 
   TaskQueue<RAS::SpinTask> tq(tasks);
   tq.compute(resources__->max_num_threads());

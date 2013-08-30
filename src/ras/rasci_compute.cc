@@ -147,8 +147,8 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
   const int norb = norb_;
 
-  for (int i = 0, ij = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j, ++ij) {
+  for (int i = 0; i < norb; ++i) {
+    for (int j = 0; j < norb; ++j) {
       vector<tuple<bitset<nbit__>, bitset<nbit__>, int>> philist;
       // L(I), R(I), sign(I) building
       for (auto& bbit : det->stringb()) {
@@ -158,6 +158,7 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         int sign = det->sign(bbit, i, j);
         philist.emplace_back(sourcebbit, bbit, sign);
       }
+      if (philist.size() == 0) continue;
 
       unique_ptr<double[]> Cp(new double[philist.size() * det->lena()]);
       fill_n(Cp.get(), philist.size() * det->lena(), 0.0);
