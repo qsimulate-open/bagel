@@ -2,7 +2,7 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 
 *** Website ***
 
-  http://nubakery.org
+  http://www.nubakery.org
 
 
 *** Authors ***
@@ -14,7 +14,7 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 
   Please cite as:
   "BAGEL, Brilliantly Advanced General Electronic-structure Library, 
-  distributed at http://nubakery.org under the GNU General Public License."
+  distributed at http://www.nubakery.org under the GNU General Public License."
 
   See doc/papers.json for BAGEL-related publications, which are also
   listed on our website. If you contributed or used BAGEL and cited above,
@@ -41,5 +41,5 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   all the reported bugs in a timely manner due to time constraints.
 
   Developers are likely to have newer code in their private branches.
-  If you want to gain access to a program that implements a published work
+  If you want to gain access to a program that implements a published work and
   you do not find it in the public repository, please write to the authors.

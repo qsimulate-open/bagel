@@ -143,7 +143,7 @@ class DFBlock {
     std::shared_ptr<Matrix> form_Dj(const std::shared_ptr<const Matrix> o, const int jdim) const;
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k
-    std::unique_ptr<double[]> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<Matrix> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
     // use with caution
     std::unique_ptr<double[]> release_data() { return std::move(data_); }

@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_SMITH_CAS_test_H 
-#define __SRC_SMITH_CAS_test_H 
+#ifndef __SRC_SMITH_CAS_test_H
+#define __SRC_SMITH_CAS_test_H
 
 #include <src/smith/spinfreebase.h>
 #include <src/scf/fock.h>
@@ -50,7 +50,6 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
     std::shared_ptr<Tensor<T>> den1;
     std::shared_ptr<Tensor<T>> den2;
     double correct_den1;
-    std::shared_ptr<Tensor<T>> dci;
     std::shared_ptr<Tensor<T>> deci;
 
     std::tuple<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> make_queue_() {
@@ -777,10 +776,9 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       r = t2->clone();
       den1 = this->h1_->clone();
       den2 = this->v2_->clone();
-      dci  = this->civec_;
-      deci = dci->clone();
+      deci = this->rdm0deriv_->clone();
     };
-    ~CAS_test() {}; 
+    ~CAS_test() {};
 
     void solve() {
       this->print_iteration();
@@ -798,15 +796,15 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
         if (err < thresh_residual()) break;
       }
       this->print_iteration(iter == maxiter_);
-      std::cout << " === Calculating CI derivative dE/dcI ===" << std::endl; 
-      while (!dec->done()) 
+      std::cout << " === Calculating CI derivative dE/dcI ===" << std::endl;
+      while (!dec->done())
         dec->next_compute();
-      deci->print1("CI derivative tensor: ", 1.0e-15); 
+      deci->print1("CI derivative tensor: ", 1.0e-15);
       std::cout << std::endl;
-      std::cout << "CI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(dci) << std::endl; 
+      std::cout << "CI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
       std::cout << std::endl;
 
-      std::cout << " === Unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl; 
+      std::cout << " === Unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl;
       while (!dens->done())
         dens->next_compute();
 #if 0
@@ -814,7 +812,7 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
 #endif
       correct_den1 = correction(correct);
       std::cout << "Unlinked correction term, <1|1>*rdm1 = " << std::setprecision(10) << correct_den1 << "*rdm1" << std::endl;
-      std::cout << " === Unrelaxed density matrix, dm2, <0|E_pqrs|1>  ===" << std::endl; 
+      std::cout << " === Unrelaxed density matrix, dm2, <0|E_pqrs|1>  ===" << std::endl;
       while (!dens2->done())
         dens2->next_compute();
 #if 0
@@ -827,18 +825,18 @@ class CAS_test : public SpinFreeMethod<T>, SMITH_info {
       while (!energ->done()) {
         std::shared_ptr<Task<T>> c = energ->next_compute();
         en += c->energy();
-      }   
-      return en; 
-    }  
+      }
+      return en;
+    }
 
     double correction(std::shared_ptr<Queue<T>> correct) {
       double n = 0.0;
       while (!correct->done()) {
         std::shared_ptr<Task<T>> c = correct->next_compute();
         n += c->correction();
-      }   
-      return n; 
-    }  
+      }
+      return n;
+    }
 
     std::shared_ptr<const Matrix> rdm1() const { return den1->matrix(); }
 

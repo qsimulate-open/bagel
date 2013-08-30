@@ -59,6 +59,8 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
   string dd = idata_->get<string>("diis", "gradient");
 
+  multipole_print_ = idata_->get<int>("multipole", 1);
+
   const int ncharge = idata_->get<int>("charge", 0);
   const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
   nocc_ = idata_->get<int>("nocc", (geom_->nele()-ncharge+nact)/2);

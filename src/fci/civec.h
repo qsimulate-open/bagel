@@ -205,7 +205,7 @@ class DistCivector {
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
       DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; })
-                            : 0.0; 
+                            : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
     }
@@ -389,11 +389,11 @@ class Civector {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
       std::transform(other.data(), other.data()+size(), cc(), cc(), [&a](DataType p, DataType q){ return a*p+q; });
     }
-    void ax_plus_y(DataType a, std::shared_ptr<const Civector> other) { ax_plus_y(a, *other); } 
+    void ax_plus_y(DataType a, std::shared_ptr<const Civector> other) { ax_plus_y(a, *other); }
 
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
-      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; }); 
+      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
     }
     DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
 
@@ -401,7 +401,7 @@ class Civector {
     double variance() const { return detail::real(dot_product(*this)) / size(); }
 
     void scale(const DataType a) {
-      std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; }); 
+      std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; });
     }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)

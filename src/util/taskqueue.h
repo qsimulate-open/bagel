@@ -60,6 +60,7 @@ class TaskQueue {
     TaskQueue(std::vector<T>& t) : task_(t) {}
 
     void compute(const int num_threads) {
+      if (task_.empty()) return;
 #ifdef HAVE_MKL_H
       const int mkl_num = mkl_get_max_threads();
       mkl_set_num_threads(1);

@@ -24,7 +24,7 @@
 //
 
 #include <src/scf/uhf.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/math/diis.h>
 
 using namespace std;
@@ -98,7 +98,7 @@ void UHF::compute() {
 
   // by default we compute dipoles
   if (!geom_->external()) {
-    Dipole mu(geom_, aodensity_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 }
