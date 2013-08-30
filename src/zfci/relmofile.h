@@ -36,6 +36,7 @@ namespace bagel {
 class RelMOFile : public ZMOFile_Base {
 
   protected:
+    int norb_rel_;
     std::shared_ptr<ZMatrix> core_dfock_;
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int) override;

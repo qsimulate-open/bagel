@@ -81,10 +81,7 @@ class ZMOFile_Base {
     std::complex<double> mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
     std::complex<double> mo1e(const size_t i, const size_t j) const { return mo1e_[i+j*nocc_]; };
     std::complex<double> mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
-    // This is in <ij|kl> == (ik|jl) format
-#if 0
-    std::complex<double> mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
-#endif
+
     std::complex<double>* mo1e_ptr() { return mo1e_.get(); };
     std::complex<double>* mo2e_ptr() { return mo2e_.get(); };
     const std::complex<double>* mo1e_ptr() const { return mo1e_.get(); };
@@ -116,7 +113,6 @@ class ZHtilde_Base {
     ZHtilde_Base(std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
       : h1_tmp_(h1), h2_tmp_(h2) { }
 };
-
 
 }
 
