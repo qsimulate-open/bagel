@@ -77,58 +77,47 @@ tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_b
   shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
   op_->diagonalize(vec_.get());
 
-  pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> scr_ = make_pair(make_shared<ZMatrix>(n,n), make_shared<ZMatrix>(n,n));
+  vector<shared_ptr<ZMatrix>> scr_;
+  scr_.push_back(make_shared<ZMatrix>(n,n));
+  scr_.push_back(make_shared<ZMatrix>(n,n));
   for (int i = 0; i != n; i+=2) {
     for (int j = 0; j != n; j++) {
-      scr_.first->data((i/2)*n+j) = real(op_->data(i*n+j));
-      scr_.second->data((i/2)*n+j) = imag(op_->data(i*n+j));
-      scr_.first->data((i+n)*n/2+j) = real(op_->data((i+1)*n+j));
-      scr_.second->data((i+n)*n/2+j) = imag(op_->data((i+1)*n+j));
+      scr_.front()->data((i/2)*n+j) = real(op_->data(i*n+j));
+      scr_.back()->data((i/2)*n+j) = imag(op_->data(i*n+j));
+      scr_.front()->data((i+n)*n/2+j) = real(op_->data((i+1)*n+j));
+      scr_.back()->data((i+n)*n/2+j) = imag(op_->data((i+1)*n+j));
     }
   }
 
   //constructing U (unitary rotation of K without complex conjugation operator)
   shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
   for (int i = 0; i != n/4; ++i) {
-    block->element(i,i+n/4) = complex<double>(0,-1.0);
-    block->element(i+n/4,i) = complex<double>(0,1.0);
+    block->element(i,i+n/4) = complex<double>(0,1.0);
+    block->element(i+n/4,i) = complex<double>(0,-1.0);
   }
 
   vector<shared_ptr<ZMatrix>> kramer;
   kramer.push_back( make_shared<ZMatrix>(n,n) );
+  kramer.front()->copy_block(0,0,n/2,n/2,block);
+  kramer.front()->copy_block(n/2,n/2,n/2,n/2,block);
   //real version = -1.0 * imaginary
-  kramer.front()->copy_block(0, 0,n/2,n/2,block);
-  kramer.front()->copy_block(n/2, n/2,n/2,n/2,block);
   kramer.push_back( make_shared<ZMatrix>(*kramer.front() * -1.0 ));
 
   //constructing U bar with matrix elements <phi|U|phi> with barred and unbarred phi
   vector< shared_ptr<ZMatrix> > ubar;
-  //real version
-  ubar.push_back(make_shared<ZMatrix>(n,n));
-  *ubar.front() = *(scr_.first) % *kramer.front() * *(scr_.first);
+  auto siter = scr_.begin();
+  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter, ++siter) {
+    ubar.push_back(make_shared<ZMatrix>(**siter % **iter * **siter));
+    ubar.back()->diagonalize(vec_.get());
 
-  unique_ptr<double[]> eigu(new double[n]);
-  unique_ptr<double[]> eig (new double[n]);
-
-  ubar.front()->diagonalize(eigu.get());
-  kramer.front()->diagonalize(eig.get());
-  //for (int i = 0; i != n; ++i) assert( fabs(*(eig.get()+i)-*(eigu.get()+i)) < 1e-10);
-  for (int i = 0; i != n; ++i) cout << *(eig.get()+i) << "               " << *(eigu.get()+i) << endl;
-
-  //imaginary version
-  ubar.push_back(make_shared<ZMatrix>(n,n));
-
-#if 0
-  //TODO will need to multiply by i somewhere after diagonalizations (factored scalar i out of kramer)
-  auto biter = ubar.begin();
-  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter, ++biter) {
-    (*iter)->diagonalize(vec_.get());
-    (*biter)->diagonalize(vec_.get());
-    // S = C*T, C=S*T^-1
+    //TODO for temporary debugging
+    unique_ptr<double[]> eig(new double[n]);
+    (*iter)->diagonalize(eig.get());
+    for (int i = 0; i != n; ++i) cout << *(eig.get()+i) << "               " << *(vec_.get()+i) << endl;
+    //U bar = C T epsilon T^-1 C^-1 C = CT*T^-1 and put back i factored out
     (*iter)->inverse();
-    **biter = **biter * **iter;
+    **siter = *ubar.back() * **iter * complex<double>(0.0,1.0);
   }
-#endif
   throw logic_error("kramers_block still in progress...");
 
   shared_ptr<const ZMatrix> mo1e = make_shared<const ZMatrix>(1,1);
