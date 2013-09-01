@@ -93,11 +93,11 @@ class StringSpace {
     // Assumes bit is within this graph
     template <int off = 1>
     unsigned int lexical(std::bitset<nbit__> bit) const {
-      unsigned int out = 0;
+      unsigned int out = ( off == 1 ? offset_ : 0 );
       int nele = 0;
       for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += weights_[offsets_[nele] + i]; ++nele; }
-      return out + off * offset_;
+      return out;
     }
 };
 

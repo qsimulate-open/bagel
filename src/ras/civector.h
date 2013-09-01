@@ -54,9 +54,11 @@ class RASBlock {
     const int lena_;
     const int lenb_;
 
+    const int offset_;
+
   public:
-    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr) :
-      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), lena_(astrings->size()), lenb_(bstrings->size())
+    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr, const int o) :
+      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), lena_(astrings->size()), lenb_(bstrings->size()), offset_(o)
     { }
 
     const int size() const { return lena_ * lenb_; }
@@ -69,10 +71,13 @@ class RASBlock {
     DataType& element(const int i) { return data_ptr_[i]; }
     const DataType& element(const int i) const { return data_ptr_[i]; }
 
-    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
-      return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
-    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
-      return element( bstrings_->lexical<0>(bstring) + astrings_->lexical<0>(astring) * lenb_ ); }
+    const int index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
+      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb_; }
+    const int gindex(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const // global index
+      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb_ + offset_; }
+
+    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
+    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
 
     std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
     std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
@@ -100,9 +105,16 @@ class RASCivector {
       std::fill_n(data_.get(), size_, 0.0);
 
       DataType* cc_ptr = data_.get();
+      int sz = 0;
       for (auto& ipair : det->stringpairs()) {
-        if ( ipair.first && ipair.second ) { blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, cc_ptr)); cc_ptr += blocks_.back()->size(); }
-        else                               { blocks_.push_back(std::shared_ptr<RBlock>()); }
+        if ( ipair.first && ipair.second ) {
+           blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, cc_ptr, sz));
+           cc_ptr += blocks_.back()->size();
+           sz += blocks_.back()->size();
+        }
+        else {
+          blocks_.push_back(std::shared_ptr<RBlock>());
+        }
       }
     }
 
@@ -112,6 +124,10 @@ class RASCivector {
 
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
+
+    const int index(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
+      return block(bstring, astring)->gindex(bstring, astring);
+    }
 
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return block(bstring, astring)->element(bstring, astring);
@@ -174,9 +190,8 @@ class RASCivector {
       auto out = std::make_shared<RASCivector<DataType>>(det);
       for (auto& iblock : blocks_) {
         if (iblock)
-          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringb(), iblock->stringa())->data(), 1.0);
+          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
       }
-
       return out;
     }
 
@@ -189,7 +204,8 @@ class RASCivector {
     DataType variance() const { return norm() / size_; }
 
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
-    void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return a*p + q; } ); }
+    void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
+      { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return a*p + q; } ); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
@@ -233,7 +249,6 @@ class RASCivector {
         std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
-
 };
 
 template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >

@@ -100,14 +100,13 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   }
 
   // Let's just get it working first, thread it later
-  int aiter = 0;
   for (auto& ispace : det->stringspacea()) {
     if (!ispace) continue;
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
     double* data = F.get();
-    for (int ia = 0; ia < ispace->size(); ++ia, ++aiter, data+=la) {
-      for (auto& iterkl : det->phia(aiter)) {
+    for (int ia = 0; ia < ispace->size(); ++ia, data+=la) {
+      for (auto& iterkl : det->phia(ia + ispace->offset())) {
         data[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phia(iterkl.source)) {
           if (iterij.ij < iterkl.ij) continue;
