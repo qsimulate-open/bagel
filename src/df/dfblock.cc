@@ -43,7 +43,6 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
 
 }
 
-
 void DFBlock::average() {
   if (averaged_) return;
   averaged_ = true;
@@ -124,6 +123,70 @@ void DFBlock::average() {
   // wait for send communication
   if (asendsize) mpi__->wait(sendtag);
 
+}
+
+
+// reverse operation of average() function
+void DFBlock::shell_boundary() {
+  if (!averaged_) return;
+  averaged_ = false;
+  const size_t o_start = astart_;
+  const size_t o_end = o_start + asize_;
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_shell_->range(myrank);
+
+  const size_t asendsize = t_start - o_start;
+  const size_t arecvsize = t_end - o_end;
+  assert(t_start >= o_start && t_end >= o_end); 
+
+  unique_ptr<double[]> sendbuf, recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
+    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+      task.emplace_back(data_.get()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
+    assert(myrank > 0);
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank-1, myrank);
+  }
+  if (arecvsize) {
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size_*b2size_]);
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank+1, myrank+1);
+  }
+
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize_ - asendsize;
+    for (size_t i = 0; i != b1size_*b2size_; ++i)
+      copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+  }
+
+  // set new astart_ and asize_
+  asize_ = t_end - t_start;
+  astart_ = t_start;
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
+    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
 }
 
 

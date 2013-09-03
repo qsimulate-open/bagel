@@ -74,6 +74,7 @@ class DFBlock {
 
     // average the asize between MPI processes (block will be described by dist_)
     void average();
+    void shell_boundary();
 
     std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
@@ -91,6 +92,7 @@ class DFBlock {
     size_t b2size() const { return b2size_; }
 
     size_t size() const { return asize_*b1size_*b2size_; }
+    bool averaged() const { return averaged_; }
 
     // a set of offsets of this block in the entire DF integrals
     size_t astart() const { return astart_; }
