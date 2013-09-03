@@ -24,14 +24,14 @@
 //
 
 #include <sstream>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/scf/scf.h>
 #include <src/scf/rohf.h>
 #include <src/scf/uhf.h>
 #include <src/wfn/reference.h>
 
-std::array<double,3> dipole(std::string filename) {
-  auto ofs = std::make_shared<std::ofstream>(filename + "_dipole.testout", std::ios::trunc);
+std::vector<double> multipole(std::string filename) {
+  auto ofs = std::make_shared<std::ofstream>(filename + "_multipole.testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
 
   // a bit ugly to hardwire an input file, but anyway...
@@ -52,26 +52,24 @@ std::array<double,3> dipole(std::string filename) {
       scf->compute();
       std::shared_ptr<const Matrix> dtot = scf->coeff()->form_density_rhf(scf->nocc());
 
-      Dipole dipole(geom, dtot);
-      std::array<double,3> d = dipole.compute();
+      Multipole multipole(geom, dtot, 2);
+      std::vector<double> d = multipole.compute();
       std::cout.rdbuf(backup_stream);
       return d;
     }
   }
   assert(false);
-  return std::array<double,3>();
+  return std::vector<double>();
 }
 
-static std::array<double,3> hf_svp_dfhf_dipole_ref() {
-  return std::array<double,3>{{0.0, 0.0, 1.055510}};
+static std::vector<double> hf_svp_dfhf_multipole_ref() {
+  return std::vector<double>{0.0, 0.0, 1.055510, -4.236243, 0.000000, -4.236243, -0.000000, -0.000000, -1.532119};
 }
-
-using ARRAY = std::array<double,3>;
 
 BOOST_AUTO_TEST_SUITE(TEST_PROP)
 
-BOOST_AUTO_TEST_CASE(DIPOLE) {
-    BOOST_CHECK(compare<ARRAY>(dipole("hf_svp_dfhf"),        hf_svp_dfhf_dipole_ref(), 1.0e-6));
+BOOST_AUTO_TEST_CASE(MULTIPOLE) {
+    BOOST_CHECK(compare<std::vector<double>>(multipole("hf_svp_dfhf"),        hf_svp_dfhf_multipole_ref(), 1.0e-6));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

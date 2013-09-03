@@ -290,13 +290,13 @@ void Dimer::construct_coeff() {
   double *Sdata = proj_coeff_->data();
 
   for(int i = 0; i < nbasisA; ++i, Adata += nbasisA) {
-    Sdata = copy(Adata, Adata + nbasisA, Sdata);
-    fill(Sdata, Sdata + nbasisB, 0.0); Sdata += nbasisB;
+    Sdata = copy_n(Adata, nbasisA, Sdata);
+    fill_n(Sdata, nbasisB, 0.0); Sdata += nbasisB;
   }
 
   for(int i = 0; i < nbasisB; ++i, Bdata += nbasisB) {
-    fill(Sdata, Sdata + nbasisA, 0.0); Sdata += nbasisA;
-    Sdata = copy(Bdata, Bdata + nbasisB, Sdata);
+    fill_n(Sdata, nbasisA, 0.0); Sdata += nbasisA;
+    Sdata = copy_n(Bdata, nbasisB, Sdata);
   }
 
   const int ncloA = ncore_.first;

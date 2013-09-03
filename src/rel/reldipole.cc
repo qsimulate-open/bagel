@@ -25,7 +25,7 @@
 
 #include <src/rel/reldipole.h>
 #include <src/molecule/dipolematrix.h>
-#include <src/integral/os/dipolebatch.h>
+#include <src/integral/os/mmbatch.h>
 #include <src/rel/small1e.h>
 
 using namespace std;

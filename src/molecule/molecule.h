@@ -104,6 +104,20 @@ class Molecule {
       return out;
     }
 
+    std::array<double,6> quadrupole() const {
+      std::array<double,6> out;
+      std::array<double,3> c = charge_center();
+      for (auto& i : atoms_) {
+        out[0] += i->atom_charge() * std::pow(i->position(0) - c[0], 2);
+        out[1] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(1) - c[1]);
+        out[2] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(2) - c[2]);
+        out[3] += i->atom_charge() * std::pow(i->position(1) - c[1], 2);
+        out[4] += i->atom_charge() * (i->position(1) - c[1]) * (i->position(2) - c[2]);
+        out[5] += i->atom_charge() * std::pow(i->position(2) - c[2], 2);
+      }
+      return out;
+    }
+
     // external field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
     double external(const int i) const { return external_[i]; }

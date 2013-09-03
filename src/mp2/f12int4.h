@@ -52,8 +52,7 @@ class F12Ref {
 
   public:
     F12Ref(std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r, const int i, const double gamma)
-        : geom_(g), ref_(r), ncore_(i), gamma_(gamma) {};
-    ~F12Ref() {};
+        : geom_(g), ref_(r), ncore_(i), gamma_(gamma) {}
 
     void compute();
 
@@ -102,8 +101,7 @@ class File4 {
     const size_t dim1_;
   public:
     File4(std::unique_ptr<double[]>& a, const size_t d, const size_t d0, const size_t d1)
-    : data_(move(a)), dim_(d), dim0_(d0), dim1_(d1) {};
-    ~File4() {};
+    : data_(move(a)), dim_(d), dim0_(d0), dim1_(d1) {}
 
     std::shared_ptr<File2> half_transform(const double* const c, const size_t n) const {
       // first transform
@@ -118,7 +116,7 @@ class File4 {
         for (size_t i = 0; i != n; ++i)
           dgemm_("N", "N", dim0_*dim1_, n, dim_, 1.0, tmp2.get()+dim0_*dim1_*dim_*i, dim0_*dim1_, c, dim_, 0.0, tmp.get()+dim0_*dim1_*n*i, dim0_*dim1_);
       return std::make_shared<File2>(tmp, dim0_, dim1_, n);
-    };
+    }
 };
 
 // unpacked AO integrals
@@ -210,7 +208,7 @@ template<typename T> class AOInt {
               for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
                 for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
                   for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                    std::copy(eridata, eridata+b3size, data_.get()+b3offset+dim0_*(j2+dim_*(j1+dim1_*j0)));
+                    std::copy_n(eridata, b3size, data_.get()+b3offset+dim0_*(j2+dim_*(j1+dim1_*j0)));
                     eridata += b3size;
                   }
                 }
@@ -220,7 +218,7 @@ template<typename T> class AOInt {
                 for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
                   for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
                     for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-                      std::copy(eridata, eridata+b3size, data2_.get()+b3offset+dim0_*(j2+dim_*(j1+dim1_*j0)));
+                      std::copy_n(eridata, b3size, data2_.get()+b3offset+dim0_*(j2+dim_*(j1+dim1_*j0)));
                       eridata += b3size;
                     }
                   }
@@ -230,7 +228,7 @@ template<typename T> class AOInt {
           }
         }
       }
-    };
+    }
   public:
     AOInt(std::shared_ptr<const Geometry> g, const double gamma = 0.0, const bool ykw = false, const bool aux0 = false, const bool aux1 = false)
      : geom_(g), dim_(g->nbasis()), dim0_(aux0 ? g->naux() : g->nbasis()), dim1_(aux1 ? g->naux() : g->nbasis()), gamma_(gamma),
@@ -241,11 +239,10 @@ template<typename T> class AOInt {
         data2_ = std::unique_ptr<double[]>(new double[n*n*dim0_*dim1_]);
       }
       init();
-    };
-    ~AOInt() {};
+    }
 
-    std::shared_ptr<File4> data()  { return std::make_shared<File4>(data_, dim_, dim0_, dim1_); };
-    std::shared_ptr<File4> data2() { return std::make_shared<File4>(data2_, dim_, dim0_, dim1_); };
+    std::shared_ptr<File4> data()  { return std::make_shared<File4>(data_, dim_, dim0_, dim1_); }
+    std::shared_ptr<File4> data2() { return std::make_shared<File4>(data2_, dim_, dim0_, dim1_); }
 
 };
 

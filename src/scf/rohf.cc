@@ -24,7 +24,7 @@
 //
 
 #include <src/scf/rohf.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/math/diis.h>
 
 using namespace std;
@@ -118,7 +118,7 @@ void ROHF::compute() {
   print_S2("ROHF");
   // by default we compute dipoles
   if (!geom_->external()) {
-    Dipole mu(geom_, aodensity_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 }

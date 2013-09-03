@@ -220,8 +220,8 @@ class Ci {
 
   public:
     Ci(std::shared_ptr<const Reference> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), ci_size_(c->size()) {
-      assert(b.size() == 1); 
-    
+      assert(b.size() == 1);
+
       // form ci coefficient tensor
       rdm0deriv_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
 

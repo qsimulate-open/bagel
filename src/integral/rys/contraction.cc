@@ -75,14 +75,14 @@ void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const 
 
       const int begin0 = lower0[i];
       const int end0   = upper0[i];
-      fill(work, work + worksize,  0.0);
+      fill_n(work, worksize,  0.0);
       for (int j = begin0; j != end0; ++j)
         daxpy_(worksize, coeff0[i][j], &current_prim[j * worksize], 1, work, 1);
 
       for (int k = 0; k != cdim1; ++k, current_cont += ac) {
         const int begin1 = lower1[k];
         const int end1   = upper1[k];
-        fill(current_cont, current_cont + ac, 0.0);
+        fill_n(current_cont, ac, 0.0);
         for (int j = begin1; j != end1; ++j) {
           daxpy_(ac, coeff1[k][j], &work[j * ac], 1, current_cont, 1);
         }

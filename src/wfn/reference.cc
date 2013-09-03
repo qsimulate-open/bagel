@@ -98,6 +98,24 @@ shared_ptr<Dvec> Reference::rdm2deriv() const {
 }
 
 
+// TODO should be updated to remove redundant FCI iterations
+shared_ptr<Dvec> Reference::rdm3deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm3deriv();
+  return out;
+}
+
+
+// TODO should be updated to remove redundant FCI iterations
+shared_ptr<Dvec> Reference::rdm4deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm4deriv();
+  return out;
+}
+
+
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method
@@ -117,8 +135,8 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
   auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_);
   if (coeffA_) {
     assert(coeffB_);
-    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_); 
-    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_); 
+    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);
+    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_);
   }
   return out;
 }

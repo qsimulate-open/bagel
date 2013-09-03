@@ -35,7 +35,7 @@
 #include <src/math/matrix.h>
 #include <src/fci/dvec.h>
 #include <src/wfn/reference.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/grad/cphf.h>
 #include <chrono>
 
@@ -72,12 +72,14 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm4_;
 
     // original determinants (for use in output)
-    std::shared_ptr<const Determinants> det_;     
+    std::shared_ptr<const Determinants> det_;
 
     // rdm ci derivatives
-    std::shared_ptr<Tensor<T>> civec_;
+    std::shared_ptr<Tensor<T>> rdm0deriv_;
     std::shared_ptr<Tensor<T>> rdm1deriv_;
     std::shared_ptr<Tensor<T>> rdm2deriv_;
+    std::shared_ptr<Tensor<T>> rdm3deriv_;
+    std::shared_ptr<Tensor<T>> rdm4deriv_;
 
     std::chrono::high_resolution_clock::time_point time_;
 
@@ -567,13 +569,13 @@ class SpinFreeMethod {
 
       // make a ci tensor.
       {
-        std::vector<IndexRange> o = {ci_}; 
+        std::vector<IndexRange> o = {ci_};
         // TODO fix later when referece has civec
         Ci<T> dci(ref_, o, bagel_civec);
-        civec_ = dci.tensor();
+        rdm0deriv_ = dci.tensor();
       }
 
-      // rdm ci derivatives. 
+      // rdm ci derivatives.
       {
         std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv();
 
@@ -590,7 +592,7 @@ class SpinFreeMethod {
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
                   for (int j2 = ci0.offset(); j2 != ci0.offset()+ci0.size(); ++j2, ++iall)
                     // Dvec - first index is annihilation, second is creation (see const_phis_ in fci/determinants.h and knowles_compute.cc)
-                    data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2); 
+                    data[iall] = rdm1d->data((j1-nclo)+r->nact()*(j0-nclo))->data(j2);
               rdm1deriv_->put_block(data, ci0, i1, i0);
             }
           }
@@ -613,11 +615,84 @@ class SpinFreeMethod {
                   int iall = 0;
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is creation
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
-                      for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation 
+                      for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
                         for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
                           for (int j4 = ci0.offset(); j4 != ci0.offset()+ci0.size(); ++j4, ++iall)
-                            data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4); 
+                            data[iall] = rdm2d->data((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*(j0-nclo))))->data(j4);
                   rdm2deriv_->put_block(data, ci0, i3, i2, i1, i0);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      {
+        std::shared_ptr<const Dvec> rdm3d = r->rdm3deriv();
+
+        std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
+        rdm3deriv_ = std::make_shared<Tensor<T>>(o, false);
+        const int nclo = ref_->nclosed();
+        for (auto& i0 : active_) {
+          for (auto& i1 : active_) {
+            for (auto& i2 : active_) {
+              for (auto& i3 : active_) {
+                for (auto& i4 : active_) {
+                  for (auto& i5 : active_) {
+                    for (auto& ci0 : ci_) {
+                      const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * ci0.size();
+                      std::unique_ptr<double[]> data(new double[size]);
+                      int iall = 0;
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
+                        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
+                          for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
+                            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
+                              for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
+                                for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
+                                  for (int j6 = ci0.offset(); j6 != ci0.offset()+ci0.size(); ++j6, ++iall)
+                                    data[iall] = rdm3d->data((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))->data(j6);
+                      rdm3deriv_->put_block(data, ci0, i5, i4, i3, i2, i1, i0);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      {
+        std::shared_ptr<const Dvec> rdm4d = r->rdm4deriv();
+
+        std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_, active_, active_};
+        rdm4deriv_ = std::make_shared<Tensor<T>>(o, false);
+        const int nclo = ref_->nclosed();
+        for (auto& i0 : active_) {
+          for (auto& i1 : active_) {
+            for (auto& i2 : active_) {
+              for (auto& i3 : active_) {
+                for (auto& i4 : active_) {
+                  for (auto& i5 : active_) {
+                    for (auto& i6 : active_) {
+                      for (auto& i7 : active_) {
+                        for (auto& ci0 : ci_) {
+                          const size_t size = i0.size() * i1.size() * i2.size() * i3.size() * i4.size() * i5.size() * i6.size() * i7.size() * ci0.size();
+                          std::unique_ptr<double[]> data(new double[size]);
+                          int iall = 0;
+                          for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) // this is  creation
+                            for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) // this is annihilation
+                              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2) // this is creation
+                                for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) // this is annihilation
+                                  for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4) // this is creation
+                                    for (int j5 = i5.offset(); j5 != i5.offset()+i5.size(); ++j5) // this is annhilation
+                                      for (int j6 = i6.offset(); j6 != i6.offset()+i6.size(); ++j6) // this is creation
+                                        for (int j7 = i7.offset(); j7 != i7.offset()+i7.size(); ++j7) // this is annhilation
+                                          for (int j8 = ci0.offset(); j8 != ci0.offset()+ci0.size(); ++j8, ++iall)
+                                            data[iall] = rdm4d->data((j7-nclo)+r->nact()*((j6-nclo)+r->nact()*((j5-nclo)+r->nact()*((j4-nclo)+r->nact()*((j3-nclo)+r->nact()*((j2-nclo)+r->nact()*((j1-nclo)+r->nact()*((j0-nclo)))))))))->data(j8);
+                          rdm4deriv_->put_block(data, ci0, i7, i6, i5, i4, i3, i2, i1, i0);
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -723,6 +798,7 @@ class SpinFreeMethod {
                     rdm4_->put_block(data, i0, i1, i2, i3, i4, i5, i6, i7);
                   }
 
+
         const int nact = ref_->nact();
         auto fockact = std::make_shared<Matrix>(nact, nact);
         for (auto& i1 : active_)
@@ -753,7 +829,7 @@ class SpinFreeMethod {
     virtual void solve() = 0;
 
     std::shared_ptr<const Civec> civec() const {
-      return civec_->civec(det_);
+      return rdm0deriv_->civec(det_);
     }
 
     Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction) const {

@@ -263,7 +263,7 @@ static void sort_indices(const T* unsorted, T* sorted,
 
   long iall=0;
   for(int j0=0;j0<a;++j0){
-    id[5]=j0;
+    id[6]=j0;
     for(int j1=0;j1<b;++j1){
       id[5]=j1;
       for(int j2=0;j2<c;++j2){

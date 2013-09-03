@@ -381,7 +381,7 @@ void Matrix::inverse() {
 // this is a vector B, and solve AC = B, returns C
 shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
-  auto out = make_shared<Matrix>(*this);
+  auto out = this->copy(); 
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
 
   unique_ptr<int[]> ipiv(new int[n]);

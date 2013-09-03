@@ -82,7 +82,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
     // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis"); 
+    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
@@ -100,7 +100,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   if (!auxfile_.empty()) {
     // read the default aux basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis"); 
+    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
@@ -262,7 +262,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
     // (3) plane of center of charges, first and second atoms.
     if (natom() > 2) {
-      assert(natom() == o.natom()); 
+      assert(natom() == o.natom());
       Quatern<double> oa0 = o.atoms(0)->position();
       Quatern<double> ma0 =   atoms(0)->position();
       Quatern<double> oa1 = o.atoms(1)->position();
@@ -677,7 +677,7 @@ class Node {
 
 static double adf_rho(shared_ptr<const Node> i, shared_ptr<const Node> j) {
   return exp(- i->atom()->distance(j->atom()) / (i->atom()->cov_radius()+j->atom()->cov_radius()) + 1.0);
-} 
+}
 }}
 
 using namespace geometry;
@@ -711,8 +711,8 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_p
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
 
-        // see IJQC 106, 2536 (2006) 
-        const double modelhess = 0.35 * adf_rho(*i, *j); 
+        // see IJQC 106, 2536 (2006)
+        const double modelhess = 0.35 * adf_rho(*i, *j);
         hessprim.push_back(modelhess);
 
         Quatern<double> ip = (*i)->atom()->position();
@@ -759,7 +759,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_p
         Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
-        // see IJQC 106, 2536 (2006) 
+        // see IJQC 106, 2536 (2006)
         const double modelhess = 0.15 * adf_rho(*i, *c) * adf_rho(*c, *j);
         hessprim.push_back(modelhess);
         const double fval = 0.12;
@@ -816,7 +816,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_p
           Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
-          // see IJQC 106, 2536 (2006) 
+          // see IJQC 106, 2536 (2006)
           const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
           hessprim.push_back(modelhess);
           const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
@@ -922,7 +922,7 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
-#if 0 
+#if 0
   geom->df_->average_3index();
   geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
   if (do_gaunt)

@@ -101,13 +101,13 @@ std::vector<double> reference_cas_act_opt() {
 std::vector<double> reference_mp2_opt() {
   std::vector<double> out(6);
   out[2] = 1.932841;
-  out[5] = 0.195930;
+  out[5] = 0.195935;
   return out;
 }
 std::vector<double> reference_mp2_aux_opt() {
   std::vector<double> out(6);
   out[2] = 1.932841;
-  out[5] = 0.195927;
+  out[5] = 0.195933;
   return out;
 }
 std::vector<double> reference_dcf_opt() {
