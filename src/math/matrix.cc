@@ -394,7 +394,7 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 
 
 // compute S^{-1} using diagonalization
-void Matrix::inverse_symmetric(const double thresh) {
+bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -414,11 +414,12 @@ void Matrix::inverse_symmetric(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 #endif
+  return rm.empty();
 }
 
 
 // compute S^{-1/2}
-void Matrix::inverse_half(const double thresh) {
+bool Matrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -444,7 +445,6 @@ void Matrix::inverse_half(const double thresh) {
   }
 #endif
 
-//#ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]);
@@ -452,7 +452,7 @@ void Matrix::inverse_half(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
-//#endif
+  return rm.empty();
 }
 
 // compute Hermitian square root, S^{1/2}

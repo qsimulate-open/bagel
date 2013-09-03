@@ -83,8 +83,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
       Reference( o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(),
       o->rdm1(), o->rdm2(), o->rdm1_av(), o->rdm2_av() ) {};
 
-    ~Reference() {}
-
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     std::shared_ptr<const Hcore> hcore() const { return hcore_; }

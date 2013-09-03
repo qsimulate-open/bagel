@@ -62,8 +62,6 @@ void CASSCF::common_init() {
 
   // first set coefficient
   coeff_ = ref_->coeff();
-  if (coeff_->mdim() != geom_->nbasis())
-    throw runtime_error("CASSCF requires a Reference object with the same number of basis functions so far"); // TODO
 #if 0
   // make sure that coefficient diagonalizes overlap // TODO I think this is very dangerous
   coeff_orthog();
@@ -162,7 +160,8 @@ void CASSCF::resume_stdcout() {
 
 shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
-  auto mo_rdm1 = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
+  const size_t nmobasis = coeff_->mdim();
+  auto mo_rdm1 = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nclosed_; ++i) mo_rdm1->element(i,i) = 2.0;
   if (!inactive_only) {
     for (int i = 0; i != nact_; ++i) {
@@ -184,7 +183,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  auto qxr = make_shared<Qvec>(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
+  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
 
   {
     // Fock operators
@@ -270,7 +269,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
 shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
   auto cnew = make_shared<Coeff>(*cold);
-  int nbas = geom_->nbasis();
+  int nbas = cold->ndim();
+  assert(nbas == geom_->nbasis());
   dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
                    0.0, cnew->data()+nbas*nclosed_, nbas);
   return cnew;

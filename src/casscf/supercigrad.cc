@@ -54,25 +54,24 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nvirt = ref_->nvirt();
 
   // related to denominators
-  const int nbasis = geom_->nbasis();
-  auto eig = make_shared<Matrix>(nbasis, nbasis);
+  const int nmobasis = coeff->mdim(); 
+  assert(nmobasis == nclosed+nact+nocc+nvirt);
+  auto eig = make_shared<Matrix>(nmobasis, nmobasis);
   {
     // as in Theor Chem Acc (1997) 97:88-95
     vector<double> occup_ = task_->fci()->rdm1(target)->diag();
 
     shared_ptr<Matrix> deninact = task_->ao_rdm1(task_->fci()->rdm1(target), true); // true means inactive_only
-    auto f_inactao = make_shared<Matrix>(nbasis, nbasis);
-    copy_n(task_->fci()->jop()->core_fock_ptr(), nbasis*nbasis, f_inactao->data()); // TODO copy construct?
-    auto finact = make_shared<Matrix>(*coeff % *f_inactao * *coeff);
+    auto finact = make_shared<Matrix>(*coeff % *task_->fci()->jop()->core_fock() * *coeff);
 
     shared_ptr<Matrix> denall = task_->ao_rdm1(task_->fci()->rdm1(target));
     auto denact = make_shared<Matrix>(*denall-*deninact);
     auto fact_ao = make_shared<Fock<1>>(geom_, task_->hcore(), denact, ref_->schwarz());
     auto f = make_shared<Matrix>(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff);
 
-    auto fact = make_shared<Qvec>(nbasis, nact, geom_->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
+    auto fact = make_shared<Qvec>(nmobasis, nact, geom_->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
     for (int i = 0; i != nact; ++i)
-      daxpy_(nbasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nbasis, 1);
+      daxpy_(nmobasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
 
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nvirt; ++j)
@@ -99,13 +98,13 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
-  auto g0 = make_shared<Matrix>(nbasis, nbasis);
+  auto g0 = make_shared<Matrix>(nmobasis, nmobasis);
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
   auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ref_->coeff());
   shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
-  dgemm_("N", "N", nbasis, nocc, nocc, 2.0, hmo->data(), nbasis, rdm1->data(), nbasis, 0.0, g0->data(), nbasis);
+  dgemm_("N", "N", nmobasis, nocc, nocc, 2.0, hmo->data(), nmobasis, rdm1->data(), nmobasis, 0.0, g0->data(), nmobasis);
   // 2) two-electron contribution
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ref_->coeff()->slice(0,nocc));
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
@@ -125,12 +124,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<PairFile<Matrix, Dvec>> zvec = cp->solve();
 
   // form Zd + dZ^+
-  shared_ptr<Matrix> dsa = ref_->rdm1_mat()->resize(nbasis, nbasis);
+  shared_ptr<Matrix> dsa = ref_->rdm1_mat()->resize(nmobasis, nmobasis);
   shared_ptr<Matrix> zslice = zvec->first();
   auto dm = make_shared<Matrix>(*zslice * *dsa + (*dsa ^ *zslice));
 
   // compute dipole...
-  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nbasis, nbasis);
+  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
   dtot->ax_plus_y(1.0, dm);
 
   // form zdensity
@@ -139,7 +138,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const RDM<2>> zrdm2;
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
 
-  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(geom_, nclosed, false)->resize(nbasis, nbasis);
+  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
   zrdm1_mat->symmetrize();
   dtot->ax_plus_y(1.0, zrdm1_mat);
 

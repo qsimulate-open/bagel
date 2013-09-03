@@ -60,7 +60,9 @@ void SuperCI::compute() {
 
     if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
       shared_ptr<Matrix> tmp = coeff_->copy();
-      diis = make_shared<HPW_DIIS<Matrix>>(10, tmp);
+      shared_ptr<Matrix> unit = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+      unit->unit();
+      diis = make_shared<HPW_DIIS<Matrix>>(10, tmp, unit);
     }
 
     // first perform CASCI to obtain RDMs

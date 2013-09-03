@@ -79,7 +79,7 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> ccoeff = coeff_->slice(0, nclosed_);
     shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc_);
     // * core Fock operator
-    shared_ptr<const Matrix> cden = nclosed_ ? coeff_->form_density_rhf(nclosed_, 0) : make_shared<const Matrix>(nbasis_, nbasis_);
+    shared_ptr<const Matrix> cden = nclosed_ ? coeff_->form_density_rhf(nclosed_, 0) : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis());
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, cden, ccoeff) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
@@ -93,7 +93,7 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    auto qxr = make_shared<const Qvec>(geom_->nbasis(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
+    auto qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
@@ -112,7 +112,9 @@ void CASBFGS::compute() {
     if (iter == 0) {
 //if (false) {
       xstart = xold->copy();
-      diis = make_shared<HPW_DIIS<Matrix>>(10, cold);
+      shared_ptr<Matrix> unit = make_shared<Matrix>(xold->mdim(), xold->mdim());
+      unit->unit();
+      diis = make_shared<HPW_DIIS<Matrix>>(10, cold, unit);
     }
     // extrapolation using BFGS
     *x *= *natorb_mat;

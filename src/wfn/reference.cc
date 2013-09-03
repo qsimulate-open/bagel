@@ -62,7 +62,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 
 shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
-    return active->rdm1_mat(geom_, nclosed_);
+    return active->rdm1_mat(nclosed_);
   else {
     auto out = make_shared<Matrix>(nocc(), nocc());
     for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
@@ -164,40 +164,41 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
 // This function currently assumes it is being called on a Reference object with no defined active space
 shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const {
   if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
-  const int nbasis = geom_->nbasis();
+  const int naobasis = geom_->nbasis();
+  const int nmobasis = coeff_->mdim();
 
   int nactive = active_indices.size();
 
   int nclosed = nclosed_;
-  int nvirt = nbasis - nclosed;
+  int nvirt = nmobasis - nclosed;
   for (auto& iter : active_indices) {
     if (iter < nclosed_) --nclosed;
     else --nvirt;
   }
 
-  auto tmp_coeff = make_shared<Matrix>(nbasis, nbasis);
+  auto tmp_coeff = make_shared<Matrix>(naobasis, nmobasis);
 
   int iclosed = 0;
   int iactive = nclosed;
   int ivirt = nclosed + nactive;
   for (int i = 0; i < nclosed_; ++i) {
     if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iclosed));
+      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iclosed));
       ++iclosed;
     }
     else {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
+      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iactive));
       ++iactive;
     }
   }
 
-  for (int i = nclosed_; i < nbasis; ++i) {
+  for (int i = nclosed_; i < nmobasis; ++i) {
     if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,ivirt));
+      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,ivirt));
       ++ivirt;
     }
     else {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
+      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iactive));
       ++iactive;
     }
   }

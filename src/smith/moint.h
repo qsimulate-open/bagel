@@ -159,7 +159,7 @@ class MOFock {
         den = ref_->coeff()->form_density_rhf(ref_->nclosed());
       } else {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
-        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
+        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->nclosed(), true);
         // slice of coeff
         std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis

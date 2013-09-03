@@ -93,15 +93,17 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   // overlap matrix
   auto overlap = make_shared<Overlap>(ga);
   // block diagonal structure is (should be)  maintained
-  TildeX tildex(overlap, 1.0e-5);
+  // instead of tildex, here we use inverse_half (because we will not be able to use diagonalize_blocks)
+  auto tildex = overlap->copy();
+  tildex->inverse_half(1.0e-5);
   auto hcore = make_shared<Hcore>(ga);
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
   unique_ptr<double[]> eig(new double[ga->nbasis()]);
   {
-    Matrix ints = tildex % *hcore * tildex;
+    Matrix ints = *tildex % *hcore * *tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
-    coeff = make_shared<const Matrix>(tildex * ints);
+    coeff = make_shared<const Matrix>(*tildex * ints);
   }
 
   tuple<int,int,int,int> nclosed = atommap_.num_closed(ga->atoms().front()->name());
@@ -153,10 +155,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     prev_energy = energy;
     fock = diis.extrapolate(make_pair(fock, residual));
 
-    Matrix ints = tildex % *fock * tildex;
+    Matrix ints = *tildex % *fock * *tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
 
-    coeff  = make_shared<const Matrix>(tildex * ints);
+    coeff  = make_shared<const Matrix>(*tildex * ints);
     ocoeff = make_shared<Matrix>(ga->nbasis(), sclosed);
     vcoeff = make_shared<Matrix>(ga->nbasis(), ga->nbasis());
     for (int i = 0, j = 0, k = 0, l = 0; i != 4; ++i) {

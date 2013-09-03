@@ -127,7 +127,7 @@ void ROHF::compute() {
 void ROHF::symmetrize_cv(shared_ptr<Matrix> fockA, shared_ptr<Matrix> fockB) {
   assert(noccB_ <= nocc_);
   for (int i = 0; i != noccB_; ++i) {
-    for (int j = nocc_; j != geom_->nbasis(); ++j) {
+    for (int j = nocc_; j != coeff_->mdim(); ++j) {
       const double dat = (fockA->element(j,i) + fockB->element(j,i)) * 0.5;
       fockA->element(j,i) = fockB->element(j,i) = fockA->element(i,j) = fockB->element(i,j) = dat;
     }

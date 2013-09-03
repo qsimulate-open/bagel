@@ -50,22 +50,20 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   Timer time;
 
   const size_t ncore = task_->ncore();
+  const size_t nmobasis = ref_->coeff()->mdim();
 
   // since this is only for closed shell
   const size_t naux = geom_->naux();
   const size_t nocc = ref_->nocc() - ncore;
   const size_t nocca = ref_->nocc();
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = geom_->nbasis() - nocca;
+  const size_t nvirt = nmobasis - nocca;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
-  assert(geom_->nbasis() == ref_->coeff()->mdim());
-
-  const size_t nbasis = geom_->nbasis();
 
   shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
   shared_ptr<const Matrix> acmat = ref_->coeff()->slice(ncore, nocca);
   shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nbasis);
+  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nmobasis);
 
   // first compute half transformed integrals
   shared_ptr<DFHalfDist> half;
@@ -93,7 +91,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   vector<double> eig_tm = ref_->eig();
   vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
 
-  auto dmp2 = make_shared<Matrix>(nbasis, nbasis);
+  auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
   double* optr = dmp2->element_ptr(ncore, ncore);
   double* vptr = dmp2->element_ptr(nocca, nocca);
 
@@ -130,9 +128,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     // T(jb|ic) -> T_c(b,ij)
     SMITH::sort_indices<1,2,0,0,1,1,1>(buf2->data(), buf->data(), nocc, nvirt, nocc);
     // D_ab = G(ja|ic) T(jb|ic)
-    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis);
+    dgemm_("N", "T", nvirt, nvirt, nocc*nocc, 2.0, buf->data(), nvirt, data->data(), nvirt, 1.0, vptr, nmobasis);
     // D_ij = - G(ja|kc) T(ia|kc)
-    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis);
+    dgemm_("T", "N", nocc, nocc, nvirt*nocc, -2.0, buf->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nmobasis);
   }
 
   time.tick_print("assembly (+ unrelaxed rdm)");
@@ -166,7 +164,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // -1*K_al(d_rs)
   const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * *vcmat;
 
-  auto grad = make_shared<Matrix>(nbasis, nbasis);
+  auto grad = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int a = 0; a != nvirt; ++a)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
@@ -240,7 +238,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   }
 
   // energy weighted density
-  auto wd = make_shared<Matrix>(nbasis, nbasis);
+  auto wd = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nocca; ++j)
       wd->element(j,i) += dtot->element(j,i) * eig_tm[j];

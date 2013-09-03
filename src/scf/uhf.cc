@@ -115,7 +115,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   auto cinv = make_shared<Matrix>(*coeff_ % *overlap_);
   auto intermediate = make_shared<Matrix>(*cinv * *aodensity_ ^ *cinv);
   *intermediate *= -1.0;
-  unique_ptr<double[]> occup(new double[geom_->nbasis()]);
+  unique_ptr<double[]> occup(new double[coeff_->mdim()]);
   intermediate->diagonalize(occup.get());
 
   auto amat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate);
@@ -124,7 +124,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   int nocc = 0;
   // TODO adjust?
   const double tiny = 1.0e-10;
-  for (int i = 0; i != geom_->nbasis(); ++i)
+  for (int i = 0; i != coeff_->mdim(); ++i)
     if (occup[i] < -tiny) ++nocc;
 
   auto r = make_shared<RDM<1>>(nocc);
@@ -151,7 +151,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   int nocc;
   vector<shared_ptr<RDM<1>>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1);
+  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, energy(), rdm1);
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
@@ -166,7 +166,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   out->set_erdm1(erdm);
 
   // this is just dummy...
-  vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
+  vector<double> e(eig_.get(), eig_.get()+coeff_->mdim());
   out->set_eig(e);
   return out;
 }

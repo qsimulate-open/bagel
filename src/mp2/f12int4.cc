@@ -44,11 +44,12 @@ void F12Ref::compute() {
     const size_t ncore = ncore_;
     const size_t nval = geom_->nele()/2 - ncore;
     const size_t nocc = nval + ncore;
-    const size_t nbasis = geom_->nbasis();
-    const size_t nvirt = nbasis - nocc;
+    const size_t nmobasis = ref_->coeff()->mdim();
+    const size_t naobasis = geom_->nbasis();
+    const size_t nvirt = nmobasis - nocc;
     const double* const coeff = ref_->coeff()->data();
-    const double* const ocoeff = coeff + ncore*nbasis;
-    const double* const vcoeff = ocoeff + nval*nbasis;
+    const double* const ocoeff = coeff + ncore*naobasis;
+    const double* const vcoeff = ocoeff + nval*naobasis;
 
     start_up_slater_();
 
@@ -276,8 +277,9 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::g
   shared_ptr<Geometry> newgeom(new Geometry(*geom_));
   newgeom->merge_obs_aux();
 
+  // TODO this does not work with linearly dependent orbital basis
   shared_ptr<Overlap> union_overlap(new Overlap(newgeom));
-  shared_ptr<TildeX> ri_coeff(new TildeX(union_overlap, thresh));
+  shared_ptr<Matrix> ri_coeff = union_overlap->tildex(thresh);
   shared_ptr<Matrix> ri_reshaped = ref_->coeff()->cut(0,ri_coeff->ndim());
 
   // SVD to project out OBS component. Note singular values are all 1 as OBS is a subset of RI space.
@@ -295,6 +297,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, int> F12Ref::g
 
   shared_ptr<Matrix> coeff_entire = ri_reshaped->merge(coeff_cabs);
 
+  // TODO note geom_->nbasis() here
   pair<shared_ptr<Matrix>, shared_ptr<Matrix>> t = coeff_cabs->split(geom_->nbasis(), geom_->naux());
 
   // TODO check

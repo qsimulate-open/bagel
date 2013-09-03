@@ -123,7 +123,7 @@ void RDM<2>::transform(const shared_ptr<Matrix>& coeff) {
 
 
 template<>
-shared_ptr<Matrix> RDM<1>::rdm1_mat(shared_ptr<const Geometry> g, const int nclosed, const bool all) const {
+shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
   auto out = make_shared<Matrix>(nclosed+norb_, nclosed+norb_);
   if (all)
     for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;

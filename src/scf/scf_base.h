@@ -28,7 +28,6 @@
 
 #include <src/molecule/overlap.h>
 #include <src/molecule/hcore.h>
-#include <src/scf/tildex.h>
 #include <src/scf/fock.h>
 #include <src/wfn/method.h>
 
@@ -36,7 +35,7 @@ namespace bagel {
 
 class SCF_base : public Method {
   protected:
-    std::shared_ptr<TildeX> tildex_;
+    std::shared_ptr<const Matrix> tildex_;
     std::shared_ptr<const Overlap> overlap_;
     std::shared_ptr<const Hcore> hcore_;
     std::shared_ptr<const Coeff> coeff_;
