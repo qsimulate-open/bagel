@@ -37,7 +37,6 @@ class MOFile {
 
   protected:
     int nocc_;
-    int nbasis_;
 
     bool do_df_;
     bool hz_; // If true, do hz stuff. This may be revisited if more algorithms are implemented

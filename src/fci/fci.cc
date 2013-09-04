@@ -60,7 +60,7 @@ void FCI::common_init() {
   }
   else {
     if (ncore_ < 0) ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
+    if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->mdim()-ncore_);
   }
 
   // Configure properties to be calculated on the final wavefunctions
@@ -165,7 +165,7 @@ void FCI::print_header() const {
 }
 
 shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
-  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
+  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, ref_->coeff()->mdim() - ncore_ - norb_, energy_, cc_);
 }
 
 

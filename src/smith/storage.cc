@@ -38,7 +38,7 @@ Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Sto
   if (init) {
     for (auto& i : size) {
       unique_ptr<double[]> tmp(new double[i.second]);
-      fill(tmp.get(), tmp.get()+i.second, 0.0);
+      fill_n(tmp.get(), i.second, 0.0);
       data_.push_back(move(tmp));
     }
   } else {
@@ -123,7 +123,7 @@ void Storage_Incore::zero() {
   for (auto& i : hashtable_) {
     const size_t bn = i.second.first;
     const size_t ln = i.second.second;
-    fill(data_[bn].get(), data_[bn].get()+ln, 0.0);
+    fill_n(data_[bn].get(), ln, 0.0);
   }
 }
 

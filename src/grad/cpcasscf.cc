@@ -54,15 +54,15 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
   assert(fci_->norb() == ref_->nact());
 
+  const size_t nmobasis = ref_->coeff()->mdim();
+  const size_t naobasis = geom_->nbasis();
   const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
-  const size_t nvirt = geom_->nbasis() - nocca;
+  const size_t nvirt = nmobasis - nocca;
 
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   assert(nact + nclosed == nocca);
-
-  const size_t nbasis = geom_->nbasis();
 
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
 
@@ -124,7 +124,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   auto cinv = make_shared<const Matrix>(*ref_->coeff() % *ovl);
 
   // State averaged density matrix
-  shared_ptr<const Matrix> dsa = ref_->rdm1_mat();
+  shared_ptr<const Matrix> dsa = ref_->rdm1_mat()->resize(nmobasis, nmobasis); // TODO resize is just a waste of time..
 
   cout << "  === CPCASSCF iteration ===" << endl << endl;
 
@@ -157,7 +157,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
       tmp0->ax_plus_y(1.0, tmp1);
       shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff->data(), nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      dgemm_("T", "N", nmobasis, nocca, naobasis, 1.0, ocoeff->data(), naobasis, buf->data(), naobasis, 1.0, sigmaorb->data(), nmobasis);
     }
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
     shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->slice(0,nocca));
@@ -166,14 +166,14 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
       shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
-      dgemm_("T", "N", nbasis, nocca, nbasis, 1.0, ocoeff->data(), nbasis, buf->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
+      dgemm_("T", "N", nmobasis, nocca, naobasis, 1.0, ocoeff->data(), naobasis, buf->data(), naobasis, 1.0, sigmaorb->data(), nmobasis);
     }
 
     // one electron part...
     auto htilde = make_shared<Matrix>(*cz0 % *ref_->hcore() * *ref_->coeff());
     htilde->symmetrize();
     *htilde *= 2.0;
-    dgemm_("N", "N", nbasis, nocca, nocca, 2.0, htilde->data(), nbasis, dsa->data(), nbasis, 1.0, sigmaorb->data(), nbasis);
+    dgemm_("N", "N", nmobasis, nocca, nocca, 2.0, htilde->data(), nmobasis, dsa->data(), nmobasis, 1.0, sigmaorb->data(), nmobasis);
 
     sigmaorb->antisymmetrize();
 
@@ -248,8 +248,10 @@ solver->civec()->second()->print(-1);
 // computes A matrix (scaled by 2 here)
 shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec, shared_ptr<const Determinants> o) const {
 
-  const size_t nbasis = geom_->nbasis();
-  auto amat = make_shared<Matrix>(nbasis, nbasis);
+  const size_t naobasis = geom_->nbasis();
+  const size_t nmobasis = ref_->coeff()->mdim();
+
+  auto amat = make_shared<Matrix>(nmobasis, nmobasis);
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
@@ -281,11 +283,11 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 
   // core Fock operator
   shared_ptr<const Matrix> core_fock = fci_->jop()->core_fock();
-  unique_ptr<double[]> buf(new double[nbasis*nact]);
-  unique_ptr<double[]> buf2(new double[nbasis*nact]);
-  dgemm_("N", "N", nbasis, nact, nbasis, 1.0, core_fock->data(), nbasis, acoeff->data(), nbasis, 0.0, buf.get(), nbasis);
-  dgemm_("N", "N", nbasis, nact, nact, 1.0, buf.get(), nbasis, rdm1->data(), nact, 0.0, buf2.get(), nbasis);
-  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, buf2.get(), nbasis, 0.0, amat->element_ptr(0,nclosed), nbasis);
+  unique_ptr<double[]> buf(new double[naobasis*nact]);
+  unique_ptr<double[]> buf2(new double[naobasis*nact]);
+  dgemm_("N", "N", naobasis, nact, naobasis, 1.0, core_fock->data(), naobasis, acoeff->data(), naobasis, 0.0, buf.get(), naobasis);
+  dgemm_("N", "N", naobasis, nact, nact, 1.0, buf.get(), naobasis, rdm1->data(), nact, 0.0, buf2.get(), naobasis);
+  dgemm_("T", "N", nmobasis, nact, naobasis, prefactor, coeff, naobasis, buf2.get(), naobasis, 0.0, amat->element_ptr(0,nclosed), nmobasis);
 
   // Half transformed DF vector
 #if 0
@@ -296,7 +298,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
   shared_ptr<const Matrix> jd = half->form_2index(fulld, 1.0);
-  dgemm_("T", "N", nbasis, nact, nbasis, prefactor, coeff, nbasis, jd->data(), nbasis, 1.0, amat->element_ptr(0,nclosed), nbasis);
+  dgemm_("T", "N", nmobasis, nact, naobasis, prefactor, coeff, naobasis, jd->data(), naobasis, 1.0, amat->element_ptr(0,nclosed), nmobasis);
 
   return amat;
 }

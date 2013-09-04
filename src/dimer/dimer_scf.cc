@@ -27,7 +27,7 @@
 
 #include <src/dimer/dimer_scf.h>
 #include <src/math/diis.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;
@@ -112,7 +112,7 @@ void DimerSCF::compute() {
 
   // by default we compute dipoles
   if (!geom_->external()) {
-    Dipole mu(geom_, aodensity_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 
@@ -121,8 +121,8 @@ void DimerSCF::compute() {
 
 shared_ptr<const Reference> DimerSCF::conv_to_ref() const {
   // Reorder here?
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
-  vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff()->mdim()-nocc(), energy());
+  vector<double> e(eig_.get(), eig_.get()+coeff()->mdim());
   out->set_eig(e);
   return out;
 }

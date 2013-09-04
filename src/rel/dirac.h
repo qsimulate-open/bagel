@@ -43,6 +43,7 @@ class Dirac : public Method {
     int max_iter_;
     int diis_start_;
     double thresh_scf_;
+    double thresh_overlap_;
     double energy_;
     std::unique_ptr<double[]> eig_;
     int ncharge_;
@@ -54,7 +55,7 @@ class Dirac : public Method {
 
     std::shared_ptr<const RelHcore> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
-    std::shared_ptr<const RelOverlap> s12_;
+    std::shared_ptr<const ZMatrix> s12_;
 
     std::shared_ptr<const ZMatrix> coeff_;
 

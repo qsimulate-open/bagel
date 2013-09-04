@@ -66,10 +66,6 @@ Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff
   }
 }
 
-Coeff::~Coeff() {
-
-}
-
 
 int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
   return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff>& b) { return a+b->ndim(); });
@@ -86,12 +82,11 @@ shared_ptr<Matrix> Coeff::form_density_rhf(const int n, const int offset) const 
 
 
 shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
-  assert(ndim_ == mdim_);
-  auto out = make_shared<Matrix>(ndim_, mdim_);
+  auto out = make_shared<Matrix>(ndim_, ndim_);
   double* out_data = out->data() + offset*ndim_;
   double* cdata = data();
   for (int i = 0; i != n; ++i, cdata += ndim_) {
-    dgemm_("N", "T", ndim_, mdim_, 1, 2.0*e[i], cdata, ndim_, cdata, ndim_, 1.0, out_data, ndim_);
+    dgemm_("N", "T", ndim_, ndim_, 1, 2.0*e[i], cdata, ndim_, cdata, ndim_, 1.0, out_data, ndim_);
   }
   return out;
 }

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: tildex.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: dipole.h
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,23 +24,30 @@
 //
 
 
-#ifndef __src_scf_tildex_h
-#define __src_scf_tildex_h
+#ifndef __SRC_PROP_MULTIPOLE_H
+#define __SRC_PROP_MULTIPOLE_H
 
-#include <src/math/matrix.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 
-class TildeX : public Matrix {
+class Multipole {
   protected:
+    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Matrix> den_;
+    const int rank_;
+    const std::string jobname_;
 
   public:
-    TildeX(const std::shared_ptr<const Overlap> olp, const double thresh) : Matrix(*olp)  {
-      this->inverse_half(thresh);
-    }
+    Multipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, const int maxrank, const std::string jobname = "");
 
-    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+ndim_*mdim_, this->data()); return *this; };
+    std::vector<double> compute() const;
+};
 
+
+class Dipole : public Multipole {
+  public:
+    Dipole(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix> m, const std::string jobname = "") : Multipole(g, m, 1, jobname) { }
 };
 
 }

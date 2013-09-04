@@ -24,7 +24,7 @@
 //
 
 #include <src/ks/ks.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/math/diis.h>
 
 using namespace std;
@@ -98,8 +98,8 @@ void KS::compute() {
 
 
 shared_ptr<const Reference> KS::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
-  vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff()->mdim()-nocc(), energy());
+  vector<double> e(eig_.get(), eig_.get()+coeff()->mdim());
   out->set_eig(e);
   return out;
 }

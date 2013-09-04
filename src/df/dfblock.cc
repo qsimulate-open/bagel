@@ -38,11 +38,10 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
  : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  size_alloc_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_)) * b1size_*b2size_;
-  data_ = unique_ptr<double[]>(new double[size_alloc_]);
+  amax_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
+  data_ = unique_ptr<double[]>(new double[amax_*b1size_*b2size_]);
 
 }
-
 
 void DFBlock::average() {
   if (averaged_) return;
@@ -96,11 +95,18 @@ void DFBlock::average() {
     const size_t t_size = t_end - t_start;
     const size_t retsize = asize_ - asendsize;
     if (t_size <= asize_) {
-      for (size_t i = 0; i != b1size_*b2size_; ++i)
-        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+      for (size_t i = 0; i != b1size_*b2size_; ++i) {
+        if (i*asize_ < (i+1)*t_size-retsize) {
+          copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+        } else if (i*asize_ > (i+1)*t_size-retsize) {
+          copy_n(data_.get()+i*asize_, retsize, data_.get()+(i+1)*t_size-retsize);
+        }
+      }
     } else {
-      for (long long int i = b1size_*b2size_-1; i >= 0; --i)
+      for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
+        assert(i*asize_ < (i+1)*t_size-retsize);
         copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+      }
     }
   }
 
@@ -115,7 +121,7 @@ void DFBlock::average() {
 
     vector<CopyBlockTask> task;
     task.reserve(b2size_);
-    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
       task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
     TaskQueue<CopyBlockTask> tq(task);
     tq.compute(resources__->max_num_threads());
@@ -127,6 +133,84 @@ void DFBlock::average() {
 }
 
 
+// reverse operation of average() function
+void DFBlock::shell_boundary() {
+  if (!averaged_) return;
+  averaged_ = false;
+  const size_t o_start = astart_;
+  const size_t o_end = o_start + asize_;
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_shell_->range(myrank);
+
+  const size_t asendsize = t_start - o_start;
+  const size_t arecvsize = t_end - o_end;
+  assert(t_start >= o_start && t_end >= o_end); 
+
+  unique_ptr<double[]> sendbuf, recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
+    for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
+      task.emplace_back(data_.get()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
+    assert(myrank > 0);
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank-1, myrank);
+  }
+  if (arecvsize) {
+    assert(myrank+1 < mpi__->size());
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size_*b2size_]);
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank+1, myrank+1);
+  }
+
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize_ - asendsize;
+    assert(t_size >= retsize);
+    if (t_size <= asize_) {
+      for (size_t i = 0; i != b1size_*b2size_; ++i) {
+        assert(i*asize_+asendsize > i*t_size);
+        copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+      }
+    } else {
+      for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
+        if (i*asize_+asendsize > i*t_size) {
+          copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+        } else if (i*asize_+asendsize < i*t_size) {
+          copy_backward(data_.get()+i*asize_+asendsize, data_.get()+(i+1)*asize_, data_.get()+i*t_size+retsize); 
+        }
+      }
+    }
+  }
+
+  // set new astart_ and asize_
+  asize_ = t_end - t_start;
+  astart_ = t_start;
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    vector<CopyBlockTask> task;
+    task.reserve(b2size_);
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
+    TaskQueue<CopyBlockTask> tq(task);
+    tq.compute(resources__->max_num_threads());
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
+}
+
+
 shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
   assert(trans ? cmat->mdim() : cmat->ndim() == b1size_);
   const double* const c = cmat->data();
@@ -134,7 +218,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  unique_ptr<double[]> tmp(new double[asize_*nocc*b2size_]);
+  unique_ptr<double[]> tmp(new double[amax_*nocc*b2size_]);
 
   for (size_t i = 0; i != b2size_; ++i) {
     if (!trans)
@@ -143,7 +227,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
       dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
   }
 
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_);
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_, amax_);
 }
 
 
@@ -154,28 +238,28 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  unique_ptr<double[]> tmp(new double[asize_*b1size_*nocc]);
+  unique_ptr<double[]> tmp(new double[amax_*b1size_*nocc]);
 
   if (!trans)
     dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, tmp.get(), asize_*b1size_);
   else  // trans -> back transform
     dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
 
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_);
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_, amax_);
 }
 
 
 shared_ptr<DFBlock> DFBlock::clone() const {
-  unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
+  unique_ptr<double[]> tmp(new double[amax_*b1size_*b2size_]);
   fill_n(tmp.get(), asize_*b1size_*b2size_, 0.0);
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_, amax_);
 }
 
 
 shared_ptr<DFBlock> DFBlock::copy() const {
-  unique_ptr<double[]> tmp(new double[asize_*b1size_*b2size_]);
+  unique_ptr<double[]> tmp(new double[amax_*b1size_*b2size_]);
   copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
+  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_, amax_);
 }
 
 
@@ -211,12 +295,12 @@ void DFBlock::symmetrize() {
 
 
 shared_ptr<DFBlock> DFBlock::swap() const {
-  unique_ptr<double[]> dat(new double[asize_*b1size_*b2size_]);
+  unique_ptr<double[]> dat(new double[amax_*b1size_*b2size_]);
   for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2)
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
       copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
 
-  return make_shared<DFBlock>(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_);
+  return make_shared<DFBlock>(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_, amax_);
 }
 
 
@@ -423,7 +507,7 @@ shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int 
 }
 
 
-unique_ptr<double[]> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<Matrix> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   const int ista = ist - astart_;
   const int jsta = jst - b1start_;
   const int ksta = kst - b2start_;
@@ -433,8 +517,9 @@ unique_ptr<double[]> DFBlock::get_block(const int ist, const int i, const int js
   if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize_ || jfen > b1size_ || kfen > b2size_)
     throw logic_error("illegal call of DFBlock::get_block");
 
-  unique_ptr<double[]> out(new double[i*j*k]);
-  double* d = out.get();
+  // TODO we need 3-index tensor class here!
+  auto out = make_shared<Matrix>(i, j*k);
+  double* d = out->data();
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj, d += i)
       copy_n(data_.get()+ista+asize_*(jj+b1size_*kk), i, d);

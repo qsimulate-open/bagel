@@ -94,18 +94,18 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 }
 
 
-unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
+shared_ptr<Matrix> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   // first thing is to find the node
   tuple<size_t, size_t> info = adist_now()->locate(i);
 
-  // ask for the data to inode
-  if (get<0>(info) == mpi__->rank()) {
+  // date has to be localised in this node
+  if (get<0>(info) == mpi__->rank() && !block_[0]->averaged()) {
     return block_[0]->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
-  return unique_ptr<double[]>();
+  return shared_ptr<Matrix>();
 }
 
 

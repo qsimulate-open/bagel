@@ -80,7 +80,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     void ax_plus_y(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
 
-    std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+    std::shared_ptr<Matrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
@@ -93,6 +93,19 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>(),
                                        const bool onlyonce = false) const;
 
+    void average_3index() {
+      Timer time;
+      if (!serial_)
+        for (auto& i : block_)
+          i->average();
+      time.tick_print("3-index ints post");
+    }
+
+    void shell_boundary_3index() {
+      if (!serial_)
+        for (auto& i : block_)
+          i->shell_boundary();
+    }
 };
 
 
@@ -142,14 +155,6 @@ class DFDist : public ParallelDF {
       for (auto& i : block_)
         out.push_back(std::make_shared<const DFDist>(nindex1_, naux_, i, df_, data2_));
       return out;
-    }
-
-    void average_3index() {
-      Timer time;
-      if (!serial_)
-        for (auto& i : block_)
-          i->average();
-      time.tick_print("3-index ints post");
     }
 };
 

@@ -36,7 +36,7 @@ const static AtomMap atommap_;
 AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
   // first make a list of unique atoms
   const string defbasis = geom_->basisfile();
-  map<string, shared_ptr<const Matrix>> atoms;
+  map<pair<string,string>, shared_ptr<const Matrix>> atoms;
   unique_ptr<double[]> eig(new double[geom_->nbasis()]);
 
   int offset = 0;
@@ -47,7 +47,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   auto ai = geom_->aux_atoms().begin();
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) { ++ai; continue; }
-    if (atoms.find(i->name()) == atoms.end()) {
+    if (atoms.find(make_pair(i->name(),i->basis())) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
@@ -62,12 +62,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), std::shared_ptr<const PTree>());
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert(make_pair(i->name(), compute_atomic(ga)));
+      atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
 
       // restore cout
       cout.rdbuf(cout_orig);
     }
-    auto iter = atoms.find(i->name());
+    auto iter = atoms.find(make_pair(i->name(),i->basis()));
     assert(iter != atoms.end());
     copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
     offset += i->nbasis();
@@ -93,15 +93,17 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   // overlap matrix
   auto overlap = make_shared<Overlap>(ga);
   // block diagonal structure is (should be)  maintained
-  TildeX tildex(overlap, 1.0e-5);
+  // instead of tildex, here we use inverse_half (because we will not be able to use diagonalize_blocks)
+  auto tildex = overlap->copy();
+  tildex->inverse_half(1.0e-5);
   auto hcore = make_shared<Hcore>(ga);
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
   unique_ptr<double[]> eig(new double[ga->nbasis()]);
   {
-    Matrix ints = tildex % *hcore * tildex;
+    Matrix ints = *tildex % *hcore * *tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
-    coeff = make_shared<const Matrix>(tildex * ints);
+    coeff = make_shared<const Matrix>(*tildex * ints);
   }
 
   tuple<int,int,int,int> nclosed = atommap_.num_closed(ga->atoms().front()->name());
@@ -153,10 +155,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     prev_energy = energy;
     fock = diis.extrapolate(make_pair(fock, residual));
 
-    Matrix ints = tildex % *fock * tildex;
+    Matrix ints = *tildex % *fock * *tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);
 
-    coeff  = make_shared<const Matrix>(tildex * ints);
+    coeff  = make_shared<const Matrix>(*tildex * ints);
     ocoeff = make_shared<Matrix>(ga->nbasis(), sclosed);
     vcoeff = make_shared<Matrix>(ga->nbasis(), ga->nbasis());
     for (int i = 0, j = 0, k = 0, l = 0; i != 4; ++i) {

@@ -39,9 +39,6 @@ class ROHF : public UHF {
   public:
     ROHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata, geom, re) {
-      // TODO projection does not work
-      coeff_ = std::shared_ptr<Coeff>();
-      coeffB_ = std::shared_ptr<Coeff>();
     }
 
     void compute() override;

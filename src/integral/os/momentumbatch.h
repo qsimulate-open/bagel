@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipole.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: momentumbatch.h
+// Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,23 +24,26 @@
 //
 
 
-#ifndef __SRC_PROP_DIPOLE_H
-#define __SRC_PROP_DIPOLE_H
+#ifndef __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
+#define __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
 
-#include <src/wfn/geometry.h>
+#include <memory>
+#include <src/integral/os/osint.h>
 
 namespace bagel {
 
-class Dipole {
+class MomentumBatch : public OSInt {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Matrix> den_;
-    std::string jobname_;
+    void perform_VRR(double*) override;
+
+    int nblocks() const override { return 3; }
+    int nrank() const override { return 0; } 
 
   public:
-    Dipole(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, const std::string jobname = "");
+    MomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+     : OSInt(basis, stack) { common_init(); }
 
-    std::array<double,3> compute() const;
+    void compute() override;
 };
 
 }

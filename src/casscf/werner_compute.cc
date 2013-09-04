@@ -73,7 +73,7 @@ shared_ptr<const Matrix> WernerKnowles::compute_denom(const shared_ptr<const Mat
   unique_ptr<double[]> cdiag = C->diag();
   shared_ptr<Matrix> denom = jk.denom();
   for (int i = 0; i != nocc_; ++i) {
-    for (int j = nocc_; j != nbasis_; ++j) {
+    for (int j = nocc_; j != coeff_->mdim(); ++j) {
       denom->element(j, i) -= cdiag[i] + cdiag[j];
       denom->element(i, j) -= cdiag[i] + cdiag[j];
     }
@@ -103,24 +103,18 @@ shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec
 shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec,
                                                  shared_ptr<Matrix> u, shared_ptr<Matrix> t, const shared_ptr<const Coeff> cc) {
   shared_ptr<const DFDist> df = geom_->df();
-  const int naux = df->naux();
-  const int nbas = df->nbasis0();
-  assert(df->nbasis0() == df->nbasis1());
-
-// TODO make sure if this works
-if (nbasis_ != nbas) throw runtime_error("I should examine this case...");
-
-  auto out = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
+  const size_t nmobasis = cc->mdim();
+  auto out = make_shared<Matrix>(nmobasis, nmobasis);
   {
     auto hcore_mo_ = make_shared<Matrix>(*cc % *hcore_ * *cc);
 
     // first term
-    Matrix all1(geom_->nbasis(), geom_->nbasis());
+    Matrix all1(nmobasis, nmobasis);
     for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
     for (int i = 0; i != nact_; ++i) copy_n(fci_->rdm1_av()->data()+nact_*i, nact_, all1.element_ptr(nclosed_, i+nclosed_));
-    auto buf = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
-    dgemm_("N", "N", nbasis_, nocc_, nbasis_, 1.0, hcore_mo_->data(), nbasis_, u->data(), nbas, 0.0, buf->data(), nbas);
-    dgemm_("N", "N", nbasis_, nocc_, nocc_, 2.0, buf->data(), nbas, all1.data(), nbas, 0.0, out->data(), nbas);
+    auto buf = make_shared<Matrix>(nmobasis, nmobasis);
+    dgemm_("N", "N", nmobasis, nocc_, nmobasis, 1.0, hcore_mo_->data(), nmobasis, u->data(), nmobasis, 0.0, buf->data(), nmobasis);
+    dgemm_("N", "N", nmobasis, nocc_, nocc_, 2.0, buf->data(), nmobasis, all1.data(), nmobasis, 0.0, out->data(), nmobasis);
   }
 
   shared_ptr<Matrix> tmp;
