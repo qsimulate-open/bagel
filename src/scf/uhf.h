@@ -46,6 +46,8 @@ class UHF : public SCF_base {
 
     void print_S2(const std::string) const;
 
+    void initial_guess();
+
   public:
     UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())

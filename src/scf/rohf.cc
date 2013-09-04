@@ -32,13 +32,9 @@ using namespace bagel;
 
 void ROHF::compute() {
 
-  if (coeff_ == nullptr || coeffB_ == nullptr) {
-    Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
-    intermediate.diagonalize(eig());
-    coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
-    coeffB_ = make_shared<Coeff>(*coeff_); // since this is obtained with hcore
-  }
-  tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+  eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+
+  initial_guess();
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
@@ -48,7 +44,6 @@ void ROHF::compute() {
   cout << indent << "=== ROHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
   // starting SCF iteration
-  eigB_ = unique_ptr<double[]>(new double[coeff_->mdim()]);
 
   DIIS<Matrix> diis(diis_size_);
   DIIS<Matrix> diisB(diis_size_);
@@ -61,26 +56,12 @@ void ROHF::compute() {
 
     shared_ptr<const Coeff> natorb = get<0>(natural_orbitals());
 
-    auto intermediateA = make_shared<Matrix>(*natorb % *fockA * *natorb);
-    auto intermediateB = make_shared<Matrix>(*natorb % *fockB * *natorb);
-
-    // Specific to ROHF:
-    //   here we want to symmetrize closed-virtual blocks
-    symmetrize_cv(intermediateA, intermediateB);
-
-    intermediateA->diagonalize(eig());
-    intermediateB->diagonalize(eigB());
-
-    shared_ptr<Matrix> new_density, new_densityA, new_densityB;
-
     auto error_vector = make_shared<Matrix>(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
                                            +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB);
 
     const double error = error_vector->rms();
 
-    energy_ = 0.5*(*aodensity_ * *hcore_).trace() + geom_->nuclear_repulsion();
-    for (int i = 0; i != this->nocc(); ++i)  energy_ += eig_[i]  * 0.5;
-    for (int i = 0; i != this->noccB(); ++i) energy_ += eigB_[i] * 0.5;
+    energy_ = 0.25*(*aodensityA_*(*hcore_+*fockA)+*aodensityB_*(*hcore_+*fockB)).trace() + geom_->nuclear_repulsion();
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
@@ -105,9 +86,19 @@ void ROHF::compute() {
 
       intermediateA->diagonalize(eig());
       intermediateB->diagonalize(eigB());
-      coeff_  = make_shared<Coeff>(*natorb**intermediateA);
-      coeffB_ = make_shared<Coeff>(*natorb**intermediateB);
+      coeff_  = make_shared<Coeff>(*natorb * *intermediateA);
+      coeffB_ = make_shared<Coeff>(*natorb * *intermediateB);
     } else {
+      auto intermediateA = make_shared<Matrix>(*natorb % *fockA * *natorb);
+      auto intermediateB = make_shared<Matrix>(*natorb % *fockB * *natorb);
+
+      // Specific to ROHF:
+      //   here we want to symmetrize closed-virtual blocks
+      symmetrize_cv(intermediateA, intermediateB);
+
+      intermediateA->diagonalize(eig());
+      intermediateB->diagonalize(eigB());
+
       coeff_  = make_shared<Coeff>(*natorb * *intermediateA);
       coeffB_ = make_shared<Coeff>(*natorb * *intermediateB);
     }
