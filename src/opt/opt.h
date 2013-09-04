@@ -240,8 +240,6 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // current geometry in a molden file
   MoldenOut mfs("opt.molden");
   mfs << current_;
-  mfs.close();
-
   print_iteration(en, cgrad->rms(), timer_.tick());
 }
 
