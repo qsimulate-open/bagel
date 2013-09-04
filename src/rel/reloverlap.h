@@ -41,15 +41,14 @@ class RelOverlap : public ZMatrix {
 
     void compute_();
 
-    bool half_inverse_;
-
   public:
-    RelOverlap(const std::shared_ptr<const Molecule> mol, bool half_inverse) : ZMatrix(mol->nbasis()*4, mol->nbasis()*4),
-               mol_(mol), kinetic_(new Kinetic(mol)), overlap_(new Overlap(mol)), half_inverse_(half_inverse) {
+    RelOverlap(const std::shared_ptr<const Molecule> mol) : ZMatrix(mol->nbasis()*4, mol->nbasis()*4),
+               mol_(mol), kinetic_(new Kinetic(mol)), overlap_(new Overlap(mol)) {
       compute_();
     }
 
-    ~RelOverlap() {};
+    std::shared_ptr<ZMatrix> tildex(const double thresh) const;
+    std::shared_ptr<ZMatrix> inverse(const double thresh = 1.0e-8) const;
 };
 
 }
