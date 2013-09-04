@@ -60,15 +60,15 @@ namespace bagel {
         const int norb = det_->norb();
 
         for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
-          const int jj = iter.ij / norb;
-          const int ii = iter.ij - norb * jj;
+          const int ii = iter.ij / norb;
+          const int jj = iter.ij % norb;
 
           vector<shared_ptr<RASBlock<double>>> allowedblocks = out_->allowed_blocks<0>(target_);
           for (auto& iblock : allowedblocks) {
             for (auto& btstring : *iblock->stringb()) {
               if ( !btstring[jj] || ( ii != jj && btstring[ii] ) ) continue;
               bitset<nbit__> bsostring = btstring; bsostring.reset(jj); bsostring.set(ii);
-              out_->element(target_, btstring) -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * this_->element(iter.source, bsostring);
+              out_->element(btstring, target_) -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * this_->element(bsostring, det_->stringa(iter.source));
             }
           }
         }
@@ -78,7 +78,7 @@ namespace bagel {
 }
 
 // Returns S^2 | civec >
-// The important portion of S^2 is S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_alpha
+// S^2 = S_z^2 + S_z + S_-S_+ with S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_beta
 template<>
 shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
@@ -92,6 +92,11 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
 
   TaskQueue<RAS::SpinTask> tq(tasks);
   tq.compute(resources__->max_num_threads());
+
+  const double sz = static_cast<double>(det_->nspin()) * 0.5;
+  const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
+
+  out->ax_plus_y(fac, *this);
 
   return out;
 }
@@ -112,13 +117,15 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
-  const double expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
+  const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
   shared_ptr<RASCivec> S2 = spin();
+  double actual_expectation = dot_product(*S2);
 
   int k = nspin + 2;
-  while( fabs(dot_product(*S2) - expectation) > thresh ) {
-    if ( k > max_spin ) throw runtime_error("Spin decontamination failed.");
+  while( fabs(actual_expectation - pure_expectation) > thresh ) {
+    cout << "<S^2> = " << actual_expectation << endl;
+    if ( k > max_spin ) { this->print(0.05); throw runtime_error("Spin decontamination failed."); }
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
     ax_plus_y(factor, *S2);
@@ -128,6 +135,7 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
     scale(rescale);
 
     S2 = spin();
+    actual_expectation = dot_product(*S2);
 
     k += 2;
   }

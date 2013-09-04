@@ -119,7 +119,7 @@ class RASCivector {
     }
 
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
-      std::copy_n(o.data_.get(), size_, data_.get());
+      std::copy_n(o.data(), size_, data_.get());
     }
 
     DataType* data() { return data_.get(); }
@@ -167,8 +167,8 @@ class RASCivector {
     template <int spin>
     const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const int nh, const int np) {
       std::vector<std::shared_ptr<RBlock>> out;
-      for (int jp = 0; jp + np < det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh < det_->max_holes(); ++ih) {
+      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
+        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
           std::shared_ptr<RBlock> blk;
           if (spin == 0) blk = block(nh, ih, np, jp);
           else           blk = block(ih, nh, jp, np);
@@ -180,7 +180,6 @@ class RASCivector {
     }
 
     const size_t size() const { return size_; }
-
     void zero() { std::fill_n(data_.get(), size_, 0.0); }
 
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
@@ -200,12 +199,12 @@ class RASCivector {
       return std::inner_product(data_.get(), data_.get() + size_, o.data(), 0.0);
     }
 
-    DataType norm() const { return std::sqrt(std::inner_product(data_.get(), data_.get() + size_, data_.get(), 0.0)); }
-    DataType variance() const { return norm() / size_; }
+    double norm() const { return std::sqrt(dot_product(*this)); }
+    double variance() const { return norm() / size_; }
 
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
-      { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return a*p + q; } ); }
+      { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
@@ -214,7 +213,7 @@ class RASCivector {
       { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_-
     std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
       { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_+
-    void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
+    void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
 
     void project_out(std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
