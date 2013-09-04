@@ -43,7 +43,7 @@ class RelOverlap : public ZMatrix {
 
   public:
     RelOverlap(const std::shared_ptr<const Molecule> mol) : ZMatrix(mol->nbasis()*4, mol->nbasis()*4),
-               mol_(mol), kinetic_(new Kinetic(mol)), overlap_(new Overlap(mol)) {
+               mol_(mol), kinetic_(std::make_shared<Kinetic>(mol)), overlap_(std::make_shared<Overlap>(mol)) {
       compute_();
     }
 

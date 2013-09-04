@@ -46,13 +46,13 @@ class RelHcore : public ZMatrix {
 
   public:
     RelHcore(const std::shared_ptr<const Molecule> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
-            kinetic_(new Kinetic(geom_)), hcore_(new Hcore(geom_)), nai_(new Matrix(*hcore_ - *kinetic_)), smallnai_(new Small1e<NAIBatch>(geom_)) {
-
+            kinetic_(std::make_shared<Kinetic>(geom_)),
+            hcore_(std::make_shared<Hcore>(geom_)),   
+            nai_(std::make_shared<Matrix>(*hcore_ - *kinetic_)),
+            smallnai_(std::make_shared<Small1e<NAIBatch>>(geom_)) {
       compute_();
-
     }
 
-    ~RelHcore() {};
 };
 
 }
