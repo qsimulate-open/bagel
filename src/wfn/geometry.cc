@@ -77,7 +77,6 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
-    mfs.close();
   } else {
 
     // read the default basis file

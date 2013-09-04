@@ -32,7 +32,6 @@ namespace bagel {
 
   class MoldenIn : public MoldenIO {
      protected:
-        std::ifstream ifs_;
         bool is_spherical_;
         bool cartesian_;
 
@@ -55,8 +54,6 @@ namespace bagel {
         MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
         MoldenIn& operator>> (std::shared_ptr<const Coeff>& coeff);
         MoldenIn& operator>> (std::shared_ptr<const Reference>& ref);
-
-        void close() { ifs_.close(); }
   };
 }
 
