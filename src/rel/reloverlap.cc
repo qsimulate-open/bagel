@@ -32,24 +32,43 @@ using namespace bagel;
 
 void RelOverlap::compute_() {
   const int n = mol_->nbasis();
-  const complex<double> coeff1 (1.0, 0.0);
-
-  auto out = make_shared<ZMatrix>(4*n, 4*n);
-  auto ovl = make_shared<Overlap>(*overlap_);
-  auto k12 = make_shared<Matrix>(*kinetic_);
-
-  if (half_inverse_) {
-    ovl->inverse_half();
-    k12->inverse_half();
-    k12->scale(c__/sqrt(0.5));
-  } else {
-    k12->scale(0.5/(c__*c__));
-  }
-
-
-  copy_real_block(coeff1, 0, 0, n, n, ovl);
-  copy_real_block(coeff1, n, n, n, n, ovl);
-  copy_real_block(coeff1, 2*n, 2*n, n, n, k12);
-  copy_real_block(coeff1, 3*n, 3*n, n, n, k12);
+  copy_real_block(1.0, 0, 0, n, n, overlap_);
+  copy_real_block(1.0, n, n, n, n, overlap_);
+  copy_real_block(0.5/(c__*c__), 2*n, 2*n, n, n, kinetic_);
+  copy_real_block(0.5/(c__*c__), 3*n, 3*n, n, n, kinetic_);
 }
 
+
+shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
+  shared_ptr<Matrix> tildeo = overlap_->tildex(thresh);
+  shared_ptr<Matrix> k = make_shared<Matrix>(*tildeo % *kinetic_ * *tildeo);
+  const bool nosing = k->inverse_half(thresh*1.0e2);
+  if (!nosing)
+    throw logic_error("positive and negative energy states have different linear dependency"); 
+  shared_ptr<Matrix> tildek = make_shared<Matrix>(*tildeo * *k);
+
+  const int n = tildeo->ndim();
+  const int m = tildeo->mdim();
+
+  auto out = make_shared<ZMatrix>(4*n, 4*m);
+  out->copy_real_block(1.0, 0, 0, n, m, tildeo);
+  out->copy_real_block(1.0, n, m, n, m, tildeo);
+  out->copy_real_block(c__/sqrt(0.5), 2*n, 2*m, n, m, tildek);
+  out->copy_real_block(c__/sqrt(0.5), 3*n, 3*m, n, m, tildek);
+  return out;
+}
+
+
+shared_ptr<ZMatrix> RelOverlap::inverse(const double thresh) const {
+  shared_ptr<ZMatrix> out = clone();
+  Matrix oinv(*overlap_);
+  oinv.inverse_symmetric(thresh);
+  Matrix kinv(*kinetic_);
+  kinv.inverse_symmetric(thresh);
+  const int n = oinv.ndim();
+  out->copy_real_block(1.0, 0, 0, n, n, oinv);
+  out->copy_real_block(1.0, n, n, n, n, oinv);
+  out->copy_real_block(2*(c__*c__), 2*n, 2*n, n, n, kinv);
+  out->copy_real_block(2*(c__*c__), 3*n, 3*n, n, n, kinv);
+  return out;
+}

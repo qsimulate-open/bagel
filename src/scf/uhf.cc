@@ -25,20 +25,43 @@
 
 #include <src/scf/uhf.h>
 #include <src/prop/multipole.h>
+#include <src/scf/atomicdensities.h>
 #include <src/math/diis.h>
 
 using namespace std;
 using namespace bagel;
 
-void UHF::compute() {
 
+void UHF::initial_guess() {
   if (coeff_ == nullptr || coeffB_ == nullptr) {
-    Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
+    shared_ptr<const Matrix> fock = hcore_;
+    if (geom_->spherical()) {
+      auto aden = make_shared<const AtomicDensities>(geom_);
+      fock = make_shared<const Fock<1>>(geom_, hcore_, aden, vector<double>());
+    }
+    DistMatrix intermediate = *tildex_ % *fock * *tildex_;
     intermediate.diagonalize(eig());
-    coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
-    coeffB_ = make_shared<Coeff>(*coeff_); // since this is obtained with hcore
+    coeff_ = make_shared<const Coeff>(*tildex_ * intermediate);
+    coeffB_ = make_shared<const Coeff>(*coeff_);
+  } else {
+    tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+    auto fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
+    auto fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
+    Matrix intermediateA = *tildex_ % *fockA * *tildex_;
+    Matrix intermediateB = *tildex_ % *fockB * *tildex_;
+    intermediateA.diagonalize(eig());
+    intermediateB.diagonalize(eigB());
+    coeff_ = make_shared<const Coeff>(*tildex_ * intermediateA);
+    coeffB_ = make_shared<const Coeff>(*tildex_ * intermediateB);
   }
   tie(aodensity_, aodensityA_, aodensityB_) = form_density_uhf();
+}
+
+void UHF::compute() {
+
+  eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+
+  initial_guess();
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl;
@@ -48,7 +71,6 @@ void UHF::compute() {
   cout << indent << "=== UHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
   // starting SCF iteration
-  eigB_ = unique_ptr<double[]>(new double[coeff_->mdim()]);
 
   DIIS<Matrix> diis(diis_size_);
   DIIS<Matrix> diisB(diis_size_);
@@ -58,10 +80,10 @@ void UHF::compute() {
     std::shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
     std::shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
 
-    energy_ = 0.5*(*aodensity_ * *hcore_+ (*fockA * *aodensityA_ + *fockB * *aodensityB_)*0.5).trace() + geom_->nuclear_repulsion();
+    energy_ = 0.25*((*hcore_+*fockA) * *aodensityA_ + (*hcore_+*fockB) * *aodensityB_).trace() + geom_->nuclear_repulsion();
 
     auto error_vector = make_shared<const Matrix>(*fockA**aodensityA_**overlap_ - *overlap_**aodensityA_**fockA
-                                                    +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB);
+                                                 +*fockB**aodensityB_**overlap_ - *overlap_**aodensityB_**fockB);
 
     const double error = error_vector->rms();
 
@@ -115,7 +137,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   auto cinv = make_shared<Matrix>(*coeff_ % *overlap_);
   auto intermediate = make_shared<Matrix>(*cinv * *aodensity_ ^ *cinv);
   *intermediate *= -1.0;
-  unique_ptr<double[]> occup(new double[geom_->nbasis()]);
+  unique_ptr<double[]> occup(new double[coeff_->mdim()]);
   intermediate->diagonalize(occup.get());
 
   auto amat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate);
@@ -124,7 +146,7 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   int nocc = 0;
   // TODO adjust?
   const double tiny = 1.0e-10;
-  for (int i = 0; i != geom_->nbasis(); ++i)
+  for (int i = 0; i != coeff_->mdim(); ++i)
     if (occup[i] < -tiny) ++nocc;
 
   auto r = make_shared<RDM<1>>(nocc);
@@ -151,7 +173,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   int nocc;
   vector<shared_ptr<RDM<1>>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, geom_->nbasis()-nocc, energy(), rdm1);
+  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, energy(), rdm1);
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
@@ -166,7 +188,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   out->set_erdm1(erdm);
 
   // this is just dummy...
-  vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
+  vector<double> e(eig_.get(), eig_.get()+coeff_->mdim());
   out->set_eig(e);
   return out;
 }

@@ -50,10 +50,7 @@ class HPW_DIIS  {
     const bool testing_;
 
   public:
-    HPW_DIIS(const int n, RefT o, const bool test = false) : diis_(n), orig_(o), testing_(test) {
-      std::shared_ptr<T> b = o->clone();
-      b->unit();
-      base_ = b;
+    HPW_DIIS(const int n, RefT o, RefT init, const bool test = false) : diis_(n), base_(init), orig_(o), testing_(test) {
     }
 
     RefT extrapolate(const RefT rot, const RefT errin = RefT()) {

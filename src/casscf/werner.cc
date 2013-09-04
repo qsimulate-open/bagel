@@ -59,7 +59,7 @@ void WernerKnowles::compute() {
     // denominator
 
     // start with U=1
-    auto U = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
+    auto U = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
     U->unit();
 
 

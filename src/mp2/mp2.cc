@@ -63,13 +63,12 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
 
 
 void MP2::compute() {
+  const size_t nbasis = ref_->coeff()->mdim();
   const size_t nocc = ref_->nocc() - ncore_;
   if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = geom_->nbasis() - nocc - ncore_;
+  const size_t nvirt = nbasis - nocc - ncore_;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
-  assert(geom_->nbasis() == ref_->coeff()->mdim());
 
-  const size_t nbasis = geom_->nbasis();
 
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
   shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);

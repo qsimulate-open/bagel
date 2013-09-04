@@ -68,7 +68,7 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
 
   if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
 
-  tildex_ = make_shared<TildeX>(overlap_, thresh_overlap_);
+  tildex_ = overlap_->tildex(thresh_overlap_);
 
   scfb.tick_print("Overlap orthog");
 
