@@ -176,7 +176,7 @@ void RASCI::print_header() const {
 
 
 void RASCI::compute() {
-  Timer pdebug(0);
+  Timer pdebug(2);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
@@ -238,9 +238,7 @@ void RASCI::compute() {
         double* source_array = errvec.at(ist)->data();
         double* denom_array = denom_->data();
         const double en = energies.at(ist);
-        for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
-        }
+        transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / std::min(en - den, -0.1); });
         davidson.orthog(cc_.at(ist));
         list<shared_ptr<const RASCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_.at(jst));

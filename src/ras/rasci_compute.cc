@@ -48,7 +48,7 @@ vector<shared_ptr<RASCivec>> RASCI::form_sigma(const vector<shared_ptr<RASCivec>
   for (int i = 0; i < nstate; ++i) { sigmavec.push_back( make_shared<RASCivec>(det_) ); }
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(0);
+    Timer pdebug(2);
     if (conv[istate]) continue;
     shared_ptr<const RASCivec> cc = ccvec.at(istate);
     shared_ptr<RASCivec> sigma = sigmavec.at(istate);
@@ -104,17 +104,17 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
     if (!ispace) continue;
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
-    double* data = F.get();
-    for (int ia = 0; ia < ispace->size(); ++ia, data+=la) {
+    double* fdata = F.get();
+    for (int ia = 0; ia < ispace->size(); ++ia, fdata+=la) {
       for (auto& iterkl : det->phia(ia + ispace->offset())) {
-        data[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
+        fdata[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phia(iterkl.source)) {
           if (iterij.ij < iterkl.ij) continue;
           const int ii = iterij.ij/norb;
           const int jj = iterij.ij%norb;
           const int kk = iterkl.ij/norb;
           const int ll = iterkl.ij%norb;
-          data[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * jop->mo2e_hz(ii, kk, jj, ll);
+          fdata[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * jop->mo2e_hz(ii, kk, jj, ll);
         }
       }
     }
@@ -122,10 +122,12 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
     // F is finished, matrix-matrix multiply (but to the right place)
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
-      shared_ptr<RASBlock<double>> target_block = sigma->block(ispace->nholes(), iblock->stringb()->nholes(), ispace->nparticles(), iblock->stringb()->nparticles());
+      shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringb(), ispace);
       if (!target_block) continue;
 
-      dgemm_("N", "N", iblock->lenb(), ispace->size(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
+      assert(iblock->lenb() == target_block->lenb());
+      assert(ispace->size() == target_block->lena());
+      dgemm_("N", "N", target_block->lenb(), target_block->lena(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
         F.get() + iblock->stringa()->offset(), la, 1.0, target_block->data(), target_block->lenb());
     }
   }

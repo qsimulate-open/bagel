@@ -200,7 +200,7 @@ class RASCivector {
     }
 
     double norm() const { return std::sqrt(dot_product(*this)); }
-    double variance() const { return norm() / size_; }
+    double variance() const { return dot_product(*this) / size_; }
 
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
@@ -231,11 +231,11 @@ class RASCivector {
     }
 
     void print(const double thr) const {
-      const DataType* i = data();
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {
         if (!iblock) continue;
+        double* i = iblock->data();
         for (auto& ia : *iblock->stringa()) {
           for (auto& ib : *iblock->stringb()) {
             if (std::abs(*i) > thr)

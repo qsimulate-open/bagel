@@ -69,7 +69,6 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
 
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size_, bitset<nbit__>(0ul));
-  auto istring = strings_.begin();
 
   vector<int> holes(norb1);
   iota(holes.begin(), holes.end(), 0);
@@ -80,11 +79,11 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
       vector<int> particles(norb3);
       iota(particles.begin(), particles.end(), norb1 + norb2);
       do {
-        for (int i = 0; i != nele1; ++i) istring->set(holes[i]);
-        for (int i = 0; i != nele2; ++i) istring->set(active[i]);
-        for (int i = 0; i != nele3; ++i) istring->set(particles[i]);
-
-        ++istring;
+        bitset<nbit__> bit(0ul);
+        for (int i = 0; i != nele1; ++i) bit.set(holes[i]);
+        for (int i = 0; i != nele2; ++i) bit.set(active[i]);
+        for (int i = 0; i != nele3; ++i) bit.set(particles[i]);
+        strings_[lexical<0>(bit)] = bit;
       } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
     } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
   } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
