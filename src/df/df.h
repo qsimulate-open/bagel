@@ -187,7 +187,7 @@ class DFDist_ints : public DFDist {
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
-              tasks.emplace_back(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk);
+              tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);
               j0 += i0->nbasis();
             }
           }

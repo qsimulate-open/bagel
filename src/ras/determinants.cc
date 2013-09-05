@@ -35,7 +35,7 @@ using namespace bagel;
 
 RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
     const int max_holes, const int max_particles, const bool mute) :
-  ras_{ norb1, norb2, norb3 }, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
+  ras_{{norb1, norb2, norb3}}, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
     lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
 {
   // Construct spaces and with them, a list of strings
