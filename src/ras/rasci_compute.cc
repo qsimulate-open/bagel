@@ -122,8 +122,8 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
     // F is finished, matrix-matrix multiply (but to the right place)
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
+      if (!det->allowed(ispace, iblock->stringb())) continue;
       shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringb(), ispace);
-      if (!target_block) continue;
 
       assert(iblock->lenb() == target_block->lenb());
       assert(ispace->size() == target_block->lena());

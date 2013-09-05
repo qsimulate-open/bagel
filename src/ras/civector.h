@@ -51,19 +51,16 @@ class RASBlock {
 
     DataType* const data_ptr_;
 
-    const int lena_;
-    const int lenb_;
-
     const int offset_;
 
   public:
     RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr, const int o) :
-      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), lena_(astrings->size()), lenb_(bstrings->size()), offset_(o)
+      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o)
     { }
 
-    const int size() const { return lena_ * lenb_; }
-    const int lena() const { return lena_; }
-    const int lenb() const { return lenb_; }
+    const int size() const { return lena() * lenb(); }
+    const int lena() const { return astrings_->size(); }
+    const int lenb() const { return bstrings_->size(); }
 
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
@@ -72,9 +69,9 @@ class RASBlock {
     const DataType& element(const int i) const { return data_ptr_[i]; }
 
     const int index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
-      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb_; }
+      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb(); }
     const int gindex(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const // global index
-      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb_ + offset_; }
+      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb() + offset_; }
 
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
     const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }

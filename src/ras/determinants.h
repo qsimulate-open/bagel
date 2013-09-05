@@ -137,8 +137,11 @@ class RASDeterminants {
     const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
+
     const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
       { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
+    const bool allowed(const std::shared_ptr<const StringSpace> alpha, const std::shared_ptr<const StringSpace> beta) const
+      { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
 
 
     // These access the global string lists

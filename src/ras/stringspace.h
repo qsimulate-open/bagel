@@ -52,7 +52,6 @@ class StringSpace {
     const int nele_;
 
     const int offset_;
-    int size_;
 
     struct RASGraph {
       const int ndim_;
@@ -79,7 +78,7 @@ class StringSpace {
     const int nholes() const { return ras_[0].second - ras_[0].first; }
     const int nparticles() const { return ras_[2].first; }
 
-    const int size() const { return size_; }
+    const int size() const { return strings_.size(); }
     const int offset() const { return offset_; }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }

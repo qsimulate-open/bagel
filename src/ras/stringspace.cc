@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <cassert>
+
 #include <src/ras/stringspace.h>
 #include <src/util/combination.hpp>
 
@@ -50,7 +52,7 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
   fill_ras_graph(norb1, nele1, norb2, nele2);
   fill_ras_graph(norb1 + norb2, nele1 + nele2, norb3, nele3);
 
-  size_ = graph.max();
+  int size = graph.max();
 
   weights_.reserve( (norb1 - nele1)*nele1 + (norb2 - nele2)*nele2 + (norb3 - nele3)*nele3 );
   offsets_.reserve( nele_ );
@@ -68,8 +70,9 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
   }
 
   // Lexical ordering done, now fill in all the strings
-  strings_ = vector<bitset<nbit__>>(size_, bitset<nbit__>(0ul));
+  strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
 
+  int cnt = 0;
   vector<int> holes(norb1);
   iota(holes.begin(), holes.end(), 0);
   do {
@@ -84,7 +87,11 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
         for (int i = 0; i != nele2; ++i) bit.set(active[i]);
         for (int i = 0; i != nele3; ++i) bit.set(particles[i]);
         strings_[lexical<0>(bit)] = bit;
+
+        ++cnt;
       } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
     } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
   } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
+
+  assert(cnt == size);
 }
