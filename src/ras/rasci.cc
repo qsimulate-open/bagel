@@ -126,7 +126,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
     for (auto& iter : adapt.first) {
       out.at(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-    //out.at(oindex)->spin_decontaminate();
+    out.at(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
@@ -243,7 +243,7 @@ void RASCI::compute() {
         list<shared_ptr<const RASCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_.at(jst));
         cc_.at(ist)->orthog(tmp);
-        //cc_.at(ist)->spin_decontaminate();
+        cc_.at(ist)->spin_decontaminate();
       }
     }
     pdebug.tick_print("denominator");

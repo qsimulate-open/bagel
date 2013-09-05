@@ -65,16 +65,28 @@ std::vector<double> ras_energy(std::string inp) {
   return std::vector<double>();
 }
 
-std::vector<double> reference_ras_energy_h2o() {
+std::vector<double> reference_ras_energy_h2o_full() {
   std::vector<double> out(2);
   out[0] = -75.28693755;
   out[1] = -74.86783699;
   return out;
 }
-std::vector<double> reference_ras_energy_hhe() {
+std::vector<double> reference_ras_energy_hhe_full() {
   std::vector<double> out(2);
   out[0] = -3.30315793;
   out[1] = -2.78407879;
+  return out;
+}
+std::vector<double> reference_ras_energy_h2o_restricted() {
+  std::vector<double> out(2);
+  out[0] = -75.28621267;
+  out[1] = -74.84580572;
+  return out;
+}
+std::vector<double> reference_ras_energy_hhe_restricted() {
+  std::vector<double> out(2);
+  out[0] = -3.26784974;
+  out[1] = -2.74836078;
   return out;
 }
 
@@ -82,8 +94,13 @@ std::vector<double> reference_ras_energy_hhe() {
 BOOST_AUTO_TEST_SUITE(TEST_RAS)
 
 BOOST_AUTO_TEST_CASE(FCI_EQUIVALENT) {
-    BOOST_CHECK(compare(ras_energy("h2o_sto3g_ras"), reference_ras_energy_h2o()));
-    BOOST_CHECK(compare(ras_energy("hhe_svp_ras"), reference_ras_energy_hhe()));
+    BOOST_CHECK(compare(ras_energy("h2o_sto3g_ras_full"), reference_ras_energy_h2o_full()));
+    BOOST_CHECK(compare(ras_energy("hhe_svp_ras_full"), reference_ras_energy_hhe_full()));
+}
+
+BOOST_AUTO_TEST_CASE(RESTRICTED) {
+    BOOST_CHECK(compare(ras_energy("h2o_sto3g_ras_restricted"), reference_ras_energy_h2o_restricted()));
+    BOOST_CHECK(compare(ras_energy("hhe_svp_ras_restricted"), reference_ras_energy_hhe_restricted()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
