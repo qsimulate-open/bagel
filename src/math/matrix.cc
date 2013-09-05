@@ -405,10 +405,10 @@ bool Matrix::inverse_symmetric(const double thresh) {
     dscal_(n, s, data_.get()+i*n, 1);
   }
   *this = *this ^ *this;
-#ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]);
+#ifndef NDEBUG
   if (!rm.empty())
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<

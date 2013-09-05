@@ -187,16 +187,16 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
+      ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
+      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;

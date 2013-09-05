@@ -43,7 +43,6 @@ class MoldenOut : public MoldenIO {
       MoldenOut& operator<< (std::shared_ptr<const Geometry>);
       MoldenOut& operator<< (std::shared_ptr<const Reference>);
 
-      void close() { ofs_.close(); }
 };
 
 }
