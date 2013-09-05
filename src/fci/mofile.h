@@ -87,6 +87,7 @@ class MOFile {
     double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }
     // This is in <ij|kl> == (ik|jl) format
     double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; }
+    double mo2e_hz(const int ij, const int kl) const { return mo2e_[ij+nocc_*nocc_*kl]; }
     double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
     double* core_fock_ptr() { return core_fock_->data(); }

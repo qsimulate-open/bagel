@@ -162,7 +162,7 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
 }
 
 // This function currently assumes it is being called on a Reference object with no defined active space
-shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const {
+shared_ptr<Reference> Reference::set_active(set<int> active_indices) const {
   if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
   const int naobasis = geom_->nbasis();
   const int nmobasis = coeff_->mdim();
@@ -176,33 +176,70 @@ shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const
     else --nvirt;
   }
 
+  auto coeff = coeff_;
   auto tmp_coeff = make_shared<Matrix>(naobasis, nmobasis);
 
   int iclosed = 0;
   int iactive = nclosed;
   int ivirt = nclosed + nactive;
-  for (int i = 0; i < nclosed_; ++i) {
-    if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iclosed));
-      ++iclosed;
-    }
-    else {
-      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iactive));
-      ++iactive;
-    }
+
+  auto cp = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
+    else if ( i < nclosed_ ) cp(i, iclosed);
+    else cp(i, ivirt);
   }
 
-  for (int i = nclosed_; i < nmobasis; ++i) {
-    if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,ivirt));
-      ++ivirt;
-    }
-    else {
-      copy_n(coeff_->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0,iactive));
-      ++iactive;
-    }
+  return make_shared<Reference>(geom_, make_shared<const Coeff>(*tmp_coeff), nclosed, nactive, nvirt);
+}
+
+// This function currently assumes it is being called on a Reference object with no defined active space
+shared_ptr<Reference> Reference::set_ractive(set<int> ras1, set<int> ras2, set<int> ras3) const {
+  if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
+  const int naobasis = geom_->nbasis();
+  const int nmobasis = coeff_->mdim();
+
+  const int nras1 = ras1.size();
+  const int nras2 = ras2.size();
+  const int nras3 = ras3.size();
+
+  int nactive = nras1 + nras2 + nras3;
+
+  set<int> total_active;
+  total_active.insert(ras1.begin(), ras1.end());
+  total_active.insert(ras2.begin(), ras2.end());
+  total_active.insert(ras3.begin(), ras3.end());
+  if (total_active.size() != nactive) throw runtime_error("Each orbital can occur in only one of RAS1, RAS2, or RAS3.");
+
+  int nclosed = nclosed_;
+  int nvirt = nmobasis - nclosed;
+  for (auto& iter : total_active) {
+    if (iter < nclosed_) --nclosed;
+    else --nvirt;
   }
 
-  auto out_coeff = make_shared<const Coeff>(*tmp_coeff);
-  return make_shared<Reference>(geom_, out_coeff, nclosed, nactive, nvirt);
+  auto coeff = coeff_;
+  auto tmp_coeff = make_shared<Matrix>(naobasis, nmobasis);
+
+  int iclosed = 0;
+  int iras1 = nclosed;
+  int iras2 = iras1 + nras1;
+  int iras3 = iras2 + nras2;
+  int ivirt = nclosed + nactive;
+
+  auto cp = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if ( total_active.find(i) != total_active.end() ) {
+      if (ras1.find(i) != ras1.end()) cp(i, iras1);
+      else if (ras2.find(i) != ras2.end()) cp(i, iras2);
+      else if (ras3.find(i) != ras3.end()) cp(i, iras3);
+      else assert(false);
+    }
+    else if (i < nclosed_) cp(i, iclosed);
+    else cp(i, ivirt);
+  }
+
+  return make_shared<Reference>(geom_, make_shared<const Coeff>(*tmp_coeff), nclosed, nactive, nvirt);
 }
