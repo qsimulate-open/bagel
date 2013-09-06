@@ -43,7 +43,7 @@ class CDMatrix : public ZMatrix {
              std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
     CDMatrix(const ZMatrix& o, const int acomp) : ZMatrix(o), alpha_comp_(acomp) { }
 
-    const int alpha_comp() const { return alpha_comp_; }
+    int alpha_comp() const { return alpha_comp_; }
 
 };
 

@@ -39,7 +39,7 @@ void UHF::initial_guess() {
       auto aden = make_shared<const AtomicDensities>(geom_);
       fock = make_shared<const Fock<1>>(geom_, hcore_, aden, vector<double>());
     }
-    DistMatrix intermediate = *tildex_ % *fock * *tildex_;
+    Matrix intermediate = *tildex_ % *fock * *tildex_;
     intermediate.diagonalize(eig());
     coeff_ = make_shared<const Coeff>(*tildex_ * intermediate);
     coeffB_ = make_shared<const Coeff>(*coeff_);

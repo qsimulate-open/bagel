@@ -69,16 +69,14 @@ void DFBlock::average() {
   int recvtag = 0;
 
   if (asendsize) {
-    vector<CopyBlockTask> task;
-    task.reserve(b2size_);
+    TaskQueue<CopyBlockTask> task(b2size_);
 
     sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
     const size_t retsize = asize_ - asendsize;
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
       task.emplace_back(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
 
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute();
 
     // send to the next node
     sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank+1, myrank);
@@ -119,12 +117,10 @@ void DFBlock::average() {
     // wait for recv communication
     mpi__->wait(recvtag);
 
-    vector<CopyBlockTask> task;
-    task.reserve(b2size_);
+    TaskQueue<CopyBlockTask> task(b2size_);
     for (size_t b2 = 0; b2 != b2size_; ++b2)
       task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute();
   }
 
   // wait for send communication
@@ -152,14 +148,12 @@ void DFBlock::shell_boundary() {
   int recvtag = 0;
 
   if (asendsize) {
-    vector<CopyBlockTask> task;
-    task.reserve(b2size_);
+    TaskQueue<CopyBlockTask> task(b2size_);
     sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
     for (size_t b2 = 0, i = 0; b2 != b2size_; ++b2)
       task.emplace_back(data_.get()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
 
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute();
     assert(myrank > 0);
     sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank-1, myrank);
   }
@@ -198,12 +192,10 @@ void DFBlock::shell_boundary() {
     // wait for recv communication
     mpi__->wait(recvtag);
 
-    vector<CopyBlockTask> task;
-    task.reserve(b2size_);
+    TaskQueue<CopyBlockTask> task(b2size_);
     for (size_t b2 = 0; b2 != b2size_; ++b2)
       task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute();
   }
 
   // wait for send communication

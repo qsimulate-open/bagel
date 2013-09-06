@@ -108,7 +108,7 @@ class MPI_Interface {
     int myprow() const { return myprow_; }
     int mypcol() const { return mypcol_; }
 
-    const int pnum(const int prow, const int pcol) const;
+    int pnum(const int prow, const int pcol) const;
     std::pair<int,int> numroc(const int, const int) const;
     std::unique_ptr<int[]> descinit(const int, const int) const;
 };

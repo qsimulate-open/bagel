@@ -70,9 +70,8 @@ class Matrix1eTask {
 void Matrix1e::init() {
 
   // CAUTION only lower half will be stored
-  vector<Matrix1eTask> task;
   const size_t nshell = accumulate(mol_->atoms().begin(), mol_->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
-  task.reserve(nshell*(nshell+1)/2);
+  TaskQueue<Matrix1eTask> task(nshell*(nshell+1)/2);
 
   size_t oa0 = 0; 
   int u = 0;
@@ -107,10 +106,7 @@ void Matrix1e::init() {
     }
     oa0 += (*a0)->nbasis();
   }
-  if (!task.empty()) {
-    TaskQueue<Matrix1eTask> queue(task);
-    queue.compute(resources__->max_num_threads());
-  }
+  task.compute();
   allreduce();
 }
 

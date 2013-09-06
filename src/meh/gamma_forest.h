@@ -175,8 +175,7 @@ template <int N> class GammaForest {
         }
       }
 
-      std::vector<GammaTask> tasks;
-      tasks.reserve(ntasks);
+      TaskQueue<GammaTask> tasks(ntasks);
 
       // Add tasks
       for (auto& iforest : forests_) {
@@ -192,8 +191,7 @@ template <int N> class GammaForest {
         }
       }
 
-      TaskQueue<GammaTask> tq(tasks);
-      tq.compute(resources__->max_num_threads());
+      tasks.compute();
     }
 
 
