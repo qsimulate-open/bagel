@@ -24,7 +24,6 @@
 //
 
 
-#include <stddef.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/gkineticbatch.h>
 #include <src/math/comb.h>

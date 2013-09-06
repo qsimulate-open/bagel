@@ -26,10 +26,6 @@
 
 #include <src/molecule/kinetic.h>
 #include <src/integral/os/kineticbatch.h>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
 
 using namespace std;
 using namespace bagel;

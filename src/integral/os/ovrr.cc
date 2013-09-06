@@ -24,8 +24,6 @@
 //
 
 
-#include <iostream>
-#include <iomanip>
 #include <src/integral/os/overlapbatch.h>
 
 using namespace std;

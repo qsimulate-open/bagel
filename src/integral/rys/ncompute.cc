@@ -23,12 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <cmath>
-#include <algorithm>
-#include <src/util/f77.h>
-#include <src/util/constants.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>

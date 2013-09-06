@@ -50,6 +50,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix(const int n, const int m, const bool localized = true);
 #endif
     Matrix(const Matrix&);
+    Matrix(Matrix&&);
 
     std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
     std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
@@ -101,6 +102,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator+=(const Matrix&);
     Matrix& operator-=(const Matrix&);
     Matrix& operator=(const Matrix&);
+    Matrix& operator=(Matrix&&);
     Matrix operator-(const Matrix&) const;
 
     Matrix& operator/=(const Matrix&);

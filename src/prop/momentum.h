@@ -27,10 +27,7 @@
 #ifndef __SRC_PROP_MOMENTUM_H
 #define __SRC_PROP_MOMENTUM_H
 
-#include <memory>
-#include <array>
 #include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 

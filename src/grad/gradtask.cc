@@ -24,8 +24,6 @@
 //
 
 
-#include <stddef.h>
-#include <array>
 #include <src/grad/gradeval_base.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/rys/gnaibatch.h>

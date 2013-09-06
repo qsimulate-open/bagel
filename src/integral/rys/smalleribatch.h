@@ -27,12 +27,7 @@
 #ifndef __SRC_INTEGRAL_RYS_SMALLERIBATCH_H
 #define __SRC_INTEGRAL_RYS_SMALLERIBATCH_H
 
-#include <stddef.h>
-#include <src/molecule/shell.h>
-#include <memory>
 #include <src/integral/rys/eribatch.h>
-#include <src/math/matrix.h>
-#include <src/parallel/resources.h>
 
 namespace bagel {
 

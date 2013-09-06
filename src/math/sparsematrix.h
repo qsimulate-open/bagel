@@ -52,7 +52,7 @@ class SparseMatrix {
 
   public:
     // SparseMatrix needs to be built element-by-element, for the most part
-    SparseMatrix(const int n, const int m, const bool sym = true);
+    SparseMatrix(const int n, const int m, const bool sym = false);
     SparseMatrix(const SparseMatrix& o);
 
     // getting info
@@ -77,7 +77,7 @@ class SparseMatrix {
 
     const std::vector<Element>& offdiagonal() const { return offdiagonal_; }
 
-    void insert(const int i, const int j, const double val) { offdiagonal_.emplace_back(i,j,val); }
+    void insert(const int& i, const int& j, const double& val) { offdiagonal_.emplace_back(i,j,val); }
 };
 
 }

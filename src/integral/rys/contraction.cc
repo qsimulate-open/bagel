@@ -24,12 +24,7 @@
 //
 
 
-#include <src/util/f77.h>
 #include <src/integral/rys/rysint.h>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 
 using namespace std;
 using namespace bagel;

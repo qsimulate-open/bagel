@@ -24,11 +24,8 @@
 //
 
 
-#include <stddef.h>
 #include <src/grad/cpcasscf.h>
 #include <src/math/linearRM.h>
-#include <cassert>
-#include <src/util/f77.h>
 #include <src/math/bfgs.h>
 
 #define CPHF_MAX_ITER 100

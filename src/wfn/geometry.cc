@@ -36,14 +36,17 @@
 #include <src/integral/rys/mixederibatch.h>
 #include <src/integral/libint/libint.h>
 #include <src/wfn/geometry.h>
+#include <src/wfn/geometry_connect.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/math/quatern.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
+
+using geometry_details::Node;
+using geometry_details::adf_rho;
 
 const static AtomMap atommap_;
 
@@ -625,61 +628,6 @@ bool Geometry::operator==(const Geometry& o) const {
   return out;
 }
 
-
-// connectivity graph
-
-#include <set>
-namespace bagel {
-namespace geometry {
-class Node {
-  protected:
-    const std::shared_ptr<const Atom> myself_;
-    const int num_;
-    // in order to avoid cyclic references
-    std::list<std::weak_ptr<Node>> connected_;
-
-
-  public:
-    Node(const std::shared_ptr<const Atom> o, const int n) : myself_(o), num_(n) {};
-    ~Node() {};
-
-    void add_connected(const std::shared_ptr<Node> i) {
-      std::weak_ptr<Node> in = i;
-      for (auto& iter : connected_)
-        if (iter.lock() == i) throw logic_error("Node::add_connected");
-      connected_.push_back(in);
-    };
-
-    const std::shared_ptr<const Atom> atom() const { return myself_; };
-    int num() const { return num_; };
-
-    std::set<std::shared_ptr<Node>> common_center(const std::shared_ptr<Node> o) const {
-      std::set<std::shared_ptr<Node>> out;
-      for (auto& c : connected_) {
-        if (c.lock()->connected_with(o)) out.insert(c.lock());
-      }
-      return out;
-    };
-
-    bool connected_with(const std::shared_ptr<Node> o) {
-      bool out = false;
-      for (auto& i : connected_) {
-        if (i.lock() == o) {
-          out = true;
-          break;
-        }
-      }
-      return out;
-    };
-
-};
-
-static double adf_rho(shared_ptr<const Node> i, shared_ptr<const Node> j) {
-  return exp(- i->atom()->distance(j->atom()) / (i->atom()->cov_radius()+j->atom()->cov_radius()) + 1.0);
-}
-}}
-
-using namespace geometry;
 
 array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
   cout << "    o Connectivitiy analysis" << endl;

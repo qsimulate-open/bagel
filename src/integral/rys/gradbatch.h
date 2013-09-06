@@ -28,8 +28,6 @@
 #define __SRC_RYSINT_GRADBATCH_H
 
 // compute analytic nuclear gradients
-#include <stddef.h>
-#include <memory>
 #include <src/integral/rys/eribatch_base.h>
 
 namespace bagel {

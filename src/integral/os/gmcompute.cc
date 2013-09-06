@@ -24,13 +24,8 @@
 //
 
 
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/gmomentbatch.h>
-#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;

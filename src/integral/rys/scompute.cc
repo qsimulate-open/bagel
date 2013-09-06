@@ -25,13 +25,6 @@
 
 #define PITWOHALF 17.493418327624862
 
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <cstring>
-#include <cassert>
-#include <src/util/f77.h>
-#include <src/math/algo.h>
 #include <src/integral/hrrlist.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>

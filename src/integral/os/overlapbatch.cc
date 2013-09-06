@@ -24,12 +24,9 @@
 //
 
 
-#include <cassert>
-#include <iostream>
 #include <src/integral/hrrlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;

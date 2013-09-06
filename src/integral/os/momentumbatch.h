@@ -27,7 +27,6 @@
 #ifndef __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
 #define __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
 
-#include <memory>
 #include <src/integral/os/osint.h>
 
 namespace bagel {

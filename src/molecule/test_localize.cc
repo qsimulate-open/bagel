@@ -26,7 +26,6 @@
 #include <sstream>
 #include <src/wfn/reference.h>
 #include <src/molecule/localization.h>
-#include <src/util/lexical_cast.h>
 
 using namespace bagel;
 

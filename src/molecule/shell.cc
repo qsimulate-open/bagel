@@ -24,10 +24,7 @@
 //
 
 
-#include <iostream>
-#include <sstream>
 #include <src/molecule/shell.h>
-#include <src/util/constants.h> // for Cartesian to spherical transformation
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/momentumbatch.h>
