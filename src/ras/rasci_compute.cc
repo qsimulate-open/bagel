@@ -23,13 +23,15 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/ras/rasci.h>
 #include <iomanip>
 #include <string>
 #include <stdexcept>
+#include <vector>
+
+#include <src/ras/rasci.h>
+#include <src/math/sparsematrix.h>
 #include <src/util/constants.h>
 #include <src/util/taskqueue.h>
-#include <vector>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -155,10 +157,9 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
       const int phisize = det->phib_ij(ij).size();
       if (phisize == 0) continue;
 
-      unique_ptr<double[]> Cp_trans(new double[phisize * det->lena()]);
-      fill_n(Cp_trans.get(), phisize * det->lena(), 0.0);
+      auto Cp_trans = make_shared<Matrix>(det->lena(), phisize);
 
-      double* cpdata = Cp_trans.get();
+      double* cpdata = Cp_trans->data();
 
       // gathering
       for ( auto& iphi : det->phib_ij(ij) ) {
@@ -184,9 +185,8 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         if (!ispace) continue;
         const int la = ispace->size();
 
-        unique_ptr<double[]> F(new double[ la * det->lena() ]);
-        double* fdata = F.get();
-        fill_n(fdata, la * det->lena(), 0.0);
+        auto F = make_shared<Matrix>( det->lena(), la );
+        double* fdata = F->data();
         for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
           for (auto& iter : det->phia(ia + ispace->offset())) {
             const int kk = iter.ij/norb;
@@ -195,11 +195,15 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
           }
         }
 
-        unique_ptr<double[]> Vt(new double[ la * phisize ]); // transposed from how it is found in the Olsen paper
-        dgemm_("T", "N", la, phisize, det->lena(), 1.0, F.get(), det->lena(), Cp_trans.get(), det->lena(),  0.0, Vt.get(), la);
+#if 0
+        auto Vt = make_shared<Matrix>(*F % *Cp_trans); // transposed from how it appears in Olsen's paper
+#else
+        auto Vt = make_shared<Matrix>(la, phisize);
+        dgemm_("T", "N", la, phisize, det->lena(), 1.0, F->data(), det->lena(), Cp_trans->data(), det->lena(),  0.0, Vt->data(), la);
+#endif
 
         // scatter
-        double* vdata = Vt.get();
+        double* vdata = Vt->data();
         for (auto& iphi : det->phib_ij(ij) ) {
           shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
           if (det->allowed(ispace, betaspace)) {
