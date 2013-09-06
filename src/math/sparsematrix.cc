@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/f77.h>
-#include <src/math/matrix.h>
 #include <src/math/sparsematrix.h>
 
 using namespace bagel;

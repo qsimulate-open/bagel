@@ -24,12 +24,6 @@
 //
 
 
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-#include <src/util/f77.h>
-#include <src/util/constants.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/momentumbatch.h>
 

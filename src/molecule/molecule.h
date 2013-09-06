@@ -27,7 +27,6 @@
 #define __SRC_MOLECULE_MOLECULE_H
 
 #include <iostream>
-#include <algorithm>
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
 #include <src/math/xyzfile.h>

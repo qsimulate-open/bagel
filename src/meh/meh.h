@@ -28,7 +28,6 @@
 
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_jop.h>
-#include <src/util/lexical_cast.h>
 #include <src/meh/gamma_forest.h>
 #include <src/meh/meh_spin.h>
 

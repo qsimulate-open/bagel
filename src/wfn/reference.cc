@@ -23,12 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;

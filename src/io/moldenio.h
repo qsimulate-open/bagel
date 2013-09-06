@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __io_moldenio_h
-#define __io_moldenio_h
+#ifndef __BAGEL_IO_MOLDENIO_H
+#define __BAGEL_IO_MOLDENIO_H
 
 #include <fstream>
 

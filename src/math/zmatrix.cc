@@ -24,16 +24,10 @@
 //
 
 
-#include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <src/util/f77.h>
-#include <src/math/zmatrix.h>
-#include <src/math/algo.h>
-#include <cassert>
 #include <cmath>
-#include <stdexcept>
-#include <src/parallel/mpi_interface.h>
+#include <src/math/zmatrix.h>
 
 using namespace std;
 using namespace bagel;

@@ -26,7 +26,6 @@
 
 #include <src/prop/momentum.h>
 #include <src/integral/os/momentumbatch.h>
-#include <iomanip>
 
 using namespace std;
 using namespace bagel;

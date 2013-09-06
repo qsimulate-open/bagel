@@ -24,9 +24,6 @@
 //
 
 
-#include <iostream>
-#include <iomanip>
-#include <array>
 #include <src/prop/multipole.h>
 #include <src/integral/os/mmbatch.h>
 

@@ -24,7 +24,6 @@
 //
 
 #include <src/rel/relreference.h>
-#include <src/util/constants.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
 

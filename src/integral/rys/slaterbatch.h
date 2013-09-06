@@ -26,13 +26,8 @@
 #ifndef __SRC_INTEGRAL_RYS_SLATERBATCH_H
 #define __SRC_INTEGRAL_RYS_SLATERBATCH_H
 
-#include <bagel_config.h>
-#include <cassert>
-#include <vector>
 #include <src/integral/rys/int2d.h>
 #include <src/integral/rys/rysint.h>
-#include <memory>
-#include <tuple>
 
 namespace bagel {
 

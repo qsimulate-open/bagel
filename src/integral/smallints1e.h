@@ -27,11 +27,7 @@
 #ifndef __SRC_INTEGRAL_SMALLINTS1E_H
 #define __SRC_INTEGRAL_SMALLINTS1E_H
 
-#include <stddef.h>
-#include <memory>
-#include <src/molecule/shell.h>
 #include <src/molecule/molecule.h>
-#include <src/math/matrix.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 

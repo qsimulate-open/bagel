@@ -24,7 +24,6 @@
 //
 
 
-#include <iostream>
 #include <iomanip>
 #include <src/integral/carsphlist.h>
 #include <src/integral/rys/mixederibatch.h>

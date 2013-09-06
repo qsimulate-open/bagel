@@ -27,7 +27,6 @@
 #ifndef __SRC_MATH_XYZFILE_H
 #define __SRC_MATH_XYZFILE_H
 
-#include <cassert>
 #include <src/math/matrix.h>
 
 namespace bagel {

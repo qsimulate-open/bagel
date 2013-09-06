@@ -41,7 +41,6 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/math/quatern.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;

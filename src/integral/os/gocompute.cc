@@ -24,7 +24,6 @@
 //
 
 
-#include <stddef.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/goverlapbatch.h>
 #include <src/math/comb.h>
