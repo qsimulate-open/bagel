@@ -166,6 +166,15 @@ class Matrix_base {
       std::copy_n(o.data_.get(), size(), data_.get());
     }
 
+    Matrix_base(Matrix_base&& o) : data_(std::move(o.data_)), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
+#ifdef HAVE_SCALAPACK
+      if (!localized_) {
+        desc_ = mpi__->descinit(ndim_, mdim_);
+        localsize_ = mpi__->numroc(ndim_, mdim_);
+      }
+#endif
+    }
+
     size_t size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }

@@ -48,6 +48,10 @@ Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
 
+Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
+}
+
+
 #ifdef HAVE_SCALAPACK
 Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
   setlocal_(o.local());
@@ -77,6 +81,12 @@ Matrix& Matrix::operator-=(const Matrix& o) {
 Matrix& Matrix::operator=(const Matrix& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   copy_n(o.data(), ndim_*mdim_, data());
+  return *this;
+}
+
+Matrix& Matrix::operator=(Matrix&& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
+  data_ = move(o.data_);
   return *this;
 }
 
