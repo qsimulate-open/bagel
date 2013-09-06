@@ -151,9 +151,8 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   const int norb = norb_;
 
   for (int i = 0, ij = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j, ++ij) {
+    for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-
       const int phisize = det->phib_ij(ij).size();
       if (phisize == 0) continue;
 

@@ -204,7 +204,7 @@ void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& st
   for (auto& iphi : phi) iphi.reserve(norb_ * norb_);
 
   phi_ij.clear();
-  phi_ij.resize( norb_ * norb_ );
+  phi_ij.resize( (norb_ * (norb_ + 1))/2 );
   for (auto& iphi : phi_ij) iphi.reserve( strings.size() );
 
   auto iphi = phi.begin();
@@ -219,7 +219,9 @@ void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& st
         std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
         if ( allowed(sourcebit) ) {
           iphi->emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
-          phi_ij[j + i * norb_].emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+          int minij, maxij;
+          std::tie(minij, maxij) = std::minmax(i,j);
+          phi_ij[minij+((maxij*(maxij+1))>>1)].emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
         }
       }
     }

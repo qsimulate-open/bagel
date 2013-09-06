@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <vector>
 #include <bitset>
+#include <unordered_map>
 
 #include <src/ras/civector.h>
 #include <src/parallel/resources.h> // This is maybe only necessary because I am missing something else?
@@ -52,17 +53,15 @@ namespace bagel {
       const RASCivector<double>* this_;
       shared_ptr<RASCivector<double>> out_;
       shared_ptr<const RASDeterminants> det_;
+      unordered_map<size_t, size_t>* lexicalmap_;
 
-      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d) :
-        target_(t), this_(th), out_(o), det_(d) {}
+      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
+        target_(t), this_(th), out_(o), det_(d), lexicalmap_(lex) {}
 
       void compute() {
         const int norb = det_->norb();
 
         unique_ptr<double[]> source(new double[det_->lenb()]);
-        map<size_t, size_t> lexicalmap;
-        for (auto& i : det_->stringb())
-          lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
 
         for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
           const int ii = iter.ij / norb;
@@ -86,7 +85,7 @@ namespace bagel {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
                 if (det_->allowed(det_->stringa(iter.source), bsostring))
-                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[lexicalmap[bsostring.to_ullong()]];
+                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
               }
               ++outelement;
             }
@@ -103,10 +102,14 @@ template<>
 shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
 
+  unordered_map<size_t, size_t> lexicalmap;
+  for (auto& i : det_->stringb())
+    lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
+
   TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
 
   for (auto& istring : det_->stringa()) {
-    tasks.emplace_back(istring, this, out, det_);
+    tasks.emplace_back(istring, this, out, det_, &lexicalmap);
   }
 
   tasks.compute();
