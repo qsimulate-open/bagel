@@ -39,11 +39,12 @@
 namespace bagel {
   namespace RAS {
     struct DMap {
-      const size_t source; // target is to be inferred from its location
+      const size_t source;
+      const size_t target;
       const size_t ij;     // displacement operators
       const int sign;      // sign of displacement
 
-      DMap(const size_t s, const size_t ii, const int sn) : source(s), ij(ii), sign(sn) {}
+      DMap(const size_t s, const size_t t, const size_t ii, const int sn) : source(s), target(t), ij(ii), sign(sn) {}
     };
   }
 
@@ -64,6 +65,9 @@ class RASDeterminants {
 
     std::vector<std::vector<RAS::DMap>> phia_;
     std::vector<std::vector<RAS::DMap>> phib_;
+
+    std::vector<std::vector<RAS::DMap>> phia_ij_;
+    std::vector<std::vector<RAS::DMap>> phib_ij_;
 
     std::vector<std::shared_ptr<const StringSpace>> alphaspaces_;
     std::vector<std::shared_ptr<const StringSpace>> betaspaces_;
@@ -168,8 +172,11 @@ class RASDeterminants {
     const int lenparts() const { return lenparts_; }
     const int size() const { return size_; }
 
-    const std::vector<RAS::DMap>& phia(const size_t ij) const { return phia_[ij]; }
-    const std::vector<RAS::DMap>& phib(const size_t ij) const { return phib_[ij]; }
+    const std::vector<RAS::DMap>& phia(const size_t target) const { return phia_[target]; }
+    const std::vector<RAS::DMap>& phib(const size_t target) const { return phib_[target]; }
+
+    const std::vector<RAS::DMap>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
+    const std::vector<RAS::DMap>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
     std::vector<std::shared_ptr<const StringSpace>>& stringspacea() { return alphaspaces_; }
     std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() { return betaspaces_; }
@@ -187,19 +194,23 @@ class RASDeterminants {
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi);
+    template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMap>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi) {
+void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMap>>& phi_ij) {
 
   phi.clear();
   phi.resize( strings.size() );
+  for (auto& iphi : phi) iphi.reserve(norb_ * norb_);
 
-  for (auto &iphi : phi) iphi.reserve(norb_ * norb_);
+  phi_ij.clear();
+  phi_ij.resize( norb_ * norb_ );
+  for (auto& iphi : phi_ij) iphi.reserve( strings.size() );
 
   auto iphi = phi.begin();
-  for (auto istring = strings.begin(); istring != strings.end(); ++istring, ++iphi) {
+  size_t tindex = 0;
+  for (auto istring = strings.begin(); istring != strings.end(); ++istring, ++iphi, ++tindex) {
     const std::bitset<nbit__> targetbit = *istring;
     for (int j = 0; j < norb_; ++j) {
       if ( !targetbit[j] ) continue;
@@ -207,8 +218,10 @@ void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& st
       for (int i = 0; i < norb_; ++i) {
         if ( intermediatebit[i] ) continue;
         std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
-        if ( allowed(sourcebit) )
-          iphi->emplace_back(lexical<spin>(sourcebit), j + i * norb_, sign(targetbit, i, j));
+        if ( allowed(sourcebit) ) {
+          iphi->emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+          phi_ij[j + i * norb_].emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+        }
       }
     }
   }

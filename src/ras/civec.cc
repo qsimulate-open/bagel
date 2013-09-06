@@ -59,17 +59,29 @@ namespace bagel {
       void compute() {
         const int norb = det_->norb();
 
+        unique_ptr<double[]> source(new double[det_->lenb()]);
+
         for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
           const int ii = iter.ij / norb;
           const int jj = iter.ij % norb;
 
+          fill_n(source.get(), det_->lenb(), 0.0);
+          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
+          for (auto& iblock : sourceblocks) {
+            const int offset = iblock->stringb()->offset();
+            copy_n(&this_->element(iblock->stringb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
+          }
+
           vector<shared_ptr<RASBlock<double>>> allowedblocks = out_->allowed_blocks<0>(target_);
           for (auto& iblock : allowedblocks) {
+            double* outelement = &out_->element(iblock->stringb()->strings(0), target_);
             for (auto& btstring : *iblock->stringb()) {
-              if ( !btstring[ii] || ( ii != jj && btstring[jj] ) ) continue;
-              bitset<nbit__> bsostring = btstring; bsostring.reset(ii); bsostring.set(jj);
-              if (det_->allowed(det_->stringa(iter.source), bsostring))
-                out_->element(btstring, target_) -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * this_->element(bsostring, det_->stringa(iter.source));
+              if ( btstring[ii] && ( ii == jj || !btstring[jj] ) ) {
+                bitset<nbit__> bsostring = btstring; bsostring.reset(ii); bsostring.set(jj);
+                if (det_->allowed(det_->stringa(iter.source), bsostring))
+                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[det_->lexical<1>(bsostring)];
+              }
+              ++outelement;
             }
           }
         }

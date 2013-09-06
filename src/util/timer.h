@@ -46,7 +46,7 @@ class Timer {
     // return duration in milliseconds
     double tick() {
       auto now = std::chrono::high_resolution_clock::now();
-      double out = std::chrono::duration_cast<std::chrono::milliseconds>(now - tp_).count()*0.001;
+      double out = std::chrono::duration_cast<std::chrono::nanoseconds>(now - tp_).count()*1.0e-9;
       tp_ = now;
       return out;
     }

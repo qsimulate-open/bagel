@@ -176,6 +176,26 @@ class RASCivector {
       return out;
     }
 
+    template <int spin>
+    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
+    template <int spin>
+    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::shared_ptr<const StringSpace> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
+
+    template <int spin>
+    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const int nh, const int np) const {
+      std::vector<std::shared_ptr<const RBlock>> out;
+      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
+        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
+          std::shared_ptr<const RBlock> blk;
+          if (spin == 0) blk = block(nh, ih, np, jp);
+          else           blk = block(ih, nh, jp, np);
+
+          if (blk) out.push_back(blk);
+        }
+      }
+      return out;
+    }
+
     const size_t size() const { return size_; }
     void zero() { std::fill_n(data_.get(), size_, 0.0); }
 

@@ -48,7 +48,7 @@ vector<shared_ptr<RASCivec>> RASCI::form_sigma(const vector<shared_ptr<RASCivec>
   for (int i = 0; i < nstate; ++i) { sigmavec.push_back( make_shared<RASCivec>(det_) ); }
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
+    Timer pdebug(0);
     if (conv[istate]) continue;
     shared_ptr<const RASCivec> cc = ccvec.at(istate);
     shared_ptr<RASCivec> sigma = sigmavec.at(istate);
@@ -148,30 +148,35 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
   const int norb = norb_;
 
-  for (int i = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      vector<tuple<bitset<nbit__>, bitset<nbit__>, int>> philist;
+  for (int i = 0, ij = 0; i < norb; ++i) {
+    for (int j = 0; j < norb; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      for (auto& bbit : det->stringb()) {
-        if ( !bbit[i] || ( i!=j && bbit[j]) ) continue;
-        bitset<nbit__> sourcebbit = bbit; sourcebbit.reset(i); sourcebbit.set(j);
-        if ( !det->allowed(sourcebbit) ) continue;
-        int sign = det->sign(bbit, i, j);
-        philist.emplace_back(sourcebbit, bbit, sign);
-      }
-      if (philist.size() == 0) continue;
 
-      unique_ptr<double[]> Cp(new double[philist.size() * det->lena()]);
-      fill_n(Cp.get(), philist.size() * det->lena(), 0.0);
-      double* cdata = Cp.get();
+      const int phisize = det->phib_ij(ij).size();
+      if (phisize == 0) continue;
+
+      unique_ptr<double[]> Cp_trans(new double[phisize * det->lena()]);
+      fill_n(Cp_trans.get(), phisize * det->lena(), 0.0);
+
+      double* cpdata = Cp_trans.get();
 
       // gathering
-      for ( auto& abit : det->stringa() ) {
-        for ( auto& iphi : philist ) {
-          // Cp(I, Ja) = sign(I) * C(L(I), Ja)
-          if ( det->allowed(abit, get<0>(iphi)) ) *cdata = cc->element(get<0>(iphi), abit) * static_cast<double>(get<2>(iphi));
-          ++cdata;
+      for ( auto& iphi : det->phib_ij(ij) ) {
+        shared_ptr<const StringSpace> sourcespace = det->space<1>(det->stringb(iphi.source));
+        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(sourcespace);
+        const int boffset = iphi.source - sourcespace->offset();
+        double sign = static_cast<double>(iphi.sign);
+
+        for ( auto& iblock : blks ) {
+          double* targetdata = cpdata + iblock->stringa()->offset();
+          const double* sourcedata = iblock->data() + boffset;
+          const int lb = iblock->lenb();
+
+          for ( int i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb ) {
+            *targetdata = *sourcedata * sign;
+          }
         }
+        cpdata += det->lena();
       }
 
       // build F, block by block
@@ -190,16 +195,27 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
           }
         }
 
-        unique_ptr<double[]> VI(new double[ la * philist.size() ]);
-        dgemm_("N", "N", philist.size(), la, det->lena(), 1.0, Cp.get(), philist.size(), F.get(), det->lena(), 0.0, VI.get(), philist.size());
+        unique_ptr<double[]> Vt(new double[ la * phisize ]); // transposed from how it is found in the Olsen paper
+        dgemm_("T", "N", la, phisize, det->lena(), 1.0, F.get(), det->lena(), Cp_trans.get(), det->lena(),  0.0, Vt.get(), la);
 
         // scatter
-        double* vdata = VI.get();
-        for ( auto& abit : *ispace ) {
-          for (auto& iphi : philist) {
-            if (det->allowed(abit, get<1>(iphi))) sigma->element(get<1>(iphi), abit) += *vdata;
-            ++vdata;
+        double* vdata = Vt.get();
+        for (auto& iphi : det->phib_ij(ij) ) {
+          shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+          if (det->allowed(ispace, betaspace)) {
+            const double* sourcedata = vdata;
+
+            shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+            double* targetdata = sgblock->data() + iphi.target - betaspace->offset();
+
+            const int lb = sgblock->lenb();
+
+            for (int i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
+              *targetdata += *sourcedata;
+            }
           }
+
+          vdata += la;
         }
       }
     }
