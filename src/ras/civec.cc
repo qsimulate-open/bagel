@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <vector>
 #include <bitset>
+#include <functional>
 
 #include <src/ras/civector.h>
 #include <src/parallel/resources.h> // This is maybe only necessary because I am missing something else?
@@ -60,6 +61,9 @@ namespace bagel {
         const int norb = det_->norb();
 
         unique_ptr<double[]> source(new double[det_->lenb()]);
+        map<size_t, size_t> lexicalmap;
+        for (auto& i : det_->stringb())
+          lexicalmap[hash<bitset<nbit__>>()(i)] = det_->lexical<1>(i);
 
         for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
           const int ii = iter.ij / norb;
@@ -83,7 +87,7 @@ namespace bagel {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
                 if (det_->allowed(det_->stringa(iter.source), bsostring))
-                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[det_->lexical<1>(bsostring)];
+                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[lexicalmap[hash<bitset<nbit__>>()(bsostring)]];
               }
               ++outelement;
             }

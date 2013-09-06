@@ -195,7 +195,7 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
           }
         }
 
-#if 0
+#if 1
         auto Vt = make_shared<Matrix>(*F % *Cp_trans); // transposed from how it appears in Olsen's paper
 #else
         auto Vt = make_shared<Matrix>(la, phisize);
