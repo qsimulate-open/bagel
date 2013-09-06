@@ -105,6 +105,7 @@ class MultiExcitonHamiltonian {
       MatrixPtr adiabats_; // Eigenvectors of adiabatic states
       std::vector<std::pair<std::string, MatrixPtr>> properties_;
 
+      int max_spin_;
       std::shared_ptr<MEHSpin> spin_;
 
       std::vector<double> energies_; // Adiabatic energies
@@ -174,8 +175,8 @@ class MultiExcitonHamiltonian {
 
       // Gamma Tree building
       void gamma_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp);
-      void spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for S^2
-      void compute_diagonal_spin_block(DimerSubspace& subspace);
+      void spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
+      void compute_diagonal_spin_block(DimerSubspace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
       // Off-diagonal stuff
       MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for H

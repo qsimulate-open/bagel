@@ -28,37 +28,38 @@
 
 #include <src/math/matrix.h>
 
+// Designed to be compliant with MKL_SPARSE_BLAS in which CSR seems to be the most commonly used format
+//  see the MKL documentation for a more detailed description of the storage formats and some of the capabilities
+
+// Apparently, when MKL Sparse includes a dense matrix, it uses the indexing scheme to determine whether the dense
+// matrix is row-major of column-major: row-major for 0-based indexing and column-major for 1-based indexing.
+// Our matrices are column-major, thus we need to use 1-based indexing.
+
 namespace bagel {
 
 class SparseMatrix {
   protected:
-    struct Element {
-      const int i;
-      const int j;
-      double value;
-
-      Element(const int ii, const int jj, const double vv) : i(ii), j(jj), value(vv) {}
-      Element(const Element& o) : i(o.i), j(o.j), value(o.value) {}
-    };
+    // These are standard for CSR storage
+    std::unique_ptr<double[]> data_; // contiguous list of non-zero elements: length = size_
+    std::unique_ptr<int[]>    cols_; // contiguous list of column id of each element: length = size_
+    std::unique_ptr<int[]>    rind_; // the elements of row i can be found starting at data_[rind_[i]]
+                                        // and ending (without including) at data_[rind_[i+1]]
 
     const int ndim_;
     const int mdim_;
-    const int ndiag_;
-
-    const bool symmetric_;
-
-    std::unique_ptr<double[]> diagonal_;
-    std::vector<Element> offdiagonal_;
+    const int size_;
 
   public:
-    // SparseMatrix needs to be built element-by-element, for the most part
-    SparseMatrix(const int n, const int m, const bool sym = false);
-    SparseMatrix(const SparseMatrix& o);
+    SparseMatrix(const int n, const int m, const int size, double* data, int* cols, int* rind);
+    SparseMatrix(const int n, const int m, std::vector<double>& data, std::vector<int>& cols, std::vector<int>& rind);
+    SparseMatrix(const int n, const int m, std::map<std::pair<int, int>, double>& coords);
+    SparseMatrix(const SparseMatrix& o); // copy constructor
+    SparseMatrix(SparseMatrix&& o);      // move constructor
 
     // getting info
     const int ndim() const { return ndim_; }
     const int mdim() const { return mdim_; }
-    const int ndiag() const { return ndiag_; }
+    const int size() const { return size_; }
 
     // Scalar operations (only bare minimum right now)
     void scale(const double& a);
@@ -69,15 +70,6 @@ class SparseMatrix {
     Matrix multiply(const Matrix& o, const double eyediag) const;
     Matrix operator*(const Matrix& o) const;
     Matrix operator+(const Matrix& o) const;
-
-    double* diagonal() { return diagonal_.get(); }
-    const double* diagonal() const { return diagonal_.get(); }
-    double& diagonal(const int i) { return diagonal_[i]; }
-    const double diagonal(const int i) const { return diagonal_[i]; }
-
-    const std::vector<Element>& offdiagonal() const { return offdiagonal_; }
-
-    void insert(const int& i, const int& j, const double& val) { offdiagonal_.emplace_back(i,j,val); }
 };
 
 }
