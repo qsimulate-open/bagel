@@ -98,14 +98,12 @@ void Grid::init() {
   gradz_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
 
   // TODO I guess this should be more efficient..
-  vector<GridBasisTask> tasks;
-  tasks.reserve(ngrid);
+  TaskQueue<GridBasisTask> tasks(ngrid);
   for (size_t g = 0; g != ngrid; ++g) {
     tasks.emplace_back(basis_->element_ptr(0,g), gradx_->element_ptr(0,g), grady_->element_ptr(0,g), gradz_->element_ptr(0,g),
                                   data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
   }
-  TaskQueue<GridBasisTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 }
 
 
@@ -114,14 +112,12 @@ array<shared_ptr<Matrix>,6> Grid::compute_grad2() const {
   for (auto& i : out)
    i = make_shared<Matrix>(geom_->nbasis(), size());
 
-  vector<GridDeriv2Task> tasks;
-  tasks.reserve(size());
+  TaskQueue<GridDeriv2Task> tasks(size());
   for (size_t g = 0; g != size(); ++g) {
     tasks.emplace_back(out[0]->element_ptr(0,g), out[1]->element_ptr(0,g), out[2]->element_ptr(0,g),
                                    out[3]->element_ptr(0,g), out[4]->element_ptr(0,g), out[5]->element_ptr(0,g),
                                    data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
   }
-  TaskQueue<GridDeriv2Task> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
   return out;
 }

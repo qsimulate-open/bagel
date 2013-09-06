@@ -84,15 +84,13 @@ template<>
 shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
 
-  vector<RAS::SpinTask> tasks;
-  tasks.reserve( det_->stringa().size() );
+  TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
 
   for (auto& istring : det_->stringa()) {
     tasks.emplace_back(istring, this, out, det_);
   }
 
-  TaskQueue<RAS::SpinTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   const double sz = static_cast<double>(det_->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());

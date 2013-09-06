@@ -57,15 +57,13 @@ void HarrisonZarrabian::const_denom() {
   denom_ = make_shared<Civec>(det());
 
   double* iter = denom_->data();
-  vector<HZDenomTask> tasks;
-  tasks.reserve(det()->stringa().size());
+  TaskQueue<HZDenomTask> tasks(det()->stringa().size());
   for (auto& ia : det()->stringa()) {
     tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
     iter += det()->stringb().size();
   }
 
-  TaskQueue<HZDenomTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
   denom_t.tick_print("denom");
 }
 

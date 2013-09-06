@@ -75,8 +75,7 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
   const int la = ccvec->lena();
   const int lb = ccvec->lenb();
 
-  vector<Prop1eTask> tasks;
-  tasks.reserve(nstates * (la + lb));
+  TaskQueue<Prop1eTask> tasks(nstates * (la + lb));
 
   for (int imu = 0; imu < 3; ++imu) {
     sigma->zero();
@@ -92,8 +91,7 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
         tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu].get());
     }
 
-    TaskQueue<Prop1eTask> tq(tasks);
-    tq.compute(resources__->max_num_threads());
+    tasks.compute();
 
     auto tmp = make_shared<Matrix>(nstates, nstates);
     for (int j = 0; j < nstates; ++j) {

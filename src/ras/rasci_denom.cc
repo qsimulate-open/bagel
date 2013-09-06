@@ -100,8 +100,7 @@ void RASCI::const_denom() {
 
   int tasksize = 0;
   for (auto& iblock : denom_->blocks()) { if (iblock) tasksize += iblock->lena(); }
-  vector<RAS::DenomTask> tasks;
-  tasks.reserve(tasksize);
+  TaskQueue<RAS::DenomTask> tasks(tasksize);
 
   for (auto& iblock : denom_->blocks()) {
     if ( !iblock ) continue;
@@ -112,8 +111,7 @@ void RASCI::const_denom() {
     }
   }
 
-  TaskQueue<RAS::DenomTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
   denom_t.tick_print("denom");
 }
 

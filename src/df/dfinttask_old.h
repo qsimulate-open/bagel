@@ -40,8 +40,8 @@ class DFIntTask_OLD {
     T* df_;
 
   public:
-    DFIntTask_OLD(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,2>&& b, T* df)
-     : shell_(std::move(a)), offset_(std::move(b)), rank_(b.size()), df_(df) { }
+    DFIntTask_OLD(std::array<std::shared_ptr<const Shell>,4>& a, std::array<int,2>& b, T* df)
+     : shell_(a), offset_(b), rank_(b.size()), df_(df) { }
 
     void compute() {
       std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);

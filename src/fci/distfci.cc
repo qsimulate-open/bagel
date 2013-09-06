@@ -235,8 +235,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
   vector<mutex> localmutex(lb);
   // loop over intermediate string
-  vector<DistBBTask> tasks;
-  tasks.reserve(intb.size());
+  TaskQueue<DistBBTask> tasks(intb.size());
 
   // two electron part
   for (auto& b : intb)
@@ -245,8 +244,7 @@ void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   for (auto& b : int_det->stringb())
     tasks.emplace_back(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex);
 
-  TaskQueue<DistBBTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   mytranspose_(target.get(), la, lb, source.get());
   for (size_t i = 0; i != la; ++i) {
@@ -396,15 +394,13 @@ void DistFCI::const_denom() {
   denom_ = make_shared<DistCivec>(det_);
 
   double* iter = denom_->local();
-  vector<HZDenomTask> tasks;
-  tasks.reserve(denom_->asize());
+  TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
     tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop.get(), kop.get(), h.get());
     iter += det()->stringb().size();
   }
+  tasks.compute();
 
-  TaskQueue<HZDenomTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
   denom_t.tick_print("denom");
 }
 

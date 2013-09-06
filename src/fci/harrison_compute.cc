@@ -113,15 +113,13 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
     }
   }
 
-  vector<HZTaskAA> tasks;
-  tasks.reserve(det->lena());
+  TaskQueue<HZTaskAA> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
     tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
 
-  TaskQueue<HZTaskAA> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 }
 
 void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
@@ -143,8 +141,7 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   const int lbs = bdet->lenb();
   const double* source_base = cc->data();
 
-  vector<HZTaskAB1> tasks;
-  tasks.reserve(norb*norb);
+  TaskQueue<HZTaskAB1> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
@@ -153,8 +150,7 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
     }
   }
 
-  TaskQueue<HZTaskAB1> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 }
 
 void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
