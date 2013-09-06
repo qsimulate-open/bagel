@@ -170,8 +170,7 @@ class DFDist_ints : public DFDist {
       Timer time;
 
       // making a task list
-      std::vector<DFIntTask<TBatch,TBatch::Nblocks()>> tasks;
-      tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
+      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tasks(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
@@ -187,7 +186,7 @@ class DFDist_ints : public DFDist {
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
-              tasks.emplace_back(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk);
+              tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);
               j0 += i0->nbasis();
             }
           }
@@ -196,8 +195,7 @@ class DFDist_ints : public DFDist {
         j2 += i2->nbasis();
       }
       time.tick_print("3-index ints prep");
-      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tq(tasks);
-      tq.compute(resources__->max_num_threads());
+      tasks.compute();
       time.tick_print("3-index ints");
 
     }

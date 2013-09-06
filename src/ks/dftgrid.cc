@@ -125,14 +125,13 @@ tuple<shared_ptr<const Matrix>,double> DFTGrid_base::compute_xc(shared_ptr<const
   StaticDist dist(grid_->size(), min(resources__->max_num_threads()*100, grid_->size()));
   vector<pair<size_t, size_t>> table = dist.atable();
 
-  vector<ExcVxcTask> tasks;
+  TaskQueue<ExcVxcTask> tasks(table.size());
   for (auto& i : table) {
     const size_t n = i.first;
     tasks.emplace_back(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
                                exc.get()+n, vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func);
   }
-  TaskQueue<ExcVxcTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
   time.tick_print("exc+vxc");
 
   auto out = make_shared<Matrix>(geom_->nbasis(), geom_->nbasis());
@@ -179,14 +178,13 @@ shared_ptr<const GradFile> DFTGrid_base::compute_xcgrad(shared_ptr<const XCFunc>
   StaticDist dist(grid_->size(), min(resources__->max_num_threads()*100, grid_->size()));
   vector<pair<size_t, size_t>> table = dist.atable();
 
-  vector<VxcTask> tasks;
+  TaskQueue<VxcTask> tasks(table.size());
   for (auto& i : table) {
     const size_t n = i.first;
     tasks.emplace_back(i.second, rho.get()+n, (!func->lda() ? sigma.get()+n : nullptr),
                             vxc.get()+n, (!func->lda() ? vxc.get()+n+grid_->size() : nullptr), func);
   }
-  TaskQueue<VxcTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   // in GGA, we need nabla^2 basis // TODO I guess this should be more efficient..
   array<shared_ptr<Matrix>,6> grad2;
@@ -327,8 +325,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
   if (nprev)
     copy_n(grid_->data()->data(), 4*nprev, combined->data());
 
-  vector<FuzzyTask> tasks;
-  tasks.reserve(geom_->natom()*nrad*nang);
+  TaskQueue<FuzzyTask> tasks(geom_->natom()*nrad*nang);
 
   int cnt = nprev;
   for (auto& a : geom_->atoms()) {
@@ -362,10 +359,7 @@ void DFTGrid_base::add_grid(const int nrad, const int nang, const unique_ptr<dou
       }
     }
   }
-  if (tasks.size()) {
-    TaskQueue<FuzzyTask> tq(tasks);
-    tq.compute(resources__->max_num_threads());
-  }
+  tasks.compute();
 
   shared_ptr<const Matrix> o = combined;
   grid_ = make_shared<Grid>(geom_, o);

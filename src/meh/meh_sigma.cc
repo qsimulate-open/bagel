@@ -96,8 +96,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
   auto sigma = make_shared<Dvec>(det, nstate);
   auto sg_trans = make_shared<Dvec>(det_trans, nstate);
 
-  vector<Prop1eTask> tasks;
-  tasks.reserve( ( det->lena() + det_trans->lenb() ) * nstate);
+  TaskQueue<Prop1eTask> tasks((det->lena() + det_trans->lenb()) * nstate);
 
   for (int istate = 0; istate < nstate; ++istate) {
     double* target = sigma->data(istate)->data();
@@ -109,8 +108,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
       tasks.emplace_back(cc_trans->data(istate), *aiter, target, modata);
   }
 
-  TaskQueue<Prop1eTask> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   sigma->ax_plus_y(1.0, *sg_trans->spinflip());
 
@@ -124,16 +122,14 @@ void MultiExcitonHamiltonian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Ci
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  vector<HZTaskAA> tasks;
-  tasks.reserve(det->lena());
+  TaskQueue<HZTaskAA> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb) {
     tasks.emplace_back(cc, *aiter, target, h1, h2);
   }
 
-  TaskQueue<HZTaskAA> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 }
 
 
@@ -147,8 +143,7 @@ void MultiExcitonHamiltonian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr
   const int lbs = base_det->lenb();
   const double* source_base = cc->data();
 
-  vector<HZTaskAB1> tasks;
-  tasks.reserve(norb*norb);
+  TaskQueue<HZTaskAB1> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
@@ -157,8 +152,7 @@ void MultiExcitonHamiltonian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr
     }
   }
 
-  TaskQueue<HZTaskAB1> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 }
 
 void MultiExcitonHamiltonian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {

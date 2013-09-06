@@ -30,7 +30,7 @@
 #include <array>
 #include <sstream>
 #include <memory>
-
+#include <vector>
 #include <src/util/lexical_cast.h>
 
 namespace bagel {

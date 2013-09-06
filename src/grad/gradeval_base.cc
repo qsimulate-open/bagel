@@ -52,8 +52,8 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
     task.insert(task.end(), task0.begin(), task0.end());
   }
 
-  TaskQueue<GradTask> tq(task);
-  tq.compute(resources__->max_num_threads());
+  TaskQueue<GradTask> tq(move(task));
+  tq.compute();
 
   grad_->allreduce();
 

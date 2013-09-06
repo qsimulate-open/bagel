@@ -356,7 +356,7 @@ unique_ptr<int[]> MPI_Interface::descinit(const int ndim, const int ncol) const 
   return desc;
 }
 
-const int MPI_Interface::pnum(const int prow, const int pcol) const {
+int MPI_Interface::pnum(const int prow, const int pcol) const {
 #ifdef HAVE_SCALAPACK
   return blacs_pnum_(context_, prow, pcol);
 #else

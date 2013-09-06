@@ -172,8 +172,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   Timer time;
 
   // generates a task of integral evaluations
-  vector<DFIntTask_OLD<DFDist>> tasks;
-  tasks.reserve(ashell.size()*ashell.size());
+  TaskQueue<DFIntTask_OLD<DFDist>> tasks(ashell.size()*ashell.size());
 
   data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
@@ -192,8 +191,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   }
 
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask_OLD<DFDist>> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   if (!serial_)
     data2_->allreduce();

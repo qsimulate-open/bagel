@@ -318,8 +318,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   }
 
   // compute
-  TaskQueue<GradTask> tq(task);
-  tq.compute(resources__->max_num_threads());
+  TaskQueue<GradTask> tq(move(task));
+  tq.compute();
 
   // allreduce
   grad_->allreduce();

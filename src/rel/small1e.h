@@ -72,7 +72,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
     }
 
     void print(const std::string name = "") const override {
-      Matrix1eArray<this->Nblocks()>::print(name.empty() ? "Small1e" : name);
+      Matrix1eArray<4*Batch::Nblocks()>::print(name.empty() ? "Small1e" : name);
     }
 
 };
