@@ -47,6 +47,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(const int n, const int m, const bool localized = true);
 #endif
     ZMatrix(const ZMatrix&);
+    ZMatrix(ZMatrix&&);
     ZMatrix(const Matrix& real, const Matrix& imag);
     ZMatrix(const Matrix& real, const std::complex<double> factor);
 
@@ -173,6 +174,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
   public:
     DistZMatrix(const int n, const int m);
     DistZMatrix(const DistZMatrix&);
+    DistZMatrix(DistZMatrix&&);
     DistZMatrix(const ZMatrix&);
 
     void diagonalize(double* vec) override;

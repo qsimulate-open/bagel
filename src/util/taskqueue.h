@@ -32,6 +32,7 @@
 #include <atomic>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 // TODO until GCC fixes this bug
 #ifdef __GNUC__
@@ -62,7 +63,7 @@ class TaskQueue {
     TaskQueue(std::vector<T>&& t) : task_(std::move(t)) { }
 
     template<typename ...args>
-    void emplace_back(args&&... a) { task_.emplace_back(a...); }
+    void emplace_back(args&&... a) { task_.emplace_back(std::forward<args>(a)...); }
 
     void compute(const int num_threads = resources__->max_num_threads()) {
       if (task_.empty()) return;

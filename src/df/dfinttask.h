@@ -45,7 +45,7 @@ class DFIntTask {
     }
 
   public:
-    DFIntTask(std::array<std::shared_ptr<const Shell>,4>& a, std::array<int,3>& b, std::array<std::shared_ptr<DFBlock>,N>& df)
+    DFIntTask(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,3>&& b, std::array<std::shared_ptr<DFBlock>,N>& df)
      : shell_(a), offset_(b), dfblocks_(df) { };
 
     void compute() {
