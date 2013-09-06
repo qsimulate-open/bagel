@@ -47,7 +47,7 @@ class DistMatrix_base {
     std::unique_ptr<DataType[]> local_;
 
     // Scalapack specific
-    const std::unique_ptr<int[]> desc_;
+    std::unique_ptr<int[]> desc_;
     const std::tuple<int, int> localsize_;
 
     template<class T>
@@ -97,7 +97,7 @@ class DistMatrix_base {
       std::copy_n(o.local_.get(), size(), local_.get());
     }
 
-    DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(std::move(local_)), desc_(std::move(o.desc_)), localsize_(o.localsize_) {
+    DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(std::move(o.local_)), desc_(std::move(o.desc_)), localsize_(o.localsize_) {
     }
 
     const std::unique_ptr<DataType[]>& local() const { return local_; }

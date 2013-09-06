@@ -42,7 +42,7 @@ DistMatrix::DistMatrix(const int n, const int m) : DistMatrix_base<double>(n,m) 
 DistMatrix::DistMatrix(const DistMatrix& o) : DistMatrix_base<double>(o) {}
 
 
-DistMatrix::DistMatrix(DistMatrix&& o) : DistMatrix_base<double>(std::move(o)) {}
+DistMatrix::DistMatrix(DistMatrix&& o) : DistMatrix_base<double>(move(o)) {}
 
 
 DistMatrix::DistMatrix(const Matrix& o) : DistMatrix_base<double>(o.ndim(), o.mdim()) {

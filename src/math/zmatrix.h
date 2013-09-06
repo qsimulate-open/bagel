@@ -174,8 +174,8 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
   public:
     DistZMatrix(const int n, const int m);
     DistZMatrix(const DistZMatrix&);
+    DistZMatrix(DistZMatrix&&);
     DistZMatrix(const ZMatrix&);
-    DistZMatrix(ZMatrix&&);
 
     void diagonalize(double* vec) override;
 
