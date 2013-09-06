@@ -41,6 +41,9 @@ DistZMatrix::DistZMatrix(const int n, const int m) : DistMatrix_base<std::comple
 DistZMatrix::DistZMatrix(const DistZMatrix& o) : DistMatrix_base<std::complex<double>>(o) {}
 
 
+DistZMatrix::DistZMatrix(DistZMatrix&& o) : DistMatrix_base<std::complex<double>>(std::move(o)) {}
+
+
 DistZMatrix::DistZMatrix(const ZMatrix& o) : DistMatrix_base<std::complex<double>>(o.ndim(), o.mdim()) {
   copy_n(o.getlocal().get(), size(), local_.get());
 }

@@ -160,6 +160,7 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix(const int n, const int m);
     DistMatrix(const DistMatrix&);
     DistMatrix(const Matrix&);
+    DistMatrix(Matrix&&);
 
     void diagonalize(double* vec) override;
 
