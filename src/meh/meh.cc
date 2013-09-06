@@ -59,20 +59,19 @@ void MultiExcitonHamiltonian::common_init() {
 
   dimerstates_ = 0;
 
-  int max_spin = 0;
-  // Process DimerCISpace to form and organize needed Civecs and figure out max_spin
+  int maxspin = 0;
+  // Process DimerCISpace to form and organize needed Civecs and figure out maxspin
   for ( auto& aiter : cispace_->cispace<0>() ) {
     SpaceKey akey = aiter.first;
     SpaceKey bkey( akey.S, -akey.m_s, -akey.q );
     shared_ptr<const Dvec> bspace = cispace_->ccvec<1>(bkey);
     if ( bspace ) {
       subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
-      max_spin = max(aiter.second->det()->nspin(), max_spin);
+      maxspin = max(aiter.second->det()->nspin(), maxspin);
     }
   }
-  max_spin = 2 * max_spin + 1;
-
-  spin_ = make_shared<MEHSpin>(dimerstates_, max_spin);
+  maxspin = 2 * maxspin + 1;
+  max_spin_ = maxspin;
 
   energies_ = vector<double>(nstates_, 0.0);
 

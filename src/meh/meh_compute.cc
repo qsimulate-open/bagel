@@ -34,17 +34,19 @@ void MultiExcitonHamiltonian::compute() {
   Timer mehtime;
   cout << endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << endl;
 
+  map<pair<int,int>, double> spinmap;
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
       gamma_couple_blocks(*iAB, *jAB);
-      spin_couple_blocks(*iAB, *jAB);
+      spin_couple_blocks(*iAB, *jAB, spinmap);
     }
     gamma_couple_blocks(*iAB, *iAB);
-    compute_diagonal_spin_block(*iAB);
+    compute_diagonal_spin_block(*iAB, spinmap);
   }
+  spin_ = make_shared<MEHSpin>(dimerstates_, spinmap, max_spin_);
 
   cout << "  o Preparing Gamma trees and building spin operator - " << setw(9) << fixed << setprecision(2) << mehtime.tick() << endl;
-  cout << "    - offdiagonal spin elements: " << spin_->offdiagonal().size() << endl;
+  cout << "    - spin elements: " << spin_->size() << endl;
 
   gammaforest_->compute();
 

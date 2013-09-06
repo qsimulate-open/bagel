@@ -37,23 +37,12 @@ void MEHSpin::filter(Matrix& o, const int desired_spin) const {
   assert( n == this->mdim() );
   const int m = o.mdim();
 
-  Matrix tmp(n, m);
   for (int ispin = 0; ispin != max_spin_; ++ispin) {
     if (ispin == desired_spin) continue;
-    const double kk1 = 0.25 * static_cast<double>( ispin*(ispin+2) );
 
-    copy_n(o.data(), n * m, tmp.data());
-    // o = (SpinMatrix - eye*kk1) * o
-    for (int j = 0; j < m; ++j) {
-      double* target = o.element_ptr(0,j);
-      const double* source = tmp.element_ptr(0,j);
-      for (int i = 0; i < n; ++i) {
-        target[i] = (diagonal(i) - kk1) * source[i];
-      }
-      for (auto& offdiag : offdiagonal_) {
-        target[offdiag.i] += offdiag.value * source[offdiag.j];
-        target[offdiag.j] += offdiag.value * source[offdiag.i];
-      }
-    }
+    Matrix S2 = *this * o;
+
+    const double factor = -4.0/(static_cast<double>(ispin*(ispin+2)));
+    o.ax_plus_y(factor, S2);
   }
 }
