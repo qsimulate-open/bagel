@@ -28,7 +28,7 @@
 using namespace bagel;
 using namespace std;
 
-void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp) {
+void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp, map<pair<int, int>, double>& spinmap) {
   const Coupling term_type = coupling_type(AB, ApBp);
 
   auto spin_block = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
@@ -91,14 +91,17 @@ void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspac
     for (int ispin = 0; ispin < n; ++ispin) {
       for (int jspin = 0; jspin < m; ++jspin) {
         const double ele = spin_block->element(ispin, jspin);
-        if ( fabs(ele) > 1.0e-4) spin_->insert(ispin + ioff, jspin + joff, ele);
+        if ( fabs(ele) > 1.0e-4)  {
+          spinmap.emplace(make_pair(ispin + ioff, jspin + joff), ele);
+          spinmap.emplace(make_pair(jspin + joff, ispin + ioff), ele);
+        }
       }
     }
   }
 }
 
 
-void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspace) {
+void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspace, map<pair<int, int>, double>& spinmap) {
   shared_ptr<const Dvec> Ap = subspace.ci<0>();
   shared_ptr<const Dvec> Bp = subspace.ci<1>();
   shared_ptr<const Dvec> SA = Ap->spin();
@@ -143,8 +146,12 @@ void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspac
   for (int ispin = 0; ispin < n; ++ispin) {
     for (int jspin = 0; jspin < ispin; ++jspin) {
       const double ele = spin_block->element(ispin,jspin);
-      if (fabs(ele) > 1.0e-4) spin_->insert(ispin + offset, jspin + offset, ele);
+      if (fabs(ele) > 1.0e-4) {
+        spinmap.emplace(make_pair(ispin + offset, jspin + offset), ele);
+        spinmap.emplace(make_pair(jspin + offset, ispin + offset), ele);
+      }
     }
-    spin_->diagonal(ispin + offset) = spin_block->element(ispin, ispin);
+    const double ele = spin_block->element(ispin, ispin);
+    if (fabs(ele) > 1.0e-4) spinmap.emplace(make_pair(ispin + offset, ispin + offset), ele);
   }
 }
