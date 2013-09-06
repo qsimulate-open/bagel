@@ -64,6 +64,10 @@ namespace bagel {
         for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
           const int ii = iter.ij / norb;
           const int jj = iter.ij % norb;
+          bitset<nbit__> mask1; mask1.set(ii); mask1.set(jj);
+          bitset<nbit__> mask2; mask2.set(ii);
+
+          bitset<nbit__> maskij; maskij.set(ii); maskij.flip(jj);
 
           fill_n(source.get(), det_->lenb(), 0.0);
           vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
@@ -76,8 +80,8 @@ namespace bagel {
           for (auto& iblock : allowedblocks) {
             double* outelement = &out_->element(iblock->stringb()->strings(0), target_);
             for (auto& btstring : *iblock->stringb()) {
-              if ( btstring[ii] && ( ii == jj || !btstring[jj] ) ) {
-                bitset<nbit__> bsostring = btstring; bsostring.reset(ii); bsostring.set(jj);
+              if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
+                const bitset<nbit__> bsostring = btstring ^ maskij;
                 if (det_->allowed(det_->stringa(iter.source), bsostring))
                   *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[det_->lexical<1>(bsostring)];
               }

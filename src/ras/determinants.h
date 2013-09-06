@@ -105,7 +105,7 @@ class RASDeterminants {
 
     std::string print_bit(std::bitset<nbit__> bit) const {
       std::string out;
-      for (int i = 0; i != norb_; ++i) { if (bit[i]) { out += "1"; } else { out += "."; } }
+      for (int i = 0; i != norb_; ++i) { out += bit[i] ? "1" : "."; }
       return out;
     }
 
@@ -122,8 +122,8 @@ class RASDeterminants {
 
     template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
-      const std::bitset<nbit__> ii( (1 << (i)) - 1 );
-      bit = bit & ii;
+      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinant::sign (and other functions)");
+      bit &= (1ull << i) - 1ull;
       return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
@@ -131,14 +131,13 @@ class RASDeterminants {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
-      std::bitset<nbit__> ii(~((1 << (min+1)) - 1));
-      std::bitset<nbit__> jj((1 << max) - 1);
-      bit = (bit & ii) & jj;
+      bit &= ~((1ull << (min+1)) - 1ull);
+      bit &= (1ull << max) - 1ull;
       return 1 - ((bit.count() & 1) << 1);
     }
 
-    const int nholes(const std::bitset<nbit__> bit) const { return ( ras_[0] - (bit & std::bitset<nbit__>((1ul << ras_[0]) - 1)).count() ); }
-    const int nparticles(const std::bitset<nbit__> bit) const { return ( (bit & std::bitset<nbit__>(((1ul << ras_[2]) - 1) << (ras_[0] + ras_[1]))).count() ); }
+    const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & std::bitset<nbit__>((1ull << ras_[0]) - 1ull)).count(); }
+    const int nparticles(const std::bitset<nbit__> bit) const { return (bit & std::bitset<nbit__>(((1ull << ras_[2]) - 1ull) << (ras_[0] + ras_[1]))).count(); }
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
@@ -185,7 +184,7 @@ class RASDeterminants {
 
     template <int spin> std::shared_ptr<const StringSpace> space(const int nholes, const int nparticles) const
       { return ( spin == Alpha ? alphaspaces_ : betaspaces_ )[nparticles + nholes * (max_particles_ + 1)]; }
-    template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__> bit) const
+    template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__>& bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
     template <int spin> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical(bit); }
