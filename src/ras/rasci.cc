@@ -46,6 +46,7 @@ void RASCI::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+  sparse_ = idata_->get<bool>("sparse", true);
 
   nstate_ = idata_->get<int>("nstate", 1);
 

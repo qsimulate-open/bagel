@@ -184,22 +184,44 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
         if (!ispace) continue;
         const int la = ispace->size();
 
-        auto F = make_shared<Matrix>( det->lena(), la );
-        double* fdata = F->data();
-        for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
-          for (auto& iter : det->phia(ia + ispace->offset())) {
-            const int kk = iter.ij/norb;
-            const int ll = iter.ij%norb;
-            fdata[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(i, kk, j, ll);
-          }
-        }
+        shared_ptr<Matrix> Vt;
+        if ( sparse_ ) {
+          const int size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, 0, [&la] (int i, vector<RAS::DMap> v) { return i + la*v.size(); });
+          vector<double> data; data.reserve(size);
+          vector<int> cols; cols.reserve(size);
+          vector<int> rind; rind.reserve(la + 1);
 
-#if 1
-        auto Vt = make_shared<Matrix>(*F % *Cp_trans); // transposed from how it appears in Olsen's paper
-#else
-        auto Vt = make_shared<Matrix>(la, phisize);
-        dgemm_("T", "N", la, phisize, det->lena(), 1.0, F->data(), det->lena(), Cp_trans->data(), det->lena(),  0.0, Vt->data(), la);
-#endif
+          for (int ia = 0; ia < la; ++ia) {
+            map<int, double> row;
+            for (auto& iter : det->phia(ia + ispace->offset())) {
+              const int kk = iter.ij/norb;
+              const int ll = iter.ij%norb;
+              row[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(i, kk, j, ll);
+            }
+            rind.push_back(data.size() + 1);
+            for (auto& irow : row) {
+              cols.push_back(irow.first + 1);
+              data.push_back(irow.second);
+            }
+          }
+          rind.push_back(data.size() + 1);
+          assert(size > data.size());
+
+          auto Ft = make_shared<SparseMatrix>( la, det->lena(), data, cols, rind);
+          Vt = make_shared<Matrix>(*Ft * *Cp_trans);
+        }
+        else { // dense matrix multiply
+          auto F = make_shared<Matrix>( det->lena(), la );
+          double* fdata = F->data();
+          for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
+            for (auto& iter : det->phia(ia + ispace->offset())) {
+              const int kk = iter.ij/norb;
+              const int ll = iter.ij%norb;
+              fdata[iter.source] += static_cast<double>(iter.sign) * jop->mo2e_hz(i, kk, j, ll);
+            }
+          }
+          Vt = make_shared<Matrix>(*F % *Cp_trans); // transposed from how it appears in Olsen's paper
+        }
 
         // scatter
         double* vdata = Vt->data();

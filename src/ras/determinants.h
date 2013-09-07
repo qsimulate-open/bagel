@@ -171,6 +171,9 @@ class RASDeterminants {
     const int lenparts() const { return lenparts_; }
     const int size() const { return size_; }
 
+    const std::vector<std::vector<RAS::DMap>>& phia() const { return phia_; }
+    const std::vector<std::vector<RAS::DMap>>& phib() const { return phib_; }
+
     const std::vector<RAS::DMap>& phia(const size_t target) const { return phia_[target]; }
     const std::vector<RAS::DMap>& phib(const size_t target) const { return phib_[target]; }
 
