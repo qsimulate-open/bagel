@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -43,10 +42,9 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 }
 
-// TODO one line change in order to add a function to block diagonalize
 double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
-  nocc_ = nfence - nstart;
+  norb_rel_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
   const int nbasis = nbasis_;
   relgeom_ = geom_->relativistic(false);
@@ -61,26 +59,74 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
 
-  // TODO block diaganolize according kramers symmetry
-  //kramers_block(buf1e, buf2e);
+  shared_ptr<const ZMatrix> mo1e_;
+  shared_ptr<const ZMatrix> mo2e_;
+  tie(mo1e_, mo2e_) = kramers_block(buf1e, buf2e);
 
-  compress(buf1e, buf2e);
+  compress(mo1e_, mo2e_);
   return core_energy;
 }
 
-void RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
-//
-//block diagonalize 1e and 2e matrices according to kramers symmetry by a unitary operator
-//
-//1) sort degenerate orbitals into a vector
-//2) loop over vector and apply projection
-//
+tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
+  const size_t n = buf1e->ndim();
+
+  //sorting orbitals into bar and unbar vectors
+  unique_ptr<double[]> vec_(new double[n]);
+  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
+  op_->diagonalize(vec_.get());
+
+  vector<shared_ptr<ZMatrix>> scr_;
+  scr_.push_back(make_shared<ZMatrix>(n,n));
+  scr_.push_back(make_shared<ZMatrix>(n,n));
+  for (int i = 0; i != n; i+=2) {
+    for (int j = 0; j != n; j++) {
+      scr_.front()->data((i/2)*n+j) = real(op_->data(i*n+j));
+      scr_.back()->data((i/2)*n+j) = imag(op_->data(i*n+j));
+      scr_.front()->data((i+n)*n/2+j) = real(op_->data((i+1)*n+j));
+      scr_.back()->data((i+n)*n/2+j) = imag(op_->data((i+1)*n+j));
+    }
+  }
+
+  //constructing U (unitary rotation of K without complex conjugation operator)
+  shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
+  for (int i = 0; i != n/4; ++i) {
+    block->element(i,i+n/4) = complex<double>(0,1.0);
+    block->element(i+n/4,i) = complex<double>(0,-1.0);
+  }
+
+  vector<shared_ptr<ZMatrix>> kramer;
+  kramer.push_back( make_shared<ZMatrix>(n,n) );
+  kramer.front()->copy_block(0,0,n/2,n/2,block);
+  kramer.front()->copy_block(n/2,n/2,n/2,n/2,block);
+  //imaginary version = -1.0 * real
+  kramer.push_back( make_shared<ZMatrix>(*kramer.front() * -1.0 ));
+
+  //constructing U bar with matrix elements <phi|U|phi> with barred and unbarred phi
+  vector< shared_ptr<ZMatrix> > ubar;
+  auto siter = scr_.begin();
+  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter, ++siter) {
+    ubar.push_back(make_shared<ZMatrix>(**siter % **iter * **siter));
+    ubar.back()->diagonalize(vec_.get());
+    //TODO can use vec_ for all diagonalizations when not checking eigenvalues
+    unique_ptr<double[]> eig(new double[n]);
+    (*iter)->diagonalize(eig.get());
+    //TODO for temporary debugging
+    for (int i = 0; i != n; ++i) cout << *(eig.get()+i) << "               " << *(vec_.get()+i) << endl;
+    //U bar = C T epsilon T^-1 C^-1 C = CT*T^-1 and put back i factored out
+    (*iter)->inverse();
+    **siter = *ubar.back() * **iter * complex<double>(0.0,1.0);
+  }
+  throw logic_error("kramers_block still in progress...");
+
+  shared_ptr<const ZMatrix> mo1e = make_shared<const ZMatrix>(1,1);
+  shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1,1);
+  return make_tuple(mo1e, mo2e);
 }
 
-//does not need to be changed as long as kramers_block is in the same format
+//TODO input matrices are now in block diagonal form and the sizes must be checked
 void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 
-  const int nocc = nocc_;
+  const int nocc = norb_rel_;
   sizeij_ = nocc*nocc;
   mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
   copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
@@ -101,29 +147,33 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
   const size_t nbasis = geom_->nbasis();
-
   complex<double> core_energy = 0.0;
+  core_energy = 1e100;
 
-  auto relhcore = make_shared<RelHcore>(relgeom_);
-
-  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+  shared_ptr<ZMatrix> dfock0 = make_shared<RelHcore>(relgeom_);
+  //TODO rhf density matrix as in ZMOFile, may not be implemented yet for dfock?
+#if 0
+  shared_ptr<RelHcore> relhcore = make_shared<RelHcore>(relgeom_);
+  if (nstart != 0) {
+    dfock0 = make_shared<DFock>(geom_, relhcore, relref->relcoeff(),true,true,true);
+    core_energy = (*** RHF DENSITY MATRIX HERE *** (*relhcore+*dfock0)).trace() * 0.5;
+  }
+  dfock0->fill_upper();
+#endif
 
   // Hij = relcoeff(T) * relhcore * relcoeff
-  core_dfock_ = make_shared<ZMatrix>(*coeff % *relhcore * *coeff);
+  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+  core_dfock_ = make_shared<ZMatrix>(*coeff % *dfock0 * *coeff);
 
-  //TODO include some density adjustment? see zmofile
-//core_energy = relhcore->trace();
-  core_energy = 1.0e100;
   assert(fabs(core_energy.imag())<1e-10);
-
   return make_tuple(core_dfock_, core_energy.real());
 }
 
 
 shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
 //slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
-  const size_t nocc = nfence - nstart;
-  if (nocc < 1) throw runtime_error("no correlated electrons");
+  const size_t norb_rel_ = nfence - nstart;
+  if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
 
   assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
   assert(geom_->nbasis()*2 == relref->relcoeff()->mdim());

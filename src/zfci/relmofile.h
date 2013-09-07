@@ -36,11 +36,12 @@ namespace bagel {
 class RelMOFile : public ZMOFile_Base {
 
   protected:
+    int norb_rel_;
     std::shared_ptr<ZMatrix> core_dfock_;
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int) override;
+    std::tuple<std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>> kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
-    void kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
 
     std::shared_ptr<const Geometry> relgeom_;
     std::shared_ptr<const RelReference> relref;
