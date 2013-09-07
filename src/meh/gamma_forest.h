@@ -26,8 +26,6 @@
 #ifndef __meh_gamma_forest_h
 #define __meh_gamma_forest_h
 
-#include <utility>
-#include <memory>
 #include <array>
 
 #include <src/fci/dvec.h>

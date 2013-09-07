@@ -23,24 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// TODO until GCC fixes this bug
-#define _GLIBCXX_USE_NANOSLEEP
-
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <stdexcept>
 #include <src/fci/distfci.h>
 #include <src/math/davidson.h>
-#include <src/util/constants.h>
 #include <src/util/combination.hpp>
 #include <src/math/comb.h>
-#include <src/math/algo.h>
 #include <src/fci/hzdenomtask.h>
 #include <src/fci/distfci_ab.h>
 #include <src/fci/distfci_bb.h>
-#include <vector>
-#include <bagel_config.h>
 
 using namespace std;
 using namespace bagel;

@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <memory>
-
 #include <src/meh/meh.h>
 #include <src/fci/hztasks.h>
 #include <src/fci/prop1etask.h>

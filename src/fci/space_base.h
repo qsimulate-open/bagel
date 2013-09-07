@@ -27,17 +27,6 @@
 #ifndef __SRC_FCI_SPACE_BASE_H
 #define __SRC_FCI_SPACE_BASE_H
 
-#include <memory>
-#include <string>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <map>
-#include <bitset>
-#include <cassert>
-
-#include <src/util/constants.h>
 #include <src/fci/determinants.h>
 
 namespace bagel {

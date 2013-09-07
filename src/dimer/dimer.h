@@ -28,7 +28,6 @@
 
 #include <src/fci/harrison.h>
 #include <src/dimer/dimer_cispace.h>
-#include <src/util/lexical_cast.h>
 #include <src/wfn/construct_method.h>
 
 namespace bagel {

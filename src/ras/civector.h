@@ -27,17 +27,12 @@
 #ifndef __BAGEL_RAS_RASCIVECTOR_H
 #define __BAGEL_RAS_RASCIVECTOR_H
 
-#include <memory>
-#include <tuple>
-#include <vector>
 #include <list>
 #include <map>
-#include <bitset>
-#include <algorithm>
 #include <cassert>
-
+#include <iostream>
+#include <iomanip>
 #include <src/ras/determinants.h>
-#include <src/util/constants.h>
 
 namespace bagel {
 

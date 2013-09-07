@@ -23,11 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
-
-#include <src/math/matrix.h>
 #include <src/meh/meh.h>
 
 using namespace std;

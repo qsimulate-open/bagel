@@ -25,7 +25,6 @@
 
 #include <src/dimer/dimer_prop.h>
 #include <src/math/davidson.h>
-#include <src/util/f77.h>
 #include <src/meh/meh.h>
 
 using namespace std;

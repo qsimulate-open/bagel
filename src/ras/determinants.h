@@ -27,13 +27,7 @@
 #ifndef __SRC_RAS_DETERMINANTS_H
 #define __SRC_RAS_DETERMINANTS_H
 
-#include <memory>
 #include <tuple>
-#include <vector>
-#include <bitset>
-#include <algorithm>
-
-#include <src/util/constants.h>
 #include <src/ras/stringspace.h>
 
 namespace bagel {

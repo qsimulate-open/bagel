@@ -23,15 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <stdexcept>
-#include <src/fci/fci.h>
 #include <src/fci/knowles.h>
 #include <src/math/davidson.h>
-#include <src/util/constants.h>
-#include <vector>
 
 // toggle for timing print out.
 static const bool tprint = false;

@@ -24,16 +24,10 @@
 //
 
 
-#include <memory>
-#include <iostream>
 #include <iomanip>
-#include <vector>
-#include <bitset>
 #include <unordered_map>
 
 #include <src/ras/civector.h>
-#include <src/parallel/resources.h> // This is maybe only necessary because I am missing something else?
-#include <src/util/constants.h>
 #include <src/util/taskqueue.h>
 
 using namespace std;
