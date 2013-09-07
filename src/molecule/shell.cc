@@ -24,13 +24,10 @@
 //
 
 
-#include <iostream>
-#include <sstream>
 #include <src/molecule/shell.h>
-#include <src/util/constants.h> // for Cartesian to spherical transformation
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
-#include <src/integral/os/momentbatch.h>
+#include <src/integral/os/momentumbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -233,12 +230,12 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
   const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
-  auto coeff0 = make_shared<MomentBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_inc_}});
+  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_inc_}});
   coeff0->compute();
 
-  shared_ptr<MomentBatch> coeff1;
+  shared_ptr<MomentumBatch> coeff1;
   if (aux_dec_) {
-    coeff1 = make_shared<MomentBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}});
+    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}});
     coeff1->compute();
   } else {
     // just to run. coeff1 is not referenced in the code

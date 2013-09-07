@@ -24,11 +24,7 @@
 //
 
 
-#include <cmath>
-#include <cassert>
-#include <iostream>
 #include <src/integral/os/osint.h>
-#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;

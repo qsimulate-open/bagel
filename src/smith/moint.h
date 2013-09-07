@@ -159,7 +159,7 @@ class MOFock {
         den = ref_->coeff()->form_density_rhf(ref_->nclosed());
       } else {
         // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
-        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->geom(), ref_->nclosed(), true);
+        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->nclosed(), true);
         // slice of coeff
         std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis
@@ -220,8 +220,8 @@ class Ci {
 
   public:
     Ci(std::shared_ptr<const Reference> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), ci_size_(c->size()) {
-      assert(b.size() == 1); 
-    
+      assert(b.size() == 1);
+
       // form ci coefficient tensor
       rdm0deriv_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
 

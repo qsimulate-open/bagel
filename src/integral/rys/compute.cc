@@ -23,12 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <cassert>
-#include <src/util/f77.h>
-#include <src/math/algo.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/hrrlist.h>
@@ -45,7 +39,7 @@ void ERIBatch::compute() {
 
   double* const stack_save = stack_->get(size_alloc_);
   bkup_ = stack_save;
-  fill(data_, data_ + size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }

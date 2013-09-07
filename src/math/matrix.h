@@ -50,6 +50,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix(const int n, const int m, const bool localized = true);
 #endif
     Matrix(const Matrix&);
+    Matrix(Matrix&&);
 
     std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
     std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
@@ -65,10 +66,10 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
-    // compute S^-1 using symmetric form.
-    void inverse_symmetric(const double thresh = 1.0e-8);
-    // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
-    void inverse_half(const double thresh = 1.0e-8);
+    // compute S^-1 using symmetric form. Returns if some roots were discarded
+    bool inverse_symmetric(const double thresh = 1.0e-8);
+    // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded. Returs if some roots were discarded
+    bool inverse_half(const double thresh = 1.0e-8);
     // compute S^1/2. Same algorithm as above.
     void sqrt();
 
@@ -101,6 +102,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator+=(const Matrix&);
     Matrix& operator-=(const Matrix&);
     Matrix& operator=(const Matrix&);
+    Matrix& operator=(Matrix&&);
     Matrix operator-(const Matrix&) const;
 
     Matrix& operator/=(const Matrix&);
@@ -122,6 +124,10 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     double dot_product(const Matrix& o) const { return this->dot_product_impl(o); }
 
     double orthog(const std::list<std::shared_ptr<const Matrix>> o) { return this->orthog_impl(o); } 
+    void rotate(const int i, const int j, const double c, const double s) { drot_(ndim_, element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
+    void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
+    void rotate(std::vector<std::tuple<int, int, double>> rotations) 
+      { for (auto& irot : rotations) rotate(std::get<0>(irot), std::get<1>(irot), std::get<2>(irot)); }
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
@@ -138,7 +144,9 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     Matrix(const DistMatrix&);
 #else
+    std::shared_ptr<Matrix> distmatrix() { return shared_from_this(); }
     std::shared_ptr<const Matrix> distmatrix() const;
+    std::shared_ptr<Matrix> matrix() { return shared_from_this(); }
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
     std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
@@ -151,6 +159,7 @@ class DistMatrix : public DistMatrix_base<double> {
   public:
     DistMatrix(const int n, const int m);
     DistMatrix(const DistMatrix&);
+    DistMatrix(DistMatrix&&);
     DistMatrix(const Matrix&);
 
     void diagonalize(double* vec) override;
@@ -173,6 +182,9 @@ class DistMatrix : public DistMatrix_base<double> {
 
     void ax_plus_y(const double a, const DistMatrix& o) { this->ax_plus_y_impl(a,o); }
     double dot_product(const DistMatrix& o) const { return this->dot_product_impl(o); }
+
+    void rotate(std::vector<std::tuple<int, int, double>> rotations);
+    void rotate(const int i, const int j, const double gamma);
 
     std::shared_ptr<Matrix> matrix() const;
 

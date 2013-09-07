@@ -60,7 +60,6 @@ double molden_out_energy(std::string inp1, std::string inp2) {
         MoldenOut mfs(out_file);
         mfs << geom;
         mfs << ref;
-        mfs.close();
 
       }
     }

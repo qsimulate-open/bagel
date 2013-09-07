@@ -24,14 +24,10 @@
 //
 
 
-#ifndef __BAGEL_SRC_UTIL_LinearRM_H
-#define __BAGEL_SRC_UTIL_LinearRM_H
+#ifndef __BAGEL_SRC_MATH_LINEARRM_H
+#define __BAGEL_SRC_MATH_LINEARRM_H
 
-#include <cassert>
-#include <memory>
-#include <list>
-#include <stdexcept>
-#include <src/util/f77.h>
+#include <src/math/matrix.h>
 
 // Solves a linear equation using residual minimization.
 // Compared to Linear, this is robust because we don't assume
@@ -51,27 +47,15 @@ class LinearRM {
     const std::shared_ptr<const T> grad_;
 
     // contains
-    std::unique_ptr<double[]> mat_;
-    std::unique_ptr<double[]> scr_;
-    std::unique_ptr<double[]> vec_;
-    std::unique_ptr<double[]> prod_;
-    std::unique_ptr<int[]> ipiv_;
-    int info;
-
-    // for convenience below
-    double& mat(int i, int j) { return mat_[i+j*max_]; }
-    double& scr(int i, int j) { return scr_[i+j*max_]; }
-
+    std::shared_ptr<Matrix> mat_;
+    std::shared_ptr<Matrix> vec_;
+    std::shared_ptr<Matrix> prod_;
 
   public:
-    LinearRM(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
-      mat_(new double[max_*max_]),
-      scr_(new double[max_*max_]),
-      vec_(new double[max_]),
-      prod_(new double[max_]),
-      ipiv_(new int[max_*2]) {
+    LinearRM(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad) {
+      mat_ = std::make_shared<Matrix>(max_, max_);
+      prod_ = std::make_shared<Matrix>(max_, 1);
     }
-    ~LinearRM() {}
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
 
@@ -82,22 +66,19 @@ class LinearRM {
       // first set mat (=x(i)A^dag Ax(j)) and prod (= x(i)A^dag *y)
       ++size_;
       auto citer = sigma_.begin();
-      for (int i = 0; i != size_; ++i, ++citer) {
-        mat(i,size_-1) = mat(size_-1,i) = s->dot_product(**citer);
+      for (int i = 0; i != size_; ++i) {
+        mat_->element(i,size_-1) = mat_->element(size_-1,i) = s->dot_product(**citer++);
       }
       // NOTE THE MINUS SIGN HERE!!
-      prod_[size_-1] = - s->dot_product(*grad_);
+      prod_->element(size_-1,0) = - s->dot_product(*grad_);
 
       // set to scr_
-      std::copy(mat_.get(), mat_.get()+max_*max_, scr_.get());
-      std::copy(prod_.get(), prod_.get()+max_, vec_.get());
-      dgesv_(size_, 1, scr_, max_, ipiv_, vec_, size_, info);
-      if (info) throw std::runtime_error("dgesv failed in Linear");
+      vec_ = prod_->solve(mat_, size_);
 
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
-      for (auto j = sigma_.begin(); j != sigma_.end(); ++j, ++cnt)
-        out->ax_plus_y(vec_[cnt], *j);
+      for (auto& j : sigma_)
+        out->ax_plus_y(vec_->element(cnt++, 0), j);
       assert(cnt == size_);
       return out;
     }
@@ -105,9 +86,8 @@ class LinearRM {
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();
       int cnt = 0;
-      for (auto i = c_.begin(); i != c_.end(); ++i, ++cnt) {
-        out->ax_plus_y(vec_[cnt], *i);
-      }
+      for (auto& i : c_)
+        out->ax_plus_y(vec_->element(cnt++, 0), i);
       return out;
     }
 

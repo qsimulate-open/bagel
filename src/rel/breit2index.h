@@ -27,10 +27,7 @@
 #ifndef __SRC_REL_BREIT2INDEX_H
 #define __SRC_REL_BREIT2INDEX_H
 
-#include <memory>
-#include <array>
 #include <src/math/zmatrix.h>
-#include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/rel/breitint.h>
 

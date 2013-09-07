@@ -25,18 +25,12 @@
 
 
 #include <src/prop/momentum.h>
-#include <src/integral/os/momentbatch.h>
-#include <iomanip>
+#include <src/integral/os/momentumbatch.h>
 
 using namespace std;
 using namespace bagel;
 
 Momentum::Momentum(shared_ptr<const Geometry> g) : geom_(g) {
-
-}
-
-
-Momentum::~Momentum() {
 
 }
 
@@ -60,7 +54,7 @@ array<shared_ptr<Matrix>, 3> Momentum::compute() const {
         for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++offset1) {
 
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
-          MomentBatch mom(input);
+          MomentumBatch mom(input);
           mom.compute();
 
           const double* dat0 = mom.data();

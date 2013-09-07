@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: tildex.h
+// Filename: momentumbatch.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,25 @@
 //
 
 
-#ifndef __src_scf_tildex_h
-#define __src_scf_tildex_h
+#ifndef __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
+#define __SRC_INTEGRAL_OS_MOMENTUMBATCH_H
 
-#include <src/math/matrix.h>
+#include <src/integral/os/osint.h>
 
 namespace bagel {
 
-class TildeX : public Matrix {
+class MomentumBatch : public OSInt {
   protected:
+    void perform_VRR(double*) override;
+
+    int nblocks() const override { return 3; }
+    int nrank() const override { return 0; } 
 
   public:
-    TildeX(const std::shared_ptr<const Overlap> olp, const double thresh) : Matrix(*olp)  {
-      this->inverse_half(thresh);
-    }
+    MomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+     : OSInt(basis, stack) { common_init(); }
 
-    TildeX& operator=(const Matrix1e& o) { std::copy(o.data(), o.data()+ndim_*mdim_, this->data()); return *this; };
-
+    void compute() override;
 };
 
 }

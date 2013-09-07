@@ -37,16 +37,14 @@ class Coeff : public Matrix {
     std::shared_ptr<const Geometry> geom_;
 
   private:
-//  std::shared_ptr<const Geometry> supergeom(std::vector<std::shared_ptr<const Coeff>> coeff_vec);
     int num_basis(std::vector<std::shared_ptr<const Coeff>> coeff_vec) const;
 
   public:
     Coeff(const Matrix&);
     Coeff(std::vector<std::shared_ptr<const Coeff>> coeff_vec);
-    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {};
-    ~Coeff();
+    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {}
 
-    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; };
+    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
 
     std::shared_ptr<Matrix> form_density_rhf(const int n, const int offset = 0) const;
     std::shared_ptr<Matrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;

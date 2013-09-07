@@ -35,13 +35,16 @@ using namespace bagel;
 
 #ifdef HAVE_SCALAPACK
 
-DistZMatrix::DistZMatrix(const int n, const int m) : DistMatrix_base<std::complex<double>>(n,m) {}
+DistZMatrix::DistZMatrix(const int n, const int m) : DistMatrix_base<complex<double>>(n,m) {}
 
 
-DistZMatrix::DistZMatrix(const DistZMatrix& o) : DistMatrix_base<std::complex<double>>(o) {}
+DistZMatrix::DistZMatrix(const DistZMatrix& o) : DistMatrix_base<complex<double>>(o) {}
 
 
-DistZMatrix::DistZMatrix(const ZMatrix& o) : DistMatrix_base<std::complex<double>>(o.ndim(), o.mdim()) {
+DistZMatrix::DistZMatrix(DistZMatrix&& o) : DistMatrix_base<complex<double>>(move(o)) {}
+
+
+DistZMatrix::DistZMatrix(const ZMatrix& o) : DistMatrix_base<complex<double>>(o.ndim(), o.mdim()) {
   copy_n(o.getlocal().get(), size(), local_.get());
 }
 
@@ -98,7 +101,7 @@ void DistZMatrix::diagonalize(double* eig) {
 
   // first compute worksize
   int info;
-  std::complex<double> wsize;
+  complex<double> wsize;
   const int lrwork = 1 + 9*n + 3*localrow*localcol;
   const int liwork = 7*n + 8*mpi__->npcol() + 2;
   unique_ptr<double[]> rwork(new double[lrwork]);

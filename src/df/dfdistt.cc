@@ -75,12 +75,10 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
     }
     for (auto& i : rrequest) mpi__->wait(i);
 
-    vector<CopyBlockTask> task;
-    task.reserve(mpi__->size());
+    TaskQueue<CopyBlockTask> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
       task.emplace_back(buf->data()+atab[i].first*size_, atab[i].second, dat->data()+atab[i].first, naux_, atab[i].second, size_);
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute();
 
     data_.push_back(dat);
   }
@@ -151,12 +149,10 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     vector<pair<size_t, size_t>> atab = df_->adist_now()->atable();
 
     // copy using threads
-    vector<CopyBlockTask> task;
-    task.reserve(mpi__->size());
+    TaskQueue<CopyBlockTask> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
       task.emplace_back((*dat)->data()+atab[i].first, naux_, (*buf)->data()+atab[i].first*size_, atab[i].second, atab[i].second, size_);
-    TaskQueue<CopyBlockTask> tq(task);
-    tq.compute(resources__->max_num_threads());
+    task.compute(resources__->max_num_threads());
 
     // last, issue all the send requests
     for (int i = 0; i != mpi__->size(); ++i) {

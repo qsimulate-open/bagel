@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: momentbatch.cc
+// Filename: momentumbatch.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,14 +24,8 @@
 //
 
 
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-#include <src/util/f77.h>
-#include <src/util/constants.h>
 #include <src/integral/carsphlist.h>
-#include <src/integral/os/momentbatch.h>
+#include <src/integral/os/momentumbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -39,7 +33,7 @@ using namespace bagel;
 const static CarSphList carsphlist;
 
 
-void MomentBatch::compute() {
+void MomentumBatch::compute() {
 
   double* const intermediate_p = stack_->get(size_block_*3);
   perform_VRR(intermediate_p);
@@ -77,7 +71,7 @@ void MomentBatch::compute() {
 }
 
 
-void MomentBatch::perform_VRR(double* intermediate) {
+void MomentumBatch::perform_VRR(double* intermediate) {
   const int worksize = amax1_;
   double* workpx = stack_->get(worksize*worksize);
   double* workpy = stack_->get(worksize*worksize);

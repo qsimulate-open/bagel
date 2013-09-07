@@ -54,9 +54,8 @@ class F12Ten {
     F12Ten(const size_t i, const size_t d0, const size_t d1, std::shared_ptr<const Matrix> b)
      : nocc_(i), dim0_(d0), dim1_(d1), data_(new double[b->size()]) { std::copy_n(b->data(), b->size(), data_.get()); }
     F12Ten(const F12Ten& o) : nocc_(o.nocc_), dim0_(o.dim0_), dim1_(o.dim1_), data_(new double[o.size()]) {
-      std::copy(o.data(), o.data()+o.size(), data_.get());
+      std::copy_n(o.data(), o.size(), data_.get());
     }
-    ~F12Ten() {}
 
     F12Ten operator*(const double a) const {
       F12Ten f(*this);
@@ -102,7 +101,6 @@ class F12Mat : public F12Ten {
     F12Mat(const size_t i, std::unique_ptr<double[]> b) : F12Ten(i, i, i, std::move(b)) { }
     F12Mat(const size_t i, std::shared_ptr<const Matrix> b) : F12Ten(i, i, i, b) { }
     F12Mat(const F12Mat& o) : F12Ten(o) { }
-    ~F12Mat() {}
 
     F12Mat operator*(const double a) const {
       F12Mat f(*this);

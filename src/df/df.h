@@ -80,7 +80,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     void ax_plus_y(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
 
-    std::unique_ptr<double[]> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+    std::shared_ptr<Matrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }
@@ -93,6 +93,19 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>(),
                                        const bool onlyonce = false) const;
 
+    void average_3index() {
+      Timer time;
+      if (!serial_)
+        for (auto& i : block_)
+          i->average();
+      time.tick_print("3-index ints post");
+    }
+
+    void shell_boundary_3index() {
+      if (!serial_)
+        for (auto& i : block_)
+          i->shell_boundary();
+    }
 };
 
 
@@ -117,10 +130,10 @@ class DFDist : public ParallelDF {
 
     DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }
 
-    bool has_2index() const { return data2_.get() != nullptr; };
-    size_t nbasis0() const { return nindex2_; };
-    size_t nbasis1() const { return nindex1_; };
-    size_t naux() const { return naux_; };
+    bool has_2index() const { return data2_.get() != nullptr; }
+    size_t nbasis0() const { return nindex2_; }
+    size_t nbasis1() const { return nindex1_; }
+    size_t naux() const { return naux_; }
 
     void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
        { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
@@ -143,14 +156,6 @@ class DFDist : public ParallelDF {
         out.push_back(std::make_shared<const DFDist>(nindex1_, naux_, i, df_, data2_));
       return out;
     }
-
-    void average_3index() {
-      Timer time;
-      if (!serial_)
-        for (auto& i : block_)
-          i->average();
-      time.tick_print("3-index ints post");
-    }
 };
 
 
@@ -165,8 +170,7 @@ class DFDist_ints : public DFDist {
       Timer time;
 
       // making a task list
-      std::vector<DFIntTask<TBatch,TBatch::Nblocks()>> tasks;
-      tasks.reserve(b1shell.size()*b2shell.size()*ashell.size());
+      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tasks(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
@@ -182,7 +186,7 @@ class DFDist_ints : public DFDist {
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
-              tasks.emplace_back(std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, std::array<int,3>{{j2, j1, j0}}, blk);
+              tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);
               j0 += i0->nbasis();
             }
           }
@@ -191,8 +195,7 @@ class DFDist_ints : public DFDist {
         j2 += i2->nbasis();
       }
       time.tick_print("3-index ints prep");
-      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tq(tasks);
-      tq.compute(resources__->max_num_threads());
+      tasks.compute();
       time.tick_print("3-index ints");
 
     }
@@ -240,8 +243,8 @@ class DFHalfDist : public ParallelDF {
   public:
     DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2(), df) { }
 
-    size_t nocc() const { return nindex1_; };
-    size_t nbasis() const { return nindex2_; };
+    size_t nocc() const { return nindex1_; }
+    size_t nbasis() const { return nindex2_; }
 
     std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
     std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;

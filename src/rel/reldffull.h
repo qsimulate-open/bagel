@@ -26,6 +26,7 @@
 #ifndef __SRC_REL_RELDFFULL_H
 #define __SRC_REL_RELDFFULL_H
 
+#include <src/rel/reldf.h>
 #include <src/rel/reldfhalf.h>
 
 namespace bagel {

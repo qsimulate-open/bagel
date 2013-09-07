@@ -23,12 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
-#include <cmath>
-#include <algorithm>
-#include <src/util/f77.h>
-#include <src/util/constants.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
@@ -37,8 +31,9 @@
 using namespace std;
 using namespace bagel;
 
-static const HRRList hrr;
-static const double PITWOHALF = 17.493418327624862;
+constexpr static double PITWOHALF = 17.493418327624862;
+const static HRRList hrr;
+const static CarSphList carsphlist;
 
 void NAIBatch::compute() {
   const double zero = 0.0;
@@ -64,7 +59,7 @@ void NAIBatch::compute() {
   double r2[20];
 
   const int alc = size_alloc_;
-  fill(data_, data_ + alc, zero);
+  fill_n(data_, alc, zero);
 
   const SortList sort(spherical1_);
 
@@ -146,7 +141,6 @@ void NAIBatch::compute() {
   // Cartesian to spherical 01 if necesarry
   // data will be stored in bkup_
   if (spherical1_) {
-    struct CarSphList carsphlist;
     const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = contsize_;
     carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);

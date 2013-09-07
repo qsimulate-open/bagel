@@ -186,6 +186,8 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   if (iter_ > 0) {
     current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
     current_->print_atoms();
+    if (internal_)
+      bmat_ = current_->compute_internal_coordinate(bmat_[0]);
   }
 
   // first calculate reference (if needed)
@@ -238,8 +240,6 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // current geometry in a molden file
   MoldenOut mfs("opt.molden");
   mfs << current_;
-  mfs.close();
-
   print_iteration(en, cgrad->rms(), timer_.tick());
 }
 

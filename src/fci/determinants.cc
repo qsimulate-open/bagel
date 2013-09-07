@@ -47,10 +47,10 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
   if (!mute) cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
   if (!mute) cout << "  o single displacement lists (alpha)" << endl;
   const_phis_<0>(stringa_, phia_, phia_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << phia_.size()*phia_.front().size() << endl;
+  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
   if (!mute) cout << "  o single displacement lists (beta)" << endl;
   const_phis_<1>(stringb_, phib_, phib_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << phib_.size()*phib_.front().size() << endl;
+  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
   if (!mute) cout << "  o size of the space " << endl;
   if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
   if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
@@ -77,8 +77,8 @@ void Determinants::const_string_lists_() {
   const int lengthb = comb.c(norb_, neleb_);
   stringa_.resize(lengtha);
   stringb_.resize(lengthb);
-  fill(stringa_.begin(), stringa_.end(),bitset<nbit__>(0));
-  fill(stringb_.begin(), stringb_.end(),bitset<nbit__>(0));
+  fill(stringa_.begin(), stringa_.end(), bitset<nbit__>(0));
+  fill(stringb_.begin(), stringb_.end(), bitset<nbit__>(0));
 
   vector<bitset<nbit__>>::iterator sa = stringa_.begin();
   do {

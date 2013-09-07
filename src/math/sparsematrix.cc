@@ -23,31 +23,67 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/f77.h>
-#include <src/math/matrix.h>
 #include <src/math/sparsematrix.h>
+#include <src/util/mkl_sparse.h>
 
 using namespace bagel;
 using namespace std;
 
-//Constructors
-SparseMatrix::SparseMatrix(const int n, const int m, const bool sym) : ndim_(n), mdim_(m), ndiag_(std::min(ndim_,mdim_)), symmetric_(sym) {
-  assert( !(symmetric_ && (ndim_ != mdim_)) ); // if symmetric matrix, ndim_ == mdim_
-
-  diagonal_ = unique_ptr<double[]>(new double[ndiag_]);
+// assumes data is given with 1-based indexing
+SparseMatrix::SparseMatrix(const int n, const int m, const int size, double* data, int* cols, int* rind) :
+  data_(unique_ptr<double[]>(new double[size])), cols_(unique_ptr<int[]>(new int[size])), rind_(unique_ptr<int[]>(new int[m+1])),
+  ndim_(n), mdim_(m), size_(size)
+{
+  copy_n(data, size_, data_.get());
+  copy_n(cols, size_, cols_.get());
+  copy_n(rind, ndim_ + 1, rind_.get());
 }
 
-SparseMatrix::SparseMatrix(const SparseMatrix& o) : ndim_(o.ndim_), mdim_(o.mdim_), ndiag_(o.ndiag_), symmetric_(o.symmetric_) {
-  diagonal_ = unique_ptr<double[]>(new double[ndiag_]);
-  copy_n(o.diagonal(), ndiag_, diagonal_.get());
-
-  for (auto& iele : offdiagonal_) { offdiagonal_.emplace_back(iele); }
+// assumes data is given with 1-based indexing
+SparseMatrix::SparseMatrix(const int n, const int m, vector<double>& data, vector<int>& cols, vector<int>& rind) :
+  SparseMatrix(n, m, data.size(), data.data(), cols.data(), rind.data())
+{
+  assert(data.size() == cols.size());
+  assert(rind.size() == n + 1);
 }
+
+// assumes coords is given with 0-based indexing
+SparseMatrix::SparseMatrix(const int n, const int m, map<pair<int, int>, double>& coords) : ndim_(n), mdim_(m), size_(coords.size())
+{
+  data_ = unique_ptr<double[]>(new double[size_]);
+  cols_ = unique_ptr<int[]>(new int[size_]);
+  rind_ = unique_ptr<int[]>(new int[ndim_ + 1]);
+
+  int current_element = 0;
+  int current_row = -1;
+
+  for (auto& element : coords) {
+    const int i = element.first.first;
+    const int j = element.first.second;
+    const double value = element.second;
+
+    data_[current_element] = value;
+    cols_[current_element] = j + 1; // for 1-based indexing
+    
+    if ( i >= current_row ) {
+      while ( current_row < i )
+        rind_[++current_row] = current_element + 1; // for 1-based indexing
+    }
+    else assert(false);
+
+    ++current_element;
+  }
+
+  fill(rind_.get() + current_row + 1, rind_.get() + ndim_ + 1, size_ + 1);
+}
+
+SparseMatrix::SparseMatrix(const SparseMatrix& o) : SparseMatrix(o.ndim_, o.mdim_, o.size_, o.data_.get(), o.cols_.get(), o.rind_.get()) {}
+
+SparseMatrix::SparseMatrix(SparseMatrix&& o) : data_(move(o.data_)), cols_(move(o.cols_)), rind_(move(o.rind_)), ndim_(o.ndim_), mdim_(o.mdim_), size_(o.size_) {}
 
 //Scalar operations
 void SparseMatrix::scale(const double& a) {
-  dscal_(ndiag_, a, diagonal_.get(), 1);
-  for (auto& iele : offdiagonal_) { iele.value *= a; }
+  transform(data_.get(), data_.get() + size_, data_.get(), [&a] (double p) { return p * a; });
 }
 
 SparseMatrix SparseMatrix::operator*(const double& a) const {
@@ -63,7 +99,7 @@ SparseMatrix SparseMatrix::operator/(const double& a) const {
 }
 
 // Matrix operations
-Matrix SparseMatrix::multiply(const Matrix& o, const double eyediag) const {
+Matrix SparseMatrix::operator*(const Matrix& o) const {
   const int l = this->mdim();
   assert(l == o.ndim());
   const int m = o.mdim();
@@ -71,31 +107,22 @@ Matrix SparseMatrix::multiply(const Matrix& o, const double eyediag) const {
 
   Matrix out(n, m);
 
+#ifdef HAVE_MKL_H
+  mkl_dcsrmm_("N", n, m, l, 1.0, data_.get(), cols_.get(), rind_.get(), o.data(), o.ndim(), 0.0, out.data(), out.ndim());
+#else
   for (int j = 0; j < m; ++j) {
     double* target = out.element_ptr(0,j);
     const double* source = o.element_ptr(0,j);
+
     for (int i = 0; i < n; ++i) {
-      target[i] = (diagonal(i) + eyediag) * source[i];
-    }
-    // Avoiding putting an if statement inside a tight loop
-    if (symmetric_) {
-      for (auto& offdiag : offdiagonal_) {
-        target[offdiag.i] += offdiag.value * source[offdiag.j];
-        target[offdiag.j] += offdiag.value * source[offdiag.i];
-      }
-    }
-    else {
-      for (auto& offdiag : offdiagonal_) {
-        target[offdiag.i] += offdiag.value * source[offdiag.j];
+      for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
+        target[i] += data_[rowdata] * source[cols_[rowdata] - 1];
       }
     }
   }
+#endif
 
   return out;
-}
-
-Matrix SparseMatrix::operator*(const Matrix& o) const {
-  return multiply(o, 0.0);
 }
 
 Matrix SparseMatrix::operator+(const Matrix& o) const {
@@ -103,19 +130,9 @@ Matrix SparseMatrix::operator+(const Matrix& o) const {
 
   Matrix out(o);
 
-  for(int i = 0; i < ndiag_; ++i) {
-    out.element(i,i) += this->diagonal(i);
-  }
-
-  if (symmetric_) {
-    for(auto& iele : offdiagonal_) {
-      out.element(iele.i, iele.j) += iele.value;
-      out.element(iele.j, iele.i) += iele.value;
-    }
-  }
-  else {
-    for(auto& iele : offdiagonal_) {
-      out.element(iele.i, iele.j) += iele.value;
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
+      out.element(i, cols_[rowdata] - 1) += data_[rowdata];
     }
   }
 

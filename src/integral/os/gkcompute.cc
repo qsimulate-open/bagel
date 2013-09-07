@@ -24,7 +24,6 @@
 //
 
 
-#include <stddef.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/gkineticbatch.h>
 #include <src/math/comb.h>
@@ -33,6 +32,7 @@ using namespace std;
 using namespace bagel;
 
 const static Comb comb;
+const static CarSphList carsphlist;
 
 void GKineticBatch::compute() {
 
@@ -169,7 +169,6 @@ void GKineticBatch::compute() {
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
     if (spherical_) {
-      struct CarSphList carsphlist;
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;
       source = bkup;

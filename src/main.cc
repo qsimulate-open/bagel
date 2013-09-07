@@ -197,10 +197,11 @@ throw logic_error("broken!");
         const bool orbitals = itree->get<bool>("orbitals", false);
         const string out_file = itree->get<string>("file", "out.molden");
 
-        MoldenOut mfs(out_file);
-        mfs << geom;
-        if(orbitals) mfs << ref;
-        mfs.close();
+        if (mpi__->rank() == 0) {
+          MoldenOut mfs(out_file);
+          mfs << geom;
+          if (orbitals) mfs << ref;
+        }
 
       } else {
         if (title != "molecule")

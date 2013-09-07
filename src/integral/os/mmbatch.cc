@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipolebatch.cc
+// Filename: mmbatch.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -25,7 +25,7 @@
 
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
-#include <src/integral/os/dipolebatch.h>
+#include <src/integral/os/mmbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -33,14 +33,14 @@ using namespace bagel;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-void DipoleBatch::compute() {
+void MMBatch::compute() {
 
-  double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*3);
+  double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*nblocks());
   perform_VRR(intermediate_p);
 
   double* cdata = data_;
   double* csource = intermediate_p;
-  for (int iblock = 0; iblock != 3; ++iblock,
+  for (int iblock = 0; iblock != nblocks(); ++iblock,
                                     cdata += size_block_, csource += prim0_*prim1_*asize_) {
 
     double* const intermediate_c = stack_->get(cont0_*cont1_*asize_);
@@ -76,73 +76,92 @@ void DipoleBatch::compute() {
     stack_->release(cont0_*cont1_*asize_, intermediate_c);
   }
 
-  stack_->release(prim0_*prim1_*asize_*3, intermediate_p);
+  stack_->release(prim0_*prim1_*asize_*nblocks(), intermediate_p);
 }
 
 
-void DipoleBatch::perform_VRR(double* intermediate) {
-  const int worksize = amax1_+1;
-  double* const workx = stack_->get(worksize);
-  double* const worky = stack_->get(worksize);
-  double* const workz = stack_->get(worksize);
-  double* const workxd = stack_->get(worksize);
-  double* const workyd = stack_->get(worksize);
-  double* const workzd = stack_->get(worksize);
+void MMBatch::perform_VRR(double* intermediate) {
 
-  const double acx = basisinfo_[0]->position(0) - center_[0];
-  const double acy = basisinfo_[0]->position(1) - center_[1];
-  const double acz = basisinfo_[0]->position(2) - center_[2];
+  const int worksize = amax1_;
+
+  double* const pworkx = stack_->get(worksize*(lmax_+1));
+  double* const pworky = stack_->get(worksize*(lmax_+1));
+  double* const pworkz = stack_->get(worksize*(lmax_+1));
+  vector<double*> workx(lmax_+1);
+  vector<double*> worky(lmax_+1);
+  vector<double*> workz(lmax_+1);
+  for (int i = 0; i != lmax_+1; ++i) {
+    workx[i] = pworkx + worksize*i;
+    worky[i] = pworky + worksize*i;
+    workz[i] = pworkz + worksize*i;
+  }
 
   const size_t size_block = prim0_*prim1_*asize_;
 
   // Perform VRR
   for (int ii = 0; ii != prim0_*prim1_; ++ii) {
     const int offset_ii = ii * asize_;
-    double* current_data0 = intermediate + offset_ii;
-    double* current_data1 = intermediate + offset_ii + size_block;
-    double* current_data2 = intermediate + offset_ii + size_block*2;
+    vector<double*> current_data(nblocks());
+    for (int i = 0; i != nblocks(); ++i)
+      current_data[i] = intermediate + offset_ii + size_block*i;
 
     /// Sx(0 : i + j, 0) etc will be made here
-    workx[0] = coeffsx_[ii];
-    worky[0] = coeffsy_[ii];
-    workz[0] = coeffsz_[ii];
-    workx[1] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
-    worky[1] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
-    workz[1] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];
-    for (int i = 2; i != amax1_+1; ++i) {
-      workx[i] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
-      worky[i] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
-      workz[i] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
+    workx[0][0] = coeffsx_[ii];
+    worky[0][0] = coeffsy_[ii];
+    workz[0][0] = coeffsz_[ii];
+    workx[0][1] = (p_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][0];
+    worky[0][1] = (p_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][0];
+    workz[0][1] = (p_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][0];
+    for (int i = 2; i < amax1_; ++i) {
+      workx[0][i] = (p_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][i - 1] + 0.5*(i-1)/xp_[ii] * workx[0][i - 2];
+      worky[0][i] = (p_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][i - 1] + 0.5*(i-1)/xp_[ii] * worky[0][i - 2];
+      workz[0][i] = (p_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][i - 1] + 0.5*(i-1)/xp_[ii] * workz[0][i - 2];
     }
 
     // take a linear combination to get dipole..
-    for (int i = 0; i != amax1_; ++i) {
-      workxd[i] = workx[i+1] + acx*workx[i];
-      workyd[i] = worky[i+1] + acy*worky[i];
-      workzd[i] = workz[i+1] + acz*workz[i];
+    const double acx = p_[ii*3]   - center_[0];
+    const double acy = p_[ii*3+1] - center_[1];
+    const double acz = p_[ii*3+2] - center_[2];
+
+    for (int i = 0; i < amax1_; ++i) {
+      workx[1][i] = 0.5*i*workx[0][i-1]/xp_[ii] + acx*workx[0][i];
+      worky[1][i] = 0.5*i*worky[0][i-1]/xp_[ii] + acy*worky[0][i];
+      workz[1][i] = 0.5*i*workz[0][i-1]/xp_[ii] + acz*workz[0][i];
+    }
+
+    // take a linear combination to get multipole integrals..
+    for (int j = 1; j <= lmax_; ++j) {
+      for (int i = 0; i != amax1_; ++i) {
+        workx[j][i] = acx*workx[j-1][i] + 0.5/xp_[ii]*(i*workx[j-1][i-1] + (j==1 ? 0.0 : (j-1)*workx[j-2][i]));
+        worky[j][i] = acy*worky[j-1][i] + 0.5/xp_[ii]*(i*worky[j-1][i-1] + (j==1 ? 0.0 : (j-1)*worky[j-2][i]));
+        workz[j][i] = acz*workz[j-1][i] + 0.5/xp_[ii]*(i*workz[j-1][i-1] + (j==1 ? 0.0 : (j-1)*workz[j-2][i]));
+      }
     }
 
     /// assembly process
+    size_t pos = 0;
+    for (int i = amin_; i <= amax_; ++i) {
+      for (int iz = 0; iz <= i; ++iz) {
+        for (int iy = 0; iy <= i - iz; ++iy, ++pos) {
+          const int ix = i - iy - iz;
 
-    for (int iz = 0; iz <= amax_; ++iz) {
-      for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
-          int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
-          current_data0[pos] = workxd[ix] * worky[iy] * workz[iz];
-          current_data1[pos] = workx[ix] * workyd[iy] * workz[iz];
-          current_data2[pos] = workx[ix] * worky[iy] * workzd[iz];
+          int lcnt = 0;
+          for (int lc = 1; lc <= lmax_; ++lc)
+            for (int lz = 0; lz <= lc; ++lz)
+              for (int ly = 0; ly <= lc-lz; ++ly, ++lcnt) {
+                const int lx = lc - ly - lz;
+                current_data[lcnt][pos] = workx[lx][ix] * worky[ly][iy] * workz[lz][iz];
+              }
+          assert(lcnt == nblocks());
         }
       }
     }
 
   } // end of primsize loop
 
-  stack_->release(worksize, workzd);
-  stack_->release(worksize, workyd);
-  stack_->release(worksize, workxd);
-  stack_->release(worksize, workz);
-  stack_->release(worksize, worky);
-  stack_->release(worksize, workx);
+  stack_->release(worksize*(lmax_+1), pworkz);
+  stack_->release(worksize*(lmax_+1), pworky);
+  stack_->release(worksize*(lmax_+1), pworkx);
 }
 
 

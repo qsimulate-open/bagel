@@ -84,7 +84,7 @@ SlaterBatch::~SlaterBatch() {
 
 void SlaterBatch::root_weight(const int prim) {
   // determine the quadrature grid
-  fill(weights_, weights_ + primsize_, 0.0);
+  fill_n(weights_, primsize_, 0.0);
   if (rank_ == 1)
     root1_direct();
   else if (rank_ == 2)
@@ -281,10 +281,10 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
 
   int index = 0;
   int index01 = 0;
-  fill(coeff_, coeff_ + primsize_, 0.0);
-  fill(coeffy_, coeffy_ + primsize_, 0.0);
-  fill(T_, T_ + primsize_, -1.0);
-  fill(U_, U_ + primsize_, 1.0e-100);
+  fill_n(coeff_,  primsize_, 0.0);
+  fill_n(coeffy_, primsize_, 0.0);
+  fill_n(T_, primsize_, -1.0);
+  fill_n(U_, primsize_, 1.0e-100);
 
   // this should be allocated in RysInt
   screening_size_ = 0;

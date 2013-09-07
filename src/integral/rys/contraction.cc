@@ -24,12 +24,7 @@
 //
 
 
-#include <src/util/f77.h>
 #include <src/integral/rys/rysint.h>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 
 using namespace std;
 using namespace bagel;
@@ -44,14 +39,14 @@ void RysInt::perform_contraction_new_outer(const int nsize, const double* prim, 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = lower0[i];
     const int end0   = upper0[i];
-    fill(work, work + worksize, 0.0);
+    fill_n(work, worksize, 0.0);
     for (int j = begin0; j != end0; ++j)
       daxpy_(worksize, coeff0[i][j], &prim[j * worksize], 1, work, 1);
 
     for (int k = 0; k != cdim1; ++k, current_cont += nsize) {
       const int begin1 = lower1[k];
       const int end1   = upper1[k];
-      fill(current_cont, current_cont + nsize, 0.0);
+      fill_n(current_cont, nsize, 0.0);
       for (int j = begin1; j != end1; ++j)
         daxpy_(nsize, coeff1[k][j], &work[j * nsize], 1, current_cont, 1);
     }
@@ -75,14 +70,14 @@ void RysInt::perform_contraction_new_inner(const int nsize, const int ac, const 
 
       const int begin0 = lower0[i];
       const int end0   = upper0[i];
-      fill(work, work + worksize,  0.0);
+      fill_n(work, worksize,  0.0);
       for (int j = begin0; j != end0; ++j)
         daxpy_(worksize, coeff0[i][j], &current_prim[j * worksize], 1, work, 1);
 
       for (int k = 0; k != cdim1; ++k, current_cont += ac) {
         const int begin1 = lower1[k];
         const int end1   = upper1[k];
-        fill(current_cont, current_cont + ac, 0.0);
+        fill_n(current_cont, ac, 0.0);
         for (int j = begin1; j != end1; ++j) {
           daxpy_(ac, coeff1[k][j], &work[j * ac], 1, current_cont, 1);
         }
@@ -103,14 +98,14 @@ void RysInt::perform_contraction(const int asize, const double* prim, const int 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    std::fill(work, work + worksize, 0.0);
+    fill_n(work, worksize, 0.0);
     for (int j = begin0; j != end0; ++j)
       daxpy_(worksize, coeff0[i][j], &prim[j * worksize], 1, work, 1);
 
     for (int k = 0; k != cdim1; ++k, cont += asize) {
       const int begin1 = ranges1[k].first;
       const int end1   = ranges1[k].second;
-      fill(cont, cont + asize, 0.0);
+      fill_n(cont, asize, 0.0);
       for (int j = begin1; j != end1; ++j) {
         daxpy_(asize, coeff1[k][j], &work[j * asize], 1, cont, 1);
       }

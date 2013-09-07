@@ -97,7 +97,7 @@ class RDM : public RDM_base {
       return true;
     }
 
-    std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all = true) const {
+    std::shared_ptr<Matrix> rdm1_mat(const int nclosed, const bool all = true) const {
       throw std::logic_error("RDM<N>::rdm1_mat() should not be called with N>1");
       return std::shared_ptr<Matrix>();
     }
@@ -125,7 +125,7 @@ template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1>::gener
 template<> void RDM<1>::transform(const std::shared_ptr<Matrix>& coeff);
 template<> void RDM<2>::transform(const std::shared_ptr<Matrix>& coeff);
 
-template<> std::shared_ptr<Matrix> RDM<1>::rdm1_mat(std::shared_ptr<const Geometry> g, const int nclosed, const bool all) const;
+template<> std::shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const;
 
 template<> void RDM<1>::print(const double thresh) const;
 template<> void RDM<2>::print(const double thresh) const;

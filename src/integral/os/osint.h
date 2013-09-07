@@ -27,13 +27,8 @@
 #ifndef __SRC_INTEGRAL_OS_OSINT_H
 #define __SRC_INTEGRAL_OS_OSINT_H
 
-#include <stddef.h>
-#include <array>
-#include <vector>
 #include <src/molecule/shell.h>
 #include <src/integral/sortlist.h>
-#include <array>
-#include <memory>
 #include <src/math/xyzfile.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>

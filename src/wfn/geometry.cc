@@ -36,14 +36,17 @@
 #include <src/integral/rys/mixederibatch.h>
 #include <src/integral/libint/libint.h>
 #include <src/wfn/geometry.h>
+#include <src/wfn/geometry_connect.h>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/math/quatern.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
+
+using geometry_details::Node;
+using geometry_details::adf_rho;
 
 const static AtomMap atommap_;
 
@@ -77,12 +80,11 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
-    mfs.close();
   } else {
 
     // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis"); 
+    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
@@ -100,7 +102,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   if (!auxfile_.empty()) {
     // read the default aux basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis"); 
+    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
@@ -262,7 +264,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
     // (3) plane of center of charges, first and second atoms.
     if (natom() > 2) {
-      assert(natom() == o.natom()); 
+      assert(natom() == o.natom());
       Quatern<double> oa0 = o.atoms(0)->position();
       Quatern<double> ma0 =   atoms(0)->position();
       Quatern<double> oa1 = o.atoms(1)->position();
@@ -627,62 +629,7 @@ bool Geometry::operator==(const Geometry& o) const {
 }
 
 
-// connectivity graph
-
-#include <set>
-namespace bagel {
-namespace geometry {
-class Node {
-  protected:
-    const std::shared_ptr<const Atom> myself_;
-    const int num_;
-    // in order to avoid cyclic references
-    std::list<std::weak_ptr<Node>> connected_;
-
-
-  public:
-    Node(const std::shared_ptr<const Atom> o, const int n) : myself_(o), num_(n) {};
-    ~Node() {};
-
-    void add_connected(const std::shared_ptr<Node> i) {
-      std::weak_ptr<Node> in = i;
-      for (auto& iter : connected_)
-        if (iter.lock() == i) throw logic_error("Node::add_connected");
-      connected_.push_back(in);
-    };
-
-    const std::shared_ptr<const Atom> atom() const { return myself_; };
-    int num() const { return num_; };
-
-    std::set<std::shared_ptr<Node>> common_center(const std::shared_ptr<Node> o) const {
-      std::set<std::shared_ptr<Node>> out;
-      for (auto& c : connected_) {
-        if (c.lock()->connected_with(o)) out.insert(c.lock());
-      }
-      return out;
-    };
-
-    bool connected_with(const std::shared_ptr<Node> o) {
-      bool out = false;
-      for (auto& i : connected_) {
-        if (i.lock() == o) {
-          out = true;
-          break;
-        }
-      }
-      return out;
-    };
-
-};
-
-static double adf_rho(shared_ptr<const Node> i, shared_ptr<const Node> j) {
-  return exp(- i->atom()->distance(j->atom()) / (i->atom()->cov_radius()+j->atom()->cov_radius()) + 1.0);
-} 
-}}
-
-using namespace geometry;
-
-array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const {
+array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
   cout << "    o Connectivitiy analysis" << endl;
 
   vector<vector<double>> out;
@@ -711,8 +658,8 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
 
-        // see IJQC 106, 2536 (2006) 
-        const double modelhess = 0.35 * adf_rho(*i, *j); 
+        // see IJQC 106, 2536 (2006)
+        const double modelhess = 0.35 * adf_rho(*i, *j);
         hessprim.push_back(modelhess);
 
         Quatern<double> ip = (*i)->atom()->position();
@@ -759,7 +706,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
         Quatern<double> st3 = (e23 * ::cos(rad) - e21) / (r23 * ::sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
-        // see IJQC 106, 2536 (2006) 
+        // see IJQC 106, 2536 (2006)
         const double modelhess = 0.15 * adf_rho(*i, *c) * adf_rho(*c, *j);
         hessprim.push_back(modelhess);
         const double fval = 0.12;
@@ -816,7 +763,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
           Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
-          // see IJQC 106, 2536 (2006) 
+          // see IJQC 106, 2536 (2006)
           const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
           hessprim.push_back(modelhess);
           const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
@@ -889,6 +836,20 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate() const 
   hess.inverse();
   *bdmnew = *bdmnew * hess;
 
+  // if this is not the first time, make sure that the change is minimum
+  if (prev) {
+    // internal--internal matrix
+    Matrix approx1 = *prev % *bdmnew;
+    assert(approx1.ndim() == ninternal && approx1.mdim() == ninternal);
+    *bnew = *prev;
+    try {
+      approx1.inverse();
+    } catch (const runtime_error& error) {
+      throw runtime_error("It seems that the geometry has changed substantially. Start over the optimization.");
+    }
+    *bdmnew *= approx1;
+  }
+
   // make them consistent
   bnew->broadcast();
   bdmnew->broadcast();
@@ -908,16 +869,11 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   for (auto& i : atoms_)
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
-#if 0 
+
   geom->df_->average_3index();
   geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
   if (do_gaunt)
     geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
-#else
-  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, false);
-  if (do_gaunt)
-    geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, false);
-#endif
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);

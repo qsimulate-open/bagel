@@ -48,6 +48,10 @@ Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
 
+Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
+}
+
+
 #ifdef HAVE_SCALAPACK
 Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
   setlocal_(o.local());
@@ -77,6 +81,12 @@ Matrix& Matrix::operator-=(const Matrix& o) {
 Matrix& Matrix::operator=(const Matrix& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   copy_n(o.data(), ndim_*mdim_, data());
+  return *this;
+}
+
+Matrix& Matrix::operator=(Matrix&& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
+  data_ = move(o.data_);
   return *this;
 }
 
@@ -381,7 +391,7 @@ void Matrix::inverse() {
 // this is a vector B, and solve AC = B, returns C
 shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
-  auto out = make_shared<Matrix>(*this);
+  auto out = this->copy(); 
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
 
   unique_ptr<int[]> ipiv(new int[n]);
@@ -394,7 +404,7 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 
 
 // compute S^{-1} using diagonalization
-void Matrix::inverse_symmetric(const double thresh) {
+bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -405,20 +415,21 @@ void Matrix::inverse_symmetric(const double thresh) {
     dscal_(n, s, data_.get()+i*n, 1);
   }
   *this = *this ^ *this;
-#ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]);
+#ifndef NDEBUG
   if (!rm.empty())
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
 #endif
+  return rm.empty();
 }
 
 
 // compute S^{-1/2}
-void Matrix::inverse_half(const double thresh) {
+bool Matrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -444,7 +455,6 @@ void Matrix::inverse_half(const double thresh) {
   }
 #endif
 
-//#ifndef NDEBUG
   vector<double> rm;
   for (int i = 0; i != n; ++i)
     if (vec[i] < thresh) rm.push_back(vec[i]);
@@ -452,7 +462,7 @@ void Matrix::inverse_half(const double thresh) {
     cout << "    - linear dependency detected: " << setw(4) << rm.size() << " / " << setw(4) << n <<
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
-//#endif
+  return rm.empty();
 }
 
 // compute Hermitian square root, S^{1/2}

@@ -24,13 +24,8 @@
 //
 
 
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <iomanip>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/gmomentbatch.h>
-#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
@@ -49,7 +44,7 @@ void GMomentBatch::compute() {
   const double* csource = intermediate_p;
   // loop over xx, xy, xz, yy, yz, zz
   for (int iblock = 0; iblock != 6; ++iblock, cdata += size_block_, csource += size_block_) {
-    fill(intermediate_c, intermediate_c+cont0_*cont1_*asize_intermediate_, 0.0);
+    fill_n(intermediate_c, cont0_*cont1_*asize_intermediate_, 0.0);
     perform_contraction(asize_intermediate_, csource, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);

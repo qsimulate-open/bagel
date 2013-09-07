@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dipolebatch.h
+// Filename: mmbatch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,30 +24,38 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_OS_DIPOLEBATCH_H
-#define __SRC_INTEGRAL_OS_DIPOLEBATCH_H
+#ifndef __SRC_INTEGRAL_OS_MMBATCH_H
+#define __SRC_INTEGRAL_OS_MMBATCH_H
 
-#include <array>
-#include <vector>
 #include <src/integral/os/osint.h>
 #include <src/molecule/molecule.h>
-#include <memory>
 
 namespace bagel {
 
-class DipoleBatch : public OSInt {
+class MMBatch : public OSInt {
   protected:
     const std::array<double,3> center_;
     void perform_VRR(double*) override;
 
-    int nblocks() const override { return Nblocks(); }
+    int nblocks() const override { return lmax_*(lmax_*lmax_+6*lmax_+11)/6; } // \sum_1^n (j+1)(j+2)/2
     int nrank() const override { return 0; }
 
+    const int lmax_;
+
   public:
-    DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> c) : OSInt(basis), center_(c->charge_center()) { common_init(); }
+    MMBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> c, const int lmax)
+     : OSInt(basis), center_(c->charge_center()), lmax_(lmax) { common_init(); }
 
     void compute() override;
 
+    int num_blocks() const { return nblocks(); }
+
+};
+
+class DipoleBatch : public MMBatch {
+  public:
+    DipoleBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<const Molecule> c) : MMBatch(basis, c, 1)
+      { assert(nblocks() == Nblocks()); }
     constexpr static int Nblocks() { return 3; }
 };
 

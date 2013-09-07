@@ -28,7 +28,6 @@
 #define __SRC_INTEGRAL_OS_OVERLAPBATCH_H
 
 #include <src/integral/os/osint.h>
-#include <memory>
 
 namespace bagel {
 

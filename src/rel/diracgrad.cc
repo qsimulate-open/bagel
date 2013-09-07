@@ -28,7 +28,6 @@
 #include <src/rel/alpha.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
-#include <src/rel/cdmatrix.h>
 #include <src/rel/relreference.h>
 #include <src/integral/rys/gsmallnaibatch.h>
 
@@ -295,6 +294,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     { // large-large
       auto iter = gamma3.find(make_pair(Comp::L,Comp::L));
       assert(iter != gamma3.end());
+      // transform to the shell-boundary format
+      iter->second->shell_boundary_3index();
       vector<GradTask> task3 = contract_grad2e(iter->second); 
       task.insert(task.end(), task3.begin(), task3.end());
     }
@@ -306,6 +307,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
           if (i <= j) {
             auto iter = gamma3.find(make_pair(i,j));
             assert(iter != gamma3.end());
+            // transform to the shell-boundary format
+            iter->second->shell_boundary_3index();
             gs[icnt++] = iter->second; 
           }
       vector<GradTask> task3 = contract_grad2e(gs);
@@ -314,8 +317,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   }
 
   // compute
-  TaskQueue<GradTask> tq(task);
-  tq.compute(resources__->max_num_threads());
+  TaskQueue<GradTask> tq(move(task));
+  tq.compute();
 
   // allreduce
   grad_->allreduce();

@@ -27,7 +27,6 @@
 #define __SRC_MOLECULE_MOLECULE_H
 
 #include <iostream>
-#include <algorithm>
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
 #include <src/math/xyzfile.h>
@@ -101,6 +100,20 @@ class Molecule {
       out[0] /= sum;
       out[1] /= sum;
       out[2] /= sum;
+      return out;
+    }
+
+    std::array<double,6> quadrupole() const {
+      std::array<double,6> out;
+      std::array<double,3> c = charge_center();
+      for (auto& i : atoms_) {
+        out[0] += i->atom_charge() * std::pow(i->position(0) - c[0], 2);
+        out[1] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(1) - c[1]);
+        out[2] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(2) - c[2]);
+        out[3] += i->atom_charge() * std::pow(i->position(1) - c[1], 2);
+        out[4] += i->atom_charge() * (i->position(1) - c[1]) * (i->position(2) - c[2]);
+        out[5] += i->atom_charge() * std::pow(i->position(2) - c[2], 2);
+      }
       return out;
     }
 

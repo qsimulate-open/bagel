@@ -24,12 +24,6 @@
 //
 
 
-#include <cmath>
-#include <algorithm>
-#include <cassert>
-#include <array>
-#include <stdexcept>
-#include <src/integral/rys/rysint.h>
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/eribatch_base.h>
 #include <src/integral/rys/naibatch_base.h>

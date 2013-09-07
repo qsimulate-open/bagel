@@ -24,16 +24,10 @@
 //
 
 
-#include <algorithm>
 #include <iostream>
 #include <iomanip>
-#include <src/util/f77.h>
-#include <src/math/zmatrix.h>
-#include <src/math/algo.h>
-#include <cassert>
 #include <cmath>
-#include <stdexcept>
-#include <src/parallel/mpi_interface.h>
+#include <src/math/zmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -43,6 +37,10 @@ ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex
 
 
 ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
+}
+
+
+ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
 }
 
 

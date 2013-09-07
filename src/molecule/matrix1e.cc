@@ -32,6 +32,8 @@
 #include <cassert>
 #include <cmath>
 #include <src/parallel/mpi_interface.h>
+#include <src/parallel/resources.h>
+#include <src/util/taskqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -52,10 +54,24 @@ Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), mol_(o.mol_) {
 }
 
 
+namespace bagel {
+class Matrix1eTask {
+  protected:
+    Matrix1e* parent_;
+    size_t ob0, ob1;
+    array<shared_ptr<const Shell>,2> bas; 
+  public:
+    Matrix1eTask(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, Matrix1e* d)
+      : parent_(d), ob0(b), ob1(c), bas(a) { }
+    void compute() const { parent_->computebatch(bas, ob0, ob1); }
+};
+}
+
 void Matrix1e::init() {
 
-  // only lower half will be stored
-  // TODO rewrite. thread. parallel
+  // CAUTION only lower half will be stored
+  const size_t nshell = accumulate(mol_->atoms().begin(), mol_->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
+  TaskQueue<Matrix1eTask> task(nshell*(nshell+1)/2);
 
   size_t oa0 = 0; 
   int u = 0;
@@ -66,7 +82,7 @@ void Matrix1e::init() {
       size_t ob1 = oa0;
       for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          computebatch({{b1, b0}}, ob0, ob1);
+          task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, this);
         }
         ob1 += b1->nbasis();
       }
@@ -80,7 +96,7 @@ void Matrix1e::init() {
         size_t ob1 = oa1;
         for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            computebatch({{b1, b0}}, ob0, ob1);
+            task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, this);
           }
           ob1 += b1->nbasis();
         }
@@ -90,8 +106,8 @@ void Matrix1e::init() {
     }
     oa0 += (*a0)->nbasis();
   }
-  mpi__->allreduce(data_.get(), size());
-
+  task.compute();
+  allreduce();
 }
 
 

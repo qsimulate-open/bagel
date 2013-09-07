@@ -59,8 +59,6 @@ double MOFile::create_Jiiii(const int nstart, const int nfence) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
-  nbasis_ = geom_->nbasis();
-  const int nbasis = nbasis_;
 
   // one electron part
   double core_energy;
@@ -168,7 +166,7 @@ shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
   shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata)->apply_J();
 
   // we want to store half-transformed quantity for latter convenience
-  mo2e_1ext_size_ = nocc*geom_->df()->naux()*nbasis_;
+  mo2e_1ext_size_ = nocc*geom_->df()->naux()*geom_->nbasis();
   mo2e_1ext_ = half;
 
   // assembles (ii|ii) = (ii|D)(D|ii)

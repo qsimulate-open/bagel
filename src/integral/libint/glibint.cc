@@ -126,7 +126,7 @@ GLibint::GLibint(const std::array<std::shared_ptr<const Shell>,4>& shells, std::
   size_alloc_ = size_block_*12;
   size_final_ = size_alloc_;
   data_ = stack_->get(size_alloc_);
-  fill(data_, data_+size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, 0.0);
   stack_save_ = data_;
 
   double* const F = stack_->get(LIBINT_MAX_AM*4 + 6);

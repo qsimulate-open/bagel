@@ -71,6 +71,7 @@ class Space_Base {
     std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
     std::shared_ptr<Determinants> finddet(const int i, const int j) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
+
   private:
     virtual void common_init() = 0;
 };

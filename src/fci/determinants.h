@@ -136,7 +136,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
 
     std::string print_bit(std::bitset<nbit__> bit) const {
       std::string out;
-      for (int i = 0; i != norb_; ++i) { if (bit[i]) { out += "1"; } else { out += "."; } }
+      for (int i = 0; i != norb_; ++i) { out += bit[i] ? "1" : "."; }
       return out;
     }
 
@@ -153,8 +153,8 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
 
     template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
-      const std::bitset<nbit__> ii( (1 << (i)) - 1 );
-      bit = bit & ii;
+      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinant::sign (and other functions)");
+      bit &= (1ull << i) - 1ull;
       return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
@@ -162,9 +162,8 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
-      std::bitset<nbit__> ii(~((1 << (min+1)) - 1));
-      std::bitset<nbit__> jj((1 << max) - 1);
-      bit = (bit & ii) & jj;
+      bit &= ~((1ull << (min+1)) - 1ull);
+      bit &= (1ull << max) - 1ull;
       return 1 - ((bit.count() & 1) << 1);
     }
 

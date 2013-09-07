@@ -29,6 +29,7 @@
 #include <src/fci/distfci.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
+#include <src/ras/rasci.h>
 #include <src/zfci/zknowles.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
@@ -65,6 +66,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     } else
       throw runtime_error("unknown ZFCI algorithm specified." + algorithm);
   }
+  else if (title == "ras")    out = make_shared<RASCI>(itree, geom, ref);
   else if (title == "fci") {
     const string algorithm = itree->get<string>("algorithm", "");
     const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();

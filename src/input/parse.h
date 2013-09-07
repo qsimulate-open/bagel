@@ -96,7 +96,7 @@ class BagelParser {
           bagelvector = qi::lit('[') >> bageldata >> *(qi::lit(',') >> bageldata) >> qi::lit(']');
           bagelobj = qi::lit('{') >> *bagelstatement >> qi::lit('}');
 
-          bageldata = bagelvalue | bagelvector | bagelobj;
+          bageldata = -(bagelvalue | bagelvector | bagelobj);
 
           bagelstatement = name >> qi::lit('=') >> bageldata >> qi::lit(';');
           bagelinput = +bagelstatement;
@@ -139,7 +139,7 @@ class BagelParser {
           bagelvalue.name("string");
 
           bagelvector = open_square [ boost::bind(&BagelParser::begin_vector, self) ]
-                        > bageldata >> *(qi::lit(',') > bageldata)
+                        > -(bageldata >> *(qi::lit(',') > bageldata))
                         > close_square [ boost::bind(&BagelParser::close_compound, self) ];
           bagelvector.name("vector");
 

@@ -28,6 +28,7 @@
 #include <src/math/matrix.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/parallel/accrequest.h>
 
 using namespace std;
 using namespace bagel;
@@ -39,6 +40,9 @@ DistMatrix::DistMatrix(const int n, const int m) : DistMatrix_base<double>(n,m) 
 
 
 DistMatrix::DistMatrix(const DistMatrix& o) : DistMatrix_base<double>(o) {}
+
+
+DistMatrix::DistMatrix(DistMatrix&& o) : DistMatrix_base<double>(move(o)) {}
 
 
 DistMatrix::DistMatrix(const Matrix& o) : DistMatrix_base<double>(o.ndim(), o.mdim()) {
@@ -111,6 +115,93 @@ void DistMatrix::diagonalize(double* eig) {
   if (n <= blocksize__) mpi__->broadcast(eig, n, 0);
 
   *this = tmp;
+}
+
+// Caution: assumes no repetition of rotation indices (each orbital is involved in at most one rotation)
+void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
+
+  const int mypcol = mpi__->mypcol();
+  const int myprow = mpi__->myprow();
+
+  vector<tuple<int, int, double>> local_rotations;
+
+  vector<mutex> mt(localcol);
+
+  auto sender = make_shared<SendRequest>();
+  auto accumer = make_shared<AccRequest>(local_.get(), &mt);
+
+  for (auto& irot : rotations) {
+    int ipcol, ioffset;
+    tie(ipcol, ioffset) = locate_column(get<0>(irot));
+
+    int jpcol, joffset;
+    tie(jpcol, joffset) = locate_column(get<1>(irot));
+
+    const double gamma = get<2>(irot);
+
+    if ( (ipcol == mypcol) != (jpcol == mypcol) ) {
+      const bool iloc = (ipcol == mypcol);
+
+      const int localoffset = iloc ? ioffset : joffset;
+      double* const localdata = local_.get() + localoffset * localrow;
+
+      const int remoteoffset = ( iloc ? joffset : ioffset ) * localrow;
+      const int remoterank = mpi__->pnum( myprow, ( iloc ? jpcol : ipcol ) );
+
+      unique_ptr<double[]> sbuf(new double[localrow]);
+      const double sendfactor = ( iloc ? -sin(gamma) : sin(gamma) ); // double check
+      transform(localdata, localdata + localrow, sbuf.get(), [&sendfactor](const double a) { return sendfactor * a; });
+
+      sender->request_send(move(sbuf), localrow, remoterank, remoteoffset);
+
+      const double localfactor = cos(gamma);
+      transform(localdata, localdata + localrow, localdata, [&localfactor](double a) { return localfactor * a; });
+    }
+    else if ( (ipcol == mypcol) && (jpcol == mypcol) ) {
+      local_rotations.emplace_back(ioffset, joffset, gamma);
+    }
+  }
+
+  accumer->flush();
+  sender->flush();
+
+  //rotate locally
+  for (auto& irot : local_rotations) {
+    const int ioffset = get<0>(irot);
+    const int joffset = get<1>(irot);
+    const double gamma = get<2>(irot);
+
+    double* const idata = local_.get() + ioffset * localrow;
+    double* const jdata = local_.get() + joffset * localrow;
+
+    drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
+
+    accumer->flush();
+    sender->flush();
+  }
+
+  // terminate accumulate
+  bool done;
+  do {
+    done = sender->test();
+    done &= accumer->test();
+#ifndef USE_SERVER_THREAD
+    // in case no thread is running behind, we need to cycle this to flush
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0;
+    if (!done) sender->flush();
+    if (!done) accumer->flush();
+#endif
+    if (!done) this_thread::sleep_for(sleeptime__);
+  } while (!done);
+}
+
+
+void DistMatrix::rotate(const int i, const int j, const double gamma) {
+  rotate(vector<tuple<int, int, double>>(1, make_tuple(i, j, gamma)));
 }
 
 

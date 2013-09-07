@@ -94,18 +94,18 @@ void ParallelDF::add_block(shared_ptr<DFBlock> o) {
 }
 
 
-unique_ptr<double[]> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
+shared_ptr<Matrix> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   // first thing is to find the node
   tuple<size_t, size_t> info = adist_now()->locate(i);
 
-  // ask for the data to inode
-  if (get<0>(info) == mpi__->rank()) {
+  // date has to be localised in this node
+  if (get<0>(info) == mpi__->rank() && !block_[0]->averaged()) {
     return block_[0]->get_block(i, id, j, jd, k, kd);
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
-  return unique_ptr<double[]>();
+  return shared_ptr<Matrix>();
 }
 
 
@@ -172,8 +172,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   Timer time;
 
   // generates a task of integral evaluations
-  vector<DFIntTask_OLD<DFDist>> tasks;
-  tasks.reserve(ashell.size()*ashell.size());
+  TaskQueue<DFIntTask_OLD<DFDist>> tasks(ashell.size()*ashell.size());
 
   data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
@@ -192,8 +191,7 @@ void DFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const
   }
 
   // these shell loops will be distributed across threads
-  TaskQueue<DFIntTask_OLD<DFDist>> tq(tasks);
-  tq.compute(resources__->max_num_threads());
+  tasks.compute();
 
   if (!serial_)
     data2_->allreduce();

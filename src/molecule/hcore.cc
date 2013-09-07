@@ -26,7 +26,7 @@
 
 #include <src/molecule/hcore.h>
 #include <src/integral/os/kineticbatch.h>
-#include <src/integral/os/dipolebatch.h>
+#include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
 
 using namespace std;

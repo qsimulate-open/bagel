@@ -27,10 +27,7 @@
 #ifndef __SRC_PROP_MOMENTUM_H
 #define __SRC_PROP_MOMENTUM_H
 
-#include <memory>
-#include <array>
 #include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
@@ -40,7 +37,6 @@ class Momentum {
 
   public:
     Momentum(std::shared_ptr<const Geometry>);
-    ~Momentum();
 
     std::array<std::shared_ptr<Matrix>,3> compute() const;
 };

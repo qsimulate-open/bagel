@@ -51,18 +51,22 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 void Dirac::common_init(const shared_ptr<const PTree> idata) {
   cout << "  *** Dirac HF ***" << endl << endl;
 
-  hcore_ = make_shared<const RelHcore>(geom_);
-  overlap_ = make_shared<const RelOverlap>(geom_, false);
-  s12_ = make_shared<const RelOverlap>(geom_, true);
   // reading input keywords
   max_iter_ = idata->get<int>("maxiter", 100);
   max_iter_ = idata->get<int>("maxiter_scf", max_iter_);
   diis_start_ = idata->get<int>("diis_start", 1);
   thresh_scf_ = idata->get<double>("thresh", 1.0e-8);
   thresh_scf_ = idata->get<double>("thresh_scf", thresh_scf_);
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
-  nneg_ = geom_->nbasis()*2;
+
+  hcore_ = make_shared<const RelHcore>(geom_);
+  overlap_ = make_shared<const RelOverlap>(geom_);
+  s12_ = overlap_->tildex(thresh_overlap_);
+
+  nneg_ = s12_->mdim()/2; 
+  assert(s12_->mdim() % 2 == 0);
 
   if (breit_ && !gaunt_) throw runtime_error("Breit cannot be turned on if Gaunt is off");
 }
@@ -155,10 +159,9 @@ void Dirac::print_eig() const {
 
 shared_ptr<const Reference> Dirac::conv_to_ref() const {
   // we store only positive state coefficients
-  const int npos = geom_->nbasis()*2;
+  const size_t npos = coeff_->mdim() - nneg_;
   auto out =  make_shared<RelReference>(geom_, coeff_->slice(nneg_, nneg_+npos), energy_, nele_, npos-nele_);
-  vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_*2);
-  assert(nneg_*2 == coeff_->ndim());
+  vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_+npos);
   out->set_eig(eig);
   return out;
 }
@@ -184,16 +187,16 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocc, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
+      ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
-      ocoeff->add_real_block(complex<double>(1.0,0.0), 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_real_block(complex<double>(1.0,0.0), n, nocca, n, noccb, ref_->coeffB()->data());
+      ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
+      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
       fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, false);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;

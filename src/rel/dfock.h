@@ -31,7 +31,6 @@
 #include <src/wfn/geometry.h>
 #include <src/math/zmatrix.h>
 #include <src/rel/reldf.h>
-#include <src/rel/reldfhalf.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/cdmatrix.h>
 

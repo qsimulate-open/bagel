@@ -24,11 +24,7 @@
 //
 
 
-#include <src/util/f77.h>
 #include <src/integral/os/osint.h>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
 
 using namespace std;
 using namespace bagel;

@@ -25,7 +25,7 @@
 
 #include <src/scf/scf.h>
 #include <src/math/diis.h>
-#include <src/prop/dipole.h>
+#include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 
 using namespace bagel;
@@ -162,15 +162,15 @@ void SCF::compute() {
   // by default we compute dipoles
   if (!geom_->external()) {
     if (dodf_) aodensity_ = aodensity->matrix();
-    Dipole mu(geom_, aodensity_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 }
 
 
 shared_ptr<const Reference> SCF::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, geom_->nbasis()-nocc(), energy());
-  vector<double> e(eig_.get(), eig_.get()+geom_->nbasis());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  vector<double> e(eig_.get(), eig_.get()+coeff_->mdim());
   out->set_eig(e);
   return out;
 }

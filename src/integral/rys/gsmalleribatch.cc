@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iostream>
-#include <iomanip>
 #include <src/rel/alpha.h>
 #include <src/integral/rys/gradbatch.h>
 #include <src/integral/libint/glibint.h>
@@ -60,7 +58,7 @@ GSmallERIBatch::~GSmallERIBatch() {
 }
 
 
-std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<unique_ptr<double[]>,6>& d) const {
+std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const Matrix>,6>& d) const {
   auto out = make_shared<GradFile>(natoms_);
   static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallERIBatch::compute_gradient");
 
@@ -77,7 +75,7 @@ std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<unique_ptr<doub
   for (int& i : xyz) {
     for (int& j : xyz) {
       if (i <= j) {
-        dgemm_("N", "T", s0size_*s1size, a2_, s2size, 1.0, d[cnt++].get(), s0size_*s1size, shells_[2]->small(j)->data(), a2_, 0.0, tmp, s0size_*s1size);
+        dgemm_("N", "T", s0size_*s1size, a2_, s2size, 1.0, d[cnt++]->data(), s0size_*s1size, shells_[2]->small(j)->data(), a2_, 0.0, tmp, s0size_*s1size);
         for (int a = 0; a != a2_; ++a) {
           dgemm_("N", "T", s0size_, a1_, s1size, 1.0, tmp+a*s0size_*s1size, s0size_, shells_[1]->small(i)->data(), a1_, 1.0, denc+a*s0size_*a1_, s0size_); 
         }
@@ -101,12 +99,9 @@ void GSmallERIBatch::compute() {
 
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
-
-  struct Address {
-    const size_t ld0, ld1, ld2;
-    Address(const size_t l0, const size_t l1, const size_t l2) : ld0(l0), ld1(l1), ld2(l2) {}
-    size_t operator()(const size_t& i, const size_t& j, const size_t& k) const { return i+ld0*(j+ld1*k); }
-  } m(s0size_, a1_, a2_);
+  const size_t s0size = s0size_;
+  const size_t a1 = a1_;
+  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); }; 
 
   {
 #ifndef LIBINT_INTERFACE

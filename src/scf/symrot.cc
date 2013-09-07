@@ -53,7 +53,7 @@ SymRotAbel::SymRotAbel(const vector<double>& xyz, const int lmax, const bool sph
   for (int i = 1; i <= lmax; ++i) {
     const int dim = (i + 1) * (i + 2) / 2;
     unique_ptr<double[]> pitmp(new double[dim*dim]);
-    fill(pitmp.get(), pitmp.get() + dim * dim, 0.0);
+    fill_n(pitmp.get(), dim * dim, 0.0);
 
     int cnt = 0;
     for (int z = 0; z <= i; ++z) {

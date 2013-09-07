@@ -23,12 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/f77.h>
 #include <src/wfn/reference.h>
 #include <src/fci/knowles.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
@@ -62,7 +60,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 
 shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
-    return active->rdm1_mat(geom_, nclosed_);
+    return active->rdm1_mat(nclosed_);
   else {
     auto out = make_shared<Matrix>(nocc(), nocc());
     for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 2.0;
@@ -98,6 +96,24 @@ shared_ptr<Dvec> Reference::rdm2deriv() const {
 }
 
 
+// TODO should be updated to remove redundant FCI iterations
+shared_ptr<Dvec> Reference::rdm3deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm3deriv();
+  return out;
+}
+
+
+// TODO should be updated to remove redundant FCI iterations
+shared_ptr<Dvec> Reference::rdm4deriv() const {
+  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
+  fci->compute();
+  shared_ptr<Dvec> out = fci->rdm4deriv();
+  return out;
+}
+
+
 // TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
   // Default to HarrisonZarrabian method
@@ -117,8 +133,8 @@ shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> 
   auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_);
   if (coeffA_) {
     assert(coeffB_);
-    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_); 
-    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_); 
+    out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);
+    out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_);
   }
   return out;
 }
@@ -144,46 +160,84 @@ void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<c
 }
 
 // This function currently assumes it is being called on a Reference object with no defined active space
-shared_ptr<const Reference> Reference::set_active(set<int> active_indices) const {
+shared_ptr<Reference> Reference::set_active(set<int> active_indices) const {
   if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
-  const int nbasis = geom_->nbasis();
+  const int naobasis = geom_->nbasis();
+  const int nmobasis = coeff_->mdim();
 
   int nactive = active_indices.size();
 
   int nclosed = nclosed_;
-  int nvirt = nbasis - nclosed;
+  int nvirt = nmobasis - nclosed;
   for (auto& iter : active_indices) {
     if (iter < nclosed_) --nclosed;
     else --nvirt;
   }
 
-  auto tmp_coeff = make_shared<Matrix>(nbasis, nbasis);
+  auto coeff = coeff_;
+  auto tmp_coeff = make_shared<Matrix>(naobasis, nmobasis);
 
   int iclosed = 0;
   int iactive = nclosed;
   int ivirt = nclosed + nactive;
-  for (int i = 0; i < nclosed_; ++i) {
-    if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iclosed));
-      ++iclosed;
-    }
-    else {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
-      ++iactive;
-    }
+
+  auto cp = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if ( active_indices.find(i) != active_indices.end() ) cp(i, iactive);
+    else if ( i < nclosed_ ) cp(i, iclosed);
+    else cp(i, ivirt);
   }
 
-  for (int i = nclosed_; i < nbasis; ++i) {
-    if ( active_indices.find(i) == active_indices.end() ) {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,ivirt));
-      ++ivirt;
-    }
-    else {
-      copy_n(coeff_->element_ptr(0,i), nbasis, tmp_coeff->element_ptr(0,iactive));
-      ++iactive;
-    }
+  return make_shared<Reference>(geom_, make_shared<const Coeff>(*tmp_coeff), nclosed, nactive, nvirt);
+}
+
+// This function currently assumes it is being called on a Reference object with no defined active space
+shared_ptr<Reference> Reference::set_ractive(set<int> ras1, set<int> ras2, set<int> ras3) const {
+  if (!coeff_) throw logic_error("Reference::set_active is not implemented for relativistic cases");
+  const int naobasis = geom_->nbasis();
+  const int nmobasis = coeff_->mdim();
+
+  const int nras1 = ras1.size();
+  const int nras2 = ras2.size();
+  const int nras3 = ras3.size();
+
+  int nactive = nras1 + nras2 + nras3;
+
+  set<int> total_active;
+  total_active.insert(ras1.begin(), ras1.end());
+  total_active.insert(ras2.begin(), ras2.end());
+  total_active.insert(ras3.begin(), ras3.end());
+  if (total_active.size() != nactive) throw runtime_error("Each orbital can occur in only one of RAS1, RAS2, or RAS3.");
+
+  int nclosed = nclosed_;
+  int nvirt = nmobasis - nclosed;
+  for (auto& iter : total_active) {
+    if (iter < nclosed_) --nclosed;
+    else --nvirt;
   }
 
-  auto out_coeff = make_shared<const Coeff>(*tmp_coeff);
-  return make_shared<Reference>(geom_, out_coeff, nclosed, nactive, nvirt);
+  auto coeff = coeff_;
+  auto tmp_coeff = make_shared<Matrix>(naobasis, nmobasis);
+
+  int iclosed = 0;
+  int iras1 = nclosed;
+  int iras2 = iras1 + nras1;
+  int iras3 = iras2 + nras2;
+  int ivirt = nclosed + nactive;
+
+  auto cp = [&tmp_coeff, &naobasis, &coeff] (const int i, int& pos) { copy_n(coeff->element_ptr(0,i), naobasis, tmp_coeff->element_ptr(0, pos)); ++pos; };
+
+  for (int i = 0; i < nmobasis; ++i) {
+    if ( total_active.find(i) != total_active.end() ) {
+      if (ras1.find(i) != ras1.end()) cp(i, iras1);
+      else if (ras2.find(i) != ras2.end()) cp(i, iras2);
+      else if (ras3.find(i) != ras3.end()) cp(i, iras3);
+      else assert(false);
+    }
+    else if (i < nclosed_) cp(i, iclosed);
+    else cp(i, ivirt);
+  }
+
+  return make_shared<Reference>(geom_, make_shared<const Coeff>(*tmp_coeff), nclosed, nactive, nvirt);
 }

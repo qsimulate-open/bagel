@@ -35,7 +35,7 @@ class MEHSpin : public SparseMatrix {
     const int max_spin_;
 
   public:
-    MEHSpin(const int dimension, const int max) : SparseMatrix(dimension, dimension, /*symmetric=*/true), max_spin_(max) {}
+    MEHSpin(const int dimension, std::map<std::pair<int,int>, double>& coords, const int max) : SparseMatrix(dimension, dimension, coords), max_spin_(max) {}
 
     const int max() const { return max_spin_; }
 
