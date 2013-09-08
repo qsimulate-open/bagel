@@ -214,6 +214,7 @@ class RASCivector {
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / size_; }
 
+    void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
       { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }

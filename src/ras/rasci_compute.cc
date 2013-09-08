@@ -179,7 +179,7 @@ void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
 
         shared_ptr<Matrix> Vt;
         if ( sparse_ ) {
-          const int size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, 0, [&la] (int i, vector<RAS::DMap> v) { return i + la*v.size(); });
+          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, size_t(0), [&la] (size_t i, vector<RAS::DMap> v) { return i + la*v.size(); });
           vector<double> data; data.reserve(size);
           vector<int> cols; cols.reserve(size);
           vector<int> rind; rind.reserve(la + 1);
