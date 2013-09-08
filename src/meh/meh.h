@@ -95,7 +95,7 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<DimerJop> jop_;
       std::shared_ptr<DimerCISpace> cispace_;
 
-      std::shared_ptr<GammaForest<2>> gammaforest_;
+      std::shared_ptr<GammaForest<Dvec, 2>> gammaforest_;
 
       std::vector<DimerSubspace> subspaces_;
 

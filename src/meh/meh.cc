@@ -74,7 +74,7 @@ void MultiExcitonHamiltonian::common_init() {
 
   energies_ = vector<double>(nstates_, 0.0);
 
-  gammaforest_ = make_shared<GammaForest<2>>();
+  gammaforest_ = make_shared<GammaForest<Dvec, 2>>();
 }
 
 const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
