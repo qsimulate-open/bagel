@@ -263,64 +263,10 @@ class GammaTask {
 
     private:
       std::shared_ptr<const Dvec> apply(std::shared_ptr<const Dvec> kets, const GammaSQ operation, const int orbital) const {
-        const int Alpha = 0;
-        const int Beta = 1;
-        const int Create = 0;
-        const int Annihilate = 1;
+        const bool action = (operation==GammaSQ::CreateAlpha || operation==GammaSQ::CreateBeta);
+        const bool spin = (operation==GammaSQ::CreateAlpha || operation==GammaSQ::AnnihilateAlpha);
 
-        const int action = ( (operation==GammaSQ::CreateAlpha || operation==GammaSQ::CreateBeta) ? Create : Annihilate);
-        const int spin = ( (operation==GammaSQ::CreateAlpha || operation==GammaSQ::AnnihilateAlpha) ? Alpha : Beta );
-
-        std::shared_ptr<const Determinants> source_det = kets->det();
-        const int norb = source_det->norb();
-        const int nstates = kets->ij();
-
-        const int source_lena = source_det->lena();
-        const int source_lenb = source_det->lenb();
-
-        if (spin == Alpha) {
-          std::shared_ptr<const Determinants> target_det = ( action == Annihilate ? source_det->remalpha() : source_det->addalpha() );
-
-          auto out = std::make_shared<Dvec>(target_det, nstates);
-
-          const int target_lena = target_det->lena();
-          const int target_lenb = target_det->lenb();
-
-          for (int i = 0; i < nstates; ++i) {
-            double* target_base = out->data(i)->data();
-            const double* source_base = kets->data(i)->data();
-
-            for (auto& iter : (action == Annihilate ? source_det->phidowna(orbital) : source_det->phiupa(orbital)) ) {
-              const double sign = static_cast<double>(iter.sign);
-              double* target = target_base + target_lenb * iter.target;
-              const double* source = source_base + source_lenb * iter.source;
-              daxpy_(target_lenb, sign, source, 1, target, 1);
-            }
-          }
-
-          return out;
-        }
-        else {
-          std::shared_ptr<const Determinants> target_det = (action == Annihilate ? source_det->rembeta() : source_det->addbeta());
-
-          const int target_lena = target_det->lena();
-          const int target_lenb = target_det->lenb();
-
-          auto out = std::make_shared<Dvec>(target_det, nstates);
-
-          for (int i = 0; i < target_lena; ++i) {
-            for (int istate = 0; istate < nstates; ++istate) {
-              double* target_base = out->data(istate)->element_ptr(0,i);
-              const double* source_base = kets->data(istate)->element_ptr(0,i);
-              for (auto& iter : (action == Annihilate ? source_det->phidownb(orbital) : source_det->phiupb(orbital))) {
-                const double sign = static_cast<double>(iter.sign);
-                target_base[iter.target] += sign * source_base[iter.source];
-              }
-            }
-          }
-
-          return out;
-        }
+        return kets->apply(orbital, action, spin);
       }
 
       std::unique_ptr<double[]> dot_product(std::shared_ptr<const Dvec> bras, std::shared_ptr<const Dvec> kets) const {

@@ -45,7 +45,8 @@ namespace bagel {
 template <typename DataType>
 class Dvector {
   // only for use in lambdas
-  using CiPtr = std::shared_ptr<Civector<DataType>>;
+  using Ci    = Civector<DataType>;
+  using CiPtr = std::shared_ptr<Ci>;
 
   protected:
     // the determinant space where Dvector's are sitting
@@ -176,6 +177,12 @@ class Dvector {
     std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
     std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
     std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+
+    std::shared_ptr<Dvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
+      std::vector<CiPtr> out;
+      for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
+      return std::make_shared<Dvector<DataType>>(out);
+    }
 
     void orthog(std::shared_ptr<const Dvector<DataType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector<DataType>::orthog called inconsistently");
