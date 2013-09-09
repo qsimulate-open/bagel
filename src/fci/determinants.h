@@ -36,6 +36,8 @@
 #include <map>
 #include <bitset>
 #include <algorithm>
+#include <cassert>
+
 #include <src/util/constants.h>
 
 namespace bagel {
@@ -282,19 +284,18 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
     int de = this->nelea() - odet->nelea();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+    else assert(false);
   }
   else {
     int de = this->neleb() - odet->neleb();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+    else assert(false);
   }
 
   std::vector<std::vector<DetMap>> phiup;
   std::vector<std::vector<DetMap>> phidown;
 
-  /* If space is an issue for these functions, I might be able to reduce the amount used... */
   phiup.resize(norb_);
   int upsize = ( (spin==Alpha) ? plusdet->lena() : plusdet->lenb() );
   for (auto& iter : phiup) {
