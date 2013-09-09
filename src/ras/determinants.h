@@ -96,11 +96,12 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
-
     RASDeterminants(std::array<int, 3> ras, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false) :
       RASDeterminants(ras[0], ras[1], ras[2], nelea, neleb, max_holes, max_particles, mute) {}
 
-    std::shared_ptr<RASDeterminants> transpose() const;
+    std::shared_ptr<RASDeterminants> clone(const int nelea, const int neleb) const
+      { return std::make_shared<RASDeterminants>(ras_, nelea, neleb, max_holes_, max_particles_, true); }
+    std::shared_ptr<RASDeterminants> transpose() const { return this->clone(neleb_, nelea_); }
 
     static const int Alpha = 0;
     static const int Beta = 1;

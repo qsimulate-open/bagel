@@ -76,6 +76,7 @@ class StringSpace {
     template <int subspace> const std::pair<const int, const int> ras() { return std::get<subspace>(ras_); }
 
     const int nholes() const { return ras_[0].second - ras_[0].first; }
+    const int nele2() const { return nele_ - ras_[0].first - ras_[2].first; }
     const int nparticles() const { return ras_[2].first; }
 
     const int size() const { return strings_.size(); }
