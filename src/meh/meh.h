@@ -86,7 +86,8 @@ class DimerSubspace {
 };
 
 class MultiExcitonHamiltonian {
-  using MatrixPtr = std::shared_ptr<Matrix>;
+   using MatrixPtr = std::shared_ptr<Matrix>;
+   using cMatrixPtr = std::shared_ptr<const Matrix>;
    protected:
       std::shared_ptr<const Dimer> dimer_;
       std::shared_ptr<const Reference> ref_;
@@ -155,6 +156,21 @@ class MultiExcitonHamiltonian {
       }
 
       std::shared_ptr<const Matrix> apply_hamiltonian(const Matrix& o);
+
+      // This will end up virtual and therefore it can't be templated
+      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ first) const
+        { return gammaforest_->get<0>(ioffset, joffset, first); }
+      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ second, GammaSQ first) const
+        { return gammaforest_->get<0>(ioffset, joffset, second, first); }
+      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ third, GammaSQ second, GammaSQ first) const
+        { return gammaforest_->get<0>(ioffset, joffset, third, second, first); }
+
+      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ first) const
+        { return gammaforest_->get<1>(ioffset, joffset, first); }
+      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ second, GammaSQ first) const
+        { return gammaforest_->get<1>(ioffset, joffset, second, first); }
+      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ third, GammaSQ second, GammaSQ first) const
+        { return gammaforest_->get<1>(ioffset, joffset, third, second, first); }
 
       MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;
