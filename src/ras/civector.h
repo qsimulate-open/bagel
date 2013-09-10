@@ -228,6 +228,111 @@ class RASCivector {
       { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_+
     void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
 
+    std::shared_ptr<RASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
+      // action: true -> create; false -> annihilate
+      // spin: true -> alpha; false -> beta
+
+      std::shared_ptr<const RASDeterminants> sdet = this->det();
+
+      const int ras1 = sdet->ras(0);
+      const int ras2 = sdet->ras(1);
+      const int ras3 = sdet->ras(2);
+      const int norb = sdet->norb();
+
+      // 0 -> RASI, 1 -> RASII, 2 -> RASIII
+      const int ras_space = ( orbital > ras1 ) + (orbital > ras2);
+
+      auto condition = (action ?
+        [&orbital] (std::bitset<nbit__>& bit) {
+          bool out = !bit[orbital];
+          bit.set(orbital);
+          return out;
+        } :
+        [&orbital] (std::bitset<nbit__>& bit) {
+          bool out = bit[orbital];
+          bit.reset(orbital);
+          return out;
+        }
+      );
+
+      auto to_array = [] (std::shared_ptr<const RASBlock<DataType>> block) {
+        auto sa = block->stringa();
+        auto sb = block->stringb();
+        return std::array<int, 6>({sa->nholes(), sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()});
+      };
+
+      auto op_on_array = [&ras_space, &action, &spin] ( std::array<int, 6> in ) {
+        const int mod = ( action ? +1 : -1 );
+        std::array<int, 6> out = in;
+        if ( ras_space == 0 ) {
+          out[0] += ( spin ? -mod : 0 );
+          out[1] += ( spin ? 0 : -mod );
+        }
+        else if (ras_space == 1) {
+          out[2] += ( spin ? mod : 0 );
+          out[3] += ( spin ? 0 : mod );
+        }
+        else {
+          out[4] += ( spin ? mod : 0 );
+          out[5] += ( spin ? 0 : mod );
+        }
+        return out;
+      };
+
+      auto apply_block = ( spin ?
+        [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
+          const int lb = soblock->lenb();
+          assert(lb == tarblock->lenb());
+          const DataType* sourcedata = soblock->data();
+          for (auto& abit : *soblock->stringa()) {
+            std::bitset<nbit__> tabit = abit;
+            if (condition(tabit)) { // Also sets bit appropriately
+              const int aoffset = tarblock->stringa()->lexical<0>(tabit);
+              DataType* targetdata = tarblock->data() + aoffset * lb;
+              const DataType sign = static_cast<DataType>(sdet->sign<0>(abit, orbital));
+              std::transform(sourcedata, sourcedata + lb, targetdata, targetdata, [&sign] (DataType p, DataType q) { return p*sign + q; });
+            }
+            sourcedata += lb;
+          }
+        } :
+        [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
+          const int la = soblock->lena();
+          assert( la == tarblock->lena() );
+          const DataType* sourcedata_base = soblock->data();
+
+          const int tlb = tarblock->lenb();
+          const int slb = soblock->lenb();
+
+          for (auto& bbit : *soblock->stringb()) {
+            const DataType* sourcedata = sourcedata_base;
+            std::bitset<nbit__> tbbit = bbit;
+            if (condition(tbbit)) {
+              DataType* targetdata = tarblock->data() + tarblock->stringb()->lexical<0>(tbbit);
+              const DataType sign = static_cast<DataType>(sdet->sign<1>(bbit, orbital));
+              for (int i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
+                *targetdata += *sourcedata;
+              }
+            }
+            ++sourcedata_base;
+          }
+        }
+      );
+
+      std::shared_ptr<const RASDeterminants> tdet = ( spin ? ( action ? sdet->addalpha() : sdet->remalpha() ) : ( action ? sdet->addbeta() : sdet->rembeta() ) );
+      auto out = std::make_shared<RASCivector<DataType>>(tdet);
+
+      for (auto& soblock : this->blocks()) {
+        for (auto& tarblock : out->blocks()) {
+          std::array<int, 6> so_array = to_array(soblock);
+          std::array<int, 6> ta_array = to_array(tarblock);
+          if ( op_on_array(so_array) == ta_array ) apply_block(soblock, tarblock);
+        }
+      }
+
+      return out;
+    }
+
+
     void project_out(std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
     double orthog(std::list<std::shared_ptr<const RASCivector<DataType>>> c) {
