@@ -61,16 +61,19 @@ class SpaceKey {
     }
 };
 
-class DimerCISpace {
-  using SpaceMap = std::multimap<SpaceKey, std::shared_ptr<Dvec>>;
-  using DMap = std::multimap<std::pair<int,int>, std::shared_ptr<Determinants>>;
+template <class VecType, class DetType>
+class DimerCISpace_base {
+  using SpaceMap = std::multimap<SpaceKey, std::shared_ptr<VecType>>;
+  using DMap = std::multimap<std::pair<int,int>, std::shared_ptr<DetType>>;
 
   protected:
     // These are stored values of the neutral species
-    std::pair<int, int> norb_;
     std::pair<int, int> nelea_;
     std::pair<int, int> neleb_;
     std::pair<int, int> nstates_;
+
+    // This is used only to make new DetType objects through clone()
+    std::pair<std::shared_ptr<const DetType>, std::shared_ptr<const DetType>> bdet_;
 
     SpaceMap cispaceA_;
     SpaceMap cispaceB_;
@@ -78,43 +81,176 @@ class DimerCISpace {
     DMap detspaceA_;
     DMap detspaceB_;
 
+
   public:
     // This constructor will build the infrastructure; civecs need to be added later
-    DimerCISpace(std::pair<int, int> nelea, std::pair<int, int> neleb, std::pair<int, int> norb) : norb_(norb), nelea_(nelea), neleb_(neleb) {}
+    DimerCISpace_base(std::pair<std::shared_ptr<const DetType>, std::shared_ptr<const DetType>> bdet, std::pair<int, int> nelea, std::pair<int, int> neleb) : nelea_(nelea), neleb_(neleb), bdet_(bdet) {}
 
-    template<int unit> int norb() const { return (unit == 0 ? norb_.first : norb_.second); }
     template<int unit> int nelea() const { return (unit == 0 ? nelea_.first : nelea_.second); }
     template<int unit> int neleb() const { return (unit == 0 ? neleb_.first : neleb_.second); }
     template<int unit> int nstates() const { return (unit == 0 ? nstates_.first : nstates_.second); }
+    template<int unit> std::shared_ptr<const DetType> bdet() const { return (unit == 0 ? bdet_.first : bdet_.second); }
 
-    std::pair<int, int> norb() const { return norb_; }
     std::pair<int, int> nelea() const { return nelea_; }
     std::pair<int, int> neleb() const { return neleb_; }
     std::pair<int, int> nstates() const { return nstates_; }
 
     template<int unit> SpaceMap& cispace() { return (unit == 0 ? cispaceA_ : cispaceB_); }
 
-    template<int unit> std::shared_ptr<Dvec> ccvec(const int S, const int m_s, const int q) { return ccvec<unit>(SpaceKey(S,m_s,q)); }
-    template<int unit> std::shared_ptr<Dvec> ccvec(SpaceKey key) {
+    template<int unit> std::shared_ptr<VecType> ccvec(const int S, const int m_s, const int q) { return ccvec<unit>(SpaceKey(S,m_s,q)); }
+    template<int unit> std::shared_ptr<VecType> ccvec(SpaceKey key) {
       SpaceMap& space = (unit == 0 ? cispaceA_ : cispaceB_);
       auto iter = space.find(key);
       return (iter != space.end() ? iter->second : nullptr);
     }
 
-    template<int unit> std::shared_ptr<Determinants> det(std::pair<const int, const int> p) { return det<unit>(p.first,p.second); }
-    template<int unit> std::shared_ptr<Determinants> det(const int qa, const int qb) {
+    template<int unit> std::shared_ptr<DetType> det(std::pair<const int, const int> p) { return det<unit>(p.first,p.second); }
+    template<int unit> std::shared_ptr<DetType> det(const int qa, const int qb) {
       DMap& dets = (unit == 0 ? detspaceA_ : detspaceB_);
       auto iter = dets.find(std::make_pair(qa, qb));
       return (iter != dets.end() ? iter->second : nullptr);
     }
 
-    template<int unit> void insert(std::shared_ptr<const Dvec> civec, const int spin = -1);
-    template<int unit> std::shared_ptr<Determinants> add_det(const int qa, const int qb);
-    template<int unit> std::shared_ptr<Determinants> add_det(std::pair<const int, const int> p) { return add_det<unit>(p.first,p.second); }
+    template<int unit> void insert(std::shared_ptr<const VecType> civec, const int spin = -1) {
+      auto new_civec = std::make_shared<VecType>(civec);
 
-    void insert(std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> cipair) { insert<0>(cipair.first); insert<1>(cipair.second); }
+      const int nelea = civec->det()->nelea();
+      const int neleb = civec->det()->neleb();
 
-    void complete();
+      const int m_s = nelea - neleb;
+      const int S = (spin < 0) ? m_s : spin;
+      const int Q = charge<unit>(nelea, neleb);
+
+      // Reform DetType object (to make sure it's the format I want)
+      std::shared_ptr<DetType> det = add_det<unit>(detkey<unit>(nelea, neleb));
+      new_civec->set_det(det);
+
+      SpaceMap& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
+      cispace.insert(std::make_pair(SpaceKey(S,m_s,Q), new_civec));
+
+      const int ij = new_civec->ij();
+      ((unit == 0) ? nstates_.first : nstates_.second) += ij;
+    }
+
+    template<int unit> std::shared_ptr<DetType> add_det(const int qa, const int qb) {
+      DMap& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
+
+      typename DMap::iterator idet = detspace.find(std::make_pair(qa,qb));
+      if ( idet != detspace.end()) {
+        return idet->second;
+      }
+      else {
+        int nelea, neleb;
+        std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
+        std::shared_ptr<DetType> det = bdet<unit>()->clone(nelea, neleb);
+
+        detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
+
+        idet = detspace.find(std::make_pair(qa+1,qb));
+        if (idet != detspace.end()) det->template link<0>(idet->second);
+
+        idet = detspace.find(std::make_pair(qa-1,qb));
+        if (idet != detspace.end()) det->template link<0>(idet->second);
+
+        idet = detspace.find(std::make_pair(qa,qb+1));
+        if (idet != detspace.end()) det->template link<1>(idet->second);
+
+        idet = detspace.find(std::make_pair(qa,qb-1));
+        if (idet != detspace.end()) det->template link<1>(idet->second);
+
+        return det;
+      }
+    }
+
+    template<int unit> std::shared_ptr<DetType> add_det(std::pair<const int, const int> p) { return add_det<unit>(p.first,p.second); }
+
+    void insert(std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> cipair) { insert<0>(cipair.first); insert<1>(cipair.second); }
+
+    // Completes the spin case and adds extra Determinants into the mapping that will be needed for Hamiltonian computation
+    void complete() {
+      {
+        std::vector<SpaceKey> references;
+        for (auto& imap : cispaceA_) { references.push_back(imap.first); }
+        // These spaces are assumed to be high-spin
+        for (auto& ispace : references) {
+          if (ispace.S > 0) {
+            const int S = ispace.S;
+
+            std::shared_ptr<VecType> ref_state = ccvec<0>(ispace);
+
+            int ref_qa, ref_qb;
+            std::tie(ref_qa, ref_qb) = detkey<0>(ispace);
+            const int mult = S + 1;
+
+            for (int i = 1; i < mult; ++i) {
+              const int nqa = ref_qa - i;
+              const int nqb = ref_qb + i;
+
+              std::shared_ptr<DetType> det = add_det<0>(nqa, nqb);
+
+              ref_state = ref_state->spin_lower(det);
+              for (int istate = 0; istate < ref_state->ij(); ++istate) {
+                const double norm = ref_state->data(istate)->norm();
+                if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
+                ref_state->data(istate)->scale(1.0/norm);
+              }
+              insert<0>(ref_state, S);
+            }
+          }
+        }
+      }
+
+
+      {
+        std::vector<SpaceKey> references;
+        for (auto& imap : cispaceB_) { references.push_back(imap.first); }
+        // These spaces are assumed to be high-spin
+        for (auto& ispace : references) {
+          if (ispace.S > 0) {
+            const int S = ispace.S;
+
+            std::shared_ptr<VecType> ref_state = ccvec<1>(ispace);
+
+            int ref_qa, ref_qb;
+            std::tie(ref_qa, ref_qb) = detkey<1>(ispace);
+            const int mult = S + 1;
+
+            for (int i = 1; i < mult; ++i) {
+              const int nqa = ref_qa - i;
+              const int nqb = ref_qb + i;
+
+              std::shared_ptr<DetType> det = add_det<1>(nqa, nqb);
+
+              ref_state = ref_state->spin_lower(det);
+              for (int istate = 0; istate < ref_state->ij(); ++istate) {
+                const double norm = ref_state->data(istate)->norm();
+                if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
+                ref_state->data(istate)->scale(1.0/norm);
+              }
+              insert<1>(ref_state, S);
+            }
+          }
+        }
+      }
+
+      for (auto& imap : cispaceA_) {
+        int qa, qb;
+        std::tie(qa, qb) = detkey<0>(imap.first);
+
+        add_det<0>(qa-1, qb);
+        add_det<0>(qa, qb-1);
+        add_det<0>(qa-1, qb-1);
+      }
+
+      for (auto& imap : cispaceB_) {
+        int qa, qb;
+        std::tie(qa, qb) = detkey<1>(imap.first);
+
+        add_det<1>(qa-1, qb);
+        add_det<1>(qa, qb-1);
+        add_det<1>(qa-1, qb-1);
+      }
+    }
 
   private:
     template<int unit> std::pair<int, int> detkey(const SpaceKey key) { return detkey<unit>(key.S, key.m_s, key.q); }
@@ -131,62 +267,10 @@ class DimerCISpace {
       return std::make_pair(qa + nelea<unit>(), qb + neleb<unit>());
     }
 
-   template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
+    template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
 };
 
-template<int unit> void DimerCISpace::insert(std::shared_ptr<const Dvec> civec, const int spin) {
-  auto new_civec = std::make_shared<Dvec>(civec);
-
-  const int nelea = civec->det()->nelea();
-  const int neleb = civec->det()->neleb();
-
-  const int m_s = nelea - neleb;
-  const int S = (spin < 0) ? m_s : spin;
-  const int Q = charge<unit>(nelea, neleb);
-
-  // Reform Determinants object (to make sure it's the format I want)
-  std::shared_ptr<Determinants> det = add_det<unit>(detkey<unit>(nelea, neleb));
-  new_civec->set_det(det);
-
-  auto& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
-  cispace.insert(std::make_pair(SpaceKey(S,m_s,Q), new_civec));
-
-  const int ij = new_civec->ij();
-  ((unit == 0) ? nstates_.first : nstates_.second) += ij;
-}
-
-template<int unit>
-std::shared_ptr<Determinants> DimerCISpace::add_det(const int qa, const int qb) {
-  const int nact = norb<unit>();
-
-  auto& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
-
-  auto idet = detspace.find(std::make_pair(qa,qb));
-  if ( idet != detspace.end()) {
-    return idet->second;
-  }
-  else {
-    int nelea, neleb;
-    std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
-    auto det = std::make_shared<Determinants>(nact, nelea, neleb, /*compress=*/false, /*mute=*/true);
-
-    detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
-
-    idet = detspace.find(std::make_pair(qa+1,qb));
-    if (idet != detspace.end()) det->link<0>(idet->second);
-
-    idet = detspace.find(std::make_pair(qa-1,qb));
-    if (idet != detspace.end()) det->link<0>(idet->second);
-
-    idet = detspace.find(std::make_pair(qa,qb+1));
-    if (idet != detspace.end()) det->link<1>(idet->second);
-
-    idet = detspace.find(std::make_pair(qa,qb-1));
-    if (idet != detspace.end()) det->link<1>(idet->second);
-
-    return det;
-  }
-}
+using DimerCISpace = DimerCISpace_base<Dvec, Determinants>;
 
 }
 

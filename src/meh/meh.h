@@ -55,7 +55,8 @@ enum class Coupling {
   inv_bbET = -7
 };
 
-class DimerSubspace {
+template <class VecType>
+class DimerSubspace_base { // until I come up with a better name
   using MatrixPtr = std::shared_ptr<Matrix>;
 
   protected:
@@ -65,10 +66,10 @@ class DimerSubspace {
     const std::string stringA_;
     const std::string stringB_;
 
-    std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> ci_;
+    std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> ci_;
 
   public:
-    DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>> _ci) :
+    DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
       offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
        ci_(_ci) { _offset += dimerstates(); }
 
@@ -81,13 +82,17 @@ class DimerSubspace {
     }
 
     template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
-    template <int unit> std::shared_ptr<const Dvec> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
+    template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
 
 };
+
+using DimerSubspace = DimerSubspace_base<Dvec>;
 
 class MultiExcitonHamiltonian {
    using MatrixPtr = std::shared_ptr<Matrix>;
    using cMatrixPtr = std::shared_ptr<const Matrix>;
+
+
    protected:
       std::shared_ptr<const Dimer> dimer_;
       std::shared_ptr<const Reference> ref_;

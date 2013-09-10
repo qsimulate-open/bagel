@@ -119,6 +119,9 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
 
+    // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
+    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb_, nelea, neleb, false, true); }
+
     // static constants
     static const int Alpha = 0;
     static const int Beta = 1;

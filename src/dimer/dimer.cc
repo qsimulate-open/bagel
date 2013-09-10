@@ -586,7 +586,9 @@ shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTre
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
-  auto out = make_shared<DimerCISpace>(nelea, neleb, nact());
+  auto d1 = make_shared<Determinants>(nact().first, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d2 = make_shared<Determinants>(nact().second, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto out = make_shared<DimerCISpace>(make_pair(d1, d2), nelea, neleb);
 
   vector<vector<int>> spaces_A;
   vector<vector<int>> spaces_B;

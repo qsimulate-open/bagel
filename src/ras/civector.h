@@ -287,8 +287,7 @@ class RASCivector {
           for (auto& abit : *soblock->stringa()) {
             std::bitset<nbit__> tabit = abit;
             if (condition(tabit)) { // Also sets bit appropriately
-              const int aoffset = tarblock->stringa()->lexical<0>(tabit);
-              DataType* targetdata = tarblock->data() + aoffset * lb;
+              DataType* targetdata = tarblock->data() + tarblock->stringa()->template lexical<0>(tabit) * lb;
               const DataType sign = static_cast<DataType>(sdet->sign<0>(abit, orbital));
               std::transform(sourcedata, sourcedata + lb, targetdata, targetdata, [&sign] (DataType p, DataType q) { return p*sign + q; });
             }
