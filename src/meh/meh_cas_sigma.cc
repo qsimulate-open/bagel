@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_sigma.cc
+// Filename: meh_cas_sigma.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,14 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/meh/meh.h>
+#include <src/meh/meh_cas.h>
 #include <src/fci/hztasks.h>
 #include <src/fci/prop1etask.h>
 
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma(shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const {
+shared_ptr<Dvec> MEH_CAS::form_sigma(shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -81,7 +81,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma(shared_ptr<const Dvec> ccve
   return sigmavec;
 }
 
-shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> ccvec, const double* modata) const {
+shared_ptr<Dvec> MEH_CAS::form_sigma_1e(shared_ptr<const Dvec> ccvec, const double* modata) const {
   const int nstate = ccvec->ij();
   shared_ptr<const Determinants> det = ccvec->det();
 
@@ -114,7 +114,7 @@ shared_ptr<Dvec> MultiExcitonHamiltonian::form_sigma_1e(shared_ptr<const Dvec> c
 }
 
 
-void MultiExcitonHamiltonian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, const double* const h1, const double* const h2) const {
+void MEH_CAS::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, const double* const h1, const double* const h2) const {
   assert(*cc->det() == *sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
@@ -131,7 +131,7 @@ void MultiExcitonHamiltonian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Ci
 }
 
 
-void MultiExcitonHamiltonian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
+void MEH_CAS::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
 
   shared_ptr<const Determinants> base_det = cc->det();
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
@@ -153,14 +153,14 @@ void MultiExcitonHamiltonian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr
   tasks.compute();
 }
 
-void MultiExcitonHamiltonian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {
+void MEH_CAS::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, const double* mo2e_ptr) const {
   const int lenab = d->lena() * d->lenb();
   const int ij = d->ij();
 
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, mo2e_ptr, ij, 0.0, e->data(), lenab);
 }
 
-void MultiExcitonHamiltonian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
+void MEH_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   shared_ptr<const Determinants> base_det = sigma->det();
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
 

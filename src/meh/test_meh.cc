@@ -24,7 +24,7 @@
 //
 
 
-#include <src/meh/meh.h>
+#include <src/meh/meh_cas.h>
 #include <src/dimer/dimer.h>
 
 double meh_energy(std::string inp) {
@@ -89,7 +89,7 @@ double meh_energy(std::string inp) {
     } else if (method == "meh") {
       std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
 
-      auto meh = std::make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
+      auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
       meh->compute();
 
       std::cout.rdbuf(backup_stream);

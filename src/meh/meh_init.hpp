@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: meh_init.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki Group
@@ -23,19 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/dimer/dimer_prop.h>
-#include <src/math/davidson.h>
-#include <src/meh/meh.h>
+#ifdef MEH_HEADERS
 
-using namespace std;
-using namespace bagel;
+#ifndef BAGEL_MEH_INIT_H
+#define BAGEL_MEH_INIT_H
 
-/************************************************************************************
-*  General note: For the moment, everything is written so it will be easiest to     *
-* debug, using as much code as possible from other functions already written. This  *
-* will eventually be fixed.                                                         *
-************************************************************************************/
-MultiExcitonHamiltonian::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerCISpace> cispace) :
+template <class VecType>
+MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace) :
   ref_(dimer->sref()), coeff_(dimer->scoeff()), cispace_(cispace),
   dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
   nact_(dimer->nact()), nbasis_(dimer->nbasis())
@@ -48,11 +42,7 @@ MultiExcitonHamiltonian::MultiExcitonHamiltonian(const std::shared_ptr<const PTr
   store_matrix_ = input->get<bool>("store_matrix", false);
   nspin_ = 0; // TODO hardcoded to singlets for now
 
-  common_init();
-}
-
-void MultiExcitonHamiltonian::common_init() {
-  jop_ = make_shared<DimerJop>(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
+  jop_ = std::make_shared<DimerJop>(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
 
   cispace_->complete();
 
@@ -60,33 +50,37 @@ void MultiExcitonHamiltonian::common_init() {
 
   int maxspin = 0;
   // Process DimerCISpace to form and organize needed Civecs and figure out maxspin
-  for ( auto& aiter : cispace_->cispace<0>() ) {
+  for ( auto& aiter : cispace_->template cispace<0>() ) {
     SpaceKey akey = aiter.first;
     SpaceKey bkey( akey.S, -akey.m_s, -akey.q );
-    shared_ptr<const Dvec> bspace = cispace_->ccvec<1>(bkey);
+    std::shared_ptr<const Dvec> bspace = cispace_->template ccvec<1>(bkey);
     if ( bspace ) {
       subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
-      maxspin = max(aiter.second->det()->nspin(), maxspin);
+      maxspin = std::max(aiter.second->det()->nspin(), maxspin);
     }
   }
   maxspin = 2 * maxspin + 1;
   max_spin_ = maxspin;
 
-  energies_ = vector<double>(nstates_, 0.0);
+  energies_ = std::vector<double>(nstates_, 0.0);
 
-  gammaforest_ = make_shared<GammaForest<Dvec, 2>>();
+  gammaforest_ = std::make_shared<GammaForest<VecType, 2>>();
 }
 
-const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const {
-  pair<int,int> neleaAB = make_pair(AB.ci<0>()->det()->nelea(), AB.ci<1>()->det()->nelea());
-  pair<int,int> nelebAB = make_pair(AB.ci<0>()->det()->neleb(), AB.ci<1>()->det()->neleb());
+template <class VecType>
+const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const {
+  std::pair<int,int> neleaAB = std::make_pair(AB.template ci<0>()->det()->nelea(), AB.template ci<1>()->det()->nelea());
+  std::pair<int,int> nelebAB = std::make_pair(AB.template ci<0>()->det()->neleb(), AB.template ci<1>()->det()->neleb());
 
-  pair<int,int> neleaApBp = make_pair(ApBp.ci<0>()->det()->nelea(), ApBp.ci<1>()->det()->nelea());
-  pair<int,int> nelebApBp = make_pair(ApBp.ci<0>()->det()->neleb(), ApBp.ci<1>()->det()->neleb());
+  std::pair<int,int> neleaApBp = std::make_pair(ApBp.template ci<0>()->det()->nelea(), ApBp.template ci<1>()->det()->nelea());
+  std::pair<int,int> nelebApBp = std::make_pair(ApBp.template ci<0>()->det()->neleb(), ApBp.template ci<1>()->det()->neleb());
 
   // AlphaTransfer and BetaTransfer
-  pair<int,int> AT = make_pair(neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second);
-  pair<int,int> BT = make_pair(nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second);
+  std::pair<int,int> AT = std::make_pair(neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second);
+  std::pair<int,int> BT = std::make_pair(nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second);
+
+  const int stride = 8; // Should be sufficient
+  auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };
 
   /************************************************************
   *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
@@ -98,7 +92,7 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
   * (-2,+2) | -bbET   |         |         |         |         *
   ************************************************************/
 
-  const int icouple = coupling_index(AT, BT);
+  const int icouple = coupling_index(AT.first, AT.second, BT.first, BT.second);
 
   if      ( icouple == coupling_index( 0, 0, 0, 0) ) return Coupling::diagonal;
   else if ( icouple == coupling_index( 0, 0,+1,-1) ) return Coupling::bET;
@@ -116,25 +110,25 @@ const Coupling MultiExcitonHamiltonian::coupling_type(const DimerSubspace& AB, c
   else                                               return Coupling::none;
 }
 
-
-shared_ptr<const Matrix> MultiExcitonHamiltonian::apply_hamiltonian(const Matrix& o) {
+template <class VecType>
+std::shared_ptr<const Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(const Matrix& o) {
   if (store_matrix_) {
-    return make_shared<const Matrix>(*hamiltonian_ * o);
+    return std::make_shared<const Matrix>(*hamiltonian_ * o);
   }
   else {
-    auto out = make_shared<Matrix>(o.ndim(), o.mdim());
+    auto out = std::make_shared<Matrix>(o.ndim(), o.mdim());
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       const int ioff = iAB->offset();
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
         const int joff = jAB->offset();
 
-        shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
+        std::shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
 
         dgemm_("N", "N", block->ndim(), o.mdim(), block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
         dgemm_("T", "N", block->mdim(), o.mdim(), block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
       }
 
-      shared_ptr<const Matrix> block = compute_diagonal_block(*iAB);
+      std::shared_ptr<const Matrix> block = compute_diagonal_block(*iAB);
       dgemm_("N", "N", block->ndim(), o.mdim(), block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
     }
 
@@ -143,21 +137,22 @@ shared_ptr<const Matrix> MultiExcitonHamiltonian::apply_hamiltonian(const Matrix
 }
 
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Matrix> hAA, shared_ptr<const Matrix> hBB, shared_ptr<const Matrix> hAB, const double core) const {
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
 
-  auto out = make_shared<Matrix>(dimerstates_, dimerstates_);
+  auto out = std::make_shared<Matrix>(dimerstates_, dimerstates_);
 
   for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
       const int joff = jAB->offset();
 
-      shared_ptr<Matrix> out_block = compute_offdiagonal_1e(*iAB, *jAB, hAB);
+      std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e(*iAB, *jAB, hAB);
 
       out->add_block(1.0, ioff, joff, out_block->ndim(), out_block->mdim(), out_block);
       out->add_block(1.0, joff, ioff, out_block->mdim(), out_block->ndim(), out_block->transpose());
     }
-    shared_ptr<const Matrix> tmp = compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core);
+    std::shared_ptr<const Matrix> tmp = compute_diagonal_1e(*iAB, hAA->data(), hBB->data(), core);
     out->add_block(1.0, ioff, ioff, tmp->ndim(), tmp->mdim(), tmp);
   }
 
@@ -165,7 +160,8 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_1e_prop(shared_ptr<const Mat
 }
 
 
-void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* target,
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::reorder_matrix(const double* source, double* target,
   const int nA, const int nAp, const int nB, const int nBp) const
 {
   const int nstatesAB = nA * nB;
@@ -187,53 +183,61 @@ void MultiExcitonHamiltonian::reorder_matrix(const double* source, double* targe
 }
 
 
-void MultiExcitonHamiltonian::print_hamiltonian(const string title, const int nstates) const {
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::print_hamiltonian(const std::string title, const int nstates) const {
   hamiltonian_->print(title, nstates);
 }
 
 
-void MultiExcitonHamiltonian::print_adiabats(const double thresh, const string title, const int nstates) const {
-  const int end = min(nstates, adiabats_->mdim());
-  shared_ptr<Matrix> spn = spin_->apply(*adiabats_);
-  cout << endl << " ===== " << title << " =====" << endl;
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::print_adiabats(const double thresh, const std::string title, const int nstates) const {
+  const int end = std::min(nstates, adiabats_->mdim());
+  std::shared_ptr<Matrix> spn = spin_->apply(*adiabats_);
+  std::cout << std::endl << " ===== " << title << " =====" << std::endl;
   for (int istate = 0; istate < end; ++istate) {
-    cout << "   state  " << setw(3) << istate << ": "
-         << setprecision(8) << setw(17) << fixed << energies_.at(istate)
-         << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << endl;
+    std::cout << "   state  " << std::setw(3) << istate << ": "
+         << std::setprecision(8) << std::setw(17) << std::fixed << energies_.at(istate)
+         << "   <S^2> = " << std::setw(4) << std::setprecision(4) << std::fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << std::endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
     for (auto& subspace : subspaces_) {
-      const int nA = subspace.nstates<0>();
-      const int nB = subspace.nstates<1>();
+      const int nA = subspace.template nstates<0>();
+      const int nB = subspace.template nstates<1>();
       for (int i = 0; i < nA; ++i) {
         for (int j = 0; j < nB; ++j, ++eigendata) {
           if ( (*eigendata)*(*eigendata) > thresh ) {
-            cout << "      " << subspace.string(i,j) << setprecision(12) << setw(20) << *eigendata << endl;
+            std::cout << "      " << subspace.string(i,j) << std::setprecision(12) << std::setw(20) << *eigendata << std::endl;
           }
         }
       }
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 
-void MultiExcitonHamiltonian::print_property(const string label, shared_ptr<const Matrix> property , const int nstates) const {
-  const string indent("   ");
-  const int nprint = min(nstates, property->ndim());
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::print_property(const std::string label, std::shared_ptr<const Matrix> property , const int nstates) const {
+  const std::string indent("   ");
+  const int nprint = std::min(nstates, property->ndim());
 
-  cout << indent << " " << label << "    |0>";
-  for (int istate = 1; istate < nprint; ++istate) cout << "         |" << istate << ">";
-  cout << endl;
+  std::cout << indent << " " << label << "    |0>";
+  for (int istate = 1; istate < nprint; ++istate) std::cout << "         |" << istate << ">";
+  std::cout << std::endl;
   for (int istate = 0; istate < nprint; ++istate) {
-    cout << indent << "<" << istate << "|";
+    std::cout << indent << "<" << istate << "|";
     for (int jstate = 0; jstate < nprint; ++jstate) {
-      cout << setw(12) << setprecision(6) << property->element(jstate, istate);
+      std::cout << std::setw(12) << std::setprecision(6) << property->element(jstate, istate);
     }
-    cout << endl;
+    std::cout << std::endl;
   }
-  cout << endl;
+  std::cout << std::endl;
 }
 
-void MultiExcitonHamiltonian::print(const int nstates, const double thresh) const {
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::print(const int nstates, const double thresh) const {
   print_adiabats(thresh, "Adiabatic States", nstates);
   if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates); }
 }
+
+#endif
+
+#endif

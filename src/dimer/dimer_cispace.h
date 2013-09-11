@@ -61,8 +61,10 @@ class SpaceKey {
     }
 };
 
-template <class VecType, class DetType>
+template <class VecType>
 class DimerCISpace_base {
+  using DetType = typename VecType::DetType;
+
   using SpaceMap = std::multimap<SpaceKey, std::shared_ptr<VecType>>;
   using DMap = std::multimap<std::pair<int,int>, std::shared_ptr<DetType>>;
 
@@ -270,7 +272,7 @@ class DimerCISpace_base {
     template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
 };
 
-using DimerCISpace = DimerCISpace_base<Dvec, Determinants>;
+using DimerCISpace = DimerCISpace_base<Dvec>;
 
 }
 

@@ -23,11 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __meh_meh_h
-#define __meh_meh_h
+#ifndef __MEH_MEH_H
+#define __MEH_MEH_H
 
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_jop.h>
+#include <src/dimer/dimer_prop.h>
+#include <src/math/davidson.h>
 #include <src/meh/gamma_forest.h>
 #include <src/meh/meh_spin.h>
 
@@ -57,8 +59,6 @@ enum class Coupling {
 
 template <class VecType>
 class DimerSubspace_base { // until I come up with a better name
-  using MatrixPtr = std::shared_ptr<Matrix>;
-
   protected:
     const int offset_;
     const int nstatesA_;
@@ -86,12 +86,11 @@ class DimerSubspace_base { // until I come up with a better name
 
 };
 
-using DimerSubspace = DimerSubspace_base<Dvec>;
-
+template <class VecType>
 class MultiExcitonHamiltonian {
-   using MatrixPtr = std::shared_ptr<Matrix>;
-   using cMatrixPtr = std::shared_ptr<const Matrix>;
-
+   protected: using DSubSpace = DimerSubspace_base<VecType>;
+   protected: using DCISpace = DimerCISpace_base<VecType>;
+   protected: using CiType = typename VecType::Ci;
 
    protected:
       std::shared_ptr<const Dimer> dimer_;
@@ -99,17 +98,16 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<const Coeff> coeff_;
 
       std::shared_ptr<DimerJop> jop_;
-      std::shared_ptr<DimerCISpace> cispace_;
 
+      std::shared_ptr<DCISpace> cispace_;
       std::shared_ptr<GammaForest<Dvec, 2>> gammaforest_;
-
-      std::vector<DimerSubspace> subspaces_;
+      std::vector<DSubSpace> subspaces_;
 
       std::unique_ptr<double[]> denom_;
 
-      MatrixPtr hamiltonian_;
-      MatrixPtr adiabats_; // Eigenvectors of adiabatic states
-      std::vector<std::pair<std::string, MatrixPtr>> properties_;
+      std::shared_ptr<Matrix> hamiltonian_;
+      std::shared_ptr<Matrix> adiabats_; // Eigenvectors of adiabatic states
+      std::vector<std::pair<std::string, std::shared_ptr<Matrix>>> properties_;
 
       int max_spin_;
       std::shared_ptr<MEHSpin> spin_;
@@ -137,7 +135,7 @@ class MultiExcitonHamiltonian {
       double print_thresh_;
 
    public:
-      MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace> cispace);
+      MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
       void compute();
 
@@ -149,67 +147,50 @@ class MultiExcitonHamiltonian {
       void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
       void print(const int nstates = 10, const double thresh = 0.05) const;
 
-      const Coupling coupling_type(const DimerSubspace& AB, const DimerSubspace& ApBp) const;
+      const Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
 
    private:
-      void common_init();
       void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
-
-      int coupling_index(std::pair<int,int> AT, std::pair<int,int> BT) const { return coupling_index(AT.first,AT.second,BT.first,BT.second); }
-      int coupling_index(const int a, const int b, const int c, const int d) const {
-        return (a + b*large__ + c*large__*large__ + d*large__*large__*large__);
-      }
 
       std::shared_ptr<const Matrix> apply_hamiltonian(const Matrix& o);
 
-      // This will end up virtual and therefore it can't be templated
-      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ first) const
-        { return gammaforest_->get<0>(ioffset, joffset, first); }
-      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ second, GammaSQ first) const
-        { return gammaforest_->get<0>(ioffset, joffset, second, first); }
-      cMatrixPtr get_gamma_A(const int ioffset, const int joffset, GammaSQ third, GammaSQ second, GammaSQ first) const
-        { return gammaforest_->get<0>(ioffset, joffset, third, second, first); }
-
-      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ first) const
-        { return gammaforest_->get<1>(ioffset, joffset, first); }
-      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ second, GammaSQ first) const
-        { return gammaforest_->get<1>(ioffset, joffset, second, first); }
-      cMatrixPtr get_gamma_B(const int ioffset, const int joffset, GammaSQ third, GammaSQ second, GammaSQ first) const
-        { return gammaforest_->get<1>(ioffset, joffset, third, second, first); }
-
-      MatrixPtr compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
-      MatrixPtr compute_offdiagonal_1e(const DimerSubspace& AB, const DimerSubspace& ApBp, std::shared_ptr<const Matrix> hAB) const;
-      MatrixPtr compute_diagonal_1e(const DimerSubspace& subspace, const double* hAA, const double* hBB, const double diag) const;
+      std::shared_ptr<Matrix> compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
+      std::shared_ptr<Matrix> compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const;
+      std::shared_ptr<Matrix> compute_diagonal_1e(const DSubSpace& subspace, const double* hAA, const double* hBB, const double diag) const;
 
       // Diagonal block stuff
-      MatrixPtr compute_diagonal_block(DimerSubspace& subspace);
-      MatrixPtr compute_intra(const DimerSubspace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
+      std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
+      std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
-      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const;
-      std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const;
-
-      void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;
-
-      void sigma_2ab_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
-      void sigma_2ab_2(std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, const double* mo2e_ptr) const;
-      void sigma_2ab_3(std::shared_ptr<Civec> sigma, std::shared_ptr<Dvec> e) const;
+      virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, const double* h1, const double* mo2e_ptr) const = 0;
+      virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
 
       // Gamma Tree building
-      void gamma_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp);
-      void spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
-      void compute_diagonal_spin_block(DimerSubspace& subspace, std::map<std::pair<int, int>, double>& spinmap);
+      void gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp);
+      void spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
+      void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
       // Off-diagonal stuff
-      MatrixPtr couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp); // Off-diagonal driver for H
+      std::shared_ptr<Matrix> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
-      MatrixPtr compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_aET(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_bET(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_abFlip(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_abET(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_aaET(DimerSubspace& AB, DimerSubspace& ApBp);
-      MatrixPtr compute_bbET(DimerSubspace& AB, DimerSubspace& ApBp);
+      std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_abET(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_aaET(DSubSpace& AB, DSubSpace& ApBp);
+      std::shared_ptr<Matrix> compute_bbET(DSubSpace& AB, DSubSpace& ApBp);
 };
+
+// Locks to make sure the following files are not included on their own
+#define MEH_HEADERS
+#include <src/meh/meh_compute.hpp>
+#include <src/meh/meh_compute_diagonal.hpp>
+#include <src/meh/meh_compute_offdiagonal.hpp>
+#include <src/meh/meh_gamma_coupling.hpp>
+#include <src/meh/meh_init.hpp>
+#include <src/meh/meh_spin_coupling.hpp>
+#undef MEH_HEADERS
 
 }
 

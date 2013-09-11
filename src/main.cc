@@ -28,7 +28,7 @@
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
 #include <src/molecule/localization.h>
-#include <src/meh/meh.h>
+#include <src/meh/meh_cas.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -154,7 +154,7 @@ throw logic_error("broken!");
       } else if (title == "meh") {
           shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
 
-          auto meh = make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
+          auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

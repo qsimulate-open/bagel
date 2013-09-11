@@ -302,6 +302,8 @@ using ZDistCivec = DistCivector<std::complex<double>>;
 // DataType is double or complex<double>
 template<typename DataType>
 class Civector {
+  public: using DetType = Determinants; // used to automatically determine type for Determinants object in templates
+
   protected:
     // The determinant space in which this Civec object is defined
     mutable std::shared_ptr<const Determinants> det_;

@@ -44,9 +44,11 @@ namespace bagel {
 
 template <typename DataType>
 class Dvector {
+  // Useful in templates involving Dvectors
+  public: using DetType = Determinants;
+  public: using Ci    = Civector<DataType>;
   // only for use in lambdas
-  using Ci    = Civector<DataType>;
-  using CiPtr = std::shared_ptr<Ci>;
+  private: using CiPtr = std::shared_ptr<Ci>;
 
   protected:
     // the determinant space where Dvector's are sitting
