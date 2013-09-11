@@ -119,7 +119,7 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
 // S_- = \sum_i i^dagger_beta i_alpha
 template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
   shared_ptr<const RASDeterminants> sdet = det_;
-  if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb());
+  if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
   assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
   auto out = make_shared<RASCivec>(tdet);
 

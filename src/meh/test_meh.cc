@@ -86,7 +86,7 @@ double meh_energy(std::string inp) {
 
       *geom = *dimer->sgeom();
       ref = dimer->sref();
-    } else if (method == "meh") {
+    } else if (method == "meh-cas") {
       std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
       auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);

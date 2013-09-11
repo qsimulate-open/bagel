@@ -65,7 +65,7 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(0);
+    Timer pdebug(2);
     if (conv[istate]) continue;
     shared_ptr<const RASCivec> cc = ccvec->data(istate);
     shared_ptr<RASCivec> sigma = sigmavec->data(istate);
@@ -119,7 +119,7 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, co
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(0);
+    Timer pdebug(2);
     shared_ptr<const RASCivec> cc = ccvec->data(istate);
     shared_ptr<RASCivec> sigma = sigmavec->data(istate);
 

@@ -186,7 +186,7 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
 
   std::shared_ptr<RASCI> rasci;
   try {
-    rasci = std::dynamic_pointer_cast<RASCI>(construct_method("rasci", input, embedded_ref->geom(), embedded_ref));
+    rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
     rasci->compute();
   }
   catch (...) {

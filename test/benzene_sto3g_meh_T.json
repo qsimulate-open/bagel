@@ -72,7 +72,7 @@
 },
 
 {
-  "title" : "meh",
+  "title" : "meh-cas",
   "store_matrix" : true,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 8},
