@@ -40,16 +40,14 @@ class FormSigmaRAS {
 
     // This is really all this class is
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop) const {
-      std::vector<int> conv(cc->ij(), static_cast<int>(false));
-      return (*this)(cc, jop, conv);
-    }
+    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, const double* mo1e, const double* mo2e) const;
+    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, const double* mo1e) const;
 
   private:
     // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
+    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
+    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
 };
 
 }
