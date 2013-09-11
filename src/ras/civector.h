@@ -258,7 +258,7 @@ class RASCivector {
       const int norb = sdet->norb();
 
       // 0 -> RASI, 1 -> RASII, 2 -> RASIII
-      const int ras_space = ( orbital > ras1 ) + (orbital > ras2);
+      const int ras_space = ( orbital >= ras1 ) + (orbital >= ras2);
 
       auto condition =
         [&orbital, &action] (std::bitset<nbit__>& bit) {
@@ -323,7 +323,7 @@ class RASCivector {
               DataType* targetdata = tarblock->data() + tarblock->stringb()->template lexical<0>(tbbit);
               const DataType sign = static_cast<DataType>(sdet->sign<1>(bbit, orbital));
               for (int i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
-                *targetdata += *sourcedata;
+                *targetdata += *sourcedata * sign;
               }
             }
             ++sourcedata_base;
