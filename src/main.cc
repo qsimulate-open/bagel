@@ -29,6 +29,7 @@
 #include <src/opt/optimize.h>
 #include <src/molecule/localization.h>
 #include <src/meh/meh_cas.h>
+#include <src/meh/meh_ras.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -151,10 +152,15 @@ int main(int argc, char** argv) {
 #else
 throw logic_error("broken!");
 #endif
-      } else if (title == "meh") {
+      } else if (title == "meh-cas") {
           shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
           auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
+          meh->compute();
+      } else if (title == "meh-ras") { // Not the best solution, but it'll do for now
+          shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+
+          auto meh = make_shared<MEH_RAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

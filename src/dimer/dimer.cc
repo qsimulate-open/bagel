@@ -631,12 +631,88 @@ shared_ptr<DimerCAS> Dimer::compute_cispace(const std::shared_ptr<const PTree> i
 
   cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
   for (auto& ispace : spaces_B) {
-    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    if (ispace.size() != 3) throw runtime_error("Charge, spin and number of states needs to be specified for each space");
     const int charge = ispace.at(0);
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
     out->insert<1>(embedded_casci<1>(fcidata, charge, spin, nstate));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+
+  return out;
+}
+
+
+shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> idata) {
+  embed_refs();
+  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+
+  const int ras1 = idata->get<int>("ras1", 0);
+  const int ras2 = idata->get<int>("ras2", 0);
+  const int ras3 = idata->get<int>("ras3", 0);
+
+  const int holes = idata->get<int>("max_holes", 0);
+  const int particles = idata->get<int>("max_particles", 0);
+
+  array<int, 5> raspace = {ras1, ras2, ras3, holes, particles};
+
+  auto d1 = make_shared<RASDeterminants>(ras1, ras2, ras3, nelea.first, neleb.first, holes, particles, true);
+  auto d2 = make_shared<RASDeterminants>(ras1, ras2, ras3, nelea.second, neleb.second, holes, particles, true);
+
+  auto out = make_shared<DimerRAS>(make_pair(d1, d2), nelea, neleb);
+
+  vector<vector<int>> spaces_A;
+  vector<vector<int>> spaces_B;
+
+  auto space = idata->get_child_optional("space");
+  if (space) {
+    // TODO make a function
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    spaces_B = spaces_A;
+  }
+  else {
+    auto spacea = idata->get_child_optional("space_a");
+    auto spaceb = idata->get_child_optional("space_b");
+    if (!(spacea && spaceb)) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    }
+    // TODO make a function
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+  }
+
+  Timer castime;
+
+  shared_ptr<const PTree> rasdata = idata->get_child_optional("ras");
+  if (!rasdata) rasdata = make_shared<const PTree>();
+
+  // Embedded RAS-CI calculations
+  cout << "    Starting embedded RAS-CI calculations on monomer A" << endl;
+  for (auto& ispace : spaces_A) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, raspace));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+  cout << endl << "    Starting embedded RAS-CI calculations on monomer B" << endl;
+  for (auto& ispace : spaces_B) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, raspace));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;

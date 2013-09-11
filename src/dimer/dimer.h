@@ -27,6 +27,7 @@
 #define __SRC_DIMER_DIMER_H
 
 #include <src/fci/harrison.h>
+#include <src/ras/rasci.h>
 #include <src/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
 
@@ -116,6 +117,9 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       template <int unit> Ref<Dvec> embedded_casci(TreeInput idata, const int charge, const int spin, const int nstates) const;
       std::shared_ptr<DimerCAS> compute_cispace(TreeInput idata);
 
+      template <int unit> Ref<RASDvec> embedded_rasci(TreeInput idata, const int charge, const int spin, const int nstates, std::array<int, 5> raspace) const;
+      std::shared_ptr<DimerRAS> compute_rcispace(TreeInput idata);
+
    private:
       void construct_geometry();
       void construct_coeff();
@@ -156,6 +160,42 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
   std::cout.rdbuf(saved_cout);
 
   return fci->civectors();
+}
+
+template<int unit>
+std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::array<int, 5> raspace) const {
+  const int nclosed = nclosed_;
+  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
+  const int nact = (unit == 0) ? nact_.first : nact_.second;
+  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
+
+  // Make new input data, set charge, spin to what I want
+  auto input = std::make_shared<PTree>(*idata);
+
+  input->erase("charge"); input->put("charge", lexical_cast<std::string>(charge));
+  input->erase("nspin"); input->put("nspin", lexical_cast<std::string>(nspin));
+  input->erase("ncore"); input->put("ncore", lexical_cast<std::string>(ncore));
+  input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
+
+  // I need to do some work here to make sure the active space is set right. Later.
+
+  // Hiding normal cout
+  std::stringstream trash;
+  std::streambuf* saved_cout = std::cout.rdbuf();
+  std::cout.rdbuf(trash.rdbuf());
+
+  std::shared_ptr<RASCI> rasci;
+  try {
+    rasci = std::dynamic_pointer_cast<RASCI>(construct_method("rasci", input, embedded_ref->geom(), embedded_ref));
+    rasci->compute();
+  }
+  catch (...) {
+    std::cout.rdbuf(saved_cout); // Restore cout to throw an error
+    throw; // Rethrow
+  }
+  std::cout.rdbuf(saved_cout);
+
+  return rasci->civectors();
 }
 
 }

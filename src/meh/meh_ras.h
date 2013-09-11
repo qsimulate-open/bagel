@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __MEH_MEH_CAS_H
-#define __MEH_MEH_CAS_H
+#ifndef __MEH_MEH_RAS_H
+#define __MEH_MEH_RAS_H
 
 #include <src/meh/meh.h>
 #include <src/ras/dvec.h>

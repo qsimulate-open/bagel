@@ -86,6 +86,14 @@ class RASDvector {
     std::shared_ptr<RASDvector<DataType>> clone() const { return std::make_shared<RASDvector<DataType>>(det_, ij_); }
     std::shared_ptr<RASDvector<DataType>> copy() const { return std::make_shared<RASDvector<DataType>>(*this); }
 
+    // for MEH
+    std::shared_ptr<RASDvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
+      std::vector<CiPtr> out;
+      for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
+      return std::make_shared<RASDvector<DataType>>(out);
+    }
+
+
     // will fail for non-double DataTypes
     std::shared_ptr<RASDvector<DataType>> spin() const {
       std::vector<CiPtr> out;

@@ -260,18 +260,12 @@ class RASCivector {
       // 0 -> RASI, 1 -> RASII, 2 -> RASIII
       const int ras_space = ( orbital > ras1 ) + (orbital > ras2);
 
-      auto condition = (action ?
-        [&orbital] (std::bitset<nbit__>& bit) {
-          bool out = !bit[orbital];
-          bit.set(orbital);
+      auto condition =
+        [&orbital, &action] (std::bitset<nbit__>& bit) {
+          bool out = action ? !bit[orbital] : bit[orbital];
+          action ? bit.set(orbital) : bit.reset(orbital);
           return out;
-        } :
-        [&orbital] (std::bitset<nbit__>& bit) {
-          bool out = bit[orbital];
-          bit.reset(orbital);
-          return out;
-        }
-      );
+        };
 
       auto to_array = [] (std::shared_ptr<const RASBlock<DataType>> block) {
         auto sa = block->stringa();
@@ -297,7 +291,7 @@ class RASCivector {
         return out;
       };
 
-      auto apply_block = ( spin ?
+      auto apply_block_alpha =
         [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
           const int lb = soblock->lenb();
           assert(lb == tarblock->lenb());
@@ -311,7 +305,9 @@ class RASCivector {
             }
             sourcedata += lb;
           }
-        } :
+        };
+
+      auto apply_block_beta =
         [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
           const int la = soblock->lena();
           assert( la == tarblock->lena() );
@@ -324,7 +320,7 @@ class RASCivector {
             const DataType* sourcedata = sourcedata_base;
             std::bitset<nbit__> tbbit = bbit;
             if (condition(tbbit)) {
-              DataType* targetdata = tarblock->data() + tarblock->stringb()->lexical<0>(tbbit);
+              DataType* targetdata = tarblock->data() + tarblock->stringb()->template lexical<0>(tbbit);
               const DataType sign = static_cast<DataType>(sdet->sign<1>(bbit, orbital));
               for (int i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
                 *targetdata += *sourcedata;
@@ -332,8 +328,7 @@ class RASCivector {
             }
             ++sourcedata_base;
           }
-        }
-      );
+        };
 
       std::shared_ptr<const RASDeterminants> tdet = ( spin ? ( action ? sdet->addalpha() : sdet->remalpha() ) : ( action ? sdet->addbeta() : sdet->rembeta() ) );
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
@@ -342,7 +337,7 @@ class RASCivector {
         for (auto& tarblock : out->blocks()) {
           std::array<int, 6> so_array = to_array(soblock);
           std::array<int, 6> ta_array = to_array(tarblock);
-          if ( op_on_array(so_array) == ta_array ) apply_block(soblock, tarblock);
+          if ( op_on_array(so_array) == ta_array ) spin ? apply_block_alpha(soblock, tarblock) : apply_block_beta(soblock,tarblock);
         }
       }
 
