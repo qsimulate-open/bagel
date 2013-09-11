@@ -36,8 +36,10 @@ namespace bagel {
 
 template <typename DataType>
 class RASDvector {
+  // used for template magicking
+  public: using DetType = RASDeterminants;
+  public: using Ci = RASCivector<DataType>;
   // only for use in lambdas
-  using Ci    = RASCivector<DataType>;
   using CiPtr = std::shared_ptr<Ci>;
 
   protected:
@@ -61,8 +63,7 @@ class RASDvector {
     }
 
     RASDvector(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (int i = 0; i != ij_; ++i)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(*(o.at(i))));
+      for (auto& ivec : o) dvec_.push_back( std::make_shared<Ci>(*ivec) );
     }
 
     std::shared_ptr<const RASDeterminants> det() const { return det_; }

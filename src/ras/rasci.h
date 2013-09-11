@@ -32,14 +32,11 @@
 #include <src/fci/properties.h>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-#include <src/ras/civector.h>
+#include <src/ras/dvec.h>
 
 namespace bagel {
 
 class RASCI : public Method {
-  using RASDvec = std::vector<std::shared_ptr<RASCivec>>;
-  using cRASDvec = std::vector<std::shared_ptr<const RASCivec>>;
-
   protected:
     // max #iteration
     int max_iter_;
@@ -70,7 +67,7 @@ class RASCI : public Method {
     std::vector<double> energy_;
 
     // CI vector at convergence
-    RASDvec cc_;
+    std::shared_ptr<RASDvec> cc_;
 
 #ifndef NORDMS
     // RDMs; should be resized in constructors
@@ -95,7 +92,7 @@ class RASCI : public Method {
     void common_init(); // may end up unnecessary
     void create_Jiiii();
     // obtain determinants for guess generation
-    void generate_guess(const int nspin, const int nstate, RASDvec& out);
+    void generate_guess(const int nspin, const int nstate, std::shared_ptr<RASDvec>& out);
     // generate spin-adapted guess configurations
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 
@@ -108,7 +105,7 @@ class RASCI : public Method {
 #ifndef NORDMS
     // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(RASDvec, cRASDvec, std::shared_ptr<const RASCivec>) const;
+      compute_rdm12_last_step(std::shared_ptr<RASDvec>, std::shared_ptr<const RASDvec>, std::shared_ptr<const RASCivec>) const;
 #endif
 
     // print functions
@@ -135,7 +132,7 @@ class RASCI : public Method {
     //double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
-    RASDvec form_sigma(const RASDvec& c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
 #ifndef NORDMS
     // rdms
@@ -144,9 +141,9 @@ class RASCI : public Method {
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int istate) const;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
+      compute_rdm12_from_civec(std::shared_ptr<const RASCivec>, std::shared_ptr<const RASCivec>) const;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>,
+      compute_rdm12_av_from_dvec(std::shared_ptr<const RASDvec>, std::shared_ptr<const RASDvec>,
                                  std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
 
     std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
@@ -161,8 +158,8 @@ class RASCI : public Method {
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
     // rdm ci derivatives
-    std::shared_ptr<Dvec> rdm1deriv() const;
-    std::shared_ptr<Dvec> rdm2deriv() const;
+    std::shared_ptr<RASDvec> rdm1deriv() const;
+    std::shared_ptr<RASDvec> rdm2deriv() const;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
@@ -183,7 +180,7 @@ class RASCI : public Method {
     double energy(const int i) const { return energy_.at(i); }
 
     // returns CI vectors
-    RASDvec civectors() const { return cc_; }
+    std::shared_ptr<RASDvec> civectors() const { return cc_; }
 
     // Helper functions for sigma formation
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;

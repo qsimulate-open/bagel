@@ -33,20 +33,19 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Olsen */
-vector<shared_ptr<RASCivec>> RASCI::form_sigma(const vector<shared_ptr<RASCivec>>& ccvec, shared_ptr<const MOFile> jop,
+shared_ptr<RASDvec> RASCI::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const {
   const int ij = norb_*norb_;
 
   const int nstate = nstate_;
 
-  vector<shared_ptr<RASCivec>> sigmavec;
-  for (int i = 0; i < nstate; ++i) { sigmavec.push_back( make_shared<RASCivec>(det_) ); }
+  auto sigmavec = make_shared<RASDvec>(det_, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(0);
     if (conv[istate]) continue;
-    shared_ptr<const RASCivec> cc = ccvec.at(istate);
-    shared_ptr<RASCivec> sigma = sigmavec.at(istate);
+    shared_ptr<const RASCivec> cc = ccvec->data(istate);
+    shared_ptr<RASCivec> sigma = sigmavec->data(istate);
 
     // (taskaa)
     sigma_aa(cc, sigma, jop);
