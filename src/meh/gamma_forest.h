@@ -60,7 +60,7 @@ class GammaBranch {
       target->activate();
       target->insert(bra, offset, rest...);
     }
-    void insert(std::shared_ptr<const VecType> bra, const int offset) { bras_.insert(std::make_pair(offset,bra)); }
+    void insert(std::shared_ptr<const VecType> bra, const int offset) { bras_.emplace(offset,bra); }
 
     template <class ...GSQs>
     std::shared_ptr<const Matrix> search(const int offset, GammaSQ first, GSQs... rest) const { return branch(first)->search(offset, rest...); }
@@ -118,7 +118,6 @@ class GammaTree {
     static const int Create = 0;
     static const int Annihilate = 1;
 
-    std::shared_ptr<const VecType> apply(std::shared_ptr<const VecType> kets, const GammaSQ operation, const int orbital) const;
     std::unique_ptr<double[]> dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets) const;
 };
 
@@ -158,31 +157,31 @@ class GammaForest {
 
           // Allocation sweep
           for (int i = 0; i < nops; ++i) {
-            auto first = itree->base()->branch(i);
+            std::shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
             if (!first->active()) continue;
             ++ntasks;
             for (auto& ibra : first->bras()) {
               const int nAp = ibra.second->ij();
               const int nstates = nA * nAp;
-              first->gammas().insert(std::make_pair(ibra.first, std::make_shared<Matrix>(nstates, norb)));
+              first->gammas().emplace(ibra.first, std::make_shared<Matrix>(nstates, norb));
             }
 
             for (int j = 0; j < nops; ++j) {
-              auto second = first->branch(j);
+              std::shared_ptr<GammaBranch<VecType>> second = first->branch(j);
               if (!second->active()) continue;
               for (auto& jbra : second->bras()) {
                 const int nAp = jbra.second->ij();
                 const int nstates = nA * nAp;
-                second->gammas().insert(std::make_pair(jbra.first, std::make_shared<Matrix>(nstates, norb * norb)));
+                second->gammas().emplace(jbra.first, std::make_shared<Matrix>(nstates, norb * norb));
               }
 
               for (int k = 0; k < nops; ++k) {
-                auto third = second->branch(k);
+                std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
                 if (!third->active()) continue;
                 for (auto& kbra : third->bras()) {
                   const int nAp = kbra.second->ij();
                   const int nstates = nA * nAp;
-                  third->gammas().insert(std::make_pair(kbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb)));
+                  third->gammas().emplace(kbra.first, std::make_shared<Matrix>(nstates, norb * norb * norb));
                 }
               }
             }
@@ -199,7 +198,7 @@ class GammaForest {
 
           const int norb = itree->ket()->det()->norb();
           for (int i = 0; i < nops; ++i) {
-            auto first = itree->base()->branch(i);
+            std::shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
             if (!first->active()) continue;
             for (int a = 0; a < norb; ++a) tasks.emplace_back(itree, GammaSQ(i), a);
           }
@@ -214,9 +213,9 @@ class GammaForest {
   private:
     template <int unit>
     std::shared_ptr<GammaTree<VecType>> tree(std::shared_ptr<const VecType> ket, const int ioffset) {
-      auto itree = forests_[unit].find(ioffset);
+      typename std::map<int, std::shared_ptr<GammaTree<VecType>>>::iterator itree = forests_[unit].find(ioffset);
       if (itree == forests_[unit].end()) {
-        forests_[unit].insert(std::make_pair(ioffset, std::make_shared<GammaTree<VecType>>(ket)));
+        forests_[unit].emplace(ioffset, std::make_shared<GammaTree<VecType>>(ket));
         itree = forests_[unit].find(ioffset);
       }
       return itree->second;
@@ -265,7 +264,7 @@ class GammaTask {
           }
 
           for (int k = 0; k < nops; ++k) {
-            auto third = second->branch(k);
+            std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
             if (!third->active()) continue;
 
             for (int c = 0; c < norb; ++c) {

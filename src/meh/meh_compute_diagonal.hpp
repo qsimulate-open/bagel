@@ -168,12 +168,12 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubS
   const int nstatesp = nstatesAp * nstatesBp;
 
   // alpha-alpha
-  Matrix gamma_AA_alpha = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_AA_beta = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
@@ -195,3 +195,4 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubS
 #endif
 
 #endif
+

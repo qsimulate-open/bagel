@@ -119,10 +119,26 @@ class RASCivector {
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
 
+    // Copy assignment
+    RASCivector<DataType>& operator=(const RASCivector<DataType>& o) {
+      assert(o.size_ == size_);
+      std::copy_n(o.data(), size_, data_.get());
+      return *this;
+    }
+
+    // Move assignment
+    RASCivector<DataType>& operator=(RASCivector<DataType>&& o) {
+      assert(o.size_ == size_);
+      data_ = std::move(o.data_);
+      return *this;
+    }
+
+    // Convenience
     const int index(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return block(bstring, astring)->gindex(bstring, astring);
     }
 
+    // Element-wise access. Beware: very slow!
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return block(bstring, astring)->element(bstring, astring);
     }

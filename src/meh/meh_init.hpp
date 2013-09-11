@@ -53,7 +53,7 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   for ( auto& aiter : cispace_->template cispace<0>() ) {
     SpaceKey akey = aiter.first;
     SpaceKey bkey( akey.S, -akey.m_s, -akey.q );
-    std::shared_ptr<const Dvec> bspace = cispace_->template ccvec<1>(bkey);
+    std::shared_ptr<const VecType> bspace = cispace_->template ccvec<1>(bkey);
     if ( bspace ) {
       subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
       maxspin = std::max(aiter.second->det()->nspin(), maxspin);

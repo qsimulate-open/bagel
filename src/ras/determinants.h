@@ -28,15 +28,17 @@
 #define __SRC_RAS_DETERMINANTS_H
 
 #include <tuple>
+#include <memory>
+
 #include <src/ras/stringspace.h>
 
 namespace bagel {
   namespace RAS {
     struct DMap {
-      const size_t source;
-      const size_t target;
-      const size_t ij;     // displacement operators
-      const int sign;      // sign of displacement
+      size_t source;
+      size_t target;
+      size_t ij;     // displacement operators
+      int sign;      // sign of displacement
 
       DMap(const size_t s, const size_t t, const size_t ii, const int sn) : source(s), target(t), ij(ii), sign(sn) {}
     };
