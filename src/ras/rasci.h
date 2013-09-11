@@ -131,9 +131,6 @@ class RASCI : public Method {
 
     //double weight(const int i) const { return weight_[i]; }
 
-    // virtual application of Hamiltonian
-    std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-
 #ifndef NORDMS
     // rdms
     void compute_rdm12(); // compute all states at once + averaged rdm
@@ -181,11 +178,6 @@ class RASCI : public Method {
 
     // returns CI vectors
     std::shared_ptr<RASDvec> civectors() const { return cc_; }
-
-    // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, std::shared_ptr<const MOFile> jop) const;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };

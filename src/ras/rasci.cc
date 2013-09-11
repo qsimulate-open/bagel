@@ -24,6 +24,7 @@
 //
 
 #include <src/ras/rasci.h>
+#include <src/ras/form_sigma.h>
 #include <src/util/combination.hpp>
 #include <src/math/davidson.h>
 
@@ -193,6 +194,9 @@ void RASCI::compute() {
 
   // Davidson utility
   DavidsonDiag<RASCivec> davidson(nstate_, max_iter_);
+
+  // Object in charge of forming sigma vector
+  FormSigmaRAS form_sigma(sparse_);
 
   // main iteration starts here
   cout << "  === RAS-CI iteration ===" << endl << endl;

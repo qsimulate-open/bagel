@@ -32,7 +32,9 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+
 #include <src/ras/determinants.h>
+#include <src/math/algo.h>
 
 namespace bagel {
 

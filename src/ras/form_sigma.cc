@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/rasci_compute.cc
+// Filename: ras/form_sigma.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/ras/rasci.h>
+#include <src/ras/form_sigma.h>
 #include <src/math/sparsematrix.h>
 
 // toggle for timing print out.
@@ -33,13 +33,12 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Olsen */
-shared_ptr<RASDvec> RASCI::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop,
+shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const {
-  const int ij = norb_*norb_;
+  const int nstate = ccvec->ij();
 
-  const int nstate = nstate_;
-
-  auto sigmavec = make_shared<RASDvec>(det_, nstate);
+  shared_ptr<const RASDeterminants> det = ccvec->det();
+  auto sigmavec = make_shared<RASDvec>(det, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(0);
@@ -64,13 +63,13 @@ shared_ptr<RASDvec> RASCI::form_sigma(shared_ptr<const RASDvec> ccvec, shared_pt
 }
 
 // sigma_2 in the Olsen paper
-void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
+void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
   shared_ptr<const RASDeterminants> det = cc->det();
   assert(det == sigma->det());
 
   const int la = det->lena();
 
-  const int norb = norb_;
+  const int norb = det->norb();
   unique_ptr<double[]> g(new double[norb*norb]);
   for (int k = 0, kl = 0; k < norb; ++k) {
     for (int l = 0; l < k; ++l, ++kl) {
@@ -127,7 +126,7 @@ void RASCI::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   }
 }
 
-void RASCI::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
+void FormSigmaRAS::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
   shared_ptr<const RASCivec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<RASCivec>(cc_trans->det());
 
@@ -136,11 +135,11 @@ void RASCI::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
 
-void RASCI::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
+void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
   shared_ptr<const RASDeterminants> det = cc->det();
 
-  const int norb = norb_;
+  const int norb = det->norb();
 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
