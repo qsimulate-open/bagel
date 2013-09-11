@@ -581,14 +581,14 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 }
 
 
-shared_ptr<DimerCISpace> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
+shared_ptr<DimerCAS> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
   auto d1 = make_shared<Determinants>(nact().first, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
   auto d2 = make_shared<Determinants>(nact().second, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
-  auto out = make_shared<DimerCISpace>(make_pair(d1, d2), nelea, neleb);
+  auto out = make_shared<DimerCAS>(make_pair(d1, d2), nelea, neleb);
 
   vector<vector<int>> spaces_A;
   vector<vector<int>> spaces_B;

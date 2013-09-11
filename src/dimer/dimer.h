@@ -114,7 +114,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       // Calculations
       void scf(TreeInput idata); // SCF on dimer and then localize
       template <int unit> Ref<Dvec> embedded_casci(TreeInput idata, const int charge, const int spin, const int nstates) const;
-      std::shared_ptr<DimerCISpace> compute_cispace(TreeInput idata);
+      std::shared_ptr<DimerCAS> compute_cispace(TreeInput idata);
 
    private:
       void construct_geometry();

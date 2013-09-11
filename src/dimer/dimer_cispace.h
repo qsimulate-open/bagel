@@ -31,7 +31,7 @@
 #include <utility>
 
 #include <src/fci/dvec.h>
-#include <src/fci/determinants.h>
+#include <src/ras/dvec.h>
 
 namespace bagel {
 
@@ -272,7 +272,8 @@ class DimerCISpace_base {
     template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
 };
 
-using DimerCISpace = DimerCISpace_base<Dvec>;
+using DimerCAS = DimerCISpace_base<Dvec>;
+using DimerRAS = DimerCISpace_base<RASDvec>;
 
 }
 

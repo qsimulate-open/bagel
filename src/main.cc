@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
 throw logic_error("broken!");
 #endif
       } else if (title == "meh") {
-          shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
+          shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
           auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
           meh->compute();

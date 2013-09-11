@@ -27,7 +27,7 @@
 #ifndef BAGEL_RAS_DVEC_H
 #define BAGEL_RAS_DVEC_H
 
-#include <src/ras/civec.h>
+#include <src/ras/civector.h>
 
 // This class is purely for convenience and compliance with FCI Dvec.
 // Unlike the FCI version though, this is basically just a wrapper around a vector
@@ -135,8 +135,8 @@ class RASDvector {
     }
 };
 
-using Dvec = Dvector<double>;
-using ZDvec = Dvector<std::complex<double>>;
+using RASDvec = RASDvector<double>;
+//using ZDvec = Dvector<std::complex<double>>;
 
 }
 
