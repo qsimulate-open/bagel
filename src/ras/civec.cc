@@ -130,12 +130,16 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : det_->stringspacea())
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& ispace : sdet->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : det_->stringspaceb())
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& ispace : sdet->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const int lb = sblock->lenb();
@@ -168,7 +172,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
 
     if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
-    if ( (ras3 > 0) && (npb > 0) && (npa < ras3) ) lower_ras(this->block(nha, nhb, npa-1, npb+1), iblock, ras1+ras2, ras1+ras2+ras3);
+    if ( (ras3 > 0) && (npb > 0) && (npa < ras3) ) lower_ras(this->block(nha, nhb, npa+1, npb-1), iblock, ras1+ras2, ras1+ras2+ras3);
   }
 
   return out;
@@ -188,12 +192,16 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : det_->stringspacea())
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& ispace : det_->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : det_->stringspaceb())
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& ispace : det_->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const int lb = sblock->lenb();
@@ -226,7 +234,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
 
     if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
-    if ( (ras3 > 0) && (npa > 0) && (npb < ras3) ) raise_ras(this->block(nha, nhb, npa+1, npb-1), iblock, ras1+ras2, ras1+ras2+ras3);
+    if ( (ras3 > 0) && (npa > 0) && (npb < ras3) ) raise_ras(this->block(nha, nhb, npa-1, npb+1), iblock, ras1+ras2, ras1+ras2+ras3);
   }
 
   return out;
@@ -243,7 +251,6 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
 
   int k = nspin + 2;
   while( fabs(actual_expectation - pure_expectation) > thresh ) {
-    cout << "<S^2> = " << actual_expectation << endl;
     if ( k > max_spin ) { this->print(0.05); throw runtime_error("Spin decontamination failed."); }
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));

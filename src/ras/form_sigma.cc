@@ -167,7 +167,7 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, co
 // sigma_2 in the Olsen paper
 void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const {
   shared_ptr<const RASDeterminants> det = cc->det();
-  assert(det == sigma->det());
+  assert(*det == *sigma->det());
 
   const int norb = det->norb();
   const int la = det->lena();

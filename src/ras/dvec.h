@@ -104,21 +104,21 @@ class RASDvector {
     std::shared_ptr<RASDvector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
       if (!det) det = det_->transpose();
       std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->transpose() );
+      for (auto& i : dvec_) out.push_back( i->transpose(det) );
       return std::make_shared<RASDvector<DataType>>(out);
     }
 
     std::shared_ptr<RASDvector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
       std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->spin_lower() );
+      for (auto& i : dvec_) out.push_back( i->spin_lower(det) );
       return std::make_shared<RASDvector<DataType>>(out);
     }
 
     std::shared_ptr<RASDvector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
       std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->spin_raise() );
+      for (auto& i : dvec_) out.push_back( i->spin_raise(det) );
       return std::make_shared<RASDvector<DataType>>(out);
     }
 

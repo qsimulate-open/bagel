@@ -146,6 +146,7 @@ class RASCivector {
       return block(bstring, astring)->element(bstring, astring);
     }
 
+    // Access to individual blocks
     const std::vector<std::shared_ptr<RBlock>>& blocks() const { return blocks_; }
     std::vector<std::shared_ptr<RBlock>>& blocks() { return blocks_; }
 
@@ -258,7 +259,7 @@ class RASCivector {
       const int norb = sdet->norb();
 
       // 0 -> RASI, 1 -> RASII, 2 -> RASIII
-      const int ras_space = ( orbital >= ras1 ) + (orbital >= ras2);
+      const int ras_space = ( orbital >= ras1 ) + (orbital >= ras1 + ras2);
 
       auto condition =
         [&orbital, &action] (std::bitset<nbit__>& bit) {
@@ -334,7 +335,9 @@ class RASCivector {
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
 
       for (auto& soblock : this->blocks()) {
+        if (!soblock) continue;
         for (auto& tarblock : out->blocks()) {
+          if (!tarblock) continue;
           std::array<int, 6> so_array = to_array(soblock);
           std::array<int, 6> ta_array = to_array(tarblock);
           if ( op_on_array(so_array) == ta_array ) spin ? apply_block_alpha(soblock, tarblock) : apply_block_beta(soblock,tarblock);
