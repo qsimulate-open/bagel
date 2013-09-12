@@ -149,6 +149,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
+    const bool allowed(const int nha, const int nhb, const int npa, const int npb) const
+      { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ ); }
     const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
       { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
     const bool allowed(const std::shared_ptr<const StringSpace> alpha, const std::shared_ptr<const StringSpace> beta) const

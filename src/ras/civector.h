@@ -151,8 +151,11 @@ class RASCivector {
     std::vector<std::shared_ptr<RBlock>>& blocks() { return blocks_; }
 
     std::shared_ptr<RBlock> block(const int nha, const int nhb, const int npa, const int npb) {
-      const int lp = det_->lenparts();
-      return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      if ( det_->allowed(nha, nhb, npa, npb) ) {
+        const int lp = det_->lenparts();
+        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      }
+      else return std::shared_ptr<RBlock>();
     }
     std::shared_ptr<RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
@@ -162,8 +165,11 @@ class RASCivector {
     }
 
     std::shared_ptr<const RBlock> block(const int nha, const int nhb, const int npa, const int npb) const {
-      const int lp = det_->lenparts();
-      return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      if ( det_->allowed(nha, nhb, npa, npb) ) {
+        const int lp = det_->lenparts();
+        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      }
+      else return std::shared_ptr<const RBlock>();
     }
     std::shared_ptr<const RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
@@ -225,9 +231,26 @@ class RASCivector {
       return out;
     }
 
+#if 0
+    // When the Determinants structures are identical. Used in most cases.
     DataType dot_product(const RASCivector<DataType>& o) const {
       assert( (*det_) == (*o.det_) );
       return std::inner_product(data_.get(), data_.get() + size_, o.data(), 0.0);
+    }
+#endif
+
+    // Safe for any structure of blocks. Used only in MEH.
+    DataType dot_product(const RASCivector<DataType>& o) const {
+      DataType out(0.0);
+      for (auto& iblock : this->blocks()) {
+        if (!iblock) continue;
+        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
+        if (!jblock) continue;
+
+        out += std::inner_product(iblock->data(), iblock->data() + iblock->lena()*iblock->lenb(), jblock->data(), 0.0);
+      }
+
+      return out;
     }
 
     double norm() const { return std::sqrt(dot_product(*this)); }
@@ -331,16 +354,22 @@ class RASCivector {
           }
         };
 
-      std::shared_ptr<const RASDeterminants> tdet = ( spin ? ( action ? sdet->addalpha() : sdet->remalpha() ) : ( action ? sdet->addbeta() : sdet->rembeta() ) );
+      const int mod = action ? +1 : -1;
+      const int telea = sdet->nelea() + ( spin ? mod : 0 );
+      const int teleb = sdet->neleb() + ( spin ? 0 : mod );
+      const int tholes = std::min(std::max(sdet->max_holes() - ( (ras_space == 0) ? mod : 0 ), 0), ras1);
+      const int tparts = std::min(std::max(sdet->max_particles() + ( (ras_space == 2) ? mod : 0), 0), ras3);
+
+      auto tdet = std::make_shared<const RASDeterminants>(ras1, ras2, ras3, telea, teleb, tholes, tparts, true);
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
 
       for (auto& soblock : this->blocks()) {
         if (!soblock) continue;
-        for (auto& tarblock : out->blocks()) {
+        std::array<int, 6> tar_array = op_on_array(to_array(soblock));
+        if ( std::all_of(tar_array.begin(), tar_array.end(), [] (int i) { return i > 0; }) ) {
+          std::shared_ptr<RASBlock<double>> tarblock = out->block(tar_array[0], tar_array[1], tar_array[4], tar_array[5]);
           if (!tarblock) continue;
-          std::array<int, 6> so_array = to_array(soblock);
-          std::array<int, 6> ta_array = to_array(tarblock);
-          if ( op_on_array(so_array) == ta_array ) spin ? apply_block_alpha(soblock, tarblock) : apply_block_beta(soblock,tarblock);
+          spin ? apply_block_alpha(soblock, tarblock) : apply_block_beta(soblock,tarblock);
         }
       }
 
