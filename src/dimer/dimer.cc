@@ -652,17 +652,32 @@ shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> 
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
   pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
 
-  const int ras1 = idata->get<int>("ras1", 0);
-  const int ras2 = idata->get<int>("ras2", 0);
-  const int ras3 = idata->get<int>("ras3", 0);
+  // { {nras1, nras2, nras3}, max holes, max particles }
+  pair<tuple<array<int, 3>, int, int>, tuple<array<int, 3>, int, int>> ras_desc;
 
-  const int holes = idata->get<int>("max_holes", 0);
-  const int particles = idata->get<int>("max_particles", 0);
+  // Sample:
+  // "restricted" : [ { "orbitals" : [1, 2, 3], "max_holes" : 0, "max_particles" : 2 } ],
+  //  puts 1 orbital in RAS1 with no holes allowed, 2 orbital in RAS2, and 3 orbitals in RAS3 with up to 2 particles
+  auto restrictions = idata->get_child("restricted");
 
-  array<int, 5> raspace = {ras1, ras2, ras3, holes, particles};
+  auto get_restricted_data = [] (shared_ptr<const PTree> i) {
+    return make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+  };
 
-  auto d1 = make_shared<RASDeterminants>(ras1, ras2, ras3, nelea.first, neleb.first, holes, particles, true);
-  auto d2 = make_shared<RASDeterminants>(ras1, ras2, ras3, nelea.second, neleb.second, holes, particles, true);
+  if (restrictions->size() == 1) {
+    ras_desc = make_pair( get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) );
+  }
+  else if (restrictions->size() == 2) {
+    auto iter = restrictions->begin();
+    auto tmp1 = get_restricted_data(*iter++);
+    auto tmp2 = get_restricted_data(*iter);
+    ras_desc = make_pair(tmp1, tmp2);
+  }
+  else throw logic_error("One or two sets of restrictions must be provided.");
+
+  // This is less than ideal. It'd be better to have some sort of generator object that can be passed around.
+  auto d1 = make_shared<RASDeterminants>(get<0>(ras_desc.first), nelea.first, neleb.first, get<1>(ras_desc.first), get<2>(ras_desc.first), true);
+  auto d2 = make_shared<RASDeterminants>(get<0>(ras_desc.second), nelea.second, neleb.second, get<1>(ras_desc.second), get<2>(ras_desc.second), true);
 
   auto out = make_shared<DimerRAS>(make_pair(d1, d2), nelea, neleb);
 
@@ -699,7 +714,7 @@ shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> 
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, raspace));
+    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
@@ -712,7 +727,7 @@ shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> 
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, raspace));
+    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;

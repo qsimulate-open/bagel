@@ -117,7 +117,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       template <int unit> Ref<Dvec> embedded_casci(TreeInput idata, const int charge, const int spin, const int nstates) const;
       std::shared_ptr<DimerCAS> compute_cispace(TreeInput idata);
 
-      template <int unit> Ref<RASDvec> embedded_rasci(TreeInput idata, const int charge, const int spin, const int nstates, std::array<int, 5> raspace) const;
+      template <int unit> Ref<RASDvec> embedded_rasci(TreeInput idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
       std::shared_ptr<DimerRAS> compute_rcispace(TreeInput idata);
 
    private:
@@ -163,7 +163,7 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
 }
 
 template<int unit>
-std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::array<int, 5> raspace) const {
+std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
   const int nclosed = nclosed_;
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const int nact = (unit == 0) ? nact_.first : nact_.second;
@@ -171,13 +171,26 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
 
   // Make new input data, set charge, spin to what I want
   auto input = std::make_shared<PTree>(*idata);
+  auto erase_put = [&input] ( std::string name, int data ) { input->erase(name); input->put(name, lexical_cast<std::string>(data)); };
 
-  input->erase("charge"); input->put("charge", lexical_cast<std::string>(charge));
-  input->erase("nspin"); input->put("nspin", lexical_cast<std::string>(nspin));
-  input->erase("ncore"); input->put("ncore", lexical_cast<std::string>(ncore));
-  input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
+  erase_put("charge", charge);
+  erase_put("nspin", nspin);
+  erase_put("ncore", ncore);
+  erase_put("nstate", nstate);
+  erase_put("max_holes", std::get<1>(desc));
+  erase_put("max_particles", std::get<2>(desc));
 
-  // I need to do some work here to make sure the active space is set right. Later.
+  input->erase("active");
+  int current = ncore;
+  auto parent = std::make_shared<PTree>();
+  for (int i = 0; i < 3; ++i) {
+    auto tmp = std::make_shared<PTree>();
+    const int nras = std::get<0>(desc)[i];
+    for (int i = 0; i < nras; ++i, ++current)
+      tmp->push_back(current+1);
+    parent->push_back(tmp);
+  }
+  input->add_child("active", parent);
 
   // Hiding normal cout
   std::stringstream trash;
