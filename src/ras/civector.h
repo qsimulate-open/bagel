@@ -241,6 +241,7 @@ class RASCivector {
 
     // Safe for any structure of blocks. Used only in MEH.
     DataType dot_product(const RASCivector<DataType>& o) const {
+      assert( det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb() );
       DataType out(0.0);
       for (auto& iblock : this->blocks()) {
         if (!iblock) continue;
@@ -301,8 +302,8 @@ class RASCivector {
         const int mod = ( action ? +1 : -1 );
         std::array<int, 6> out = in;
         if ( ras_space == 0 ) {
-          out[0] += ( spin ? -mod : 0 );
-          out[1] += ( spin ? 0 : -mod );
+          out[0] -= ( spin ? mod : 0 );
+          out[1] -= ( spin ? 0 : mod );
         }
         else if (ras_space == 1) {
           out[2] += ( spin ? mod : 0 );
@@ -357,8 +358,8 @@ class RASCivector {
       const int mod = action ? +1 : -1;
       const int telea = sdet->nelea() + ( spin ? mod : 0 );
       const int teleb = sdet->neleb() + ( spin ? 0 : mod );
-      const int tholes = std::min(std::max(sdet->max_holes() - ( (ras_space == 0) ? mod : 0 ), 0), ras1);
-      const int tparts = std::min(std::max(sdet->max_particles() + ( (ras_space == 2) ? mod : 0), 0), ras3);
+      const int tholes = std::max(sdet->max_holes() - ( (ras_space == 0) ? mod : 0 ), 0);
+      const int tparts = std::max(sdet->max_particles() + ( (ras_space == 2) ? mod : 0), 0);
 
       auto tdet = std::make_shared<const RASDeterminants>(ras1, ras2, ras3, telea, teleb, tholes, tparts, true);
       auto out = std::make_shared<RASCivector<DataType>>(tdet);
@@ -366,7 +367,7 @@ class RASCivector {
       for (auto& soblock : this->blocks()) {
         if (!soblock) continue;
         std::array<int, 6> tar_array = op_on_array(to_array(soblock));
-        if ( std::all_of(tar_array.begin(), tar_array.end(), [] (int i) { return i > 0; }) ) {
+        if ( std::all_of(tar_array.begin(), tar_array.end(), [] (int i) { return i >= 0; }) ) {
           std::shared_ptr<RASBlock<double>> tarblock = out->block(tar_array[0], tar_array[1], tar_array[4], tar_array[5]);
           if (!tarblock) continue;
           spin ? apply_block_alpha(soblock, tarblock) : apply_block_beta(soblock,tarblock);
@@ -375,7 +376,6 @@ class RASCivector {
 
       return out;
     }
-
 
     void project_out(std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
