@@ -25,6 +25,7 @@
 
 
 #include <src/meh/meh_cas.h>
+#include <src/meh/meh_ras.h>
 #include <src/dimer/dimer.h>
 
 double meh_energy(std::string inp) {
@@ -94,6 +95,14 @@ double meh_energy(std::string inp) {
 
       std::cout.rdbuf(backup_stream);
       return meh->energy(0);
+    } else if (method == "meh-ras") {
+      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+
+      auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
+      meh->compute();
+
+      std::cout.rdbuf(backup_stream);
+      return meh->energy(0);
     }
 
     std::string saveref = itree->get<std::string>("saveref", "");
@@ -105,9 +114,13 @@ double meh_energy(std::string inp) {
 
 BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
-BOOST_AUTO_TEST_CASE(MEH_GROUND_STATE) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.319548355058, 1.0e-6));
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28040890, 1.0e-6));
+BOOST_AUTO_TEST_CASE(CAS) {
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.31936592, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28037410, 1.0e-6));
+}
+
+BOOST_AUTO_TEST_CASE(RAS) {
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh-ras_stack"), -459.31881204, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
