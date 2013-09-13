@@ -107,7 +107,14 @@ class PTree {
 
     template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
     template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); }
+
+    void add_child(const std::string s, std::shared_ptr<PTree> ch) { data_.add_child(s, ch->data_); }
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
+    template<typename T> void push_back(const T& o) {
+      boost::property_tree::ptree ch;
+      ch.put("", lexical_cast<std::string>(o));
+      data_.push_back(std::make_pair("", ch));
+    }
 
     template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;
     template<typename T, int N> std::array<T,N> get_array(const std::string s) const;
@@ -148,10 +155,10 @@ template<typename T, int N> std::array<T,N> PTree::get_array(const std::string k
   auto tmp = get_child(key);
   if (tmp->size() != N) {
     std::stringstream err;
-    err << "Unexpected number of elements in vector " << key << ". Expected: " << N << ", received: " << tmp->size();
+    err << "Unexpected number of elements in array " << key << ". Expected: " << N << ", received: " << tmp->size();
     throw std::runtime_error(err.str());
   }
-  int n = 0;  
+  int n = 0;
   for (auto& i : *tmp)
     out[n++] = lexical_cast<T>(i->data());
   return out;

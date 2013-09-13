@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_compute_diagonal.cc
+// Filename: meh_compute_diagonal.hpp
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,28 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/meh/meh.h>
+#ifdef MEH_HEADERS
 
-using namespace std;
-using namespace bagel;
+#ifndef BAGEL_MEH_COMPUTE_DIAGONAL_H
+#define BAGEL_MEH_COMPUTE_DIAGONAL_H
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& AB, shared_ptr<const DimerJop> jop, const double diag) {
-  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
-  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
-  shared_ptr<const Dvec> sigmavecA = form_sigma(ccvecA, jop->mo1e_first(), jop->mo2e_first());
-  shared_ptr<const Dvec> sigmavecB = form_sigma(ccvecB, jop->mo1e_second(), jop->mo2e_second());
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
+  std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
+  std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
+  std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->mo1e_first(), jop->mo2e_first());
+  std::shared_ptr<const VecType> sigmavecB = form_sigma(ccvecB, jop->mo1e_second(), jop->mo2e_second());
 
-  const int nstatesA = AB.nstates<0>();
-  const int nstatesB = AB.nstates<1>();
+  const int nstatesA = AB.template nstates<0>();
+  const int nstatesB = AB.template nstates<1>();
   const int dimerstates = AB.dimerstates();
 
-  auto out = make_shared<Matrix>(dimerstates, dimerstates);
+  auto out = std::make_shared<Matrix>(dimerstates, dimerstates);
 
   // first H^{AA}_{AA}
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
-    shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
+    std::shared_ptr<const CiType> isigma = sigmavecA->data(stateA);
     for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-      shared_ptr<const Civec> icc = ccvecA->data(stateAp);
+      std::shared_ptr<const CiType> icc = ccvecA->data(stateAp);
       const double dotproduct = isigma->dot_product(*icc);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
@@ -62,9 +63,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
 
   // H^{BB}_{BB}
   for(int stateB = 0; stateB < nstatesB; ++stateB) {
-    shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
+    std::shared_ptr<const CiType> isigma = sigmavecB->data(stateB);
     for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-      shared_ptr<const Civec> icc = ccvecB->data(stateBp);
+      std::shared_ptr<const CiType> icc = ccvecB->data(stateBp);
       const double dotproduct = isigma->dot_product(*icc);
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
@@ -85,23 +86,24 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_intra(const DimerSubspace& A
   return out;
 }
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubspace& AB, const double* hAA, const double* hBB, const double diag) const {
-  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
-  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
-  shared_ptr<const Dvec> sigmavecA = form_sigma_1e(ccvecA, hAA);
-  shared_ptr<const Dvec> sigmavecB = form_sigma_1e(ccvecB, hBB);
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
+  std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
+  std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
+  std::shared_ptr<const VecType> sigmavecA = form_sigma_1e(ccvecA, hAA);
+  std::shared_ptr<const VecType> sigmavecB = form_sigma_1e(ccvecB, hBB);
 
-  const int nstatesA = AB.nstates<0>();
-  const int nstatesB = AB.nstates<1>();
+  const int nstatesA = AB.template nstates<0>();
+  const int nstatesB = AB.template nstates<1>();
   const int dimerstates = AB.dimerstates();
 
-  auto out = make_shared<Matrix>(dimerstates, dimerstates);
+  auto out = std::make_shared<Matrix>(dimerstates, dimerstates);
 
   // first H^{AA}_{AA}
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
-    shared_ptr<const Civec> isigma = sigmavecA->data(stateA);
+    std::shared_ptr<const CiType> isigma = sigmavecA->data(stateA);
     for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-      shared_ptr<const Civec> icc = ccvecA->data(stateAp);
+      std::shared_ptr<const CiType> icc = ccvecA->data(stateAp);
       const double dotproduct = isigma->dot_product(*icc);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
@@ -119,9 +121,9 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 
   // H^{BB}_{BB}
   for(int stateB = 0; stateB < nstatesB; ++stateB) {
-    shared_ptr<const Civec> isigma = sigmavecB->data(stateB);
+    std::shared_ptr<const CiType> isigma = sigmavecB->data(stateB);
     for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-      shared_ptr<const Civec> icc = ccvecB->data(stateBp);
+      std::shared_ptr<const CiType> icc = ccvecB->data(stateBp);
       const double dotproduct = isigma->dot_product(*icc);
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
@@ -143,42 +145,39 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_1e(const DimerSubsp
 }
 
 
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_diagonal_block(DimerSubspace& subspace) {
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block(DSubSpace& subspace) {
   const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
 
   // Would be better to allocate here and then send to subprocesses
-  shared_ptr<Matrix> out = compute_intra(subspace, jop_, core);
+  std::shared_ptr<Matrix> out = compute_intra(subspace, jop_, core);
   *out += *compute_inter_2e(subspace, subspace);
 
   return out;
 }
 
 // This term will couple off-diagonal blocks since it has no delta functions involved
-shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, DimerSubspace& ApBp) {
-  shared_ptr<const Dvec> ccvecA = AB.ci<0>();
-  shared_ptr<const Dvec> ccvecB = AB.ci<1>();
-  shared_ptr<const Dvec> ccvecAp = ApBp.ci<0>();
-  shared_ptr<const Dvec> ccvecBp = ApBp.ci<1>();
-
-  const int nstatesA = AB.nstates<0>();
-  const int nstatesB = AB.nstates<1>();
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) {
+  const int nstatesA = AB.template nstates<0>();
+  const int nstatesB = AB.template nstates<1>();
   const int nstates = nstatesA * nstatesB;
 
-  const int nstatesAp = ApBp.nstates<0>();
-  const int nstatesBp = ApBp.nstates<1>();
+  const int nstatesAp = ApBp.template nstates<0>();
+  const int nstatesBp = ApBp.template nstates<1>();
   const int nstatesp = nstatesAp * nstatesBp;
 
   // alpha-alpha
-  Matrix gamma_AA_alpha = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *gammaforest_->get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *gammaforest_->get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_AA_beta = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
-  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
-  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
+  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
+  std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp(nstatesA*nstatesAp, nstatesB*nstatesBp);
 
@@ -187,8 +186,13 @@ shared_ptr<Matrix> MultiExcitonHamiltonian::compute_inter_2e(DimerSubspace& AB, 
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  auto out = make_shared<Matrix>(nstates, nstatesp);
+  auto out = std::make_shared<Matrix>(nstates, nstatesp);
   reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
 
   return out;
 }
+
+#endif
+
+#endif
+
