@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <bagel_config.h>
 #include <src/scf/rohf.h>
 #include <src/ks/ks.h>
 #include <src/fci/distfci.h>

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_spin_coupling.cc
+// Filename: meh_spin_coupling.hpp
 // Copyright (C) 2013 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,39 +23,40 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/meh/meh.h>
+#ifdef MEH_HEADERS
 
-using namespace bagel;
-using namespace std;
+#ifndef BAGEL_MEH_SPIN_COUPLING_H
+#define BAGEL_MEH_SPIN_COUPLING_H
 
-void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspace& ApBp, map<pair<int, int>, double>& spinmap) {
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap) {
   const Coupling term_type = coupling_type(AB, ApBp);
 
-  auto spin_block = make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+  auto spin_block = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   if ( (term_type == Coupling::abFlip) || (term_type == Coupling::baFlip) ) {
-    shared_ptr<Dvec> SA, SB;
+    std::shared_ptr<VecType> SA, SB;
 
-    shared_ptr<const Dvec> Ap = ApBp.ci<0>();
-    shared_ptr<const Dvec> Bp = ApBp.ci<1>();
+    std::shared_ptr<const VecType> Ap = ApBp.template ci<0>();
+    std::shared_ptr<const VecType> Bp = ApBp.template ci<1>();
     switch (term_type) {
       case Coupling::abFlip :
-        SA = AB.ci<0>()->spin_lower(Ap->det());
-        SB = AB.ci<1>()->spin_raise(Bp->det());
+        SA = AB.template ci<0>()->spin_lower(Ap->det());
+        SB = AB.template ci<1>()->spin_raise(Bp->det());
         break;
       case Coupling::baFlip :
-        SA = AB.ci<0>()->spin_raise(Ap->det());
-        SB = AB.ci<1>()->spin_lower(Bp->det());
+        SA = AB.template ci<0>()->spin_raise(Ap->det());
+        SB = AB.template ci<1>()->spin_lower(Bp->det());
         break;
       default: assert(false); break; // Control should never be able to reach here...
     }
 
-    const int nA = AB.nstates<0>();
-    const int nB = AB.nstates<1>();
-    const int nAp = ApBp.nstates<0>();
-    const int nBp = ApBp.nstates<1>();
+    const int nA = AB.template nstates<0>();
+    const int nB = AB.template nstates<1>();
+    const int nAp = ApBp.template nstates<0>();
+    const int nBp = ApBp.template nstates<1>();
 
-    vector<double> AdotAp, BdotBp;
+    std::vector<double> AdotAp, BdotBp;
 
     for (int iAp = 0; iAp < nAp; ++iAp) {
       for (int iA = 0; iA < nA; ++iA) {
@@ -91,9 +92,9 @@ void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspac
     for (int ispin = 0; ispin < n; ++ispin) {
       for (int jspin = 0; jspin < m; ++jspin) {
         const double ele = spin_block->element(ispin, jspin);
-        if ( fabs(ele) > 1.0e-4)  {
-          spinmap.emplace(make_pair(ispin + ioff, jspin + joff), ele);
-          spinmap.emplace(make_pair(jspin + joff, ispin + ioff), ele);
+        if ( std::fabs(ele) > 1.0e-4)  {
+          spinmap.emplace(std::make_pair(ispin + ioff, jspin + joff), ele);
+          spinmap.emplace(std::make_pair(jspin + joff, ispin + ioff), ele);
         }
       }
     }
@@ -101,21 +102,22 @@ void MultiExcitonHamiltonian::spin_couple_blocks(DimerSubspace& AB, DimerSubspac
 }
 
 
-void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspace, map<pair<int, int>, double>& spinmap) {
-  shared_ptr<const Dvec> Ap = subspace.ci<0>();
-  shared_ptr<const Dvec> Bp = subspace.ci<1>();
-  shared_ptr<const Dvec> SA = Ap->spin();
-  shared_ptr<const Dvec> SB = Bp->spin();
+template <class VecType>
+void MultiExcitonHamiltonian<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
+  std::shared_ptr<const VecType> Ap = subspace.template ci<0>();
+  std::shared_ptr<const VecType> Bp = subspace.template ci<1>();
+  std::shared_ptr<const VecType> SA = Ap->spin();
+  std::shared_ptr<const VecType> SB = Bp->spin();
 
-  const int nA = subspace.nstates<0>();
-  const int nB = subspace.nstates<1>();
+  const int nA = subspace.template nstates<0>();
+  const int nB = subspace.template nstates<1>();
 
   const double sz_AB = 0.5 * static_cast<double>(Ap->det()->nspin() * Bp->det()->nspin());
 
-  auto spin_block = make_shared<Matrix>(nA*nB, nA*nB);
+  auto spin_block = std::make_shared<Matrix>(nA*nB, nA*nB);
 
-  vector<double> AdotAp;
-  vector<double> BdotBp;
+  std::vector<double> AdotAp;
+  std::vector<double> BdotBp;
 
   for (int iAp = 0; iAp < nA; ++iAp) {
     for (int iA = 0; iA < nA; ++iA)
@@ -146,12 +148,16 @@ void MultiExcitonHamiltonian::compute_diagonal_spin_block(DimerSubspace& subspac
   for (int ispin = 0; ispin < n; ++ispin) {
     for (int jspin = 0; jspin < ispin; ++jspin) {
       const double ele = spin_block->element(ispin,jspin);
-      if (fabs(ele) > 1.0e-4) {
-        spinmap.emplace(make_pair(ispin + offset, jspin + offset), ele);
-        spinmap.emplace(make_pair(jspin + offset, ispin + offset), ele);
+      if (std::fabs(ele) > 1.0e-4) {
+        spinmap.emplace(std::make_pair(ispin + offset, jspin + offset), ele);
+        spinmap.emplace(std::make_pair(jspin + offset, ispin + offset), ele);
       }
     }
     const double ele = spin_block->element(ispin, ispin);
-    if (fabs(ele) > 1.0e-4) spinmap.emplace(make_pair(ispin + offset, ispin + offset), ele);
+    if (std::fabs(ele) > 1.0e-4) spinmap.emplace(std::make_pair(ispin + offset, ispin + offset), ele);
   }
 }
+
+#endif
+
+#endif

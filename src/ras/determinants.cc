@@ -111,10 +111,6 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 
-shared_ptr<RASDeterminants> RASDeterminants::transpose() const {
-  return make_shared<RASDeterminants>(ras_, neleb_, nelea_, max_holes_, max_particles_, /*compress =*/true);
-}
-
 pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
   vector<tuple<bitset<nbit__>, bitset<nbit__>, int>> out;
 

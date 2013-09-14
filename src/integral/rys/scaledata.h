@@ -31,10 +31,10 @@
 
 namespace bagel {
 
-template<int rank_, int worksize>
-void scaledata(double* out, const double* a, const double c, const double* in) {
+template<int rank_, int worksize, typename DataType>
+void scaledata(DataType* out, const DataType* a, const DataType c, const DataType* in) {
   static_assert(worksize % rank_ == 0, "worksize and rank_ inconsistent");
-  double ca[rank_];
+  DataType ca[rank_];
   for (int i = 0; i != rank_; ++i)
     ca[i] = c * a[i];
 

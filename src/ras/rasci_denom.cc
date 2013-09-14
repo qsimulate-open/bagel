@@ -23,14 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <iomanip>
-#include <stdexcept>
-#include <bitset>
 #include <src/ras/rasci.h>
-#include <src/fci/mofile.h>
-#include <src/util/taskqueue.h>
-#include <iostream>
-#include <sstream>
 
 using namespace std;
 using namespace bagel;

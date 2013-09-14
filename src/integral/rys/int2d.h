@@ -30,37 +30,37 @@
 
 namespace bagel {
 
-template <int a_, int c_, int rank_>
-void int2d(const double& P, const double& Q, const double& A, const double& B, const double& C, const double& D,
-           const double& xp, const double& xq, const double& one_2p, const double& one_2q, const double& one_pq, const double* roots, double* const data) {
+template <int a_, int c_, int rank_, typename DataType>
+void int2d(const DataType& P, const DataType& Q, const DataType& A, const DataType& B, const DataType& C, const DataType& D,
+           const DataType& xp, const DataType& xq, const DataType& one_2p, const DataType& one_2q, const DataType& one_pq, const DataType* roots, DataType* const data) {
   /// for recursion
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-  double C00_[rank_]__attribute__((aligned(32))); // TODO deprecated
-  double D00_[rank_]__attribute__((aligned(32)));
-  double B00_[rank_]__attribute__((aligned(32)));
-  double B10_[rank_]__attribute__((aligned(32)));
-  double B01_[rank_]__attribute__((aligned(32)));
+  DataType C00_[rank_]__attribute__((aligned(32))); // TODO deprecated
+  DataType D00_[rank_]__attribute__((aligned(32)));
+  DataType B00_[rank_]__attribute__((aligned(32)));
+  DataType B10_[rank_]__attribute__((aligned(32)));
+  DataType B01_[rank_]__attribute__((aligned(32)));
 #else
-  alignas(32) double C00_[rank_];
-  alignas(32) double D00_[rank_];
-  alignas(32) double B00_[rank_];
-  alignas(32) double B10_[rank_];
-  alignas(32) double B01_[rank_];
+  alignas(32) DataType C00_[rank_];
+  alignas(32) DataType D00_[rank_];
+  alignas(32) DataType B00_[rank_];
+  alignas(32) DataType B10_[rank_];
+  alignas(32) DataType B01_[rank_];
 #endif
 
-  const double xqopq = xq * one_pq;
-  const double xpopq = xp * one_pq;
+  const DataType xqopq = xq * one_pq;
+  const DataType xpopq = xp * one_pq;
 
-  const double c00i0 = P - A;
-  const double c00i1 = (P - Q) * xqopq;
-  const double d00i0 = Q - C;
-  const double d00i1 = (P - Q) * xpopq;
-  const double b00i0 = 0.5 * one_pq;
-  const double b10i0 = xqopq * one_2p;
-  const double b01i0 = xpopq * one_2q;
+  const DataType c00i0 = P - A;
+  const DataType c00i1 = (P - Q) * xqopq;
+  const DataType d00i0 = Q - C;
+  const DataType d00i1 = (P - Q) * xpopq;
+  const DataType b00i0 = 0.5 * one_pq;
+  const DataType b10i0 = xqopq * one_2p;
+  const DataType b01i0 = xpopq * one_2q;
 
   for (int i = 0; i != rank_; ++i) {
-    const double tsq = roots[i];
+    const DataType tsq = roots[i];
     C00_[i] = c00i0 - c00i1 * tsq;
     D00_[i] = d00i0 + d00i1 * tsq;
     B00_[i] = b00i0 * tsq;
@@ -68,7 +68,7 @@ void int2d(const double& P, const double& Q, const double& A, const double& B, c
     B01_[i] = one_2q - b01i0 * tsq;
   }
 
-  vrr<a_,c_,rank_>(data, C00_, D00_, B00_, B01_, B10_);
+  vrr<a_,c_,rank_, DataType>(data, C00_, D00_, B00_, B01_, B10_);
 }
 
 }

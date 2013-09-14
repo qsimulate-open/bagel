@@ -42,19 +42,23 @@
 },
 
 {
-  "title" : "meh-cas",
-  "store_matrix" : false,
+  "title" : "meh-ras",
+  "store_matrix" : true,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 2},
     { "charge" : 0, "spin" : 2, "nstate" : 2},
     { "charge" : 1, "spin" : 1, "nstate" : 2},
     { "charge" :-1, "spin" : 1, "nstate" : 2}
   ],
-  "fci" : {
-    "thresh" : 1.0e-12,
-    "algorithm" : "kh"
+  "restricted" : [ {
+    "orbitals" : [2, 2, 2],
+    "max_holes" : 2,
+    "max_particles" : 2
+  } ],
+  "ras" : {
+    "thresh" : 1.0e-12
   },
-  "nstates" : 2
+  "nstates" : 1
 }
 
 ]}

@@ -24,15 +24,9 @@
 //
 
 #include <src/fci/harrison.h>
-#include <iomanip>
-#include <string>
-#include <stdexcept>
-#include <src/fci/space.h>
 #include <src/math/davidson.h>
-#include <src/util/constants.h>
 #include <src/util/taskqueue.h>
 #include <src/fci/hztasks.h>
-#include <vector>
 
 // toggle for timing print out.
 static const bool tprint = false;

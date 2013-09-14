@@ -34,8 +34,6 @@
 #define __BAGEL_UTIL_DAVIDSON
 
 #include <list>
-#include <memory>
-#include <stdexcept>
 #include <src/math/algo.h>
 #include <src/util/f77.h>
 

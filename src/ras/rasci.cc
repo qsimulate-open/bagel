@@ -24,14 +24,14 @@
 //
 
 #include <src/ras/rasci.h>
+#include <src/ras/form_sigma.h>
 #include <src/util/combination.hpp>
 #include <src/math/davidson.h>
-#include <src/util/lexical_cast.h>
 
 using namespace std;
 using namespace bagel;
 
-RASCI::RASCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r)
+RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r)
  : Method(idat, g, r) {
   common_init();
   update(ref_->coeff());
@@ -100,7 +100,7 @@ void RASCI::common_init() {
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
+void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec>& out) {
   int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
@@ -122,12 +122,12 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
     done.push_back(open_bit);
 
-    pair<vector<tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      out.at(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-    out.at(oindex)->spin_decontaminate();
+    out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
@@ -136,7 +136,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, RASDvec& out) {
     if (oindex == nstate) break;
   }
   if (oindex < nstate) {
-    for (auto& io : out) io->zero();
+    for (auto& io : out->dvec()) io->zero();
     ndet *= 4;
     goto start_over;
   }
@@ -183,8 +183,7 @@ void RASCI::compute() {
   if (geom_->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
 
   // Creating an initial CI vector
-  cc_ = vector<shared_ptr<RASCivec>>(nstate_);
-  for (auto& icc : cc_) icc = make_shared<RASCivec>(det_); // B runs first
+  cc_ = make_shared<RASDvec>(det_, nstate_);
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_);
@@ -196,6 +195,9 @@ void RASCI::compute() {
   // Davidson utility
   DavidsonDiag<RASCivec> davidson(nstate_, max_iter_);
 
+  // Object in charge of forming sigma vector
+  FormSigmaRAS form_sigma(sparse_);
+
   // main iteration starts here
   cout << "  === RAS-CI iteration ===" << endl << endl;
   // 0 means not converged
@@ -205,15 +207,15 @@ void RASCI::compute() {
     Timer fcitime;
 
     // form a sigma vector given cc
-    RASDvec sigma = form_sigma(cc_, jop_, conv);
+    shared_ptr<RASDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
     // constructing Dvec's for Davidson
-    cRASDvec ccn, sigman;
+    vector<shared_ptr<const RASCivec>> ccn, sigman;
     for (int i = 0; i < nstate_; ++i) {
       if (!conv[i]) {
-        ccn.push_back(make_shared<const RASCivec>(*cc_.at(i)));
-        sigman.push_back(make_shared<const RASCivec>(*sigma.at(i)));
+        ccn.push_back(make_shared<const RASCivec>(*cc_->data(i)));
+        sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -234,17 +236,17 @@ void RASCI::compute() {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
-        const int size = cc_.at(ist)->size();
-        double* target_array = cc_.at(ist)->data();
+        const int size = cc_->data(ist)->size();
+        double* target_array = cc_->data(ist)->data();
         double* source_array = errvec.at(ist)->data();
         double* denom_array = denom_->data();
         const double en = energies.at(ist);
-        transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / std::min(en - den, -0.1); });
-        davidson.orthog(cc_.at(ist));
+        transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
+        davidson.orthog(cc_->data(ist));
         list<shared_ptr<const RASCivec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_.at(jst));
-        cc_.at(ist)->orthog(tmp);
-        cc_.at(ist)->spin_decontaminate();
+        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
+        cc_->data(ist)->orthog(tmp);
+        cc_->data(ist)->spin_decontaminate();
       }
     }
     pdebug.tick_print("denominator");
@@ -262,12 +264,12 @@ void RASCI::compute() {
   }
   // main iteration ends here
 
-  cc_ = davidson.civec();
+  cc_ = make_shared<RASDvec>(davidson.civec());
 
   for (int istate = 0; istate < nstate_; ++istate) {
-    cout << endl << "     * ci vector " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) << cc_.at(istate)->spin_expectation()
+    cout << endl << "     * ci vector " << setw(3) << istate << ", <S^2> = " << setw(6) << setprecision(4) << cc_->data(istate)->spin_expectation()
                  << ", E = " << setw(17) << fixed << setprecision(8) << energy_[istate] << endl;
-    cc_.at(istate)->print(print_thresh_);
+    cc_->data(istate)->print(print_thresh_);
   }
 
 #if 0

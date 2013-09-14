@@ -24,16 +24,10 @@
 //
 
 
-#include <memory>
-#include <iostream>
 #include <iomanip>
-#include <vector>
-#include <bitset>
 #include <unordered_map>
 
 #include <src/ras/civector.h>
-#include <src/parallel/resources.h> // This is maybe only necessary because I am missing something else?
-#include <src/util/constants.h>
 #include <src/util/taskqueue.h>
 
 using namespace std;
@@ -122,16 +116,128 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   return out;
 }
 
-// S_-
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const RASDeterminants>) const {
-  assert(false);
-  return shared_ptr<RASCivector<double>>();
+// S_- = \sum_i i^dagger_beta i_alpha
+template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
+  shared_ptr<const RASDeterminants> sdet = det_;
+  if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
+  assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
+  auto out = make_shared<RASCivec>(tdet);
+
+  const int norb = sdet->norb();
+  const int ras1 = sdet->ras(0);
+  const int ras2 = sdet->ras(1);
+  const int ras3 = sdet->ras(2);
+
+  // maps bits to their local offsets
+  unordered_map<size_t, size_t> alex;
+  for (auto& ispace : sdet->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  }
+
+  unordered_map<size_t, size_t> blex;
+  for (auto& ispace : sdet->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  }
+
+  auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
+    const int lb = sblock->lenb();
+    double* odata = tblock->data();
+    for (auto& abit : *tblock->stringa()) {
+      for (auto& bbit : *tblock->stringb()) {
+        for ( int i = nstart; i < nfence; ++i) {
+          if (abit[i] || !bbit[i]) continue;
+          bitset<nbit__> sabit = abit; sabit.set(i);
+          bitset<nbit__> sbbit = bbit; sbbit.reset(i);
+
+          const double phase = static_cast<double>(-1 * sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
+
+          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+        }
+        ++odata;
+      }
+    }
+  };
+
+  // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
+  for (auto& iblock : out->blocks()) {
+    if (!iblock) continue;
+    const int nha = iblock->stringa()->nholes();
+    const int nhb = iblock->stringb()->nholes();
+    const int npa = iblock->stringa()->nparticles();
+    const int npb = iblock->stringb()->nparticles();
+    const int n2a = iblock->stringa()->nele2();
+    const int n2b = iblock->stringb()->nele2();
+
+    if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
+    if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
+    if ( (ras3 > 0) && (npb > 0) && (npa < ras3) ) lower_ras(this->block(nha, nhb, npa+1, npb-1), iblock, ras1+ras2, ras1+ras2+ras3);
+  }
+
+  return out;
 }
 
-// S_+
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(shared_ptr<const RASDeterminants>) const {
-  assert(false);
-  return shared_ptr<RASCivector<double>>();
+// S_+ = \sum_i i^dagger_alpha i_beta
+template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
+  shared_ptr<const RASDeterminants> sdet = det_;
+  if (!tdet) tdet = sdet->clone(sdet->nelea()+1, sdet->neleb()-1);
+  assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
+  auto out = make_shared<RASCivec>(tdet);
+
+  const int norb = sdet->norb();
+  const int ras1 = sdet->ras(0);
+  const int ras2 = sdet->ras(1);
+  const int ras3 = sdet->ras(2);
+
+  // maps bits to their local offsets
+  unordered_map<size_t, size_t> alex;
+  for (auto& ispace : det_->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  }
+
+  unordered_map<size_t, size_t> blex;
+  for (auto& ispace : det_->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  }
+
+  auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
+    const int lb = sblock->lenb();
+    double* odata = tblock->data();
+    for (auto& abit : *tblock->stringa()) {
+      for (auto& bbit : *tblock->stringb()) {
+        for ( int i = nstart; i < nfence; ++i) {
+          if (!abit[i] || bbit[i]) continue;
+          bitset<nbit__> sabit = abit; sabit.reset(i);
+          bitset<nbit__> sbbit = bbit; sbbit.set(i);
+
+          const double phase = static_cast<double>(sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
+
+          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+        }
+        ++odata;
+      }
+    }
+  };
+
+  // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
+  for (auto& iblock : out->blocks()) {
+    if (!iblock) continue;
+    const int nha = iblock->stringa()->nholes();
+    const int nhb = iblock->stringb()->nholes();
+    const int npa = iblock->stringa()->nparticles();
+    const int npb = iblock->stringb()->nparticles();
+    const int n2a = iblock->stringa()->nele2();
+    const int n2b = iblock->stringb()->nele2();
+
+    if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
+    if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
+    if ( (ras3 > 0) && (npa > 0) && (npb < ras3) ) raise_ras(this->block(nha, nhb, npa-1, npb+1), iblock, ras1+ras2, ras1+ras2+ras3);
+  }
+
+  return out;
 }
 
 template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
@@ -145,7 +251,6 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
 
   int k = nspin + 2;
   while( fabs(actual_expectation - pure_expectation) > thresh ) {
-    cout << "<S^2> = " << actual_expectation << endl;
     if ( k > max_spin ) { this->print(0.05); throw runtime_error("Spin decontamination failed."); }
 
     const double factor = -4.0/(static_cast<double>(k*(k+2)));

@@ -36,6 +36,8 @@
 #include <map>
 #include <bitset>
 #include <algorithm>
+#include <cassert>
+
 #include <src/util/constants.h>
 
 namespace bagel {
@@ -116,6 +118,9 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
+
+    // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
+    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb_, nelea, neleb, false, true); }
 
     // static constants
     static const int Alpha = 0;
@@ -282,19 +287,18 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
     int de = this->nelea() - odet->nelea();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+    else assert(false);
   }
   else {
     int de = this->neleb() - odet->neleb();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::runtime_error(" Forming a bad link with Determinants! ");
+    else assert(false);
   }
 
   std::vector<std::vector<DetMap>> phiup;
   std::vector<std::vector<DetMap>> phidown;
 
-  /* If space is an issue for these functions, I might be able to reduce the amount used... */
   phiup.resize(norb_);
   int upsize = ( (spin==Alpha) ? plusdet->lena() : plusdet->lenb() );
   for (auto& iter : phiup) {

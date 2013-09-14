@@ -78,6 +78,12 @@ PTreeIterator PTree::end()   const { return PTreeIterator(data_.end());   }
 PTreeReverseIterator PTree::rbegin() const { return PTreeReverseIterator(data_.rbegin()); }
 PTreeReverseIterator PTree::rend()   const { return PTreeReverseIterator(data_.rend());   }
 
+namespace bagel {
+template <> void PTree::push_back<shared_ptr<PTree>>(const shared_ptr<PTree>& pt) {
+  data_.push_back(make_pair("", pt->data_));
+}
+}
+
 
 size_t PTree::size() const {
   return data_.size();

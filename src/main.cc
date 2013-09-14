@@ -23,33 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <vector>
-#include <tuple>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
-#include <stdexcept>
-#include <memory>
-
-#include <src/wfn/geometry.h>
-#include <src/dimer/dimer.h>
-#include <src/dimer/dimer_cispace.h>
-#include <src/io/moldenout.h>
-#include <src/wfn/reference.h>
-#include <src/wfn/ciwfn.h>
-#include <src/mp2/mp2grad.h>
 #include <src/global.h>
+#include <src/io/moldenout.h>
+#include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/util/constants.h>
 #include <src/molecule/localization.h>
-#include <src/util/timer.h>
-#include <src/util/lexical_cast.h>
-#include <src/meh/meh.h>
-#include <src/wfn/construct_method.h>
-
-// input parser
-#include <src/input/input.h>
+#include <src/meh/meh_cas.h>
+#include <src/meh/meh_ras.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -172,10 +152,15 @@ int main(int argc, char** argv) {
 #else
 throw logic_error("broken!");
 #endif
-      } else if (title == "meh") {
-          shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
+      } else if (title == "meh-cas") {
+          shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
-          auto meh = make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
+          auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
+          meh->compute();
+      } else if (title == "meh-ras") { // Not the best solution, but it'll do for now
+          shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+
+          auto meh = make_shared<MEH_RAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

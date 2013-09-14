@@ -38,10 +38,22 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
  : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  amax_ = max(adist_shell->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
-  data_ = unique_ptr<double[]>(new double[amax_*b1size_*b2size_]);
+  assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()));
 
+  const size_t amax = max(adist_shell_->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
+  data_ = unique_ptr<double[]>(new double[amax*b1size_*b2size_]);
 }
+
+
+DFBlock::DFBlock(const DFBlock& o)
+ : adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), asize_(o.asize_), b1size_(o.b1size_), b2size_(o.b2size_),
+   astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
+
+  const size_t amax = max(adist_shell_->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
+  data_ = unique_ptr<double[]>(new double[amax*b1size_*b2size_]);
+  copy_n(o.data_.get(), size(), data_.get());
+}
+
 
 void DFBlock::average() {
   if (averaged_) return;
@@ -210,16 +222,15 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  unique_ptr<double[]> tmp(new double[amax_*nocc*b2size_]);
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_);
 
   for (size_t i = 0; i != b2size_; ++i) {
     if (!trans)
-      dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, tmp.get()+i*asize_*nocc, asize_);
+      dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, out->get()+i*asize_*nocc, asize_);
     else
-      dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, tmp.get()+i*asize_*nocc, asize_);
+      dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, out->get()+i*asize_*nocc, asize_);
   }
-
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, nocc, b2size_, astart_, 0, b2start_, averaged_, amax_);
+  return out;
 }
 
 
@@ -230,33 +241,32 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  unique_ptr<double[]> tmp(new double[amax_*b1size_*nocc]);
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, tmp.get(), asize_*b1size_);
+    dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, out->get(), asize_*b1size_);
   else  // trans -> back transform
-    dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, tmp.get(), asize_*b1size_);
+    dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, out->get(), asize_*b1size_);
 
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_, amax_);
+  return out;
 }
 
 
 shared_ptr<DFBlock> DFBlock::clone() const {
-  unique_ptr<double[]> tmp(new double[amax_*b1size_*b2size_]);
-  fill_n(tmp.get(), asize_*b1size_*b2size_, 0.0);
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_, amax_);
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
+  out->zero();
+  return out;
 }
 
 
 shared_ptr<DFBlock> DFBlock::copy() const {
-  unique_ptr<double[]> tmp(new double[amax_*b1size_*b2size_]);
-  copy_n(data_.get(), asize_*b1size_*b2size_, tmp.get());
-  return make_shared<DFBlock>(tmp, adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_, amax_);
+  return make_shared<DFBlock>(*this);
 }
 
 
 DFBlock& DFBlock::operator+=(const DFBlock& o) { ax_plus_y( 1.0, o); return *this; }
 DFBlock& DFBlock::operator-=(const DFBlock& o) { ax_plus_y(-1.0, o); return *this; }
+
 
 void DFBlock::ax_plus_y(const double a, const DFBlock& o) {
   if (size() != o.size()) throw logic_error("DFBlock::daxpy called illegally");
@@ -287,12 +297,11 @@ void DFBlock::symmetrize() {
 
 
 shared_ptr<DFBlock> DFBlock::swap() const {
-  unique_ptr<double[]> dat(new double[amax_*b1size_*b2size_]);
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_);
   for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2)
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
-      copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, dat.get()+asize_*(b2+b2size_*b1));
-
-  return make_shared<DFBlock>(dat, adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_, amax_);
+      copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, out->get()+asize_*(b2+b2size_*b1));
+  return out;
 }
 
 

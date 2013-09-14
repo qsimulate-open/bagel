@@ -24,7 +24,8 @@
 //
 
 
-#include <src/meh/meh.h>
+#include <src/meh/meh_cas.h>
+#include <src/meh/meh_ras.h>
 #include <src/dimer/dimer.h>
 
 double meh_energy(std::string inp) {
@@ -86,10 +87,18 @@ double meh_energy(std::string inp) {
 
       *geom = *dimer->sgeom();
       ref = dimer->sref();
-    } else if (method == "meh") {
-      std::shared_ptr<DimerCISpace> cispace = dimer->compute_cispace(itree);
+    } else if (method == "meh-cas") {
+      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
-      auto meh = std::make_shared<MultiExcitonHamiltonian>(itree, dimer, cispace);
+      auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
+      meh->compute();
+
+      std::cout.rdbuf(backup_stream);
+      return meh->energy(0);
+    } else if (method == "meh-ras") {
+      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+
+      auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
       meh->compute();
 
       std::cout.rdbuf(backup_stream);
@@ -105,9 +114,13 @@ double meh_energy(std::string inp) {
 
 BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
-BOOST_AUTO_TEST_CASE(MEH_GROUND_STATE) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.319548355058, 1.0e-6));
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28040890, 1.0e-6));
+BOOST_AUTO_TEST_CASE(CAS) {
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.31936592, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28037410, 1.0e-6));
+}
+
+BOOST_AUTO_TEST_CASE(RAS) {
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh-ras_stack"), -459.31881204, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

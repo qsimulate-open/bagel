@@ -33,24 +33,24 @@
 
 namespace bagel {
 
-template<int a_, int c_, int rank_>
-void vrr(double* data_, const double* C00, const double* D00, const double* B00, const double* B01, const double* B10) {
+template<int a_, int c_, int rank_, typename DataType>
+void vrr(DataType* data_, const DataType* C00, const DataType* D00, const DataType* B00, const DataType* B01, const DataType* B10) {
 
   static_assert(a_>=0 && c_>=0 && rank_ >= 1, "parameter(s) wrong in vrr");
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
   // TODO when GCC 4.7 is gone, we remove these lines. "alignas(32)" is based on the standard C++11
-  double C00_[rank_]__attribute__((aligned(32)));
-  double D00_[rank_]__attribute__((aligned(32)));
-  double B00_[rank_]__attribute__((aligned(32)));
-  double B01_[rank_]__attribute__((aligned(32)));
-  double B10_[rank_]__attribute__((aligned(32)));
+  DataType C00_[rank_]__attribute__((aligned(32)));
+  DataType D00_[rank_]__attribute__((aligned(32)));
+  DataType B00_[rank_]__attribute__((aligned(32)));
+  DataType B01_[rank_]__attribute__((aligned(32)));
+  DataType B10_[rank_]__attribute__((aligned(32)));
 #else
-  alignas(32) double C00_[rank_];
-  alignas(32) double D00_[rank_];
-  alignas(32) double B00_[rank_];
-  alignas(32) double B01_[rank_];
-  alignas(32) double B10_[rank_];
+  alignas(32) DataType C00_[rank_];
+  alignas(32) DataType D00_[rank_];
+  alignas(32) DataType B00_[rank_];
+  alignas(32) DataType B01_[rank_];
+  alignas(32) DataType B10_[rank_];
 #endif
   std::copy_n(C00, rank_, C00_);
   std::copy_n(D00, rank_, D00_);
@@ -71,9 +71,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
         data_[rank_*2+t] = C00_[t] * data_[rank_*1+t] + B10_[t];
     } else if (a_ > 1) {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-      double B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
+      DataType B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-      alignas(32) double B10_current[rank_];
+      alignas(32) DataType B10_current[rank_];
 #endif
       // a == 2
       for (int t = 0; t != rank_; ++t)
@@ -93,9 +93,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
       data_[rank_*(a_+1)+t] = D00_[t];
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-    double cB00_current[rank_]__attribute__((aligned(32))); // TODO deprecated
+    DataType cB00_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-    alignas(32) double cB00_current[rank_];
+    alignas(32) DataType cB00_current[rank_];
 #endif
     for (int t = 0; t != rank_; ++t)
       cB00_current[t] = B00_[t];
@@ -109,9 +109,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
     } else if (a_ > 1) {
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-      double B10_current[rank_]__attribute__((aligned(32)));  // TODO deprecated
+      DataType B10_current[rank_]__attribute__((aligned(32)));  // TODO deprecated
 #else
-      alignas(32) double B10_current[rank_];
+      alignas(32) DataType B10_current[rank_];
 #endif
       for (int t = 0; t != rank_; ++t)
         B10_current[t] = B10_[t];
@@ -129,9 +129,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
     }
     // c > 1
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-    double B01_current[rank_]__attribute__((aligned(32))) = {0.0};  // TODO deprecated
+    DataType B01_current[rank_]__attribute__((aligned(32))) = {0.0};  // TODO deprecated
 #else
-    alignas(32) double B01_current[rank_] = {0.0};
+    alignas(32) DataType B01_current[rank_] = {0.0};
 #endif
     for (int c = 2; c != c_+1; ++c) {
       for (int t = 0; t != rank_; ++t)
@@ -148,9 +148,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
 
       if (a_ > 1) {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-        double B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
+        DataType B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-        alignas(32) double B10_current[rank_];
+        alignas(32) DataType B10_current[rank_];
 #endif
         for (int t = 0; t != rank_; ++t)
           B10_current[t] = B10_[t];
@@ -180,9 +180,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
         data_[rank_*2+t] = D00_[t] * data_[rank_*1+t] + B01_[t];
     } else {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-      double B01_current[rank_]__attribute__((aligned(32))); // TODO deprecated
+      DataType B01_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-      alignas(32) double B01_current[rank_];
+      alignas(32) DataType B01_current[rank_];
 #endif
       // c == 2
       for (int t = 0; t != rank_; ++t)
@@ -219,9 +219,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
         data_[rank_*(a_+3)+t] = C00_[t] * data_[rank_*(a_+2)+t] + B10_[t] * data_[rank_*(a_+1)+t] + B00_[t] * data_[rank_+t];
     } else {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-      double B10_current[rank_]__attribute__((aligned(32)));  // TODO deprecated
+      DataType B10_current[rank_]__attribute__((aligned(32)));  // TODO deprecated
 #else
-      alignas(32) double B10_current[rank_];
+      alignas(32) DataType B10_current[rank_];
 #endif
       // a == 2
       for (int t = 0; t != rank_; ++t)
@@ -281,9 +281,9 @@ void vrr(double* data_, const double* C00, const double* D00, const double* B00,
         data_[rank_*2+t] = C00_[t] * data_[rank_*1+t] + B10_[t];
     } else {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-      double B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
+      DataType B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-      alignas(32) double B10_current[rank_];
+      alignas(32) DataType B10_current[rank_];
 #endif
       // a == 2
       for (int t = 0; t != rank_; ++t)

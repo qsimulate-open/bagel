@@ -302,6 +302,8 @@ using ZDistCivec = DistCivector<std::complex<double>>;
 // DataType is double or complex<double>
 template<typename DataType>
 class Civector {
+  public: using DetType = Determinants; // used to automatically determine type for Determinants object in templates
+
   protected:
     // The determinant space in which this Civec object is defined
     mutable std::shared_ptr<const Determinants> det_;
@@ -412,6 +414,55 @@ class Civector {
     std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
       { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_+
     void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
+
+    std::shared_ptr<Civector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
+      // action: true -> create; false -> annihilate
+      // spin: true -> alpha; false -> beta
+
+      std::shared_ptr<const Determinants> source_det = this->det();
+      const int norb = source_det->norb();
+
+      const int source_lena = source_det->lena();
+      const int source_lenb = source_det->lenb();
+
+      std::shared_ptr<Civector<DataType>> out;
+
+      if (spin) {
+        std::shared_ptr<const Determinants> target_det = ( action ? source_det->addalpha() : source_det->remalpha() );
+        out = std::make_shared<Civector<DataType>>(target_det);
+
+        const int target_lena = target_det->lena();
+        const int target_lenb = target_det->lenb();
+
+        DataType* target_base = out->data();
+        const DataType* source_base = this->data();
+        for (auto& iter : ( action ? source_det->phiupa(orbital) : source_det->phidowna(orbital) )) {
+          const DataType sign = static_cast<DataType>(iter.sign);
+          DataType* target = target_base + target_lenb * iter.target;
+          const DataType* source = source_base + source_lenb * iter.source;
+          std::transform(source, source + target_lenb, target, target, [&sign] (DataType p, DataType q) { return sign * p + q; });
+        }
+      }
+      else {
+        std::shared_ptr<const Determinants> target_det = ( action ? source_det->addbeta() : source_det->rembeta() );
+
+        const int target_lena = target_det->lena();
+        const int target_lenb = target_det->lenb();
+
+        out = std::make_shared<Civector<DataType>>(target_det);
+
+        for (int i = 0; i < target_lena; ++i) {
+          DataType* target_base = out->element_ptr(0,i);
+          const DataType* source_base = this->element_ptr(0,i);
+          for (auto& iter : ( action ? source_det->phiupb(orbital) : source_det->phidownb(orbital) )) {
+            const DataType sign = static_cast<DataType>(iter.sign);
+            target_base[iter.target] += sign * source_base[iter.source];
+          }
+        }
+      }
+
+      return out;
+    }
 
     Civector<DataType>& operator*=(const double& a) { scale(a); return *this; }
     Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }

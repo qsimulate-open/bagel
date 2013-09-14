@@ -37,11 +37,11 @@
 
 namespace bagel {
 
-template<int a_, int b_, int c_, int d_, int rank_>
-void vrr_driver(double* out, const double* const roots, const double* const weights, const double& coeff,
-                const std::array<double,3>& a, const std::array<double,3>& b, const std::array<double,3>& c, const std::array<double,3>& d,
-                const double* const p, const double* const q, const double& xp, const double& xq,
-                const int* const amap, const int* const cmap, const int& asize_, double* const workx, double* const worky, double* const workz) {
+template<int a_, int b_, int c_, int d_, int rank_, typename DataType>
+void vrr_driver(DataType* out, const DataType* const roots, const DataType* const weights, const DataType& coeff,
+                const std::array<DataType,3>& a, const std::array<DataType,3>& b, const std::array<DataType,3>& c, const std::array<DataType,3>& d,
+                const DataType* const p, const DataType* const q, const DataType& xp, const DataType& xq,
+                const int* const amap, const int* const cmap, const int& asize_, DataType* const workx, DataType* const worky, DataType* const workz) {
 
   // compile time
   constexpr int amax_ = a_+b_;
@@ -55,20 +55,20 @@ void vrr_driver(double* out, const double* const roots, const double* const weig
   constexpr int worksize = rank_ * isize;
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-  double iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated
+  DataType iyiz[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
-  alignas(32) double iyiz[rank_];
+  alignas(32) DataType iyiz[rank_];
 #endif
 
-  const double oxp2 = 0.5 / xp;
-  const double oxq2 = 0.5 / xq;
-  const double opq = 1.0 / (xp + xq);
+  const DataType oxp2 = 0.5 / xp;
+  const DataType oxq2 = 0.5 / xq;
+  const DataType opq = 1.0 / (xp + xq);
 
-  int2d<amax_,cmax_,rank_>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
-  scaledata<rank_, worksize>(workx, weights, coeff, workx);
+  int2d<amax_,cmax_,rank_, DataType>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
+  scaledata<rank_, worksize, DataType>(workx, weights, coeff, workx);
 
-  int2d<amax_,cmax_,rank_>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
-  int2d<amax_,cmax_,rank_>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
+  int2d<amax_,cmax_,rank_, DataType>(p[1], q[1], a[1], b[1], c[1], d[1], xp, xq, oxp2, oxq2, opq, roots, worky);
+  int2d<amax_,cmax_,rank_, DataType>(p[2], q[2], a[2], b[2], c[2], d[2], xp, xq, oxp2, oxq2, opq, roots, workz);
 
   for (int iz = 0; iz <= cmax_; ++iz) {
     for (int iy = 0; iy <= cmax_ - iz; ++iy) {
