@@ -42,86 +42,48 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
 }
 
+
 double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   norb_rel_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
-  const int nbasis = nbasis_;
-  relgeom_ = geom_->relativistic(false);
-  relref = dynamic_pointer_cast<const RelReference>(ref_);
+  geom_ = geom_->relativistic(false);
+  assert(dynamic_pointer_cast<const RelReference>(ref_));
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+
+  // tempolary integral files
+  shared_ptr<const ZMatrix> buf1e, buf2e;
 
   // one electron part
   double core_energy = 0;
-  shared_ptr<const ZMatrix> buf1e;
   tie(buf1e, core_energy) = compute_mo1e(nstart, nfence);
 
   // two electron part.
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
-  shared_ptr<const ZMatrix> buf2e = compute_mo2e(nstart, nfence);
+  buf2e = compute_mo2e(nstart, nfence);
 
-  shared_ptr<const ZMatrix> mo1e_;
-  shared_ptr<const ZMatrix> mo2e_;
-  tie(mo1e_, mo2e_) = kramers_block(buf1e, buf2e);
+  // compute the unitary matrix that block-diagonalizes integrals 
+  shared_ptr<const ZMatrix> umat = kramers();
+  // set subblocks to mo1e_ and mo2e_
+  tie(buf1e, buf2e) = kramers_block_diagonalize(umat, buf1e, buf2e);
 
-  compress(mo1e_, mo2e_);
+  compress(buf1e, buf2e);
   return core_energy;
 }
 
-tuple<shared_ptr<const ZMatrix>, shared_ptr<const ZMatrix>> RelMOFile::kramers_block(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
-  const size_t n = buf1e->ndim();
 
-  //sorting orbitals into bar and unbar vectors
-  unique_ptr<double[]> vec_(new double[n]);
-  shared_ptr<ZMatrix> op_ = make_shared<ZMatrix>(*buf1e);
-  op_->diagonalize(vec_.get());
-
-  vector<shared_ptr<ZMatrix>> scr_;
-  scr_.push_back(make_shared<ZMatrix>(n,n));
-  scr_.push_back(make_shared<ZMatrix>(n,n));
-  for (int i = 0; i != n; i+=2) {
-    for (int j = 0; j != n; j++) {
-      scr_.front()->data((i/2)*n+j) = real(op_->data(i*n+j));
-      scr_.back()->data((i/2)*n+j) = imag(op_->data(i*n+j));
-      scr_.front()->data((i+n)*n/2+j) = real(op_->data((i+1)*n+j));
-      scr_.back()->data((i+n)*n/2+j) = imag(op_->data((i+1)*n+j));
-    }
-  }
-
-  //constructing U (unitary rotation of K without complex conjugation operator)
-  shared_ptr<ZMatrix> block = make_shared<ZMatrix>(n/2,n/2);
-  for (int i = 0; i != n/4; ++i) {
-    block->element(i,i+n/4) = complex<double>(0,1.0);
-    block->element(i+n/4,i) = complex<double>(0,-1.0);
-  }
-
-  vector<shared_ptr<ZMatrix>> kramer;
-  kramer.push_back( make_shared<ZMatrix>(n,n) );
-  kramer.front()->copy_block(0,0,n/2,n/2,block);
-  kramer.front()->copy_block(n/2,n/2,n/2,n/2,block);
-  //imaginary version = -1.0 * real
-  kramer.push_back( make_shared<ZMatrix>(*kramer.front() * -1.0 ));
-
-  //constructing U bar with matrix elements <phi|U|phi> with barred and unbarred phi
-  vector< shared_ptr<ZMatrix> > ubar;
-  auto siter = scr_.begin();
-  for (auto iter = kramer.begin(); iter != kramer.end(); ++iter, ++siter) {
-    ubar.push_back(make_shared<ZMatrix>(**siter % **iter * **siter));
-    ubar.back()->diagonalize(vec_.get());
-    //TODO can use vec_ for all diagonalizations when not checking eigenvalues
-    unique_ptr<double[]> eig(new double[n]);
-    (*iter)->diagonalize(eig.get());
-    //TODO for temporary debugging
-    for (int i = 0; i != n; ++i) cout << *(eig.get()+i) << "               " << *(vec_.get()+i) << endl;
-    //U bar = C T epsilon T^-1 C^-1 C = CT*T^-1 and put back i factored out
-    (*iter)->inverse();
-    **siter = *ubar.back() * **iter * complex<double>(0.0,1.0);
-  }
-  throw logic_error("kramers_block still in progress...");
-
-  shared_ptr<const ZMatrix> mo1e = make_shared<const ZMatrix>(1,1);
-  shared_ptr<const ZMatrix> mo2e = make_shared<const ZMatrix>(1,1);
-  return make_tuple(mo1e, mo2e);
+shared_ptr<const ZMatrix> RelMOFile::kramers() const {
+  throw runtime_error("to be implemented");
+  return shared_ptr<const ZMatrix>();
 }
+
+
+tuple<shared_ptr<const ZMatrix>,shared_ptr<const ZMatrix>>
+ RelMOFile::kramers_block_diagonalize(shared_ptr<const ZMatrix> umat,shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
+
+  throw runtime_error("to be implemented");
+}
+
 
 //TODO input matrices are now in block diagonal form and the sizes must be checked
 void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
@@ -144,16 +106,17 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
   }
 }
 
+
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
 
-  const size_t nbasis = geom_->nbasis();
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
   complex<double> core_energy = 0.0;
   core_energy = 1e100;
 
-  shared_ptr<ZMatrix> dfock0 = make_shared<RelHcore>(relgeom_);
+  shared_ptr<ZMatrix> dfock0 = make_shared<RelHcore>(geom_);
   //TODO rhf density matrix as in ZMOFile, may not be implemented yet for dfock?
 #if 0
-  shared_ptr<RelHcore> relhcore = make_shared<RelHcore>(relgeom_);
+  shared_ptr<RelHcore> relhcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     dfock0 = make_shared<DFock>(geom_, relhcore, relref->relcoeff(),true,true,true);
     core_energy = (*** RHF DENSITY MATRIX HERE *** (*relhcore+*dfock0)).trace() * 0.5;
@@ -175,6 +138,7 @@ shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfenc
   const size_t norb_rel_ = nfence - nstart;
   if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
 
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
   assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
   assert(geom_->nbasis()*2 == relref->relcoeff()->mdim());
 
@@ -191,8 +155,8 @@ shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfenc
 
   // (1) make DFDists
   vector<shared_ptr<const DFDist>> dfs;
-  dfs = relgeom_->dfs()->split_blocks();
-  dfs.push_back(relgeom_->df());
+  dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
   list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
   // (2) first-transform

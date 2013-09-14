@@ -38,16 +38,22 @@ class RelMOFile : public ZMOFile_Base {
   protected:
     int norb_rel_;
     std::shared_ptr<ZMatrix> core_dfock_;
+
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int) override;
-    std::tuple<std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>> kramers_block(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
+
+    // generates Kramers symmetry-adapted orbitals
+    std::shared_ptr<const ZMatrix> kramers() const;
+    // rotates integrals using unitary matrix, and set sub-blocks to mo1e_ and mo2e_
+    std::tuple<std::shared_ptr<const ZMatrix>,std::shared_ptr<const ZMatrix>>
+      kramers_block_diagonalize(std::shared_ptr<const ZMatrix> umat, std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
+
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
 
-    std::shared_ptr<const Geometry> relgeom_;
-    std::shared_ptr<const RelReference> relref;
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+
     std::shared_ptr<const ZMatrix> core_fock() const { return core_dfock_; };
     std::complex<double>* core_dfock_ptr() { return core_dfock_->data(); };
     const std::complex<double>* core_dfock_ptr() const { return core_dfock_->data(); };

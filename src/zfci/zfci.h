@@ -37,8 +37,6 @@ namespace bagel {
 class ZFCI : public Method {
 
   protected:
-    //relativistic
-    bool rel;
     // max #iteration
     int max_iter_;
     // threshold for variants
@@ -105,8 +103,8 @@ class ZFCI : public Method {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool rel,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1);
+    ZFCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
+         const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
     virtual void compute() override;
 

@@ -58,10 +58,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "zfci") {
     const string algorithm = itree->get<string>("algorithm", "");
     const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
-    if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-      out = make_shared<ZKnowlesHandy>(itree, geom, ref, false);
-    } else if (algorithm == "relkh" || algorithm == "relknowles" || algorithm == "relhandy" || algorithm == "") {
-      out = make_shared<ZKnowlesHandy>(itree, geom, ref, true);
+    if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy" || algorithm == "") {
+      out = make_shared<ZKnowlesHandy>(itree, geom, ref);
     } else
       throw runtime_error("unknown ZFCI algorithm specified." + algorithm);
   }

@@ -94,25 +94,26 @@ void ZKnowlesHandy::const_denom() {
     }
   }
 }
+
+
 void ZKnowlesHandy::update(shared_ptr<const Coeff> c) {
+  // TODO This function is only for debugging...
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
   jop_ = make_shared<ZJop>(ref_, ncore_, ncore_+norb_, c, "KH");
-
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
   const_denom();
   mult_phase_factor();
 }
 
+
 void ZKnowlesHandy::relupdate() {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  //TODO clean up norb/nocc notation in relativistic code to account for additional size due to time reversal symmetry
-  const size_t norb_rel_ = 2*norb_;
-  auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_rel_, "KH");
+  auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_*2, "KH");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;

@@ -54,10 +54,15 @@ class ZKnowlesHandy : public ZFCI {
 
   public:
     // this constructor is ugly... to be fixed some day...
-    ZKnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b, const bool rel,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, rel, ncore, nocc, nstate) {
-        if (!rel) {  update(ref_->coeff());  }
-        else if (rel) {  relupdate();  }
+    ZKnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
+                  const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, ncore, nocc, nstate) {
+      auto relref = std::dynamic_pointer_cast<const RelReference>(ref_);
+      if (!relref) {
+        update(ref_->coeff());
+      } else {    
+        relupdate();
+      }
+assert(false);
     }
     void relupdate();
     void update(std::shared_ptr<const Coeff>) override;

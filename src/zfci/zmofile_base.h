@@ -42,8 +42,8 @@ class ZMOFile_Base {
     bool hz_; // If true, do hz stuff. This may be revisited if more algorithms are implemented
     double core_energy_;
 
-    const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
     size_t sizeij_;
 #if 0
     long filesize_;
