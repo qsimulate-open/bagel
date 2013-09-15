@@ -68,7 +68,7 @@ namespace bagel {
           fill_n(source.get(), det_->lenb(), 0.0);
           vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
           for (auto& iblock : sourceblocks) {
-            const int offset = iblock->stringb()->offset();
+            const size_t offset = iblock->stringb()->offset();
             copy_n(&this_->element(iblock->stringb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
           }
 
@@ -142,7 +142,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
-    const int lb = sblock->lenb();
+    const size_t lb = sblock->lenb();
     double* odata = tblock->data();
     for (auto& abit : *tblock->stringa()) {
       for (auto& bbit : *tblock->stringb()) {
@@ -204,7 +204,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
-    const int lb = sblock->lenb();
+    const size_t lb = sblock->lenb();
     double* odata = tblock->data();
     for (auto& abit : *tblock->stringa()) {
       for (auto& bbit : *tblock->stringb()) {

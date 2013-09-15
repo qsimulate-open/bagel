@@ -57,7 +57,7 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int lenholes_; // number of combinations of holes
     const int lenparts_; // number of combinations of particles
 
-    int size_;
+    size_t size_;
 
     std::weak_ptr<RASDeterminants> addalpha_;
     std::weak_ptr<RASDeterminants> remalpha_;
@@ -158,8 +158,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
 
     // These access the global string lists
-    const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
-    const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
+    const std::bitset<nbit__>& stringa(const size_t i) const { return stringa_[i]; }
+    const std::bitset<nbit__>& stringb(const size_t i) const { return stringb_[i]; }
     const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
     const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
 
@@ -175,11 +175,11 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
 
-    const int lena() const { return stringa_.size(); }
-    const int lenb() const { return stringb_.size(); }
+    const size_t lena() const { return stringa_.size(); }
+    const size_t lenb() const { return stringb_.size(); }
+    const size_t size() const { return size_; }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
-    const int size() const { return size_; }
 
     const std::vector<std::vector<RAS::DMap>>& phia() const { return phia_; }
     const std::vector<std::vector<RAS::DMap>>& phib() const { return phib_; }
@@ -279,13 +279,13 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   std::vector<std::vector<RAS::DMap>> phidown;
 
   phiup.resize(norb_);
-  int upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
+  const size_t upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
   for (auto& iter : phiup) {
     iter.reserve(upsize);
   }
 
   phidown.resize(norb_);
-  int downsize = ( (spin==0) ? det->lena() : det->lenb() );
+  const size_t downsize = ( (spin==0) ? det->lena() : det->lenb() );
   for (auto& iter : phidown) {
     iter.reserve(downsize);
   }
