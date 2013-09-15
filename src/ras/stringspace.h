@@ -45,30 +45,30 @@ class StringSpace {
     std::vector<std::bitset<nbit__>> strings_;
 
     // Lexical ordering
-    std::vector<double> weights_;
-    std::vector<int> offsets_;
+    std::vector<size_t> weights_;
+    std::vector<size_t> offsets_;
 
     const int norb_;
     const int nele_;
 
-    const int offset_;
+    const size_t offset_;
 
     struct RASGraph {
       const int ndim_;
       const int mdim_;
-      std::unique_ptr<int[]> data_;
+      std::unique_ptr<size_t[]> data_;
 
-      RASGraph(const int n, const int m) : ndim_(n), mdim_(m) {
-        data_ = std::unique_ptr<int[]>(new int[n*m]);
-        std::fill_n(data_.get(), ndim_*mdim_, -1);
+      RASGraph(const size_t n, const size_t m) : ndim_(n), mdim_(m) {
+        data_ = std::unique_ptr<size_t[]>(new size_t[n*m]);
+        std::fill_n(data_.get(), ndim_*mdim_, 0);
       }
 
-      int& operator()(const int i, const int j) { return data_[j*ndim_ + i]; }
-      const int max() const { return *std::max_element(data_.get(), data_.get() + ndim_ * mdim_); }
+      size_t& operator()(const int i, const int j) { return data_[j*ndim_ + i]; }
+      const size_t max() const { return *std::max_element(data_.get(), data_.get() + ndim_ * mdim_); }
     };
 
   public:
-    StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset = 0);
+    StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset = 0);
 
     const int nele() const { return nele_; }
     const int norb() const { return norb_; }
@@ -79,11 +79,11 @@ class StringSpace {
     const int nele2() const { return nele_ - ras_[0].first - ras_[2].first; }
     const int nparticles() const { return ras_[2].first; }
 
-    const int size() const { return strings_.size(); }
-    const int offset() const { return offset_; }
+    const size_t size() const { return strings_.size(); }
+    const size_t offset() const { return offset_; }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
-    const std::bitset<nbit__> strings(const int i) const { return strings_[i]; }
+    const std::bitset<nbit__> strings(const size_t i) const { return strings_[i]; }
 
     std::vector<std::bitset<nbit__>>::iterator begin() { return strings_.begin(); }
     std::vector<std::bitset<nbit__>>::iterator end() { return strings_.end(); }
@@ -92,8 +92,8 @@ class StringSpace {
 
     // Assumes bit is within this graph
     template <int off = 1>
-    unsigned int lexical(const std::bitset<nbit__>& bit) const {
-      unsigned int out = ( off == 1 ? offset_ : 0 );
+    size_t lexical(const std::bitset<nbit__>& bit) const {
+      size_t out = ( off == 1 ? offset_ : 0 );
       int nele = 0;
       for (int i = 0; i != norb_; ++i)
         if (bit[i]) { out += weights_[offsets_[nele++] + i]; }
