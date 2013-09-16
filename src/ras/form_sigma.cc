@@ -257,7 +257,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
         shared_ptr<Matrix> Vt;
         if ( sparse_ ) {
-          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, size_t(0), [&la] (size_t i, vector<RAS::DMap> v) { return i + v.size(); });
+          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, 0ull, [] (size_t i, vector<RAS::DMap> v) { return i + v.size(); });
           vector<double> data; data.reserve(size);
           vector<int> cols; cols.reserve(size);
           vector<int> rind; rind.reserve(la + 1);
