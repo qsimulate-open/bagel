@@ -119,7 +119,7 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, co
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
+    Timer pdebug(0);
     shared_ptr<const RASCivec> cc = ccvec->data(istate);
     shared_ptr<RASCivec> sigma = sigmavec->data(istate);
 
@@ -224,7 +224,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const size_t phisize = det->phib_ij(ij).size();
+      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, RAS::BlockedDMap m) { return i + m.phi.size(); });
       if (phisize == 0) continue;
 
       auto Cp_trans = make_shared<Matrix>(det->lena(), phisize);
@@ -232,22 +232,25 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       double* cpdata = Cp_trans->data();
 
       // gathering
-      for ( auto& iphi : det->phib_ij(ij) ) {
-        shared_ptr<const StringSpace> sourcespace = det->space<1>(det->stringb(iphi.source));
-        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(sourcespace);
-        const size_t boffset = iphi.source - sourcespace->offset();
-        double sign = static_cast<double>(iphi.sign);
-
-        for ( auto& iblock : blks ) {
-          double* targetdata = cpdata + iblock->stringa()->offset();
-          const double* sourcedata = iblock->data() + boffset;
+      int current_column = 0;
+      for ( auto& iphispace : det->phib_ij(ij) ) {
+        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphispace.nholes, iphispace.nparts);
+        for (auto& iblock : blks) {
+          double* target_base = cpdata + iblock->stringa()->offset();
           const size_t lb = iblock->lenb();
 
-          for ( size_t i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb ) {
-            *targetdata = *sourcedata * sign;
+          for (auto iphi : iphispace.phi) {
+            double sign = static_cast<double>(iphi.sign);
+            double* targetdata = target_base;
+            const double* sourcedata = iblock->data() + iphi.source;
+
+            for (size_t i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb)
+              *targetdata = *sourcedata * sign;
+            target_base += det->lena();
           }
         }
-        cpdata += det->lena();
+        ++current_column;
+        cpdata += iphispace.phi.size() * det->lena();
       }
 
       // build F, block by block
@@ -296,22 +299,24 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
         // scatter
         double* vdata = Vt->data();
-        for (auto& iphi : det->phib_ij(ij) ) {
-          shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
-          if (det->allowed(ispace, betaspace)) {
-            const double* sourcedata = vdata;
+        for (auto& iphispace : det->phib_ij(ij) ) {
+          for (auto& iphi : iphispace.phi) {
+            shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+            if (det->allowed(ispace, betaspace)) {
+              const double* sourcedata = vdata;
 
-            shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
-            double* targetdata = sgblock->data() + iphi.target - betaspace->offset();
+              shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+              double* targetdata = sgblock->data() + iphi.target - betaspace->offset();
 
-            const size_t lb = sgblock->lenb();
+              const size_t lb = sgblock->lenb();
 
-            for (size_t i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
-              *targetdata += *sourcedata;
+              for (size_t i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
+                *targetdata += *sourcedata;
+              }
             }
-          }
 
-          vdata += la;
+            vdata += la;
+          }
         }
       }
     }

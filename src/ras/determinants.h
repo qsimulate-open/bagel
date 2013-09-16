@@ -42,7 +42,16 @@ namespace bagel {
 
       DMap(const size_t s, const size_t t, const size_t ii, const int sn) : source(s), target(t), ij(ii), sign(sn) {}
     };
-  }
+
+  struct BlockedDMap {
+    const int offset;
+    const int nholes;
+    const int nparts;
+    std::vector<RAS::DMap> phi;
+
+    BlockedDMap(const int o, const int nh, const int np, std::vector<RAS::DMap> p) : offset(o), nholes(nh), nparts(np), phi(p) {}
+  };
+}
 
 class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
   protected:
@@ -67,8 +76,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::vector<std::vector<RAS::DMap>> phia_;
     std::vector<std::vector<RAS::DMap>> phib_;
 
-    std::vector<std::vector<RAS::DMap>> phia_ij_;
-    std::vector<std::vector<RAS::DMap>> phib_ij_;
+    std::vector<std::vector<RAS::BlockedDMap>> phia_ij_;
+    std::vector<std::vector<RAS::BlockedDMap>> phib_ij_;
 
     std::vector<std::vector<RAS::DMap>> phiupa_;
     std::vector<std::vector<RAS::DMap>> phiupb_;
@@ -187,8 +196,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const std::vector<RAS::DMap>& phia(const size_t target) const { return phia_[target]; }
     const std::vector<RAS::DMap>& phib(const size_t target) const { return phib_[target]; }
 
-    const std::vector<RAS::DMap>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
-    const std::vector<RAS::DMap>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
+    const std::vector<RAS::BlockedDMap>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
+    const std::vector<RAS::BlockedDMap>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
     const std::vector<RAS::DMap>& phiupa(const size_t target) const { return phiupa_[target]; }
     const std::vector<RAS::DMap>& phiupb(const size_t target) const { return phiupb_[target]; }
@@ -217,43 +226,53 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__>& bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
-    template <int spin> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical(bit); }
+    template <int spin, int off = 1> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical<off>(bit); }
 
     std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMap>>& phi_ij);
+    template <int spin> void construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::BlockedDMap>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(const std::vector<std::bitset<nbit__>>& strings, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMap>>& phi_ij) {
+void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::BlockedDMap>>& phi_ij) {
+  const size_t stringsize = std::accumulate(stringspace.begin(), stringspace.end(), 0ull, [] (size_t i, std::shared_ptr<const StringSpace> v) { return i + (v ? v->size() : 0); });
 
   phi.clear();
-  phi.resize( strings.size() );
+  phi.resize( stringsize );
   for (auto& iphi : phi) iphi.reserve(norb_ * norb_);
 
+  const int nij = (norb_ * (norb_ + 1))/2;
+
   phi_ij.clear();
-  phi_ij.resize( (norb_ * (norb_ + 1))/2 );
-  for (auto& iphi : phi_ij) iphi.reserve( strings.size() );
+  phi_ij.resize( nij );
+  for (auto& iphi : phi_ij) iphi.reserve( stringsize );
 
   auto iphi = phi.begin();
   size_t tindex = 0;
-  for (auto istring = strings.begin(); istring != strings.end(); ++istring, ++iphi, ++tindex) {
-    const std::bitset<nbit__> targetbit = *istring;
-    for (int j = 0; j < norb_; ++j) {
-      if ( !targetbit[j] ) continue;
-      std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);
-      for (int i = 0; i < norb_; ++i) {
-        if ( intermediatebit[i] ) continue;
-        std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
-        if ( allowed(sourcebit) ) {
-          iphi->emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
-          int minij, maxij;
-          std::tie(minij, maxij) = std::minmax(i,j);
-          phi_ij[minij+((maxij*(maxij+1))>>1)].emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+  for (auto ispace : stringspace) {
+    if (!ispace) continue;
+    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++iphi, ++tindex) {
+      const std::bitset<nbit__> targetbit = *istring;
+      std::vector<std::vector<RAS::DMap>> pij;
+      pij.resize( nij );
+      for (auto& ip : pij) ip.reserve( ispace->size() );
+      for (int j = 0; j < norb_; ++j) {
+        if ( !targetbit[j] ) continue;
+        std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);
+        for (int i = 0; i < norb_; ++i) {
+          if ( intermediatebit[i] ) continue;
+          std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
+          if ( allowed(sourcebit) ) {
+            iphi->emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+            int minij, maxij;
+            std::tie(minij, maxij) = std::minmax(i,j);
+            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(tindex - ispace->offset(), lexical<spin>(sourcebit), j + i * norb_, sign(targetbit, i, j));
+          }
         }
       }
+      for (int i = 0; i < nij; ++i) phi_ij[i].emplace_back(ispace->offset(), ispace->nholes(), ispace->nparticles(), pij[i]);
     }
   }
 }
