@@ -137,6 +137,8 @@ class PTree {
     static std::shared_ptr<const PTree> read_basis(std::string name);
 };
 
+template <> void PTree::push_back<std::shared_ptr<PTree>>(const std::shared_ptr<PTree>& pt);
+
 template<typename T> std::vector<T> PTree::get_vector(const std::string key, const int nexpected) const {
   std::vector<T> out;
   auto tmp = get_child(key);
