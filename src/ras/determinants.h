@@ -165,6 +165,18 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const bool allowed(const std::shared_ptr<const StringSpace> alpha, const std::shared_ptr<const StringSpace> beta) const
       { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
 
+    template <int spin>
+    const std::vector<std::shared_ptr<const StringSpace>> allowed_spaces(const int nh, const int np) const {
+      std::vector<std::shared_ptr<const StringSpace>> out;
+      for (int jp = 0; jp + np <= max_particles_; ++jp) {
+        for (int ih = 0; ih + nh <= max_holes_; ++ih) {
+          std::shared_ptr<const StringSpace> sp = space< (spin == 0 ? 1 : 0) >(ih, jp);
+          if (sp) out.push_back(sp);
+        }
+      }
+      return out;
+    }
+
 
     // These access the global string lists
     const std::bitset<nbit__>& stringa(const size_t i) const { return stringa_[i]; }

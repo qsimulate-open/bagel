@@ -249,8 +249,8 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             target_base += det->lena();
           }
         }
-        ++current_column;
         cpdata += iphispace.phi.size() * det->lena();
+        current_column += iphispace.phi.size();
       }
 
       // build F, block by block
@@ -294,7 +294,17 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
               fdata[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
             }
           }
-          Vt = make_shared<Matrix>(*F % *Cp_trans); // transposed from how it appears in Olsen's paper
+          Vt = make_shared<Matrix>(la, phisize);
+          int current_column = 0;
+          for (auto& phispace : det->phib_ij(ij)) {
+            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(phispace.nholes, phispace.nparts);
+            for (auto& mult_space : allowed_spaces) {
+              dgemm_("T", "N", la, phispace.phi.size(), mult_space->size(), 1.0, F->element_ptr(mult_space->offset(), 0), det->lena(),
+                                   Cp_trans->element_ptr(mult_space->offset(), current_column), det->lena(), 1.0, Vt->element_ptr(0, current_column), la);
+            }
+            current_column += phispace.phi.size();
+          }
+          assert(phisize == current_column);
         }
 
         // scatter
