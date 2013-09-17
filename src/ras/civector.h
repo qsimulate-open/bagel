@@ -261,6 +261,7 @@ class RASCivector {
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
       { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
+    void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); } 
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
