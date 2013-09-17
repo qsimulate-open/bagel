@@ -38,7 +38,7 @@ DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
  : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-  assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()));
+  assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()) || asize_ == adist_->nele());
 
   const size_t amax = max(adist_shell_->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
   data_ = unique_ptr<double[]>(new double[amax*b1size_*b2size_]);
