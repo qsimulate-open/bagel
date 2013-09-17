@@ -66,7 +66,6 @@ class DavidsonDiag {
                                  scr_(std::make_shared<MatType>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)),
                                  ovlp_scr_(std::make_shared<MatType>(max_,max_,true)) {
     }
-    ~DavidsonDiag(){}
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
       assert(nstate_ == 1);
@@ -127,12 +126,12 @@ class DavidsonDiag {
         auto tmp = std::make_shared<T>(*c_.front());
         tmp->zero(); // <- waste of time
         int k = 0;
-        for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->ax_plus_y(-vec_[i]*eig_->element(k,i), **iter);
+        for (auto& iv : c_) {
+          tmp->ax_plus_y(-vec_[i]*eig_->element(k++,i), iv);
         }
         k = 0;
-        for (auto iter = sigma_.begin(); iter != sigma_.end(); ++iter, ++k) {
-          tmp->ax_plus_y(eig_->element(k,i), **iter);
+        for (auto& iv : sigma_) {
+          tmp->ax_plus_y(eig_->element(k++,i), iv);
         }
         out.push_back(tmp);
       }
@@ -143,11 +142,11 @@ class DavidsonDiag {
     std::vector<std::shared_ptr<T>> civec() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        auto tmp = std::make_shared<T>(*c_.front());
-        tmp->zero(); // <- waste of time
+        auto tmp = c_.front()->clone();
+        tmp->zero(); // just to make sure
         int k = 0;
-        for (auto iter = c_.begin(); iter != c_.end(); ++iter, ++k) {
-          tmp->ax_plus_y((*eig_)[i*max_+k], **iter);
+        for (auto& iv : c_) {
+          tmp->ax_plus_y(eig_->element(k++,i), iv);
         }
         out.push_back(tmp);
       }
