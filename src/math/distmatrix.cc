@@ -77,9 +77,9 @@ DistMatrix& DistMatrix::operator=(const DistMatrix& o) {
 
 DistMatrix& DistMatrix::operator=(DistMatrix&& o) {
   assert(size() == o.size());
+  assert(localsize_ == o.localsize_);
+  assert(desc_[0] == o.desc_[0]);
   local_ = move(o.local_);
-  desc_ = move(o.desc_);
-  localsize_ = o.localsize_;
   return *this;
 }
 
