@@ -111,6 +111,7 @@ class PTree {
     void add_child(const std::string s, std::shared_ptr<PTree> ch) { data_.add_child(s, ch->data_); }
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
     template<typename T> void push_back(const T& o) {
+      assert(typeid(T) != typeid(std::shared_ptr<PTree>)); // there is a specialization for shared_ptr<PTree>
       boost::property_tree::ptree ch;
       ch.put("", lexical_cast<std::string>(o));
       data_.push_back(std::make_pair("", ch));
