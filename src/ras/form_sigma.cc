@@ -266,11 +266,6 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
           vector<vector<int>> cols(nspaces);
           vector<vector<int>> rind(nspaces);
 
-          // a crude estimate
-          for (auto& i : data) i.reserve( det->nelea() * det->nelea() * la);
-          for (auto& c : cols) c.reserve( det->nelea() * det->neleb() * la);
-          for (auto& r : rind) r.reserve( la + 1 );
-
           vector<pair<size_t, int>> bounds;
           for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
           assert(bounds.size() == nspaces);
@@ -289,21 +284,29 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
           };
 
           for (int ia = 0; ia < la; ++ia) {
-            vector<map<size_t, double>> rows(nspaces);
+            map<size_t, double> row;
+            size_t mx = 0;
+            size_t mn = det->lena();
             for (auto& iter : det->phia(ia + ispace->offset())) {
               const int kk = iter.ij/norb;
               const int ll = iter.ij%norb;
-              int col = iter.source;
-              const int sp = which_space(col);
-              rows.at(sp)[col] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
+              row[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
+              mx = max(mx, iter.source);
+              mn = min(mn, iter.source);
             }
 
-            for (int isp = 0; isp < nspaces; ++isp) {
-              rind.at(isp).push_back(data[isp].size() + 1);
-              for (auto& irow : rows.at(isp)) {
-                cols[isp].push_back(irow.first + 1);
-                data[isp].push_back(irow.second);
+            cout << "banding of column " << ia + ispace->offset() << " ranges from " << mn << " to " << mx << endl;
+
+            for (int sp = 0; sp < nspaces; ++sp) rind[sp].push_back(data[sp].size() + 1);
+
+            auto ibound = bounds.begin();
+            int sp = 0;
+            for (auto& irow : row) {
+              if (irow.first < ibound->second) {
+                cols[sp].push_back(irow.first + 1 - ibound->first);
+                data[sp].push_back(irow.second);
               }
+              else { ++ibound; ++sp; }
             }
           }
 
