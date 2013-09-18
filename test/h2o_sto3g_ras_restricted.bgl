@@ -21,5 +21,5 @@ ras = {
   max_particles = 2;
   maxiter = 10;
   thresh = 1.0e-14;
-  sparse = true;
+  sparse = false;
 };

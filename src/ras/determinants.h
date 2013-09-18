@@ -284,7 +284,7 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
           }
         }
       }
-      for (int i = 0; i < nij; ++i) phi_ij[i].emplace_back(ispace->offset(), ispace->nholes(), ispace->nparticles(), pij[i]);
+      for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) phi_ij[i].emplace_back(ispace->offset(), ispace->nholes(), ispace->nparticles(), pij[i]);
     }
   }
 }

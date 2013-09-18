@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <map>
+
 #include <src/ras/form_sigma.h>
 #include <src/math/sparsematrix.h>
 
@@ -227,30 +229,31 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, RAS::BlockedDMap m) { return i + m.phi.size(); });
       if (phisize == 0) continue;
 
-      auto Cp_trans = make_shared<Matrix>(det->lena(), phisize);
-
-      double* cpdata = Cp_trans->data();
+      map<pair<int, int>, shared_ptr<Matrix>> Cp_map;
 
       // gathering
+      {
       int current_column = 0;
       for ( auto& iphispace : det->phib_ij(ij) ) {
         vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphispace.nholes, iphispace.nparts);
         for (auto& iblock : blks) {
-          double* target_base = cpdata + iblock->stringa()->offset();
+          auto tmp = make_shared<Matrix>(iblock->lena(), iphispace.phi.size());
+          double* targetdata = tmp->data();
+
           const size_t lb = iblock->lenb();
 
           for (auto iphi : iphispace.phi) {
             double sign = static_cast<double>(iphi.sign);
-            double* targetdata = target_base;
             const double* sourcedata = iblock->data() + iphi.source;
 
             for (size_t i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb)
               *targetdata = *sourcedata * sign;
-            target_base += det->lena();
           }
+
+          Cp_map.emplace(make_pair(iblock->stringa()->offset(), current_column), tmp);
         }
-        cpdata += iphispace.phi.size() * det->lena();
         current_column += iphispace.phi.size();
+      }
       }
 
       // build F, block by block
@@ -258,31 +261,77 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         if (!ispace) continue;
         const size_t la = ispace->size();
 
-        shared_ptr<Matrix> Vt;
+        auto Vt = make_shared<Matrix>(la, phisize);
         if ( sparse_ ) {
-          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, size_t(0), [&la] (size_t i, vector<RAS::DMap> v) { return i + v.size(); });
-          vector<double> data; data.reserve(size);
-          vector<int> cols; cols.reserve(size);
-          vector<int> rind; rind.reserve(la + 1);
+          // Making several SparseMatrix objects
+          // First, how many?
+          const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
+          vector<vector<double>> data(nspaces, vector<double>());
+          vector<vector<int>> cols(nspaces, vector<int>());
+          vector<vector<int>> rind(nspaces, vector<int>());
+
+          vector<pair<size_t, int>> bounds;
+          for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
+          assert(bounds.size() == nspaces);
+
+          // figures out which space a column belongs to and subtracts the offset
+          auto which_space = [&bounds] (int& col) {
+            int space = 0;
+            for (auto& b : bounds) {
+              if ( col >= b.first && col < b.second ) {
+                col -= b.first;
+                return space;
+              }
+              ++space;
+            }
+            assert(false); return 0;
+          };
+
+          // Not sure how to guess how many elements would be filled in each stringspace
 
           for (int ia = 0; ia < la; ++ia) {
-            map<int, double> row;
+            vector<map<size_t, double>> rows(nspaces);
             for (auto& iter : det->phia(ia + ispace->offset())) {
               const int kk = iter.ij/norb;
               const int ll = iter.ij%norb;
-              row[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
+              int col = iter.source;
+              const int sp = which_space(col);
+              rows.at(sp)[col] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
             }
-            rind.push_back(data.size() + 1);
-            for (auto& irow : row) {
-              cols.push_back(irow.first + 1);
-              data.push_back(irow.second);
+
+            for (int isp = 0; isp < nspaces; ++isp) {
+              rind.at(isp).push_back(data[isp].size() + 1);
+              for (auto& irow : rows.at(isp)) {
+                cols[isp].push_back(irow.first + 1);
+                data[isp].push_back(irow.second);
+              }
             }
           }
-          rind.push_back(data.size() + 1);
-          assert(size > data.size());
 
-          auto Ft = make_shared<SparseMatrix>( la, det->lena(), data, cols, rind);
-          Vt = make_shared<Matrix>(*Ft * *Cp_trans);
+          map<size_t, shared_ptr<SparseMatrix>> Ft_map;
+
+          for (int isp = 0; isp < nspaces; ++isp) {
+            if (data.at(isp).size() > 0) {
+              rind.at(isp).push_back(data.at(isp).size() + 1);
+              const int mdim = bounds.at(isp).second - bounds.at(isp).first;
+              Ft_map.emplace(bounds.at(isp).first, make_shared<SparseMatrix>(la, mdim, data.at(isp), cols.at(isp), rind.at(isp)));
+            }
+            else Ft_map.emplace(bounds.at(isp).first, shared_ptr<SparseMatrix>());
+          }
+
+          int current_column = 0;
+          for (auto& phispace : det->phib_ij(ij)) {
+            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(phispace.nholes, phispace.nparts);
+            for (auto& mult_space : allowed_spaces) {
+              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), current_column));
+              shared_ptr<SparseMatrix> Ft_block = Ft_map.at(mult_space->offset());
+              if (Ft_block) {
+                auto Vt_block = make_shared<Matrix>(*Ft_block * *Cp_block);
+                Vt->add_block(1.0, 0, current_column, Vt_block->ndim(), Vt_block->mdim(), Vt_block);
+              }
+            }
+            current_column += phispace.phi.size();
+          }
         }
         else { // dense matrix multiply
           auto F = make_shared<Matrix>( det->lena(), la );
@@ -294,13 +343,14 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
               fdata[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
             }
           }
-          Vt = make_shared<Matrix>(la, phisize);
           int current_column = 0;
           for (auto& phispace : det->phib_ij(ij)) {
             vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(phispace.nholes, phispace.nparts);
             for (auto& mult_space : allowed_spaces) {
+              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), current_column));
+              assert(mult_space->size() == Cp_block->ndim());
               dgemm_("T", "N", la, phispace.phi.size(), mult_space->size(), 1.0, F->element_ptr(mult_space->offset(), 0), det->lena(),
-                                   Cp_trans->element_ptr(mult_space->offset(), current_column), det->lena(), 1.0, Vt->element_ptr(0, current_column), la);
+                                   Cp_block->data(), Cp_block->ndim(), 1.0, Vt->element_ptr(0, current_column), la);
             }
             current_column += phispace.phi.size();
           }
