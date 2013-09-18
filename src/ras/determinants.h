@@ -43,13 +43,22 @@ namespace bagel {
       DMap(const size_t s, const size_t t, const size_t ii, const int sn) : source(s), target(t), ij(ii), sign(sn) {}
     };
 
-  struct BlockedDMap {
-    const int offset;
-    const int nholes;
-    const int nparts;
-    std::vector<RAS::DMap> phi;
+  class DMapBlock {
+    protected:
+      const size_t offset_;
+      std::shared_ptr<const StringSpace> space_;
+      std::vector<RAS::DMap> phis_;
 
-    BlockedDMap(const int o, const int nh, const int np, std::vector<RAS::DMap> p) : offset(o), nholes(nh), nparts(np), phi(p) {}
+    public:
+      DMapBlock(const int o, std::shared_ptr<const StringSpace> sp, std::vector<RAS::DMap>&& p) : offset_(o), space_(sp), phis_(std::move(p)) {}
+
+      std::vector<RAS::DMap>::const_iterator begin() const { return phis_.begin(); }
+      std::vector<RAS::DMap>::const_iterator end() const { return phis_.end(); }
+      size_t size() const { return phis_.size(); }
+
+      size_t offset() const { return offset_; }
+
+      std::shared_ptr<const StringSpace> space() const { return space_; }
   };
 }
 
@@ -76,8 +85,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::vector<std::vector<RAS::DMap>> phia_;
     std::vector<std::vector<RAS::DMap>> phib_;
 
-    std::vector<std::vector<RAS::BlockedDMap>> phia_ij_;
-    std::vector<std::vector<RAS::BlockedDMap>> phib_ij_;
+    std::vector<std::vector<RAS::DMapBlock>> phia_ij_;
+    std::vector<std::vector<RAS::DMapBlock>> phib_ij_;
 
     std::vector<std::vector<RAS::DMap>> phiupa_;
     std::vector<std::vector<RAS::DMap>> phiupb_;
@@ -166,8 +175,10 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
       { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
 
     template <int spin>
-    const std::vector<std::shared_ptr<const StringSpace>> allowed_spaces(const int nh, const int np) const {
+    const std::vector<std::shared_ptr<const StringSpace>> allowed_spaces(std::shared_ptr<const StringSpace> sp) const {
       std::vector<std::shared_ptr<const StringSpace>> out;
+      const int np = sp->nparticles();
+      const int nh = sp->nholes();
       for (int jp = 0; jp + np <= max_particles_; ++jp) {
         for (int ih = 0; ih + nh <= max_holes_; ++ih) {
           std::shared_ptr<const StringSpace> sp = space< (spin == 0 ? 1 : 0) >(ih, jp);
@@ -208,8 +219,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const std::vector<RAS::DMap>& phia(const size_t target) const { return phia_[target]; }
     const std::vector<RAS::DMap>& phib(const size_t target) const { return phib_[target]; }
 
-    const std::vector<RAS::BlockedDMap>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
-    const std::vector<RAS::BlockedDMap>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
+    const std::vector<RAS::DMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
+    const std::vector<RAS::DMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
     const std::vector<RAS::DMap>& phiupa(const size_t target) const { return phiupa_[target]; }
     const std::vector<RAS::DMap>& phiupb(const size_t target) const { return phiupb_[target]; }
@@ -244,11 +255,11 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::BlockedDMap>>& phi_ij);
+    template <int spin> void construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMapBlock>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::BlockedDMap>>& phi_ij) {
+void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const StringSpace>>& stringspace, std::vector<std::vector<RAS::DMap>>& phi, std::vector<std::vector<RAS::DMapBlock>>& phi_ij) {
   const size_t stringsize = std::accumulate(stringspace.begin(), stringspace.end(), 0ull, [] (size_t i, std::shared_ptr<const StringSpace> v) { return i + (v ? v->size() : 0); });
 
   phi.clear();
@@ -260,6 +271,8 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
   phi_ij.clear();
   phi_ij.resize( nij );
   for (auto& iphi : phi_ij) iphi.reserve( stringsize );
+
+  std::vector<size_t> offsets(nij, 0);
 
   auto iphi = phi.begin();
   size_t tindex = 0;
@@ -284,7 +297,10 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
           }
         }
       }
-      for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) phi_ij[i].emplace_back(ispace->offset(), ispace->nholes(), ispace->nparticles(), pij[i]);
+      for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) {
+        phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
+        offsets[i] += phi_ij[i].back().size();
+      }
     }
   }
 }

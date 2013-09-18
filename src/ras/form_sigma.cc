@@ -226,23 +226,21 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, RAS::BlockedDMap m) { return i + m.phi.size(); });
+      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const RAS::DMapBlock& m) { return i + m.size(); });
       if (phisize == 0) continue;
 
-      map<pair<int, int>, shared_ptr<Matrix>> Cp_map;
+      map<pair<size_t, size_t>, shared_ptr<Matrix>> Cp_map;
 
       // gathering
-      {
-      int current_column = 0;
-      for ( auto& iphispace : det->phib_ij(ij) ) {
-        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphispace.nholes, iphispace.nparts);
+      for ( auto& iphiblock : det->phib_ij(ij) ) {
+        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
         for (auto& iblock : blks) {
-          auto tmp = make_shared<Matrix>(iblock->lena(), iphispace.phi.size());
+          auto tmp = make_shared<Matrix>(iblock->lena(), iphiblock.size());
           double* targetdata = tmp->data();
 
           const size_t lb = iblock->lenb();
 
-          for (auto iphi : iphispace.phi) {
+          for (auto& iphi : iphiblock) {
             double sign = static_cast<double>(iphi.sign);
             const double* sourcedata = iblock->data() + iphi.source;
 
@@ -250,10 +248,8 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
               *targetdata = *sourcedata * sign;
           }
 
-          Cp_map.emplace(make_pair(iblock->stringa()->offset(), current_column), tmp);
+          Cp_map.emplace(make_pair(iblock->stringa()->offset(), iphiblock.offset()), tmp);
         }
-        current_column += iphispace.phi.size();
-      }
       }
 
       // build F, block by block
@@ -319,18 +315,16 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             else Ft_map.emplace(bounds.at(isp).first, shared_ptr<SparseMatrix>());
           }
 
-          int current_column = 0;
-          for (auto& phispace : det->phib_ij(ij)) {
-            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(phispace.nholes, phispace.nparts);
+          for (auto& iphiblock : det->phib_ij(ij)) {
+            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
             for (auto& mult_space : allowed_spaces) {
-              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), current_column));
+              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
               shared_ptr<SparseMatrix> Ft_block = Ft_map.at(mult_space->offset());
               if (Ft_block) {
                 auto Vt_block = make_shared<Matrix>(*Ft_block * *Cp_block);
-                Vt->add_block(1.0, 0, current_column, Vt_block->ndim(), Vt_block->mdim(), Vt_block);
+                Vt->add_block(1.0, 0, iphiblock.offset(), Vt_block->ndim(), Vt_block->mdim(), Vt_block);
               }
             }
-            current_column += phispace.phi.size();
           }
         }
         else { // dense matrix multiply
@@ -343,24 +337,21 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
               fdata[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
             }
           }
-          int current_column = 0;
-          for (auto& phispace : det->phib_ij(ij)) {
-            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(phispace.nholes, phispace.nparts);
+          for (auto& iphiblock : det->phib_ij(ij)) {
+            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
             for (auto& mult_space : allowed_spaces) {
-              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), current_column));
+              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
               assert(mult_space->size() == Cp_block->ndim());
-              dgemm_("T", "N", la, phispace.phi.size(), mult_space->size(), 1.0, F->element_ptr(mult_space->offset(), 0), det->lena(),
-                                   Cp_block->data(), Cp_block->ndim(), 1.0, Vt->element_ptr(0, current_column), la);
+              dgemm_("T", "N", la, iphiblock.size(), mult_space->size(), 1.0, F->element_ptr(mult_space->offset(), 0), det->lena(),
+                                   Cp_block->data(), Cp_block->ndim(), 1.0, Vt->element_ptr(0, iphiblock.offset()), la);
             }
-            current_column += phispace.phi.size();
           }
-          assert(phisize == current_column);
         }
 
         // scatter
         double* vdata = Vt->data();
-        for (auto& iphispace : det->phib_ij(ij) ) {
-          for (auto& iphi : iphispace.phi) {
+        for (auto& iphiblock : det->phib_ij(ij) ) {
+          for (auto& iphi : iphiblock) {
             shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
               const double* sourcedata = vdata;
