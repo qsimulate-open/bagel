@@ -262,9 +262,14 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
           // Making several SparseMatrix objects
           // First, how many?
           const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
-          vector<vector<double>> data(nspaces, vector<double>());
-          vector<vector<int>> cols(nspaces, vector<int>());
-          vector<vector<int>> rind(nspaces, vector<int>());
+          vector<vector<double>> data(nspaces);
+          vector<vector<int>> cols(nspaces);
+          vector<vector<int>> rind(nspaces);
+
+          // a crude estimate
+          for (auto& i : data) i.reserve( det->nelea() * det->nelea() * la);
+          for (auto& c : cols) c.reserve( det->nelea() * det->neleb() * la);
+          for (auto& r : rind) r.reserve( la + 1 );
 
           vector<pair<size_t, int>> bounds;
           for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
@@ -282,8 +287,6 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             }
             assert(false); return 0;
           };
-
-          // Not sure how to guess how many elements would be filled in each stringspace
 
           for (int ia = 0; ia < la; ++ia) {
             vector<map<size_t, double>> rows(nspaces);
