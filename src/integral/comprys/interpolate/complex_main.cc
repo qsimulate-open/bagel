@@ -10,20 +10,20 @@
 //////Basic Setup and Namespaces//////////
 //////////////////////////////////////////
 
-#define TESTING 2000                 // Define this to skip code generation and instead run the functions in the generated files.  The number you give defines the number of tests to be run.  
+//#define TESTING 2000                 // Define this to skip code generation and instead run the functions in the generated files.  The number you give defines the number of tests to be run.  
 constexpr double IMULT = 0.01;          // Used for the "-h" option, this defines the starting value of T.imag as a multiple of T.real
 constexpr double MAXABS_ERROR = 2e-14;
 constexpr double MAXREL_ERROR = 2e-14;
 
 constexpr int RGRID1 = 14;         // Number of gridpoints to use for bins close to zero
 constexpr int IGRID1 = 10;
-constexpr int CUTOFF = 7;          // Number of bins to use a larger number of gridpoints for (along real axis)
+constexpr int CUTOFF = 8;          // Number of bins to use a larger number of gridpoints for (along real axis)
 
 constexpr int RGRID2 = 10;         // Number of gridpoints to use above CUTOFF
 constexpr int IGRID2 = 8;
 
 #ifdef TESTING
-#include "complex_erirootlist.h"  // Used only the for the -t testing/debugging architecture
+#include "../comperirootlist.h"  // Used only the for the -t testing/debugging architecture
 using namespace bagel;
 #else
 constexpr int RYS_MAX = 13;       // This is the maximum number of roots we want for the generated interpolation files - defined here and in the root list header
