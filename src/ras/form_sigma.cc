@@ -283,6 +283,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             assert(false); return 0;
           };
 
+          const double* mo2e_ij = mo2e + i + norb*norb*j;
           for (int ia = 0; ia < la; ++ia) {
             map<size_t, double> row;
             size_t mx = 0;
@@ -290,23 +291,17 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             for (auto& iter : det->phia(ia + ispace->offset())) {
               const int kk = iter.ij/norb;
               const int ll = iter.ij%norb;
-              row[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
-              mx = max(mx, iter.source);
-              mn = min(mn, iter.source);
+              row[iter.source] += static_cast<double>(iter.sign) * mo2e_ij[norb*kk + norb*norb*norb*ll];
             }
-
-            cout << "banding of column " << ia + ispace->offset() << " ranges from " << mn << " to " << mx << endl;
 
             for (int sp = 0; sp < nspaces; ++sp) rind[sp].push_back(data[sp].size() + 1);
 
             auto ibound = bounds.begin();
             int sp = 0;
             for (auto& irow : row) {
-              if (irow.first < ibound->second) {
-                cols[sp].push_back(irow.first + 1 - ibound->first);
-                data[sp].push_back(irow.second);
-              }
-              else { ++ibound; ++sp; }
+              while (irow.first >= ibound->second) { ++ibound; ++sp; }
+              cols[sp].push_back(irow.first + 1 - ibound->first);
+              data[sp].push_back(irow.second);
             }
           }
 

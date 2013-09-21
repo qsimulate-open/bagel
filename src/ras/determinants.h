@@ -298,9 +298,11 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
         }
       }
       for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) {
+        pij[i].shrink_to_fit();
         phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
         offsets[i] += phi_ij[i].back().size();
       }
+      iphi->shrink_to_fit();
     }
   }
 }
