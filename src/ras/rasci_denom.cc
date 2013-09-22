@@ -91,7 +91,7 @@ void RASCI::const_denom() {
 
   denom_ = make_shared<RASCivec>(det());
 
-  int tasksize = 0;
+  size_t tasksize = 0;
   for (auto& iblock : denom_->blocks()) { if (iblock) tasksize += iblock->lena(); }
   TaskQueue<RAS::DenomTask> tasks(tasksize);
 

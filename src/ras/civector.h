@@ -48,26 +48,26 @@ class RASBlock {
 
     DataType* const data_ptr_;
 
-    const int offset_;
+    const size_t offset_;
 
   public:
-    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr, const int o) :
+    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr, const size_t o) :
       astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o)
     { }
 
-    const int size() const { return lena() * lenb(); }
-    const int lena() const { return astrings_->size(); }
-    const int lenb() const { return bstrings_->size(); }
+    const size_t size() const { return lena() * lenb(); }
+    const size_t lena() const { return astrings_->size(); }
+    const size_t lenb() const { return bstrings_->size(); }
 
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
 
-    DataType& element(const int i) { return data_ptr_[i]; }
-    const DataType& element(const int i) const { return data_ptr_[i]; }
+    DataType& element(const size_t i) { return data_ptr_[i]; }
+    const DataType& element(const size_t i) const { return data_ptr_[i]; }
 
-    const int index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
+    const size_t index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
       { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb(); }
-    const int gindex(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const // global index
+    const size_t gindex(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const // global index
       { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb() + offset_; }
 
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
@@ -99,7 +99,7 @@ class RASCivector {
       std::fill_n(data_.get(), size_, 0.0);
 
       DataType* cc_ptr = data_.get();
-      int sz = 0;
+      size_t sz = 0;
       for (auto& ipair : det->stringpairs()) {
         if ( ipair.first && ipair.second ) {
            blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, cc_ptr, sz));
@@ -134,7 +134,7 @@ class RASCivector {
     }
 
     // Convenience
-    const int index(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
+    const size_t index(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return block(bstring, astring)->gindex(bstring, astring);
     }
 
@@ -261,6 +261,7 @@ class RASCivector {
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
       { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
+    void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); } 
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
@@ -318,7 +319,7 @@ class RASCivector {
 
       auto apply_block_alpha =
         [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
-          const int lb = soblock->lenb();
+          const size_t lb = soblock->lenb();
           assert(lb == tarblock->lenb());
           const DataType* sourcedata = soblock->data();
           for (auto& abit : *soblock->stringa()) {
@@ -334,12 +335,12 @@ class RASCivector {
 
       auto apply_block_beta =
         [&condition, &sdet, &orbital] (std::shared_ptr<const RASBlock<DataType>> soblock, std::shared_ptr<RASBlock<DataType>> tarblock) {
-          const int la = soblock->lena();
+          const size_t la = soblock->lena();
           assert( la == tarblock->lena() );
           const DataType* sourcedata_base = soblock->data();
 
-          const int tlb = tarblock->lenb();
-          const int slb = soblock->lenb();
+          const size_t tlb = tarblock->lenb();
+          const size_t slb = soblock->lenb();
 
           for (auto& bbit : *soblock->stringb()) {
             const DataType* sourcedata = sourcedata_base;
@@ -347,7 +348,7 @@ class RASCivector {
             if (condition(tbbit)) {
               DataType* targetdata = tarblock->data() + tarblock->stringb()->template lexical<0>(tbbit);
               const DataType sign = static_cast<DataType>(sdet->sign<1>(bbit, orbital));
-              for (int i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
+              for (size_t i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
                 *targetdata += *sourcedata * sign;
               }
             }

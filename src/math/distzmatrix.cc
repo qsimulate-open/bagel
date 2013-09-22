@@ -67,6 +67,22 @@ DistZMatrix& DistZMatrix::operator*=(const DistZMatrix& o) {
 }
 
 
+DistZMatrix& DistZMatrix::operator=(const DistZMatrix& o) {
+  assert(size() == o.size());
+  copy_n(o.local_.get(), size(), local_.get());
+  return *this;
+}
+
+
+DistZMatrix& DistZMatrix::operator=(DistZMatrix&& o) {
+  assert(size() == o.size());
+  assert(localsize_ == o.localsize_);
+  assert(desc_[0] == o.desc_[0]);
+  local_ = move(o.local_);
+  return *this;
+}
+
+
 DistZMatrix DistZMatrix::operator%(const DistZMatrix& o) const {
   const int l = mdim_;
   const int m = ndim_;

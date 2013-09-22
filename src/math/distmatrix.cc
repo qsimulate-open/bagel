@@ -68,6 +68,22 @@ DistMatrix& DistMatrix::operator*=(const DistMatrix& o) {
 }
 
 
+DistMatrix& DistMatrix::operator=(const DistMatrix& o) {
+  assert(size() == o.size());
+  copy_n(o.local_.get(), size(), local_.get());
+  return *this;
+}
+
+
+DistMatrix& DistMatrix::operator=(DistMatrix&& o) {
+  assert(size() == o.size());
+  assert(localsize_ == o.localsize_);
+  assert(desc_[0] == o.desc_[0]);
+  local_ = move(o.local_);
+  return *this;
+}
+
+
 DistMatrix DistMatrix::operator%(const DistMatrix& o) const {
   const int l = mdim_;
   const int m = ndim_;

@@ -42,9 +42,7 @@ void RASCI::common_init() {
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
-  thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   sparse_ = idata_->get<bool>("sparse", true);
 
@@ -236,7 +234,7 @@ void RASCI::compute() {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
-        const int size = cc_->data(ist)->size();
+        const size_t size = cc_->data(ist)->size();
         double* target_array = cc_->data(ist)->data();
         double* source_array = errvec.at(ist)->data();
         double* denom_array = denom_->data();

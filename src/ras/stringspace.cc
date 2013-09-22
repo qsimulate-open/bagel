@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const int offset) :
+StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
   ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}}, norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
 {
   RASGraph graph(norb_ + 1, nele_ + 1);
@@ -43,7 +43,7 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
       for (int j = 0; j <= nele; ++j) {
         if (i + j + istart == 0) graph(i+j+istart,j+jstart) = 1;
         else if (j + jstart == 0) graph(i+j+istart,j+jstart) = graph(i+j+istart-1,j+jstart);
-        else graph(i+j+istart,j+jstart) = max(0, graph(i+j+istart-1,j+jstart-1)) + max(0,graph(i+j+istart-1,j+jstart));
+        else graph(i+j+istart,j+jstart) = graph(i+j+istart-1,j+jstart-1) + graph(i+j+istart-1,j+jstart);
       }
     }
   };
@@ -52,27 +52,27 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
   fill_ras_graph(norb1, nele1, norb2, nele2);
   fill_ras_graph(norb1 + norb2, nele1 + nele2, norb3, nele3);
 
-  int size = graph.max();
+  size_t size = graph.max();
 
   weights_.reserve( (norb1 - nele1)*nele1 + (norb2 - nele2)*nele2 + (norb3 - nele3)*nele3 );
   offsets_.reserve( nele_ );
 
   for (int j = 0; j < nele_; ++j) {
     int i = 0;
-    while ( (graph(i+1,j+1) < 0) || (graph(i,j) < 0) ) ++i;
+    while ( (graph(i+1,j+1) == 0) || (graph(i,j) == 0) ) ++i;
 
     offsets_.push_back( weights_.size() - i );
 
     for ( ; i < norb_; ++i) {
-      if (graph(i+1,j+1) < 0 || graph(i,j) < 0) break;
-      weights_.push_back( max(0, graph(i,j+1)) );
+      if (graph(i+1,j+1) == 0 || graph(i,j) == 0) break;
+      weights_.push_back( graph(i,j+1) );
     }
   }
 
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
 
-  int cnt = 0;
+  size_t cnt = 0;
   vector<int> holes(norb1);
   iota(holes.begin(), holes.end(), 0);
   do {

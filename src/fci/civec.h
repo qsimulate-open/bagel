@@ -98,6 +98,9 @@ class DistCivector {
       return *this;
     }
 
+    std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
+    std::shared_ptr<DistCivector<DataType>> copy() const { return std::make_shared<DistCivector<DataType>>(*this); }
+
     DataType& local(const size_t i) { return local_[i]; }
     const DataType& local(const size_t i) const { return local_[i]; }
 
@@ -117,8 +120,6 @@ class DistCivector {
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
-
-    std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
 
     // MPI Isend Irecv
     void init_mpi_accumulate() const {
@@ -226,6 +227,7 @@ class DistCivector {
         std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](DataType p, DataType q){ return a*p+q; });
       }
     }
+    void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); } 
 
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
@@ -343,7 +345,7 @@ class Civector {
       std::copy_n(o.cc(), lena_*lenb_, cc());
     }
 
-    // from a distribtued Civec  TODO not efficient TODO only works for double
+    // from a distribtued Civec  TODO not efficient
     Civector(const DistCivector<DataType>& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       cc_ptr_ = cc_.get();
@@ -358,6 +360,9 @@ class Civector {
       cc_ = std::move(o->cc_);
       cc_ptr_ = cc_.get();
     }
+
+    std::shared_ptr<Civector<DataType>> clone() const { return std::make_shared<Civector<DataType>>(det_); }
+    std::shared_ptr<Civector<DataType>> copy() const { return std::make_shared<Civector<DataType>>(*this); }
 
     DataType* data() { return cc(); }
     DataType& element(size_t i, size_t j) { return cc(i+j*lenb_); }

@@ -170,7 +170,7 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   assert(*det == *sigma->det());
 
   const int norb = det->norb();
-  const int la = det->lena();
+  const size_t la = det->lena();
 
   // Let's just get it working first, thread it later
   for (auto& ispace : det->stringspacea()) {
@@ -178,7 +178,7 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
     double* fdata = F.get();
-    for (int ia = 0; ia < ispace->size(); ++ia, fdata+=la) {
+    for (size_t ia = 0; ia < ispace->size(); ++ia, fdata+=la) {
       for (auto& iterkl : det->phia(ia + ispace->offset())) {
         fdata[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phia(iterkl.source)) {
@@ -224,7 +224,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const int phisize = det->phib_ij(ij).size();
+      const size_t phisize = det->phib_ij(ij).size();
       if (phisize == 0) continue;
 
       auto Cp_trans = make_shared<Matrix>(det->lena(), phisize);
@@ -235,15 +235,15 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       for ( auto& iphi : det->phib_ij(ij) ) {
         shared_ptr<const StringSpace> sourcespace = det->space<1>(det->stringb(iphi.source));
         vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(sourcespace);
-        const int boffset = iphi.source - sourcespace->offset();
+        const size_t boffset = iphi.source - sourcespace->offset();
         double sign = static_cast<double>(iphi.sign);
 
         for ( auto& iblock : blks ) {
           double* targetdata = cpdata + iblock->stringa()->offset();
           const double* sourcedata = iblock->data() + boffset;
-          const int lb = iblock->lenb();
+          const size_t lb = iblock->lenb();
 
-          for ( int i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb ) {
+          for ( size_t i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb ) {
             *targetdata = *sourcedata * sign;
           }
         }
@@ -253,11 +253,11 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       // build F, block by block
       for (auto& ispace : det->stringspacea()) {
         if (!ispace) continue;
-        const int la = ispace->size();
+        const size_t la = ispace->size();
 
         shared_ptr<Matrix> Vt;
         if ( sparse_ ) {
-          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, size_t(0), [&la] (size_t i, vector<RAS::DMap> v) { return i + la*v.size(); });
+          const size_t size = accumulate(det->phia().begin()+ispace->offset(), det->phia().begin()+ispace->offset()+la, 0ull, [] (size_t i, vector<RAS::DMap> v) { return i + v.size(); });
           vector<double> data; data.reserve(size);
           vector<int> cols; cols.reserve(size);
           vector<int> rind; rind.reserve(la + 1);
@@ -284,7 +284,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         else { // dense matrix multiply
           auto F = make_shared<Matrix>( det->lena(), la );
           double* fdata = F->data();
-          for (int ia = 0; ia < la; ++ia, fdata+=det->lena()) {
+          for (size_t ia = 0; ia < la; ++ia, fdata+=det->lena()) {
             for (auto& iter : det->phia(ia + ispace->offset())) {
               const int kk = iter.ij/norb;
               const int ll = iter.ij%norb;
@@ -304,9 +304,9 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
             double* targetdata = sgblock->data() + iphi.target - betaspace->offset();
 
-            const int lb = sgblock->lenb();
+            const size_t lb = sgblock->lenb();
 
-            for (int i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
+            for (size_t i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
               *targetdata += *sourcedata;
             }
           }

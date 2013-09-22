@@ -80,7 +80,7 @@ class RASDvector {
 
     void set_det(std::shared_ptr<const RASDeterminants> o) const {
       det_ = o;
-      std::for_each(dvec_.begin(), dvec_.end(), [&o](CiPtr p){ p->set_det(o); });
+      std::for_each(dvec_.begin(), dvec_.end(), [&o](CiPtr p) { p->set_det(o); });
     }
 
     std::shared_ptr<RASDvector<DataType>> clone() const { return std::make_shared<RASDvector<DataType>>(det_, ij_); }

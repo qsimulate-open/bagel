@@ -74,6 +74,8 @@ class StaticDist {
     std::tuple<size_t, size_t> range(const size_t i) const { assert(i < start_.size()-1); return std::make_tuple(start_[i], start_[i+1]); }
     size_t size(const size_t i) const { return start_[i+1]-start_[i]; }
 
+    size_t nele() const { return nele_; }
+
     std::tuple<size_t, size_t> locate(size_t element) const {
       for (size_t i = 0; i != nproc_; ++i) {
         if (element < start_[i+1]) return std::make_tuple(i, element-start_[i]);

@@ -89,6 +89,13 @@ ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
 }
 
 
+ZMatrix& ZMatrix::operator=(ZMatrix&& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
+  data_ = move(o.data_);
+  return *this;
+}
+
+
 ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
   ZMatrix out(*this);
   out.ax_plus_y(complex<double>(-1.0,0.0), o);
