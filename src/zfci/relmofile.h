@@ -43,10 +43,7 @@ class RelMOFile : public ZMOFile_Base {
     double create_Jiiii(const int, const int) override;
 
     // generates Kramers symmetry-adapted orbitals
-    std::shared_ptr<const ZMatrix> kramers() const;
-    // rotates integrals using unitary matrix, and set sub-blocks to mo1e_ and mo2e_
-    std::tuple<std::shared_ptr<const ZMatrix>,std::shared_ptr<const ZMatrix>>
-      kramers_block_diagonalize(std::shared_ptr<const ZMatrix> umat, std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
+    std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
     void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
 

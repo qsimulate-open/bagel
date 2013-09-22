@@ -48,9 +48,36 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   norb_rel_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
   geom_ = geom_->relativistic(false);
-  assert(dynamic_pointer_cast<const RelReference>(ref_));
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
+  array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
+
+#define LOCAL_DEBUG_PRINT
+#ifdef LOCAL_DEBUG_PRINT
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+  shared_ptr<const ZMatrix> bcoeff = relref->relcoeff()->slice(nstart, 10);
+  auto hcore = make_shared<RelHcore>(geom_); 
+  auto overlap = make_shared<RelOverlap>(geom_); 
+  auto diag = (*coeff[0] % *overlap * *coeff[0]).diag();
+
+  (*coeff[0] % *overlap * *coeff[0]).print("T");
+  (*coeff[1] % *overlap * *coeff[1]).print("T");
+
+  (*bcoeff % *hcore * *bcoeff).print("T", "hcore correct");
+  (*coeff[0] % *hcore * *coeff[0]).print("T","hcore0");
+  (*coeff[1] % *hcore * *coeff[1]).print("T","hcore1");
+  (*coeff[0] % *hcore * *coeff[1]).print("T","hcore01");
+  (*coeff[1] % *hcore * *coeff[0]).print("T","hcore10");
+
+  auto fock = make_shared<DFock>(geom_, hcore, bcoeff, false, false, false);
+  (*bcoeff % *fock * *bcoeff).print("T", "fock correct");
+  (*coeff[0] % *fock * *coeff[0]).print("T", "fock0");
+  (*coeff[1] % *fock * *coeff[1]).print("T", "fock1");
+#endif
+
+
+  // TODO TODO a lot of changes required
+
+#if 0
   // tempolary integral files
   shared_ptr<const ZMatrix> buf1e, buf2e;
 
@@ -65,23 +92,74 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // compute the unitary matrix that block-diagonalizes integrals 
   shared_ptr<const ZMatrix> umat = kramers();
   // set subblocks to mo1e_ and mo2e_
-  tie(buf1e, buf2e) = kramers_block_diagonalize(umat, buf1e, buf2e);
+  // TODO not implemented
+  throw runtime_error("not yet implemented");
 
-  compress(buf1e, buf2e);
+//compress(buf1e, buf2e);
   return core_energy;
+#else
+  throw runtime_error("not yet implemented");
+  return 0;
+#endif
 }
 
 
-shared_ptr<const ZMatrix> RelMOFile::kramers() const {
-  throw runtime_error("to be implemented");
-  return shared_ptr<const ZMatrix>();
-}
+array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
+  assert(dynamic_pointer_cast<const RelReference>(ref_));
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+  shared_ptr<ZMatrix> reordered = coeff->clone();
 
+  const int noff = reordered->mdim()/2;
+  const int ndim = reordered->ndim();
 
-tuple<shared_ptr<const ZMatrix>,shared_ptr<const ZMatrix>>
- RelMOFile::kramers_block_diagonalize(shared_ptr<const ZMatrix> umat,shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
+  if ((nfence-nstart)%2 != 0 || ndim%4 != 0)
+    throw logic_error("illegal call of RelMOFile::kramers");
 
-  throw runtime_error("to be implemented");
+#ifdef LOCAL_DEBUG_PRINT
+coeff->print("T","orig",12);
+#endif
+
+  for (int i = 0; i != noff; ++i) {
+    reordered->copy_block(0, i,      ndim, 1, coeff->element_ptr(0, i*2));
+    reordered->copy_block(0, i+noff, ndim, 1, coeff->element_ptr(0, i*2+1));
+  }
+
+  const int nb = ndim / 4;
+  // off diagonal
+  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg(); 
+  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg(); 
+  reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
+  reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
+
+  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg(); 
+  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg(); 
+  reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
+  reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
+  
+  // diagonal
+  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg()); 
+  reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
+  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg()); 
+  reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
+
+  reordered->scale(0.5);
+
+  array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
+
+  auto overlap = make_shared<RelOverlap>(geom_); 
+  auto diag = (*out[0] % *overlap * *out[0]).diag();
+  for (int i = 0; i != noff; ++i) {
+    for (int j = 0; j != ndim; ++j) {
+      out[0]->element(j,i) /= sqrt(diag[i].real());
+      out[1]->element(j,i) /= sqrt(diag[i].real());
+    }
+  }
+#ifdef LOCAL_DEBUG_PRINT
+out[0]->print("T","out0",12);
+out[1]->print("T","out1",12);
+#endif
+  return out; 
 }
 
 
@@ -108,28 +186,8 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
 
 
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
-
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  complex<double> core_energy = 0.0;
-  core_energy = 1e100;
-
-  shared_ptr<ZMatrix> dfock0 = make_shared<RelHcore>(geom_);
-  //TODO rhf density matrix as in ZMOFile, may not be implemented yet for dfock?
-#if 0
-  shared_ptr<RelHcore> relhcore = make_shared<RelHcore>(geom_);
-  if (nstart != 0) {
-    dfock0 = make_shared<DFock>(geom_, relhcore, relref->relcoeff(),true,true,true);
-    core_energy = (*** RHF DENSITY MATRIX HERE *** (*relhcore+*dfock0)).trace() * 0.5;
-  }
-  dfock0->fill_upper();
-#endif
-
-  // Hij = relcoeff(T) * relhcore * relcoeff
-  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
-  core_dfock_ = make_shared<ZMatrix>(*coeff % *dfock0 * *coeff);
-
-  assert(fabs(core_energy.imag())<1e-10);
-  return make_tuple(core_dfock_, core_energy.real());
+  throw runtime_error("not yet implemented");
+  return make_tuple(shared_ptr<const ZMatrix>(), 0.0);
 }
 
 
