@@ -62,7 +62,6 @@ class ZKnowlesHandy : public ZFCI {
       } else {    
         relupdate();
       }
-assert(false);
     }
     void relupdate();
     void update(std::shared_ptr<const Coeff>) override;

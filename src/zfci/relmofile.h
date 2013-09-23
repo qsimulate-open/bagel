@@ -40,7 +40,7 @@ class RelMOFile {
     double core_energy_;
 
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const RelReference> ref_; 
+    std::shared_ptr<const RelReference> ref_;
     std::shared_ptr<ZMatrix> core_dfock_;
 
     // creates integral files and returns the core energy.
@@ -67,15 +67,21 @@ class RelMOFile {
 
 class RelJop : public RelMOFile {
   protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { }
-    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { }
+    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override {
+      assert(false);
+      return std::make_tuple(std::shared_ptr<const ZMatrix>(), static_cast<double>(0.0));
+    }
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override {
+      assert(false);
+      return std::shared_ptr<const ZMatrix>();
+    }
   public:
     RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
       : RelMOFile(b, f) { core_energy_ = create_Jiiii(c, d); }
 };
 
 
-#if 0 
+#if 0
 class RelHtilde : public ZHtilde_Base, public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
