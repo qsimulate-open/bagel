@@ -32,8 +32,6 @@ using namespace std;
 using namespace bagel;
 
 void ZKnowlesHandy::mult_phase_factor() {
-  //jop_->print(3);
-
   cout << "         "  << "Applying random phase factor to integrals" << endl << endl;
   const size_t norb2 = norb_*norb_;
   const size_t norb3 = norb2*norb_;
@@ -48,7 +46,6 @@ void ZKnowlesHandy::mult_phase_factor() {
 
   //transform 1e integrals.
   auto mo1e = make_shared<ZMatrix>(norb_, norb_);
-
   copy_n(jop_->mo1e_ptr(), norb2, mo1e->data());
   *mo1e = *phase % *mo1e * *phase;
 

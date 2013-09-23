@@ -24,10 +24,12 @@
 //
 
 #include <src/zfci/zfci.h>
-#include <src/fci/space.h>
+#include <src/zfci/relspace.h>
 #include <src/util/combination.hpp>
 #include <src/math/davidson.h>
 #include <src/util/lexical_cast.h>
+#include <src/rel/dirac.h>
+#include <src/rel/relreference.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,11 +37,14 @@ using namespace bagel;
 
 ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+  if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 }
 
 void ZFCI::common_init() {
   print_header();
+
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -51,6 +56,8 @@ void ZFCI::common_init() {
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+#if 0
+  // TODO not verified
   if (iactive) {
     set<int> tmp;
     for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()));
@@ -59,8 +66,14 @@ void ZFCI::common_init() {
     norb_ = ref_->nact();
   }
   else {
-    if (ncore_ < 0) ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
+#else
+  {
+#endif
+    if (ncore_ < 0)
+      ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+    // norb is a dimension of CI (!= nelec in relativistic cases)
+    if (norb_  < 0)
+      norb_ = relref ? relref->relcoeff()->mdim()/2-ncore_ : idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
   }
 
 #if 0
@@ -75,12 +88,14 @@ void ZFCI::common_init() {
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = idata_->get<int>("nspin", 0);
   if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
+
+  // these will be superseded by relupdate in relativistic calculations.
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
-  // TODO allow for zero electron (quick return)
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  for (int i = 0; i != nstate_; ++i)
+    weight_.push_back(1.0/nstate_);
 
   // resizing rdm vectors (with null pointers)
   rdm1_.resize(nstate_);
@@ -88,7 +103,15 @@ void ZFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0);
+  if (!relref) {
+    det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0);
+// TODO remove the following. Without constructing Kramers-adapted orbitals, we cannot specify nelea and neleb.
+#if 0
+  } else if (relref) {
+    auto relspace = make_shared<RelSpace>(norb_, nelea_, neleb_);
+    det_ = relspace->finddet(0,0);
+#endif
+  }
 }
 
 // generate initial vectors
@@ -165,9 +188,15 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
 
 
 void ZFCI::print_header() const {
-  cout << "  ---------------------------" << endl;
-  cout << "        ZFCI calculation      " << endl;
-  cout << "  ---------------------------" << endl << endl;
+  if (!dynamic_pointer_cast<const RelReference>(ref_)) {
+    cout << "  ---------------------------" << endl;
+    cout << "    Complex FCI calculation  " << endl;
+    cout << "  ---------------------------" << endl << endl;
+  } else {
+    cout << "  ----------------------------" << endl;
+    cout << "  Relativistic FCI calculation" << endl;
+    cout << "  ----------------------------" << endl << endl;
+  }
 }
 
 shared_ptr<const CIWfn> ZFCI::conv_to_ciwfn() {

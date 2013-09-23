@@ -40,12 +40,12 @@ class ZKnowlesHandy : public ZFCI {
     void const_denom() override;
 
     // virtual application of Hamiltonian
-    std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile_Base> jop, const std::vector<int>& conv) const override;
 
     // run-time functions
-    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop) const;
-    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop) const;
-    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop) const;
+    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_Base> jop) const;
+    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_Base> jop) const;
+    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile_Base> jop) const;
     void sigma_2c1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2c2(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
@@ -55,9 +55,16 @@ class ZKnowlesHandy : public ZFCI {
   public:
     // this constructor is ugly... to be fixed some day...
     ZKnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, ncore, nocc, nstate) {
-      update(ref_->coeff());
+                  const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, ncore, nocc, nstate) {
+      auto relref = std::dynamic_pointer_cast<const RelReference>(ref_);
+      if (!relref) {
+        update(ref_->coeff());
+      } else {
+        relupdate();
+      }
+assert(false);
     }
+    void relupdate();
     void update(std::shared_ptr<const Coeff>) override;
 };
 

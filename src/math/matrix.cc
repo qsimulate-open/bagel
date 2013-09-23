@@ -84,6 +84,7 @@ Matrix& Matrix::operator=(const Matrix& o) {
   return *this;
 }
 
+
 Matrix& Matrix::operator=(Matrix&& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   data_ = move(o.data_);

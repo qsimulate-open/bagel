@@ -48,7 +48,7 @@ void RelSpace::common_init() {
   for (int M_ = -(norb_-nelec()/2) ; M_ <= norb_ - nelec()/2; ++M_) {
     if (!mute_) cout << " **Constructing space of all determinants with Kramers index "
                      << kramers(M_) << endl << endl;
-    auto tmpdet = make_shared<Determinants>(norb_, nelea_ + M_, neleb_ - M_, 0, 0);
+    auto tmpdet = make_shared<Determinants>(norb_, nelea_ + M_, neleb_ - M_, false, mute_);
     detmap_.insert(pair<int,shared_ptr<Determinants>>(kramers(M_), tmpdet));
   }
     if (!mute_) cout << " **Total space is made up of " << detmap_.size() << " determinants." << endl;

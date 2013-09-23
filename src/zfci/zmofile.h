@@ -24,7 +24,6 @@
 //
 
 
-
 #ifndef __BAGEL_ZFCI_ZMOFILE_H
 #define __BAGEL_ZFCI_ZMOFILE_H
 
@@ -37,14 +36,9 @@ class ZMOFile : public ZMOFile_Base {
 
   protected:
     std::shared_ptr<Matrix> core_fock_;
-//TODO function inheritance and where should be virtual? ZJOP placement?
     // creates integral files and returns the core energy.
     double create_Jiiii(const int, const int) override;
-    // this sets mo1e_, core_fock_ and returns a core energy
-    virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
-    // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
-    virtual std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) = 0;
-    void compress(std::shared_ptr<const ZMatrix> buf1e, std::unique_ptr<std::complex<double>[]>& buf2e) override;
+    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
     std::shared_ptr<const Coeff> coeff_;
   public:
     ZMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
@@ -56,29 +50,24 @@ class ZMOFile : public ZMOFile_Base {
 
 };
 
+
 class ZJop : public ZMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override;
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override;
   public:
-    ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : ZMOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     ZJop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
       : ZMOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
 
-class ZHtilde : public ZMOFile {
+
+class ZHtilde : public ZHtilde_Base, public ZMOFile {
   protected:
-    // temp storage
-    std::shared_ptr<const ZMatrix> h1_tmp_;
-    std::unique_ptr<std::complex<double>[]> h2_tmp_;
-
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
-    std::unique_ptr<std::complex<double>[]> compute_mo2e(const int, const int) override { return std::move(h2_tmp_); };
-
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { return h2_tmp_; };
   public:
-    ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::unique_ptr<std::complex<double>[]> h2)
-      : ZMOFile(b), h1_tmp_(h1), h2_tmp_(std::move(h2)) {
+    ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
+      : ZHtilde_Base(h1, h2), ZMOFile(b) {
       core_energy_ = create_Jiiii(c, d);
     }
 };

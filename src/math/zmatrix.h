@@ -110,10 +110,11 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix operator%(const ZMatrix&) const; // caution
     ZMatrix operator^(const ZMatrix&) const; // caution
     ZMatrix operator+(const ZMatrix&) const;
+    ZMatrix operator-(const ZMatrix&) const;
     ZMatrix& operator+=(const ZMatrix&);
     ZMatrix& operator-=(const ZMatrix&);
     ZMatrix& operator=(const ZMatrix&);
-    ZMatrix operator-(const ZMatrix&) const;
+    ZMatrix& operator=(ZMatrix&&);
 
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
@@ -187,7 +188,8 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     DistZMatrix operator-(const DistZMatrix& o) const { DistZMatrix out(*this); out.ax_plus_y(-1.0, o); return out; }
     DistZMatrix& operator+=(const DistZMatrix& o) { ax_plus_y(1.0, o); return *this; }
     DistZMatrix& operator-=(const DistZMatrix& o) { ax_plus_y(-1.0, o); return *this; }
-    DistZMatrix& operator=(const DistZMatrix& o) { assert(size() == o.size()); std::copy_n(o.local_.get(), size(), local_.get()); return *this; }
+    DistZMatrix& operator=(const DistZMatrix& o);
+    DistZMatrix& operator=(DistZMatrix&& o);
 
     std::shared_ptr<DistZMatrix> clone() const { return std::make_shared<DistZMatrix>(ndim_, mdim_); }
 

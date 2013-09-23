@@ -111,6 +111,7 @@ class PTree {
     void add_child(const std::string s, std::shared_ptr<PTree> ch) { data_.add_child(s, ch->data_); }
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
     template<typename T> void push_back(const T& o) {
+      assert(typeid(T) != typeid(std::shared_ptr<PTree>)); // there is a specialization for shared_ptr<PTree>
       boost::property_tree::ptree ch;
       ch.put("", lexical_cast<std::string>(o));
       data_.push_back(std::make_pair("", ch));
@@ -136,6 +137,8 @@ class PTree {
     // static function to read basis files
     static std::shared_ptr<const PTree> read_basis(std::string name);
 };
+
+template <> void PTree::push_back<std::shared_ptr<PTree>>(const std::shared_ptr<PTree>& pt);
 
 template<typename T> std::vector<T> PTree::get_vector(const std::string key, const int nexpected) const {
   std::vector<T> out;
