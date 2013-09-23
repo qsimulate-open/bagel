@@ -105,16 +105,16 @@ class MOFile {
 
 };
 
+
 class Jop : public MOFile {
   protected:
     std::tuple<std::shared_ptr<const Matrix>, double> compute_mo1e(const int, const int) override;
     std::shared_ptr<const Matrix> compute_mo2e(const int, const int) override;
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string e = std::string("KH"))
-      : MOFile(b,e) { core_energy_ = create_Jiiii(c, d); assert(false); }
     Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
       : MOFile(b,e,f) { core_energy_ = create_Jiiii(c, d); }
 };
+
 
 class Htilde : public MOFile {
   protected:
