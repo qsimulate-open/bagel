@@ -23,13 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_RYSINT_ERIROOTLIST_H
-#define __SRC_RYSINT_ERIROOTLIST_H
+#ifndef __SRC_COMPRYSINT_ERIROOTLIST_H
+#define __SRC_COMPRYSINT_ERIROOTLIST_H
 constexpr int RYS_MAX = 13;       // This is the maximum number of roots we want for the generated interpolation files
 
 #include <functional>
 #include <complex>
-//#include <src/util/constants.h>
+#include <src/util/constants.h>
 
 using namespace std;
 

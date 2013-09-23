@@ -17,7 +17,7 @@ constexpr double MAXREL_ERROR = 2e-14;
 
 constexpr int RGRID1 = 14;         // Number of gridpoints to use for bins close to zero
 constexpr int IGRID1 = 10;
-constexpr int CUTOFF = 8;          // Number of bins to use a larger number of gridpoints for (along real axis)
+constexpr int CUTOFF = 11;          // Number of bins to use a larger number of gridpoints for (along real axis)
 
 constexpr int RGRID2 = 10;         // Number of gridpoints to use above CUTOFF
 constexpr int IGRID2 = 8;
@@ -546,7 +546,7 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
     ///////////////////////////////////////////////////////////
     const string func = "complex_eriroot";
     ofstream ofs;
-    string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".cc";
+    string filename = "../_" + func + "_" + lexical_cast<string>(nroot) + ".cc";
     ofs.open(filename.c_str());
     ofs << "\
 //\n\
@@ -578,7 +578,7 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
 #include <complex>\n\
 #include <iostream>\n\
 #include <iomanip>\n\
-#include \"complex_erirootlist.h\"\n\
+#include \"comperirootlist.h\"\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
