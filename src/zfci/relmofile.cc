@@ -112,20 +112,53 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 
   const int noff = reordered->mdim()/2;
   const int ndim = reordered->ndim();
+  const int mdim = reordered->mdim();
+  const int nb = ndim / 4;
 
   if ((nfence-nstart)%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
+
+  // overlap matrix
+  auto overlap = make_shared<RelOverlap>(geom_); 
+  auto sigmaz = overlap->copy();
+  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb)); 
+  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb)); 
+  // just for convenience
+  sigmaz->scale(-1.0);
 
 #ifdef LOCAL_DEBUG_PRINT
 coeff->print("T","orig",12);
 #endif
 
-  for (int i = 0; i != noff; ++i) {
-    reordered->copy_block(0, i,      ndim, 1, coeff->element_ptr(0, i*2));
-    reordered->copy_block(0, i+noff, ndim, 1, coeff->element_ptr(0, i*2+1));
+  unique_ptr<double[]> tmp(new double[mdim]);
+  int i;
+  for (i = 0; i != mdim; ) {
+    const double eig = ref_->eig()[nstart+i];
+    int j = i+1;
+    // pick up degenerate orbitals
+    while (j != mdim && (fabs(ref_->eig()[nstart+j]-eig) < 1.0e-8))
+      ++j;
+    assert((j-i)%2 == 0);
+    const int n = j-i;
+
+    auto cnow = coeff->slice(i, j);
+    auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
+    s->diagonalize(tmp.get());
+    *cnow *= *s;
+
+    assert(i%2 == 0);
+    reordered->copy_block(0, i/2,      ndim, n/2, cnow->element_ptr(0, 0));
+    reordered->copy_block(0, i/2+noff, ndim, n/2, cnow->element_ptr(0, n/2));
+    i = j;
   }
 
-  const int nb = ndim / 4;
+  // fix the phase - making the largest element in each colomn real  
+  for (int i = 0; i != mdim; ++i) {
+    complex<double> ele = *max_element(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), [](complex<double> a, complex<double> b) { return norm(a) < norm(b); });
+    const complex<double> fac = norm(ele) / ele;
+    transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
+  }
+
   // off diagonal
   auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg(); 
   auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg(); 
@@ -147,7 +180,6 @@ coeff->print("T","orig",12);
 
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
-  auto overlap = make_shared<RelOverlap>(geom_); 
   auto diag = (*out[0] % *overlap * *out[0]).diag();
   for (int i = 0; i != noff; ++i) {
     for (int j = 0; j != ndim; ++j) {
@@ -192,7 +224,6 @@ tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, 
 
 
 shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
-//slightly modified code from rel/dmp2.cc to form 3 index integrals that we can build into 4 index with form4index
   const size_t norb_rel_ = nfence - nstart;
   if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
 
