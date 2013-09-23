@@ -35,61 +35,39 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
-: ZMOFile_Base(ref, method) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+  // input should be RelReference
+  assert(dynamic_pointer_cast<const RelReference>(ref));
 
-  do_df_ = geom_->df().get();
-  if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
+  // density fitting is assumed
+  assert(geom_->df());
 }
 
 
+// nstart and nfence are based on the convention in Dirac calculations
 double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
-  norb_rel_ = nfence - nstart;
   nbasis_ = geom_->nbasis();
+  nocc_ = (nfence - nstart)/2;
+  assert((nfence - nstart) % 2 == 0);
   geom_ = geom_->relativistic(false);
 
   array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
 
-  // TODO TODO a lot of changes required
-
-#if 0
-  // tempolary integral files
-  shared_ptr<const ZMatrix> buf1e, buf2e;
-
-  // one electron part
-  double core_energy = 0;
-  tie(buf1e, core_energy) = compute_mo1e(nstart, nfence);
-
-  // two electron part.
-  // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
-  buf2e = compute_mo2e(nstart, nfence);
-
-  // compute the unitary matrix that block-diagonalizes integrals 
-  shared_ptr<const ZMatrix> umat = kramers();
-  // set subblocks to mo1e_ and mo2e_
-  // TODO not implemented
-  throw runtime_error("not yet implemented");
-
-//compress(buf1e, buf2e);
-  return core_energy;
-#else
   throw runtime_error("not yet implemented");
   return 0;
-#endif
 }
 
 
 array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
-  assert(dynamic_pointer_cast<const RelReference>(ref_));
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  shared_ptr<const ZMatrix> coeff = relref->relcoeff()->slice(nstart, nfence);
+  shared_ptr<const ZMatrix> coeff = ref_->relcoeff()->slice(nstart, nfence);
   shared_ptr<ZMatrix> reordered = coeff->clone();
 
   const int noff = reordered->mdim()/2;
   const int ndim = reordered->ndim();
   const int mdim = reordered->mdim();
   const int nb = ndim / 4;
+  assert(nb == nbasis_);
 
   if ((nfence-nstart)%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
@@ -163,6 +141,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 }
 
 
+#if 0
 //TODO input matrices are now in block diagonal form and the sizes must be checked
 void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
 
@@ -183,14 +162,18 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
     }
   }
 }
+#endif
 
 
+#if 0
 tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
   throw runtime_error("not yet implemented");
   return make_tuple(shared_ptr<const ZMatrix>(), 0.0);
 }
+#endif
 
 
+#if 0
 shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
   const size_t norb_rel_ = nfence - nstart;
   if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
@@ -243,3 +226,4 @@ shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfenc
 
   return buf;
 }
+#endif

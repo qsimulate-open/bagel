@@ -28,24 +28,32 @@
 #define __BAGEL_ZFCI_RELMOFILE_H
 
 
-#include <src/zfci/zmofile_base.h>
+#include <src/math/zmatrix.h>
 #include <src/rel/relreference.h>
 
 namespace bagel {
 
-class RelMOFile : public ZMOFile_Base {
-
+class RelMOFile {
   protected:
-    int norb_rel_;
+    int nocc_;
+    int nbasis_;
+    double core_energy_;
+
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const RelReference> ref_; 
     std::shared_ptr<ZMatrix> core_dfock_;
 
     // creates integral files and returns the core energy.
-    double create_Jiiii(const int, const int) override;
+    double create_Jiiii(const int, const int);
 
     // generates Kramers symmetry-adapted orbitals
     std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
-    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) override;
+#if 0
+    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
+#endif
+    virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
+    virtual std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) = 0;
 
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
@@ -59,14 +67,15 @@ class RelMOFile : public ZMOFile_Base {
 
 class RelJop : public RelMOFile {
   protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override;
-    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override;
+    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { }
+    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { }
   public:
     RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
       : RelMOFile(b, f) { core_energy_ = create_Jiiii(c, d); }
 };
 
 
+#if 0 
 class RelHtilde : public ZHtilde_Base, public RelMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
@@ -77,6 +86,7 @@ class RelHtilde : public ZHtilde_Base, public RelMOFile {
       core_energy_ = create_Jiiii(c, d);
     }
 };
+#endif
 
 }
 
