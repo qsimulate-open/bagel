@@ -51,30 +51,6 @@ double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
 
   array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
 
-#define LOCAL_DEBUG_PRINT
-#ifdef LOCAL_DEBUG_PRINT
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  shared_ptr<const ZMatrix> bcoeff = relref->relcoeff()->slice(nstart, 10);
-  auto hcore = make_shared<RelHcore>(geom_); 
-  auto overlap = make_shared<RelOverlap>(geom_); 
-  auto diag = (*coeff[0] % *overlap * *coeff[0]).diag();
-
-  (*coeff[0] % *overlap * *coeff[0]).print("T");
-  (*coeff[1] % *overlap * *coeff[1]).print("T");
-
-  (*bcoeff % *hcore * *bcoeff).print("T", "hcore correct");
-  (*coeff[0] % *hcore * *coeff[0]).print("T","hcore0");
-  (*coeff[1] % *hcore * *coeff[1]).print("T","hcore1");
-  (*coeff[0] % *hcore * *coeff[1]).print("T","hcore01");
-  (*coeff[1] % *hcore * *coeff[0]).print("T","hcore10");
-
-  auto fock = make_shared<DFock>(geom_, hcore, bcoeff, false, false, false);
-  (*bcoeff % *fock * *bcoeff).print("T", "fock correct");
-  (*coeff[0] % *fock * *coeff[0]).print("T", "fock0");
-  (*coeff[1] % *fock * *coeff[1]).print("T", "fock1");
-#endif
-
-
   // TODO TODO a lot of changes required
 
 #if 0
@@ -125,10 +101,6 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb)); 
   // just for convenience
   sigmaz->scale(-1.0);
-
-#ifdef LOCAL_DEBUG_PRINT
-coeff->print("T","orig",12);
-#endif
 
   unique_ptr<double[]> tmp(new double[mdim]);
   int i;
@@ -187,10 +159,6 @@ coeff->print("T","orig",12);
       out[1]->element(j,i) /= sqrt(diag[i].real());
     }
   }
-#ifdef LOCAL_DEBUG_PRINT
-out[0]->print("T","out0",12);
-out[1]->print("T","out1",12);
-#endif
   return out; 
 }
 
