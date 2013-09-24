@@ -59,7 +59,7 @@ class ZKnowlesHandy : public ZFCI {
       auto relref = std::dynamic_pointer_cast<const RelReference>(ref_);
       if (!relref) {
         update(ref_->coeff());
-      } else {    
+      } else {
         relupdate();
       }
     }

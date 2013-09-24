@@ -37,7 +37,7 @@ using namespace bagel;
 
 ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
-  if (!ref_) throw runtime_error("ZFCI requires a reference object"); 
+  if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 }
 
@@ -89,7 +89,7 @@ void ZFCI::common_init() {
   const int nspin = idata_->get<int>("nspin", 0);
   if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
 
-  // these will be superseded by relupdate in relativistic calculations. 
+  // these will be superseded by relupdate in relativistic calculations.
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 

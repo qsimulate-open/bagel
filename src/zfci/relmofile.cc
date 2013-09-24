@@ -73,10 +73,10 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
-  auto overlap = make_shared<RelOverlap>(geom_); 
+  auto overlap = make_shared<RelOverlap>(geom_);
   auto sigmaz = overlap->copy();
-  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb)); 
-  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb)); 
+  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb));
+  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb));
   // just for convenience
   sigmaz->scale(-1.0);
 
@@ -102,7 +102,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     i = j;
   }
 
-  // fix the phase - making the largest element in each colomn real  
+  // fix the phase - making the largest element in each colomn real
   for (int i = 0; i != mdim; ++i) {
     complex<double> ele = *max_element(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), [](complex<double> a, complex<double> b) { return norm(a) < norm(b); });
     const complex<double> fac = norm(ele) / ele;
@@ -110,20 +110,20 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   }
 
   // off diagonal
-  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg(); 
-  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg(); 
+  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
+  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
   reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
   reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
 
-  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg(); 
-  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg(); 
+  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg();
+  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg();
   reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
   reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
-  
+
   // diagonal
-  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg()); 
+  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
   reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
-  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg()); 
+  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
   reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
 
   reordered->scale(0.5);
@@ -137,7 +137,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
       out[1]->element(j,i) /= sqrt(diag[i].real());
     }
   }
-  return out; 
+  return out;
 }
 
 

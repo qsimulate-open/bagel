@@ -82,9 +82,9 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - beta strings: " << stringb_.size() << endl << endl;
 
   if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
-  construct_phis_<0>(stringa_, phia_, phia_ij_);
+  construct_phis_<0>(alphaspaces_, phia_, phia_ij_);
   if (!mute) cout << "   - alpha lists: " << accumulate(phia_.begin(), phia_.end(), 0, [] (const int init, vector<RAS::DMap> plist) { return init + plist.size(); }) << endl;
-  construct_phis_<1>(stringb_, phib_, phib_ij_);
+  construct_phis_<1>(betaspaces_, phib_, phib_ij_);
   if (!mute) cout << "   - beta lists: " << accumulate(phib_.begin(), phib_.end(), 0, [] (const int init, vector<RAS::DMap> plist) { return init + plist.size(); }) << endl;
 
   if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
