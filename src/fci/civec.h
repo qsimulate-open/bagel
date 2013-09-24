@@ -231,6 +231,9 @@ class DistCivector {
 
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
+    double spin_expectation() const { assert(false); return 0.0; }
+    std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return std::shared_ptr<DistCivector<DataType>>(); }
+
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
@@ -295,6 +298,11 @@ class DistCivector {
     }
 
 };
+
+template <>
+double DistCivector<double>::spin_expectation() const;
+template <>
+std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;

@@ -31,6 +31,133 @@
 using namespace std;
 using namespace bagel;
 
+namespace bagel { namespace Dist {
+  class SpinTask {
+    protected:
+      const bitset<nbit__> abit_;
+      double* target_;
+      const DistCivector<double>* cc_;
+
+      unique_ptr<double[]> buf_;
+      vector<int> requests_;
+
+    public:
+      SpinTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c) : abit_(a), target_(t), cc_(c) {
+        shared_ptr<const Determinants> det = c->det();
+        const size_t lb = det->lenb();
+        const int norb = det->norb();
+
+        buf_ = unique_ptr<double[]>(new double[lb * abit_.count() * (norb - abit_.count() + 1)]);
+
+        for (int i = 0, k = 0; i < norb; ++i) {
+          for (int j = 0; j < norb; ++j) {
+            if ( !abit_[j] && ( abit_[i] || i==j ) ) continue;
+            bitset<nbit__> tarbit = abit_; tarbit.reset(j); tarbit.set(i);
+            const int l = cc_->get_bstring_buf(buf_.get() + lb*k++, det->lexical<0>(tarbit));
+            if (l >= 0) requests_.push_back(l);
+          }
+        }
+      }
+
+      bool test() {
+        bool out = true;
+        for (auto i = requests_.begin(); i != requests_.end(); ) {
+          if (mpi__->test(*i)) {
+            i = requests_.erase(i);
+          }
+          else {
+            ++i;
+            out = false;
+          }
+        }
+        return out;
+      }
+
+      void compute() {
+        shared_ptr<const Determinants> det = cc_->det();
+
+        const size_t lb = det->lenb();
+        const int norb = det->norb();
+
+        for (int i = 0, k = 0; i < norb; ++i) {
+          for (int j = 0; j < norb; ++j) {
+            if ( !abit_[j] && ( abit_[i] || i==j ) ) continue;
+            const double* source = buf_.get() + lb*k++;
+            const int aphase = det->sign(abit_, i, j);
+            for (auto& iter : det->phib(j, i)) {
+              target_[iter.target] -= static_cast<double>(aphase * iter.sign) * source[iter.source];
+            }
+          }
+        }
+      }
+  };
+} }
+
+template <>
+double DistCivector<double>::spin_expectation() const {
+  shared_ptr<DistCivector<double>> S2 = spin();
+  double out = dot_product(*S2);
+
+  return out;
+}
+
+template <>
+shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
+  const size_t la = det_->lena();
+  const size_t lb = det_->lenb();
+  auto out = this->clone();
+
+  this->init_mpi_recv();
+
+  list<Dist::SpinTask> tasks;
+  for (size_t ia = astart_; ia < aend_; ++ia) {
+    tasks.emplace_back(det_->stringa(ia), out->local() + (ia - astart_) * lb, this);
+
+    for (auto i = tasks.begin(); i != tasks.end(); ) {
+      if (i->test()) {
+        i->compute();
+        i = tasks.erase(i);
+      }
+      else {
+        ++i;
+      }
+    }
+
+#ifndef USE_SERVER_THREAD
+    this->flush();
+#endif
+  }
+
+  const double sz = 0.5*static_cast<double>(det_->nspin());
+  out->ax_plus_y(sz*sz + sz + static_cast<double>(det_->neleb()), *this);
+
+  bool done;
+  do {
+    done = true;
+    for (auto i = tasks.begin(); i != tasks.end(); ) {
+      if (i->test()) {
+        i->compute();
+        i = tasks.erase(i);
+      }
+      else {
+        ++i;
+        done = false;
+      }
+    }
+#ifndef USE_SERVER_THREAD
+    size_t d = done ? 0 : 1;
+    mpi__->soft_allreduce(&d, 1);
+    done = d == 0;
+    if (!done) this->flush();
+#endif
+    if (!done) this_thread::sleep_for(sleeptime__);
+  }
+  while (!done);
+
+  this->terminate_mpi_recv();
+
+  return out;
+}
 
 template<>
 double Civector<double>::spin_expectation() const {
