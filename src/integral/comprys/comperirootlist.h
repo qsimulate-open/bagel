@@ -25,7 +25,6 @@
 
 #ifndef __SRC_COMPRYSINT_ERIROOTLIST_H
 #define __SRC_COMPRYSINT_ERIROOTLIST_H
-constexpr int RYS_MAX = 13;       // This is the maximum number of roots we want for the generated interpolation files
 
 #include <functional>
 #include <complex>

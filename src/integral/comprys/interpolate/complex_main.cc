@@ -9,7 +9,8 @@
 //////Basic Setup and Namespaces//////////
 //////////////////////////////////////////
 
-//#define TESTING 2000                 // Define this to skip code generation and instead run the functions in the generated files.  The number you give defines the number of tests to be run.  
+//#define TESTING 20              // Define this to skip code generation and instead run the functions in the generated files.  The number you give defines the number of tests to be run.  
+
 constexpr double IMULT = 0.01;          // Used for the "-h" option, this defines the starting value of T.imag as a multiple of T.real
 constexpr double MAXABS_ERROR = 2e-14;
 constexpr double MAXREL_ERROR = 2e-14;
@@ -21,13 +22,8 @@ constexpr int CUTOFF = 11;          // Number of bins to use a larger number of 
 constexpr int RGRID2 = 10;         // Number of gridpoints to use above CUTOFF
 constexpr int IGRID2 = 8;
 
-#ifdef TESTING
 #include "../comperirootlist.h"  // Used only the for the -t testing/debugging architecture
-using namespace bagel;
-#else
-constexpr int RYS_MAX = 13;       // This is the maximum number of roots we want for the generated interpolation files - defined here and in the root list header
-#endif
-
+#include <src/util/constants.h>
 #include <iostream>      // Basic input/output for the keyboard/screen
 #include <sstream>       // "String stream," allows you to use strings for input or something
 #include <vector>        // For vectors, similar to arrays
@@ -45,6 +41,7 @@ constexpr int RYS_MAX = 13;       // This is the maximum number of roots we want
 using namespace std;
 using namespace mpfr;
 using namespace boost;
+using namespace bagel;
 
 //////////////////////////////////////////
 //////Definitions of Functions////////////
