@@ -1,8 +1,7 @@
-//#if 0
-
 //
 // Author:  Ryan Reynolds
 // Creation date:  July 29, 2013
+// Last updated:  September 23, 2013
 // Interpolation file for Rys Quadrature - Complex arguments
 //
 
@@ -546,8 +545,8 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
     ///////////////////////////////////////////////////////////
     const string func = "complex_eriroot";
     ofstream ofs;
-    string filename = "../_" + func + "_" + lexical_cast<string>(nroot) + ".cc";
-    ofs.open(filename.c_str());
+    string filename = "_" + func + "_" + lexical_cast<string>(nroot) + ".cc";
+    ofs.open(("../" + filename).c_str());
     ofs << "\
 //\n\
 // BAGEL - Parallel electron correlation program.\n\
@@ -891,5 +890,3 @@ ofs << "\
 #endif
   return 0;
 }
-
-//#endif
