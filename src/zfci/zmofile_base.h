@@ -51,8 +51,8 @@ class ZMOFile_Base {
     std::vector<std::shared_ptr<Shell>> basis_;
     std::vector<int> offset_;
 #endif
-    std::unique_ptr<std::complex<double>[]> mo1e_;
-    std::unique_ptr<std::complex<double>[]> mo2e_;
+    std::shared_ptr<ZMatrix> mo1e_;
+    std::shared_ptr<ZMatrix> mo2e_;
     std::shared_ptr<DFHalfDist> mo2e_1ext_;
 
     size_t mo2e_1ext_size_;
@@ -72,20 +72,21 @@ class ZMOFile_Base {
 
     int sizeij() const { return sizeij_; };
 
-    void set_moints(std::shared_ptr<ZMatrix> mo1e, std::unique_ptr<std::complex<double>[]>& mo2e) {
-      std::copy_n(mo1e->data(), nocc_*nocc_, mo1e_.get());
-      mo2e_ = std::move(mo2e);
-    }
+    void set_moints(std::shared_ptr<ZMatrix> mo1e, std::shared_ptr<ZMatrix> mo2e) { mo1e_ = mo1e; mo2e_ = mo2e; }
 
-    std::complex<double> mo1e(const size_t i) const { return mo1e_[i]; };
-    std::complex<double> mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; };
-    std::complex<double> mo1e(const size_t i, const size_t j) const { return mo1e_[i+j*nocc_]; };
-    std::complex<double> mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; };
+    std::complex<double>& mo1e(const size_t i) { return mo1e_->data(i); }
+    std::complex<double>& mo2e(const size_t i, const size_t j) { return mo2e_->element(i,j); }
+    std::complex<double>& mo1e(const size_t i, const size_t j) { return mo1e_->element(i,j); }
+    std::complex<double>& mo2e_kh(const int i, const int j, const int k, const int l) { return mo2e_->element(i+nocc_*j, k+nocc_*l); }
+    const std::complex<double>& mo1e(const size_t i) const { return mo1e_->data(i); }
+    const std::complex<double>& mo2e(const size_t i, const size_t j) const { return mo2e_->element(i,j); }
+    const std::complex<double>& mo1e(const size_t i, const size_t j) const { return mo1e_->element(i,j); }
+    const std::complex<double>& mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e_->element(i+nocc_*j, k+nocc_*l); }
 
-    std::complex<double>* mo1e_ptr() { return mo1e_.get(); };
-    std::complex<double>* mo2e_ptr() { return mo2e_.get(); };
-    const std::complex<double>* mo1e_ptr() const { return mo1e_.get(); };
-    const std::complex<double>* mo2e_ptr() const { return mo2e_.get(); };
+    std::complex<double>* mo1e_ptr() { return mo1e_->data(); }
+    std::complex<double>* mo2e_ptr() { return mo2e_->data(); }
+    const std::complex<double>* mo1e_ptr() const { return mo1e_->data(); }
+    const std::complex<double>* mo2e_ptr() const { return mo2e_->data(); }
 
     double core_energy() const { return core_energy_; };
 #if 0
