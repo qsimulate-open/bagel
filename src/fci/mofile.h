@@ -1,4 +1,4 @@
-
+//
 // BAGEL - Parallel electron correlation program.
 // Filename: mofile.h
 // Copyright (C) 2011 Toru Shiozaki
@@ -29,6 +29,7 @@
 #define __BAGEL_FCI_MOFILE_H
 
 #include <src/wfn/reference.h>
+#include <src/math/csymmatrix.h>
 #include <src/scf/scf.h>
 
 namespace bagel {
@@ -50,11 +51,15 @@ class MOFile {
     std::vector<std::shared_ptr<Shell>> basis_;
     std::vector<int> offset_;
 
-    std::shared_ptr<Matrix> core_fock_;
-    std::unique_ptr<double[]> mo1e_;
-    std::unique_ptr<double[]> mo2e_;
-    std::shared_ptr<DFHalfDist> mo2e_1ext_;
 
+    // core fock operator
+    std::shared_ptr<Matrix> core_fock_;
+    // mo1e is a compressed symmetric matrix
+    std::shared_ptr<CSymMatrix> mo1e_;
+    // mo2e is a matrix of sizeij_*sizeij_ 
+    std::shared_ptr<Matrix> mo2e_;
+
+    std::shared_ptr<DFHalfDist> mo2e_1ext_;
     size_t mo2e_1ext_size_;
 
     int address_(int i, int j) const {
@@ -80,22 +85,30 @@ class MOFile {
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
     int sizeij() const { return sizeij_; }
-    double mo1e(const size_t i) const { return mo1e_[i]; }
-    double mo2e(const size_t i, const size_t j) const { return mo2e_[i+j*sizeij_]; }
+    double& mo1e(const size_t i) { return mo1e_->data(i); }
+    double& mo2e(const size_t i) { return mo2e_->data(i); }
+    double& mo2e(const size_t i, const size_t j) { return mo2e_->element(i,j); }
+    const double& mo1e(const size_t i) const { return mo1e_->data(i); }
+    const double& mo2e(const size_t i) const { return mo2e_->data(i); }
+    const double& mo2e(const size_t i, const size_t j) const { return mo2e_->element(i,j); }
     // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l
-    double mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }
+    double& mo2e_kh(const int i, const int j, const int k, const int l) { return mo2e(address_(i,j), address_(k,l)); }
+    const double& mo2e_kh(const int i, const int j, const int k, const int l) const { return mo2e(address_(i,j), address_(k,l)); }
     // This is in <ij|kl> == (ik|jl) format
-    double mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_[i+nocc_*(j+nocc_*(k+nocc_*l))]; }
-    double mo2e_hz(const int ij, const int kl) const { return mo2e_[ij+nocc_*nocc_*kl]; }
-    double mo1e(const int i, const int j) const { return mo1e(address_(i,j)); }
+    double& mo2e_hz(const int i, const int j, const int k, const int l) { return mo2e_->element(i+nocc_*j, k+nocc_*l); }
+    double& mo2e_hz(const int ij, const int kl) { return mo2e_->element(ij, kl); }
+    double& mo1e(const int i, const int j) { return mo1e_->element(i,j); }
+    const double& mo2e_hz(const int i, const int j, const int k, const int l) const { return mo2e_->element(i+nocc_*j, k+nocc_*l); }
+    const double& mo2e_hz(const int ij, const int kl) const { return mo2e_->element(ij, kl); }
+    const double& mo1e(const int i, const int j) const { return mo1e_->element(i,j); }
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
     double* core_fock_ptr() { return core_fock_->data(); }
-    double* mo1e_ptr() { return mo1e_.get(); }
-    double* mo2e_ptr() { return mo2e_.get(); }
+    double* mo1e_ptr() { return mo1e_->data(); }
+    double* mo2e_ptr() { return mo2e_->data(); }
     const double* core_fock_ptr() const { return core_fock_->data(); }
-    const double* mo1e_ptr() const { return mo1e_.get(); }
-    const double* mo2e_ptr() const { return mo2e_.get(); }
+    const double* mo1e_ptr() const { return mo1e_->data(); }
+    const double* mo2e_ptr() const { return mo2e_->data(); }
 
     double core_energy() const { return core_energy_; }
 

@@ -79,7 +79,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> b
   // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
   sizeij_ = hz_ ? nocc*nocc : nocc*(nocc+1)/2;
-  mo2e_ = unique_ptr<double[]>(new double[sizeij_*sizeij_]);
+  mo2e_ = make_shared<Matrix>(sizeij_, sizeij_, true);
 
   if (!hz_) {
     int ijkl = 0;
@@ -88,7 +88,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> b
         const int ijo = (j + i*nocc)*nocc*nocc;
         for (int k = 0; k != nocc; ++k)
           for (int l = 0; l <= k; ++l, ++ijkl)
-            mo2e_[ijkl] = buf2e->data(l+k*nocc+ijo);
+            mo2e(ijkl) = buf2e->data(l+k*nocc+ijo);
       }
     }
   }
@@ -101,7 +101,7 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> b
       for (int k = 0; k != nocc; ++k) {
         for (int j = 0; j != nocc; ++j) {
           for (int l = 0; l != nocc; ++l, ++ijkl) {
-            mo2e_[ijkl] = buf2e->data(l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc);
+            mo2e(ijkl) = buf2e->data(l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc);
           }
         }
       }
@@ -109,15 +109,14 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> b
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)
-  const int size1e = nocc*(nocc+1)/2;
-  mo1e_ = unique_ptr<double[]>(new double[size1e]);
+  mo1e_ = make_shared<CSymMatrix>(nocc, true);
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
-      mo1e_[ij] = buf1e->element(j,i);
+      mo1e(ij) = buf1e->element(j,i);
       if (!hz_) {
         for (int k = 0; k != nocc; ++k)
-          mo1e_[ij] -= 0.5*buf2e->data((k+j*nocc)*nocc*nocc+(k+i*nocc));
+          mo1e(ij) -= 0.5*buf2e->data((k+j*nocc)*nocc*nocc+(k+i*nocc));
       }
     }
   }
