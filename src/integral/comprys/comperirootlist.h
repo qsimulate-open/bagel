@@ -34,45 +34,45 @@ using namespace std;
 
 namespace bagel {
 
-struct ComplexERIRootList  {
-  private:
-    std::function<void (const complex<double>*, complex<double>*, complex<double>*, const int)> rfunc[RYS_MAX + 1];
+  struct ComplexERIRootList  {
+    private:
+      std::function<void (const complex<double>*, complex<double>*, complex<double>*, const int)> rfunc[RYS_MAX + 1];
 
-    static void complex_eriroot1(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot2(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot3(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot4(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot5(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot6(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot7(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot8(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot9(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot10(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot11(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot12(const complex<double>*, complex<double>*, complex<double>*, const int);
-    static void complex_eriroot13(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot1(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot2(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot3(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot4(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot5(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot6(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot7(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot8(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot9(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot10(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot11(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot12(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot13(const complex<double>*, complex<double>*, complex<double>*, const int);
 
 
-  public:
-    ComplexERIRootList() {
-      rfunc[1] = &complex_eriroot1;
-      rfunc[2] = &complex_eriroot2;
-      rfunc[3] = &complex_eriroot3;
-      rfunc[4] = &complex_eriroot4;
-      rfunc[5] = &complex_eriroot5;
-      rfunc[6] = &complex_eriroot6;
-      rfunc[7] = &complex_eriroot7;
-      rfunc[8] = &complex_eriroot8;
-      rfunc[9] = &complex_eriroot9;
-      rfunc[10] = &complex_eriroot10;
-      rfunc[11] = &complex_eriroot11;
-      rfunc[12] = &complex_eriroot12;
-      rfunc[13] = &complex_eriroot13;
-    }
+    public:
+      ComplexERIRootList() {
+        rfunc[1] = &complex_eriroot1;
+        rfunc[2] = &complex_eriroot2;
+        rfunc[3] = &complex_eriroot3;
+        rfunc[4] = &complex_eriroot4;
+        rfunc[5] = &complex_eriroot5;
+        rfunc[6] = &complex_eriroot6;
+        rfunc[7] = &complex_eriroot7;
+        rfunc[8] = &complex_eriroot8;
+        rfunc[9] = &complex_eriroot9;
+        rfunc[10] = &complex_eriroot10;
+        rfunc[11] = &complex_eriroot11;
+        rfunc[12] = &complex_eriroot12;
+        rfunc[13] = &complex_eriroot13;
+      }
 
-   void root(const int i, const complex<double>* a1, complex<double>* a2, complex<double>* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
+      void root(const int i, const complex<double>* a1, complex<double>* a2, complex<double>* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
 
-};
+  };
  
 }
 

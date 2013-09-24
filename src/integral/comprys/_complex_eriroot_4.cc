@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ../_complex_eriroot_4.cc
+// Filename: _complex_eriroot_4.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Ryan Reynolds <rreynoldschem@gmail.com>
