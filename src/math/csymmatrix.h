@@ -38,7 +38,14 @@ class CSymMatrix {
     const size_t size_;
     std::unique_ptr<double[]> data_; 
   public:
-    CSymMatrix(int n, bool l) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { }
+    CSymMatrix(int n, bool l) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
+
+    CSymMatrix(std::shared_ptr<const Matrix> in) : nocc_(in->ndim()), size_(nocc_*(nocc_+1)/2), data_(new double[size_]) {
+      assert(in->ndim() == in->mdim() && (*in - *in->transpose()).rms() < 1.0e-8);
+      for (int i = 0; i != nocc_; ++i)
+        for (int j = 0; j <= i; ++j)
+           element(j,i) = in->element(j,i);
+    }
 
     // sequential access
     double* data() { return data_.get(); }
@@ -53,9 +60,11 @@ class CSymMatrix {
     // returns a full matrix
     std::shared_ptr<Matrix> matrix() const {
       auto out = std::make_shared<Matrix>(nocc_, nocc_, localized_);
-      for (int i = 0; i != nocc_; ++i)
-        for (int j = 0; j <= i; ++j)
+      for (int i = 0; i != nocc_; ++i) {
+        for (int j = 0; j != i; ++j)
            out->element(i,j) = out->element(j,i) = element(j,i);
+        out->element(i,i) = element(i,i);
+      }
       return out;
     }
 };
