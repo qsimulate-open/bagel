@@ -157,7 +157,6 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
   } while (!done);
 
   cc->terminate_mpi_recv();
-
 }
 
 
@@ -345,8 +344,15 @@ void DistFCI::compute() {
   // main iteration ends here
 
   // TODO RDM etc is not properly done yet
-//cc_ = davidson.civec();
-//s->print();
+  cc = davidson.civec();
+  for (int ist = 0; ist < nstate_; ++ist) {
+    const double s2 = cc[ist]->spin_expectation();
+    if (mpi__->rank() == 0)
+      cout << endl << "     * ci vector " << setw(3) << ist
+                   << ", <S^2> = " << setw(6) << setprecision(4) << s2
+                   << ", E = " << setw(17) << fixed << setprecision(8) << energy_[ist] << endl;
+    cc[ist]->print(print_thresh_); 
+  }
 }
 
 

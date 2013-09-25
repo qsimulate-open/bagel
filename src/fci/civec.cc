@@ -51,10 +51,14 @@ namespace bagel { namespace Dist {
 
         for (int i = 0, k = 0; i < norb; ++i) {
           for (int j = 0; j < norb; ++j) {
-            if ( !abit_[j] && ( abit_[i] || i==j ) ) continue;
-            bitset<nbit__> tarbit = abit_; tarbit.reset(j); tarbit.set(i);
-            const int l = cc_->get_bstring_buf(buf_.get() + lb*k++, det->lexical<0>(tarbit));
-            if (l >= 0) requests_.push_back(l);
+            if ( abit_[j] ) {
+              bitset<nbit__> tarbit = abit_; tarbit.reset(j);
+              if ( !tarbit[i] ) {
+                tarbit.set(i);
+                const int l = cc_->get_bstring_buf(buf_.get() + lb*k++, det->lexical<0>(tarbit));
+                if (l >= 0) requests_.push_back(l);
+              }
+            }
           }
         }
       }
@@ -81,11 +85,14 @@ namespace bagel { namespace Dist {
 
         for (int i = 0, k = 0; i < norb; ++i) {
           for (int j = 0; j < norb; ++j) {
-            if ( !abit_[j] && ( abit_[i] || i==j ) ) continue;
-            const double* source = buf_.get() + lb*k++;
-            const int aphase = det->sign(abit_, i, j);
-            for (auto& iter : det->phib(j, i)) {
-              target_[iter.target] -= static_cast<double>(aphase * iter.sign) * source[iter.source];
+            if ( abit_[j] ) {
+              bitset<nbit__> tarbit = abit_; tarbit.reset(j);
+              if ( !tarbit[i] ) {
+                const double* source = buf_.get() + lb*k++;
+                const int aphase = det->sign(abit_, i, j);
+                for (auto& iter : det->phib(j, i))
+                  target_[iter.target] -= static_cast<double>(aphase * iter.sign) * source[iter.source];
+              }
             }
           }
         }
@@ -122,7 +129,6 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
         ++i;
       }
     }
-
 #ifndef USE_SERVER_THREAD
     this->flush();
 #endif
@@ -151,8 +157,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
     if (!done) this->flush();
 #endif
     if (!done) this_thread::sleep_for(sleeptime__);
-  }
-  while (!done);
+  } while (!done);
 
   this->terminate_mpi_recv();
 
