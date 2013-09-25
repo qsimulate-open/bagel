@@ -317,6 +317,7 @@ void DistFCI::compute() {
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
+          c->spin_decontaminate();
           davidson.orthog(c);
           list<shared_ptr<const DistCivec>> tmp;
           for (int jst = 0; jst != ist; ++jst)
@@ -493,6 +494,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
       if (aloc >= 0 && aloc < out[oindex]->asize())
         out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
     }
+    out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;

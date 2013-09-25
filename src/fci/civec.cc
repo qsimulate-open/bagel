@@ -165,13 +165,40 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
 }
 
 template<>
+void DistCivector<double>::spin_decontaminate(const double thresh) {
+  const int nspin = det_->nspin();
+  const int max_spin = det_->nelea() + det_->neleb();
+
+  const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
+
+  shared_ptr<DistCivector<double>> S2 = spin();
+  double actual_expectation = dot_product(*S2);
+
+  int k = nspin + 2;
+  while( fabs(actual_expectation - pure_expectation) > thresh ) {
+    if ( k > max_spin ) { this->print(0.05); throw runtime_error("Spin decontamination failed."); }
+
+    const double factor = -4.0/(static_cast<double>(k*(k+2)));
+    ax_plus_y(factor, *S2); 
+
+    const double norm = this->norm();
+    const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
+    scale(rescale);
+
+    S2 = spin();
+    actual_expectation = dot_product(*S2);
+
+    k += 2;
+  }
+}
+
+template<>
 double Civector<double>::spin_expectation() const {
   shared_ptr<Civec> S2 = spin();
   double out = dot_product(*S2);
 
   return out;
 }
-
 
 // S^2 = S_z^2 + S_z + S_-S_+
 template<>
