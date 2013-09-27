@@ -231,9 +231,16 @@ class DistCivector {
 
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
 
-    double spin_expectation() const { assert(false); return 0.0; }
+    DataType spin_expectation() const {
+      std::shared_ptr<DistCivector<DataType>> S2 = spin();
+      return dot_product(*S2);
+    }
     std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return std::shared_ptr<DistCivector<DataType>>(); }
     void spin_decontaminate(const double thresh = 1.0e-4) { assert(false); }
+    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+      assert(false);
+      return std::shared_ptr<DistCivector<DataType>>();
+    }
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -348,9 +355,10 @@ class DistCivector {
 
 };
 
-template <> double DistCivector<double>::spin_expectation() const;
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
 template <> void DistCivector<double>::spin_decontaminate(const double);
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const;
+//template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const;
 
 
 using DistCivec = DistCivector<double>;
@@ -469,7 +477,10 @@ class Civector {
     }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
+    DataType spin_expectation() const { // returns < S^2 >
+      std::shared_ptr<Civector<DataType>> S2 = spin();
+      return dot_product(*S2);
+    }
     std::shared_ptr<Civector<DataType>> spin() const { assert(false); return std::shared_ptr<Civector<DataType>>();} // returns S^2 | civec >
     std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
       { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_-
@@ -585,7 +596,6 @@ class Civector {
     }
 };
 
-template<> double Civector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+

@@ -26,12 +26,13 @@
 
 #include <src/fci/civec.h>
 #include <src/math/algo.h>
+#include <src/parallel/distqueue.h>
 #include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-namespace bagel { namespace Dist {
+namespace bagel { namespace DFCI {
   class SpinTask {
     protected:
       const bitset<nbit__> abit_;
@@ -101,14 +102,6 @@ namespace bagel { namespace Dist {
 } }
 
 template <>
-double DistCivector<double>::spin_expectation() const {
-  shared_ptr<DistCivector<double>> S2 = spin();
-  double out = dot_product(*S2);
-
-  return out;
-}
-
-template <>
 shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
   const size_t la = det_->lena();
   const size_t lb = det_->lenb();
@@ -116,51 +109,21 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
 
   this->init_mpi_recv();
 
-  list<Dist::SpinTask> tasks;
-  for (size_t ia = astart_; ia < aend_; ++ia) {
-    tasks.emplace_back(det_->stringa(ia), out->local() + (ia - astart_) * lb, this);
-
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if (i->test()) {
-        i->compute();
-        i = tasks.erase(i);
-      }
-      else {
-        ++i;
-      }
-    }
 #ifndef USE_SERVER_THREAD
-    this->flush();
+  DistQueue<DFCI::SpinTask, const DistCivector<double>*> dq(this);
+#else
+  DistQueue<DFCI::SpinTask> dq;
 #endif
-  }
+
+  for (size_t ia = astart_; ia < aend_; ++ia)
+    dq.emplace_and_compute(det_->stringa(ia), out->local() + (ia - astart_) * lb, this);
 
   const double sz = 0.5*static_cast<double>(det_->nspin());
   out->ax_plus_y(sz*sz + sz + static_cast<double>(det_->neleb()), *this);
 
-  bool done;
-  do {
-    done = true;
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if (i->test()) {
-        i->compute();
-        i = tasks.erase(i);
-      }
-      else {
-        ++i;
-        done = false;
-      }
-    }
-#ifndef USE_SERVER_THREAD
-    size_t d = done ? 0 : 1;
-    mpi__->soft_allreduce(&d, 1);
-    done = d == 0;
-    if (!done) this->flush();
-#endif
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
+  dq.finish();
 
   this->terminate_mpi_recv();
-
   return out;
 }
 
@@ -192,11 +155,97 @@ void DistCivector<double>::spin_decontaminate(const double thresh) {
   }
 }
 
-template<>
-double Civector<double>::spin_expectation() const {
-  shared_ptr<Civec> S2 = spin();
-  double out = dot_product(*S2);
+namespace bagel { namespace DFCI {
+  class LowerTask {
+    protected:
+      const bitset<nbit__> abit_;
+      double* target_;
+      const DistCivector<double>* cc_;
+      shared_ptr<const Determinants> tdet_;
 
+      unique_ptr<double[]> buf_;
+      vector<int> requests_;
+
+    public:
+      LowerTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td) : abit_(a), target_(t), cc_(c), tdet_(td) {
+        shared_ptr<const Determinants> det = c->det();
+        const size_t lbs = det->lenb();
+        const int norb = det->norb();
+
+        buf_ = unique_ptr<double[]>(new double[lbs * (norb - abit_.count())]);
+
+        for (int i = 0, k = 0; i < norb; ++i) {
+          if ( !abit_[i] ) {
+            bitset<nbit__> sourcebit = abit_; sourcebit.set(i);
+            const int l = cc_->get_bstring_buf(buf_.get() + lbs*k++, det->lexical<0>(sourcebit));
+            if (l >= 0) requests_.push_back(l);
+          }
+        }
+      }
+
+      bool test() {
+        bool out = true;
+        for (auto i = requests_.begin(); i != requests_.end(); ) {
+          if (mpi__->test(*i)) {
+            i = requests_.erase(i);
+          }
+          else {
+            ++i;
+            out = false;
+          }
+        }
+        return out;
+      }
+
+      void compute() {
+        shared_ptr<const Determinants> sdet = cc_->det();
+
+        const size_t lbs = sdet->lenb();
+        const int norb = sdet->norb();
+
+        for (int i = 0, k = 0; i < norb; ++i) {
+          if ( abit_[i] ) continue;
+          bitset<nbit__> sabit = abit_; sabit.set(i);
+          const int aphase = sdet->sign<0>(sabit, i);
+          const double* sourcedata = buf_.get() + lbs * k++;
+          double* targetdata = target_;
+          for ( auto& bbit : tdet_->stringb() ) {
+            if ( bbit[i] ) {
+              bitset<nbit__> sbbit = bbit; sbbit.reset(i);
+              const int bphase = -sdet->sign<1>(sbbit, i);
+              *targetdata += static_cast<double>(aphase * bphase) * sourcedata[sdet->lexical<1>(sbbit)];
+            }
+            ++targetdata;
+          }
+        }
+      }
+  };
+} }
+
+template<>
+shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(shared_ptr<const Determinants> tdet) const {
+  if (!tdet) tdet = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
+  assert( (tdet->nelea() == det_->nelea()-1) && (tdet->neleb() == det_->neleb()+1) );
+
+  auto out = make_shared<DistCivector<double>>(tdet);
+  this->init_mpi_recv();
+
+  const size_t tastart = out->astart();
+  const size_t taend = out->aend();
+  const size_t lbt = tdet->lenb();
+
+#ifndef USE_SERVER_THREAD
+  DistQueue<DFCI::LowerTask, const DistCivector<double>*> dq(this);
+#else
+  DistQueue<DFCI::LowerTask> dq;
+#endif
+
+  for (size_t ia = tastart; ia < taend; ++ia)
+    dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet);
+
+  dq.finish();
+
+  this->terminate_mpi_recv();
   return out;
 }
 
