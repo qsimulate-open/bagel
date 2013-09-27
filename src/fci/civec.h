@@ -241,6 +241,10 @@ class DistCivector {
       assert(false);
       return std::shared_ptr<DistCivector<DataType>>();
     }
+    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+      assert(false);
+      return std::shared_ptr<DistCivector<DataType>>();
+    }
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -358,7 +362,7 @@ class DistCivector {
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
 template <> void DistCivector<double>::spin_decontaminate(const double);
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const;
-//template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const;
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const;
 
 
 using DistCivec = DistCivector<double>;
