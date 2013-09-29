@@ -201,6 +201,11 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   out[bitset<2>("11")] = make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]); 
 
   assert(out.size() == 4);
+  // symmetry requirement
+  assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
+  // Kramers requirement 
+  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
+
   return out; 
 }
 
@@ -289,8 +294,6 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   full[bitset<2>("11")] = dffull.front();
   dffull.clear();
 
-  assert(full.size() == 3);
-
   // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
   out[bitset<4>("1111")] = full[bitset<2>("11")]->form_4index(full[bitset<2>("11")], 1.0);
@@ -312,6 +315,12 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   out[bitset<4>("0010")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("10")], 1.0);
   out[bitset<4>("0001")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("01")], 1.0);
   out[bitset<4>("0000")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("00")], 1.0);
+
+  // some assert statements
+  // symmetry requirement
+  assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
+  // Kramers requirement 
+  assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
 
   return out;
 }
