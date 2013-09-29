@@ -211,7 +211,7 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
   vector<size_t> rec(mpi__->size());
   fill(rec.begin(), rec.end(), 0);
 
-  mpi__->allgather(&astart, 1, &rec[0], 1);
+  mpi__->allgather(&astart, 1, rec.data(), 1);
   rec.push_back(naux_);
 
   return make_shared<const StaticDist>(rec);

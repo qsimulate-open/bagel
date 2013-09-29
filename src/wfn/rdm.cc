@@ -59,7 +59,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
   daxpy_(dim_*dim_, -1.0, data(), 1, buf->data(), 1);
 
   vector<double> vec(dim_);
-  buf->diagonalize(&vec[0]);
+  buf->diagonalize(vec.data());
 
   for (auto& i : vec) i = 2.0-i;
 
