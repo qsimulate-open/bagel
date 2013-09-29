@@ -30,6 +30,7 @@
 #include <src/util/f77.h>
 #include <src/fci/mofile.h>
 #include <src/scf/scf.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -77,11 +78,11 @@ void MOFile::init(const int nstart, const int nfence) {
   // this fills mo2e_1ext_ and returns buf2e which is an ii/ii quantity
   shared_ptr<const Matrix> buf2e = compute_mo2e(nstart, nfence);
 
-  compress(buf1e, buf2e);
+  compress_and_set(buf1e, buf2e);
 }
 
 
-void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> buf2e) {
+void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> buf2e) {
 
   // mo2e is compressed in KH case, not in HZ case
   const int nocc = nocc_;
@@ -98,21 +99,11 @@ void MOFile::compress(shared_ptr<const Matrix> buf1e, shared_ptr<const Matrix> b
             mo2e(ijkl) = buf2e->data(l+k*nocc+ijo);
       }
     }
-  }
-  else {
-    int ijkl = 0;
+  } else {
     // In this case, there is no compression (this is actually necessary)
     // Is currently ordered like (ij|kl), should be ordered like (ik|jl), with the last index moving the fastest
     // Equivalent to             <ik|jl> --> <ij|kl>
-    for (int i = 0; i != nocc; ++i) {
-      for (int k = 0; k != nocc; ++k) {
-        for (int j = 0; j != nocc; ++j) {
-          for (int l = 0; l != nocc; ++l, ++ijkl) {
-            mo2e(ijkl) = buf2e->data(l + k*nocc + j*nocc*nocc + i*nocc*nocc*nocc);
-          }
-        }
-      }
-    }
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(buf2e->data(), mo2e_->data(), nocc_, nocc_, nocc_, nocc_);
   }
 
   // h'kl = hkl - 0.5 sum_j (kj|jl)

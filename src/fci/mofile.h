@@ -72,7 +72,7 @@ class MOFile {
     // this sets mo2e_1ext_ (half transformed DF integrals) and returns mo2e IN UNCOMPRESSED FORMAT
     virtual std::shared_ptr<const Matrix> compute_mo2e(const int, const int) = 0;
 
-    void compress(std::shared_ptr<const Matrix> buf1e, std::shared_ptr<const Matrix> buf2e);
+    void compress_and_set(std::shared_ptr<const Matrix> buf1e, std::shared_ptr<const Matrix> buf2e);
 
     std::shared_ptr<const Coeff> coeff_;
 

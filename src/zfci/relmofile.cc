@@ -32,6 +32,7 @@
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
 #include <src/rel/reloverlap.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -46,7 +47,7 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-double RelMOFile::init(const int nstart, const int nfence) {
+void RelMOFile::init(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
@@ -78,8 +79,10 @@ double RelMOFile::init(const int nstart, const int nfence) {
   // calculate 2-e MO integrals 
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(coeff);
 
+  // compress and set mo1e_ and mo2e_
+  compress_and_set(buf1e, buf2e); 
+
   throw runtime_error("not yet implemented");
-  return 0;
 }
 
 
@@ -165,40 +168,27 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 }
 
 
-#if 0
-//TODO input matrices are now in block diagonal form and the sizes must be checked
-void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
+void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatrix>> buf1e, unordered_map<bitset<4>,shared_ptr<const ZMatrix>> buf2e) {
+  mo1e_ = buf1e;
 
-  const int nocc = norb_rel_;
-  sizeij_ = nocc*nocc;
-  mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-  copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
-
-  // h'ij = hij - 0.5 sum_k (ik|kj)
-  const int size1e = nocc*nocc;
-  mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
-  int ij = 0;
-  for (int i = 0; i != nocc; ++i) {
-    for (int j = 0; j != nocc; ++j, ++ij) {
-      mo1e_[ij] = buf1e->element(j,i);
-      for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
-    }
+  // Harrison requires <ij|kl> = (lj|ki)
+  for (auto& mat : buf2e) {
+    shared_ptr<ZMatrix> tmp = mat.second->clone();
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
+    mo2e_.insert(make_pair(mat.first, tmp));
   }
+
+  assert(mo2e_.size() == 16);
 }
-#endif
 
 
 unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
-  // --
-  out[bitset<2>("00")] = make_shared<ZMatrix>(*coeff[0] % *core_fock_ * *coeff[0]); 
-  // +-
-  out[bitset<2>("10")] = make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[0]); 
-  // -+
-  out[bitset<2>("01")] = make_shared<ZMatrix>(*coeff[0] % *core_fock_ * *coeff[1]); 
-  // ++
-  out[bitset<2>("11")] = make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]); 
+
+  auto intbit2 = [](const size_t i) { bitset<2> out; for (int j = 0; j != 2; ++j) if (i & (1<<j)) out.set(j); return out; };
+
+  for (int i = 0; i != 4; ++i)
+    out[intbit2(i)] = make_shared<ZMatrix>(*coeff[i>>1] % *core_fock_ * *coeff[i&1]); 
 
   assert(out.size() == 4);
   // symmetry requirement

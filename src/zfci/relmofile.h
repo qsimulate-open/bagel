@@ -44,7 +44,7 @@ class RelMOFile {
     std::shared_ptr<const ZMatrix> core_fock_;
 
     // creates integral files and returns the core energy.
-    double init(const int nstart, const int nend);
+    void init(const int nstart, const int nend);
 
     // hamiltoniam data
     std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> mo1e_;
@@ -53,9 +53,9 @@ class RelMOFile {
     // generates Kramers symmetry-adapted orbitals
     std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
-#if 0
-    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
-#endif
+    void compress_and_set(std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> buf1e,
+                          std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> buf2e);
+
     virtual std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
     virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
 
