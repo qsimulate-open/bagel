@@ -43,3 +43,7 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   Developers are likely to have newer code in their private branches.
   If you want to gain access to a program that implements a published work and
   you do not find it in the public repository, please write to the authors.
+
+  BAGEL is intended for use in parallel environments with a few Terabyte 
+  of distributed memory (e.g., hence there is no disk interface).
+  We are NOT going to optimize BAGEL for a stand-alone workstation. 
