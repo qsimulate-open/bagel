@@ -53,9 +53,6 @@ double RelMOFile::init(const int nstart, const int nfence) {
   assert((nfence - nstart) % 2 == 0);
   geom_ = geom_->relativistic(ref_->gaunt());
 
-  // then compute Kramers adapated coefficient matrices
-  array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
-
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
@@ -72,6 +69,15 @@ double RelMOFile::init(const int nstart, const int nfence) {
     core_energy_ = 0.0;
   }
 
+  // then compute Kramers adapated coefficient matrices
+  array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
+
+  // calculate 1-e MO integrals 
+  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(coeff);
+
+  // calculate 2-e MO integrals 
+  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(coeff);
+
   throw runtime_error("not yet implemented");
   return 0;
 }
@@ -87,7 +93,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   const int nb = ndim / 4;
   assert(nb == nbasis_);
 
-  if ((nfence-nstart)%2 != 0 || ndim%4 != 0)
+  if (nfence-nstart <= 0 || (nfence-nstart)%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
@@ -183,65 +189,129 @@ void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatr
 #endif
 
 
-#if 0
-tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
-  throw runtime_error("not yet implemented");
-  return make_tuple(shared_ptr<const ZMatrix>(), 0.0);
+unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<ZMatrix>,2> coeff) {
+  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
+  // --
+  out[bitset<2>("00")] = make_shared<ZMatrix>(*coeff[0] % *core_fock_ * *coeff[0]); 
+  // +-
+  out[bitset<2>("10")] = make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[0]); 
+  // -+
+  out[bitset<2>("01")] = make_shared<ZMatrix>(*coeff[0] % *core_fock_ * *coeff[1]); 
+  // ++
+  out[bitset<2>("11")] = make_shared<ZMatrix>(*coeff[1] % *core_fock_ * *coeff[1]); 
+
+  assert(out.size() == 4);
+  return out; 
 }
-#endif
 
 
-#if 0
-shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
-  const size_t norb_rel_ = nfence - nstart;
-  if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
-
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
-  assert(geom_->nbasis()*2 == relref->relcoeff()->mdim());
-
-  // Separate Coefficients into real and imaginary
-  // correlated occupied orbitals
-  array<shared_ptr<const Matrix>, 4> rocoeff;
-  array<shared_ptr<const Matrix>, 4> iocoeff;
-  for (int i = 0; i != 4; ++i) {
-    const size_t nbasis = geom_->nbasis();
-    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, nstart, nbasis, nfence);
-    rocoeff[i] = oc->get_real_part();
-    iocoeff[i] = oc->get_imag_part();
-  }
+unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<ZMatrix>,2> coeff) {
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // TODO for the time being I only use Coulomb term
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  if (ref_->gaunt()) throw logic_error("gaunt term not yet implemented in RelJop::compute_mo2e");
 
   // (1) make DFDists
   vector<shared_ptr<const DFDist>> dfs;
   dfs = geom_->dfs()->split_blocks();
   dfs.push_back(geom_->df());
-  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, ref_->gaunt());
+
+  // Separate Coefficients into real and imaginary
+  // correlated occupied orbitals
+  array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+  array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
+  for (int k = 0; k != 2; ++k) {
+    for (int i = 0; i != 4; ++i) {
+      shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
+      assert(nocc_ == coeff[k]->mdim());
+      rocoeff[k][i] = oc->get_real_part();
+      iocoeff[k][i] = oc->get_imag_part();
+    }
+  }
 
   // (2) first-transform
-  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
-  for (auto& i : half_complex)
-    i = i->apply_J();
+  array<list<shared_ptr<RelDFHalf>>,2> half_complex;
+  for (int k = 0; k != 2; ++k) {
+    half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
+    for (auto& i : half_complex[k]) 
+      i = i->apply_J();
+  }
 
   // (3) split and factorize
-  list<shared_ptr<RelDFHalf>> half_complex_exch;
-  for (auto& i : half_complex) {
-    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
+  for (int k = 0; k != 2; ++k) {
+    for (auto& i : half_complex[k]) {
+      list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
+      half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
+    }
+    half_complex[k].clear();
+    DFock::factorize(half_complex_exch[k]);
   }
-  half_complex.clear();
-  DFock::factorize(half_complex_exch);
 
   // (4) compute (gamma|ii)
+  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
   list<shared_ptr<RelDFFull>> dffull;
-  for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
+
+  // --
+  for (auto& i : half_complex_exch[0])
+    dffull.push_back(make_shared<RelDFFull>(i, rocoeff[0], iocoeff[0]));
   DFock::factorize(dffull);
-  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
-  shared_ptr<const RelDFFull> full = dffull.front();
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  full[bitset<2>("00")] = dffull.front();
+  dffull.clear();
 
-  shared_ptr<const ZMatrix> buf = full->form_4index(full, 1.0);
+  // +-
+  for (auto& i : half_complex_exch[1])
+    dffull.push_back(make_shared<RelDFFull>(i, rocoeff[0], iocoeff[0]));
+  DFock::factorize(dffull);
+  assert(dffull.size() == 1);
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  full[bitset<2>("10")] = dffull.front();
+  dffull.clear();
 
-  return buf;
+  // -+
+  for (auto& i : half_complex_exch[0])
+    dffull.push_back(make_shared<RelDFFull>(i, rocoeff[1], iocoeff[1]));
+  DFock::factorize(dffull);
+  assert(dffull.size() == 1);
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  full[bitset<2>("01")] = dffull.front();
+  dffull.clear();
+
+  // ++
+  for (auto& i : half_complex_exch[1])
+    dffull.push_back(make_shared<RelDFFull>(i, rocoeff[1], iocoeff[1]));
+  DFock::factorize(dffull);
+  assert(dffull.size() == 1);
+  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+  full[bitset<2>("11")] = dffull.front();
+  dffull.clear();
+
+  assert(full.size() == 3);
+
+  // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
+  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
+  out[bitset<4>("1111")] = full[bitset<2>("11")]->form_4index(full[bitset<2>("11")], 1.0);
+  out[bitset<4>("1110")] = full[bitset<2>("11")]->form_4index(full[bitset<2>("10")], 1.0);
+  out[bitset<4>("1101")] = full[bitset<2>("11")]->form_4index(full[bitset<2>("01")], 1.0);
+  out[bitset<4>("1100")] = full[bitset<2>("11")]->form_4index(full[bitset<2>("00")], 1.0);
+
+  out[bitset<4>("1011")] = full[bitset<2>("10")]->form_4index(full[bitset<2>("11")], 1.0);
+  out[bitset<4>("1010")] = full[bitset<2>("10")]->form_4index(full[bitset<2>("10")], 1.0);
+  out[bitset<4>("1001")] = full[bitset<2>("10")]->form_4index(full[bitset<2>("01")], 1.0);
+  out[bitset<4>("1000")] = full[bitset<2>("10")]->form_4index(full[bitset<2>("00")], 1.0);
+
+  out[bitset<4>("0111")] = full[bitset<2>("01")]->form_4index(full[bitset<2>("11")], 1.0);
+  out[bitset<4>("0110")] = full[bitset<2>("01")]->form_4index(full[bitset<2>("10")], 1.0);
+  out[bitset<4>("0101")] = full[bitset<2>("01")]->form_4index(full[bitset<2>("01")], 1.0);
+  out[bitset<4>("0100")] = full[bitset<2>("01")]->form_4index(full[bitset<2>("00")], 1.0);
+
+  out[bitset<4>("0011")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("11")], 1.0);
+  out[bitset<4>("0010")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("10")], 1.0);
+  out[bitset<4>("0001")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("01")], 1.0);
+  out[bitset<4>("0000")] = full[bitset<2>("00")]->form_4index(full[bitset<2>("00")], 1.0);
+
+  return out;
 }
-#endif
