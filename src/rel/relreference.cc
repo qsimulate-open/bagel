@@ -24,6 +24,7 @@
 //
 
 #include <src/rel/relreference.h>
+#include <src/rel/reloverlap.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
 
@@ -48,5 +49,5 @@ shared_ptr<const Reference> RelReference::project_coeff(shared_ptr<const Geometr
   mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
-  return make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()));
+  return make_shared<const RelReference>(geomin, c, energy_, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
 }

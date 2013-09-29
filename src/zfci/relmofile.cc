@@ -31,6 +31,7 @@
 #include <src/zfci/relmofile.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
+#include <src/rel/reloverlap.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,14 +46,31 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
+double RelMOFile::init(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
-  geom_ = geom_->relativistic(false);
+  geom_ = geom_->relativistic(ref_->gaunt());
 
+  // then compute Kramers adapated coefficient matrices
   array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
+
+  // calculates the core fock matrix
+  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+  if (nstart != 0) {
+    shared_ptr<const ZMatrix> den = ref_->relcoeff()->distmatrix()->form_density_rhf(nstart)->matrix();
+    core_fock_ = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false);
+    const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
+    if (fabs(prod.imag()) > 1.0e-12) {
+      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
+      cout << ss.str() << endl;
+    }
+    core_energy_ = 0.5*prod.real();
+  } else {
+    core_fock_ = hcore; 
+    core_energy_ = 0.0;
+  }
 
   throw runtime_error("not yet implemented");
   return 0;
