@@ -3,7 +3,9 @@
 // Filename: space_base.h
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Michael Caldwell <caldwell@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Modified by: Shane Parker <shane.parker@u.northwestern.edu>
+// Modified by: Michael Caldwell <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -47,6 +49,8 @@ class Space_Base {
 
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
+    virtual void common_init() = 0;
+
   public:
     Space_Base(std::shared_ptr<const Determinants> det_, const bool mute = true) :
       norb_(det_->norb()), nelea_(det_->nelea()), neleb_(det_->neleb()), mute_(mute) { }
@@ -60,9 +64,6 @@ class Space_Base {
     std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
     std::shared_ptr<Determinants> finddet(const int i, const int j) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
-
-  private:
-    virtual void common_init() = 0;
 };
 
 }

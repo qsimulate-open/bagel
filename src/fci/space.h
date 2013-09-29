@@ -3,8 +3,7 @@
 // Filename: space.h
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Modified by: Shane Parker <shane.parker@u.northwestern.edu>
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Modified by: Michael Caldwell <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
@@ -37,17 +36,14 @@ namespace bagel {
 class Space : public Space_Base {
   protected:
     const int M_; // number of electrons added or removed from a reference
-
     const bool compress_;
+    void common_init() override;
 
   public:
     Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = true);
     Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = false, const bool mute = true);
 
     int nspin() const { return nelea_ - neleb_; };
-
-  private:
-    void common_init() override;
 };
 
 }
