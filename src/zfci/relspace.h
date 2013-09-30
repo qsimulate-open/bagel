@@ -32,7 +32,7 @@
 namespace bagel {
 
 // implements spaces that contain all determinants |PQ> for a given Kramers index -N/2 to N/2
-class RelSpace : public Space_Base {
+class RelSpace : public Space_base {
   protected:
     int nelec() const { return nelea_ + neleb_; }
     int kramers(int m) const { return (nelea_ - neleb_ + 2*m)/2; }

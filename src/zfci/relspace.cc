@@ -32,13 +32,13 @@ using namespace std;
 using namespace bagel;
 
 RelSpace::RelSpace(const int norb, const int nelea, const int neleb, const bool mute)
-  : Space_Base(norb, nelea, neleb, mute) {
+  : Space_base(norb, nelea, neleb, mute) {
 
   common_init();
 }
 
 RelSpace::RelSpace(shared_ptr<const Determinants> _det, const bool _mute) :
-  Space_Base(_det, _mute) {
+  Space_base(_det, _mute) {
 
   common_init();
 }

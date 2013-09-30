@@ -27,6 +27,7 @@
 #ifndef __BAGEL_ZFCI_ZFCI_H
 #define __BAGEL_ZFCI_ZFCI_H
 
+#include <src/fci/space.h>
 #include <src/fci/dvec.h>
 #include <src/zfci/zmofile.h>
 #include <src/zfci/relmofile.h>
@@ -75,7 +76,7 @@ class ZFCI : public Method {
 
 
     // Determinant space
-    std::shared_ptr<const Determinants> det_;
+    std::shared_ptr<const Space_base> space_;
 
     // denominator
     std::shared_ptr<Civec> denom_;
@@ -152,7 +153,7 @@ class ZFCI : public Method {
     std::pair<std::shared_ptr<ZMatrix>,std::vector<std::complex<double>>> natorb_convert();
 #endif
 
-    std::shared_ptr<const Determinants> det() const { return det_; }
+    std::shared_ptr<const Space_base> space() const { return space_; }
 
     // returns integral files
     std::shared_ptr<const ZMOFile_Base> jop() const { return jop_; }

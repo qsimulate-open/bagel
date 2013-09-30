@@ -34,7 +34,7 @@
 namespace bagel {
 
 // implements a space that contains multiple determinants made by modification of a reference
-class Space_Base {
+class Space_base {
   protected:
     // assuming that the number of active orbitals are the same in alpha and beta.
     const int norb_;
@@ -44,17 +44,17 @@ class Space_Base {
 
     const bool mute_;
 
-    int key_(const int a, const int b) { return ( a*large__ + b ); }
-    int key_(std::shared_ptr<Determinants> det) { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
+    int key_(const int a, const int b) const { return ( a*large__ + b ); }
+    int key_(std::shared_ptr<Determinants> det) const { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
     virtual void common_init() = 0;
 
   public:
-    Space_Base(std::shared_ptr<const Determinants> det_, const bool mute = true) :
+    Space_base(std::shared_ptr<const Determinants> det_, const bool mute = true) :
       norb_(det_->norb()), nelea_(det_->nelea()), neleb_(det_->neleb()), mute_(mute) { }
-    Space_Base(const int norb, const int nelea, const int neleb, const bool mute = true) :
+    Space_base(const int norb, const int nelea, const int neleb, const bool mute = true) :
       norb_(norb), nelea_(nelea), neleb_(neleb), mute_(mute) { }
 
     // static constants
@@ -62,8 +62,10 @@ class Space_Base {
     static const int Beta = 1;
 
     std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
+    std::shared_ptr<const Determinants> basedet() const { return finddet(0, 0); };
     // Caution: This function does not check to make sure i,j is valid
     std::shared_ptr<Determinants> finddet(const int i, const int j) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
+    std::shared_ptr<const Determinants> finddet(const int i, const int j) const { auto idet = detmap_.find(key_(i,j)); return idet->second; };
 };
 
 }

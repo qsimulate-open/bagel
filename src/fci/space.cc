@@ -33,13 +33,13 @@ using namespace std;
 using namespace bagel;
 
 Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress, const bool _mute)
-  : Space_Base(_norb, _nelea, _neleb, _mute), M_(_M), compress_(_compress) {
+  : Space_base(_norb, _nelea, _neleb, _mute), M_(_M), compress_(_compress) {
 
   common_init();
 }
 
 Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) :
-  Space_Base(det, _mute), M_(_M), compress_(_compress) {
+  Space_base(det, _mute), M_(_M), compress_(_compress) {
 
   common_init();
 }

@@ -62,13 +62,13 @@ void ZKnowlesHandy::const_denom() {
       fk[i] += kop[j*norb_+i];
     }
   }
-  denom_ = make_shared<Civec>(det());
-  const int nspin = det()->nspin();
+  denom_ = make_shared<Civec>(space_->basedet());
+  const int nspin = space_->basedet()->nspin();
   const int nspin2 = nspin*nspin;
   complex<double> med = 0.0;
   double* iter = denom_->data();
-  for (auto& ia : det()->stringa()) {
-    for (auto& ib : det()->stringb()) {
+  for (auto& ia : space_->basedet()->stringa()) {
+    for (auto& ib : space_->basedet()->stringb()) {
       const int nopen = (ia^ib).count();
       const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
       *iter = 0.0;

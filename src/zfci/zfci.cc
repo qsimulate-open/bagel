@@ -90,7 +90,6 @@ void ZFCI::common_init() {
   const int nspin = idata_->get<int>("nspin", 0);
   if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
 
-  // these will be superseded by relupdate in relativistic calculations.
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
@@ -105,13 +104,9 @@ void ZFCI::common_init() {
 
   // construct a determinant space in which this FCI will be performed.
   if (!relref) {
-    det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0);
-// TODO remove the following. Without constructing Kramers-adapted orbitals, we cannot specify nelea and neleb.
-#if 0
+    space_ = make_shared<Space>(make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0), 0, 0);
   } else if (relref) {
-    auto relspace = make_shared<RelSpace>(norb_, nelea_, neleb_);
-    det_ = relspace->finddet(0,0);
-#endif
+    space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
   }
 }
 
@@ -141,7 +136,7 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDv
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
     done.push_back(open_bit);
 
-    pair<vector<tuple<int, int, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    pair<vector<tuple<int, int, int>>, double> adapt = space_->basedet()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
@@ -150,7 +145,7 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDv
 //  out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << space_->basedet()->print_bit(alpha&beta) << " open " << setw(20) << space_->basedet()->print_bit(open_bit) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
@@ -170,8 +165,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
-  for (auto& aiter : det()->stringa()) {
-    for (auto& biter : det()->stringb()) {
+  for (auto& aiter : space_->basedet()->stringa()) {
+    for (auto& biter : space_->basedet()->stringb()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -180,7 +175,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
+  assert(tmp.size() == ndet || ndet > space_->basedet()->stringa().size()*space_->basedet()->stringb().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
@@ -217,7 +212,7 @@ void ZFCI::compute() {
   const int ij = nij();
 
   // Creating an initial CI vector
-  cc_ = make_shared<ZDvec>(det_, nstate_); // B runs first
+  cc_ = make_shared<ZDvec>(space_->basedet(), nstate_); // B runs first
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_);

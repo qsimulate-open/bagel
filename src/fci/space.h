@@ -33,7 +33,7 @@
 namespace bagel {
 
 // implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
-class Space : public Space_Base {
+class Space : public Space_base {
   protected:
     const int M_; // number of electrons added or removed from a reference
     const bool compress_;
