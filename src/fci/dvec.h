@@ -65,6 +65,7 @@ class Dvector {
     Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
       // data should be in a contiguous area to call dgemm.
       data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
+      std::fill_n(data_.get(), lenb_*lena_*ij_, DataType(0.0));
       DataType* tmp = data_.get();
       for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
         dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));

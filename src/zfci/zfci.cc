@@ -270,8 +270,10 @@ void ZFCI::compute() {
         }
         davidson.orthog(ctmp);
         // TODO very inefficient code
-        vector<shared_ptr<const RelZDvec>> cctmpb = cc_->split(0, ist);
-        ctmp->orthog(list<shared_ptr<const RelZDvec>>(cctmpb.begin(), cctmpb.end()));
+        if (ist > 0) {
+          vector<shared_ptr<const RelZDvec>> cctmpb = cc_->split(0, ist);
+          ctmp->orthog(list<shared_ptr<const RelZDvec>>(cctmpb.begin(), cctmpb.end()));
+        }
         cc_->set_data(ist, ctmp);
       }
     }

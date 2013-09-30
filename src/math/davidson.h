@@ -123,8 +123,7 @@ class DavidsonDiag {
     std::vector<std::shared_ptr<T>> residual() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        auto tmp = std::make_shared<T>(*c_.front());
-        tmp->zero(); // <- waste of time
+        auto tmp = c_.front()->clone(); 
         int k = 0;
         for (auto& iv : c_) {
           tmp->ax_plus_y(-vec_[i]*eig_->element(k++,i), iv);
@@ -143,7 +142,6 @@ class DavidsonDiag {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
         auto tmp = c_.front()->clone();
-        tmp->zero(); // just to make sure
         int k = 0;
         for (auto& iv : c_) {
           tmp->ax_plus_y(eig_->element(k++,i), iv);

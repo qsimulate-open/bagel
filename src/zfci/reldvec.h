@@ -56,7 +56,7 @@ class RelDvector {
 
     RelDvector(RelDvector<DataType>&& o) : dvecs_(o.dvecs_), space_(o.space_) { }
 
-    RelDvector(std::shared_ptr<const RelDvector<DataType>> o) {
+    RelDvector(std::shared_ptr<const RelDvector<DataType>> o) : space_(o->space_) {
       for (auto& i : o->dvecs_)
         dvecs_.insert(std::make_pair(i.first, std::make_shared<Dvector<DataType>>(i.second)));
     }
@@ -106,8 +106,10 @@ class RelDvector {
       for (int i = nstart; i != nend; ++i) {
         std::map<int, std::shared_ptr<Dvector<DataType>>> tmp;
         // copy construct each of them
-        for (auto& j : dvecs_)
-          tmp.insert(std::make_pair(j.first, std::make_shared<Dvector<DataType>>(std::vector<std::shared_ptr<Civector<DataType>>>(1, j.second->data(i)))));
+        for (auto& j : dvecs_) {
+          std::vector<std::shared_ptr<Civector<DataType>>> tmp1 { std::make_shared<Civector<DataType>>(*j.second->data(i)) };
+          tmp.insert(std::make_pair(j.first, std::make_shared<Dvector<DataType>>(tmp1)));
+        }
         out.push_back(std::make_shared<RelDvector<DataType>>(tmp, space_));
       }
       return out;
