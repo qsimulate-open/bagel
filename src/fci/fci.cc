@@ -223,7 +223,7 @@ void FCI::compute() {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
-        const int size = cc_->data(ist)->size();
+        const size_t size = cc_->data(ist)->size();
         double* target_array = cc_->data(ist)->data();
         double* source_array = errvec[ist]->data();
         double* denom_array = denom_->data();

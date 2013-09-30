@@ -38,23 +38,25 @@ static const bool tprint = false;
 using namespace std;
 using namespace bagel;
 
-shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, shared_ptr<const ZMOFile_Base> jop,
+shared_ptr<RelZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const ZMOFile_Base> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
 
   const int ij = nij();
-  const int nstate = ccvec->ij();
-  auto sigmavec = make_shared<ZDvec>(ccvec->det(), nstate);
+  const int nstate = ccvec->find(space_->basedet())->ij();
+  auto sigmavec = ccvec->clone(); 
   sigmavec->zero();
-  // we need two vectors for intermediate quantities
-  auto d = make_shared<ZDvec>(ccvec->det(), ij);
-  auto e = make_shared<ZDvec>(ccvec->det(), ij);
-
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);
     if (conv[istate]) continue;
-    shared_ptr<const ZCivec> cc = ccvec->data(istate);
-    shared_ptr<ZCivec> sigma = sigmavec->data(istate);
+
+    // TODO just to compile
+    shared_ptr<const Determinants> cdet = space_->basedet();
+    auto d = make_shared<ZDvec>(cdet, ij);
+    auto e = make_shared<ZDvec>(cdet, ij);
+
+    shared_ptr<const ZCivec> cc = ccvec->find(cdet)->data(istate);
+    shared_ptr<ZCivec> sigma = sigmavec->find(cdet)->data(istate);
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);

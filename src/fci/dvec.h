@@ -141,9 +141,9 @@ class Dvector {
 
     // some functions for convenience
     DataType dot_product(const Dvector<DataType>& other) const {
-      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), 0.0, std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
+      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), DataType(0.0), std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
     }
-    void ax_plus_y(double a, const Dvector<DataType>& other) {
+    void ax_plus_y(const DataType a, const Dvector<DataType>& other) {
       std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
     }
     Dvector<DataType>& operator+=(const Dvector<DataType>& o) { ax_plus_y(1.0, o); return *this; }
@@ -163,9 +163,9 @@ class Dvector {
       return out;
     }
 
-    double norm() const { return std::sqrt(dot_product(*this)); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
 
-    void scale(const double a) {
+    void scale(const DataType& a) {
       std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
     }
 

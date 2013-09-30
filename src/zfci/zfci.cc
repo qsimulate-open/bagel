@@ -94,12 +94,7 @@ void ZFCI::common_init() {
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  for (int i = 0; i != nstate_; ++i)
-    weight_.push_back(1.0/nstate_);
 
-  // resizing rdm vectors (with null pointers)
-  rdm1_.resize(nstate_);
-  rdm2_.resize(nstate_);
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
@@ -114,7 +109,8 @@ void ZFCI::common_init() {
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDvec> out) {
+void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec> out) {
+  shared_ptr<const Determinants> cdet = space_->basedet();
   int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
@@ -139,7 +135,7 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDv
     pair<vector<tuple<int, int, int>>, double> adapt = space_->basedet()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      out->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      out->find(cdet)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
 // TODO remove or replace
 //  out->data(oindex)->spin_decontaminate();
@@ -161,12 +157,15 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<ZDv
 
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
+  // initial guess is assumed to be in the (nelea, neleb) deterimnant - TODO is this OK?
+  shared_ptr<const Determinants> cdet = space_->basedet();
+
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
-  double* diter = denom_->data();
-  for (auto& aiter : space_->basedet()->stringa()) {
-    for (auto& biter : space_->basedet()->stringb()) {
+  double* diter = denom_->find(cdet)->data();
+  for (auto& aiter : cdet->stringa()) {
+    for (auto& biter : cdet->stringb()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -175,7 +174,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > space_->basedet()->stringa().size()*space_->basedet()->stringb().size());
+  assert(tmp.size() == ndet || ndet > cdet->stringa().size()*cdet->stringb().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
@@ -212,7 +211,7 @@ void ZFCI::compute() {
   const int ij = nij();
 
   // Creating an initial CI vector
-  cc_ = make_shared<ZDvec>(space_->basedet(), nstate_); // B runs first
+  cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 
   // find determinants that have small diagonal energies
   generate_guess(nelea_-neleb_, nstate_, cc_);
@@ -222,7 +221,7 @@ void ZFCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<ZCivec, ZMatrix> davidson(nstate_, max_iter_);
+  DavidsonDiag<RelZDvec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
   cout << "  === ZFCI iteration ===" << endl << endl;
@@ -233,15 +232,15 @@ void ZFCI::compute() {
     Timer fcitime;
 
     // form a sigma vector given cc
-    shared_ptr<ZDvec> sigma = form_sigma(cc_, jop_, conv);
+    shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
     // constructing Dvec's for Davidson
-    auto ccn = make_shared<const ZDvec>(cc_);
-    auto sigman = make_shared<const ZDvec>(sigma);
+    auto ccn = make_shared<const RelZDvec>(cc_);
+    auto sigman = make_shared<const RelZDvec>(sigma);
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
-    vector<shared_ptr<ZCivec>> errvec = davidson.residual();
+    vector<shared_ptr<RelZDvec>> errvec = davidson.residual();
     pdebug.tick_print("davidson");
 
     // compute errors
@@ -254,22 +253,26 @@ void ZFCI::compute() {
 
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
+
+      auto ctmp = errvec.front()->clone(); 
+       
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
-        const int size = cc_->data(ist)->size();
-        complex<double>* target_array = cc_->data(ist)->data();
-        complex<double>* source_array = errvec[ist]->data();
-        double* denom_array = denom_->data();
-        const double en = energies[ist];
-        for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+        for (auto& ib : space_->detmap()) {
+          const size_t size = ccn->find(ib.second)->data(ist)->size();
+          complex<double>* target_array = ctmp->find(ib.second)->data();
+          complex<double>* source_array = errvec[ist]->find(ib.second)->data();
+          double* denom_array = denom_->find(ib.second)->data();
+          const double en = energies[ist];
+          for (int i = 0; i != size; ++i) {
+            target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+          }
         }
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const ZCivec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
-// TODO remove or repalace
-//      cc_->data(ist)->spin_decontaminate();
+        davidson.orthog(ctmp);
+        // TODO very inefficient code
+        vector<shared_ptr<const RelZDvec>> cctmpb = cc_->split(0, ist);
+        ctmp->orthog(list<shared_ptr<const RelZDvec>>(cctmpb.begin(), cctmpb.end()));
+        cc_->set_data(ist, ctmp);
       }
     }
     pdebug.tick_print("denominator");
@@ -287,8 +290,11 @@ void ZFCI::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<ZDvec>(davidson.civec());
+  // TODO print
+#if 0
+  auto s = make_shared<RelZDvec>(davidson.civec());
   s->print(print_thresh_);
+#endif
 
 #if 0
   cc_ = make_shared<ZDvec>(s);
