@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: complex_erirootlist.h
+// Filename: comperirootlist.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -30,27 +30,25 @@
 #include <complex>
 #include <src/util/constants.h>
 
-using namespace std;
-
 namespace bagel {
 
   struct ComplexERIRootList  {
     private:
-      std::function<void (const complex<double>*, complex<double>*, complex<double>*, const int)> rfunc[RYS_MAX + 1];
+      std::function<void (const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int)> rfunc[RYS_MAX + 1];
 
-      static void complex_eriroot1(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot2(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot3(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot4(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot5(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot6(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot7(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot8(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot9(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot10(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot11(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot12(const complex<double>*, complex<double>*, complex<double>*, const int);
-      static void complex_eriroot13(const complex<double>*, complex<double>*, complex<double>*, const int);
+      static void complex_eriroot1(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot2(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot3(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot4(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot5(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot6(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot7(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot8(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot9(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot10(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot11(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot12(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
+      static void complex_eriroot13(const std::complex<double>*, std::complex<double>*, std::complex<double>*, const int);
 
 
     public:
@@ -70,7 +68,7 @@ namespace bagel {
         rfunc[13] = &complex_eriroot13;
       }
 
-      void root(const int i, const complex<double>* a1, complex<double>* a2, complex<double>* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
+      void root(const int i, const std::complex<double>* a1, std::complex<double>* a2, std::complex<double>* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
 
   };
  
