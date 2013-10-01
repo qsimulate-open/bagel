@@ -61,6 +61,15 @@ class RelDvector {
         dvecs_.insert(std::make_pair(i.first, std::make_shared<Dvector<DataType>>(i.second)));
     }
 
+    // combines (opposite of split()) 
+    RelDvector(const std::vector<std::shared_ptr<RelDvector<DataType>>>& o) : space_(o.front()->space_) {
+      for (auto& isp : space_->detmap())
+        dvecs_.insert(std::make_pair(isp.first, std::make_shared<Dvector<DataType>>(isp.second, o.size()))); 
+      int j = 0;
+      for (auto& i : o)
+        set_data(j++, i);
+    }
+
     std::shared_ptr<RelDvector<DataType>> clone() const { return std::make_shared<RelDvector<DataType>>(space_, dvecs_.begin()->second->ij()); }
     std::shared_ptr<RelDvector<DataType>> copy() const { return std::make_shared<RelDvector<DataType>>(*this); }
 
@@ -142,7 +151,8 @@ class RelDvector {
     }
 
     void print(double thresh) const {
-      // TODO implement
+      for (auto& i : dvecs_)
+        i.second->print(thresh); 
     }
 
 };

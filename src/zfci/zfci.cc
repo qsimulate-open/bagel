@@ -292,11 +292,8 @@ void ZFCI::compute() {
   }
   // main iteration ends here
 
-  // TODO print
-#if 0
   auto s = make_shared<RelZDvec>(davidson.civec());
   s->print(print_thresh_);
-#endif
 
 #if 0
   cc_ = make_shared<ZDvec>(s);
