@@ -61,7 +61,7 @@ class ZFCI : public Method {
     std::shared_ptr<RelZDvec> cc_;
 
     // MO integrals
-    std::shared_ptr<ZMOFile_Base> jop_;
+    std::shared_ptr<ZMOFile_base> jop_;
 
 
     // Determinant space
@@ -102,12 +102,12 @@ class ZFCI : public Method {
     virtual int nij() const { return norb_*norb_; }
 
     // virtual application of Hamiltonian
-    virtual std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_Base> jop, const std::vector<int>& conv) const = 0;
+    virtual std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_base> jop, const std::vector<int>& conv) const = 0;
 
     std::shared_ptr<const Space_base> space() const { return space_; }
 
     // returns integral files
-    std::shared_ptr<const ZMOFile_Base> jop() const { return jop_; }
+    std::shared_ptr<const ZMOFile_base> jop() const { return jop_; }
 
     // returns a denominator
     //returns non-complex because denom_ is currently all real because of real mo2e

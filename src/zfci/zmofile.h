@@ -32,7 +32,7 @@
 
 namespace bagel {
 
-class ZMOFile : public ZMOFile_Base {
+class ZMOFile : public ZMOFile_base {
 
   protected:
     std::shared_ptr<Matrix> core_fock_;
@@ -61,13 +61,13 @@ class ZJop : public ZMOFile {
 };
 
 
-class ZHtilde : public ZHtilde_Base, public ZMOFile {
+class ZHtilde : public ZHtilde_base, public ZMOFile {
   protected:
     std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override { return std::make_tuple(h1_tmp_, 0.0); };
     std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override { return h2_tmp_; };
   public:
     ZHtilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
-      : ZHtilde_Base(h1, h2), ZMOFile(b) {
+      : ZHtilde_base(h1, h2), ZMOFile(b) {
       core_energy_ = create_Jiiii(c, d);
     }
 };

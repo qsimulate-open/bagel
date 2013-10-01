@@ -32,7 +32,7 @@
 
 namespace bagel {
 
-class ZMOFile_Base {
+class ZMOFile_base {
 
   protected:
     int nocc_;
@@ -65,7 +65,7 @@ class ZMOFile_Base {
     virtual std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) = 0;
     virtual void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e) = 0;
   public:
-    ZMOFile_Base(const std::shared_ptr<const Reference> ref, const std::string method = std::string("KH")) :
+    ZMOFile_base(const std::shared_ptr<const Reference> ref, const std::string method = std::string("KH")) :
       geom_(ref->geom()), ref_(ref) { }
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; };
@@ -104,14 +104,14 @@ class ZMOFile_Base {
     }
 };
 
-class ZHtilde_Base {
+class ZHtilde_base {
   protected:
     // temp storage
     std::shared_ptr<const ZMatrix> h1_tmp_;
     std::shared_ptr<const ZMatrix> h2_tmp_;
 
   public:
-    ZHtilde_Base(std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
+    ZHtilde_base(std::shared_ptr<const ZMatrix> h1, std::shared_ptr<const ZMatrix> h2)
       : h1_tmp_(h1), h2_tmp_(h2) { }
 };
 
