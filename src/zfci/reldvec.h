@@ -38,7 +38,7 @@ class RelDvector {
     using MapType = std::pair<int, std::shared_ptr<Dvector<DataType>>>;
 
     std::map<int, std::shared_ptr<Dvector<DataType>>> dvecs_;
-    std::shared_ptr<const Space_base> space_;
+    const std::shared_ptr<const Space_base> space_;
 
   public:
     // make an empty Dvec
