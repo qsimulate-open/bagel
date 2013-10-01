@@ -30,6 +30,7 @@
 #include <src/integral/rys/erirootlist.h>
 #include <src/integral/rys/breitrootlist.h>
 #include <src/integral/rys/spin2rootlist.h>
+#include <src/integral/comprys/comperirootlist.h>
 #include <src/integral/rys/breitbatch.h>
 #include <src/util/constants.h>
 #include <algorithm>
@@ -40,13 +41,13 @@ using namespace std;
 using namespace bagel;
 
 const static ERIRootList eri;
+const static ComplexERIRootList comperi;
 const static BreitRootList br;
 const static Spin2RootList s2;
 
 static const double pitwohalf__ = pow(pi__, 2.5);
 static const double pimhalf__ = 1.0/sqrt(pi__);
 static const double T_thresh__ = 1.0e-8;
-
 
 ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit, shared_ptr<StackMem> stack)
  : RysInt(o, stack) {
@@ -82,7 +83,9 @@ ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const do
 
 void ERIBatch_base::root_weight(const int ps) {
   if (breit_ == 0) {
-    if (amax_ + cmax_ == 0) {
+    if (london_) {
+      comperi.root(rank_, T_, roots_, weights_, ps);
+    } else if (amax_ + cmax_ == 0) {
       for (int j = 0; j != screening_size_; ++j) {
         int i = screening_[j];
         if (T_[i] < T_thresh__) {

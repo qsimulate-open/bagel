@@ -66,6 +66,7 @@ class RysInt : public Integral {
     int deriv_rank_;
     int tenno_;
     int breit_;
+    int london_;
 
     double *data_;
     double *data2_;

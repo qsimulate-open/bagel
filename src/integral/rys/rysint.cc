@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 
 RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
- : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
+ : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0), london_(0) {
   assert(spherical1_ == info[1]->spherical());
   assert(spherical2_ == info[3]->spherical());
 
