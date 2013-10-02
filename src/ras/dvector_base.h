@@ -24,10 +24,9 @@
 //
 
 
-#ifndef BAGEL_FCI_DVECTOR_H
-#define BAGEL_FCI_DVECTOR_H
+#ifndef BAGEL_RAS_DVECTOR_H
+#define BAGEL_RAS_DVECTOR_H
 
-//#include <src/fci/dvector.h>
 #include <memory>
 #include <vector>
 #include <algorithm>
