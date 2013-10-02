@@ -342,3 +342,121 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(shared_ptr<con
   this->terminate_mpi_recv();
   return out;
 }
+
+namespace bagel { namespace DFCI {
+  class ApplyTask {
+    protected:
+      const bitset<nbit__> abit_;
+      double* target_;
+      const DistCivector<double>* cc_;
+      shared_ptr<const Determinants> tdet_;
+      const bool action_;
+      const int orbital_;
+
+      vector<int> requests_;
+
+      // tests condition and sets bit
+      bool condition(bitset<nbit__>& abit) {
+        if (action_) {
+          bool out = abit[orbital_];
+          abit.reset(orbital_);
+          return out;
+        }
+        else {
+          bool out = !abit[orbital_];
+          abit.set(orbital_);
+          return out;
+        }
+      }
+
+    public:
+      ApplyTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td, const bool act, const int orb)
+       : abit_(a), target_(t), cc_(c), tdet_(td), action_(act), orbital_(orb) {
+        shared_ptr<const Determinants> det = c->det();
+        const size_t lbs = det->lenb();
+        const int norb = det->norb();
+
+        bitset<nbit__> ab = abit_;
+        if ( condition(ab) ) {
+          const int k = cc_->get_bstring_buf(target_, det->lexical<0>(ab));
+          if (k >= 0) requests_.push_back(k);
+        }
+      }
+
+      bool test() {
+        bool out = true;
+        for (auto i = requests_.begin(); i != requests_.end(); ) {
+          if (mpi__->test(*i)) {
+            i = requests_.erase(i);
+          }
+          else {
+            ++i;
+            out = false;
+          }
+        }
+        return out;
+      }
+
+      void compute() {
+        shared_ptr<const Determinants> sdet = cc_->det();
+        const size_t lbs = sdet->lenb();
+
+        bitset<nbit__> ab = abit_;
+        if( condition(ab) ) {
+          const int sign = sdet->sign<0>(ab, orbital_);
+          transform(target_, target_ + lbs, target_, [&sign] (const double& t) { return sign * t; });
+        }
+      }
+  };
+} }
+
+template<>
+shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, const bool action, const bool spin) const {
+  // action: true -> create; false -> annihilate
+  // spin:   true -> alpha;  false -> beta
+  shared_ptr<const Determinants> sdet = this->det();
+  const int norb = sdet->norb();
+
+  const size_t las = sdet->lena();
+  const size_t lbs = sdet->lenb();
+
+  shared_ptr<DistCivector<double>> out;
+
+  if (spin) {
+    shared_ptr<const Determinants> tdet = ( action ? sdet->addalpha() : sdet->remalpha() );
+    out = make_shared<DistCivector<double>>(tdet);
+
+    this->init_mpi_recv();
+
+    const size_t tastart = out->astart();
+    const size_t taend = out->aend();
+    const size_t lbt = tdet->lenb();
+
+  #ifndef USE_SERVER_THREAD
+    DistQueue<DFCI::ApplyTask, const DistCivector<double>*> dq(this);
+  #else
+    DistQueue<DFCI::ApplyTask> dq;
+  #endif
+
+    for (size_t ia = tastart; ia < taend; ++ia)
+      dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet, action, orbital);
+
+    dq.finish();
+    this->terminate_mpi_recv();
+  }
+  else { // This case requires no communication
+    shared_ptr<const Determinants> tdet = ( action ? sdet->addbeta() : sdet->rembeta() );
+    out = make_shared<DistCivector<double>>(tdet);
+
+    for (size_t ia = astart_; ia < aend_; ++ia) {
+      const double* source_base = this->local() + (ia - astart_) * lbs;
+      double* target_base = out->local() + (ia - astart_) * lbs;
+      for (auto& iter : ( action ? sdet->phiupb(orbital) : sdet->phidownb(orbital) )) {
+        const double sign = static_cast<double>(iter.sign);
+        target_base[iter.target] += sign * source_base[iter.source];
+      }
+    }
+  }
+
+  return out;
+}
