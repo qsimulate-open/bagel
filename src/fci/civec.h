@@ -42,6 +42,8 @@ template<typename DataType> class Civector;
 
 template<typename DataType>
 class DistCivector {
+  public: using DetType = Determinants;
+
   protected:
     mutable std::shared_ptr<const Determinants> det_;
 
