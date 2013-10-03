@@ -50,7 +50,7 @@ void ZKnowlesHandy::mult_phase_factor() {
   *mo1e = *phase % *mo1e * *phase;
 
   //transforming 4 index mo2e
-  unique_ptr<complex<double>[]> mo2e(new complex<double>[norb4]);
+  auto mo2e = make_shared<ZMatrix>(norb2, norb2, true);
   unique_ptr<complex<double>[]> tmp(new complex<double>[norb4]);
   unique_ptr<complex<double>[]> trans(new complex<double>[norb4]);
 
@@ -67,7 +67,7 @@ void ZKnowlesHandy::mult_phase_factor() {
   zgemm3m_("c","n", norb_, norb3, norb_, 1.0, phase->data(), norb_, trans.get(), norb_, 0.0, tmp.get(), norb_);
 
   // 5) make (k*, l', i*, j') (right multiply by phase)
-  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase->data(), norb_, 0.0, mo2e.get(), norb3);
+  zgemm3m_("n","n", norb3, norb_, norb_, 1.0, tmp.get(), norb3, phase->data(), norb_, 0.0, mo2e->data(), norb3);
 
   // set mo1e and mo2e
   jop_->set_moints(mo1e, mo2e);

@@ -27,7 +27,6 @@
 #include <src/math/davidson.h>
 #include <src/util/combination.hpp>
 #include <src/math/comb.h>
-#include <src/fci/hzdenomtask.h>
 #include <src/fci/distfci_ab.h>
 #include <src/fci/distfci_bb.h>
 
@@ -82,9 +81,8 @@ vector<shared_ptr<DistCivec>> DistFCI::form_sigma(vector<shared_ptr<DistCivec>>&
 
 
 void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
-
-  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
-  shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  shared_ptr<const Determinants> base_det = cc->det();
+  shared_ptr<const Determinants> int_det = space_->finddet(base_det->nelea() - 1, base_det->neleb() - 1);
 
   const size_t lbt = int_det->lenb();
   const size_t lbs = base_det->lenb();
@@ -147,14 +145,15 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
 
 void DistFCI::sigma_aa(shared_ptr<const DistCivec> ctrans, shared_ptr<DistCivec> strans, shared_ptr<const MOFile> jop) const {
-  shared_ptr<const Determinants> int_tra = space_->finddet(-1,-1)->transpose();
+  shared_ptr<const Determinants> trans_det = ctrans->det();
+  shared_ptr<const Determinants> int_tra = space_->finddet(trans_det->neleb() - 1, trans_det->nelea() - 1)->transpose();
   sigma_bb(ctrans, strans, jop, ctrans->det(), int_tra);
 }
 
 
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
-  const shared_ptr<const Determinants> base_det = space_->finddet(0,0);
-  const shared_ptr<const Determinants> int_det = space_->finddet(-1,-1); // only for n-1 beta strings...
+  const shared_ptr<const Determinants> base_det = cc->det();
+  const shared_ptr<const Determinants> int_det = space_->finddet(base_det->nelea() - 1,base_det->neleb() - 1); // only for n-1 beta strings...
   sigma_bb(cc, sigma, jop, base_det, int_det);
 }
 

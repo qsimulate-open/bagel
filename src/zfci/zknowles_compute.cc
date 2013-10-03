@@ -38,23 +38,25 @@ static const bool tprint = false;
 using namespace std;
 using namespace bagel;
 
-shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, shared_ptr<const ZMOFile_Base> jop,
+shared_ptr<RelZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const ZMOFile_base> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
 
   const int ij = nij();
-  const int nstate = ccvec->ij();
-  auto sigmavec = make_shared<ZDvec>(ccvec->det(), nstate);
+  const int nstate = ccvec->find(space_->basedet())->ij();
+  auto sigmavec = ccvec->clone();
   sigmavec->zero();
-  // we need two vectors for intermediate quantities
-  auto d = make_shared<ZDvec>(ccvec->det(), ij);
-  auto e = make_shared<ZDvec>(ccvec->det(), ij);
-
 
   for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);
     if (conv[istate]) continue;
-    shared_ptr<const ZCivec> cc = ccvec->data(istate);
-    shared_ptr<ZCivec> sigma = sigmavec->data(istate);
+
+    // TODO just to compile
+    shared_ptr<const Determinants> cdet = space_->basedet();
+    auto d = make_shared<ZDvec>(cdet, ij);
+    auto e = make_shared<ZDvec>(cdet, ij);
+
+    shared_ptr<const ZCivec> cc = ccvec->find(cdet)->data(istate);
+    shared_ptr<ZCivec> sigma = sigmavec->find(cdet)->data(istate);
 
     // (task1) one-electron alpha: sigma(Psib, Psi'a) += sign h'(ij) C(Psib, Psia)
     sigma_1(cc, sigma, jop);
@@ -92,7 +94,7 @@ shared_ptr<ZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const ZDvec> ccvec, share
   return sigmavec;
 }
 
-// The first two are a part of Base because they are needed in the RDM parts
+// The first two are a part of base because they are needed in the RDM parts
 void ZFCI::sigma_2a1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   assert(d->det() == cc->det());
   const int lb = d->lenb();
@@ -124,7 +126,7 @@ void ZFCI::sigma_2a2(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   }
 }
 
-void ZKnowlesHandy::sigma_1(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const ZMOFile_Base> jop) const {
+void ZKnowlesHandy::sigma_1(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const ZMOFile_base> jop) const {
   assert(cc->det() == sigma->det());
   const int ij = nij();
   const int lb = cc->lenb();
@@ -167,7 +169,7 @@ void ZKnowlesHandy::sigma_2c2(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
   }
 }
 
-void ZKnowlesHandy::sigma_3(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const ZMOFile_Base> jop) const {
+void ZKnowlesHandy::sigma_3(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const ZMOFile_base> jop) const {
   const int la = cc->lena();
   const int ij = nij();
 
@@ -184,7 +186,7 @@ void ZKnowlesHandy::sigma_3(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
   }
 }
 
-void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const ZMOFile_Base> jop) const {
+void ZKnowlesHandy::sigma_2b(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const ZMOFile_base> jop) const {
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();

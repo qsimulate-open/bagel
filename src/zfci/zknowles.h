@@ -40,12 +40,12 @@ class ZKnowlesHandy : public ZFCI {
     void const_denom() override;
 
     // virtual application of Hamiltonian
-    std::shared_ptr<ZDvec> form_sigma(std::shared_ptr<const ZDvec> c, std::shared_ptr<const ZMOFile_Base> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_base> jop, const std::vector<int>& conv) const override;
 
     // run-time functions
-    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_Base> jop) const;
-    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_Base> jop) const;
-    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile_Base> jop) const;
+    void sigma_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_3(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_2b (std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile_base> jop) const;
     void sigma_2c1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2c2(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
@@ -60,7 +60,8 @@ class ZKnowlesHandy : public ZFCI {
       if (!relref) {
         update(ref_->coeff());
       } else {
-        relupdate();
+//      relupdate();
+        assert(false);
       }
     }
     void relupdate();

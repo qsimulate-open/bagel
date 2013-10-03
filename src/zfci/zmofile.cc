@@ -36,7 +36,7 @@ using namespace std;
 using namespace bagel;
 
 ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const string method)
-: ZMOFile_Base(ref, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())) {
+: ZMOFile_base(ref, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -46,7 +46,7 @@ ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const string method)
 
 
 ZMOFile::ZMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
-: ZMOFile_Base(ref, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
+: ZMOFile_base(ref, method), core_fock_(make_shared<Matrix>(geom_->nbasis(), geom_->nbasis())), coeff_(c) {
 
   do_df_ = geom_->df().get();
   if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
@@ -77,18 +77,17 @@ void ZMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix
 
   const int nocc = nocc_;
   sizeij_ = nocc*nocc;
-  mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-  copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
+  mo2e_ = make_shared<ZMatrix>(*buf2e);
 
   // h'ij = hij - 0.5 sum_k (ik|kj)
   const int size1e = nocc*nocc;
-  mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
+  mo1e_ = make_shared<ZMatrix>(nocc, nocc, true);
   int ij = 0;
   for (int i = 0; i != nocc; ++i) {
     for (int j = 0; j != nocc; ++j, ++ij) {
-      mo1e_[ij] = buf1e->element(j,i);
+      mo1e(ij) = buf1e->element(j,i);
       for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
+        mo1e(ij) -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
     }
   }
 }

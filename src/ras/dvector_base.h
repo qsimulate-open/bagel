@@ -79,7 +79,7 @@ class Dvector_base {
     std::vector<CiPtr> dvec() const { return dvec_; }
 
     size_t ij() const { return ij_; }
-    size_t size() const { return ij_ * det->size(); }
+    size_t size() const { return ij_ * det_->size(); }
 
     void set_det(std::shared_ptr<const DetType> o) const {
       det_ = o;

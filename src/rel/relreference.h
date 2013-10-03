@@ -26,7 +26,7 @@
 #ifndef __SRC_REL_RELREFERENCE_H
 #define __SRC_REL_RELREFERENCE_H
 
-#include <src/rel/reloverlap.h>
+#include <src/rel/relhcore.h>
 #include <src/wfn/reference.h>
 #include <src/molecule/mixedbasis.h>
 
@@ -34,15 +34,20 @@ namespace bagel {
 
 class RelReference : public Reference {
   protected:
+    const bool gaunt_;
+    const bool breit_;
     const std::shared_ptr<const ZMatrix> relcoeff_;
 
   public:
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nocc, const int nvirt)
-     : Reference(g, std::shared_ptr<Coeff>(), nocc, 0, nvirt, en), relcoeff_(c){
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nocc, const int nvirt, const bool ga, const bool br)
+     : Reference(g, std::shared_ptr<Coeff>(), nocc, 0, nvirt, en), gaunt_(ga), breit_(br), relcoeff_(c) {
     }
 
     const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
     const std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
+
+    bool gaunt() const { return gaunt_; }
+    bool breit() const { return breit_; }
 
     std::shared_ptr<const Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 

@@ -62,13 +62,13 @@ void ZKnowlesHandy::const_denom() {
       fk[i] += kop[j*norb_+i];
     }
   }
-  denom_ = make_shared<Civec>(det());
-  const int nspin = det()->nspin();
+  denom_ = make_shared<RelDvec>(space_, 1);
+  const int nspin = space_->basedet()->nspin();
   const int nspin2 = nspin*nspin;
   complex<double> med = 0.0;
-  double* iter = denom_->data();
-  for (auto& ia : det()->stringa()) {
-    for (auto& ib : det()->stringb()) {
+  double* iter = denom_->find(space_->basedet())->data();
+  for (auto& ia : space_->basedet()->stringa()) {
+    for (auto& ib : space_->basedet()->stringb()) {
       const int nopen = (ia^ib).count();
       const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
       *iter = 0.0;
@@ -106,17 +106,4 @@ void ZKnowlesHandy::update(shared_ptr<const Coeff> c) {
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
   const_denom();
   mult_phase_factor();
-}
-
-
-void ZKnowlesHandy::relupdate() {
-  // iiii file to be created (MO transformation).
-  // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  Timer timer;
-  auto jop_ = make_shared<RelJop>(ref_, ncore_, ncore_+norb_*2, "KH");
-
-  // right now full basis is used.
-  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
-
-  const_denom();
 }

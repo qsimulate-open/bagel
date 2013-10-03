@@ -60,7 +60,7 @@ SymMat::SymMat(const shared_ptr<const Geometry> gm, const int iop) : Matrix(gm->
       assert(block.size() == size * size);
 
       for (int k = 0; k != nfunc; ++k) {
-        copy_block(toffset, coffset, size, size, &block[0]);
+        copy_block(toffset, coffset, size, size, block.data());
         coffset += size;
         toffset += size;
       }

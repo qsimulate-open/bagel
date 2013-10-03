@@ -249,7 +249,7 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__>& bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
-    template <int spin, int off = 1> const size_t lexical(const std::bitset<nbit__>& bit) const { return space<spin>(bit)->lexical<off>(bit); }
+    template <int spin, int off = 1> size_t lexical(const std::bitset<nbit__>& bit) const { std::shared_ptr<const StringSpace> sspace = space<spin>(bit); return sspace->lexical<off>(bit); }
 
     std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;

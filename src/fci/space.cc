@@ -33,13 +33,13 @@ using namespace std;
 using namespace bagel;
 
 Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress, const bool _mute)
-  : Space_Base(_norb, _nelea, _neleb, _mute), M_(_M), compress_(_compress) {
+  : Space_base(_norb, _nelea, _neleb, _mute), M_(_M), compress_(_compress) {
 
   common_init();
 }
 
 Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) :
-  Space_Base(det, _mute), M_(_M), compress_(_compress) {
+  Space_base(det, _mute), M_(_M), compress_(_compress) {
 
   common_init();
 }
@@ -51,7 +51,7 @@ void Space::common_init() {
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
       auto tmpdet = make_shared<Determinants>(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true);
-      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i,j), tmpdet));
+      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(nelea_+i,neleb_+j), tmpdet));
     }
   }
   if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
@@ -60,9 +60,8 @@ void Space::common_init() {
   int nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_+1,nb-neleb_));
-    if(jdet==detmap_.end()) continue;
-    else {
+    auto jdet = detmap_.find(key_(na+1,nb));
+    if (jdet != detmap_.end()) {
       idet->second->link<0>(jdet->second);
       ++nlinks;
     }
@@ -74,9 +73,8 @@ void Space::common_init() {
   nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_,nb-neleb_+1));
-    if(jdet==detmap_.end()) continue;
-    else {
+    auto jdet = detmap_.find(key_(na,nb+1));
+    if (jdet != detmap_.end()) {
       idet->second->link<1>(jdet->second);
       ++nlinks;
     }
