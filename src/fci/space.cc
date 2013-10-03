@@ -51,7 +51,7 @@ void Space::common_init() {
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
       auto tmpdet = make_shared<Determinants>(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true);
-      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i,j), tmpdet));
+      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(nelea_+i,neleb_+j), tmpdet));
     }
   }
   if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
@@ -60,7 +60,7 @@ void Space::common_init() {
   int nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_+1,nb-neleb_));
+    auto jdet = detmap_.find(key_(na+1,nb));
     if(jdet==detmap_.end()) continue;
     else {
       idet->second->link<0>(jdet->second);
@@ -74,7 +74,7 @@ void Space::common_init() {
   nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_,nb-neleb_+1));
+    auto jdet = detmap_.find(key_(na,nb+1));
     if(jdet==detmap_.end()) continue;
     else {
       idet->second->link<1>(jdet->second);

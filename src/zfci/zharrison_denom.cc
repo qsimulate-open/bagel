@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <bitset>
 #include <src/zfci/zharrison.h>
+#include <src/fci/hzdenomtask.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 #include <iostream>
@@ -38,43 +39,42 @@ using namespace bagel;
 
 void ZHarrison::const_denom() {
   Timer denom_t;
-  auto h = make_shared<ZMatrix>(norb_, 1);
-  auto jaa = make_shared<ZMatrix>(norb_, norb_);
-  auto jab = make_shared<ZMatrix>(norb_, norb_);
-  auto jbb = make_shared<ZMatrix>(norb_, norb_);
-  auto kaa = make_shared<ZMatrix>(norb_, norb_);
-  auto kbb = make_shared<ZMatrix>(norb_, norb_);
+  auto h = make_shared<Matrix>(norb_, 1);
+  auto jop = make_shared<Matrix>(norb_, norb_);
+  auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
-      jaa->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, j, i);
-      jab->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0101"), j, i, j, i);
-      jbb->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, j, i);
-      kaa->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, i, j);
-      kbb->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, i, j);
+      jop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, j, i).real();
+      kop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, i, j).real();
+      // assert for Kramers and symmetry
+      assert(fabs(jop_->mo2e(bitset<4>("0000"), j, i, j, i).imag()) < 1.0e-8); 
+      assert(fabs(jop_->mo2e(bitset<4>("1111"), j, i, i, j).imag()) < 1.0e-8); 
+      assert(fabs(jop_->mo2e(bitset<4>("0101"), j, i, j, i).imag()) < 1.0e-8); 
     }
-    h->data(i) = jop_->mo1e(bitset<2>("00"), i,i);
-    assert(abs(h->data(i) - jop_->mo1e(bitset<2>("11"), i,i)) < 1.0e-8);
+    h->data(i) = jop_->mo1e(bitset<2>("00"), i,i).real();
+    // assert for Kramers and symmetry
+    assert(abs(jop_->mo1e(bitset<2>("00"), i,i) - jop_->mo1e(bitset<2>("11"), i,i)) < 1.0e-8);
+    assert(abs(jop_->mo1e(bitset<2>("00"), i,i).imag()) < 1.0e-8);
   }
   denom_t.tick_print("jop, kop");
 
   denom_ = make_shared<RelDvec>(space_, 1);
 
   const size_t est = accumulate(space_->detmap().begin(), space_->detmap().end(), 0ull, [](size_t r, pair<int,shared_ptr<Determinants>> i){ return r+i.second->stringa().size(); });
-//TaskQueue<ZHarrisonDenomTask> tasks(est);
+  TaskQueue<HZDenomTask> tasks(est);
 
   for (auto& i : space_->detmap()) {
     shared_ptr<const Determinants> det = i.second; 
-#if 0
-    double* iter = denom_->data();
-    for (auto& ia : det()->stringa()) {
-      tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
-      iter += det()->stringb().size();
+    shared_ptr<Dvec> cdenom = denom_->find(det);
+    double* dptr = cdenom->data();
+    for (auto& ia : det->stringa()) {
+      tasks.emplace_back(dptr, ia, det, jop, kop, h);
+      dptr += det->stringb().size();
     }
-#endif
   }
 
-//tasks.compute();
+  tasks.compute();
   denom_t.tick_print("denom");
 }
 

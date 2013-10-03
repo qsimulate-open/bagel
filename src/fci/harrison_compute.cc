@@ -44,8 +44,8 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate);
   sigmavec->zero();
 
-  shared_ptr<Determinants> base_det = space_->finddet(0,0);
-  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
+  shared_ptr<Determinants> base_det = space_->basedet();
+  shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
   auto d = make_shared<Dvec>(int_det, ij);
@@ -156,8 +156,8 @@ void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shar
 }
 
 void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
-  const shared_ptr<Determinants> base_det = space_->finddet(0,0);
-  const shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
+  const shared_ptr<Determinants> base_det = space_->basedet();
+  const shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
   const int norb = norb_;
   const int lbt = base_det->lenb();

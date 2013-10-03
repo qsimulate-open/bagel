@@ -44,7 +44,7 @@ class Space_base {
 
     const bool mute_;
 
-    int key_(const int a, const int b) const { return ( a*large__ + b ); }
+    int key_(const int a, const int b) const { return a*large__ + b; }
 
     std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
 
@@ -60,15 +60,13 @@ class Space_base {
     static const int Alpha = 0;
     static const int Beta = 1;
 
-    std::shared_ptr<Determinants> basedet() { return finddet(0, 0); };
-    std::shared_ptr<const Determinants> basedet() const { return finddet(0, 0); };
+    std::shared_ptr<Determinants> basedet() { return finddet(nelea_, neleb_); }
+    std::shared_ptr<const Determinants> basedet() const { return finddet(nelea_, neleb_); }
     // Caution: This function does not check to make sure i,j is valid
-    std::shared_ptr<Determinants> finddet(const int i, const int j) { auto idet = detmap_.find(key_(i,j)); return idet->second; };
-    std::shared_ptr<const Determinants> finddet(const int i, const int j) const { auto idet = detmap_.find(key_(i,j)); return idet->second; };
+    std::shared_ptr<Determinants> finddet(const int i, const int j) { return detmap_.at(key_(i,j)); }
+    std::shared_ptr<const Determinants> finddet(const int i, const int j) const { return detmap_.at(key_(i,j)); }
 
     const std::map<int, std::shared_ptr<Determinants>>& detmap() const { return detmap_; }
-
-    int key(std::shared_ptr<const Determinants> det) const { return key_(det->nelea() - nelea_, det->neleb() - neleb_); }
 };
 
 }

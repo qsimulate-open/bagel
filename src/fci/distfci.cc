@@ -98,8 +98,8 @@ vector<shared_ptr<DistCivec>> DistFCI::form_sigma(vector<shared_ptr<DistCivec>>&
 
 void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
 
-  shared_ptr<Determinants> int_det = space_->finddet(-1,-1);
-  shared_ptr<Determinants> base_det = space_->finddet(0,0);
+  shared_ptr<Determinants> int_det = space_->finddet(nelea_-1, neleb_-1);
+  shared_ptr<Determinants> base_det = space_->basedet();
 
   const size_t lbt = int_det->lenb();
   const size_t lbs = base_det->lenb();
@@ -163,14 +163,14 @@ void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sig
 
 
 void DistFCI::sigma_aa(shared_ptr<const DistCivec> ctrans, shared_ptr<DistCivec> strans, shared_ptr<const MOFile> jop) const {
-  shared_ptr<const Determinants> int_tra = space_->finddet(-1,-1)->transpose();
+  shared_ptr<const Determinants> int_tra = space_->finddet(nelea_-1,neleb_-1)->transpose();
   sigma_bb(ctrans, strans, jop, ctrans->det(), int_tra);
 }
 
 
 void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
-  const shared_ptr<const Determinants> base_det = space_->finddet(0,0);
-  const shared_ptr<const Determinants> int_det = space_->finddet(-1,-1); // only for n-1 beta strings...
+  const shared_ptr<const Determinants> base_det = space_->basedet();
+  const shared_ptr<const Determinants> int_det = space_->finddet(nelea_-1,neleb_-1); // only for n-1 beta strings...
   sigma_bb(cc, sigma, jop, base_det, int_det);
 }
 
