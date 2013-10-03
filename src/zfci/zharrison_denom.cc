@@ -46,11 +46,12 @@ void ZHarrison::const_denom() {
   auto kbb = make_shared<ZMatrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j) {
-#if 0
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
-#endif
+    for (int j = 0; j != norb_; ++j) {
+      jaa->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, j, i);
+      jab->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0101"), j, i, j, i);
+      jbb->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, j, i);
+      kaa->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, i, j);
+      kbb->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, i, j);
     }
     h->data(i) = jop_->mo1e(bitset<2>("00"), i,i);
     assert(abs(h->data(i) - jop_->mo1e(bitset<2>("11"), i,i)) < 1.0e-8);
@@ -59,17 +60,22 @@ void ZHarrison::const_denom() {
 
   denom_ = make_shared<RelDvec>(space_, 1);
 
+  const size_t est = accumulate(space_->detmap().begin(), space_->detmap().end(), 0ull, [](size_t r, pair<int,shared_ptr<Determinants>> i){ return r+i.second->stringa().size(); });
+//TaskQueue<ZHarrisonDenomTask> tasks(est);
+
+  for (auto& i : space_->detmap()) {
+    shared_ptr<const Determinants> det = i.second; 
 #if 0
-  double* iter = denom_->data();
-  TaskQueue<HZDenomTask> tasks(det()->stringa().size());
-  for (auto& ia : det()->stringa()) {
-    tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
-    iter += det()->stringb().size();
+    double* iter = denom_->data();
+    for (auto& ia : det()->stringa()) {
+      tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
+      iter += det()->stringb().size();
+    }
+#endif
   }
 
-  tasks.compute();
+//tasks.compute();
   denom_t.tick_print("denom");
-#endif
 }
 
 #if 0

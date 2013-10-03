@@ -169,11 +169,14 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatrix>> buf1e, unordered_map<bitset<4>,shared_ptr<const ZMatrix>> buf2e) {
   mo1e_ = buf1e;
 
-  // Harrison requires <ij|kl> = (lj|ki)
+  // Harrison requires <ij|kl> = (ik|jl)
   for (auto& mat : buf2e) {
     shared_ptr<ZMatrix> tmp = mat.second->clone();
     SMITH::sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
-    mo2e_.insert(make_pair(mat.first, tmp));
+    bitset<4> s = mat.first;
+    s[2] = mat.first[1];
+    s[1] = mat.first[2];
+    mo2e_.insert(make_pair(s, tmp));
   }
 
   assert(mo2e_.size() == 16);

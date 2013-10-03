@@ -76,6 +76,8 @@ class RelDvector {
     std::shared_ptr<Dvector<DataType>> find(std::shared_ptr<const Determinants> det) { return dvecs_.at(space_->key(det)); } 
     std::shared_ptr<const Dvector<DataType>> find(std::shared_ptr<const Determinants> det) const { return dvecs_.at(space_->key(det)); } 
 
+    std::shared_ptr<const Space_base> space() const { return space_; }
+
     void set_data(const int istate, std::shared_ptr<const RelDvector<DataType>> o) {
       assert(space_ == o->space_ || o->dvecs_.begin()->second->ij() == 1);
       auto j = o->dvecs_.begin();
