@@ -65,6 +65,7 @@ class ZHarrison : public Method {
 
     // Determinant space
     std::shared_ptr<const Space_base> space_;
+    std::shared_ptr<const Space_base> int_space_;
 
     // denominator
     std::shared_ptr<RelDvec> denom_;
@@ -82,11 +83,11 @@ class ZHarrison : public Method {
     void const_denom();
 
     // run-time functions.
-    void sigma_aa(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const RelMOFile> jop) const;
-    void sigma_bb(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const RelMOFile> jop) const;
-    void sigma_2ab_1(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> d) const;
-    void sigma_2ab_2(std::shared_ptr<RelZDvec> d, std::shared_ptr<RelZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
-    void sigma_2ab_3(std::shared_ptr<RelZDvec> sigma, std::shared_ptr<RelZDvec> e) const;
+    void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_bb(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2ab_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+    void sigma_2ab_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2ab_3(std::shared_ptr<ZCivec> sigma, std::shared_ptr<ZDvec> e) const;
 
   public:
     // this constructor is ugly... to be fixed some day...

@@ -38,47 +38,52 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
   const int ij = norb_*norb_;
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
 
-#if 0
-  shared_ptr<Determinants> base_det = space_->basedet();
-  shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
+  // diagonal part
+  for (auto& isp : space_->detmap()) { 
+    const bool noab = (nelea_ == 0 || neleb_ == 0);
+    shared_ptr<const Determinants> base_det = isp.second; 
+    shared_ptr<const Determinants> int_det = noab ? shared_ptr<const Determinants>() : int_space_->finddet(nelea_-1,neleb_-1);
 
-  /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-  auto d = make_shared<Dvec>(int_det, ij);
-  auto e = make_shared<Dvec>(int_det, ij);
+    /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
+    shared_ptr<ZDvec> d, e;
+    if (!noab) {
+      d = make_shared<ZDvec>(int_det, ij);
+      e = make_shared<ZDvec>(int_det, ij);
+    }
 
-  for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
-    if (conv[istate]) continue;
-    shared_ptr<const Civec> cc = ccvec->data(istate);
-    shared_ptr<Civec> sigma = sigmavec->data(istate);
+    for (int istate = 0; istate != nstate_; ++istate) {
+      Timer pdebug(2);
+      if (conv[istate]) continue;
+      shared_ptr<const ZCivec> cc = ccvec->find(base_det)->data(istate);
+      shared_ptr<ZCivec> sigma = sigmavec->find(base_det)->data(istate);
 
-    // (taskaa)
-    sigma_aa(cc, sigma, jop);
-    pdebug.tick_print("taskaa");
+      // (taskaa)
+      sigma_aa(cc, sigma, jop);
+      pdebug.tick_print("taskaa");
 
-    // (taskbb)
-    sigma_bb(cc, sigma, jop);
-    pdebug.tick_print("taskbb");
+      // (taskbb)
+      sigma_bb(cc, sigma, jop);
+      pdebug.tick_print("taskbb");
 
-    // (2ab) alpha-beta contributions
-    /* Resembles more the Knowles & Handy FCI terms */
-    d->zero();
+      // (2ab) alpha-beta contributions
+      /* Resembles more the Knowles & Handy FCI terms */
+      d->zero();
 
-    sigma_2ab_1(cc, d);
-    pdebug.tick_print("task2ab-1");
+      sigma_2ab_1(cc, d);
+      pdebug.tick_print("task2ab-1");
 
-    sigma_2ab_2(d, e, jop);
-    pdebug.tick_print("task2ab-2");
+      sigma_2ab_2(d, e, jop);
+      pdebug.tick_print("task2ab-2");
 
-    sigma_2ab_3(sigma, e);
-    pdebug.tick_print("task2ab-3");
+      sigma_2ab_3(sigma, e);
+      pdebug.tick_print("task2ab-3");
+    }
   }
-#endif
 throw logic_error("end of sigma");
   return sigmavec;
 }
 
-void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const RelMOFile> jop) const {
+void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
 #if 0
   assert(cc->det() == sigma->det());
 
@@ -114,7 +119,7 @@ void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sig
 #endif
 }
 
-void ZHarrison::sigma_bb(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const RelMOFile> jop) const {
+void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
 #if 0
   shared_ptr<const Civec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<Civec>(cc_trans->det());
@@ -125,7 +130,7 @@ void ZHarrison::sigma_bb(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sig
 #endif
 }
 
-void ZHarrison::sigma_2ab_1(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> d) const {
+void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
 #if 0
   const int norb = norb_;
 
@@ -149,7 +154,7 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> 
 #endif
 }
 
-void ZHarrison::sigma_2ab_2(shared_ptr<RelZDvec> d, shared_ptr<RelZDvec> e, shared_ptr<const RelMOFile> jop) const {
+void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
 #if 0
   const int la = d->lena();
   const int lb = d->lenb();
@@ -159,7 +164,7 @@ void ZHarrison::sigma_2ab_2(shared_ptr<RelZDvec> d, shared_ptr<RelZDvec> e, shar
 #endif
 }
 
-void ZHarrison::sigma_2ab_3(shared_ptr<RelZDvec> sigma, shared_ptr<RelZDvec> e) const {
+void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const {
 #if 0
   const shared_ptr<Determinants> base_det = space_->basedet();
   const shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);

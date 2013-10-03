@@ -95,6 +95,7 @@ void ZHarrison::common_init() {
   energy_.resize(nstate_);
 
   space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
+  int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1);
 }
 
 
@@ -137,9 +138,6 @@ void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_pt
     for (auto& iter : adapt.first) {
       out->find(cdet)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-// TODO remove or replace
-//  out->data(oindex)->spin_decontaminate();
-
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << space_->basedet()->print_bit(alpha&beta) << " open " << setw(20) << space_->basedet()->print_bit(open_bit) << right << endl;
 
@@ -185,7 +183,6 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
 void ZHarrison::compute() {
   Timer pdebug(2);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
   // some constants
@@ -205,7 +202,7 @@ void ZHarrison::compute() {
   DavidsonDiag<RelZDvec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
-  cout << "  === ZFCI iteration ===" << endl << endl;
+  cout << "  === Relativistic FCI iteration ===" << endl << endl;
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
