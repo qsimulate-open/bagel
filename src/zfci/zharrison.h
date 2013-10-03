@@ -26,39 +26,76 @@
 // Desc :: The implementation closely follows Harrison and Zarrabian
 //
 
-#ifndef __BAGEL_ZFCI_ZHARRISONZARRABIAN_H
-#define __BAGEL_ZFCI_ZHARRISONZARRABIAN_H
+#ifndef __BAGEL_ZFCI_ZHARRISON_H
+#define __BAGEL_ZFCI_ZHARRISON_H
 
-#include <src/zfci/zfci.h>
+#include <src/wfn/method.h>
+#include <src/zfci/relmofile.h>
+#include <src/zfci/reldvec.h>
+#include <src/rel/relreference.h>
 
 namespace bagel {
 
-class ZHarrison : public ZFCI {
+class ZHarrison : public Method {
 
   protected:
-    void const_denom() override;
+    // max #iteration
+    int max_iter_;
+    // threshold for variants
+    double thresh_;
+    double print_thresh_;
 
-    std::shared_ptr<RelMOFile> jop_; // this hides ZFCI::jop_
+    // numbers of electrons
+    int nelea_;
+    int neleb_;
+    int ncore_;
+    int norb_;
+
+    // number of states
+    int nstate_;
+
+    // total energy
+    std::vector<double> energy_;
+
+    // CI vector at convergence
+    std::shared_ptr<RelZDvec> cc_;
+
+    // MO integrals
+    std::shared_ptr<RelMOFile> jop_;
+
+    // Determinant space
+    std::shared_ptr<const Space_base> space_;
+
+    // denominator
+    std::shared_ptr<RelDvec> denom_;
+
+    // some init functions
+    void common_init(); // may end up unnecessary
+    // obtain determinants for guess generation
+    void generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec>);
+    // generate spin-adapted guess configurations
+    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
+
+    // print functions
+    void print_header() const;
+
+    void const_denom();
 
     // run-time functions.
-    void sigma_aa(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
-    void sigma_bb(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_aa(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_bb(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const RelMOFile> jop) const;
     void sigma_2ab_1(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> d) const;
-    void sigma_2ab_2(std::shared_ptr<RelZDvec> d, std::shared_ptr<RelZDvec> e, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_2ab_2(std::shared_ptr<RelZDvec> d, std::shared_ptr<RelZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
     void sigma_2ab_3(std::shared_ptr<RelZDvec> sigma, std::shared_ptr<RelZDvec> e) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : ZFCI(a, g, b, ncore, nocc, nstate) {
-      relupdate();
-    }
+        const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
-    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_base> jop, const std::vector<int>& conv) const override;
+    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const Coeff>) override { assert(false); }
-
-    void relupdate() {
+    void update() {
       Timer timer;
       jop_ = std::make_shared<RelJop>(ref_, ncore_, ncore_+norb_*2, "HZ");
 
@@ -66,6 +103,20 @@ class ZHarrison : public ZFCI {
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
     }
+
+    void compute() override;
+
+    // returns members
+    int norb() const { return norb_; }
+    int nelea() const { return nelea_; }
+    int neleb() const { return neleb_; }
+    int ncore() const { return ncore_; }
+    double core_energy() const { return jop_->core_energy(); }
+
+    int nij() const { return norb_*norb_; }
+
+    // TODO
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };
 
 }

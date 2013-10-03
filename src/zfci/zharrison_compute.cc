@@ -34,7 +34,7 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const ZMOFile_base> jop, const vector<int>& conv) const {
+shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
   const int ij = norb_*norb_;
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
 
@@ -78,7 +78,7 @@ throw logic_error("end of sigma");
   return sigmavec;
 }
 
-void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const ZMOFile_base> jop) const {
+void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const RelMOFile> jop) const {
 #if 0
   assert(cc->det() == sigma->det());
 
@@ -114,7 +114,7 @@ void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sig
 #endif
 }
 
-void ZHarrison::sigma_bb(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const ZMOFile_base> jop) const {
+void ZHarrison::sigma_bb(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const RelMOFile> jop) const {
 #if 0
   shared_ptr<const Civec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<Civec>(cc_trans->det());
@@ -149,7 +149,7 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> 
 #endif
 }
 
-void ZHarrison::sigma_2ab_2(shared_ptr<RelZDvec> d, shared_ptr<RelZDvec> e, shared_ptr<const ZMOFile_base> jop) const {
+void ZHarrison::sigma_2ab_2(shared_ptr<RelZDvec> d, shared_ptr<RelZDvec> e, shared_ptr<const RelMOFile> jop) const {
 #if 0
   const int la = d->lena();
   const int lb = d->lenb();

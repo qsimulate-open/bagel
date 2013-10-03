@@ -97,7 +97,7 @@ class ZFCI : public Method {
     int nelea() const { return nelea_; }
     int neleb() const { return neleb_; }
     int ncore() const { return ncore_; }
-    double core_energy() const { return jop_->core_energy(); }
+    virtual double core_energy() const { return jop_->core_energy(); }
 
     virtual int nij() const { return norb_*norb_; }
 
