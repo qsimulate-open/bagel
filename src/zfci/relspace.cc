@@ -44,23 +44,24 @@ RelSpace::RelSpace(shared_ptr<const Determinants> _det, const bool _mute) :
 }
 
 void RelSpace::common_init() {
-  if (!mute_) cout << " **Constructing " << 2*(norb_ - nelec()/2)+1 << " determinant spaces by Kramers index" << endl;
-  for (int M_ = -(norb_-nelec()/2) ; M_ <= norb_ - nelec()/2; ++M_) {
-    if (!mute_) cout << " **Constructing space of all determinants with Kramers index "
-                     << kramers(M_) << endl << endl;
-    auto tmpdet = make_shared<Determinants>(norb_, nelea_ + M_, neleb_ - M_, false, mute_);
-    detmap_.insert(pair<int,shared_ptr<Determinants>>(kramers(M_), tmpdet));
+  assert(nelea_ == neleb_);
+
+  if (!mute_) cout << " Constructing " << nelea_+neleb_+1 << " determinant spaces" << endl;
+  for (int i = -nelea_; i <= neleb_; ++i) {
+    if (!mute_) cout << " Constructing space of all determinants with " << nelea_+i << " " << neleb_+i << " "  << endl << endl;
+    auto tmpdet = make_shared<Determinants>(norb_, nelea_+i, neleb_-i, false, mute_);
+    detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(nelea_+i, neleb_-i), tmpdet));
   }
-    if (!mute_) cout << " **Total space is made up of " << detmap_.size() << " determinants." << endl;
+
+  if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
 #if 0
   if (!mute_) cout << "  o forming alpha links" << endl;
 
   int nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_+1,nb-neleb_));
-    if(jdet==detmap_.end()) continue;
-    else {
+    auto jdet = detmap_.find(key_(na+1,nb));
+    if (jdet != detmap_.end()) {
       idet->second->link<0>(jdet->second);
       ++nlinks;
     }
@@ -72,9 +73,8 @@ void RelSpace::common_init() {
   nlinks = 0;
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na-nelea_,nb-neleb_+1));
-    if(jdet==detmap_.end()) continue;
-    else {
+    auto jdet = detmap_.find(key_(na,nb+1));
+    if (jdet != detmap_.end()) {
       idet->second->link<1>(jdet->second);
       ++nlinks;
     }

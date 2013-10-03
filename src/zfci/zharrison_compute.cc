@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: zharrison_compute.cc
-// Copyright (C) 2011 Toru Shiozaki
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,10 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/fci/harrison.h>
+#include <src/zfci/zharrison.h>
 #include <src/math/davidson.h>
 #include <src/util/taskqueue.h>
-#include <src/fci/hztasks.h>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -35,14 +34,11 @@ using namespace std;
 using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
-shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
-                     const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
+shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const ZMOFile_base> jop, const vector<int>& conv) const {
   const int ij = norb_*norb_;
-  assert(ccvec->ij() == nstate_);
+  auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
 
-  auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate_);
-  sigmavec->zero();
-
+#if 0
   shared_ptr<Determinants> base_det = space_->basedet();
   shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
@@ -50,7 +46,7 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   auto d = make_shared<Dvec>(int_det, ij);
   auto e = make_shared<Dvec>(int_det, ij);
 
-  for (int istate = 0; istate != nstate_; ++istate) {
+  for (int istate = 0; istate != nstate; ++istate) {
     Timer pdebug(2);
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);
@@ -77,11 +73,13 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
     sigma_2ab_3(sigma, e);
     pdebug.tick_print("task2ab-3");
   }
-
+#endif
+throw logic_error("end of sigma");
   return sigmavec;
 }
 
-void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+void ZHarrison::sigma_aa(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const ZMOFile_base> jop) const {
+#if 0
   assert(cc->det() == sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
@@ -113,18 +111,22 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
     tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
 
   tasks.compute();
+#endif
 }
 
-void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
+void ZHarrison::sigma_bb(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> sigma, shared_ptr<const ZMOFile_base> jop) const {
+#if 0
   shared_ptr<const Civec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<Civec>(cc_trans->det());
 
   sigma_aa(cc_trans, sig_trans, jop);
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
+#endif
 }
 
-void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
+void ZHarrison::sigma_2ab_1(shared_ptr<const RelZDvec> cc, shared_ptr<RelZDvec> d) const {
+#if 0
   const int norb = norb_;
 
   shared_ptr<const Determinants> bdet = cc->det(); // base
@@ -144,17 +146,21 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   }
 
   tasks.compute();
+#endif
 }
 
-void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
+void ZHarrison::sigma_2ab_2(shared_ptr<RelZDvec> d, shared_ptr<RelZDvec> e, shared_ptr<const ZMOFile_base> jop) const {
+#if 0
   const int la = d->lena();
   const int lb = d->lenb();
   const int ij = d->ij();
   const int lenab = la*lb;
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
+#endif
 }
 
-void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
+void ZHarrison::sigma_2ab_3(shared_ptr<RelZDvec> sigma, shared_ptr<RelZDvec> e) const {
+#if 0
   const shared_ptr<Determinants> base_det = space_->basedet();
   const shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
@@ -176,4 +182,5 @@ void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e)
       }
     }
   }
+#endif
 }

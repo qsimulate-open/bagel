@@ -35,7 +35,6 @@ namespace bagel {
 class RelSpace : public Space_base {
   protected:
     int nelec() const { return nelea_ + neleb_; }
-    int kramers(int m) const { return (nelea_ - neleb_ + 2*m)/2; }
     void common_init() override;
 
   public:

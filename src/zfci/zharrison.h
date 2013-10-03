@@ -41,13 +41,11 @@ class ZHarrison : public ZFCI {
     std::shared_ptr<RelMOFile> jop_; // this hides ZFCI::jop_
 
     // run-time functions.
-#if 0
-    void sigma_aa(std::shared_ptr<const ZDvec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const MOFile> jop) const { }
-    void sigma_bb(std::shared_ptr<const ZDvec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const MOFile> jop) const { }
-    void sigma_2ab_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const { }
-    void sigma_2ab_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const MOFile> jop) const { }
-    void sigma_2ab_3(std::shared_ptr<ZCivec> sigma, std::shared_ptr<ZDvec> e) const { }
-#endif
+    void sigma_aa(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_bb(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> sigma, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_2ab_1(std::shared_ptr<const RelZDvec> cc, std::shared_ptr<RelZDvec> d) const;
+    void sigma_2ab_2(std::shared_ptr<RelZDvec> d, std::shared_ptr<RelZDvec> e, std::shared_ptr<const ZMOFile_base> jop) const;
+    void sigma_2ab_3(std::shared_ptr<RelZDvec> sigma, std::shared_ptr<RelZDvec> e) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
@@ -56,9 +54,7 @@ class ZHarrison : public ZFCI {
       relupdate();
     }
 
-    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_base> jop, const std::vector<int>& conv) const override {
-      return std::shared_ptr<RelZDvec>();
-    }
+    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile_base> jop, const std::vector<int>& conv) const override;
 
     void update(std::shared_ptr<const Coeff>) override { assert(false); }
 
@@ -69,7 +65,6 @@ class ZHarrison : public ZFCI {
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
-assert(false);
     }
 };
 

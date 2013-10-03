@@ -61,8 +61,7 @@ void Space::common_init() {
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
     auto jdet = detmap_.find(key_(na+1,nb));
-    if(jdet==detmap_.end()) continue;
-    else {
+    if (jdet != detmap_.end()) {
       idet->second->link<0>(jdet->second);
       ++nlinks;
     }
@@ -75,8 +74,7 @@ void Space::common_init() {
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     int na = idet->second->nelea(); int nb = idet->second->neleb();
     auto jdet = detmap_.find(key_(na,nb+1));
-    if(jdet==detmap_.end()) continue;
-    else {
+    if (jdet != detmap_.end()) {
       idet->second->link<1>(jdet->second);
       ++nlinks;
     }
