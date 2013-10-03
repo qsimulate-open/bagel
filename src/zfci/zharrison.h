@@ -36,7 +36,7 @@ namespace bagel {
 class ZHarrison : public ZFCI {
 
   protected:
-    void const_denom() override { }
+    void const_denom() override;
 
     std::shared_ptr<RelMOFile> jop_; // this hides ZFCI::jop_
 
@@ -69,6 +69,7 @@ class ZHarrison : public ZFCI {
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
+assert(false);
     }
 };
 

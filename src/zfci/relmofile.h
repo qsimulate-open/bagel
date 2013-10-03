@@ -64,6 +64,9 @@ class RelMOFile {
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
+
+    const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
+    const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
 };
 
 

@@ -81,8 +81,6 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
   // compress and set mo1e_ and mo2e_
   compress_and_set(buf1e, buf2e); 
-
-  throw runtime_error("not yet implemented");
 }
 
 

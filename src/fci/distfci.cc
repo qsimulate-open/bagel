@@ -367,16 +367,16 @@ void DistFCI::update(shared_ptr<const Coeff> c) {
 // same as HZ::const_denom except that denom_ is also distributed
 void DistFCI::const_denom() {
   Timer denom_t;
-  unique_ptr<double[]> h(new double[norb_]);
-  unique_ptr<double[]> jop(new double[norb_*norb_]);
-  unique_ptr<double[]> kop(new double[norb_*norb_]);
+  auto h = make_shared<Matrix>(norb_, 1);
+  auto jop = make_shared<Matrix>(norb_, norb_);
+  auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(i, j, i, j);
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(i, j, j, i);
+      jop->element(j, i) = jop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
+      kop->element(j, i) = kop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
     }
-    h[i] = jop_->mo1e(i,i);
+    h->element(i,0) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 
@@ -385,7 +385,7 @@ void DistFCI::const_denom() {
   double* iter = denom_->local();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
-    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop.get(), kop.get(), h.get());
+    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop, kop, h);
     iter += det()->stringb().size();
   }
   tasks.compute();
