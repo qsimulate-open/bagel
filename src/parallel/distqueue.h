@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_PARALELL_DISTQUEUE_H
-#define __SRC_PARALELL_DISTQUEUE_H
+#ifndef __SRC_PARALLEL_DISTQUEUE_H
+#define __SRC_PARALLEL_DISTQUEUE_H
 
 #include <stddef.h>
 #include <list>

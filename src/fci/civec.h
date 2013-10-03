@@ -35,6 +35,7 @@
 #include <src/fci/determinants.h>
 #include <src/parallel/accrequest.h>
 #include <src/parallel/recvrequest.h>
+#include <src/ras/dvector_base.h>
 
 namespace bagel {
 
@@ -375,6 +376,8 @@ template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::apply(co
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;
+
+using DistDvec = Dvector_base<DistCivec>;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
