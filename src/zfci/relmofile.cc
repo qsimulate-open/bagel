@@ -66,21 +66,21 @@ void RelMOFile::init(const int nstart, const int nfence) {
     }
     core_energy_ = 0.5*prod.real();
   } else {
-    core_fock_ = hcore; 
+    core_fock_ = hcore;
     core_energy_ = 0.0;
   }
 
   // then compute Kramers adapated coefficient matrices
   array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
 
-  // calculate 1-e MO integrals 
+  // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(coeff);
 
-  // calculate 2-e MO integrals 
+  // calculate 2-e MO integrals
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(coeff);
 
   // compress and set mo1e_ and mo2e_
-  compress_and_set(buf1e, buf2e); 
+  compress_and_set(buf1e, buf2e);
 }
 
 
@@ -189,15 +189,15 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   auto intbit2 = [](const size_t i) { bitset<2> out; for (int j = 0; j != 2; ++j) if (i & (1<<j)) out.set(j); return out; };
 
   for (int i = 0; i != 4; ++i)
-    out[intbit2(i)] = make_shared<ZMatrix>(*coeff[i>>1] % *core_fock_ * *coeff[i&1]); 
+    out[intbit2(i)] = make_shared<ZMatrix>(*coeff[i>>1] % *core_fock_ * *coeff[i&1]);
 
   assert(out.size() == 4);
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
-  // Kramers requirement 
+  // Kramers requirement
   assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
 
-  return out; 
+  return out;
 }
 
 
@@ -230,7 +230,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   array<list<shared_ptr<RelDFHalf>>,2> half_complex;
   for (int k = 0; k != 2; ++k) {
     half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
-    for (auto& i : half_complex[k]) 
+    for (auto& i : half_complex[k])
       i = i->apply_J();
   }
 
@@ -271,7 +271,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // some assert statements
   // symmetry requirement
   assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
-  // Kramers requirement 
+  // Kramers requirement
   assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
 
   return out;

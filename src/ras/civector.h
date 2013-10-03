@@ -33,6 +33,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include <src/ras/dvector_base.h>
 #include <src/ras/determinants.h>
 #include <src/math/algo.h>
 
@@ -79,7 +80,8 @@ class RASBlock {
 
 template <typename DataType>
 class RASCivector {
-  using RBlock = RASBlock<DataType>;
+  public: using DetType = RASDeterminants;
+  public: using RBlock = RASBlock<DataType>;
   protected:
     std::unique_ptr<DataType[]> data_;
     std::vector<std::shared_ptr<RBlock>> blocks_;
@@ -421,6 +423,8 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh);
 
 using RASCivec = RASCivector<double>;
 // RASZCivec may come at some later time
+
+using RASDvec = Dvector_base<RASCivec>;
 
 }
 

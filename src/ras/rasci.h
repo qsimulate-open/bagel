@@ -32,7 +32,7 @@
 #include <src/fci/properties.h>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-#include <src/ras/dvec.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 

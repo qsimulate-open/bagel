@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/dvec.h
+// Filename: fci/dvector.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,27 +24,30 @@
 //
 
 
-#ifndef BAGEL_RAS_DVEC_H
-#define BAGEL_RAS_DVEC_H
+#ifndef BAGEL_RAS_DVECTOR_H
+#define BAGEL_RAS_DVECTOR_H
 
-#include <src/ras/civector.h>
+#include <memory>
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <iomanip>
 
-// This class is purely for convenience and compliance with FCI Dvec.
-// Unlike the FCI version though, this is basically just a wrapper around a vector
+// This version of Dvector_base is mainly just a wrapper around some vectors
 
 namespace bagel {
 
-template <typename DataType>
-class RASDvector {
+template <typename CiType>
+class Dvector_base {
   // used for template magicking
-  public: using DetType = RASDeterminants;
-  public: using Ci = RASCivector<DataType>;
+  public: using DetType = typename CiType::DetType;
+  public: using Ci = CiType;
   // only for use in lambdas
-  using CiPtr = std::shared_ptr<Ci>;
+  using CiPtr = std::shared_ptr<CiType>;
 
   protected:
-    // the determinant space where Dvector's are sitting
-    mutable std::shared_ptr<const RASDeterminants> det_;
+    // the determinant space where Dvector_base's are sitting
+    mutable std::shared_ptr<const DetType> det_;
 
     // the size of the vector<CiPtr>
     size_t ij_;
@@ -52,22 +55,22 @@ class RASDvector {
     std::vector<CiPtr> dvec_;
 
   public:
-    RASDvector(std::shared_ptr<const RASDeterminants> det, const size_t ij) : det_(det), ij_(ij) {
+    Dvector_base(std::shared_ptr<const DetType> det, const size_t ij) : det_(det), ij_(ij) {
       dvec_.clear();
-      for (int i = 0; i < ij_; ++i) dvec_.push_back( std::make_shared<Ci>(det_) );
+      for (int i = 0; i < ij_; ++i) dvec_.push_back( std::make_shared<CiType>(det_) );
     }
 
-    RASDvector(const RASDvector<DataType>& o) : det_(o.det_), ij_(o.ij_) {
+    Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
       dvec_.clear();
-      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<Ci>(*ivec) );
+      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(*ivec) );
     }
-    RASDvector(std::shared_ptr<const RASDvector<DataType>> o) : RASDvector<DataType>(*o) {}
+    Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
 
-    RASDvector(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (auto& ivec : o) dvec_.push_back( std::make_shared<Ci>(*ivec) );
+    Dvector_base(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
+      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(*ivec) );
     }
 
-    std::shared_ptr<const RASDeterminants> det() const { return det_; }
+    std::shared_ptr<const DetType> det() const { return det_; }
 
     CiPtr& data(const size_t i) { return dvec_[i]; }
     CiPtr data(const size_t i) const { return dvec_[i]; }
@@ -78,57 +81,57 @@ class RASDvector {
     size_t ij() const { return ij_; }
     size_t size() const { return ij_ * det_->size(); }
 
-    void set_det(std::shared_ptr<const RASDeterminants> o) const {
+    void set_det(std::shared_ptr<const DetType> o) const {
       det_ = o;
       std::for_each(dvec_.begin(), dvec_.end(), [&o](CiPtr p) { p->set_det(o); });
     }
 
-    std::shared_ptr<RASDvector<DataType>> clone() const { return std::make_shared<RASDvector<DataType>>(det_, ij_); }
-    std::shared_ptr<RASDvector<DataType>> copy() const { return std::make_shared<RASDvector<DataType>>(*this); }
+    std::shared_ptr<Dvector_base<CiType>> clone() const { return std::make_shared<Dvector_base<CiType>>(det_, ij_); }
+    std::shared_ptr<Dvector_base<CiType>> copy() const { return std::make_shared<Dvector_base<CiType>>(*this); }
 
     // for MEH
-    std::shared_ptr<RASDvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
+    std::shared_ptr<Dvector_base<CiType>> apply(const int orbital, const bool action, const int spin) const {
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
-      return std::make_shared<RASDvector<DataType>>(out);
+      return std::make_shared<Dvector_base<CiType>>(out);
     }
 
 
     // will fail for non-double DataTypes
-    std::shared_ptr<RASDvector<DataType>> spin() const {
+    std::shared_ptr<Dvector_base<CiType>> spin() const {
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back( i->spin() );
-      return std::make_shared<RASDvector<DataType>>(out);
+      return std::make_shared<Dvector_base<CiType>>(out);
     }
 
-    std::shared_ptr<RASDvector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
+    std::shared_ptr<Dvector_base<CiType>> transpose(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->transpose();
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back( i->transpose(det) );
-      return std::make_shared<RASDvector<DataType>>(out);
+      return std::make_shared<Dvector_base<CiType>>(out);
     }
 
-    std::shared_ptr<RASDvector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
+    std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back( i->spin_lower(det) );
-      return std::make_shared<RASDvector<DataType>>(out);
+      return std::make_shared<Dvector_base<CiType>>(out);
     }
 
-    std::shared_ptr<RASDvector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<RASDeterminants>()) const {
+    std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back( i->spin_raise(det) );
-      return std::make_shared<RASDvector<DataType>>(out);
+      return std::make_shared<Dvector_base<CiType>>(out);
     }
 
-    void orthog(std::shared_ptr<const RASDvector<DataType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("RASDvector<DataType>::orthog called inconsistently");
+    void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {
+      if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::orthog called inconsistently");
       std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
     }
 
-    void project_out(std::shared_ptr<const RASDvector<DataType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("RASDvec::project_out called inconsistently");
+    void project_out(std::shared_ptr<const Dvector_base<CiType>> o) {
+      if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::project_out called inconsistently");
       auto j = o->dvec().begin();
       // simply project out each CI vector
       for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
@@ -138,15 +141,12 @@ class RASDvector {
       int j = 0;
       for (auto& iter : dvec_) {
         std::cout << std::endl << "     * ci vector, state " << std::setw(3) << j++;
-        if (typeid(DataType) == typeid(double)) std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
+        std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
         std::cout << std::endl;
         iter->print(thresh);
       }
     }
 };
-
-using RASDvec = RASDvector<double>;
-//using ZDvec = Dvector<std::complex<double>>;
 
 }
 

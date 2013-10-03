@@ -43,7 +43,7 @@ shared_ptr<RelZDvec> ZKnowlesHandy::form_sigma(shared_ptr<const RelZDvec> ccvec,
 
   const int ij = nij();
   const int nstate = ccvec->find(space_->basedet())->ij();
-  auto sigmavec = ccvec->clone(); 
+  auto sigmavec = ccvec->clone();
   sigmavec->zero();
 
   for (int istate = 0; istate != nstate; ++istate) {

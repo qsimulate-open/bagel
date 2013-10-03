@@ -67,7 +67,7 @@ void MOFile::init(const int nstart, const int nfence) {
     core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), den, ref_->schwarz());
     core_energy_ = (*den * (*ref_->hcore()+*core_fock_)).trace() * 0.5;
   } else {
-    core_fock_ = ref_->hcore(); 
+    core_fock_ = ref_->hcore();
     core_energy_ = 0.0;
   }
 

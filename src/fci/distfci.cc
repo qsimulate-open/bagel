@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: distfci.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: fci/distfci.cc
+// Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,18 +24,16 @@
 //
 
 #include <src/fci/distfci.h>
-#include <src/math/davidson.h>
+#include <src/fci/space.h>
 #include <src/util/combination.hpp>
-#include <src/math/comb.h>
 #include <src/fci/hzdenomtask.h>
-#include <src/fci/distfci_ab.h>
-#include <src/fci/distfci_bb.h>
 
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(std::shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b, const int ncore, const int nocc, const int nstate)
- : FCI(a, g, b, ncore, nocc, nstate) {
+DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+  common_init();
 
 #ifndef HAVE_MPI_H
   throw logic_error("DistFCI can be used only with MPI");
@@ -43,357 +41,111 @@ DistFCI::DistFCI(std::shared_ptr<const PTree> a, shared_ptr<const Geometry> g, s
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  space_ = make_shared<Space>(det_, 1);
+  space_ = make_shared<Space>(det_, 1); 
   update(ref_->coeff());
-
 }
 
+void DistFCI::common_init() {
+  print_header();
 
-vector<shared_ptr<DistCivec>> DistFCI::form_sigma(vector<shared_ptr<DistCivec>>& ccvec, shared_ptr<const MOFile> jop, const vector<int>& conv) const {
-  const int ij = norb_*norb_;
+  const bool frozen = idata_->get<bool>("frozen", false);
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
+  thresh_ = idata_->get<double>("thresh", 1.0e-20);
+  thresh_ = idata_->get<double>("thresh_fci", thresh_);
+  print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
-  const int nstate = ccvec.size();
+  if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
 
-  vector<shared_ptr<DistCivec>> sigmavec;
-
-  for (int istate = 0; istate != nstate; ++istate) {
-    if (conv[istate]) {
-      sigmavec.push_back(shared_ptr<DistCivec>());
-      continue;
-    }
-    shared_ptr<const DistCivec> cc = ccvec[istate];
-    shared_ptr<DistCivec> sigma = cc->clone();
-    sigma->zero();
-
-    Timer fcitime(1);
-    sigma->init_mpi_accumulate();
-
-    shared_ptr<DistCivec> ctrans = cc->transpose();
-
-    sigma_ab(cc, sigma, jop);
-    fcitime.tick_print("alpha-beta");
-
-    ctrans->transpose_wait();
-    shared_ptr<DistCivec> strans = ctrans->clone();
-    sigma_aa(ctrans, strans, jop);
-    shared_ptr<DistCivec> sigma_aa = strans->transpose();
-    fcitime.tick_print("alpha-alpha");
-
-    sigma_bb(cc, sigma, jop);
-    fcitime.tick_print("beta-beta");
-
-    sigma_aa->transpose_wait();
-    sigma->ax_plus_y(1.0, *sigma_aa);
-    fcitime.tick_print("wait1");
-
-    sigma->terminate_mpi_accumulate();
-    fcitime.tick_print("wait");
-
-    sigmavec.push_back(sigma);
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    set<int> tmp;
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()) - 1);
+    ref_ = ref_->set_active(tmp);
+    ncore_ = ref_->nclosed();
+    norb_ = ref_->nact();
+  }
+  else {
+    if (ncore_ < 0) ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+    if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->mdim()-ncore_);
   }
 
-  return sigmavec;
+  // Configure properties to be calculated on the final wavefunctions
+  //if (idata_->get<bool>("dipoles", false)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
+
+  // additional charge
+  const int charge = idata_->get<int>("charge", 0);
+
+  // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
+  const int nspin = idata_->get<int>("nspin", 0);
+  if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
+  nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
+  neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
+
+  // TODO allow for zero electron (quick return)
+  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
+  //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+
+  // resizing rdm vectors (with null pointers)
+  //rdm1_.resize(nstate_);
+  //rdm2_.resize(nstate_);
+  energy_.resize(nstate_);
+
+  // construct a determinant space in which this FCI will be performed.
+  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 }
 
+// generate initial vectors
+//   - bits: bit patterns of low-energy determinants
+//   - nspin: #alpha - #beta
+//   - out:
+void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec>> out) {
+  int ndet = nstate_*10;
+  start_over:
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
 
-void DistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
+  // Spin adapt detseeds
+  int oindex = 0;
+  vector<bitset<nbit__>> done;
+  for (auto& it : bits) {
+    bitset<nbit__> alpha = it.second;
+    bitset<nbit__> beta = it.first;
+    bitset<nbit__> open_bit = (alpha^beta);
 
-  shared_ptr<Determinants> int_det = space_->finddet(nelea_-1, neleb_-1);
-  shared_ptr<Determinants> base_det = space_->basedet();
+    // make sure that we have enough unpaired alpha
+    const int unpairalpha = (alpha ^ (alpha & beta)).count();
+    const int unpairbeta  = (beta ^ (alpha & beta)).count();
+    if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
 
-  const size_t lbt = int_det->lenb();
-  const size_t lbs = base_det->lenb();
-  const int ij = norb_*norb_;
+    // check if this orbital configuration is already used
+    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+    done.push_back(open_bit);
 
-  const int rank = mpi__->rank();
-  const int size = mpi__->size();
+    pair<vector<tuple<int, int, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
+    const double fac = adapt.second;
 
-  cc->init_mpi_recv();
+    out[oindex]->zero();
+    for (auto& ad : adapt.first) {
+      const int aloc = get<1>(ad) - out[oindex]->astart();
+      if (aloc >= 0 && aloc < out[oindex]->asize())
+        out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
+    }   
+    out[oindex]->spin_decontaminate();
 
-  vector<shared_ptr<DistABTask>> tasks;
+    cout << "     guess " << setw(3) << oindex << ":   closed " <<
+          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
 
-  // shamelessly statically distributing across processes
-  for (size_t a = 0; a != int_det->lena(); ++a) {
-    if (a%size != rank) continue;
-
-    const bitset<nbit__> astring = int_det->stringa(a);
-
-    tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
-
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if ((*i)->test()) {
-         (*i)->compute();
-        i = tasks.erase(i);
-      } else {
-        ++i;
-      }
-    }
-#ifndef USE_SERVER_THREAD
-    cc->flush();
-    sigma->flush();
-#endif
+    ++oindex;
+    if (oindex == nstate) break;
   }
-
-  bool done;
-  do {
-    done = true;
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if ((*i)->test()) {
-        (*i)->compute();
-        i = tasks.erase(i);
-      } else {
-        ++i;
-        done = false;
-      }
-    }
-#ifndef USE_SERVER_THREAD
-    size_t d = done ? 0 : 1;
-    mpi__->soft_allreduce(&d, 1);
-    done = d == 0;
-    if (!done) cc->flush();
-    if (!done) sigma->flush();
-#endif
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-
-  cc->terminate_mpi_recv();
-
-}
-
-
-
-void DistFCI::sigma_aa(shared_ptr<const DistCivec> ctrans, shared_ptr<DistCivec> strans, shared_ptr<const MOFile> jop) const {
-  shared_ptr<const Determinants> int_tra = space_->finddet(nelea_-1,neleb_-1)->transpose();
-  sigma_bb(ctrans, strans, jop, ctrans->det(), int_tra);
-}
-
-
-void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
-  const shared_ptr<const Determinants> base_det = space_->basedet();
-  const shared_ptr<const Determinants> int_det = space_->finddet(nelea_-1,neleb_-1); // only for n-1 beta strings...
-  sigma_bb(cc, sigma, jop, base_det, int_det);
-}
-
-
-// beta-beta block has no communication (and should be cheap)
-void DistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop,
-                       const shared_ptr<const Determinants> base_det, const shared_ptr<const Determinants> int_det) const {
-
-  const size_t lb = sigma->lenb();
-  const size_t la = sigma->asize();
-
-  unique_ptr<double[]> target(new double[la*lb]);
-  unique_ptr<double[]> source(new double[la*lb]);
-
-  // (astart:aend, b)
-  mytranspose_(cc->local(), lb, la, source.get());
-  fill_n(target.get(), la*lb, 0.0);
-
-  // preparing Hamiltonian
-  const size_t npack = norb_*(norb_-1)/2;
-  unique_ptr<double[]> hamil1(new double[norb_*norb_]);
-  unique_ptr<double[]> hamil2(new double[npack*npack]);
-  for (int i = 0, ij = 0, ijkl = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j, ++ij) {
-      hamil1[j+norb_*i] = hamil1[i+norb_*j] = jop_->mo1e(ij);
-      if (i == j) continue;
-      for (int k = 0; k != norb_; ++k)
-        for (int l = 0; l < k; ++l, ++ijkl)
-          hamil2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
-    }
+  if (oindex < nstate) {
+    for (auto& i : out) i->zero();
+    ndet *= 4;
+    goto start_over;
   }
-
-#ifndef USE_SERVER_THREAD
-  // for accumulate in aa and ab
-  sigma->flush();
-#endif
-
-  const size_t nelea = base_det->nelea();
-  const size_t neleb = base_det->neleb();
-
-  const static Comb comb;
-  const size_t lengb = comb.c(norb_, neleb-2);
-  vector<bitset<nbit__>> intb(lengb, bitset<nbit__>(0));
-  vector<int> data(norb_);
-  iota(data.begin(), data.end(), 0);
-  auto sa = intb.begin();
-  do {
-    for (int i=0; i < neleb-2; ++i) sa->set(data[i]);
-    ++sa;
-  } while (boost::next_combination(data.begin(), data.begin()+neleb-2, data.end()));
-
-  vector<mutex> localmutex(lb);
-  // loop over intermediate string
-  TaskQueue<DistBBTask> tasks(intb.size());
-
-  // two electron part
-  for (auto& b : intb)
-    tasks.emplace_back(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex);
-  // one electron part
-  for (auto& b : int_det->stringb())
-    tasks.emplace_back(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex);
-
-  tasks.compute();
-
-  mytranspose_(target.get(), la, lb, source.get());
-  for (size_t i = 0; i != la; ++i) {
-    lock_guard<mutex> lock(sigma->cimutex(i));
-    daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
-  }
-
-  // for accumulate in aa and ab
-#ifndef USE_SERVER_THREAD
-  sigma->flush();
-#endif
+  cout << endl;
 }
-
-
-
-void DistFCI::compute() {
-  Timer pdebug(2);
-
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
-
-  // some constants
-  //const int ij = nij();
-
-  // Creating an initial CI vector
-  vector<shared_ptr<DistCivec>> cc(nstate_);
-  for (auto& i : cc)
-    i = make_shared<DistCivec>(det_);
-
-  // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc);
-  pdebug.tick_print("guess generation");
-
-  // nuclear energy retrieved from geometry
-  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
-
-  // Davidson utility
-  DavidsonDiag<DistCivec> davidson(nstate_, max_iter_);
-
-  // main iteration starts here
-  cout << "  === FCI iteration ===" << endl << endl;
-  // 0 means not converged
-  vector<int> conv(nstate_,0);
-
-  for (int iter = 0; iter != max_iter_; ++iter) {
-    Timer fcitime;
-
-    // form a sigma vector given cc
-    vector<shared_ptr<DistCivec>> sigma = form_sigma(cc, jop_, conv);
-    pdebug.tick_print("sigma vector");
-
-    // Davidson
-    vector<shared_ptr<const DistCivec>> ccn, sigman;
-    for (auto& i : cc) if (i) ccn.push_back(i);
-    for (auto& i : sigma) if (i) sigman.push_back(i);
-    const vector<double> energies = davidson.compute(ccn, sigman);
-
-    // get residual and new vectors
-    vector<shared_ptr<DistCivec>> errvec = davidson.residual();
-    pdebug.tick_print("davidson");
-
-    // compute errors
-    vector<double> errors;
-    for (int i = 0; i != nstate_; ++i) {
-      errors.push_back(errvec[i]->variance());
-      conv[i] = static_cast<int>(errors[i] < thresh_);
-    }
-    pdebug.tick_print("error");
-
-    cc.clear();
-    if (!*min_element(conv.begin(), conv.end())) {
-      // denominator scaling
-      for (int ist = 0; ist != nstate_; ++ist) {
-        if (!conv[ist]) {
-          shared_ptr<DistCivec> c = errvec[ist]->clone();
-          const int size = c->size();
-          double* target_array = c->local();
-          double* source_array = errvec[ist]->local();
-          double* denom_array = denom_->local();
-          const double en = energies[ist];
-          // TODO this should be threaded
-          for (int i = 0; i != size; ++i) {
-            target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
-          }
-          davidson.orthog(c);
-          list<shared_ptr<const DistCivec>> tmp;
-          for (int jst = 0; jst != ist; ++jst)
-            if (!conv[jst]) tmp.push_back(cc.at(jst));
-          c->orthog(tmp);
-          cc.push_back(c);
-        } else {
-          cc.push_back(shared_ptr<DistCivec>());
-        }
-      }
-    }
-    pdebug.tick_print("denominator");
-
-    // printing out
-    if (nstate_ != 1 && iter) cout << endl;
-    for (int i = 0; i != nstate_; ++i) {
-      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
-                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
-                              << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
-                              << fcitime.tick() << endl;
-      energy_[i] = energies[i]+nuc_core;
-    }
-    if (*min_element(conv.begin(), conv.end())) break;
-  }
-  // main iteration ends here
-
-  // TODO RDM etc is not properly done yet
-//cc_ = davidson.civec();
-//s->print();
-}
-
-
-void DistFCI::update(shared_ptr<const Coeff> c) {
-  // iiii file to be created (MO transformation).
-  // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
-  Timer timer;
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
-
-  // right now full basis is used.
-  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
-
-  const_denom();
-}
-
-
-
-// same as HZ::const_denom except that denom_ is also distributed
-void DistFCI::const_denom() {
-  Timer denom_t;
-  auto h = make_shared<Matrix>(norb_, 1);
-  auto jop = make_shared<Matrix>(norb_, norb_);
-  auto kop = make_shared<Matrix>(norb_, norb_);
-
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j <= i; ++j) {
-      jop->element(j, i) = jop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
-      kop->element(j, i) = kop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
-    }
-    h->element(i,0) = jop_->mo1e(i,i);
-  }
-  denom_t.tick_print("jop, kop");
-
-  denom_ = make_shared<DistCivec>(det_);
-
-  double* iter = denom_->local();
-  TaskQueue<HZDenomTask> tasks(denom_->asize());
-  for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
-    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop, kop, h);
-    iter += det()->stringb().size();
-  }
-  tasks.compute();
-
-  denom_t.tick_print("denom");
-}
-
-
 
 vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) {
   multimap<double, pair<size_t, size_t>> tmp;
@@ -451,53 +203,53 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 }
 
 
+void DistFCI::print_header() const {
+  cout << "  ---------------------------" << endl;
+  cout << "        FCI calculation      " << endl;
+  cout << "  ---------------------------" << endl << endl;
+}
 
-// generate initial vectors
-//   - bits: bit patterns of low-energy determinants
-//   - nspin: #alpha - #beta
-//   - out:
-void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec>> out) {
-  int ndet = nstate_*10;
-  start_over:
-  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
 
-  // Spin adapt detseeds
-  int oindex = 0;
-  vector<bitset<nbit__>> done;
-  for (auto& it : bits) {
-    bitset<nbit__> alpha = it.second;
-    bitset<nbit__> beta = it.first;
-    bitset<nbit__> open_bit = (alpha^beta);
 
-    // make sure that we have enough unpaired alpha
-    const int unpairalpha = (alpha ^ (alpha & beta)).count();
-    const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
+void DistFCI::update(shared_ptr<const Coeff> c) {
+  // iiii file to be created (MO transformation).
+  // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
+  Timer timer;
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
 
-    // check if this orbital configuration is already used
-    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-    done.push_back(open_bit);
+  // right now full basis is used.
+  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
 
-    pair<vector<tuple<int, int, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
-    const double fac = adapt.second;
+  const_denom();
+}
 
-    out[oindex]->zero();
-    for (auto& ad : adapt.first) {
-      const int aloc = get<1>(ad) - out[oindex]->astart();
-      if (aloc >= 0 && aloc < out[oindex]->asize())
-        out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
+
+
+// same as HZ::const_denom except that denom_ is also distributed
+void DistFCI::const_denom() {
+  Timer denom_t;
+  auto h = make_shared<Matrix>(norb_, 1);
+  auto jop = make_shared<Matrix>(norb_, norb_);
+  auto kop = make_shared<Matrix>(norb_, norb_);
+
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j <= i; ++j) {
+      jop->element(i,j) = jop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, i, j);
+      kop->element(i,j) = kop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, j, i);
     }
-
-    cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
-
-    ++oindex;
-    if (oindex == nstate) break;
+    h->element(i,0) = jop_->mo1e(i,i);
   }
-  if (oindex < nstate) {
-    for (auto& i : out) i->zero();
-    ndet *= 4;
-    goto start_over;
+  denom_t.tick_print("jop, kop");
+
+  denom_ = make_shared<DistCivec>(det_);
+
+  double* iter = denom_->local();
+  TaskQueue<HZDenomTask> tasks(denom_->asize());
+  for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
+    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop, kop, h);
+    iter += det()->stringb().size();
   }
-  cout << endl;
+  tasks.compute();
+
+  denom_t.tick_print("denom");
 }

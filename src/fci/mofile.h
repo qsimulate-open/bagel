@@ -56,7 +56,7 @@ class MOFile {
     std::shared_ptr<const Matrix> core_fock_;
     // mo1e is a compressed symmetric matrix
     std::shared_ptr<CSymMatrix> mo1e_;
-    // mo2e is a matrix of sizeij_*sizeij_ 
+    // mo2e is a matrix of sizeij_*sizeij_
     std::shared_ptr<Matrix> mo2e_;
 
     std::shared_ptr<DFHalfDist> mo2e_1ext_;

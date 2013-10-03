@@ -13,12 +13,12 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 *** Citation ***
 
   Please cite as:
-  "BAGEL, Brilliantly Advanced General Electronic-structure Library, 
+  "BAGEL, Brilliantly Advanced General Electronic-structure Library,
   distributed at http://www.nubakery.org under the GNU General Public License."
 
   See doc/papers.json for BAGEL-related publications, which are also
   listed on our website. If you contributed or used BAGEL and cited above,
-  feel free to update this file so that your papers appear on the website. 
+  feel free to update this file so that your papers appear on the website.
 
 
 *** License ***
@@ -44,6 +44,6 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   If you want to gain access to a program that implements a published work and
   you do not find it in the public repository, please write to the authors.
 
-  BAGEL is intended for use in parallel environments with a few Terabyte 
+  BAGEL is intended for use in parallel environments with a few Terabyte
   of distributed memory (e.g., hence there is no disk interface).
-  We are NOT going to optimize BAGEL for a stand-alone workstation. 
+  We are NOT going to optimize BAGEL for a stand-alone workstation.

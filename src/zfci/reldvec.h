@@ -3,7 +3,7 @@
 // Filename: reldvec.h
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -44,7 +44,7 @@ class RelDvector {
     // make an empty Dvec
     RelDvector(std::shared_ptr<const Space_base> space, const size_t ij) : space_(space) {
       for (auto& isp : space->detmap())
-        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, ij))); 
+        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, ij)));
     }
 
     RelDvector(const std::map<std::shared_ptr<const Determinants>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const Space_base> space) : dvecs_(o), space_(space) { }
@@ -61,10 +61,10 @@ class RelDvector {
         dvecs_.insert(std::make_pair(i.first, std::make_shared<Dvector<DataType>>(i.second)));
     }
 
-    // combines (opposite of split()) 
+    // combines (opposite of split())
     RelDvector(const std::vector<std::shared_ptr<RelDvector<DataType>>>& o) : space_(o.front()->space_) {
       for (auto& isp : space_->detmap())
-        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, o.size()))); 
+        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, o.size())));
       int j = 0;
       for (auto& i : o)
         set_data(j++, i);
@@ -73,8 +73,8 @@ class RelDvector {
     std::shared_ptr<RelDvector<DataType>> clone() const { return std::make_shared<RelDvector<DataType>>(space_, dvecs_.begin()->second->ij()); }
     std::shared_ptr<RelDvector<DataType>> copy() const { return std::make_shared<RelDvector<DataType>>(*this); }
 
-    std::shared_ptr<Dvector<DataType>> find(std::shared_ptr<const Determinants> det) { return dvecs_.at(det); } 
-    std::shared_ptr<const Dvector<DataType>> find(std::shared_ptr<const Determinants> det) const { return dvecs_.at(det); } 
+    std::shared_ptr<Dvector<DataType>> find(std::shared_ptr<const Determinants> det) { return dvecs_.at(det); }
+    std::shared_ptr<const Dvector<DataType>> find(std::shared_ptr<const Determinants> det) const { return dvecs_.at(det); }
 
     std::shared_ptr<const Space_base> space() const { return space_; }
 
@@ -87,7 +87,7 @@ class RelDvector {
       }
     }
 
-    void zero() { std::for_each(dvecs_.begin(), dvecs_.end(), [](MapType i) { i.second->zero(); }); } 
+    void zero() { std::for_each(dvecs_.begin(), dvecs_.end(), [](MapType i) { i.second->zero(); }); }
 
     size_t size() const { return std::accumulate(dvecs_.begin(), dvecs_.end(), 0ull, [](size_t i, MapType o) { return i+o.second->size(); }); }
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
@@ -109,7 +109,7 @@ class RelDvector {
 
     std::vector<std::shared_ptr<const RelDvector<DataType>>> split() const {
       const int nstate = dvecs_.begin()->second->ij();
-      return split(0, nstate); 
+      return split(0, nstate);
     }
 
     std::vector<std::shared_ptr<const RelDvector<DataType>>> split(const int nstart, const int nend) const {
@@ -154,7 +154,7 @@ class RelDvector {
 
     void print(double thresh) const {
       for (auto& i : dvecs_)
-        i.second->print(thresh); 
+        i.second->print(thresh);
     }
 
 };

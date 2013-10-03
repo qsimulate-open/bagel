@@ -48,9 +48,9 @@ void ZHarrison::const_denom() {
       jop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, j, i).real();
       kop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, i, j).real();
       // assert for Kramers and symmetry
-      assert(fabs(jop_->mo2e(bitset<4>("0000"), j, i, j, i).imag()) < 1.0e-8); 
-      assert(fabs(jop_->mo2e(bitset<4>("1111"), j, i, i, j).imag()) < 1.0e-8); 
-      assert(fabs(jop_->mo2e(bitset<4>("0101"), j, i, j, i).imag()) < 1.0e-8); 
+      assert(fabs(jop_->mo2e(bitset<4>("0000"), j, i, j, i).imag()) < 1.0e-8);
+      assert(fabs(jop_->mo2e(bitset<4>("1111"), j, i, i, j).imag()) < 1.0e-8);
+      assert(fabs(jop_->mo2e(bitset<4>("0101"), j, i, j, i).imag()) < 1.0e-8);
     }
     h->data(i) = jop_->mo1e(bitset<2>("00"), i,i).real();
     // assert for Kramers and symmetry
@@ -65,7 +65,7 @@ void ZHarrison::const_denom() {
   TaskQueue<HZDenomTask> tasks(est);
 
   for (auto& i : space_->detmap()) {
-    shared_ptr<const Determinants> det = i.second; 
+    shared_ptr<const Determinants> det = i.second;
     shared_ptr<Dvec> cdenom = denom_->find(det);
     double* dptr = cdenom->data();
     for (auto& ia : det->stringa()) {

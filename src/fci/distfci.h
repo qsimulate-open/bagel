@@ -39,25 +39,44 @@ namespace bagel {
 //
 // The implementation is based on the HarrisonZarrabian class written by Shane Parker.
 
-class DistFCI : public FCI {
-
+class DistFCI : public Method {
   protected:
     std::shared_ptr<Space> space_;
     std::shared_ptr<DistCivec> denom_;
 
-    // const_denom function here only makes a denom for local data of DistCivec. This is called from FCI
-    void const_denom() override;
+    // Options
+    int max_iter_;
+    double thresh_;
+    double print_thresh_;
+
+    int nelea_;
+    int neleb_;
+    int ncore_;
+    int norb_;
+
+    int nstate_;
+
+    // extra
+    std::shared_ptr<const Determinants> det_;
+
+    // results
+    std::vector<double> energy_;
+    std::shared_ptr<DistDvec> cc_;
+    std::shared_ptr<MOFile> jop_;
+
+    void common_init();
+    void print_header() const;
+
+    // const_denom function here only makes a denom for local data of DistCivec.
+    void const_denom();
 
     // denominator
     void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec>> out);
 
     // Determinant seeds in parallel
-    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet) override;
+    std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 
     // just to confort FCI
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const override
-      { throw std::logic_error("DistFCI::form_sigma disabled"); }
-
     std::vector<std::shared_ptr<DistCivec>> form_sigma(std::vector<std::shared_ptr<DistCivec>>&, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
 
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop,
@@ -72,11 +91,28 @@ class DistFCI : public FCI {
     DistFCI(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
             const int ncore = -1, const int nocc = -1, const int nstate = -1);
 
-    void update(std::shared_ptr<const Coeff>) override;
-
     // FCI compute function using DistCivec
     void compute() override;
 
+    int norb() const { return norb_; }
+    int nelea() const { return nelea_; }
+    int neleb() const { return neleb_; }
+    int ncore() const { return ncore_; }
+    double core_energy() const { return jop_->core_energy(); }
+
+    int nij() const { return (norb_*(norb_+1))/2; }
+
+    void update(std::shared_ptr<const Coeff>);
+
+    std::shared_ptr<const Determinants> det() const { return det_; }
+    std::shared_ptr<const MOFile> jop() const { return jop_; }
+    std::shared_ptr<const DistCivec> denom() const { return denom_; }
+    std::shared_ptr<const DistDvec> civec() const { return cc_; }
+
+    std::vector<double> energy() const { return energy_; }
+    double energy(const int i) const { return energy_.at(i); }
+
+    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };
 
 }

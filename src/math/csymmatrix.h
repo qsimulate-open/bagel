@@ -36,7 +36,7 @@ class CSymMatrix {
     bool localized_;
     const int nocc_;
     const size_t size_;
-    std::unique_ptr<double[]> data_; 
+    std::unique_ptr<double[]> data_;
   public:
     CSymMatrix(int n, bool l) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
 
@@ -50,8 +50,8 @@ class CSymMatrix {
     // sequential access
     double* data() { return data_.get(); }
     const double* data() const { return data_.get(); }
-    double& data(int i) { assert(i < size_); return data_[i]; } 
-    const double& data(int i) const { assert(i < size_); return data_[i]; } 
+    double& data(int i) { assert(i < size_); return data_[i]; }
+    const double& data(int i) const { assert(i < size_); return data_[i]; }
 
     // element access
     double& element(int i, int j) { assert(i <= j); return data_[i+((j*(j+1))>>1)]; }

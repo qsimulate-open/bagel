@@ -31,7 +31,7 @@
 #include <utility>
 
 #include <src/fci/dvec.h>
-#include <src/ras/dvec.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 

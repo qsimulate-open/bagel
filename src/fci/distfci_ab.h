@@ -38,8 +38,8 @@ namespace bagel {
 class DistABTask {
   protected:
     std::bitset<nbit__> astring;
-    std::shared_ptr<Determinants> base_det;
-    std::shared_ptr<Determinants> int_det;
+    std::shared_ptr<const Determinants> base_det;
+    std::shared_ptr<const Determinants> int_det;
     std::shared_ptr<const MOFile> jop;
     std::shared_ptr<const DistCivec> cc;
     std::shared_ptr<DistCivec> sigma;
@@ -49,7 +49,7 @@ class DistABTask {
     std::vector<int> requests_;
 
   public:
-    DistABTask(const std::bitset<nbit__> ast, std::shared_ptr<Determinants> b, std::shared_ptr<Determinants> i, std::shared_ptr<const MOFile> j,
+    DistABTask(const std::bitset<nbit__> ast, std::shared_ptr<const Determinants> b, std::shared_ptr<const Determinants> i, std::shared_ptr<const MOFile> j,
                std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> s)
      : astring(ast), base_det(b), int_det(i), jop(j), sigma(s) {
       // first receive all the data (nele_a * lenb)

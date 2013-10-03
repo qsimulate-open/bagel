@@ -254,8 +254,8 @@ void ZFCI::compute() {
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
 
-      auto ctmp = errvec.front()->clone(); 
-       
+      auto ctmp = errvec.front()->clone();
+
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         for (auto& ib : space_->detmap()) {
