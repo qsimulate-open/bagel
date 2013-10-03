@@ -47,10 +47,13 @@ void RelSpace::common_init() {
   assert(nelea_ == neleb_);
 
   if (!mute_) cout << " Constructing " << nelea_+neleb_+1 << " determinant spaces" << endl;
-  for (int i = -nelea_; i <= neleb_; ++i) {
-    if (!mute_) cout << " Constructing space of all determinants with " << nelea_+i << " " << neleb_+i << " "  << endl << endl;
-    auto tmpdet = make_shared<Determinants>(norb_, nelea_+i, neleb_-i, false, mute_);
-    detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(nelea_+i, neleb_-i), tmpdet));
+  const int nele = nelea_+neleb_;
+  for (int i = 0; i != norb_; ++i) {
+    if (nele-i >= 0 && nele-i <= norb_) {
+      if (!mute_) cout << " Constructing space of all determinants with " << nelea_+i << " " << neleb_+i << " "  << endl << endl;
+      auto tmpdet = make_shared<Determinants>(norb_, i, nele-i, false, mute_);
+      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i, nele-i), tmpdet));
+    }
   }
 
   if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
