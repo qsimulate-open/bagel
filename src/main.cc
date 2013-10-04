@@ -29,6 +29,7 @@
 #include <src/opt/optimize.h>
 #include <src/molecule/localization.h>
 #include <src/meh/meh_cas.h>
+#include <src/meh/meh_distcas.h>
 #include <src/meh/meh_ras.h>
 
 // debugging
@@ -156,6 +157,11 @@ throw logic_error("broken!");
           shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
 
           auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
+          meh->compute();
+      } else if (title == "meh-dist-cas") {
+          shared_ptr<DimerDistCAS> cispace = dimer->compute_distcispace(itree);
+
+          auto meh = make_shared<MEH_DistCAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "meh-ras") { // Not the best solution, but it'll do for now
           shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);

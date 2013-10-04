@@ -124,6 +124,8 @@ class DistCivector {
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
 
+    void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
+
     // MPI Isend Irecv
     void init_mpi_accumulate() const {
       send_  = std::make_shared<SendRequest>();

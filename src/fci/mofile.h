@@ -109,6 +109,8 @@ class MOFile {
     const double* mo1e_ptr() const { return mo1e_->data(); }
     const double* mo2e_ptr() const { return mo2e_->data(); }
 
+    const int nocc() const { return nocc_; }
+
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
     double core_energy() const { return core_energy_; }
 

@@ -37,10 +37,10 @@ class FormSigmaDistFCI {
     std::shared_ptr<const Space> space_;
 
   public:
-    FormSigmaDistFCI(std::shared_ptr<const Space> sp) : space_(sp) {}
+    FormSigmaDistFCI(std::shared_ptr<const Space> sp = std::shared_ptr<const Space>()) : space_(sp) {}
 
-    std::vector<std::shared_ptr<DistCivec>> operator()(std::vector<std::shared_ptr<DistCivec>>& cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-    std::shared_ptr<DistDvec> operator()(std::shared_ptr<DistDvec> cc, std::shared_ptr<const MOFile> jop) const;
+    std::vector<std::shared_ptr<DistCivec>> operator()(const std::vector<std::shared_ptr<DistCivec>>& cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    std::shared_ptr<DistDvec> operator()(std::shared_ptr<const DistDvec> cc, std::shared_ptr<const MOFile> jop) const;
     //std::shared_ptr<DistDvec> operator()(std::shared_ptr<const DistDvec> cc, const double* mo1e) const;
 
   private:
@@ -49,7 +49,7 @@ class FormSigmaDistFCI {
                   const std::shared_ptr<const Determinants>, const std::shared_ptr<const Determinants>) const;
 
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
+    void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop, std::shared_ptr<const Determinants> int_det) const;
     void sigma_ab(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
 };
 

@@ -46,7 +46,6 @@ DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  space_ = make_shared<Space>(det_, 1); 
   update(ref_->coeff());
 }
 
@@ -98,7 +97,8 @@ void DistFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
+  space_ = make_shared<Space>(norb_, nelea_, neleb_, 1); 
+  det_ = space_->basedet();
 }
 
 // generate initial vectors
@@ -260,7 +260,7 @@ void DistFCI::const_denom() {
 }
 
 void DistFCI::compute() {
-  Timer pdebug(2);
+  Timer pdebug(0);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
@@ -286,7 +286,7 @@ void DistFCI::compute() {
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
   // 0 means not converged
-  vector<int> conv(nstate_,0);
+  vector<int> conv(nstate_, 0);
 
   FormSigmaDistFCI form_sigma(space_);
 

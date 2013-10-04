@@ -97,7 +97,7 @@ class DistFCI : public Method {
     std::shared_ptr<const Determinants> det() const { return det_; }
     std::shared_ptr<const MOFile> jop() const { return jop_; }
     std::shared_ptr<const DistCivec> denom() const { return denom_; }
-    std::shared_ptr<const DistDvec> civec() const { return cc_; }
+    std::shared_ptr<const DistDvec> civectors() const { return cc_; }
 
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }

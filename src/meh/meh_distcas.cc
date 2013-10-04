@@ -1,10 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: space.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: meh_distcas.cc
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Modified by: Michael Caldwell <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,28 +23,20 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/meh/meh_distcas.h>
+#include <src/fci/dist_form_sigma.h>
 
-#ifndef __SRC_FCI_SPACE_H
-#define __SRC_FCI_SPACE_H
+using namespace std;
+using namespace bagel;
 
-#include <src/fci/space_base.h>
+shared_ptr<DistDvec> MEH_DistCAS::form_sigma(shared_ptr<const DistDvec> ccvec, std::shared_ptr<const MOFile> jop) const {
+  FormSigmaDistFCI form;
 
-namespace bagel {
-
-// implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
-class Space : public Space_base {
-  protected:
-    const int M_; // number of electrons added or removed from a reference
-    const bool compress_;
-    void common_init() override;
-
-  public:
-    Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = false);
-    Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = false, const bool mute = false);
-
-    int nspin() const { return nelea_ - neleb_; };
-};
-
+  return form(ccvec, jop);
 }
 
-#endif
+shared_ptr<DistDvec> MEH_DistCAS::form_sigma_1e(shared_ptr<const DistDvec> ccvec, const double* modata) const {
+  throw logic_error("1e properties not yet implemented in MEH_DistCAS");
+
+  return shared_ptr<DistDvec>();
+}

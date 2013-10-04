@@ -32,8 +32,8 @@
 using namespace std;
 using namespace bagel;
 
-vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(vector<shared_ptr<DistCivec>>& ccvec, shared_ptr<const MOFile> jop, const vector<int>& conv) const {
-  const int norb = ccvec.front()->det()->norb();
+vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_ptr<DistCivec>>& ccvec, shared_ptr<const MOFile> jop, const vector<int>& conv) const {
+  const int norb = jop->nocc();
   const int ij = norb*norb;
 
   const int nstate = ccvec.size();
@@ -59,7 +59,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(vector<shared_ptr<Dis
 
     ctrans->transpose_wait();
     shared_ptr<DistCivec> strans = ctrans->clone();
-    sigma_aa(ctrans, strans, jop);
+    sigma_aa(ctrans, strans, jop, cc->det()->remalpha()->rembeta());
     shared_ptr<DistCivec> sigma_aa = strans->transpose();
     fcitime.tick_print("alpha-alpha");
 
@@ -79,7 +79,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(vector<shared_ptr<Dis
   return sigmavec;
 }
 
-shared_ptr<DistDvec> FormSigmaDistFCI::operator()(shared_ptr<DistDvec> ccvec, shared_ptr<const MOFile> jop) const {
+shared_ptr<DistDvec> FormSigmaDistFCI::operator()(shared_ptr<const DistDvec> ccvec, shared_ptr<const MOFile> jop) const {
   vector<int> conv(ccvec->ij(), static_cast<bool>(false));
   vector<shared_ptr<DistCivec>> svec = (*this)(ccvec->dvec(), jop, conv);
   return make_shared<DistDvec>(svec);
@@ -88,7 +88,7 @@ shared_ptr<DistDvec> FormSigmaDistFCI::operator()(shared_ptr<DistDvec> ccvec, sh
 
 void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
   shared_ptr<const Determinants> base_det = cc->det();
-  shared_ptr<const Determinants> int_det = space_->finddet(base_det->nelea() - 1, base_det->neleb() - 1);
+  shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
 
   const int norb = base_det->norb();
 
@@ -152,16 +152,16 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
 
 
 
-void FormSigmaDistFCI::sigma_aa(shared_ptr<const DistCivec> ctrans, shared_ptr<DistCivec> strans, shared_ptr<const MOFile> jop) const {
+void FormSigmaDistFCI::sigma_aa(shared_ptr<const DistCivec> ctrans, shared_ptr<DistCivec> strans, shared_ptr<const MOFile> jop, shared_ptr<const Determinants> int_det) const {
   shared_ptr<const Determinants> trans_det = ctrans->det();
-  shared_ptr<const Determinants> int_tra = space_->finddet(trans_det->neleb() - 1, trans_det->nelea() - 1)->transpose();
+  shared_ptr<const Determinants> int_tra = int_det->transpose();
   sigma_bb(ctrans, strans, jop, ctrans->det(), int_tra);
 }
 
 
 void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
   const shared_ptr<const Determinants> base_det = cc->det();
-  const shared_ptr<const Determinants> int_det = space_->finddet(base_det->nelea() - 1,base_det->neleb() - 1); // only for n-1 beta strings...
+  const shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta(); // only for n-1 beta strings...
   sigma_bb(cc, sigma, jop, base_det, int_det);
 }
 

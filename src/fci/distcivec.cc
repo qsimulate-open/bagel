@@ -372,7 +372,7 @@ namespace bagel { namespace DFCI {
     public:
       ApplyTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td, const bool act, const int orb)
        : abit_(a), target_(t), cc_(c), tdet_(td), action_(act), orbital_(orb) {
-        shared_ptr<const Determinants> det = c->det();
+        shared_ptr<const Determinants> det = cc_->det();
         const size_t lbs = det->lenb();
         const int norb = det->norb();
 
@@ -425,6 +425,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
   if (spin) {
     shared_ptr<const Determinants> tdet = ( action ? sdet->addalpha() : sdet->remalpha() );
     out = make_shared<DistCivector<double>>(tdet);
+    assert( lbs == tdet->lenb() );
 
     this->init_mpi_recv();
 
@@ -442,15 +443,18 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
       dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet, action, orbital);
 
     dq.finish();
+
     this->terminate_mpi_recv();
   }
   else { // This case requires no communication
     shared_ptr<const Determinants> tdet = ( action ? sdet->addbeta() : sdet->rembeta() );
     out = make_shared<DistCivector<double>>(tdet);
+    assert( sdet->lena() == tdet->lena() );
+    const size_t lbt = tdet->lenb();
 
     for (size_t ia = astart_; ia < aend_; ++ia) {
       const double* source_base = this->local() + (ia - astart_) * lbs;
-      double* target_base = out->local() + (ia - astart_) * lbs;
+      double* target_base = out->local() + (ia - astart_) * lbt;
       for (auto& iter : ( action ? sdet->phiupb(orbital) : sdet->phidownb(orbital) )) {
         const double sign = static_cast<double>(iter.sign);
         target_base[iter.target] += sign * source_base[iter.source];

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_cas_sigma.cc
+// Filename: meh_cas.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
