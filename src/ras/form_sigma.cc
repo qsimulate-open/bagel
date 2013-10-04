@@ -88,59 +88,6 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
   return sigmavec;
 }
 
-// This is how this is accessed from MEH
-shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, const double* mo1e, const double* mo2e) const {
-  const int nstate = ccvec->ij();
-  shared_ptr<const RASDeterminants> det = ccvec->det();
-  const int norb = det->norb();
-
-  auto mo2e_hz = [&mo2e, &norb] (const int i, const int j, const int k, const int l) { return mo2e[i + j*norb + norb*norb*(k + l*norb)]; };
-
-  unique_ptr<double[]> g(new double[norb*norb]);
-  for (int k = 0, kl = 0; k < norb; ++k) {
-    for (int l = 0; l < k; ++l, ++kl) {
-      { // g_kl
-        double val = mo1e[l + k * norb] - mo2e_hz(k, k, k, l);
-        for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,l);
-        g[l + k * norb] = val;
-      }
-
-      { // g_lk
-        double val = mo1e[k + l * norb];
-        for (int j = 0; j < l; ++j) val -= mo2e_hz(l,j,j,k);
-        g[k + l * norb] = val;
-      }
-    }
-    // g_kk
-    double val = mo1e[k + k*norb] - 0.5*mo2e_hz(k,k,k,k);
-    for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,k);
-    g[k + k * norb] = val;
-    ++kl;
-  }
-
-  auto sigmavec = make_shared<RASDvec>(det, nstate);
-
-  for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
-    shared_ptr<const RASCivec> cc = ccvec->data(istate);
-    shared_ptr<RASCivec> sigma = sigmavec->data(istate);
-
-    // (taskaa)
-    sigma_aa(cc, sigma, g.get(), mo2e);
-    pdebug.tick_print("taskaa");
-
-    // (taskbb)
-    sigma_bb(cc, sigma, g.get(), mo2e);
-    pdebug.tick_print("taskbb");
-
-    // (taskab) alpha-beta contributions
-    sigma_ab(cc, sigma, mo2e);
-    pdebug.tick_print("taskab");
-  }
-
-  return sigmavec;
-}
-
 // A bit of a temporary hack for 1e terms
 shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, const double* mo1e) const {
   const int nstate = ccvec->ij();

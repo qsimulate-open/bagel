@@ -44,8 +44,12 @@ class CSymMatrix {
       assert(in->ndim() == in->mdim() && (*in - *in->transpose()).rms() < 1.0e-8);
       for (int i = 0; i != nocc_; ++i)
         for (int j = 0; j <= i; ++j)
-           element(j,i) = in->element(j,i);
+          element(j,i) = in->element(j,i);
     }
+
+    // get info
+    const int nocc() const { return nocc_; }
+    const int size() const { return size_; }
 
     // sequential access
     double* data() { return data_.get(); }
@@ -62,7 +66,7 @@ class CSymMatrix {
       auto out = std::make_shared<Matrix>(nocc_, nocc_, localized_);
       for (int i = 0; i != nocc_; ++i) {
         for (int j = 0; j != i; ++j)
-           out->element(i,j) = out->element(j,i) = element(j,i);
+          out->element(i,j) = out->element(j,i) = element(j,i);
         out->element(i,i) = element(i,i);
       }
       return out;

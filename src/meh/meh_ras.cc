@@ -36,9 +36,10 @@ MEH_RAS::MEH_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, s
 }
 
 
-shared_ptr<RASDvec> MEH_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, const double* h1, const double* mo2e_ptr) const {
+shared_ptr<RASDvec> MEH_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   FormSigmaRAS form(sparse_);
-  return form(ccvec, h1, mo2e_ptr);
+  vector<int> conv(ccvec->ij(), static_cast<int>(false));
+  return form(ccvec, jop, conv);
 }
 
 shared_ptr<RASDvec> MEH_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, const double* modata) const {

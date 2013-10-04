@@ -32,8 +32,8 @@ template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
   std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
   std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
-  std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->mo1e_first(), jop->mo2e_first());
-  std::shared_ptr<const VecType> sigmavecB = form_sigma(ccvecB, jop->mo1e_second(), jop->mo2e_second());
+  std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->monomer_jop<0>());
+  std::shared_ptr<const VecType> sigmavecB = form_sigma(ccvecB, jop->monomer_jop<1>());
 
   const int nstatesA = AB.template nstates<0>();
   const int nstatesB = AB.template nstates<1>();

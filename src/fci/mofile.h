@@ -79,10 +79,14 @@ class MOFile {
   public:
     MOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
     MOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    // Shortcut used in MEH
+    MOFile(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : nocc_(mo1e->nocc()), mo1e_(mo1e), mo2e_(mo2e) {}
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 
     int sizeij() const { return sizeij_; }
+    std::shared_ptr<const CSymMatrix> mo1e() const { return mo1e_; }
+    std::shared_ptr<const Matrix> mo2e() const { return mo2e_; }
     double& mo1e(const size_t i) { return mo1e_->data(i); }
     double& mo2e(const size_t i) { return mo2e_->data(i); }
     double& mo2e(const size_t i, const size_t j) { return mo2e_->element(i,j); }
@@ -122,6 +126,7 @@ class Jop : public MOFile {
   public:
     Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
       : MOFile(b,e,f) { init(c, d); }
+    Jop(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : MOFile(mo1e, mo2e) {}
 };
 
 

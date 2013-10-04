@@ -37,8 +37,10 @@ class DimerJop : public Jop {
     // Array is big enough to store all possible coulomb matrices just for simplicity
     std::array<std::shared_ptr<const Matrix>, 16> matrices_;
 
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo1es_;
-    std::pair<std::unique_ptr<double[]>, std::unique_ptr<double[]>> monomer_mo2es_;
+    std::pair<std::shared_ptr<MOFile>, std::shared_ptr<MOFile>> jops_;
+
+    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo1es_;
+    std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> monomer_mo2es_;
 
     std::shared_ptr<const Matrix> cross_mo1e_;
 
@@ -47,16 +49,17 @@ class DimerJop : public Jop {
   public:
     DimerJop(const std::shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
       std::shared_ptr<const Coeff> coeff); // note that in DimerJop, I'm forcing a HZ Jop
-    ~DimerJop() {};
 
     // Functions to kind of make DimerJop behave like a pair of shared_ptr<Jop>
-    double* mo1e_first() const { return monomer_mo1es_.first.get(); };
-    double* mo1e_second() const { return monomer_mo1es_.second.get(); };
+    double* mo1e_first() const { return monomer_mo1es_.first->data(); };
+    double* mo1e_second() const { return monomer_mo1es_.second->data(); };
 
-    double* mo2e_first() const { return monomer_mo2es_.first.get(); };
-    double* mo2e_second() const { return monomer_mo2es_.second.get(); };
+    double* mo2e_first() const { return monomer_mo2es_.first->data(); };
+    double* mo2e_second() const { return monomer_mo2es_.second->data(); };
 
     std::shared_ptr<const Matrix> cross_mo1e() const { return cross_mo1e_; }
+
+    template<int unit> std::shared_ptr<MOFile> monomer_jop() const { return ( unit == 0 ? jops_.first : jops_.second ); }
 
     template<int A, int B, int C, int D>
     std::shared_ptr<const Matrix> coulomb_matrix();
