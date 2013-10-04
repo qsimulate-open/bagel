@@ -27,6 +27,7 @@
 #include <src/math/davidson.h>
 #include <src/util/taskqueue.h>
 #include <src/fci/hztasks.h>
+#include <src/smith/prim_op.h>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -87,30 +88,21 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  const int norb = norb_;
-  unique_ptr<double[]> h1(new double[norb*norb]);
-  for (int i = 0, ij = 0; i < norb; ++i) {
+  auto h1 = make_shared<Matrix>(norb_, norb_);
+  for (int i = 0, ij = 0; i < norb_; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
-      h1[i + j*norb] = h1[j + i*norb] = jop->mo1e(ij);
+      h1->element(i, j) = h1->element(j, i) = jop->mo1e(ij);
     }
   }
 
-  unique_ptr<double[]> h2(new double[norb*norb*norb*norb]);
-  for (int i = 0, ijkl = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      for (int k = 0; k < norb; ++k) {
-        for (int l = 0; l < norb; ++l, ++ijkl) {
-          h2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
-        }
-      }
-    }
-  }
+  auto h2 = make_shared<Matrix>(*jop->mo2e());
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e()->data(), h2->data(), norb_, norb_, norb_, norb_);
 
-  TaskQueue<HZTaskAA> tasks(det->lena());
+  TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
+    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();
 }

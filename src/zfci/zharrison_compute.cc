@@ -26,6 +26,8 @@
 #include <src/zfci/zharrison.h>
 #include <src/math/davidson.h>
 #include <src/util/taskqueue.h>
+#include <src/fci/hztasks.h>
+#include <src/smith/prim_op.h>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -84,40 +86,23 @@ throw logic_error("end of sigma");
 }
 
 void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
-#if 0
   assert(cc->det() == sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
+  shared_ptr<const ZMatrix> h1 = jop->mo1e(bitset<2>("00"));
+  auto h2 = make_shared<ZMatrix>(*jop->mo2e(bitset<4>("0000")));
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("0000"))->data(), h2->data(), norb_, norb_, norb_, norb_);
+
+  TaskQueue<HZTaskAA<complex<double>>> tasks(det->lena());
+
   const int lb = cc->lenb();
-
-  const int norb = norb_;
-  unique_ptr<double[]> h1(new double[norb*norb]);
-  for (int i = 0, ij = 0; i < norb; ++i) {
-    for (int j = 0; j <= i; ++j, ++ij) {
-      h1[i + j*norb] = h1[j + i*norb] = jop->mo1e(ij);
-    }
-  }
-
-  unique_ptr<double[]> h2(new double[norb*norb*norb*norb]);
-  for (int i = 0, ijkl = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      for (int k = 0; k < norb; ++k) {
-        for (int l = 0; l < norb; ++l, ++ijkl) {
-          h2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
-        }
-      }
-    }
-  }
-
-  TaskQueue<HZTaskAA> tasks(det->lena());
-
-  double* target = sigma->data();
+  complex<double>* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
+    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();
-#endif
 }
+
 
 void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
 #if 0

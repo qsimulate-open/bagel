@@ -120,7 +120,7 @@ void MEH_CAS::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, cons
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  TaskQueue<HZTaskAA> tasks(det->lena());
+  TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb) {
