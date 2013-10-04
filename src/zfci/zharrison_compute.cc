@@ -42,9 +42,10 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
 
   // diagonal part
   for (auto& isp : space_->detmap()) { 
-    const bool noab = (nelea_ == 0 || neleb_ == 0);
     shared_ptr<const Determinants> base_det = isp.second; 
-    shared_ptr<const Determinants> int_det = noab ? shared_ptr<const Determinants>() : int_space_->finddet(nelea_-1,neleb_-1);
+
+    const bool noab = (base_det->nelea() == 0 || base_det->neleb() == 0);
+    shared_ptr<const Determinants> int_det = noab ? shared_ptr<const Determinants>() : int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
 
     /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
     shared_ptr<ZDvec> d, e;
@@ -67,21 +68,22 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
       sigma_bb(cc, sigma, jop);
       pdebug.tick_print("taskbb");
 
-      // (2ab) alpha-beta contributions
-      /* Resembles more the Knowles & Handy FCI terms */
-      d->zero();
+      if (!noab) {
+        // (2ab) alpha-beta contributions
+        /* Resembles more the Knowles & Handy FCI terms */
+        d->zero();
 
-      sigma_2ab_1(cc, d);
-      pdebug.tick_print("task2ab-1");
+        sigma_2ab_1(cc, d);
+        pdebug.tick_print("task2ab-1");
 
-      sigma_2ab_2(d, e, jop);
-      pdebug.tick_print("task2ab-2");
+        sigma_2ab_2(d, e, jop);
+        pdebug.tick_print("task2ab-2");
 
-      sigma_2ab_3(sigma, e);
-      pdebug.tick_print("task2ab-3");
+        sigma_2ab_3(sigma, e);
+        pdebug.tick_print("task2ab-3");
+      }
     }
   }
-throw logic_error("end of sigma");
   return sigmavec;
 }
 
@@ -116,8 +118,6 @@ void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
 
 void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
-  const int norb = norb_;
-
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
@@ -125,11 +125,11 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
   const int lbs = bdet->lenb();
   const complex<double>* source_base = cc->data();
 
-  TaskQueue<HZTaskAB1<complex<double>>> tasks(norb*norb);
+  TaskQueue<HZTaskAB1<complex<double>>> tasks(norb_*norb_);
 
-  for (int k = 0; k < norb; ++k) {
-    for (int l = 0; l < norb; ++l) {
-      complex<double>* target_base = d->data(k*norb + l)->data();
+  for (int k = 0; k < norb_; ++k) {
+    for (int l = 0; l < norb_; ++l) {
+      complex<double>* target_base = d->data(k*norb_ + l)->data();
       tasks.emplace_back(tdet, lbs, source_base, target_base, k, l);
     }
   }
@@ -156,14 +156,13 @@ void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
-  const int norb = norb_;
   const int lbt = base_det->lenb();
   const int lbs = int_det->lenb();
   complex<double>* target_base = sigma->data();
 
-  for (int i = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      const complex<double>* source_base = e->data(i*norb + j)->data();
+  for (int i = 0; i < norb_; ++i) {
+    for (int j = 0; j < norb_; ++j) {
+      const complex<double>* source_base = e->data(i*norb_ + j)->data();
       for (auto& aiter : int_det->phiupa(i)) {
         complex<double>* target = target_base + aiter.target*lbt;
         const complex<double>* source = source_base + aiter.source*lbs;
