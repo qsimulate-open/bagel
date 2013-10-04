@@ -85,6 +85,7 @@ throw logic_error("end of sigma");
   return sigmavec;
 }
 
+
 void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
   assert(cc->det() == sigma->det());
 
@@ -105,15 +106,14 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
 
 void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
-#if 0
-  shared_ptr<const Civec> cc_trans = cc->transpose();
-  auto sig_trans = make_shared<Civec>(cc_trans->det());
+  shared_ptr<const ZCivec> cc_trans = cc->transpose();
+  auto sig_trans = make_shared<ZCivec>(cc_trans->det());
 
   sigma_aa(cc_trans, sig_trans, jop);
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
-#endif
 }
+
 
 void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
 #if 0
