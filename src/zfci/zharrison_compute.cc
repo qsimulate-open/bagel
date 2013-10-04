@@ -116,7 +116,6 @@ void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
 
 void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
-#if 0
   const int norb = norb_;
 
   shared_ptr<const Determinants> bdet = cc->det(); // base
@@ -124,30 +123,33 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 
   const int lbt = tdet->lenb();
   const int lbs = bdet->lenb();
-  const double* source_base = cc->data();
+  const complex<double>* source_base = cc->data();
 
-  TaskQueue<HZTaskAB1> tasks(norb*norb);
+  TaskQueue<HZTaskAB1<complex<double>>> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
-      double* target_base = d->data(k*norb + l)->data();
+      complex<double>* target_base = d->data(k*norb + l)->data();
       tasks.emplace_back(tdet, lbs, source_base, target_base, k, l);
     }
   }
 
   tasks.compute();
+}
+
+
+void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+  // TODO check -- 0101, 1010: Are they identical?
+#if 0
+  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e(bitset<4>("0101")), ij, 0.0, e->data(), lenab);
+  zgemm3m_("n", "n", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e(bitset<4>("1010")), ij, 0.0, e->data(), lenab);
+#else
+  zgemm3m_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bitset<4>("0101"))->data(), ij, 0.0, e->data(), lenab);
 #endif
 }
 
-void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
-#if 0
-  const int la = d->lena();
-  const int lb = d->lenb();
-  const int ij = d->ij();
-  const int lenab = la*lb;
-  dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
-#endif
-}
 
 void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const {
 #if 0

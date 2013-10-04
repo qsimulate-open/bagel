@@ -93,18 +93,20 @@ class HZTaskAA {
 
 };
 
+
+template<typename DataType>
 class HZTaskAB1 {
   protected:
     std::shared_ptr<const Determinants> det_;
     const int lbs_;
-    const double* const source_base_;
-    double* const target_base_;
+    const DataType* const source_base_;
+    DataType* const target_base_;
     const int k_;
     const int l_;
 
 
   public:
-    HZTaskAB1(std::shared_ptr<const Determinants>& det, const int& lbs, const double* const source_base, double* const target_base,
+    HZTaskAB1(std::shared_ptr<const Determinants>& det, const int& lbs, const DataType* const source_base, DataType* const target_base,
       const int& k, const int& l) :
       det_(det), lbs_(lbs), source_base_(source_base), target_base_(target_base), k_(k), l_(l) {}
 
@@ -112,8 +114,8 @@ class HZTaskAB1 {
       const int lbt = det_->lenb();
 
       for (auto& aiter : det_->phiupa(k_)) {
-        double *target = target_base_ + aiter.source*lbt;
-        const double *source = source_base_ + aiter.target*lbs_;
+        DataType* target = target_base_ + aiter.source*lbt;
+        const DataType* source = source_base_ + aiter.target*lbs_;
         for (auto& biter : det_->phiupb(l_)) {
           const double sign = aiter.sign * biter.sign;
           target[biter.source] += sign * source[biter.target];
