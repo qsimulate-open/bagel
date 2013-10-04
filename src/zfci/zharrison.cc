@@ -95,7 +95,7 @@ void ZHarrison::common_init() {
   energy_.resize(nstate_);
 
   space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
-  int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1);
+  int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
 }
 
 

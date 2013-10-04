@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: relmofile.h
-// Copyright (C) 2013 Michael Caldwell
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Michael Caldwell  <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -60,8 +60,7 @@ class RelMOFile {
     virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
 
   public:
-    RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
-    RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    RelMOFile(const std::shared_ptr<const Reference>);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -81,8 +80,7 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
-      : RelMOFile(b, f) { init(c, d); }
+    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d) : RelMOFile(b) { init(c, d); }
 };
 
 

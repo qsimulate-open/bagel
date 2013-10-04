@@ -48,6 +48,7 @@ void Space::common_init() {
   if (!mute_) cout << " Constructing space of all determinants that can formed by removing "
                   << M_ << " electrons from " << nelea_
                   << " alpha and " << neleb_ << " beta electrons." << endl << endl;
+  assert(neleb_ >= M_ && nelea_ >= M_);
   for(int i = -M_; i <= 0; ++i ) {
     for(int j = -M_; j <= 0; ++j) {
       auto tmpdet = make_shared<Determinants>(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true);

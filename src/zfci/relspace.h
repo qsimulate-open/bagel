@@ -34,12 +34,11 @@ namespace bagel {
 // implements spaces that contain all determinants |PQ> for a given Kramers index -N/2 to N/2
 class RelSpace : public Space_base {
   protected:
-    int nelec() const { return nelea_ + neleb_; }
+    const bool linkup_;
     void common_init() override;
 
   public:
-    RelSpace(std::shared_ptr<const Determinants> det, const bool mute = true);
-    RelSpace(const int norb, const int nelea, const int neleb, const bool mute = true);
+    RelSpace(const int norb, const int nelea, const int neleb, const bool mute = true, const bool linkup = false);
 };
 
 }

@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
   // input should be RelReference
   assert(dynamic_pointer_cast<const RelReference>(ref));
 
