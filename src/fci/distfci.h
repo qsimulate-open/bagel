@@ -76,16 +76,6 @@ class DistFCI : public Method {
     // Determinant seeds in parallel
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 
-    // just to confort FCI
-    std::vector<std::shared_ptr<DistCivec>> form_sigma(std::vector<std::shared_ptr<DistCivec>>&, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-
-    void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop,
-                  const std::shared_ptr<const Determinants>, const std::shared_ptr<const Determinants>) const;
-
-    void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_ab(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
-
   public:
     // this constructor is ugly... to be fixed some day...
     DistFCI(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,

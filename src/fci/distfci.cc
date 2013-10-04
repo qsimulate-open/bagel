@@ -23,9 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/fci/distfci.h>
-#include <src/fci/space.h>
+#include <cassert>
+
 #include <src/util/combination.hpp>
+#include <src/math/comb.h>
+#include <src/fci/dist_form_sigma.h>
+#include <src/fci/distfci.h>
+#include <src/math/davidson.h>
+#include <src/fci/space.h>
 #include <src/fci/hzdenomtask.h>
 
 using namespace std;
@@ -252,4 +257,114 @@ void DistFCI::const_denom() {
   tasks.compute();
 
   denom_t.tick_print("denom");
+}
+
+void DistFCI::compute() {
+  Timer pdebug(2);
+
+  // at the moment I only care about C1 symmetry, with dynamics in mind
+  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
+
+  // some constants
+  //const int ij = nij();
+
+  // Creating an initial CI vector
+  vector<shared_ptr<DistCivec>> cc(nstate_);
+  for (auto& i : cc)
+    i = make_shared<DistCivec>(det_);
+
+  // find determinants that have small diagonal energies
+  generate_guess(nelea_-neleb_, nstate_, cc);
+  pdebug.tick_print("guess generation");
+
+  // nuclear energy retrieved from geometry
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+
+  // Davidson utility
+  DavidsonDiag<DistCivec> davidson(nstate_, max_iter_);
+
+  // main iteration starts here
+  cout << "  === FCI iteration ===" << endl << endl;
+  // 0 means not converged
+  vector<int> conv(nstate_,0);
+
+  FormSigmaDistFCI form_sigma(space_);
+
+  for (int iter = 0; iter != max_iter_; ++iter) {
+    Timer fcitime;
+
+    // form a sigma vector given cc
+    vector<shared_ptr<DistCivec>> sigma = form_sigma(cc, jop_, conv);
+    pdebug.tick_print("sigma vector");
+
+    // Davidson
+    vector<shared_ptr<const DistCivec>> ccn, sigman;
+    for (auto& i : cc) if (i) ccn.push_back(i);
+    for (auto& i : sigma) if (i) sigman.push_back(i);
+    const vector<double> energies = davidson.compute(ccn, sigman);
+
+    // get residual and new vectors
+    vector<shared_ptr<DistCivec>> errvec = davidson.residual();
+    pdebug.tick_print("davidson");
+
+    // compute errors
+    vector<double> errors;
+    for (int i = 0; i != nstate_; ++i) {
+      errors.push_back(errvec[i]->variance());
+      conv[i] = static_cast<int>(errors[i] < thresh_);
+    }
+    pdebug.tick_print("error");
+
+    cc.clear();
+    if (!*min_element(conv.begin(), conv.end())) {
+      // denominator scaling
+      for (int ist = 0; ist != nstate_; ++ist) {
+        if (!conv[ist]) {
+          shared_ptr<DistCivec> c = errvec[ist]->clone();
+          const int size = c->size();
+          double* target_array = c->local();
+          double* source_array = errvec[ist]->local();
+          double* denom_array = denom_->local();
+          const double en = energies[ist];
+          // TODO this should be threaded
+          for (int i = 0; i != size; ++i) {
+            target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
+          }
+          c->spin_decontaminate();
+          davidson.orthog(c);
+          list<shared_ptr<const DistCivec>> tmp;
+          for (int jst = 0; jst != ist; ++jst)
+            if (!conv[jst]) tmp.push_back(cc.at(jst));
+          c->orthog(tmp);
+          cc.push_back(c);
+        } else {
+          cc.push_back(shared_ptr<DistCivec>());
+        }
+      }
+    }
+    pdebug.tick_print("denominator");
+
+    // printing out
+    if (nstate_ != 1 && iter) cout << endl;
+    for (int i = 0; i != nstate_; ++i) {
+      cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                              << setw(17) << fixed << setprecision(8) << energies[i]+nuc_core << "   "
+                              << setw(10) << scientific << setprecision(2) << errors[i] << fixed << setw(10) << setprecision(2)
+                              << fcitime.tick() << endl;
+      energy_[i] = energies[i]+nuc_core;
+    }
+    if (*min_element(conv.begin(), conv.end())) break;
+  }
+  // main iteration ends here
+
+  // TODO RDM etc is not properly done yet
+  cc_ = make_shared<DistDvec>(davidson.civec());
+  for (int ist = 0; ist < nstate_; ++ist) {
+    const double s2 = cc_->data(ist)->spin_expectation();
+    if (mpi__->rank() == 0)
+      cout << endl << "     * ci vector " << setw(3) << ist
+                   << ", <S^2> = " << setw(6) << setprecision(4) << s2
+                   << ", E = " << setw(17) << fixed << setprecision(8) << energy_[ist] << endl;
+    cc_->data(ist)->print(print_thresh_); 
+  }
 }
