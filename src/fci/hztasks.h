@@ -59,12 +59,11 @@ class HZTaskAA {
           if (ibs[j]) continue;
           std::bitset <nbit__> sourcestring = ibs; sourcestring.set(j);
 
-          const DataType hc = h1_[i+ j*norb] * static_cast<double>(det->sign(sourcestring, i, j));
+          const DataType hc = h1_[j+ i*norb] * static_cast<double>(det->sign(sourcestring, i, j));
           const DataType* const source = cc_->element_ptr(0, det->lexical<0>(sourcestring));
           std::transform(source, source+lb, target_, target_, [&hc](DataType p, DataType q){ return hc*p+q; });
         }
       }
-
 
       // Two-electron part
       for (int i = 0; i != norb; ++i) {
@@ -82,7 +81,7 @@ class HZTaskAA {
               const double phase = -static_cast<double>(ij_phase*kl_phase);
               std::bitset<nbit__> string_ijkl = string_ij;
               string_ijkl.set(k); string_ijkl.set(l);
-              const DataType temp = phase * h2_[l+norb*(k+norb*(j+norb*i))]; // TODO check for complex
+              const DataType temp = phase * h2_[l+norb*(k+norb*(j+norb*i))];
               const DataType* const source = cc_->element_ptr(0, det->lexical<0>(string_ijkl));
               std::transform(source, source+lb, target_, target_, [&temp](DataType p, DataType q){ return temp*p+q; });
             }

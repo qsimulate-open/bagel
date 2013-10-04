@@ -88,13 +88,18 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
 }
 
 
-void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
+void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool beta) const {
   assert(cc->det() == sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
-  shared_ptr<const ZMatrix> h1 = jop->mo1e(bitset<2>("00"));
-  auto h2 = make_shared<ZMatrix>(*jop->mo2e(bitset<4>("0000")));
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("0000"))->data(), h2->data(), norb_, norb_, norb_, norb_);
+
+  bitset<2> bit2;
+  bitset<4> bit4;
+  if (beta) { bit2 = ~bit2; bit4 = ~bit4; }
+
+  shared_ptr<const ZMatrix> h1 = jop->mo1e(bit2);
+  auto h2 = make_shared<ZMatrix>(*jop->mo2e(bit4));
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bit4)->data(), h2->data(), norb_, norb_, norb_, norb_);
 
   TaskQueue<HZTaskAA<complex<double>>> tasks(det->lena());
 
@@ -111,7 +116,7 @@ void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
   shared_ptr<const ZCivec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<ZCivec>(cc_trans->det());
 
-  sigma_aa(cc_trans, sig_trans, jop);
+  sigma_aa(cc_trans, sig_trans, jop, /*beta*/true);
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
