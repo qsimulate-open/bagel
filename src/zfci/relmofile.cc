@@ -155,6 +155,14 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
+#ifndef NDEBUG
+  {
+    ZMatrix tmp = *out[0] % *overlap * *out[0];
+    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
+    assert(tmp.rms() < 1.0e-6);
+  }
+#endif
+
   auto diag = (*out[0] % *overlap * *out[0]).diag();
   for (int i = 0; i != noff; ++i) {
     for (int j = 0; j != ndim; ++j) {
@@ -162,6 +170,19 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
       out[1]->element(j,i) /= sqrt(diag[i].real());
     }
   }
+
+#ifndef NDEBUG
+  { // check reconstructed Fock matrix
+    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), false, false, false);
+    auto diag0 = (*out[0] % *fock * *out[0]).diag();
+    auto diag1 = (*out[1] % *fock * *out[1]).diag();
+    for (int i = 0; i != out[0]->mdim(); ++i) {
+      assert(fabs(diag0[i] - ref_->eig()[i*2+nstart]) < 1.0e-8);
+      assert(fabs(diag1[i] - ref_->eig()[i*2+nstart]) < 1.0e-8);
+    }
+  }
+#endif
   return out;
 }
 
