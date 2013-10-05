@@ -160,6 +160,8 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     ZMatrix tmp = *out[0] % *overlap * *out[0];
     for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
     assert(tmp.rms() < 1.0e-6);
+    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
+    assert(tmp2.rms() < 1.0e-6);
   }
 #endif
 
@@ -178,8 +180,10 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     auto diag0 = (*out[0] % *fock * *out[0]).diag();
     auto diag1 = (*out[1] % *fock * *out[1]).diag();
     for (int i = 0; i != out[0]->mdim(); ++i) {
-      assert(fabs(diag0[i] - ref_->eig()[i*2+nstart]) < 1.0e-8);
-      assert(fabs(diag1[i] - ref_->eig()[i*2+nstart]) < 1.0e-8);
+      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
+        stringstream ss; ss << "Fock reconstruction failed. " << fabs(diag0[i] - ref_->eig()[i*2+nstart]) << " " << fabs(diag1[i] - ref_->eig()[i*2+nstart]) << endl;
+        throw logic_error(ss.str());
+      }
     }
   }
 #endif

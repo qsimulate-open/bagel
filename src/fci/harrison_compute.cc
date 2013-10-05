@@ -143,10 +143,8 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
 
 
 void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
-  const int la = d->lena();
-  const int lb = d->lenb();
   const int ij = d->ij();
-  const int lenab = la*lb;
+  const int lenab = d->lena() * d->lenb();
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }
 
