@@ -347,6 +347,8 @@ namespace bagel { namespace DFCI {
   class ApplyTask {
     protected:
       const bitset<nbit__> abit_;
+      const size_t source_;
+      const int sign_;
       double* target_;
       const DistCivector<double>* cc_;
       shared_ptr<const Determinants> tdet_;
@@ -370,17 +372,14 @@ namespace bagel { namespace DFCI {
       }
 
     public:
-      ApplyTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td, const bool act, const int orb)
-       : abit_(a), target_(t), cc_(c), tdet_(td), action_(act), orbital_(orb) {
+      ApplyTask(const bitset<nbit__> a, const size_t source, const int sign, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td, const bool act, const int orb)
+       : abit_(a), source_(source), sign_(sign), target_(t), cc_(c), tdet_(td), action_(act), orbital_(orb) {
         shared_ptr<const Determinants> det = cc_->det();
         const size_t lbs = det->lenb();
         const int norb = det->norb();
 
-        bitset<nbit__> ab = abit_;
-        if ( condition(ab) ) {
-          const int k = cc_->get_bstring_buf(target_, det->lexical<0>(ab));
-          if (k >= 0) requests_.push_back(k);
-        }
+        const int k = cc_->get_bstring_buf(target_, source);
+        if (k >= 0) requests_.push_back(k);
       }
 
       bool test() {
@@ -401,11 +400,8 @@ namespace bagel { namespace DFCI {
         shared_ptr<const Determinants> sdet = cc_->det();
         const size_t lbs = sdet->lenb();
 
-        bitset<nbit__> ab = abit_;
-        if( condition(ab) ) {
-          const int sign = sdet->sign<0>(ab, orbital_);
-          transform(target_, target_ + lbs, target_, [&sign] (const double& t) { return sign * t; });
-        }
+        const int sign = sign_;
+        transform(target_, target_ + lbs, target_, [&sign] (const double& t) { return sign * t; });
       }
   };
 } }
@@ -423,6 +419,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
   shared_ptr<DistCivector<double>> out;
 
   if (spin) {
+    lock_guard<mutex> lock(recv_mutex_);
     shared_ptr<const Determinants> tdet = ( action ? sdet->addalpha() : sdet->remalpha() );
     out = make_shared<DistCivector<double>>(tdet);
     assert( lbs == tdet->lenb() );
@@ -439,8 +436,11 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
     DistQueue<DFCI::ApplyTask> dq;
   #endif
 
-    for (size_t ia = tastart; ia < taend; ++ia)
-      dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet, action, orbital);
+    for (auto& iter : ( action ? sdet->phiupa(orbital) : sdet->phidowna(orbital) )) {
+      if ( tastart <= iter.target && taend > iter.target ) {
+        dq.emplace(tdet->stringa(iter.target), iter.source, iter.sign, out->local() + (iter.target - tastart) * lbt, this, tdet, action, orbital);
+      }
+    }
 
     dq.finish();
 

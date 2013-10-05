@@ -73,6 +73,8 @@ class DistCivector {
 
     // mutex for write accesses to local_
     mutable std::vector<std::mutex> mutex_;
+    // for gathering data
+    mutable std::mutex recv_mutex_;
 
     // for transpose, buffer can be appended
     mutable std::shared_ptr<DistCivector<DataType>> buf_;

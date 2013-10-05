@@ -63,8 +63,8 @@ class DistQueue {
       DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)) {}
 
       template <typename... Args>
-      void emplace_and_compute(Args... args) {
-        tasks_.emplace_back(args...);
+      void emplace_and_compute(Args&&... args) {
+        tasks_.emplace_back(std::forward<Args>(args)...);
 
         for (auto i = tasks_.begin(); i != tasks_.end(); ) {
           if (i->test()) {
@@ -78,6 +78,11 @@ class DistQueue {
 #ifndef USE_SERVER_THREAD
         flush();
 #endif
+      }
+
+      template <typename... Args>
+      void emplace(Args&&... args) {
+        tasks_.emplace_back(std::forward<Args>(args)...);
       }
 
       void finish() {
