@@ -132,9 +132,9 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 
   TaskQueue<HZTaskAB1<complex<double>>> tasks(norb_*norb_);
 
-  for (int k = 0; k < norb_; ++k) {
-    for (int l = 0; l < norb_; ++l) {
-      complex<double>* target_base = d->data(k*norb_ + l)->data();
+  for (int k = 0; k < norb_; ++k) { // alpha
+    for (int l = 0; l < norb_; ++l) { // beta
+      complex<double>* target_base = d->data(l*norb_ + k)->data();
       tasks.emplace_back(tdet, lbs, source_base, target_base, k, l);
     }
   }
@@ -146,14 +146,10 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
   const int ij = d->ij();
   const int lenab = d->lena()*d->lenb();
-  // TODO check -- do I need to transpose?
-  // TODO check -- 0101, 1010: Are they identical?
-#if 0
-  zgemm3m_("n", "t", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e(bitset<4>("0101")), ij, 0.0, e->data(), lenab);
-  zgemm3m_("n", "t", lenab, ij, ij, 0.5, d->data(), lenab, jop->mo2e(bitset<4>("1010")), ij, 0.0, e->data(), lenab);
-#else
-  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bitset<4>("0101"))->data(), ij, 0.0, e->data(), lenab);
-#endif
+  ZMatrix tmp(*jop->mo2e(bitset<4>("1010")));
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("0110"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
+
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
 }
 
 
@@ -165,9 +161,9 @@ void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const
   const int lbs = int_det->lenb();
   complex<double>* target_base = sigma->data();
 
-  for (int i = 0; i < norb_; ++i) {
-    for (int j = 0; j < norb_; ++j) {
-      const complex<double>* source_base = e->data(i*norb_ + j)->data();
+  for (int i = 0; i < norb_; ++i) { // alpha
+    for (int j = 0; j < norb_; ++j) { // beta
+      const complex<double>* source_base = e->data(j*norb_ + i)->data();
       for (auto& aiter : int_det->phiupa(i)) {
         complex<double>* target = target_base + aiter.target*lbt;
         const complex<double>* source = source_base + aiter.source*lbs;
