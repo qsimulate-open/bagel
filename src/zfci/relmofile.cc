@@ -273,7 +273,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 
   for (size_t t = 0; t != 4; ++t) {
     list<shared_ptr<RelDFFull>> dffull;
-    for (auto& i : half_complex_exch[(t/2)])
+    for (auto& i : half_complex_exch[t/2])
       dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
     DFock::factorize(dffull);
     assert(dffull.size() == 1);
@@ -285,7 +285,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
 
   for (size_t i = 0; i != 16; ++i) {
-    out[bitset<4>(i)] = full[bitset<2>(i/4)]->form_4index(full[bitset<2>(i%4)], 1.0);
+    out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
   }
 
   // some assert statements

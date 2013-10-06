@@ -146,8 +146,8 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
   const int ij = d->ij();
   const int lenab = d->lena()*d->lenb();
-  ZMatrix tmp(*jop->mo2e(bitset<4>("1010")));
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("0110"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
+  ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
 
   zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
 }
