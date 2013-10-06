@@ -77,10 +77,24 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
         pdebug.tick_print("task2ab-1");
 
         sigma_2ab_2(d, e, jop);
-        pdebug.tick_print("task2ab-2");
+        pdebug.tick_print("task2ab-2 (0)");
 
         sigma_2ab_3(sigma, e);
-        pdebug.tick_print("task2ab-3");
+        pdebug.tick_print("task2ab-3 (0)");
+
+        if (base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_) {
+          // (b^+b^+ a b) contribution
+          // output determinant space
+          shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
+          // output area
+          shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
+
+          sigma_2ab_2_1(d, e, jop);
+          pdebug.tick_print("task2ab-2 (+1)");
+
+          sigma_2ab_3_1(sigma_1, e);
+          pdebug.tick_print("task2ab-3 (+1)");
+        }
       }
     }
   }
@@ -88,14 +102,14 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
 }
 
 
-void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool beta) const {
+void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool trans) const {
   assert(cc->det() == sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
 
   bitset<2> bit2;
   bitset<4> bit4;
-  if (beta) { bit2 = ~bit2; bit4 = ~bit4; }
+  if (trans) { bit2 = ~bit2; bit4 = ~bit4; }
 
   shared_ptr<const ZMatrix> h1 = jop->mo1e(bit2);
   auto h2 = make_shared<ZMatrix>(*jop->mo2e(bit4));
@@ -116,7 +130,7 @@ void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
   shared_ptr<const ZCivec> cc_trans = cc->transpose();
   auto sig_trans = make_shared<ZCivec>(cc_trans->det());
 
-  sigma_aa(cc_trans, sig_trans, jop, /*beta*/true);
+  sigma_aa(cc_trans, sig_trans, jop, /*trans*/true);
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
@@ -175,3 +189,52 @@ void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const
     }
   }
 }
+
+
+void ZHarrison::sigma_2ab_2_1(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+  bitset<4> bit4("1101");
+  if (trans) bit4 = ~bit4;
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+
+  // TODO can be reduced by a factor of two by using symmetry
+}
+
+
+void ZHarrison::sigma_2ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const {
+  const shared_ptr<const Determinants> base_det = sigma->det();
+  const shared_ptr<const Determinants> int_det = e->det();
+
+  const int lbt = base_det->lenb();
+  const int lbs = int_det->lenb();
+  const int la = base_det->lena();
+
+  assert(base_det->lena() == int_det->lena());
+
+  complex<double>* target_base = sigma->data();
+
+  // TODO can be reduced by a factor of two by using symmetry
+  // TODO not efficient code
+  for (int i = 0; i < norb_; ++i) { // beta
+    for (int j = 0; j < norb_; ++j) { // beta
+      if (i == j) continue;
+      const complex<double>* source_base = e->data(j*norb_ + i)->data();
+
+      for (size_t ia = 0; ia != la; ++ia) {
+        complex<double>* target = target_base + ia*lbt;
+        const complex<double>* source = source_base + ia*lbs;
+
+        for (const bitset<nbit__>& b : int_det->stringb()) {
+          if (b[i] || b[j]) continue;
+          bitset<nbit__> cb = b;
+          cb.set(i); cb.set(j); 
+          const double sign = base_det->sign(cb, i, j); 
+          target[base_det->lexical<1>(cb)] += sign * source[int_det->lexical<1>(b)];
+        }
+
+      }
+    }
+  }
+}
+
