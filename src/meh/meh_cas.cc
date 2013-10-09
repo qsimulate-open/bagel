@@ -122,7 +122,7 @@ void MEH_CAS::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, cons
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  TaskQueue<HZTaskAA> tasks(det->lena());
+  TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb) {
@@ -143,7 +143,7 @@ void MEH_CAS::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const 
   const int lbs = base_det->lenb();
   const double* source_base = cc->data();
 
-  TaskQueue<HZTaskAB1> tasks(norb*norb);
+  TaskQueue<HZTaskAB1<double>> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {

@@ -30,16 +30,18 @@
 
 namespace bagel {
 
+template<typename DataType>
 class HZTaskAA {
   protected:
-    std::shared_ptr<const Civec> cc_;
+    const std::shared_ptr<const Civector<DataType>> cc_;
     const std::bitset<nbit__> targetstring_;
-    double* const target_;
-    const double* const h1_;
-    const double* const h2_;
+    DataType* const target_;
+    const DataType* const h1_;
+    const DataType* const h2_;
 
   public:
-    HZTaskAA(std::shared_ptr<const Civec> cc, const std::bitset<nbit__> targetstring, double* const target, const double* const h1, const double* const h2) :
+    HZTaskAA(std::shared_ptr<const Civector<DataType>> cc, const std::bitset<nbit__> targetstring, DataType* const target,
+             const DataType* const h1, const DataType* const h2) :
       cc_(cc), targetstring_(targetstring), target_(target), h1_(h1), h2_(h2) {}
 
     void compute() {
@@ -57,11 +59,11 @@ class HZTaskAA {
           if (ibs[j]) continue;
           std::bitset <nbit__> sourcestring = ibs; sourcestring.set(j);
 
-          const double hc = h1_[i + j*norb] * static_cast<double>(det->sign(sourcestring, i, j));
-          daxpy_(lb, hc, cc_->element_ptr(0, det->lexical<0>(sourcestring)), 1, target_, 1);
+          const DataType hc = h1_[i+ j*norb] * static_cast<double>(det->sign(sourcestring, i, j));
+          const DataType* const source = cc_->element_ptr(0, det->lexical<0>(sourcestring));
+          std::transform(source, source+lb, target_, target_, [&hc](DataType p, DataType q){ return hc*p+q; });
         }
       }
-
 
       // Two-electron part
       for (int i = 0; i != norb; ++i) {
@@ -79,9 +81,9 @@ class HZTaskAA {
               const double phase = -static_cast<double>(ij_phase*kl_phase);
               std::bitset<nbit__> string_ijkl = string_ij;
               string_ijkl.set(k); string_ijkl.set(l);
-              const double temp = phase * h2_[l + k*norb + j*norb*norb + i*norb*norb*norb];
-              const double* source = cc_->element_ptr(0, det->lexical<0>(string_ijkl));
-              daxpy_(lb, temp, source, 1, target_, 1);
+              const DataType temp = phase * h2_[i+norb*(j+norb*(k+norb*l))]; // TODO fix this random access (but stick to this order for complex cases)
+              const DataType* const source = cc_->element_ptr(0, det->lexical<0>(string_ijkl));
+              std::transform(source, source+lb, target_, target_, [&temp](DataType p, DataType q){ return temp*p+q; });
             }
           }
         }
@@ -90,18 +92,20 @@ class HZTaskAA {
 
 };
 
+
+template<typename DataType>
 class HZTaskAB1 {
   protected:
     std::shared_ptr<const Determinants> det_;
     const int lbs_;
-    const double* const source_base_;
-    double* const target_base_;
+    const DataType* const source_base_;
+    DataType* const target_base_;
     const int k_;
     const int l_;
 
 
   public:
-    HZTaskAB1(std::shared_ptr<const Determinants>& det, const int& lbs, const double* const source_base, double* const target_base,
+    HZTaskAB1(std::shared_ptr<const Determinants>& det, const int& lbs, const DataType* const source_base, DataType* const target_base,
       const int& k, const int& l) :
       det_(det), lbs_(lbs), source_base_(source_base), target_base_(target_base), k_(k), l_(l) {}
 
@@ -109,8 +113,8 @@ class HZTaskAB1 {
       const int lbt = det_->lenb();
 
       for (auto& aiter : det_->phiupa(k_)) {
-        double *target = target_base_ + aiter.source*lbt;
-        const double *source = source_base_ + aiter.target*lbs_;
+        DataType* target = target_base_ + aiter.source*lbt;
+        const DataType* source = source_base_ + aiter.target*lbs_;
         for (auto& biter : det_->phiupb(l_)) {
           const double sign = aiter.sign * biter.sign;
           target[biter.source] += sign * source[biter.target];

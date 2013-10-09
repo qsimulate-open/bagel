@@ -1,10 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zfci.cc
+// Filename: zharrison.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
-// Modified by: Michael Caldwell <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,25 +23,23 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/zfci/zfci.h>
-#include <src/zfci/relspace.h>
-#include <src/util/combination.hpp>
+#include <src/zfci/zharrison.h>
 #include <src/math/davidson.h>
-#include <src/util/lexical_cast.h>
-#include <src/rel/dirac.h>
-#include <src/rel/relreference.h>
+#include <src/zfci/relspace.h>
 
 using namespace std;
 using namespace bagel;
 
-
-ZFCI::ZFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
+
+  update();
 }
 
-void ZFCI::common_init() {
+
+void ZHarrison::common_init() {
   print_header();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
@@ -93,23 +90,28 @@ void ZFCI::common_init() {
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
-  if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
+//if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
 
   energy_.resize(nstate_);
 
-  // construct a determinant space in which this FCI will be performed.
-  if (!relref) {
-    space_ = make_shared<Space>(make_shared<const Determinants>(norb_, nelea_, neleb_, 0, 0), 0, 0);
-  } else if (relref) {
-    space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
-  }
+  space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
+  if (nelea_ > 0 && neleb_ > 0)
+    int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
 }
+
+
+void ZHarrison::print_header() const {
+  cout << "  ----------------------------" << endl;
+  cout << "  Relativistic FCI calculation" << endl;
+  cout << "  ----------------------------" << endl << endl;
+}
+
 
 // generate initial vectors
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec> out) {
+void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec> out) {
   shared_ptr<const Determinants> cdet = space_->basedet();
   int ndet = nstate_*10;
   start_over:
@@ -137,9 +139,6 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Rel
     for (auto& iter : adapt.first) {
       out->find(cdet)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
-// TODO remove or replace
-//  out->data(oindex)->spin_decontaminate();
-
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << space_->basedet()->print_bit(alpha&beta) << " open " << setw(20) << space_->basedet()->print_bit(open_bit) << right << endl;
 
@@ -156,7 +155,7 @@ void ZFCI::generate_guess(const int nspin, const int nstate, std::shared_ptr<Rel
 
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
+vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet) {
   // initial guess is assumed to be in the (nelea, neleb) deterimnant - TODO is this OK?
   shared_ptr<const Determinants> cdet = space_->basedet();
 
@@ -182,29 +181,9 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZFCI::detseeds(const int ndet) {
 }
 
 
-void ZFCI::print_header() const {
-  if (!dynamic_pointer_cast<const RelReference>(ref_)) {
-    cout << "  ---------------------------" << endl;
-    cout << "    Complex FCI calculation  " << endl;
-    cout << "  ---------------------------" << endl << endl;
-  } else {
-    cout << "  ----------------------------" << endl;
-    cout << "  Relativistic FCI calculation" << endl;
-    cout << "  ----------------------------" << endl << endl;
-  }
-}
-
-shared_ptr<const CIWfn> ZFCI::conv_to_ciwfn() {
-//  return make_shared<const CIWfn>(geom_, ref_->coeff(), ncore_, norb_, geom_->nbasis() - ncore_ - norb_, energy_, cc_);
-    throw logic_error("ZFCI::con_to_ciwfn() not implemented yet");
-    return 0;
-}
-
-
-void ZFCI::compute() {
+void ZHarrison::compute() {
   Timer pdebug(2);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
   // some constants
@@ -224,7 +203,7 @@ void ZFCI::compute() {
   DavidsonDiag<RelZDvec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
-  cout << "  === ZFCI iteration ===" << endl << endl;
+  cout << "  === Relativistic FCI iteration ===" << endl << endl;
   // 0 means not converged
   vector<int> conv(nstate_,0);
 
@@ -254,8 +233,8 @@ void ZFCI::compute() {
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
 
-      auto ctmp = errvec.front()->clone();
-
+      auto ctmp = errvec.front()->clone(); 
+       
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         for (auto& ib : space_->detmap()) {

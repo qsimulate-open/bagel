@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
   // input should be RelReference
   assert(dynamic_pointer_cast<const RelReference>(ref));
 
@@ -155,6 +155,16 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
+#ifndef NDEBUG
+  {
+    ZMatrix tmp = *out[0] % *overlap * *out[0];
+    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
+    assert(tmp.rms() < 1.0e-6);
+    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
+    assert(tmp2.rms() < 1.0e-6);
+  }
+#endif
+
   auto diag = (*out[0] % *overlap * *out[0]).diag();
   for (int i = 0; i != noff; ++i) {
     for (int j = 0; j != ndim; ++j) {
@@ -162,6 +172,21 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
       out[1]->element(j,i) /= sqrt(diag[i].real());
     }
   }
+
+#ifndef NDEBUG
+  { // check reconstructed Fock matrix
+    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), false, false, false);
+    auto diag0 = (*out[0] % *fock * *out[0]).diag();
+    auto diag1 = (*out[1] % *fock * *out[1]).diag();
+    for (int i = 0; i != out[0]->mdim(); ++i) {
+      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
+        stringstream ss; ss << "Fock reconstruction failed. " << fabs(diag0[i] - ref_->eig()[i*2+nstart]) << " " << fabs(diag1[i] - ref_->eig()[i*2+nstart]) << endl;
+        throw logic_error(ss.str());
+      }
+    }
+  }
+#endif
   return out;
 }
 
@@ -186,10 +211,8 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
 unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
 
-  auto intbit2 = [](const size_t i) { bitset<2> out; for (int j = 0; j != 2; ++j) if (i & (1<<j)) out.set(j); return out; };
-
-  for (int i = 0; i != 4; ++i)
-    out[intbit2(i)] = make_shared<ZMatrix>(*coeff[i>>1] % *core_fock_ * *coeff[i&1]);
+  for (size_t i = 0; i != 4; ++i)
+    out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
 
   assert(out.size() == 4);
   // symmetry requirement
@@ -236,7 +259,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 
   // (3) split and factorize
   array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
-  for (int k = 0; k != 2; ++k) {
+  for (size_t k = 0; k != 2; ++k) {
     for (auto& i : half_complex[k]) {
       list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
       half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
@@ -248,24 +271,21 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // (4) compute (gamma|ii)
   unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
 
-  auto intbit4 = [](const size_t i) { bitset<4> out; for (int j = 0; j != 4; ++j) if (i & (1<<j)) out.set(j); return out; };
-  auto intbit2 = [](const size_t i) { bitset<2> out; for (int j = 0; j != 2; ++j) if (i & (1<<j)) out.set(j); return out; };
-
-  for (int t = 0; t != 4; ++t) {
+  for (size_t t = 0; t != 4; ++t) {
     list<shared_ptr<RelDFFull>> dffull;
-    for (auto& i : half_complex_exch[(t>>1)])
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff[(t&1)], iocoeff[(t&1)]));
+    for (auto& i : half_complex_exch[t/2])
+      dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
     DFock::factorize(dffull);
     assert(dffull.size() == 1);
     dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-    full[intbit2(t)] = dffull.front();
+    full[bitset<2>(t)] = dffull.front();
   }
 
   // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
 
-  for (int i = 0; i != 16; ++i) {
-    out[intbit4(i)] = full[intbit2(i>>2)]->form_4index(full[intbit2(i%4)], 1.0);
+  for (size_t i = 0; i != 16; ++i) {
+    out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
   }
 
   // some assert statements

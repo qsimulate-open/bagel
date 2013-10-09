@@ -27,6 +27,7 @@
 #include <src/math/davidson.h>
 #include <src/util/taskqueue.h>
 #include <src/fci/hztasks.h>
+#include <src/smith/prim_op.h>
 
 // toggle for timing print out.
 static const bool tprint = false;
@@ -81,39 +82,32 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   return sigmavec;
 }
 
+
 void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
 
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  const int norb = norb_;
-  unique_ptr<double[]> h1(new double[norb*norb]);
-  for (int i = 0, ij = 0; i < norb; ++i) {
+  auto h1 = make_shared<Matrix>(norb_, norb_);
+  for (int i = 0, ij = 0; i < norb_; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
-      h1[i + j*norb] = h1[j + i*norb] = jop->mo1e(ij);
+      h1->element(i, j) = h1->element(j, i) = jop->mo1e(ij);
     }
   }
 
-  unique_ptr<double[]> h2(new double[norb*norb*norb*norb]);
-  for (int i = 0, ijkl = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      for (int k = 0; k < norb; ++k) {
-        for (int l = 0; l < norb; ++l, ++ijkl) {
-          h2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
-        }
-      }
-    }
-  }
+  auto h2 = make_shared<Matrix>(*jop->mo2e());
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e()->data(), h2->data(), norb_, norb_, norb_, norb_);
 
-  TaskQueue<HZTaskAA> tasks(det->lena());
+  TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1.get(), h2.get());
+    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();
 }
+
 
 void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   shared_ptr<const Civec> cc_trans = cc->transpose();
@@ -123,6 +117,7 @@ void HarrisonZarrabian::sigma_bb(shared_ptr<const Civec> cc, shared_ptr<Civec> s
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
+
 
 void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
   const int norb = norb_;
@@ -134,7 +129,7 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   const int lbs = bdet->lenb();
   const double* source_base = cc->data();
 
-  TaskQueue<HZTaskAB1> tasks(norb*norb);
+  TaskQueue<HZTaskAB1<double>> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {
@@ -146,17 +141,17 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   tasks.compute();
 }
 
+
 void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<const MOFile> jop) const {
-  const int la = d->lena();
-  const int lb = d->lenb();
   const int ij = d->ij();
-  const int lenab = la*lb;
+  const int lenab = d->lena() * d->lenb();
   dgemm_("n", "n", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e_ptr(), ij, 0.0, e->data(), lenab);
 }
 
+
 void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
-  const shared_ptr<Determinants> base_det = space_->basedet();
-  const shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
+  const shared_ptr<const Determinants> base_det = sigma->det();
+  const shared_ptr<const Determinants> int_det = e->det(); 
 
   const int norb = norb_;
   const int lbt = base_det->lenb();

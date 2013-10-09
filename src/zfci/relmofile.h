@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: relmofile.h
-// Copyright (C) 2013 Michael Caldwell
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Michael Caldwell  <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -60,14 +60,17 @@ class RelMOFile {
     virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
 
   public:
-    RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
-    RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    RelMOFile(const std::shared_ptr<const Reference>);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
+    std::shared_ptr<const ZMatrix> mo1e(const std::bitset<2>& b) const { return mo1e_.at(b); }
+    std::shared_ptr<const ZMatrix> mo2e(const std::bitset<4>& b) const { return mo2e_.at(b); }
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
     const std::complex<double>& mo2e(const std::bitset<4>& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e_.at(b)->element(i+nocc_*j, k+nocc_*l); }
+
+    double core_energy() const { return core_energy_; }
 };
 
 
@@ -77,8 +80,7 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
-      : RelMOFile(b, f) { init(c, d); }
+    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d) : RelMOFile(b) { init(c, d); }
 };
 
 
