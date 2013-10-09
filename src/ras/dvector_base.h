@@ -90,7 +90,7 @@ class Dvector_base {
     std::shared_ptr<Dvector_base<CiType>> copy() const { return std::make_shared<Dvector_base<CiType>>(*this); }
 
     // for MEH
-    std::shared_ptr<Dvector_base<CiType>> apply(const int orbital, const bool action, const int spin) const {
+    std::shared_ptr<Dvector_base<CiType>> apply(const int orbital, const bool action, const bool spin) const {
       std::vector<CiPtr> out;
       for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
       return std::make_shared<Dvector_base<CiType>>(out);

@@ -73,8 +73,6 @@ class DistCivector {
 
     // mutex for write accesses to local_
     mutable std::vector<std::mutex> mutex_;
-    // for gathering data
-    mutable std::mutex recv_mutex_;
 
     // for transpose, buffer can be appended
     mutable std::shared_ptr<DistCivector<DataType>> buf_;
@@ -380,6 +378,8 @@ template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::apply(co
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;
+
+template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const;
 
 using DistDvec = Dvector_base<DistCivec>;
 
