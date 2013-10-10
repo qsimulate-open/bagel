@@ -45,14 +45,7 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
     shared_ptr<const Determinants> base_det = isp.second; 
 
     const bool noab = (base_det->nelea() == 0 || base_det->neleb() == 0);
-    shared_ptr<const Determinants> int_det = noab ? shared_ptr<const Determinants>() : int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
-
-    /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
-    shared_ptr<ZDvec> d, e;
-    if (!noab) {
-      d = make_shared<ZDvec>(int_det, ij);
-      e = make_shared<ZDvec>(int_det, ij);
-    }
+    const bool noaa =  base_det->nelea() < 1;
 
     for (int istate = 0; istate != nstate_; ++istate) {
       Timer pdebug(2);
@@ -69,6 +62,10 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
       pdebug.tick_print("taskbb");
 
       if (!noab) {
+        shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
+        auto d = make_shared<ZDvec>(int_det, ij);
+        auto e = make_shared<ZDvec>(int_det, ij);
+
         // (2ab) alpha-beta contributions
         /* Resembles more the Knowles & Handy FCI terms */
         d->zero();
@@ -83,18 +80,27 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
         pdebug.tick_print("task2ab-3 (0)");
 
         if (base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_) {
-          // (b^+b^+ a b) contribution
           // output determinant space
           shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
           // output area
           shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
 
+          // (b^+ a) contribution
+          sigma_ab(cc, sigma_1, jop);
+
+          // (b^+b^+ a b) contribution
           sigma_2ab_2_1(d, e, jop);
           pdebug.tick_print("task2ab-2 (+1)");
 
           sigma_2ab_3_1(sigma_1, e);
           pdebug.tick_print("task2ab-3 (+1)");
         }
+      }
+
+      if (!noaa) {
+        shared_ptr<const Determinants> int_det = int_space_aa_->finddet(base_det->nelea()-2, base_det->neleb());
+        auto d = make_shared<ZDvec>(int_det, ij);
+        auto e = make_shared<ZDvec>(int_det, ij);
       }
     }
   }
@@ -133,6 +139,44 @@ void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
   sigma_aa(cc_trans, sig_trans, jop, /*trans*/true);
 
   sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
+}
+
+
+void ZHarrison::sigma_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool trans) const {
+  assert(cc->det()->nelea()-1 == sigma->det()->nelea());
+  assert(cc->det()->neleb()+1 == sigma->det()->neleb());
+
+  const int lbs = cc->lenb();
+  const int lbt = sigma->lenb();
+  const int neleb = cc->det()->neleb();
+
+  bitset<2> bit2("10");
+  if (trans) bit2 = ~bit2;
+  shared_ptr<const ZMatrix> h1 = jop->mo1e(bit2);
+
+  shared_ptr<const Determinants> ccdet = cc->det();
+  shared_ptr<const Determinants> sigmadet = sigma->det(); 
+
+  // One-electron part
+  for (int i = 0; i != norb_; ++i) {
+    for (auto& a : sigmadet->stringa()) {
+      if (a[i]) continue;
+      auto ca = a; ca.set(i);
+      const complex<double>* source =    cc->data() + lbs * ccdet->lexical<0>(ca);
+            complex<double>* target = sigma->data() + lbt * sigmadet->lexical<0>(a);
+      const double asign = sigmadet->sign<0>(ca, i);
+
+      for (int j = 0; j != norb_; ++j) {
+        for (auto& b : ccdet->stringb()) {
+          if (b[j]) continue;
+          auto cb = b; cb.set(j);
+          const complex<double> fac = h1->element(j,i) * (ccdet->sign<1>(b, j) * asign);
+          target[sigmadet->lexical<1>(cb)] += fac * source[ccdet->lexical<1>(b)];
+        }
+      }
+
+    }
+  }
 }
 
 
@@ -229,7 +273,8 @@ void ZHarrison::sigma_2ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) con
           if (b[i] || b[j]) continue;
           bitset<nbit__> cb = b;
           cb.set(i); cb.set(j); 
-          const double sign = base_det->sign(cb, i, j); 
+          // TODO check the sign. Should be different for i<j and i>j
+          const double sign = (j > i ? 1.0 : -1.0) * base_det->sign(cb, i, j);
           target[base_det->lexical<1>(cb)] += sign * source[int_det->lexical<1>(b)];
         }
 

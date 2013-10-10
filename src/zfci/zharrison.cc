@@ -97,6 +97,10 @@ void ZHarrison::common_init() {
   space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
   if (nelea_ > 0 && neleb_ > 0)
     int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
+  if (nelea_ > 1)
+    int_space_aa_ = make_shared<RelSpace>(norb_, nelea_-2, neleb_, /*mute*/true, /*link up*/false);
+  if (neleb_ > 1)
+    int_space_bb_ = make_shared<RelSpace>(norb_, nelea_, neleb_-2, /*mute*/true, /*link up*/false);
 }
 
 

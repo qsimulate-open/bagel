@@ -39,9 +39,8 @@ RelSpace::RelSpace(const int norb, const int nelea, const int neleb, const bool 
 
 
 void RelSpace::common_init() {
-  assert(nelea_ == neleb_);
-
   const int nele = nelea_+neleb_;
+
   for (int i = 0; i <= norb_; ++i) {
     if (nele-i >= 0 && nele-i <= norb_) {
       if (!mute_) cout << " Constructing space of all determinants with " << i << " " << nele-i << " "  << endl << endl;
