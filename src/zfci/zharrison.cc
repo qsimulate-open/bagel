@@ -134,7 +134,7 @@ void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_pt
     pair<vector<tuple<int, int, int>>, double> adapt = space_->basedet()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      out->find(cdet)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      out->find(cdet->nelea(), cdet->neleb())->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << space_->basedet()->print_bit(alpha&beta) << " open " << setw(20) << space_->basedet()->print_bit(open_bit) << right << endl;
@@ -159,7 +159,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
-  double* diter = denom_->find(cdet)->data();
+  double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
   for (auto& aiter : cdet->stringa()) {
     for (auto& biter : cdet->stringb()) {
       const double din = -(*diter);
@@ -235,10 +235,12 @@ void ZHarrison::compute() {
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         for (auto& ib : space_->detmap()) {
-          const size_t size = ccn->find(ib.second)->data(ist)->size();
-          complex<double>* target_array = ctmp->find(ib.second)->data();
-          complex<double>* source_array = errvec[ist]->find(ib.second)->data();
-          double* denom_array = denom_->find(ib.second)->data();
+          const int na = ib.second->nelea();
+          const int nb = ib.second->neleb();
+          const size_t size = ccn->find(na, nb)->data(ist)->size();
+          complex<double>* target_array = ctmp->find(na, nb)->data();
+          complex<double>* source_array = errvec[ist]->find(na, nb)->data();
+          double* denom_array = denom_->find(na, nb)->data();
           const double en = energies[ist];
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);

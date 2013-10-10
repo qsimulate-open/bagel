@@ -37,110 +37,134 @@ using namespace bagel;
 
 /* Implementing the method as described by Harrison and Zarrabian */
 shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, shared_ptr<const RelMOFile> jop, const vector<int>& conv) const {
-  const int ij = norb_*norb_;
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
+  auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
 
-  // diagonal part
   for (auto& isp : space_->detmap()) { 
     shared_ptr<const Determinants> base_det = isp.second; 
-
-    const bool noab = (base_det->nelea() == 0 || base_det->neleb() == 0);
-    const bool noaa =  base_det->nelea() <= 1 && base_det->neleb()+1 <= norb_;
+    const int nelea = base_det->nelea();
+    const int neleb = base_det->neleb();
 
     for (int istate = 0; istate != nstate_; ++istate) {
-      Timer pdebug(2);
       if (conv[istate]) continue;
-      shared_ptr<const ZCivec> cc = ccvec->find(base_det)->data(istate);
-      shared_ptr<ZCivec> sigma = sigmavec->find(base_det)->data(istate);
 
-      // (taskaa)
-      sigma_aa(cc, sigma, jop);
-      pdebug.tick_print("taskaa");
+      shared_ptr<const ZCivec> cc = ccvec->find(nelea, neleb)->data(istate);
+      sigma_one(cc, sigmavec, jop, istate, /*diag*/true, /*transpose*/false);
 
-      // (taskbb)
-      sigma_bb(cc, sigma, jop);
-      pdebug.tick_print("taskbb");
-
-      if (!noab) {
-        shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
-        auto d = make_shared<ZDvec>(int_det, ij);
-        auto e = make_shared<ZDvec>(int_det, ij);
-
-        // (2ab) alpha-beta contributions
-        /* Resembles more the Knowles & Handy FCI terms */
-
-        sigma_2ab_1(cc, d);
-        pdebug.tick_print("task2ab-1");
-
-        sigma_2ab_2(d, e, jop);
-        pdebug.tick_print("task2ab-2 (0)");
-
-        sigma_2ab_3(sigma, e);
-        pdebug.tick_print("task2ab-3 (0)");
-
-        if (base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_) {
-          // output determinant space
-          shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
-          // output area
-          shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
-
-          // (b^+ a) contribution
-          sigma_ab(cc, sigma_1, jop);
-
-          // (b^+b^+ a b) contribution
-          sigma_2ab_2_1(d, e, jop);
-          pdebug.tick_print("task2ab-2 (+1)");
-
-          sigma_2ab_3_1(sigma_1, e);
-          pdebug.tick_print("task2ab-3 (+1)");
-        }
-      }
-
-      if (!noaa) {
-        shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-2, base_det->neleb());
-        auto d = make_shared<ZDvec>(int_det, ij);
-        auto e = make_shared<ZDvec>(int_det, ij);
-
-        sigma_2aa_1(cc, d); 
-        pdebug.tick_print("task2aa-1 (2)");
-
-        sigma_2aa_2_1(d, e, jop);
-
-        assert(base_det->neleb()+1 <= norb_);
-        // +1 sector
-        shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
-        shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
-        // reusing
-        sigma_2ab_3(sigma_1, e);
-
-        // +2 sector
-        if (base_det->neleb()+2 <= norb_) {
-          shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-2, base_det->neleb()+2);
-          shared_ptr<ZCivec> sigma_2 = sigmavec->find(sigmadet)->data(istate);
-          // reusing
-          sigma_2ab_3_1(sigma_2, e);
-        }
-      }
+      shared_ptr<const ZCivec> cc_trans = cc->transpose();
+      sigma_one(cc_trans, sigmavec_trans, jop, istate, /*diag*/false, /*transpose*/true);
     }
   }
+
+  for (auto& isp : space_->detmap()) {
+    const int nelea = isp.second->nelea();
+    const int neleb = isp.second->neleb();
+    shared_ptr<ZDvec> sigma = sigmavec->find(nelea, neleb);
+    shared_ptr<ZDvec> sigma_trans = sigmavec_trans->find(neleb, nelea); 
+
+    // daxpy for each Civec
+    for (int ist = 0; ist != nstate_; ++ist) {
+      if (conv[ist]) continue;
+      sigma->data(ist)->ax_plus_y(1.0, *sigma_trans->data(ist)->transpose());
+    }
+  }
+
   return sigmavec;
 }
 
 
-#if 0
-void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop, const int istate) const {
+void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop,
+                          const int istate, const bool diag, const bool trans) const {
+  Timer pdebug(2);
+
+  const int ij = norb_*norb_;
   shared_ptr<const Determinants> base_det = cc->det();
   // diagonal output
-  shared_ptr<ZCivec> sigma = sigmavec->find(base_det)->data(istate);
+  const int nelea = base_det->nelea();
+  const int neleb = base_det->neleb();
+  shared_ptr<ZCivec> sigma = sigmavec->find(nelea, neleb)->data(istate);
 
-  sigma_aa(cc, sigma, jop);
+  sigma_aa(cc, sigma, jop, trans);
   pdebug.tick_print("taskaa");
-}
+
+  const bool noab = (base_det->nelea() == 0 || base_det->neleb() == 0);
+  const bool noaa =  base_det->nelea() <= 1 && base_det->neleb()+1 <= norb_;
+
+  const bool output1 = base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_;
+  const bool output2 = base_det->nelea()-2 >= 0 && base_det->neleb()+2 <= norb_;
+
+  if (!noab && (diag || output1)) {
+    shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
+    auto d = make_shared<ZDvec>(int_det, ij);
+    auto e = make_shared<ZDvec>(int_det, ij);
+
+    // (2ab) alpha-beta contributions
+    /* Resembles more the Knowles & Handy FCI terms */
+
+    sigma_2ab_1(cc, d);
+    pdebug.tick_print("task2ab-1");
+
+    if (diag) {
+      sigma_2ab_2(d, e, jop);
+      pdebug.tick_print("task2ab-2 (0)");
+
+      sigma_2ab_3(sigma, e);
+      pdebug.tick_print("task2ab-3 (0)");
+    }
+
+#if 0
+    if (output1) {
+      // output determinant space
+      shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
+      // output area
+      shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
+
+      // (b^+ a) contribution
+      sigma_ab(cc, sigma_1, jop);
+
+      // (b^+b^+ a b) contribution
+      sigma_2ab_2_1(d, e, jop);
+      pdebug.tick_print("task2ab-2 (+1)");
+
+      sigma_2ab_3_1(sigma_1, e);
+      pdebug.tick_print("task2ab-3 (+1)");
+    }
 #endif
+  }
+
+#if 0
+  if (!noaa) {
+    shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-2, base_det->neleb());
+    auto d = make_shared<ZDvec>(int_det, ij);
+    auto e = make_shared<ZDvec>(int_det, ij);
+
+    sigma_2aa_1(cc, d); 
+    pdebug.tick_print("task2aa-1 (2)");
+
+    sigma_2aa_2_1(d, e, jop);
+
+    assert(base_det->neleb()+1 <= norb_);
+    // +1 sector
+    shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-1, base_det->neleb()+1);
+    shared_ptr<ZCivec> sigma_1 = sigmavec->find(sigmadet)->data(istate);
+    // reusing
+    sigma_2ab_3(sigma_1, e);
+
+    // +2 sector
+    if (base_det->neleb()+2 <= norb_) {
+      shared_ptr<const Determinants> sigmadet = space_->finddet(base_det->nelea()-2, base_det->neleb()+2);
+      shared_ptr<ZCivec> sigma_2 = sigmavec->find(sigmadet)->data(istate);
+      // reusing
+      sigma_2ab_3_1(sigma_2, e);
+    }
+  }
+#endif
+}
 
 
 void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool trans) const {
-  assert(cc->det() == sigma->det());
+  assert(cc->det()->nelea() == sigma->det()->nelea());
+  assert(cc->det()->neleb() == sigma->det()->neleb());
 
   shared_ptr<const Determinants> det = cc->det();
 
@@ -160,16 +184,6 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
     tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();
-}
-
-
-void ZHarrison::sigma_bb(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop) const {
-  shared_ptr<const ZCivec> cc_trans = cc->transpose();
-  auto sig_trans = make_shared<ZCivec>(cc_trans->det());
-
-  sigma_aa(cc_trans, sig_trans, jop, /*trans*/true);
-
-  sigma->ax_plus_y(1.0, *sig_trans->transpose(sigma->det()));
 }
 
 

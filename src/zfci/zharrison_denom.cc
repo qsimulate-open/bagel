@@ -66,7 +66,7 @@ void ZHarrison::const_denom() {
 
   for (auto& i : space_->detmap()) {
     shared_ptr<const Determinants> det = i.second;
-    shared_ptr<Dvec> cdenom = denom_->find(det);
+    shared_ptr<Dvec> cdenom = denom_->find(det->nelea(), det->neleb());
     double* dptr = cdenom->data();
     for (auto& ia : det->stringa()) {
       tasks.emplace_back(dptr, ia, det, jop, kop, h);
