@@ -90,17 +90,10 @@ void ZHarrison::common_init() {
   nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
   neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
 
-//if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-
   energy_.resize(nstate_);
 
   space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
-  if (nelea_ > 0 && neleb_ > 0)
-    int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
-  if (nelea_ > 1)
-    int_space_aa_ = make_shared<RelSpace>(norb_, nelea_-2, neleb_, /*mute*/true, /*link up*/false);
-  if (neleb_ > 1)
-    int_space_bb_ = make_shared<RelSpace>(norb_, nelea_, neleb_-2, /*mute*/true, /*link up*/false);
+  int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
 }
 
 

@@ -66,8 +66,6 @@ class ZHarrison : public Method {
     // Determinant space
     std::shared_ptr<const Space_base> space_;
     std::shared_ptr<const Space_base> int_space_;
-    std::shared_ptr<const Space_base> int_space_aa_;
-    std::shared_ptr<const Space_base> int_space_bb_;
 
     // denominator
     std::shared_ptr<RelDvec> denom_;
@@ -94,6 +92,10 @@ class ZHarrison : public Method {
     // alpha->beta contribution
     void sigma_2ab_2_1(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
     void sigma_2ab_3_1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<ZDvec> e) const;
+
+    void sigma_2aa_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
+    void sigma_2aa_2_1(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2aa_2_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
