@@ -79,7 +79,7 @@ class RASBlock {
 };
 
 template <typename DataType>
-class RASCivector {
+class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
   protected:
@@ -116,6 +116,10 @@ class RASCivector {
 
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
       std::copy_n(o.data(), size_, data_.get());
+    }
+
+    RASCivector(RASCivector<DataType>&& o) : RASCivector(o.det_) {
+      data_ = std::move(o.data_);
     }
 
     DataType* data() { return data_.get(); }
