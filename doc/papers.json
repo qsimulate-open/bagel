@@ -48,6 +48,14 @@
         "title"   : "Active-space decomposition for molecular dimers",
         "doi"     : "10.1063/1.4813827",
         "type"    : "article"
+      }, {
+        "author"  : "T. Shiozaki",
+        "journal" : "Journal of Chemical Theory and Computation",
+        "volume"  : "9",
+        "pages"   : "4300&ndash;4303",
+        "title"   : "Analytical nuclear gradients of density-fitted Dirac&ndash;Fock theory with a 2-spinor basis",
+        "doi"     : "10.1021/ct400719d",
+        "type"    : "article"
       }
     ]
   }
