@@ -94,7 +94,7 @@ class ZHarrison : public Method {
 
     void sigma_2aa_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
     void sigma_2aa_2_1(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans) const;
-    void sigma_2aa_2_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2aa_2_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans) const;
 
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
