@@ -296,6 +296,9 @@ class DistCivector {
 
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
+        if (det_->nelea()*det_->neleb() & 1)
+          std::transform(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), trans->local()+off, [](DataType a){ return -a; });
+
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
           out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*std::get<0>(thisrange), out->asize()*dist_.size(i), i, i));
@@ -469,6 +472,9 @@ class Civector {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
       mytranspose_(cc(), lenb_, lena_, ct->data());
+
+      if (det_->nelea()*det_->neleb() & 1)
+        ct->scale(-1.0);
       return ct;
     }
 
