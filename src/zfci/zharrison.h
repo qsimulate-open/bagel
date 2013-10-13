@@ -85,13 +85,13 @@ class ZHarrison : public Method {
     // run-time functions.
     // aaaa and bbbb
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    // one electron contribution to +1 and -1 contributions
     void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    void sigma_2e_ab_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
-    void sigma_2e_ab_3(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
-    // alpha->beta contribution
-    void sigma_2e_ab_3_1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
-    void sigma_2e_aa_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
+
+    void sigma_2e_annih_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+    void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
+
+    void sigma_2e_create_bb(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
+    void sigma_2e_create_ab(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
     void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
     void sigma_2e_h0100(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans) const;

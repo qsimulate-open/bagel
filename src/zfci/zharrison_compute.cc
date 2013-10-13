@@ -95,22 +95,20 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
 
   if (!noab && (diag || output1)) {
     shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
-    auto dtmp = make_shared<ZDvec>(int_det, ij);
+    auto d = make_shared<ZDvec>(int_det, ij);
     auto e = make_shared<ZDvec>(int_det, ij);
 
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
 
-    sigma_2e_ab_1(cc, dtmp);
+    sigma_2e_annih_ab(cc, d);
     pdebug.tick_print("task2ab-1");
-
-    shared_ptr<const ZDvec> d = dtmp;
 
     if (diag) {
       sigma_2e_h0101_h1001(d, e, jop);
       pdebug.tick_print("task2ab-2 (0)");
 
-      sigma_2e_ab_3(sigma, e);
+      sigma_2e_create_ab(sigma, e);
       pdebug.tick_print("task2ab-3 (0)");
     }
 
@@ -125,8 +123,8 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
       sigma_2e_h1101(d, e, jop, trans);
       pdebug.tick_print("task2ab-2 (+1)");
 
-#if 1
-      sigma_2e_ab_3_1(sigma_1, e);
+#if 0
+      sigma_2e_create_bb(sigma_1, e);
       pdebug.tick_print("task2ab-3 (+1)");
 #endif
     }
@@ -137,7 +135,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     auto d = make_shared<ZDvec>(int_det, ij);
     auto e = make_shared<ZDvec>(int_det, ij);
 
-    sigma_2e_aa_1(cc, d); 
+    sigma_2e_annih_aa(cc, d); 
     pdebug.tick_print("task2aa-1 (2)");
 
     sigma_2e_h1101(d, e, jop, trans);
@@ -146,8 +144,8 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     // +1 sector
     shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
     // reusing
-#if 1
-    sigma_2e_ab_3(sigma_1, e);
+#if 0
+    sigma_2e_create_ab(sigma_1, e);
 #endif
 
     // +2 sector
@@ -155,7 +153,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
       shared_ptr<ZCivec> sigma_2 = sigmavec->find(nelea-2, neleb+2)->data(istate);
       // reusing
       sigma_2e_h1100(d, e, jop, trans);
-      sigma_2e_ab_3_1(sigma_2, e);
+      sigma_2e_create_bb(sigma_2, e);
     }
   }
 }
@@ -183,30 +181,6 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
     tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();
-}
-
-
-void ZHarrison::sigma_2e_aa_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
-  // compute |d> = a_i a_j|cc>
-  const complex<double>* const source = cc->data();
-  const size_t lb = cc->lenb();
-  assert(lb == d->lenb());
-
-  for (int i = 0; i != norb_; ++i) {
-    for (int j = 0; j != norb_; ++j) {
-      complex<double>* target = d->data(j+norb_*i)->data();
-      for (auto& a : d->det()->stringa()) {
-        if (a[i] || a[j]) continue; 
-        auto ca = a; ca.set(i); ca.set(j);
-        // TODO check sign (should be easy using invariance of +/- 2 blocks)
-        const double factor = cc->det()->sign(a, i, j) * (i < j ? -1.0 : 1.0);
-        const size_t offas = cc->det()->lexical<0>(ca); 
-        const size_t offat = d->det()->lexical<0>(a); 
-        transform(source + lb*offas, source + lb*(offas+1), target + lb*offat, target + lb*offat,
-                  [&factor](complex<double> p, complex<double> q) { return factor*p+q; }); 
-      }
-    }
-  }
 }
 
 
@@ -247,7 +221,33 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
 }
 
 
-void ZHarrison::sigma_2e_ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
+//////////////// functions for two electron annihilation ///////////////
+
+void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
+  // compute |d> = a_i a_j|cc>
+  const complex<double>* const source = cc->data();
+  const size_t lb = cc->lenb();
+  assert(lb == d->lenb());
+
+  for (int i = 0; i != norb_; ++i) {
+    for (int j = 0; j != norb_; ++j) {
+      complex<double>* target = d->data(j+norb_*i)->data();
+      for (auto& a : d->det()->stringa()) {
+        if (a[i] || a[j]) continue; 
+        auto ca = a; ca.set(i); ca.set(j);
+        // TODO check sign (should be easy using invariance of +/- 2 blocks)
+        const double factor = cc->det()->sign(a, i, j) * (i < j ? -1.0 : 1.0);
+        const size_t offas = cc->det()->lexical<0>(ca); 
+        const size_t offat = d->det()->lexical<0>(a); 
+        transform(source + lb*offas, source + lb*(offas+1), target + lb*offat, target + lb*offat,
+                  [&factor](complex<double> p, complex<double> q) { return factor*p+q; }); 
+      }
+    }
+  }
+}
+
+
+void ZHarrison::sigma_2e_annih_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
@@ -268,10 +268,9 @@ void ZHarrison::sigma_2e_ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) 
 }
 
 
+//////////////// functions for two electron creation ///////////////
 
-
-
-void ZHarrison::sigma_2e_ab_3(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
+void ZHarrison::sigma_2e_create_ab(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -288,7 +287,7 @@ void ZHarrison::sigma_2e_ab_3(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
         for (auto& biter : int_det->phiupb(j)) {
           const double sign = aiter.sign * biter.sign;
           // minus sign due to an extra electron in alpha
-          target[biter.target] += -sign * source[biter.source];
+          target[biter.target] -= sign * source[biter.source];
         }
       }
     }
@@ -296,9 +295,7 @@ void ZHarrison::sigma_2e_ab_3(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> 
 }
 
 
-
-
-void ZHarrison::sigma_2e_ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
+void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -335,6 +332,8 @@ void ZHarrison::sigma_2e_ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec
   }
 }
 
+
+//////////////// functions for multiplication of the Hamiltonian ///////////////
 
 void ZHarrison::sigma_2e_h1101(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
   const int ij = d->ij();
