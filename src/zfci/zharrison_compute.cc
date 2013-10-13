@@ -242,6 +242,7 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
+      if (i == j) continue;
       complex<double>* target = d->data(j+norb_*i)->data();
       for (auto& a : d->det()->stringa()) {
         if (a[i] || a[j]) continue; 
