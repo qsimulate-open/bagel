@@ -95,20 +95,22 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
 
   if (!noab && (diag || output1)) {
     shared_ptr<const Determinants> int_det = int_space_->finddet(base_det->nelea()-1, base_det->neleb()-1);
-    auto d = make_shared<ZDvec>(int_det, ij);
+    auto dtmp = make_shared<ZDvec>(int_det, ij);
     auto e = make_shared<ZDvec>(int_det, ij);
 
     // (2ab) alpha-beta contributions
     /* Resembles more the Knowles & Handy FCI terms */
 
-    sigma_2ab_1(cc, d);
+    sigma_2e_ab_1(cc, dtmp);
     pdebug.tick_print("task2ab-1");
 
+    shared_ptr<const ZDvec> d = dtmp;
+
     if (diag) {
-      sigma_2ab_2(d, e, jop);
+      sigma_2e_h0101_h1001(d, e, jop);
       pdebug.tick_print("task2ab-2 (0)");
 
-      sigma_2ab_3(sigma, e);
+      sigma_2e_ab_3(sigma, e);
       pdebug.tick_print("task2ab-3 (0)");
     }
 
@@ -117,14 +119,14 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
       shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
 
       // (b^+ a) contribution
-      sigma_ab(cc, sigma_1, jop, trans);
+      sigma_1e_ab(cc, sigma_1, jop, trans);
 
       // (b^+b^+ a b) contribution
-      sigma_2ab_2_1(d, e, jop, trans);
+      sigma_2e_h1101(d, e, jop, trans);
       pdebug.tick_print("task2ab-2 (+1)");
 
-#if 0
-      sigma_2ab_3_1(sigma_1, e);
+#if 1
+      sigma_2e_ab_3_1(sigma_1, e);
       pdebug.tick_print("task2ab-3 (+1)");
 #endif
     }
@@ -135,25 +137,25 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     auto d = make_shared<ZDvec>(int_det, ij);
     auto e = make_shared<ZDvec>(int_det, ij);
 
-    sigma_2aa_1(cc, d); 
+    sigma_2e_aa_1(cc, d); 
     pdebug.tick_print("task2aa-1 (2)");
 
-    sigma_2aa_2_1(d, e, jop, trans);
+    sigma_2e_h1101(d, e, jop, trans);
 
     assert(neleb+1 <= norb_);
     // +1 sector
     shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
     // reusing
-#if 0
-    sigma_2ab_3(sigma_1, e);
+#if 1
+    sigma_2e_ab_3(sigma_1, e);
 #endif
 
     // +2 sector
     if (base_det->neleb()+2 <= norb_) {
       shared_ptr<ZCivec> sigma_2 = sigmavec->find(nelea-2, neleb+2)->data(istate);
       // reusing
-      sigma_2aa_2_2(d, e, jop, trans);
-      sigma_2ab_3_1(sigma_2, e);
+      sigma_2e_h1100(d, e, jop, trans);
+      sigma_2e_ab_3_1(sigma_2, e);
     }
   }
 }
@@ -184,7 +186,7 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 }
 
 
-void ZHarrison::sigma_2aa_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
+void ZHarrison::sigma_2e_aa_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   // compute |d> = a_i a_j|cc>
   const complex<double>* const source = cc->data();
   const size_t lb = cc->lenb();
@@ -208,7 +210,7 @@ void ZHarrison::sigma_2aa_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 }
 
 
-void ZHarrison::sigma_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool trans) const {
+void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, shared_ptr<const RelMOFile> jop, const bool trans) const {
   assert(cc->det()->nelea()-1 == sigma->det()->nelea());
   assert(cc->det()->neleb()+1 == sigma->det()->neleb());
 
@@ -245,7 +247,7 @@ void ZHarrison::sigma_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 }
 
 
-void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
+void ZHarrison::sigma_2e_ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) const {
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
@@ -266,39 +268,10 @@ void ZHarrison::sigma_2ab_1(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec> d) co
 }
 
 
-void ZHarrison::sigma_2ab_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
-  const int ij = d->ij();
-  const int lenab = d->lena()*d->lenb();
-  ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
-  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
-
-  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
-}
 
 
-void ZHarrison::sigma_2aa_2_1(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
-  const int ij = d->ij();
-  const int lenab = d->lena()*d->lenb();
 
-  bitset<4> bit4("0100");
-  if (trans) bit4 = ~bit4;
-
-  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
-}
-
-
-void ZHarrison::sigma_2aa_2_2(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
-  const int ij = d->ij();
-  const int lenab = d->lena()*d->lenb();
-
-  bitset<4> bit4("1100");
-  if (trans) bit4 = ~bit4;
-
-  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
-}
-
-
-void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const {
+void ZHarrison::sigma_2e_ab_3(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -314,7 +287,8 @@ void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const
         const complex<double>* source = source_base + aiter.source*lbs;
         for (auto& biter : int_det->phiupb(j)) {
           const double sign = aiter.sign * biter.sign;
-          target[biter.target] += sign * source[biter.source];
+          // minus sign due to an extra electron in alpha
+          target[biter.target] += -sign * source[biter.source];
         }
       }
     }
@@ -322,18 +296,9 @@ void ZHarrison::sigma_2ab_3(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const
 }
 
 
-void ZHarrison::sigma_2ab_2_1(shared_ptr<ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
-  const int ij = d->ij();
-  const int lenab = d->lena()*d->lenb();
-  bitset<4> bit4("1101");
-  if (trans) bit4 = ~bit4;
-
-  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
-  // TODO can be reduced by a factor of two by using symmetry
-}
 
 
-void ZHarrison::sigma_2ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) const {
+void ZHarrison::sigma_2e_ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -370,3 +335,45 @@ void ZHarrison::sigma_2ab_3_1(shared_ptr<ZCivec> sigma, shared_ptr<ZDvec> e) con
   }
 }
 
+
+void ZHarrison::sigma_2e_h1101(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+  bitset<4> bit4("1101");
+  if (trans) bit4 = ~bit4;
+
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+}
+
+
+void ZHarrison::sigma_2e_h0100(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+
+  bitset<4> bit4("0100");
+  if (trans) bit4 = ~bit4;
+
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+}
+
+
+void ZHarrison::sigma_2e_h1100(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop, const bool trans) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+
+  bitset<4> bit4("1100");
+  if (trans) bit4 = ~bit4;
+
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+}
+
+
+void ZHarrison::sigma_2e_h0101_h1001(shared_ptr<const ZDvec> d, shared_ptr<ZDvec> e, shared_ptr<const RelMOFile> jop) const {
+  const int ij = d->ij();
+  const int lenab = d->lena()*d->lenb();
+  ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
+
+  // -1.0 comes from the phase that is not accounted in sigma_2ab_1. CAUTION!
+  zgemm3m_("n", "t", lenab, ij, ij, -1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
+}
