@@ -1,3 +1,4 @@
+#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: rysint.cc
@@ -28,10 +29,9 @@
 #include <src/integral/rys/eribatch_base.h>
 #include <src/integral/rys/naibatch_base.h>
 
-using namespace std;
 using namespace bagel;
 
-RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<StackMem> stack)
+RysInt::RysInt(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMem> stack)
  : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0), london_(0) {
   assert(spherical1_ == info[1]->spherical());
   assert(spherical2_ == info[3]->spherical());
@@ -46,9 +46,9 @@ RysInt::RysInt(const array<std::shared_ptr<const Shell>,4>& info, shared_ptr<Sta
 }
 
 
-RysInt::RysInt(const array<std::shared_ptr<const Shell>,2>& info, shared_ptr<StackMem> stack)
+RysInt::RysInt(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMem> stack)
  : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
-  auto dum = make_shared<const Shell>(spherical2_);
+  auto dum = std::make_shared<const Shell>(spherical2_);
   basisinfo_ = {{ info[0], info[1], dum, dum }};
 
   if (stack == nullptr) {
@@ -77,14 +77,14 @@ RysInt::~RysInt() {
 void RysInt::set_swap_info(const bool swap_bra_ket) {
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->angular_number() == 0) {
-    swap(basisinfo_[0], basisinfo_[1]);
+    std::swap(basisinfo_[0], basisinfo_[1]);
     swap01_ = true;
   } else {
     swap01_ = false;
   }
   // swap 23 indices when needed
   if (basisinfo_[2]->angular_number() < basisinfo_[3]->angular_number() || basisinfo_[2]->angular_number() == 0) {
-    swap(basisinfo_[2], basisinfo_[3]);
+    std::swap(basisinfo_[2], basisinfo_[3]);
     swap23_ = true;
   } else {
     swap23_ = false;
@@ -94,9 +94,9 @@ void RysInt::set_swap_info(const bool swap_bra_ket) {
   if (swap_bra_ket) {
     if (!basisinfo_[0]->angular_number() && !basisinfo_[2]->angular_number()) {
       swap0123_ = true;
-      tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
-        = make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
-      swap(spherical1_, spherical2_);
+      std::tie(basisinfo_[0], basisinfo_[1], basisinfo_[2], basisinfo_[3], swap01_, swap23_)
+        = std::make_tuple(basisinfo_[2], basisinfo_[3], basisinfo_[0], basisinfo_[1], swap23_, swap01_);
+      std::swap(spherical1_, spherical2_);
     }
   }
 }
@@ -116,7 +116,7 @@ void RysInt::set_prim_contsizes() {
 }
 
 
-tuple<int,int,int,int> RysInt::set_angular_info() {
+std::tuple<int,int,int,int> RysInt::set_angular_info() {
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
@@ -126,8 +126,8 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
 
   amax_ = ang0 + ang1 + deriv_rank_;
   cmax_ = ang2 + ang3 + deriv_rank_;
-  amin_ = max(ang0 - deriv_rank_, 0);
-  cmin_ = max(ang2 - deriv_rank_, 0);
+  amin_ = std::max(ang0 - deriv_rank_, 0);
+  cmin_ = std::max(ang2 - deriv_rank_, 0);
   amax1_ = amax_ + 1;
   cmax1_ = cmax_ + 1;
 
@@ -162,7 +162,7 @@ tuple<int,int,int,int> RysInt::set_angular_info() {
       }
     }
   }
-  return make_tuple(asize_final, csize_final, asize_final_sph, csize_final_sph);
+  return std::make_tuple(asize_final, csize_final, asize_final_sph, csize_final_sph);
 }
 
 
@@ -218,7 +218,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
     const unsigned int size_start = asize_ * csize_ * primsize_;
     const unsigned int size_intermediate = asize_final * csize_ * contsize_;
     const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-    size_block_ = max(size_start, max(size_intermediate, size_intermediate2));
+    size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
     size_alloc_ = size_block_;
 
     // if this is a two-electron Breit integral
@@ -244,7 +244,7 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
       size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
       assert(csize_final == 1);
     } else {
-      throw logic_error("something is strange in RysInt::allocate_data");
+      throw std::logic_error("something is strange in RysInt::allocate_data");
     }
     stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = nullptr;
@@ -252,5 +252,4 @@ void RysInt::allocate_data(const int asize_final, const int csize_final, const i
   data_ = stack_save_;
   data2_ = stack_save2_;
 }
-
-
+#endif

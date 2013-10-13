@@ -1,3 +1,4 @@
+#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: contraction.cc
@@ -115,3 +116,4 @@ void RysInt::perform_contraction(const int asize, const double* prim, const int 
 }
 
 
+#endif

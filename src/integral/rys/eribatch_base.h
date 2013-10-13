@@ -31,11 +31,12 @@
 
 namespace bagel {
 
-class ERIBatch_base : public RysInt{
+class ERIBatch_base : public RysIntegral<double> {
   protected:
 
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
+    void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:
     ERIBatch_base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0,
