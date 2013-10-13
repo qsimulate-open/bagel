@@ -374,6 +374,5 @@ void ZHarrison::sigma_2e_h0101_h1001(shared_ptr<const ZDvec> d, shared_ptr<ZDvec
   ZMatrix tmp(*jop->mo2e(bitset<4>("0101")));
   SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop->mo2e(bitset<4>("1001"))->data(), tmp.data(), norb_, norb_, norb_, norb_);
 
-  // -1.0 comes from the phase that is not accounted in sigma_2ab_1. CAUTION!
-  zgemm3m_("n", "t", lenab, ij, ij, -1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
+  zgemm3m_("n", "t", lenab, ij, ij, 1.0, d->data(), lenab, tmp.data(), ij, 0.0, e->data(), lenab);
 }

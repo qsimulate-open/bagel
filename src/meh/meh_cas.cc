@@ -179,7 +179,8 @@ void MEH_CAS::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
         const double *source = source_base + aiter.source*lbs;
         for (auto& biter : int_det->phiupb(j)) {
           const double sign = static_cast<double>(aiter.sign * biter.sign);
-          target[biter.target] += sign * source[biter.source];
+          // minus sign due to an extra alpha electron
+          target[biter.target] -= sign * source[biter.source];
         }
       }
     }

@@ -117,7 +117,8 @@ class HZTaskAB1 {
         const DataType* source = source_base_ + aiter.target*lbs_;
         for (auto& biter : det_->phiupb(l_)) {
           const double sign = aiter.sign * biter.sign;
-          target[biter.source] += sign * source[biter.target];
+          // minus sign because there is one less alpha electron
+          target[biter.source] -= sign * source[biter.target];
         }
       }
     }
