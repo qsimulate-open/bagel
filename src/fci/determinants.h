@@ -163,7 +163,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
-    int sign(std::bitset<nbit__> bit, int i, int j) const {
+    static int sign(std::bitset<nbit__> bit, int i, int j) {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
