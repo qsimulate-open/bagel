@@ -46,13 +46,15 @@ class PutRequest : public ServerFlush {
     void init();
     const double* const data_;
 
+    const size_t probe_offset_;
+
     // this mutex is for MPI calls
     std::mutex block_;
 
     void flush_() override;
 
   public:
-    PutRequest(const double* d);
+    PutRequest(const double* d, const size_t probe_offset = 0);
     ~PutRequest();
 };
 
@@ -72,6 +74,7 @@ class RecvRequest {
     };
 
     size_t counter_;
+    const size_t nprobes_;
 
     // tuple contains: size, if ready, target rank, and buffer
     std::map<int, std::shared_ptr<Probe>> request_;
@@ -80,9 +83,9 @@ class RecvRequest {
     std::mutex block_;
 
   public:
-    RecvRequest();
+    RecvRequest(const size_t nprobes = 1);
     // return mpi tag
-    int request_recv(double* target, const size_t size, const int dest, const size_t off);
+    int request_recv(double* target, const size_t size, const int dest, const size_t off, const size_t probe_offset = 0);
     bool test();
 
 };
