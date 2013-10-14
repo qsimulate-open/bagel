@@ -63,11 +63,11 @@ class DistRASBlock {
     std::unique_ptr<DataType[]> local_;
 
     // Used during MPI routines
-    std::weak_ptr<DistRASCivector<DataType>> cc_;
+    DistRASCivector<DataType>* cc_; // parent
     const size_t block_offset_;
 
   public:
-    DistRASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, std::shared_ptr<DistRASCivector<DataType>> cc, const size_t o) :
+    DistRASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DistRASCivector<DataType>* cc, const size_t o) :
       astrings_(astrings), bstrings_(bstrings), dist_(astrings->size(), mpi__->size()), cc_(cc), block_offset_(o)
     {
       std::tie(astart_, aend_) = dist_.range(mpi__->rank());
@@ -77,11 +77,11 @@ class DistRASBlock {
       mutex_ = std::vector<std::mutex>(asize());
     }
 
-    DistRASBlock(const DistRASBlock<DataType>& o, std::shared_ptr<DistRASCivector<DataType>> cc) : DistRASBlock<DataType>(o.stringa(), o.stringb(), cc, o.block_offset_) {
+    DistRASBlock(const DistRASBlock<DataType>& o, DistRASCivector<DataType>* cc) : DistRASBlock<DataType>(o.stringa(), o.stringb(), cc, o.block_offset_) {
       std::copy_n(o.local(), alloc_, local_.get());
     }
 
-    DistRASBlock(DistRASBlock<DataType>&& o, std::shared_ptr<DistRASCivector<DataType>> cc) : astrings_(o.astrings_), bstrings_(o.bstrings_), dist_(astrings_->size(), mpi__->size()), cc_(cc.lock()), block_offset_(o.block_offset_) {
+    DistRASBlock(DistRASBlock<DataType>&& o, DistRASCivector<DataType>* cc) : astrings_(o.astrings_), bstrings_(o.bstrings_), dist_(astrings_->size(), mpi__->size()), cc_(cc), block_offset_(o.block_offset_) {
       std::tie(astart_, aend_) = dist_.range(mpi__->rank());
       alloc_ = size();
       local_ = std::move(o.local_);
@@ -98,8 +98,7 @@ class DistRASBlock {
       if (mpirank == rank) {
         std::copy_n(local_.get()+off*lenb(), lenb(), buf);
       } else {
-        auto cc = cc_.lock();
-        out = cc->recv_->request_recv(buf, lenb(), rank, off*lenb(), block_offset_);
+        out = cc_->recv_->request_recv(buf, lenb(), rank, off*lenb(), block_offset_);
       }
       return out;
     }
@@ -126,7 +125,7 @@ class DistRASBlock {
 };
 
 template <typename DataType>
-class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<DataType>> {
+class DistRASCivector {
   friend class DistRASBlock<DataType>;
   public: using DetType = RASDeterminants;
   public: using RBlock = DistRASBlock<DataType>;
@@ -153,7 +152,7 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
       size_t block_offset = 0;
       for (auto& ipair : det->stringpairs()) {
         if (ipair.first && ipair.second)
-          blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, this->shared_from_this(), block_offset));
+          blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, this, block_offset));
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
         ++block_offset;
@@ -163,7 +162,7 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
     DistRASCivector(const DistRASCivector<DataType>& o) : det_(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         if (iblock)
-          blocks_.push_back(std::make_shared<RBlock>(*iblock, this->shared_from_this()));
+          blocks_.push_back(std::make_shared<RBlock>(*iblock, this));
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
       }
@@ -172,7 +171,7 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
     DistRASCivector(DistRASCivector<DataType>&& o) : det_(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         if (iblock)
-          blocks_.push_back(std::make_shared<RBlock>(std::move(*iblock), this->shared_from_this()));
+          blocks_.push_back(std::make_shared<RBlock>(std::move(*iblock), this));
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
       }
@@ -189,8 +188,12 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
     // Move assignment
     DistRASCivector<DataType>& operator=(DistRASCivector<DataType>&& o) {
       assert(*det_ == *o.det_);
-      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i)
-        if (*i) *i = *j;
+      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i) {
+        if (*i) {
+          *i = *j;
+          (*i)->cc_ = this;
+        }
+      }
       return *this;
     }
 

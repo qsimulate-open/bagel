@@ -60,7 +60,7 @@ namespace bagel {
         for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
           // loop through blocks
           for (auto& iblock : this_->allowed_blocks<0>(det_->stringa(iter.source))) {
-            const int l = iblock->get_bstring_buf(buf_.get() + lb*k + iblock->stringb()->offset(), iter.source);
+            const int l = iblock->get_bstring_buf(buf_.get() + lb*k + iblock->stringb()->offset(), iter.source - iblock->stringa()->offset());
             if (l >= 0) requests_.push_back(l);
           }
           ++k;
