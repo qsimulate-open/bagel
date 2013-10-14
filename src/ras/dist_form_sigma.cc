@@ -179,66 +179,79 @@ void FormSigmaRAS::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 }
 
 void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, const double* mo2e) const {
-#if 0
   assert(cc->det() == sigma->det());
   shared_ptr<const RASDeterminants> det = cc->det();
 
   const int norb = det->norb();
 
-  map<size_t, map<size_t, pair<vector<tuple<size_t, int, int>>, shared_ptr<SparseMatrix>>>> Fmatrices;
-
-  if (sparse_) {
-    for (auto& ispace : det->stringspacea()) {
-      if (!ispace) continue;
-      const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
-      const size_t la = ispace->size();
-
-      // These are for building the initial versions of the sparse matrices
-      vector<vector<double>> data(nspaces);
-      vector<vector<int>> cols(nspaces);
-      vector<vector<int>> rind(nspaces);
-      vector<vector<tuple<size_t, int, int>>> sparse_info(nspaces);
-
-      vector<pair<size_t, int>> bounds;
-      for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
-      assert(bounds.size() == nspaces);
-
-      for (int ia = 0; ia < la; ++ia) {
-        map<size_t, double> row;
-        map<size_t, vector<tuple<int, int>>> row_positions;
-        for (auto& iter : det->phia(ia + ispace->offset())) {
-          const int kk = iter.ij/norb;
-          const int ll = iter.ij%norb;
-          row_positions[iter.source].emplace_back(iter.sign, ll*norb + kk*norb*norb*norb);
-        }
-
-        for (int sp = 0; sp < nspaces; ++sp) rind[sp].push_back(data[sp].size() + 1);
-
-        auto ibound = bounds.begin();
-        int sp = 0;
-        for (auto& irow : row_positions) {
-          while (irow.first >= ibound->second) { ++ibound; ++sp; }
-          const int pos = data[sp].size();
-          for (auto& i : irow.second)
-            sparse_info[sp].emplace_back(pos, get<0>(i), get<1>(i));
-          cols[sp].push_back(irow.first + 1 - ibound->first);
-          data[sp].push_back(1.0);
-        }
-      }
-
-      map<size_t, pair<vector<tuple<size_t, int, int>>, shared_ptr<SparseMatrix>>> Fmap;
-
-      for (int isp = 0; isp < nspaces; ++isp) {
-        if (data[isp].size() > 0) {
-          rind[isp].push_back(data[isp].size() + 1);
-          const int mdim = bounds.at(isp).second - bounds.at(isp).first;
-          Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), make_shared<SparseMatrix>(la, mdim, data[isp], cols[isp], rind[isp])));
-        }
-        else Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), shared_ptr<SparseMatrix>()));
-      }
-
-      Fmatrices.emplace(ispace->offset(), move(Fmap));
+  // mapping space offsets to process bounds
+  map<size_t, tuple<size_t, size_t>> bounds_map;
+  for (auto& sp : det->stringspacea()) {
+    if (sp) {
+      StaticDist d(sp->size(), mpi__->size());
+      bounds_map.emplace(sp->offset(), d.range(mpi__->rank()));
     }
+  }
+
+  map<size_t, map<size_t, pair<vector<tuple<size_t, int, size_t>>, shared_ptr<SparseMatrix>>>> Fmatrices;
+
+  // Builds prototypes for the sparse F matrices as well as vectors that contain all of the information necessary to update the matrices as they are needed
+  const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
+  for (auto& ispace : det->stringspacea()) {
+    if (!ispace) continue;
+    const size_t la = ispace->size();
+
+    // These are for building the initial versions of the sparse matrices
+    vector<vector<double>> data(nspaces);
+    vector<vector<int>> cols(nspaces);
+    vector<vector<int>> rind(nspaces);
+    vector<vector<tuple<size_t, int, size_t>>> sparse_info(nspaces);
+
+    vector<pair<size_t, size_t>> bounds;
+    for (auto& isp : bounds_map)
+      bounds.emplace_back(isp.first + get<0>(isp.second), isp.first + get<1>(isp.second));
+    assert(bounds.size() == nspaces);
+
+    for (int ia = 0; ia < la; ++ia) {
+      map<size_t, double> row;
+      map<size_t, vector<tuple<int, int>>> row_positions;
+      for (auto& iter : det->phia(ia + ispace->offset())) {
+        const int kk = iter.ij/norb;
+        const int ll = iter.ij%norb;
+        row_positions[iter.source].emplace_back(iter.sign, ll*norb + kk*norb*norb*norb);
+      }
+
+      for (int sp = 0; sp < nspaces; ++sp) rind[sp].push_back(data[sp].size() + 1);
+
+      auto ibound = bounds.begin();
+      for (auto& irow : row_positions) {
+        for (int isp = 0; isp < nspaces; ++isp) {
+          if ( irow.first >= bounds[isp].first && irow.first < bounds[isp].second) {
+            const size_t pos = data[isp].size();
+            for (auto& i : irow.second)
+              sparse_info[isp].emplace_back(pos, get<0>(i), get<1>(i));
+            cols[isp].push_back(irow.first + 1 - bounds[isp].first);
+            data[isp].push_back(1.0);
+            continue;
+          }
+        }
+      }
+    }
+
+    // Map connects the offset of a stringspace to a corresponding SparseMatrix and all the info needed to reconstruct it
+    map<size_t, pair<vector<tuple<size_t, int, size_t>>, shared_ptr<SparseMatrix>>> Fmap;
+
+    // TODO is using the starting bound okay here?
+    for (int isp = 0; isp < nspaces; ++isp) {
+      if (data[isp].size() > 0) {
+        rind[isp].push_back(data[isp].size() + 1);
+        const int mdim = bounds.at(isp).second - bounds.at(isp).first;
+        Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), make_shared<SparseMatrix>(la, mdim, data[isp], cols[isp], rind[isp])));
+      }
+      else Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), shared_ptr<SparseMatrix>()));
+    }
+
+    Fmatrices.emplace(ispace->offset(), move(Fmap));
   }
 
   for (int i = 0, ij = 0; i < norb; ++i) {
@@ -253,19 +266,20 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       for ( auto& iphiblock : det->phib_ij(ij) ) {
         vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
         for (auto& iblock : blks) {
-          auto tmp = make_shared<Matrix>(iblock->lena(), iphiblock.size());
+          auto tmp = make_shared<Matrix>(iblock->asize(), iphiblock.size());
           double* targetdata = tmp->data();
 
           const size_t lb = iblock->lenb();
 
           for (auto& iphi : iphiblock) {
             double sign = static_cast<double>(iphi.sign);
-            const double* sourcedata = iblock->data() + iphi.source;
+            const double* sourcedata = iblock->local() + iphi.source;
 
-            for (size_t i = 0; i < iblock->lena(); ++i, ++targetdata, sourcedata+=lb)
+            for (size_t i = 0; i < iblock->asize(); ++i, ++targetdata, sourcedata+=lb)
               *targetdata = *sourcedata * sign;
           }
 
+          // TODO is using the offset okay here?
           Cp_map.emplace(make_pair(iblock->stringa()->offset(), iphiblock.offset()), tmp);
         }
       }
@@ -275,82 +289,52 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         if (!ispace) continue;
         const size_t la = ispace->size();
 
+        // Beware, this COULD be a memory problem
         auto Vt = make_shared<Matrix>(la, phisize);
-        if ( sparse_ ) {
-          // Making several SparseMatrix objects
-          // First, how many?
-          const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
-          vector<vector<double>> data(nspaces);
-          vector<vector<int>> cols(nspaces);
-          vector<vector<int>> rind(nspaces);
+        auto& Fmap = Fmatrices.at(ispace->offset());
 
-          vector<pair<size_t, int>> bounds;
-          for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
-          assert(bounds.size() == nspaces);
-
-          auto& Fmap = Fmatrices.at(ispace->offset());
-
-          // Replace data in SparseMatrix
-          const double* mo2e_ij = mo2e + i + norb*norb*j;
-          for (auto& f : Fmap) {
-            shared_ptr<SparseMatrix> sparse = f.second.second;
-            if (sparse) {
-              sparse->zero();
-              double* fdata = sparse->data();
-              for (auto& i : f.second.first)
-                fdata[get<0>(i)] += static_cast<double>(get<1>(i)) * mo2e_ij[get<2>(i)];
-            }
+        // Replace data in SparseMatrix
+        const double* mo2e_ij = mo2e + i + norb*norb*j;
+        for (auto& f : Fmap) {
+          shared_ptr<SparseMatrix> sparse = f.second.second;
+          if (sparse) {
+            sparse->zero();
+            double* fdata = sparse->data();
+            vector<tuple<size_t, int, size_t>>& replace_data = f.second.first;
+            foreach(replace_data.begin(), replace_data.end(), [&fdata, &mo2e_ij] (const tuple<size_t, int, size_t>& i)
+              { fdata[get<0>(i)] += static_cast<double>(get<1>(i)) * mo2e_ij[get<2>(i)]; });
           }
+        }
 
-          for (auto& iphiblock : det->phib_ij(ij)) {
-            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
-            for (auto& mult_space : allowed_spaces) {
-              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
-              shared_ptr<SparseMatrix> Ft_block = Fmap[mult_space->offset()].second;
-              if (Ft_block) {
-                auto Vt_block = make_shared<Matrix>(*Ft_block * *Cp_block);
-                Vt->add_block(1.0, 0, iphiblock.offset(), Vt_block->ndim(), Vt_block->mdim(), Vt_block);
-              }
+        for (auto& iphiblock : det->phib_ij(ij)) {
+          vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
+          for (auto& mult_space : allowed_spaces) {
+            shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
+            shared_ptr<SparseMatrix> Ft_block = Fmap[mult_space->offset() + get<0>(bounds_map[mult_space->offset()])].second;
+            if (Ft_block) {
+              auto Vt_block = make_shared<Matrix>(*Ft_block * *Cp_block);
+              Vt->add_block(1.0, 0, iphiblock.offset(), Vt_block->ndim(), Vt_block->mdim(), Vt_block);
             }
           }
         }
-        else { // dense matrix multiply
-          auto F = make_shared<Matrix>( det->lena(), la );
-          double* fdata = F->data();
-          for (size_t ia = 0; ia < la; ++ia, fdata+=det->lena()) {
-            for (auto& iter : det->phia(ia + ispace->offset())) {
-              const int kk = iter.ij/norb;
-              const int ll = iter.ij%norb;
-              fdata[iter.source] += static_cast<double>(iter.sign) * mo2e[i + norb*kk + norb*norb*(j + norb*ll)];
-            }
-          }
-          for (auto& iphiblock : det->phib_ij(ij)) {
-            vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
-            for (auto& mult_space : allowed_spaces) {
-              shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
-              assert(mult_space->size() == Cp_block->ndim());
-              dgemm_("T", "N", la, iphiblock.size(), mult_space->size(), 1.0, F->element_ptr(mult_space->offset(), 0), det->lena(),
-                                   Cp_block->data(), Cp_block->ndim(), 1.0, Vt->element_ptr(0, iphiblock.offset()), la);
-            }
-          }
-        }
+
+        // Add up contributions from each node
+        mpi__->allreduce(Vt->data(), Vt->size());
 
         // scatter
-        double* vdata = Vt->data();
+        const double* vdata = Vt->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
             shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
-              const double* sourcedata = vdata;
 
               shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
-              double* targetdata = sgblock->data() + iphi.target - betaspace->offset();
+              double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
 
               const size_t lb = sgblock->lenb();
 
-              for (size_t i = 0; i < la; ++i, targetdata+=lb, ++sourcedata) {
-                *targetdata += *sourcedata;
-              }
+              for (size_t i = sgblock->astart(), j = 0; i < sgblock->aend(); ++i, ++j)
+                targetdata[j*lb] += vdata[i];
             }
 
             vdata += la;
@@ -359,5 +343,4 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       }
     }
   }
-#endif
 }
