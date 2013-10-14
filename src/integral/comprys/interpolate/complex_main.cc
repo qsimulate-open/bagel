@@ -1,7 +1,6 @@
 //
 // Author:  Ryan Reynolds
 // Creation date:  July 29, 2013
-// Last updated:  September 23, 2013
 // Interpolation file for Rys Quadrature - Complex arguments
 //
 

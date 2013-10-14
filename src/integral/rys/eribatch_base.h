@@ -27,7 +27,7 @@
 #ifndef __SRC_INTEGRAL_RYS_ERIBATCH_BASE_H
 #define __SRC_INTEGRAL_RYS_ERIBATCH_BASE_H
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 
 namespace bagel {
 

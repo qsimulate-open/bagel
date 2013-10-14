@@ -52,7 +52,7 @@ class BreitBatch : public BreitBatch_base {
     void perform_VRR1() override;
 
   public:
-    // dummy will never used.
+    // dummy will never be used.
     BreitBatch(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy = 0.0, const bool dum = true)
      :  BreitBatch_base(a, max_density, dummy, dum, 1) { }
 
@@ -65,7 +65,7 @@ class Spin2Batch : public BreitBatch_base {
     void perform_VRR1() override;
 
   public:
-    // dummy will never used.
+    // dummy will never be used.
     Spin2Batch(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy = 0.0, const bool dum = true)
      :  BreitBatch_base(a, max_density, dummy, dum, 2) { }
 

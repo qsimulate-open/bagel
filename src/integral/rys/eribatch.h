@@ -40,7 +40,7 @@ class ERIBatch : public ERIBatch_base {
 
   public:
 
-    // dummy will never used.
+    // dummy will never be used.
     ERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true,
              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
 

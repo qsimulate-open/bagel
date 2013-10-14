@@ -84,9 +84,7 @@ ERIBatch_base::ERIBatch_base(const array<shared_ptr<const Shell>,4>& o, const do
 
 void ERIBatch_base::root_weight(const int ps) {
   if (breit_ == 0) {
-    if (london_) {
-//      comperi.root(rank_, T_, roots_, weights_, ps);   // This line goes on the other branch
-    } else if (amax_ + cmax_ == 0) {
+    if (amax_ + cmax_ == 0) {
       for (int j = 0; j != screening_size_; ++j) {
         int i = screening_[j];
         if (T_[i] < T_thresh__) {
@@ -298,7 +296,6 @@ void ERIBatch_base::compute_ssss(const double integral_thresh) {
 
 }
 
-// TODO this is not a good design. Should refactor at certain point using virtual functions...
 void ERIBatch_base::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
@@ -322,19 +319,12 @@ void ERIBatch_base::allocate_data(const int asize_final, const int csize_final, 
   // derivative integrals
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
-///*
     // if this is a two-electron gradient integral
     if (dynamic_cast<ERIBatch_base*>(this)) {
       size_alloc_ = 12 * size_block_;
-    // if this is an NAI gradient integral
-    } else if (dynamic_cast<NAIBatch_base*>(this)) {
-      // in this case, we store everything
-      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
-      assert(csize_final == 1);
     } else {
-      throw std::logic_error("something is strange in RysInt::allocate_data");
+      throw std::logic_error("something is strange in ERIBatch_base::allocate_data");
     }
-//*/
     stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = nullptr;
   }

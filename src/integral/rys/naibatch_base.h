@@ -27,7 +27,7 @@
 #ifndef __SRC_RYSINT_NAIBATCH_BASE_H
 #define __SRC_RYSINT_NAIBATCH_BASE_H
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {

@@ -125,20 +125,14 @@ void NAIBatch_base::allocate_data(const int asize_final, const int csize_final, 
   // derivative integrals
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
-///*
-    // if this is a two-electron gradient integral
-//    if (dynamic_cast<ERIBatch_base*>(this)) {
-//      size_alloc_ = 12 * size_block_;
     // if this is an NAI gradient integral
-//    } else // connect to next line - "else if"
     if (dynamic_cast<NAIBatch_base*>(this)) {
       // in this case, we store everything
       size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
       assert(csize_final == 1);
     } else {
-      throw std::logic_error("something is strange in RysInt::allocate_data");
+      throw std::logic_error("something is strange in NAIBatch_base::allocate_data");
     }
-//*/
     stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = nullptr;
   }

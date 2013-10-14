@@ -26,8 +26,8 @@
 
 // Base class for the Rys-type integral evaluator - now a class template
 
-#ifndef __SRC_INTEGRAL_RYS_RYSINT_H
-#define __SRC_INTEGRAL_RYS_RYSINT_H
+#ifndef __SRC_INTEGRAL_RYS_RYSINTEGRAL_H
+#define __SRC_INTEGRAL_RYS_RYSINTEGRAL_H
 
 #include <tuple>
 #include <complex>
@@ -70,7 +70,6 @@ namespace bagel {
     int deriv_rank_;
     int tenno_;
     int breit_;
-    int london_;
 
     double *data_;
     double *data2_;
@@ -203,7 +202,6 @@ namespace bagel {
     virtual void compute_ssss(const double thr) = 0;
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
-
     void allocate_arrays(const size_t ps) {
       size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
@@ -224,38 +222,6 @@ namespace bagel {
         U_ = pointer;     pointer += ps;
       }
     }
-    // TODO this is not a good design. Should refactor at certain point using virtual functions...
-/*
-    virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
-      size_final_ = asize_final_sph * csize_final_sph * contsize_;
-      if (deriv_rank_ == 0) {
-        const unsigned int size_start = asize_ * csize_ * primsize_;
-        const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-        const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-        size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
-        size_alloc_ = size_block_;
-
-        // if this is a two-electron Breit integral
-        if (breit_)
-          size_alloc_ = 6 * size_block_;
-
-        stack_save_ = stack_->get(size_alloc_);
-        stack_save2_ = nullptr;
-
-        // if Slater/Yukawa integrals
-        if (tenno_)
-          stack_save2_ = stack_->get(size_alloc_);
-
-      // derivative integrals
-      } else if (deriv_rank_ == 1) {
-            size_block_ = asize_final * csize_final * primsize_;
-        stack_save_ = stack_->get(size_alloc_);
-        stack_save2_ = nullptr;
-      }
-      data_ = stack_save_;
-      data2_ = stack_save2_;
-    }
-*/
 
     size_t size_allocated_;
 
@@ -370,7 +336,7 @@ namespace bagel {
     bool swap0123() const { return swap0123_; }
 
     RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMem> stack)
-     : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0), london_(0) {
+     : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
       assert(spherical1_ == info[1]->spherical());
       assert(spherical2_ == info[3]->spherical());
 
