@@ -28,7 +28,7 @@
 #include <unordered_map>
 
 #include <src/ras/distcivector.h>
-#include <src/util/taskqueue.h>
+#include <src/parallel/distqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,7 +47,7 @@ namespace bagel {
       unique_ptr<double[]> buf_;
       list<int> requests_;
 
-      SpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
+      DistSpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
         abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
       {
         const size_t lb = det_->lenb();
@@ -59,7 +59,7 @@ namespace bagel {
         int k = 0;
         for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
           // loop through blocks
-          for (auto& iblock : this_->allowed_blocks(det_->stringa(iter.source))) {
+          for (auto& iblock : this_->allowed_blocks<0>(det_->stringa(iter.source))) {
             const int l = iblock->get_bstring_buf(buf_.get() + lb*k + iblock->stringb()->offset(), iter.source);
             if (l >= 0) requests_.push_back(l);
           }
@@ -83,10 +83,10 @@ namespace bagel {
 
       void compute() {
         const int norb = det_->norb();
-        const size_t lex_a = det_->lexical<0, 0>(target_);
+        const size_t lex_a = det_->lexical<0, 0>(abit_);
 
         int k = 0;
-        for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
+        for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
           const int j = iter.ij / norb;
           const int i = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(j); mask1.set(i);
@@ -95,13 +95,13 @@ namespace bagel {
           bitset<nbit__> maskij; maskij.set(j); maskij.flip(i);
 
           const double* source = buf_.get() + det_->lenb() * k++;
-          for (auto& iblock : out_->allowed_blocks<0>(target_)) {
-            const size_t lb = iblock->stringb()->lenb();
+          for (auto& iblock : out_->allowed_blocks<0>(abit_)) {
+            const size_t lb = iblock->lenb();
             double* odata = iblock->local() + lb * (lex_a - iblock->astart());
             for (auto& ib : *iblock->stringb()) {
               if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
                 const bitset<nbit__> bsostring = ib ^ maskij;
-                *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
+                *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
               }
               ++odata;
             }
@@ -122,7 +122,11 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   for (auto& i : det_->stringb())
     lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
 
-  DistQueue<RAS::DistSpinTask> tasks(det_->stringa().size());
+#ifndef USE_SERVER_THREAD
+  DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
+#else
+  DistQueue<RAS::DistSpinTask> tasks;
+#endif
 
   for (auto& istring : det_->stringa())
     tasks.emplace_and_compute(istring, this, out, det_, &lexicalmap);

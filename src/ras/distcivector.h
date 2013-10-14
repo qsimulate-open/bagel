@@ -34,6 +34,7 @@
 #include <iomanip>
 
 #include <src/parallel/staticdist.h>
+#include <src/parallel/recvrequest.h>
 #include <src/ras/dvector_base.h>
 #include <src/ras/determinants.h>
 #include <src/math/algo.h>
@@ -97,7 +98,8 @@ class DistRASBlock {
       if (mpirank == rank) {
         std::copy_n(local_.get()+off*lenb(), lenb(), buf);
       } else {
-        out = cc_->recv_->request_recv(buf, lenb(), rank, off*lenb(), block_offset_);
+        auto cc = cc_.lock();
+        out = cc->recv_->request_recv(buf, lenb(), rank, off*lenb(), block_offset_);
       }
       return out;
     }
@@ -286,6 +288,10 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
       // cancel all MPI calls
       recv_.reset();
       std::for_each(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock> i) { if (i) i->put_.reset(); });
+    }
+
+    void flush() const {
+      std::for_each(blocks_.begin(), blocks_.end(), [] (std::shared_ptr<const RBlock> b) { if (b) if (b->put_) b->put_->flush(); });
     }
 
     void zero() { for (auto& i : blocks_) if (i) std::fill_n(i->local(), i->size(), 0.0); }
