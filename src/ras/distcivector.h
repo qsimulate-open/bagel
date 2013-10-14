@@ -77,7 +77,7 @@ class DistRASBlock {
       mutex_ = std::vector<std::mutex>(asize());
     }
 
-    DistRASBlock(const DistRASBlock<DataType>& o, std::shared_ptr<DistRASCivector<DataType>> cc) : DistRASBlock<DataType>(o.stringa(), o.stringb(), cc.lock(), o.block_offset_) {
+    DistRASBlock(const DistRASBlock<DataType>& o, std::shared_ptr<DistRASCivector<DataType>> cc) : DistRASBlock<DataType>(o.stringa(), o.stringb(), cc, o.block_offset_) {
       std::copy_n(o.local(), alloc_, local_.get());
     }
 
@@ -160,16 +160,16 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
       }
     }
 
-    DistRASCivector(const DistRASCivector<DataType>& o) : det_(o.det_), global_size_(det->size()) {
+    DistRASCivector(const DistRASCivector<DataType>& o) : det_(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         if (iblock)
-          blocks_.push_back(std::make_shared<RBlock>(*iblock), this->shared_from_this());
+          blocks_.push_back(std::make_shared<RBlock>(*iblock, this->shared_from_this()));
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
       }
     }
 
-    DistRASCivector(DistRASCivector<DataType>&& o) : det_(o.det_), global_size_(det->size()) {
+    DistRASCivector(DistRASCivector<DataType>&& o) : det_(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         if (iblock)
           blocks_.push_back(std::make_shared<RBlock>(std::move(*iblock), this->shared_from_this()));

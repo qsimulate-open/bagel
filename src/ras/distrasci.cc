@@ -24,7 +24,7 @@
 //
 
 #include <src/ras/distrasci.h>
-//#include <src/ras/form_sigma.h>
+#include <src/ras/dist_form_sigma.h>
 #include <src/util/combination.hpp>
 #include <src/math/davidson.h>
 
@@ -149,19 +149,18 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
 
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet) {
-  multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
+  multimap<double, pair<size_t,size_t>> tmp;
   for (int i = 0; i != ndet; ++i)
-    tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
+    tmp.emplace(-1.0e10*(1+i), make_pair(0ull,0ull));
 
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->local();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
-      bitset<nbit__> aiter = det_->stringa(ia);
-      for (auto& biter : *iblock->stringb()) {
+      for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
-          tmp.emplace(din, make_pair(biter, aiter));
+          tmp.emplace(din, make_pair(ib, ia));
           tmp.erase(tmp.begin());
         }
         ++diter;
@@ -174,9 +173,9 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
   vector<size_t> aarray, barray;
   vector<double> en;
   for (auto i = tmp.rbegin(); i != tmp.rend(); ++i) {
-    aarray.push_back(iter->second.second);
-    barray.push_back(iter->second.first);
-    en.push_back(iter->first);
+    aarray.push_back(i->second.second);
+    barray.push_back(i->second.first);
+    en.push_back(i->first);
   }
 
   // rank 0 will take care of this
@@ -260,7 +259,7 @@ void DistRASCI::compute() {
     const vector<double> energies = davidson.compute(ccn, sigman);
 
     // get residual and new vectors
-    vector<shared_ptr<Dist RASCivec>> errvec = davidson.residual();
+    vector<shared_ptr<DistRASCivec>> errvec = davidson.residual();
     pdebug.tick_print("davidson");
 
     // compute errors
@@ -275,7 +274,6 @@ void DistRASCI::compute() {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
-        const size_t size = cc_->data(ist)->size();
         shared_ptr<DistRASCivector<double>> target = cc_->data(ist);
         shared_ptr<DistRASCivector<double>> source = errvec.at(ist);
         const double en = energies.at(ist);
