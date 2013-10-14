@@ -465,7 +465,6 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
     }
 };
 
-template<> double DistRASCivector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
 template<> std::shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
