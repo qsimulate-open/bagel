@@ -44,7 +44,6 @@ class DistFormSigmaRAS {
 
   private:
     // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const DistRASCivec> cc, std::shared_ptr<DistRASCivec> sigma, const double* g, const double* mo2e) const;
     void sigma_bb(std::shared_ptr<const DistRASCivec> cc, std::shared_ptr<DistRASCivec> sigma, const double* g, const double* mo2e) const;
     void sigma_ab(std::shared_ptr<const DistRASCivec> cc, std::shared_ptr<DistRASCivec> sigma, const double* mo2e) const;
 };

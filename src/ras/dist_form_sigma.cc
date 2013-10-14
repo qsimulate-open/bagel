@@ -24,6 +24,7 @@
 //
 
 #include <map>
+#include <algorithm>
 
 #include <src/ras/dist_form_sigma.h>
 #include <src/math/sparsematrix.h>
@@ -73,7 +74,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     shared_ptr<DistRASCivec> sigma = sigmavec->data(istate);
 
     // start transpose
-    shared_ptr<const DistRASCivec> cctrans = cc->transpose();
+    shared_ptr<DistRASCivec> cctrans = cc->transpose();
 
     // (taskbb)
     sigma_bb(cc, sigma, g.get(), jop->mo2e_ptr());
@@ -89,7 +90,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     pdebug.tick_print("taskaa");
 
     // start transpose back
-    shared_ptr<const DistRASCivec> saa = strans->transpose();
+    shared_ptr<DistRASCivec> saa = strans->transpose();
 
     // (taskab) alpha-beta contributions
     sigma_ab(cc, sigma, jop->mo2e_ptr());
@@ -120,7 +121,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     shared_ptr<DistRASCivec> sigma = sigmavec->data(istate);
 
     // start transpose
-    shared_ptr<const DistRASCivec> cctrans = cc->transpose();
+    shared_ptr<DistRASCivec> cctrans = cc->transpose();
 
     // (taskbb)
     sigma_bb(cc, sigma, mo1e, blank2e.get());
@@ -131,7 +132,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     // (taskaa)
     sigma_bb(cctrans, strans, mo1e, blank2e.get());
 
-    shared_ptr<const DistRASCivec> saa = strans->transpose();
+    shared_ptr<DistRASCivec> saa = strans->transpose();
     saa->transpose_wait();
 
     sigma->ax_plus_y(1.0, *saa);
@@ -141,7 +142,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
 }
 
 // sigma_bb requires no communication
-void FormSigmaRAS::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const {
+void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<DistRASCivec> sigma, const double* g, const double* mo2e) const {
   shared_ptr<const RASDeterminants> det = cc->det();
   assert(*det = *sigma->det());
 
@@ -156,7 +157,7 @@ void FormSigmaRAS::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       for (auto& iterkl : det->phib(ib + ispace->offset())) {
         fdata[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
         for (auto& iterij : det->phib(iterkl.source)) {
-          if (iterij.ij < iterkl.ij) continue
+          if (iterij.ij < iterkl.ij) continue;
           const int ii = iterij.ij/norb;
           const int jj = iterij.ij%norb;
           const int kk = iterkl.ij/norb;
@@ -178,7 +179,7 @@ void FormSigmaRAS::sigma_bb(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   }
 }
 
-void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> sigma, const double* mo2e) const {
+void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<DistRASCivec> sigma, const double* mo2e) const {
   assert(cc->det() == sigma->det());
   shared_ptr<const RASDeterminants> det = cc->det();
 
@@ -264,7 +265,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
       // gathering
       for ( auto& iphiblock : det->phib_ij(ij) ) {
-        vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
+        vector<shared_ptr<const DistRASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
         for (auto& iblock : blks) {
           auto tmp = make_shared<Matrix>(iblock->asize(), iphiblock.size());
           double* targetdata = tmp->data();
@@ -301,7 +302,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             sparse->zero();
             double* fdata = sparse->data();
             vector<tuple<size_t, int, size_t>>& replace_data = f.second.first;
-            foreach(replace_data.begin(), replace_data.end(), [&fdata, &mo2e_ij] (const tuple<size_t, int, size_t>& i)
+            for_each(replace_data.begin(), replace_data.end(), [&fdata, &mo2e_ij] (const tuple<size_t, int, size_t>& i)
               { fdata[get<0>(i)] += static_cast<double>(get<1>(i)) * mo2e_ij[get<2>(i)]; });
           }
         }
@@ -328,7 +329,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
             shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
 
-              shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+              shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);
               double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
 
               const size_t lb = sgblock->lenb();

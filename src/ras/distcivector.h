@@ -337,8 +337,8 @@ class DistRASCivector : public std::enable_shared_from_this<DistRASCivector<Data
       buf_ = clone();
       for (auto i = blocks_.begin(), j = buf_->blocks().begin(); i != blocks_.end(); ++i, ++j) {
         if (!(*i)) continue;
-        mytranspose_(i->local(), i->asize(), i->lenb(), j->local());
-        std::copy_n(j->local(), i->asize() * i->lenb(), i->local());
+        mytranspose_((*i)->local(), (*i)->asize(), (*i)->lenb(), (*j)->local());
+        std::copy_n((*j)->local(), (*i)->asize() * (*i)->lenb(), (*i)->local());
       }
       buf_ = std::shared_ptr<DistRASCivector<DataType>>();
     }
