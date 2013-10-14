@@ -399,7 +399,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
       return orthog(std::list<std::shared_ptr<const RASCivector<DataType>>>{o});
     }
 
-    void print(const double thr) const {
+    void print(const double thr = 0.05) const {
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {

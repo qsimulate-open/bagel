@@ -308,6 +308,7 @@ class DistRASCivector {
 
       std::shared_ptr<DistRASCivector<DataType>> trans = clone();
       for (auto& sblock : blocks_) {
+        if (!sblock) continue;
         std::shared_ptr<RBlock> tblock = out->block(sblock->stringa(), sblock->stringb());
         std::shared_ptr<RBlock> bufblock = trans->block(sblock->stringb(), sblock->stringa());
         for (int i = 0; i < mpi__->size(); ++i) {

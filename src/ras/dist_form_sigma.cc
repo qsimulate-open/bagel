@@ -43,32 +43,32 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
   shared_ptr<const RASDeterminants> det = ccvec->det();
 
   const int norb = det->norb();
-  unique_ptr<double[]> g(new double[norb*norb]);
+  auto g = make_shared<Matrix>(norb, norb);
   for (int k = 0, kl = 0; k < norb; ++k) {
     for (int l = 0; l < k; ++l, ++kl) {
       { // g_kl
         double val = jop->mo1e(kl) - jop->mo2e_hz(k, k, k, l);
         for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,l);
-        g[l + k * norb] = val;
+        g->element(l, k) = val;
       }
 
       { // g_lk
         double val = jop->mo1e(kl);
         for (int j = 0; j < l; ++j) val -= jop->mo2e_hz(l,j,j,k);
-        g[k + l * norb] = val;
+        g->element(k, l) = val;
       }
     }
     // g_kk
     double val = jop->mo1e(kl) - 0.5*jop->mo2e_hz(k,k,k,k);
     for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,k);
-    g[k + k * norb] = val;
+    g->element(k, k) = val;
     ++kl;
   }
 
   auto sigmavec = make_shared<DistRASDvec>(det, nstate);
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
+    Timer pdebug(0);
     if (conv[istate]) continue;
     shared_ptr<const DistRASCivec> cc = ccvec->data(istate);
     shared_ptr<DistRASCivec> sigma = sigmavec->data(istate);
@@ -77,7 +77,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     shared_ptr<DistRASCivec> cctrans = cc->transpose();
 
     // (taskbb)
-    sigma_bb(cc, sigma, g.get(), jop->mo2e_ptr());
+    sigma_bb(cc, sigma, g->data(), jop->mo2e_ptr());
     pdebug.tick_print("taskbb");
 
     // finish transpose
@@ -86,7 +86,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
 
     // (taskaa)
     shared_ptr<DistRASCivec> strans = cctrans->clone();
-    sigma_bb(cctrans, strans, g.get(), jop->mo2e_ptr());
+    sigma_bb(cctrans, strans, g->data(), jop->mo2e_ptr());
     pdebug.tick_print("taskaa");
 
     // start transpose back
@@ -144,7 +144,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
 // sigma_bb requires no communication
 void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<DistRASCivec> sigma, const double* g, const double* mo2e) const {
   shared_ptr<const RASDeterminants> det = cc->det();
-  assert(*det = *sigma->det());
+  assert(*det == *sigma->det());
 
   const int norb = det->norb();
   const size_t lb = det->lenb();
@@ -170,11 +170,11 @@ void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
     // F is finished, apply to the right places
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
-      if (!det->allowed(ispace, iblock->stringb())) continue;
-      shared_ptr<DistRASBlock<double>> tblock = sigma->block(iblock->stringb(), ispace);
+      if (!det->allowed(ispace, iblock->stringa())) continue;
+      shared_ptr<DistRASBlock<double>> tblock = sigma->block(ispace, iblock->stringa());
 
-      dgemm_("T", "N", ispace->size(), iblock->asize(), iblock->lenb(), 1.0,
-        F->element_ptr(0, iblock->stringb()->offset()), F->ndim(), iblock->local(), iblock->lenb(), 1.0, tblock->local(), tblock->lenb());
+      dgemm_("T", "N", ispace->size(), tblock->asize(), iblock->lenb(), 1.0,
+        F->element_ptr(iblock->stringb()->offset(), 0), F->ndim(), iblock->local(), iblock->lenb(), 1.0, tblock->local(), tblock->lenb());
     }
   }
 }

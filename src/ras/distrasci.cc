@@ -156,11 +156,13 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->local();
+    const size_t aoff = iblock->stringa()->offset();
+    const size_t boff = iblock->stringb()->offset();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
       for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
-          tmp.emplace(din, make_pair(ib, ia));
+          tmp.emplace(din, make_pair(ib + boff, ia + aoff));
           tmp.erase(tmp.begin());
         }
         ++diter;
@@ -277,7 +279,7 @@ void DistRASCI::compute() {
         shared_ptr<DistRASCivector<double>> target = cc_->data(ist);
         shared_ptr<DistRASCivector<double>> source = errvec.at(ist);
         const double en = energies.at(ist);
-        for (auto c = target->blocks().begin(), d = denom_->blocks().begin(), e = source->blocks().begin(); c != cc_->data(ist)->blocks().end(); ++c, ++d, ++e) {
+        for (auto c = target->blocks().begin(), d = denom_->blocks().begin(), e = source->blocks().begin(); c != target->blocks().end(); ++c, ++d, ++e) {
           if (*c && *d && *e) {
             transform((*e)->local(), (*e)->local() + (*e)->size(), (*d)->local(), (*c)->local(),
               [&en] (const double& cc, const double& den) { return cc / min(en - den, -0.1); });

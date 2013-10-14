@@ -124,7 +124,7 @@ void DistRASCI::const_denom() {
   }
   denom_t.tick_print("jop, kop");
 
-  denom_ = make_shared<DistRASCivec>(det());
+  denom_ = make_shared<DistRASCivec>(det_);
 
   size_t tasksize = 0;
   for (auto& iblock : denom_->blocks()) { if (iblock) tasksize += iblock->asize(); }
@@ -133,10 +133,8 @@ void DistRASCI::const_denom() {
   for (auto& iblock : denom_->blocks()) {
     if ( !iblock ) continue;
     double* iter = iblock->local();
-    for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
-      tasks.emplace_back(iter, det_->stringa(ia), iblock->stringb(), jop.get(), kop.get(), h.get());
-      iter += iblock->lenb();
-    }
+    for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia, iter+=iblock->lenb())
+      tasks.emplace_back(iter, det_->stringa(ia + iblock->stringa()->offset()), iblock->stringb(), jop.get(), kop.get(), h.get());
   }
 
   tasks.compute();
