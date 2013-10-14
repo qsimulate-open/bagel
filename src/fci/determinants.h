@@ -163,7 +163,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
     }
 
-    int sign(std::bitset<nbit__> bit, int i, int j) const {
+    static int sign(std::bitset<nbit__> bit, int i, int j) {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
@@ -284,16 +284,16 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::shared_ptr<Determinants> plusdet;
   std::shared_ptr<Determinants> det;
   if (spin==Alpha) {
-    int de = this->nelea() - odet->nelea();
+    const int de = this->nelea() - odet->nelea();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else assert(false);
+    else throw std::logic_error("Determinants::link failed");
   }
   else {
-    int de = this->neleb() - odet->neleb();
+    const int de = this->neleb() - odet->neleb();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else assert(false);
+    else throw std::logic_error("Determinants::link failed");
   }
 
   std::vector<std::vector<DetMap>> phiup;

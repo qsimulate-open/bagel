@@ -647,6 +647,72 @@ shared_ptr<DimerCAS> Dimer::compute_cispace(const std::shared_ptr<const PTree> i
 }
 
 
+shared_ptr<DimerDistCAS> Dimer::compute_distcispace(const std::shared_ptr<const PTree> idata) {
+  embed_refs();
+  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+
+  auto d1 = make_shared<Determinants>(nact().first, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d2 = make_shared<Determinants>(nact().second, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto out = make_shared<DimerDistCAS>(make_pair(d1, d2), nelea, neleb);
+
+  vector<vector<int>> spaces_A;
+  vector<vector<int>> spaces_B;
+
+  auto space = idata->get_child_optional("space");
+  if (space) {
+    // TODO make a function
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    spaces_B = spaces_A;
+  }
+  else {
+    auto spacea = idata->get_child_optional("space_a");
+    auto spaceb = idata->get_child_optional("space_b");
+    if (!(spacea && spaceb)) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    }
+    // TODO make a function
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+  }
+
+  Timer castime;
+
+  shared_ptr<const PTree> fcidata = idata->get_child_optional("fci");
+  if (!fcidata) fcidata = make_shared<const PTree>();
+
+  // Embedded CAS-CI calculations
+  cout << "    Starting embedded distributed CAS-CI calculations on monomer A" << endl;
+  for (auto& ispace : spaces_A) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<0>(embedded_distcasci<0>(fcidata, charge, spin, nstate));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+  cout << endl << "    Starting embedded CAS-CI calculations on monomer B" << endl;
+  for (auto& ispace : spaces_B) {
+    if (ispace.size() != 3) throw runtime_error("Charge, spin and number of states needs to be specified for each space");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<1>(embedded_distcasci<1>(fcidata, charge, spin, nstate));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+
+  return out;
+}
+
+
 shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
   pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);

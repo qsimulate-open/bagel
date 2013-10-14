@@ -58,10 +58,9 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
 }
 
 size_t Determinants::ncsfs() const {
-  const int twoS = nspin();
+  const int twoS = abs(nspin());
   const int N = nelea() + neleb();
   const int M = norb();
-  //TODO fix? gives nonsense for relativistic
   size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
   out /= M + 1;
 

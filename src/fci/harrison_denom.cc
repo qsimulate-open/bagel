@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci_init.cc
+// Filename: harrison_denom.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -27,7 +27,6 @@
 #include <stdexcept>
 #include <bitset>
 #include <src/fci/harrison.h>
-#include <src/fci/mofile.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 #include <src/util/taskqueue.h>
@@ -41,16 +40,16 @@ using namespace bagel;
 
 void HarrisonZarrabian::const_denom() {
   Timer denom_t;
-  unique_ptr<double[]> h(new double[norb_]);
-  unique_ptr<double[]> jop(new double[norb_*norb_]);
-  unique_ptr<double[]> kop(new double[norb_*norb_]);
+  auto h = make_shared<Matrix>(norb_, 1);
+  auto jop = make_shared<Matrix>(norb_, norb_);
+  auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop[i*norb_+j] = jop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, j, i);
-      kop[i*norb_+j] = kop[j*norb_+i] = 0.5*jop_->mo2e_hz(j, i, i, j);
+      jop->element(j, i) = jop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, j, i);
+      kop->element(j, i) = kop->element(i, j) = 0.5*jop_->mo2e_hz(j, i, i, j);
     }
-    h[i] = jop_->mo1e(i,i);
+    h->element(i,0) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 
@@ -59,7 +58,7 @@ void HarrisonZarrabian::const_denom() {
   double* iter = denom_->data();
   TaskQueue<HZDenomTask> tasks(det()->stringa().size());
   for (auto& ia : det()->stringa()) {
-    tasks.emplace_back(iter, ia, det_, jop.get(), kop.get(), h.get());
+    tasks.emplace_back(iter, ia, det_, jop, kop, h);
     iter += det()->stringb().size();
   }
 

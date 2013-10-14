@@ -57,6 +57,9 @@ class SparseMatrix {
     SparseMatrix(SparseMatrix&& o);      // move constructor
 
     // getting info
+    double* data() { return data_.get(); }
+    const double* data() const { return data_.get(); }
+
     const int ndim() const { return ndim_; }
     const int mdim() const { return mdim_; }
     const int size() const { return size_; }
@@ -70,6 +73,8 @@ class SparseMatrix {
     Matrix multiply(const Matrix& o, const double eyediag) const;
     Matrix operator*(const Matrix& o) const;
     Matrix operator+(const Matrix& o) const;
+
+    void zero() { std::fill_n(data_.get(), size_, 0.0); }
 };
 
 }

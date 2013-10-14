@@ -65,6 +65,7 @@ class Dvector {
     Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
       // data should be in a contiguous area to call dgemm.
       data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
+      std::fill_n(data_.get(), lenb_*lena_*ij_, DataType(0.0));
       DataType* tmp = data_.get();
       for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
         dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
@@ -141,9 +142,9 @@ class Dvector {
 
     // some functions for convenience
     DataType dot_product(const Dvector<DataType>& other) const {
-      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), 0.0, std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
+      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), DataType(0.0), std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
     }
-    void ax_plus_y(double a, const Dvector<DataType>& other) {
+    void ax_plus_y(const DataType a, const Dvector<DataType>& other) {
       std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
     }
     Dvector<DataType>& operator+=(const Dvector<DataType>& o) { ax_plus_y(1.0, o); return *this; }
@@ -163,9 +164,9 @@ class Dvector {
       return out;
     }
 
-    double norm() const { return std::sqrt(dot_product(*this)); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
 
-    void scale(const double a) {
+    void scale(const DataType& a) {
       std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
     }
 

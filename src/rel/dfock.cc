@@ -205,7 +205,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   // split
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
-    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
   }
   half_complex.clear();

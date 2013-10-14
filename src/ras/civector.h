@@ -33,6 +33,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include <src/ras/dvector_base.h>
 #include <src/ras/determinants.h>
 #include <src/math/algo.h>
 
@@ -79,7 +80,8 @@ class RASBlock {
 
 template <typename DataType>
 class RASCivector {
-  using RBlock = RASBlock<DataType>;
+  public: using DetType = RASDeterminants;
+  public: using RBlock = RASBlock<DataType>;
   protected:
     std::unique_ptr<DataType[]> data_;
     std::vector<std::shared_ptr<RBlock>> blocks_;
@@ -261,7 +263,7 @@ class RASCivector {
     void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
       { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
-    void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); } 
+    void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
@@ -421,6 +423,8 @@ template<> void RASCivector<double>::spin_decontaminate(const double thresh);
 
 using RASCivec = RASCivector<double>;
 // RASZCivec may come at some later time
+
+using RASDvec = Dvector_base<RASCivec>;
 
 }
 

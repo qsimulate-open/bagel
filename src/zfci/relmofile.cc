@@ -31,11 +31,13 @@
 #include <src/zfci/relmofile.h>
 #include <src/rel/dfock.h>
 #include <src/rel/reldffull.h>
+#include <src/rel/reloverlap.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
   // input should be RelReference
   assert(dynamic_pointer_cast<const RelReference>(ref));
 
@@ -45,17 +47,40 @@ RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const string method)
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-double RelMOFile::create_Jiiii(const int nstart, const int nfence) {
+void RelMOFile::init(const int nstart, const int nfence) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
-  geom_ = geom_->relativistic(false);
+  geom_ = geom_->relativistic(ref_->gaunt());
 
+  // calculates the core fock matrix
+  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+  if (nstart != 0) {
+    shared_ptr<const ZMatrix> den = ref_->relcoeff()->distmatrix()->form_density_rhf(nstart)->matrix();
+    core_fock_ = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false);
+    const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
+    if (fabs(prod.imag()) > 1.0e-12) {
+      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
+      cout << ss.str() << endl;
+    }
+    core_energy_ = 0.5*prod.real();
+  } else {
+    core_fock_ = hcore;
+    core_energy_ = 0.0;
+  }
+
+  // then compute Kramers adapated coefficient matrices
   array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
 
-  throw runtime_error("not yet implemented");
-  return 0;
+  // calculate 1-e MO integrals
+  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(coeff);
+
+  // calculate 2-e MO integrals
+  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(coeff);
+
+  // compress and set mo1e_ and mo2e_
+  compress_and_set(buf1e, buf2e);
 }
 
 
@@ -69,14 +94,14 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   const int nb = ndim / 4;
   assert(nb == nbasis_);
 
-  if ((nfence-nstart)%2 != 0 || ndim%4 != 0)
+  if (nfence-nstart <= 0 || (nfence-nstart)%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
-  auto overlap = make_shared<RelOverlap>(geom_); 
+  auto overlap = make_shared<RelOverlap>(geom_);
   auto sigmaz = overlap->copy();
-  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb)); 
-  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb)); 
+  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb));
+  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb));
   // just for convenience
   sigmaz->scale(-1.0);
 
@@ -102,7 +127,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     i = j;
   }
 
-  // fix the phase - making the largest element in each colomn real  
+  // fix the phase - making the largest element in each colomn real
   for (int i = 0; i != mdim; ++i) {
     complex<double> ele = *max_element(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), [](complex<double> a, complex<double> b) { return norm(a) < norm(b); });
     const complex<double> fac = norm(ele) / ele;
@@ -110,25 +135,35 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   }
 
   // off diagonal
-  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg(); 
-  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg(); 
+  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
+  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
   reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
   reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
 
-  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg(); 
-  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg(); 
+  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg();
+  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg();
   reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
   reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
-  
+
   // diagonal
-  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg()); 
+  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
   reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
-  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg()); 
+  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
   reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
 
   reordered->scale(0.5);
 
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
+
+#ifndef NDEBUG
+  {
+    ZMatrix tmp = *out[0] % *overlap * *out[0];
+    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
+    assert(tmp.rms() < 1.0e-6);
+    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
+    assert(tmp2.rms() < 1.0e-6);
+  }
+#endif
 
   auto diag = (*out[0] % *overlap * *out[0]).diag();
   for (int i = 0; i != noff; ++i) {
@@ -137,93 +172,127 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
       out[1]->element(j,i) /= sqrt(diag[i].real());
     }
   }
-  return out; 
-}
 
-
-#if 0
-//TODO input matrices are now in block diagonal form and the sizes must be checked
-void RelMOFile::compress(shared_ptr<const ZMatrix> buf1e, shared_ptr<const ZMatrix> buf2e) {
-
-  const int nocc = norb_rel_;
-  sizeij_ = nocc*nocc;
-  mo2e_ = unique_ptr<complex<double>[]>(new complex<double>[sizeij_*sizeij_]);
-  copy_n(buf2e->data(), sizeij_*sizeij_, mo2e_.get());
-
-  // h'ij = hij - 0.5 sum_k (ik|kj)
-  const int size1e = nocc*nocc;
-  mo1e_ = unique_ptr<complex<double>[]>(new complex<double>[size1e]);
-  int ij = 0;
-  for (int i = 0; i != nocc; ++i) {
-    for (int j = 0; j != nocc; ++j, ++ij) {
-      mo1e_[ij] = buf1e->element(j,i);
-      for (int k = 0; k != nocc; ++k)
-        mo1e_[ij] -= 0.5*buf2e->data(j+k*nocc+k*nocc*nocc+i*nocc*nocc*nocc);
+#ifndef NDEBUG
+  { // check reconstructed Fock matrix
+    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), false, false, false);
+    auto diag0 = (*out[0] % *fock * *out[0]).diag();
+    auto diag1 = (*out[1] % *fock * *out[1]).diag();
+    for (int i = 0; i != out[0]->mdim(); ++i) {
+      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
+        stringstream ss; ss << "Fock reconstruction failed. " << fabs(diag0[i] - ref_->eig()[i*2+nstart]) << " " << fabs(diag1[i] - ref_->eig()[i*2+nstart]) << endl;
+        throw logic_error(ss.str());
+      }
     }
   }
-}
 #endif
-
-
-#if 0
-tuple<shared_ptr<const ZMatrix>, double> RelJop::compute_mo1e(const int nstart, const int nfence) {
-  throw runtime_error("not yet implemented");
-  return make_tuple(shared_ptr<const ZMatrix>(), 0.0);
+  return out;
 }
-#endif
 
 
-#if 0
-shared_ptr<const ZMatrix> RelJop::compute_mo2e(const int nstart, const int nfence) {
-  const size_t norb_rel_ = nfence - nstart;
-  if (norb_rel_ < 1) throw runtime_error("no correlated electrons");
+void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatrix>> buf1e, unordered_map<bitset<4>,shared_ptr<const ZMatrix>> buf2e) {
+  mo1e_ = buf1e;
 
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  assert(geom_->nbasis()*4 == relref->relcoeff()->ndim());
-  assert(geom_->nbasis()*2 == relref->relcoeff()->mdim());
-
-  // Separate Coefficients into real and imaginary
-  // correlated occupied orbitals
-  array<shared_ptr<const Matrix>, 4> rocoeff;
-  array<shared_ptr<const Matrix>, 4> iocoeff;
-  for (int i = 0; i != 4; ++i) {
-    const size_t nbasis = geom_->nbasis();
-    shared_ptr<const ZMatrix> oc = relref->relcoeff()->get_submatrix(i*nbasis, nstart, nbasis, nfence);
-    rocoeff[i] = oc->get_real_part();
-    iocoeff[i] = oc->get_imag_part();
+  // Harrison requires <ij|kl> = (ik|jl)
+  for (auto& mat : buf2e) {
+    shared_ptr<ZMatrix> tmp = mat.second->clone();
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
+    bitset<4> s = mat.first;
+    s[2] = mat.first[1];
+    s[1] = mat.first[2];
+    mo2e_.insert(make_pair(s, tmp));
   }
+
+  assert(mo2e_.size() == 16);
+}
+
+
+unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<ZMatrix>,2> coeff) {
+  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
+
+  for (size_t i = 0; i != 4; ++i)
+    out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
+
+  assert(out.size() == 4);
+  // symmetry requirement
+  assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
+  // Kramers requirement
+  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
+
+  return out;
+}
+
+
+unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<ZMatrix>,2> coeff) {
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // TODO for the time being I only use Coulomb term
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  if (ref_->gaunt()) throw logic_error("gaunt term not yet implemented in RelJop::compute_mo2e");
 
   // (1) make DFDists
   vector<shared_ptr<const DFDist>> dfs;
   dfs = geom_->dfs()->split_blocks();
   dfs.push_back(geom_->df());
-  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, ref_->gaunt());
+
+  // Separate Coefficients into real and imaginary
+  // correlated occupied orbitals
+  array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+  array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
+  for (int k = 0; k != 2; ++k) {
+    for (int i = 0; i != 4; ++i) {
+      shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
+      assert(nocc_ == coeff[k]->mdim());
+      rocoeff[k][i] = oc->get_real_part();
+      iocoeff[k][i] = oc->get_imag_part();
+    }
+  }
 
   // (2) first-transform
-  list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
-  for (auto& i : half_complex)
-    i = i->apply_J();
+  array<list<shared_ptr<RelDFHalf>>,2> half_complex;
+  for (int k = 0; k != 2; ++k) {
+    half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
+    for (auto& i : half_complex[k])
+      i = i->apply_J();
+  }
 
   // (3) split and factorize
-  list<shared_ptr<RelDFHalf>> half_complex_exch;
-  for (auto& i : half_complex) {
-    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-    half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+  array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
+  for (size_t k = 0; k != 2; ++k) {
+    for (auto& i : half_complex[k]) {
+      list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
+      half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
+    }
+    half_complex[k].clear();
+    DFock::factorize(half_complex_exch[k]);
   }
-  half_complex.clear();
-  DFock::factorize(half_complex_exch);
 
   // (4) compute (gamma|ii)
-  list<shared_ptr<RelDFFull>> dffull;
-  for (auto& i : half_complex_exch)
-    dffull.push_back(make_shared<RelDFFull>(i, rocoeff, iocoeff));
-  DFock::factorize(dffull);
-  dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-  assert(dffull.size() == 1);
-  shared_ptr<const RelDFFull> full = dffull.front();
+  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
 
-  shared_ptr<const ZMatrix> buf = full->form_4index(full, 1.0);
+  for (size_t t = 0; t != 4; ++t) {
+    list<shared_ptr<RelDFFull>> dffull;
+    for (auto& i : half_complex_exch[t/2])
+      dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
+    DFock::factorize(dffull);
+    assert(dffull.size() == 1);
+    dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+    full[bitset<2>(t)] = dffull.front();
+  }
 
-  return buf;
+  // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
+  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
+
+  for (size_t i = 0; i != 16; ++i) {
+    out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
+  }
+
+  // some assert statements
+  // symmetry requirement
+  assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
+  // Kramers requirement
+  assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
+
+  return out;
 }
-#endif

@@ -26,7 +26,7 @@
 #ifndef __BAGEL_RAS_FORM_SIGMA_RAS_H
 #define __BAGEL_RAS_FORM_SIGMA_RAS_H
 
-#include <src/ras/dvec.h>
+#include <src/ras/civector.h>
 #include <src/fci/mofile.h>
 
 namespace bagel {
@@ -40,7 +40,6 @@ class FormSigmaRAS {
 
     // This is really all this class is
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, const double* mo1e, const double* mo2e) const;
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, const double* mo1e) const;
 
   private:

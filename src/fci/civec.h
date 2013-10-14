@@ -35,6 +35,7 @@
 #include <src/fci/determinants.h>
 #include <src/parallel/accrequest.h>
 #include <src/parallel/recvrequest.h>
+#include <src/ras/dvector_base.h>
 
 namespace bagel {
 
@@ -42,6 +43,8 @@ template<typename DataType> class Civector;
 
 template<typename DataType>
 class DistCivector {
+  public: using DetType = Determinants;
+
   protected:
     mutable std::shared_ptr<const Determinants> det_;
 
@@ -120,6 +123,8 @@ class DistCivector {
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
     std::shared_ptr<const Determinants> det() const { return det_; }
+
+    void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
 
     // MPI Isend Irecv
     void init_mpi_accumulate() const {
@@ -227,9 +232,28 @@ class DistCivector {
         std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](DataType p, DataType q){ return a*p+q; });
       }
     }
-    void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); } 
+    void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
 
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
+
+    DataType spin_expectation() const {
+      std::shared_ptr<DistCivector<DataType>> S2 = spin();
+      return dot_product(*S2);
+    }
+    std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return std::shared_ptr<DistCivector<DataType>>(); }
+    void spin_decontaminate(const double thresh = 1.0e-4) { assert(false); }
+    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+      assert(false);
+      return std::shared_ptr<DistCivector<DataType>>();
+    }
+    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+      assert(false);
+      return std::shared_ptr<DistCivector<DataType>>();
+    }
+    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
+      assert(false);
+      return std::shared_ptr<DistCivector<DataType>>();
+    }
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -272,6 +296,9 @@ class DistCivector {
 
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
+        if (det_->nelea()*det_->neleb() & 1)
+          std::transform(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), trans->local()+off, [](DataType a){ return -a; });
+
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
           out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*std::get<0>(thisrange), out->asize()*dist_.size(i), i, i));
@@ -294,10 +321,70 @@ class DistCivector {
       buf_ = std::shared_ptr<DistCivector<DataType>>();
     }
 
+    void print(const double thresh = 0.05) const {
+      std::vector<DataType> data;
+      std::vector<size_t> abits;
+      std::vector<size_t> bbits;
+
+      const DataType* d = local();
+
+      for (size_t ia = astart_; ia < aend_; ++ia) {
+        for (size_t ib = 0; ib < det_->lenb(); ++ib, ++d) {
+          if ( std::abs(*d) >= thresh ) {
+            data.push_back(*d);
+            abits.push_back(ia);
+            bbits.push_back(ib);
+          }
+        }
+      }
+      std::unique_ptr<size_t[]> nelements(new size_t[mpi__->size()]);
+      std::fill_n(nelements.get(), mpi__->size(), 0);
+      const size_t nn = data.size();
+      mpi__->allgather(&nn, 1, nelements.get(), 1);
+
+      const size_t chunk = *std::max_element(nelements.get(), nelements.get() + mpi__->size());
+      data.resize(chunk, 0);
+      abits.resize(chunk, 0);
+      bbits.resize(chunk, 0);
+
+      std::vector<double> alldata(chunk * mpi__->size());
+      mpi__->allgather(data.data(), chunk, alldata.data(), chunk);
+      std::vector<size_t> allabits(chunk * mpi__->size());
+      mpi__->allgather(abits.data(), chunk, allabits.data(), chunk);
+      std::vector<size_t> allbbits(chunk * mpi__->size());
+      mpi__->allgather(bbits.data(), chunk, allbbits.data(), chunk);
+
+      if (mpi__->rank() == 0) {
+        std::multimap<double, std::tuple<double, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
+        for (int i = 0; i < chunk * mpi__->size(); ++i) {
+          if (alldata[i] != 0.0)
+            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->stringa(allabits[i]), det_->stringb(allbbits[i])));
+        }
+
+        for (auto& i : tmp) {
+          std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
+                    << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
+
+        }
+      }
+    }
+
 };
+
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
+template <> void DistCivector<double>::spin_decontaminate(const double);
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const;
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const;
+
+template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, const bool action, const bool spin) const;
+
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;
+
+template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const;
+
+using DistDvec = Dvector_base<DistCivec>;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -385,6 +472,9 @@ class Civector {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
       mytranspose_(cc(), lenb_, lena_, ct->data());
+
+      if (det_->nelea()*det_->neleb() & 1)
+        ct->scale(-1.0);
       return ct;
     }
 
@@ -412,7 +502,10 @@ class Civector {
     }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
-    double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
+    DataType spin_expectation() const { // returns < S^2 >
+      std::shared_ptr<Civector<DataType>> S2 = spin();
+      return dot_product(*S2);
+    }
     std::shared_ptr<Civector<DataType>> spin() const { assert(false); return std::shared_ptr<Civector<DataType>>();} // returns S^2 | civec >
     std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
       { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_-
@@ -528,7 +621,6 @@ class Civector {
     }
 };
 
-template<> double Civector<double>::spin_expectation() const; // returns < S^2 >
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
 template<> std::shared_ptr<Civector<double>> Civector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+

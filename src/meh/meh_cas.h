@@ -37,7 +37,7 @@ class MEH_CAS : public MultiExcitonHamiltonian<Dvec> {
         MultiExcitonHamiltonian<Dvec>(input, dimer, cispace) {}
 
    private:
-      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const override;
+      std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
       std::shared_ptr<Dvec> form_sigma_1e(std::shared_ptr<const Dvec> ccvec, const double* modata) const override;
 
       void sigma_aa(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, const double* h1, const double* h2) const;

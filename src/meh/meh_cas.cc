@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_cas_sigma.cc
+// Filename: meh_cas.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Dvec> MEH_CAS::form_sigma(shared_ptr<const Dvec> ccvec, const double* h1, const double* mo2e_ptr) const {
+shared_ptr<Dvec> MEH_CAS::form_sigma(shared_ptr<const Dvec> ccvec, std::shared_ptr<const MOFile> jop) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();
@@ -41,17 +41,19 @@ shared_ptr<Dvec> MEH_CAS::form_sigma(shared_ptr<const Dvec> ccvec, const double*
 
   const int norb = det->norb();
 
-  unique_ptr<double[]> h2_container(new double[norb*norb*norb*norb]);
+  shared_ptr<Matrix> h1 = jop->mo1e()->matrix();
+
+  auto h2 = make_shared<Matrix>(norb*norb, norb*norb);
+  double* h2_ptr = h2->data();
   for (int i = 0, ijkl = 0; i < norb; ++i) {
     for (int j = 0; j < norb; ++j) {
       for (int k = 0; k < norb; ++k) {
         for (int l = 0; l < norb; ++l, ++ijkl) {
-          h2_container[ijkl] = mo2e_ptr[l + norb*k + norb*norb*(j + norb*i)] - mo2e_ptr[k + norb*l + norb*norb*(j + norb*i)];
+          h2_ptr[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
         }
       }
     }
   }
-  double* h2 = h2_container.get();
 
   const int ij = norb * norb;
   auto d = make_shared<Dvec>(int_det, ij);
@@ -61,20 +63,20 @@ shared_ptr<Dvec> MEH_CAS::form_sigma(shared_ptr<const Dvec> ccvec, const double*
     shared_ptr<const Civec> cc = ccvec->data(istate);
     shared_ptr<Civec> sigma = sigmavec->data(istate);
 
-    sigma_aa(cc, sigma, h1, h2);
+    sigma_aa(cc, sigma, h1->data(), h2->data());
 
     auto cc_trans = cc->transpose();
     auto sg_trans = make_shared<Civec>(cc_trans->det());
 
     // sigma_bb
-    sigma_aa(cc_trans, sg_trans, h1, h2);
+    sigma_aa(cc_trans, sg_trans, h1->data(), h2->data());
 
     sigma->ax_plus_y(1.0, *sg_trans->transpose());
 
     d->zero();
 
     sigma_2ab_1(cc, d);
-    sigma_2ab_2(d, e, mo2e_ptr);
+    sigma_2ab_2(d, e, jop->mo2e_ptr());
     sigma_2ab_3(sigma, e);
   }
 
@@ -120,7 +122,7 @@ void MEH_CAS::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, cons
   shared_ptr<const Determinants> det = cc->det();
   const int lb = cc->lenb();
 
-  TaskQueue<HZTaskAA> tasks(det->lena());
+  TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
   for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb) {
@@ -141,7 +143,7 @@ void MEH_CAS::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const 
   const int lbs = base_det->lenb();
   const double* source_base = cc->data();
 
-  TaskQueue<HZTaskAB1> tasks(norb*norb);
+  TaskQueue<HZTaskAB1<double>> tasks(norb*norb);
 
   for (int k = 0; k < norb; ++k) {
     for (int l = 0; l < norb; ++l) {

@@ -1,7 +1,7 @@
-
+//
 // BAGEL - Parallel electron correlation program.
 // Filename: relmofile.h
-// Copyright (C) 2013 Michael Caldwell
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Michael Caldwell  <caldwell@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -27,7 +27,7 @@
 #ifndef __BAGEL_ZFCI_RELMOFILE_H
 #define __BAGEL_ZFCI_RELMOFILE_H
 
-
+#include <unordered_map>
 #include <src/math/zmatrix.h>
 #include <src/rel/relreference.h>
 
@@ -41,43 +41,46 @@ class RelMOFile {
 
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const RelReference> ref_;
-    std::shared_ptr<ZMatrix> core_dfock_;
+    std::shared_ptr<const ZMatrix> core_fock_;
 
     // creates integral files and returns the core energy.
-    double create_Jiiii(const int, const int);
+    void init(const int nstart, const int nend);
+
+    // hamiltoniam data
+    std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> mo1e_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> mo2e_;
 
     // generates Kramers symmetry-adapted orbitals
     std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
-#if 0
-    void compress(std::shared_ptr<const ZMatrix> buf1e, std::shared_ptr<const ZMatrix> buf2e);
-#endif
-    virtual std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) = 0;
-    virtual std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) = 0;
+    void compress_and_set(std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> buf1e,
+                          std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> buf2e);
+
+    virtual std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
+    virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
 
   public:
-    RelMOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
-    RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    RelMOFile(const std::shared_ptr<const Reference>);
 
-    std::shared_ptr<const ZMatrix> core_fock() const { return core_dfock_; };
-    std::complex<double>* core_dfock_ptr() { return core_dfock_->data(); };
-    const std::complex<double>* core_dfock_ptr() const { return core_dfock_->data(); };
+    std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
+
+    std::shared_ptr<const ZMatrix> mo1e(const std::bitset<2>& b) const { return mo1e_.at(b); }
+    std::shared_ptr<const ZMatrix> mo2e(const std::bitset<4>& b) const { return mo2e_.at(b); }
+    const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
+    const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
+    const std::complex<double>& mo2e(const std::bitset<4>& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e_.at(b)->element(i+nocc_*j, k+nocc_*l); }
+
+    double core_energy() const { return core_energy_; }
 };
 
 
 class RelJop : public RelMOFile {
   protected:
-    std::tuple<std::shared_ptr<const ZMatrix>, double> compute_mo1e(const int, const int) override {
-      assert(false);
-      return std::make_tuple(std::shared_ptr<const ZMatrix>(), static_cast<double>(0.0));
-    }
-    std::shared_ptr<const ZMatrix> compute_mo2e(const int, const int) override {
-      assert(false);
-      return std::shared_ptr<const ZMatrix>();
-    }
+    std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
+
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d, const std::string f = std::string("KH"))
-      : RelMOFile(b, f) { core_energy_ = create_Jiiii(c, d); }
+    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d) : RelMOFile(b) { init(c, d); }
 };
 
 

@@ -31,7 +31,7 @@ using namespace std;
 
 // assumes data is given with 1-based indexing
 SparseMatrix::SparseMatrix(const int n, const int m, const int size, double* data, int* cols, int* rind) :
-  data_(unique_ptr<double[]>(new double[size])), cols_(unique_ptr<int[]>(new int[size])), rind_(unique_ptr<int[]>(new int[m+1])),
+  data_(unique_ptr<double[]>(new double[size])), cols_(unique_ptr<int[]>(new int[size])), rind_(unique_ptr<int[]>(new int[n+1])),
   ndim_(n), mdim_(m), size_(size)
 {
   copy_n(data, size_, data_.get());

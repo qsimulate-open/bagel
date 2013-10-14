@@ -31,7 +31,7 @@
 #include <utility>
 
 #include <src/fci/dvec.h>
-#include <src/ras/dvec.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 
@@ -273,6 +273,7 @@ class DimerCISpace_base {
 };
 
 using DimerCAS = DimerCISpace_base<Dvec>;
+using DimerDistCAS = DimerCISpace_base<DistDvec>;
 using DimerRAS = DimerCISpace_base<RASDvec>;
 
 }

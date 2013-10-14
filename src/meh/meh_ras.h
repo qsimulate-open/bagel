@@ -27,7 +27,7 @@
 #define __MEH_MEH_RAS_H
 
 #include <src/meh/meh.h>
-#include <src/ras/dvec.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 
@@ -39,7 +39,7 @@ class MEH_RAS : public MultiExcitonHamiltonian<RASDvec> {
       MEH_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
 
    private:
-      std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, const double* h1, const double* mo2e_ptr) const override;
+      std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
       std::shared_ptr<RASDvec> form_sigma_1e(std::shared_ptr<const RASDvec> ccvec, const double* modata) const override;
 
       void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;

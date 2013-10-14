@@ -26,20 +26,9 @@
 
 #include <src/fci/civec.h>
 #include <src/math/algo.h>
-#include <src/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
-
-
-template<>
-double Civector<double>::spin_expectation() const {
-  shared_ptr<Civec> S2 = spin();
-  double out = dot_product(*S2);
-
-  return out;
-}
-
 
 // S^2 = S_z^2 + S_z + S_-S_+
 template<>

@@ -162,7 +162,7 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
       std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
-      virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, const double* h1, const double* mo2e_ptr) const = 0;
+      virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
       virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
 
       // Gamma Tree building
