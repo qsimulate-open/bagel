@@ -127,9 +127,11 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     i = j;
   }
 
-  // fix the phase - making the largest element in each colomn real
+  // fix the phase - making the largest large-component element in each colomn real
   for (int i = 0; i != mdim; ++i) {
-    complex<double> ele = *max_element(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), [](complex<double> a, complex<double> b) { return norm(a) < norm(b); });
+    const int iblock = i/(mdim/2);
+    complex<double> ele = *max_element(reordered->element_ptr(iblock*nb,i), reordered->element_ptr((iblock+1)*nb,i),
+                                       [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
     const complex<double> fac = norm(ele) / ele;
     transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
   }
