@@ -270,7 +270,7 @@ class DistRASCivector {
     // MPI routines
     void init_mpi_recv() const {
       size_t off = 0;
-      std::for_each(blocks_.begin(), blocks_.end(), [&off] (const std::shared_ptr<const RBlock>& i) { if (i) i->put_ = std::make_shared<PutRequest>(i->local); ++off; });
+      std::for_each(blocks_.begin(), blocks_.end(), [&off] (const std::shared_ptr<const RBlock>& i) { if (i) i->put_ = std::make_shared<PutRequest>(i->local(), off); ++off; });
       recv_ = std::make_shared<RecvRequest>( blocks_.size());
     }
 

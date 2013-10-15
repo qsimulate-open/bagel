@@ -54,7 +54,6 @@ namespace bagel {
         const int norb = det_->norb();
 
         buf_ = unique_ptr<double[]>(new double[lb * abit_.count() * (norb - abit_.count() + 1)]);
-        std::fill_n(buf_.get(), lb * abit_.count() * (norb - abit_.count() + 1), 0.0);
 
         int k = 0;
         for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
@@ -65,6 +64,7 @@ namespace bagel {
           }
           ++k;
         }
+        assert( k == abit_.count() * (norb - abit_.count() + 1) );
       }
 
       bool test() {
@@ -122,14 +122,23 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   for (auto& i : det_->stringb())
     lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
 
+  this->init_mpi_recv();
+
 #ifndef USE_SERVER_THREAD
   DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
 #else
   DistQueue<RAS::DistSpinTask> tasks;
 #endif
 
-  for (auto& istring : det_->stringa())
-    tasks.emplace_and_compute(istring, this, out, det_, &lexicalmap);
+  for (auto& ispace : det_->stringspacea()) {
+    if (!ispace) continue;
+    StaticDist dist(ispace->size(), mpi__->size());
+    size_t astart, aend;
+    tie(astart, aend) = dist.range(mpi__->rank());
+
+    for (size_t ia = astart; ia < aend; ++ia)
+      tasks.emplace_and_compute(det_->stringa(ia + ispace->offset()), this, out, det_, &lexicalmap);
+  }
 
   const double sz = static_cast<double>(det_->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
@@ -137,6 +146,8 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   out->ax_plus_y(fac, *this);
 
   tasks.finish();
+
+  this->terminate_mpi_recv();
 
   return out;
 }
