@@ -311,6 +311,8 @@ class DistRASCivector {
         if (!sblock) continue;
         std::shared_ptr<RBlock> tblock = out->block(sblock->stringa(), sblock->stringb());
         std::shared_ptr<RBlock> bufblock = trans->block(sblock->stringb(), sblock->stringa());
+        assert(tblock->size() == sblock->size() && bufblock->size() == sblock->size());
+
         for (int i = 0; i < mpi__->size(); ++i) {
           std::tuple<size_t, size_t> outrange = tblock->dist_.range(i);
           std::tuple<size_t, size_t> thisrange = sblock->dist_.range(i);
@@ -322,11 +324,16 @@ class DistRASCivector {
           const size_t off = std::get<0>(outrange) * sblock->asize();
           std::copy_n(tmp.get(), tblock->dist_.size(i)*sblock->asize(), bufblock->local()+off);
           if ( i != myrank ) {
-            out->transp_.push_back(mpi__->request_send(bufblock->local()+off, tblock->dist_.size(i), i, myrank));
-            out->transp_.push_back(mpi__->request_recv(tblock->local()+tblock->asize()*std::get<0>(thisrange), tblock->asize()*sblock->dist_.size(i), i, i));
+            const int tag_offset = sblock->block_offset_ * mpi__->size();
+            const size_t sendsize = tblock->dist_.size(i) * sblock->asize();
+            if (sendsize)
+              out->transp_.push_back(mpi__->request_send(bufblock->local()+off, sendsize, i, tag_offset + myrank));
+            const size_t recvsize = tblock->asize() * sblock->dist_.size(i);
+            if (recvsize)
+              out->transp_.push_back(mpi__->request_recv(tblock->local()+tblock->asize()*std::get<0>(thisrange), recvsize, i, tag_offset + i));
           }
           else {
-            std::copy_n(bufblock->local() + off, tblock->asize() * sblock->asize(), tblock->local() + sblock->astart() * sblock->asize());
+            std::copy_n(bufblock->local() + off, tblock->asize() * sblock->asize(), tblock->local() + sblock->astart() * tblock->asize());
           }
         }
       }
