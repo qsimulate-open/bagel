@@ -148,7 +148,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     if (base_det->neleb()+2 <= norb_) {
       shared_ptr<ZCivec> sigma_2 = sigmavec->find(nelea-2, neleb+2)->data(istate);
       // reusing
-      sigma_2e_h<1,1,0,0>(d, e, jop, trans);
+      sigma_2e_h<1,1,0,0>(d, e, jop, trans, 0.5);
       sigma_2e_create_bb(sigma_2, e);
     }
   }

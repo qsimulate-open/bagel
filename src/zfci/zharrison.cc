@@ -43,6 +43,7 @@ void ZHarrison::common_init() {
   print_header();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+  assert(relref);
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -71,7 +72,7 @@ void ZHarrison::common_init() {
       ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
     // norb is a dimension of CI (!= nelec in relativistic cases)
     if (norb_  < 0)
-      norb_ = relref ? relref->relcoeff()->mdim()/2-ncore_ : idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
+      norb_ = relref->relcoeff()->mdim()/2-ncore_;
   }
 
 #if 0
