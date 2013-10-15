@@ -51,7 +51,7 @@ class RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> mo2e_;
 
     // generates Kramers symmetry-adapted orbitals
-    std::array<std::shared_ptr<ZMatrix>,2> coeff_rotate(const int nstart, const int nfence) const;
+    std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
     void compress_and_set(std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> buf1e,
                           std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> buf2e);

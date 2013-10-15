@@ -71,7 +71,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
   }
 
   // then compute Kramers adapated coefficient matrices
-  array<shared_ptr<ZMatrix>,2> coeff = coeff_rotate(nstart, nfence);
+  array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(coeff);
@@ -84,7 +84,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
 }
 
 
-array<shared_ptr<ZMatrix>,2> RelMOFile::coeff_rotate(const int nstart, const int nfence) const {
+array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
   shared_ptr<const ZMatrix> coeff = ref_->relcoeff()->slice(nstart, nfence);
   shared_ptr<ZMatrix> reordered = coeff->clone();
 
@@ -127,8 +127,66 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::coeff_rotate(const int nstart, const int
     i = j;
   }
 
+  // fix the phase - making the largest element in each colomn real
+  for (int i = 0; i != mdim; ++i) {
+    complex<double> ele = *max_element(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), [](complex<double> a, complex<double> b) { return norm(a) < norm(b); });
+    const complex<double> fac = norm(ele) / ele;
+    transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
+  }
+
+  // off diagonal
+  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
+  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
+  reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
+  reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
+
+  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg();
+  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg();
+  reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
+  reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
+
+  // diagonal
+  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
+  reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
+  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
+  reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
+
+  reordered->scale(0.5);
+
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
+#ifndef NDEBUG
+  {
+    ZMatrix tmp = *out[0] % *overlap * *out[0];
+    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
+    assert(tmp.rms() < 1.0e-6);
+    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
+    assert(tmp2.rms() < 1.0e-6);
+  }
+#endif
+
+  auto diag = (*out[0] % *overlap * *out[0]).diag();
+  for (int i = 0; i != noff; ++i) {
+    for (int j = 0; j != ndim; ++j) {
+      out[0]->element(j,i) /= sqrt(diag[i].real());
+      out[1]->element(j,i) /= sqrt(diag[i].real());
+    }
+  }
+
+#ifndef NDEBUG
+  { // check reconstructed Fock matrix
+    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), false, false, false);
+    auto diag0 = (*out[0] % *fock * *out[0]).diag();
+    auto diag1 = (*out[1] % *fock * *out[1]).diag();
+    for (int i = 0; i != out[0]->mdim(); ++i) {
+      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
+        stringstream ss; ss << "Fock reconstruction failed. " << fabs(diag0[i] - ref_->eig()[i*2+nstart]) << " " << fabs(diag1[i] - ref_->eig()[i*2+nstart]) << endl;
+        throw logic_error(ss.str());
+      }
+    }
+  }
+#endif
   return out;
 }
 
@@ -159,6 +217,9 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
   assert(out.size() == 4);
   // symmetry requirement
   assert((*out[bitset<2>("10")] - *out[bitset<2>("01")]->transpose_conjg()).rms() < 1.0e-8);
+  // Kramers requirement
+  assert((*out[bitset<2>("11")] - *out[bitset<2>("00")]->get_conjg()).rms() < 1.0e-8);
+
   return out;
 }
 
@@ -230,5 +291,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // some assert statements
   // symmetry requirement
   assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
+  // Kramers requirement
+  assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
+
   return out;
 }
