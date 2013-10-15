@@ -33,6 +33,11 @@ using namespace bagel;
 
 DistRASCI::DistRASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r)
  : Method(idat, g, r) {
+#ifndef HAVE_MPI_H
+  throw logic_error("DistRASCI can be used only with MPI");
+#endif
+
+  cout << "Parallel RAS algorithm will be used." << endl;
   common_init();
   update(ref_->coeff());
 }

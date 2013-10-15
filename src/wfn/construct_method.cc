@@ -62,9 +62,11 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     if ( algorithm == "local" || algorithm == "" ) {
       out = make_shared<RASCI>(itree, geom, ref);
     }
+#ifdef HAVE_MPI_H
     else if ( algorithm == "dist" || algorithm == "parallel" ) {
       out = make_shared<DistRASCI>(itree, geom, ref);
     }
+#endif
     else
       throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
   }
