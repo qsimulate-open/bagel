@@ -153,10 +153,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
-    // first parameter must be "R", "I", or "T" to print real part, imaginary part, or total
-    void print(const std::string, const std::string in = "", const size_t size = 10) const;
-    void print_row(const std::string, const std::string in = "", const size_t size = 10, const int row_num = 0) const;
-    void print_col(const std::string, const std::string in = "", const size_t size = 10, const int col_num = 0) const;
+    void print(const std::string in = "", const size_t size = 10) const;
 
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;

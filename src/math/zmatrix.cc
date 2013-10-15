@@ -503,79 +503,15 @@ void ZMatrix::inverse_half(const double thresh) {
 }
 
 
-void ZMatrix::print(const string component, const string name, const size_t size) const {
-
+void ZMatrix::print(const string name, const size_t size) const {
   cout << "++++ " + name + " ++++" << endl;
-  if (component == "R")  {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      for (int j = 0; j != min(size,mdim_); ++j) {
-        cout << fixed << setw(2) << setprecision(2) << real(data_[j * ndim_ + i])  << " ";
-      }
-      cout << endl;
-    }
-  } else if (component == "I") {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      for (int j = 0; j != min(size,mdim_); ++j) {
-        cout << fixed << setw(12) << setprecision(9) << imag(data_[j * ndim_ + i])  << " ";
-      }
-      cout << endl;
-    }
-  } else if (component == "T") {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      for (int j = 0; j != min(size,mdim_); ++j) {
-        cout << fixed << setw(12) << setprecision(9) << data_[j * ndim_ + i]  << " ";
-      }
-      cout << endl;
-    }
-  } else cout << "First argument of print is illegal." << endl;
-
-}
-
-void ZMatrix::print_row(const string component, const string name, const size_t size, const int row_num) const {
-
-  cout << "++++ " + name + " ++++" << endl;
-  if (component == "R")  {
-    for (int i = 0; i != min(size,mdim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << real(data_[i * ndim_ + row_num]) << " ";
+  for (int i = 0; i != min(size,ndim_); ++i) {
+    for (int j = 0; j != min(size,mdim_); ++j) {
+      cout << fixed << setw(30) << setprecision(8) << data_[j * ndim_ + i]  << " ";
     }
     cout << endl;
-  } else if (component == "I") {
-    for (int i = 0; i != min(size,mdim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << imag(data_[i * ndim_ + row_num]) << " ";
-    }
-    cout << endl;
-  } else if (component == "T") {
-    for (int i = 0; i != min(size,mdim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << data_[i * ndim_ + row_num] << " ";
-    }
-    cout << endl;
-  } else cout << "First argument of print is illegal." << endl;
-
+  }
 }
-
-void ZMatrix::print_col(const string component, const string name, const size_t size, const int col_num) const {
-
-  cout << "++++ " + name + " ++++" << endl;
-  if (component == "R")  {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << real(data_[col_num * ndim_ + i]) << " ";
-      cout << endl;
-    }
-  } else if (component == "I") {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << imag(data_[(1+col_num) * ndim_ + i]) << " ";
-      cout << endl;
-    }
-  } else if (component == "T") {
-    for (int i = 0; i != min(size,ndim_); ++i) {
-      cout << fixed << setw(12) << setprecision(9) << data_[(col_num) * ndim_ + i] << " ";
-      cout << fixed << setw(12) << setprecision(9) << data_[(1+col_num) * ndim_ + i] << " ";
-      cout << endl;
-    }
-  } else cout << "First argument of print is illegal." << endl;
-
-}
-
 
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
