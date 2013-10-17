@@ -46,13 +46,13 @@ class ZHarrison : public Method {
     double print_thresh_;
 
     // numbers of electrons
-    int nelea_;
-    int neleb_;
     int ncore_;
     int norb_;
+    int charge_;
 
     // number of states
     int nstate_;
+    std::vector<int> states_;
 
     // total energy
     std::vector<double> energy_;
@@ -73,9 +73,9 @@ class ZHarrison : public Method {
     // some init functions
     void common_init(); // may end up unnecessary
     // obtain determinants for guess generation
-    void generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec>);
+    void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
-    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
+    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
 
     // print functions
     void print_header() const;
@@ -129,8 +129,6 @@ class ZHarrison : public Method {
 
     // returns members
     int norb() const { return norb_; }
-    int nelea() const { return nelea_; }
-    int neleb() const { return neleb_; }
     int ncore() const { return ncore_; }
     double core_energy() const { return jop_->core_energy(); }
 
