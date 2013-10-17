@@ -506,7 +506,41 @@ class Civector {
       std::shared_ptr<Civector<DataType>> S2 = spin();
       return dot_product(*S2);
     }
-    std::shared_ptr<Civector<DataType>> spin() const { assert(false); return std::shared_ptr<Civector<DataType>>();} // returns S^2 | civec >
+    std::shared_ptr<Civector<DataType>> spin() const {
+      auto out = std::make_shared<Civector<DataType>>(det_);
+
+      // First the easy part, S_z^2 + S_z
+      const double sz = 0.5*static_cast<double>(det_->nspin());
+      *out = *this;
+      *out *= sz*sz + sz + det_->neleb();
+
+      const int norb = det_->norb();
+      const int lena = det_->lena();
+      const int lenb = det_->lenb();
+
+      auto intermediate = std::make_shared<Civector<DataType>>(det_);
+
+      for (int i = 0; i < norb; ++i) {
+        for (int j = 0; j < norb; ++j) {
+          intermediate->zero();
+          for ( auto& iter : det_->phia(i,j) ) {
+            const DataType* source = this->element_ptr(0, iter.source);
+            DataType* target = intermediate->element_ptr(0, iter.target);
+            double sign = static_cast<double>(iter.sign);
+
+            std::transform(source, source+lenb, target, target, [&sign](DataType p, DataType q){ return q+sign*p; });
+          }
+          for (int ia = 0; ia < lena; ++ia) {
+            DataType* target_base = out->element_ptr(0, ia);
+            const DataType* source_base = intermediate->element_ptr(0, ia);
+            for ( auto& iter : det_->phib(j,i) ) {
+              target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
+            }
+          }
+        }
+      }
+      return out;
+    }
 
     // S_- = \sum_i i_beta^\dagger i_alpha
     std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const {
@@ -700,7 +734,6 @@ class Civector {
     }
 };
 
-template<> std::shared_ptr<Civector<double>> Civector<double>::spin() const; // returns S^2 | civec >
 template<> void Civector<double>::spin_decontaminate(const double thresh);
 
 using Civec = Civector<double>;

@@ -30,47 +30,6 @@
 using namespace std;
 using namespace bagel;
 
-// S^2 = S_z^2 + S_z + S_-S_+
-template<>
-shared_ptr<Civector<double>> Civector<double>::spin() const {
-  auto out = make_shared<Civec>(det_);
-
-  // First the easy part, S_z^2 + S_z
-  const double sz = 0.5*static_cast<double>(det_->nspin());
-  *out = *this;
-  *out *= sz*sz + sz + det_->neleb();
-
-  const int norb = det_->norb();
-  const int lena = det_->lena();
-  const int lenb = det_->lenb();
-
-  auto intermediate = make_shared<Civec>(det_);
-
-  for (int i = 0; i < norb; ++i) {
-    for (int j = 0; j < norb; ++j) {
-      intermediate->zero();
-
-      for ( auto& iter : det_->phia(i,j) ) {
-        const double* source = this->element_ptr(0, iter.source);
-        double* target = intermediate->element_ptr(0, iter.target);
-        double sign = static_cast<double>(iter.sign);
-
-        daxpy_(lenb, sign, source, 1, target, 1);
-      }
-
-      for (int ia = 0; ia < lena; ++ia) {
-        double* target_base = out->element_ptr(0, ia);
-        double* source_base = intermediate->element_ptr(0, ia);
-        for ( auto& iter : det_->phib(j,i) ) {
-          target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
-        }
-      }
-    }
-  }
-
-  return out;
-}
-
 
 template<>
 void Civector<double>::spin_decontaminate(const double thresh) {
