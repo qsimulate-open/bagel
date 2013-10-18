@@ -136,6 +136,8 @@ class ZHarrison : public Method {
 
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+
+    std::vector<double> energy() const { return energy_; }
 };
 
 }
