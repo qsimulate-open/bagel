@@ -287,6 +287,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
 
   for (size_t i = 0; i != 16; ++i) {
+    // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
+    if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6) continue;
     out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
   }
 
