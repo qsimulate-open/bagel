@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zharrison.h
+// Filename: zharrison.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
