@@ -188,24 +188,22 @@ void ZHarrison::compute() {
   // find determinants that have small diagonal energies
   int offset = 0;
   for (int ispin = 0; ispin != states_.size(); ++ispin) {
-    if (states_[ispin] == 0) continue;
-    if ((geom_->nele()+ispin-charge_) % 2 == 1)
-      throw runtime_error("wrong states specified in the input"); 
+    int nstate = 0;
+    for (int i = ispin; i != states_.size(); ++i)
+      nstate += states_[i];
+
+    if ((geom_->nele()+ispin-charge_) % 2 == 1) {
+      if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+      continue;
+    }
+
     const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
     const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
-    generate_guess(nelea, neleb, states_[ispin], cc_, offset);
-    offset += states_[ispin];
-
-    // apply spin lowering operators
-    const int n = states_[ispin];
-    for (int i = 0; i != ispin; ++i) {
-      for (int j = 0; j != n; ++j, ++offset) {
-        shared_ptr<ZCivec> tmp = cc_->find(nelea-i, neleb+i)->data(offset-n)->spin_lower();
-        const double norm = tmp->norm();
-        assert(norm > 1.0e-10);
-        tmp->scale(1.0/norm);
-        *cc_->find(nelea-(i+1), neleb+(i+1))->data(offset) = *tmp;
-      }
+    generate_guess(nelea, neleb, nstate, cc_, offset);
+    offset += nstate;
+    if (nelea != neleb) {
+      generate_guess(neleb, nelea, nstate, cc_, offset);
+      offset += nstate;
     }
   }
   pdebug.tick_print("guess generation");
