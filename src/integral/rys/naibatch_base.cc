@@ -27,8 +27,23 @@
 #include <src/integral/rys/naibatch_base.h>
 #include <src/util/constants.h>
 
+#include <src/integral/rys/inline.h>
+#include <src/integral/rys/erirootlist.h>
+#include <src/integral/rys/breitrootlist.h>
+#include <src/integral/rys/spin2rootlist.h>
+#include <src/util/constants.h>
+#include <algorithm>
+#include <cmath>
+
 using namespace std;
 using namespace bagel;
+
+const static ERIRootList eri;
+const static BreitRootList br;
+const static Spin2RootList s2;
+static constexpr double pitwohalf__ = pow(pi__, 2.5);
+static constexpr double pimhalf__ = 1.0/sqrt(pi__);
+static constexpr double T_thresh__ = 1.0e-8;
 
 NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              shared_ptr<StackMem> stack, const int L, const double A)
@@ -138,5 +153,22 @@ void NAIBatch_base::allocate_data(const int asize_final, const int csize_final, 
   }
   data_ = stack_save_;
   data2_ = stack_save2_;
+}
+
+void NAIBatch_base::root_weight(const int ps) {
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (T_[i] < T_thresh__) {
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+      }
+    }
+  } else {
+    eri.root(rank_, T_, roots_, weights_, ps);
+  }
 }
 
