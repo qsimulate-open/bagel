@@ -50,9 +50,9 @@ template <typename DataType>
             if (this->T_[i] < 1.0e-8 ) {
               this->weights_[i] = 1.0;
             } else {
-              const double sqrtt = sqrt(this->T_[i]);
+              const double sqrtt = std::sqrt(this->T_[i]);
               const double erfsqt = inline_erf(sqrtt);
-              this->weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+              this->weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
             }
           }
         } else {
@@ -141,11 +141,11 @@ template <typename DataType>
             if (integral_thresh != 0.0) {
               const double rho = cxp_min * cxq / (cxp_min + cxq);
               const double T = rho * min_pq_sq;
-              const double onepqp_q = 1.0 / (sqrt(cxp_min + cxq) * cxp_min * cxq);
+              const double onepqp_q = 1.0 / (std::sqrt(cxp_min + cxq) * cxp_min * cxq);
               const double abcd_sc = min_ab * cd;
               const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-              const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
-              const double tsqrt = sqrt(T);
+              const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
+              const double tsqrt = std::sqrt(T);
               const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                                   * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
               if (ssss > integral_thresh) {
@@ -190,7 +190,7 @@ template <typename DataType>
             const double tsqrt = std::sqrt(T_sc);
             const double abcd_sc = ab * min_cd;
             const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
-            const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
+            const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
             const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
                               * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
             if (ssss < integral_thresh) continue;
@@ -207,7 +207,7 @@ template <typename DataType>
             this->xp_[index] = cxp;
             this->xq_[index] = cxq;
             const double cxpxq = cxp * cxq;
-            const double onepqp_q = 1.0 / (sqrt(cxp + cxq) * cxpxq);
+            const double onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
             this->coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
             const double rho = cxpxq / (cxp + cxq);
             const double xpq = qx_save[index23] - px;
