@@ -178,12 +178,13 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 #ifndef NDEBUG
   { // check reconstructed Fock matrix
     shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), false, false, false);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false);
     auto diag0 = (*out[0] % *fock * *out[0]).diag();
     auto diag1 = (*out[1] % *fock * *out[1]).diag();
     for (int i = 0; i != out[0]->mdim(); ++i) {
       if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
-        stringstream ss; ss << "Fock reconstruction failed. " << fabs(diag0[i] - ref_->eig()[i*2+nstart]) << " " << fabs(diag1[i] - ref_->eig()[i*2+nstart]) << endl;
+        stringstream ss; ss << "Fock reconstruction failed. " << diag0[i] << " " << ref_->eig()[i*2+nstart] << endl
+                            << "                            " << diag1[i] << " " << ref_->eig()[i*2+nstart] << endl;
         throw logic_error(ss.str());
       }
     }
@@ -228,73 +229,86 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   // TODO for the time being I only use Coulomb term
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  if (ref_->gaunt()) throw logic_error("gaunt term not yet implemented in RelJop::compute_mo2e");
+  if (ref_->breit()) throw logic_error("breit term not yet implemented in RelJop::compute_mo2e");
 
-  // (1) make DFDists
-  vector<shared_ptr<const DFDist>> dfs;
-  dfs = geom_->dfs()->split_blocks();
-  dfs.push_back(geom_->df());
-  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, ref_->gaunt());
-
-  // Separate Coefficients into real and imaginary
-  // correlated occupied orbitals
-  array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
-  array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
-  for (int k = 0; k != 2; ++k) {
-    for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
-      assert(nocc_ == coeff[k]->mdim());
-      rocoeff[k][i] = oc->get_real_part();
-      iocoeff[k][i] = oc->get_imag_part();
+  auto compute = [&coeff, this](unordered_map<bitset<4>, shared_ptr<ZMatrix>>& out, const bool gaunt, const bool breit) {
+    assert(!breit || gaunt);
+    // (1) make DFDists
+    vector<shared_ptr<const DFDist>> dfs;
+    if (!gaunt) {
+      dfs = geom_->dfs()->split_blocks();
+      dfs.push_back(geom_->df());
+    } else {
+      dfs = geom_->dfsl()->split_blocks();
     }
-  }
+    list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, gaunt);
 
-  // (2) first-transform
-  array<list<shared_ptr<RelDFHalf>>,2> half_complex;
-  for (int k = 0; k != 2; ++k) {
-    half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
-    for (auto& i : half_complex[k])
-      i = i->apply_J();
-  }
-
-  // (3) split and factorize
-  array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
-  for (size_t k = 0; k != 2; ++k) {
-    for (auto& i : half_complex[k]) {
-      list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
-      half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
+    // Separate Coefficients into real and imaginary
+    // correlated occupied orbitals
+    array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+    array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
+    for (int k = 0; k != 2; ++k) {
+      for (int i = 0; i != 4; ++i) {
+        shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
+        assert(nocc_ == coeff[k]->mdim());
+        rocoeff[k][i] = oc->get_real_part();
+        iocoeff[k][i] = oc->get_imag_part();
+      }
     }
-    half_complex[k].clear();
-    DFock::factorize(half_complex_exch[k]);
-  }
 
-  // (4) compute (gamma|ii)
-  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
+    // (2) first-transform
+    array<list<shared_ptr<RelDFHalf>>,2> half_complex;
+    for (int k = 0; k != 2; ++k)
+      half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
 
-  for (size_t t = 0; t != 4; ++t) {
-    list<shared_ptr<RelDFFull>> dffull;
-    for (auto& i : half_complex_exch[t/2])
-      dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
-    DFock::factorize(dffull);
-    assert(dffull.size() == 1);
-    dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-    full[bitset<2>(t)] = dffull.front();
-  }
+    // (3) split and factorize
+    array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
+    for (size_t k = 0; k != 2; ++k) {
+      for (auto& i : half_complex[k]) {
+        list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
+        half_complex_exch[k].insert(half_complex_exch[k].end(), tmp.begin(), tmp.end());
+      }
+      half_complex[k].clear();
+      DFock::factorize(half_complex_exch[k]);
+    }
 
-  // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
-  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> out;
+    // (4) compute (gamma|ii)
+    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
+    for (size_t t = 0; t != 4; ++t) {
+      list<shared_ptr<RelDFFull>> dffull;
+      for (auto& i : half_complex_exch[t/2])
+        dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
+      DFock::factorize(dffull);
+      assert(dffull.size() == 1);
+      dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+      full[bitset<2>(t)] = dffull.front()->apply_J();
+    }
 
-  for (size_t i = 0; i != 16; ++i) {
-    // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
-    if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6) continue;
-    out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
-  }
+    // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
+    const complex<double> gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
+    for (size_t i = 0; i != 16; ++i) {
+      // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
+      if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
+        continue;
 
-  // some assert statements
-  // symmetry requirement
-//assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
+      if (out.find(bitset<4>(i)) == out.end()) {
+        out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
+        out[bitset<4>(i)]->scale(gscale);
+      } else {
+        *out.at(bitset<4>(i)) += (*full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0) * gscale);
+      }
+    }
+  };
+
+  unordered_map<bitset<4>, shared_ptr<ZMatrix>> out;
+  // Dirac-Coulomb term
+  compute(out, false, false);
+
+  if (ref_->gaunt())
+    compute(out, true, false);
+
   // Kramers requirement
-  assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
+  assert((*out.at(bitset<4>("1111")) - *out.at(bitset<4>("0000"))->get_conjg()).rms() < 1.0e-8);
 
-  return out;
+  return unordered_map<bitset<4>, shared_ptr<const ZMatrix>>(out.begin(), out.end());
 }
