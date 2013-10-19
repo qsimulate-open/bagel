@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: spin2batch.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: breitbatch.cc
+// Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,33 +23,26 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_SPIN2BATCH_H
-#define __SRC_INTEGRAL_RYS_SPIN2BATCH_H
-
 #include <src/integral/rys/breitbatch.h>
+#include <src/integral/rys/breitrootlist.h>
+#include <src/integral/rys/spin2rootlist.h>
 
-namespace bagel {
+using namespace std;
+using namespace bagel;
 
-class Spin2Batch : public BreitBatch {
-
-  protected:
-    void perform_VRR();
-    void perform_VRR1();
-
-  public:
-
-    // dummy will never used.
-    Spin2Batch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true);
-
-    /// compute a batch of integrals
-    void compute() override;
-
-    double* data(const int i) override { return data_ + i*size_block_; }
-    constexpr static int nblocks() { return 6; }
-
-};
-
+void BreitBatch::root_weight(const int ps) {
+  if (breit_ == 1) {
+    breitroot__.root(rank_, T_, roots_, weights_, ps);
+  } else {
+    assert(false);
+  }
 }
 
-#endif
+void Spin2Batch::root_weight(const int ps) {
+  if (breit_ == 2) {
+    spin2root__.root(rank_, T_, roots_, weights_, ps);
+  } else {
+    assert(false);
+  }
+}
 

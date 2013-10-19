@@ -72,6 +72,8 @@ struct ERIRootList  {
 
 };
 
+const static ERIRootList eriroot__;
+
 }
 
 #endif

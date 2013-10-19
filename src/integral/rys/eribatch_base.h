@@ -27,90 +27,75 @@
 #ifndef __SRC_INTEGRAL_RYS_ERIBATCH_BASE_H
 #define __SRC_INTEGRAL_RYS_ERIBATCH_BASE_H
 
-#include <src/integral/rys/rysintegral.h>
-
 #include <src/integral/rys/inline.h>
-#include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/rysintegral.h>
 #include <src/integral/rys/erirootlist.h>
 #include <src/integral/rys/breitrootlist.h>
 #include <src/integral/rys/spin2rootlist.h>
-#include <src/integral/rys/breitbatch.h>
-#include <src/util/constants.h>
-#include <algorithm>
-#include <cmath>
 
 namespace bagel {
 
-const static ERIRootList eri;
-// const static ComplexERIRootList comperi;
-const static BreitRootList br;
-const static Spin2RootList s2;
-static constexpr double pitwohalf__ = pow(pi__, 2.5);
-static constexpr double pimhalf__ = 1.0/sqrt(pi__);
-static constexpr double T_thresh__ = 1.0e-8;
-
 template <typename DataType>
- class ERIBatch_Base : public RysIntegral<double> {
-  protected:
+ class ERIBatch_Base : public RysIntegral<DataType> {
 
+  protected:
     // a hack for screening of three-center integrals
     static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
 
     void root_weight(const int ps) override {
-      if (breit_ == 0) {
-        if (amax_ + cmax_ == 0) {
-          for (int j = 0; j != screening_size_; ++j) {
-            int i = screening_[j];
-            if (T_[i] < T_thresh__) {
-              weights_[i] = 1.0;
+      if (this->breit_ == 0) {
+        if (this->amax_ + this->cmax_ == 0) {
+          for (int j = 0; j != this->screening_size_; ++j) {
+            int i = this->screening_[j];
+            if (this->T_[i] < 1.0e-8 ) {
+              this->weights_[i] = 1.0;
             } else {
-              const double sqrtt = sqrt(T_[i]);
+              const double sqrtt = sqrt(this->T_[i]);
               const double erfsqt = inline_erf(sqrtt);
-              weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+              this->weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
             }
           }
         } else {
-          eri.root(rank_, T_, roots_, weights_, ps);
+          eriroot__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
         }
-      } else if (breit_ == 1) {
-        br.root(rank_, T_, roots_, weights_, ps);
-      } else if (breit_ == 2) {
-        s2.root(rank_, T_, roots_, weights_, ps);
+      } else if (this->breit_ == 1) {
+        breitroot__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
+      } else if (this->breit_ == 2) {
+        spin2root__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
       } else {
         assert(false);
       }
     }
 
-
-    // this sets T_ (+ U_), p_, q_, xp_, xq_, coeff_, and screening_size_
+    // this sets this->T_ (+ U_), this->p_, this->q_, this->xp_, this->xq_, this->coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const double integral_thresh) override {
-      const double ax = basisinfo_[0]->position(0);
-      const double ay = basisinfo_[0]->position(1);
-      const double az = basisinfo_[0]->position(2);
-      const double bx = basisinfo_[1]->position(0);
-      const double by = basisinfo_[1]->position(1);
-      const double bz = basisinfo_[1]->position(2);
-      const double cx = basisinfo_[2]->position(0);
-      const double cy = basisinfo_[2]->position(1);
-      const double cz = basisinfo_[2]->position(2);
-      const double dx = basisinfo_[3]->position(0);
-      const double dy = basisinfo_[3]->position(1);
-      const double dz = basisinfo_[3]->position(2);
+      const double ax = this->basisinfo_[0]->position(0);
+      const double ay = this->basisinfo_[0]->position(1);
+      const double az = this->basisinfo_[0]->position(2);
+      const double bx = this->basisinfo_[1]->position(0);
+      const double by = this->basisinfo_[1]->position(1);
+      const double bz = this->basisinfo_[1]->position(2);
+      const double cx = this->basisinfo_[2]->position(0);
+      const double cy = this->basisinfo_[2]->position(1);
+      const double cz = this->basisinfo_[2]->position(2);
+      const double dx = this->basisinfo_[3]->position(0);
+      const double dy = this->basisinfo_[3]->position(1);
+      const double dz = this->basisinfo_[3]->position(2);
 
-      const double* exp0 = (basisinfo_[0]->exponents_pointer());
-      const double* exp1 = (basisinfo_[1]->exponents_pointer());
-      const double* exp2 = (basisinfo_[2]->exponents_pointer());
-      const double* exp3 = (basisinfo_[3]->exponents_pointer());
-      const int nexp0 = basisinfo_[0]->num_primitive();
-      const int nexp1 = basisinfo_[1]->num_primitive();
-      const int nexp2 = basisinfo_[2]->num_primitive();
-      const int nexp3 = basisinfo_[3]->num_primitive();
+      const double* exp0 = this->basisinfo_[0]->exponents_pointer();
+      const double* exp1 = this->basisinfo_[1]->exponents_pointer();
+      const double* exp2 = this->basisinfo_[2]->exponents_pointer();
+      const double* exp3 = this->basisinfo_[3]->exponents_pointer();
+      const int nexp0 = this->basisinfo_[0]->num_primitive();
+      const int nexp1 = this->basisinfo_[1]->num_primitive();
+      const int nexp2 = this->basisinfo_[2]->num_primitive();
+      const int nexp3 = this->basisinfo_[3]->num_primitive();
 
-      double* const Ecd_save = stack_->get(prim2size_ * prim3size_);
-      double* const qx_save = stack_->get(prim2size_ * prim3size_);
-      double* const qy_save = stack_->get(prim2size_ * prim3size_);
-      double* const qz_save = stack_->get(prim2size_ * prim3size_);
+      double* const Ecd_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      double* const qx_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      double* const qy_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      double* const qz_save = this->stack_->get(this->prim2size_*this->prim3size_);
 
       const double minexp0 = *std::min_element(exp0, exp0+nexp0);
       const double minexp1 = *std::min_element(exp1, exp1+nexp1);
@@ -122,9 +107,9 @@ template <typename DataType>
       const double min_cdp = minexp2 * minexp3;
 
       // minimum distance between two lines (AB and CD)
-      const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1];
-      const double y_ab_cd = AB_[2] * CD_[0] - AB_[0] * CD_[2];
-      const double z_ab_cd = AB_[0] * CD_[1] - AB_[1] * CD_[0];
+      const double x_ab_cd = this->AB_[1] * this->CD_[2] - this->AB_[2] * this->CD_[1];
+      const double y_ab_cd = this->AB_[2] * this->CD_[0] - this->AB_[0] * this->CD_[2];
+      const double z_ab_cd = this->AB_[0] * this->CD_[1] - this->AB_[1] * this->CD_[0];
       const double x_n_ac = x_ab_cd * (ax - cx);
       const double y_n_ac = y_ab_cd * (ay - cy);
       const double z_n_ac = z_ab_cd * (az - cz);
@@ -132,11 +117,11 @@ template <typename DataType>
       const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
       const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq;
 
-      const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
-      const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
+      const double r01_sq = this->AB_[0] * this->AB_[0] + this->AB_[1] * this->AB_[1] + this->AB_[2] * this->AB_[2];
+      const double r23_sq = this->CD_[0] * this->CD_[0] + this->CD_[1] * this->CD_[1] + this->CD_[2] * this->CD_[2];
 
       unsigned int tuple_length = 0u;
-      double* const tuple_field = stack_->get(nexp2*nexp3*3);
+      double* const tuple_field = this->stack_->get(nexp2*nexp3*3);
       int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
       {
         const double cxp_min = minexp0 + minexp1;
@@ -162,7 +147,7 @@ template <typename DataType>
               const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
               const double tsqrt = sqrt(T);
               const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
-                                  * (T > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
+                                  * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
               if (ssss > integral_thresh) {
                 tuple_field[tuple_length*2  ] = *expi2;
                 tuple_field[tuple_length*2+1] = *expi3;
@@ -181,8 +166,8 @@ template <typename DataType>
 
       int index = 0;
       int index01 = 0;
-      std::fill_n(T_, primsize_, -1.0);
-      screening_size_ = 0;
+      std::fill_n(this->T_, this->primsize_, -1.0);
+      this->screening_size_ = 0;
 
       const double cxq_min = minexp2 + minexp3;
       const double cxq_inv_min = 1.0 / cxq_min;
@@ -193,25 +178,25 @@ template <typename DataType>
           const double abp = *expi0 * *expi1;
           const double ab = rnd(*expi0) * rnd(*expi1);
           const double cxp_inv = 1.0 / cxp;
-          const double Eab = exp(-r01_sq * (abp * cxp_inv) );
-          const double coeff_half = 2 * Eab * pitwohalf__;
+          const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
+          const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
           const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
           const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
           const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
           if (integral_thresh != 0.0) {
             const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
             const double T_sc = rho_sc * min_pq_sq;
-            const double onepqp_q_sc = 1.0 / (sqrt(cxp + cxq_min) * cxp * cxq_min);
-            const double tsqrt = sqrt(T_sc);
+            const double onepqp_q_sc = 1.0 / (std::sqrt(cxp + cxq_min) * cxp * cxq_min);
+            const double tsqrt = std::sqrt(T_sc);
             const double abcd_sc = ab * min_cd;
             const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
             const double abcd_sc_3_4 = sqrt(sqrt(abcd_sc_3));
             const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
-                              * (T_sc > T_thresh__ ? inline_erf(tsqrt) * 0.5 / tsqrt : pimhalf__);
+                              * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
             if (ssss < integral_thresh) continue;
           }
 
-          const int index_base = prim2size_ * prim3size_ * index01;
+          const int index_base = this->prim2size_ * this->prim3size_ * index01;
 
           for (unsigned int i = 0; i != tuple_length; ++i) {
             const int index23 = tuple_index[i];
@@ -219,106 +204,106 @@ template <typename DataType>
             const double exp2value = tuple_field[2*i];
             const double exp3value = tuple_field[2*i+1];
             const double cxq = exp2value + exp3value;
-            xp_[index] = cxp;
-            xq_[index] = cxq;
+            this->xp_[index] = cxp;
+            this->xq_[index] = cxq;
             const double cxpxq = cxp * cxq;
             const double onepqp_q = 1.0 / (sqrt(cxp + cxq) * cxpxq);
-            coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
+            this->coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
             const double rho = cxpxq / (cxp + cxq);
             const double xpq = qx_save[index23] - px;
             const double ypq = qy_save[index23] - py;
             const double zpq = qz_save[index23] - pz;
             const double T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
             const int index3 = index * 3;
-            p_[index3] = px;
-            p_[index3 + 1] = py;
-            p_[index3 + 2] = pz;
-            q_[index3] =     qx_save[index23];
-            q_[index3 + 1] = qy_save[index23];
-            q_[index3 + 2] = qz_save[index23];
-            T_[index] = T;
-            screening_[screening_size_] = index;
-            ++screening_size_;
+            this->p_[index3] = px;
+            this->p_[index3 + 1] = py;
+            this->p_[index3 + 2] = pz;
+            this->q_[index3] =     qx_save[index23];
+            this->q_[index3 + 1] = qy_save[index23];
+            this->q_[index3 + 2] = qz_save[index23];
+            this->T_[index] = T;
+            this->screening_[this->screening_size_] = index;
+            ++this->screening_size_;
           }
         }
       }
-      stack_->release(nexp2*nexp3*3, tuple_field);
-      stack_->release(prim2size_*prim3size_, qz_save);
-      stack_->release(prim2size_*prim3size_, qy_save);
-      stack_->release(prim2size_*prim3size_, qx_save);
-      stack_->release(prim2size_*prim3size_, Ecd_save);
+      this->stack_->release(nexp2*nexp3*3, tuple_field);
+      this->stack_->release(this->prim2size_*this->prim3size_, qz_save);
+      this->stack_->release(this->prim2size_*this->prim3size_, qy_save);
+      this->stack_->release(this->prim2size_*this->prim3size_, qx_save);
+      this->stack_->release(this->prim2size_*this->prim3size_, Ecd_save);
     }
 
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override {
-      size_final_ = asize_final_sph * csize_final_sph * contsize_;
-      if (deriv_rank_ == 0) {
-        const unsigned int size_start = asize_ * csize_ * primsize_;
-        const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-        const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-        size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
-        size_alloc_ = size_block_;
+      this->size_final_ = asize_final_sph * csize_final_sph * this->contsize_;
+      if (this->deriv_rank_ == 0) {
+        const unsigned int size_start = this->asize_ * this->csize_ * this->primsize_;
+        const unsigned int size_intermediate = asize_final * this->csize_ * this->contsize_;
+        const unsigned int size_intermediate2 = asize_final_sph * csize_final * this->contsize_;
+        this->size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
+        this->size_alloc_ = this->size_block_;
 
         // if this is a two-electron Breit integral
-        if (breit_)
-          size_alloc_ = 6 * size_block_;
+        if (this->breit_)
+          this->size_alloc_ = 6 * this->size_block_;
 
-        stack_save_ = stack_->get(size_alloc_);
-        stack_save2_ = nullptr;
+        this->stack_save_ = this->stack_->get(this->size_alloc_);
+        this->stack_save2_ = nullptr;
 
         // if Slater/Yukawa integrals
-        if (tenno_)
-          stack_save2_ = stack_->get(size_alloc_);
+        if (this->tenno_)
+          this->stack_save2_ = this->stack_->get(this->size_alloc_);
 
       // derivative integrals
-      } else if (deriv_rank_ == 1) {
-        size_block_ = asize_final * csize_final * primsize_;
+      } else if (this->deriv_rank_ == 1) {
+        this->size_block_ = asize_final * csize_final * this->primsize_;
         // if this is a two-electron gradient integral
         if (dynamic_cast<ERIBatch_Base*>(this)) {
-          size_alloc_ = 12 * size_block_;
+          this->size_alloc_ = 12 * this->size_block_;
         } else {
           throw std::logic_error("something is strange in ERIBatch_Base::allocate_data");
         }
-        stack_save_ = stack_->get(size_alloc_);
-        stack_save2_ = nullptr;
+        this->stack_save_ = this->stack_->get(this->size_alloc_);
+        this->stack_save2_ = nullptr;
       }
-      data_ = stack_save_;
-      data2_ = stack_save2_;
+      this->data_ = this->stack_save_;
+      this->data2_ = this->stack_save2_;
     }
 
   public:
 
     ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0,
-                 std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysInt(o, stack) {
+                 std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType>(o, stack) {
 
-      breit_ = breit;
+      this->breit_ = breit;
 
-      deriv_rank_ = deriv;
+      this->deriv_rank_ = deriv;
 
       // determines if we want to swap shells
-      set_swap_info(true);
+      this->set_swap_info(true);
 
       // stores AB and CD
-      set_ab_cd();
+      this->set_ab_cd();
 
-      // set primsize_ and contsize_, as well as relevant members
-      set_prim_contsizes();
+      // set this->primsize_ and this->contsize_, as well as relevant members
+      this->set_prim_contsizes();
 
       // sets angular info
       int asize_final, csize_final, asize_final_sph, csize_final_sph;
-      std::tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = set_angular_info();
+      std::tie(asize_final, csize_final, asize_final_sph, csize_final_sph) = this->set_angular_info();
 
       // allocate
       allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
-      allocate_arrays(primsize_);
+      this->allocate_arrays(this->primsize_);
 
       const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
       compute_ssss(integral_thresh);
 
-      root_weight(primsize_);
+      root_weight(this->primsize_);
     }
  };
 
-using ERIBatch_base = bagel::ERIBatch_Base<double>;
+using ERIBatch_base = ERIBatch_Base<double>;
 
 }
 

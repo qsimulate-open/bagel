@@ -50,6 +50,7 @@ class BreitBatch : public BreitBatch_base {
   protected:
     void perform_VRR() override;
     void perform_VRR1() override;
+    void root_weight(const int ps) override;
 
   public:
     // dummy will never be used.
@@ -63,6 +64,7 @@ class Spin2Batch : public BreitBatch_base {
   protected:
     void perform_VRR() override;
     void perform_VRR1() override;
+    void root_weight(const int ps) override;
 
   public:
     // dummy will never be used.

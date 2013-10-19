@@ -71,6 +71,8 @@ struct BreitRootList  {
 
 };
 
+const static BreitRootList breitroot__;
+
 }
 
 #endif

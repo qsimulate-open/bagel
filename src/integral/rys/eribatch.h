@@ -37,6 +37,7 @@ class ERIBatch : public ERIBatch_base {
     void perform_VRR1();
     void perform_VRR2();
     void perform_VRR3();
+    void root_weight(const int ps) override;
 
   public:
 
