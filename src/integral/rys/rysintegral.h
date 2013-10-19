@@ -320,21 +320,6 @@ namespace bagel {
 
   public:
 
-    virtual void compute() = 0;
-
-    /// retrieve a batch of integrals
-    virtual double* data(const int i) override { assert(i == 0); return data_; }
-    const double* data() const { return data_; }
-    const double* data2() const { return data2_; }
-    bool data2_exists() const { return data2_ != nullptr; }
-    size_t data_size() const { return size_final_; }
-
-    size_t size_block() const { return size_block_; }
-
-    bool swap01() const { return swap01_; }
-    bool swap23() const { return swap23_; }
-    bool swap0123() const { return swap0123_; }
-
     RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMem> stack)
      : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
       assert(spherical1_ == info[1]->spherical());
@@ -375,8 +360,24 @@ namespace bagel {
         resources__->release(stack_);
     }
 
- };
-using RysInt = bagel::RysIntegral<double>;
+    virtual void compute() = 0;
+
+    /// retrieve a batch of integrals
+    virtual double* data(const int i) override { assert(i == 0); return data_; }
+    const double* data() const { return data_; }
+    const double* data2() const { return data2_; }
+    bool data2_exists() const { return data2_ != nullptr; }
+    size_t data_size() const { return size_final_; }
+
+    size_t size_block() const { return size_block_; }
+
+    bool swap01() const { return swap01_; }
+    bool swap23() const { return swap23_; }
+    bool swap0123() const { return swap0123_; }
+};
+
+using RysInt = RysIntegral<double>;
+
 }
 
 #endif
