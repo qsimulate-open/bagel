@@ -32,6 +32,8 @@
 using namespace std;
 using namespace bagel;
 
+static constexpr double T_thresh__ = 1.0e-8;
+
 NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              shared_ptr<StackMem> stack, const int L, const double A)
  : RysInt(_info, stack), mol_(mol), L_(L), A_(A) {
@@ -146,7 +148,7 @@ void NAIBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
-      if (T_[i] < 1.0e-8) {
+      if (T_[i] < T_thresh__) {
         weights_[i] = 1.0;
       } else {
         const double sqrtt = sqrt(T_[i]);

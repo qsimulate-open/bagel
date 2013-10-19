@@ -52,10 +52,8 @@ static const double pitwohalf__ = ::pow(pi__, 2.5);
 // TODO need to update
 const static SRootList root;
 
-std::shared_ptr<StackMem> stack_;
-
 SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
-:  RysIntegral(_info, stack_), gamma_(gmm), yukawa_(yukawa) {
+:  RysIntegral<double>(_info, stack_), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
 

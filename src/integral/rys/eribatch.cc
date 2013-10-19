@@ -30,8 +30,6 @@
 using namespace std;
 using namespace bagel;
 
-const bagel::ERIRootList eri;
-
 ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum,
                    shared_ptr<StackMem> stack) :  ERIBatch_base(_info, max_density, 0, 0, stack) {
 
@@ -54,7 +52,7 @@ void ERIBatch::root_weight(const int ps) {
         }
       }
     } else {
-      eri.root(rank_, T_, roots_, weights_, ps);
+      eriroot__.root(rank_, T_, roots_, weights_, ps);
     }
   } else {
     assert(false);
