@@ -205,8 +205,6 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
     s[1] = mat.first[2];
     mo2e_.insert(make_pair(s, tmp));
   }
-
-  assert(mo2e_.size() == 16);
 }
 
 
@@ -294,7 +292,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
 
   // some assert statements
   // symmetry requirement
-  assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
+//assert((*out[bitset<4>("1100")] - *out[bitset<4>("0011")]->transpose()).rms() < 1.0e-8);
   // Kramers requirement
   assert((*out[bitset<4>("1111")] - *out[bitset<4>("0000")]->get_conjg()).rms() < 1.0e-8);
 
