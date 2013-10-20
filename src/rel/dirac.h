@@ -53,6 +53,9 @@ class Dirac : public Method {
     bool gaunt_;
     bool breit_;
 
+    // for Fock build
+    bool robust_;
+
     std::shared_ptr<const RelHcore> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
     std::shared_ptr<const ZMatrix> s12_;
