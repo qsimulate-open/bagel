@@ -226,10 +226,6 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
 
 
 unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<ZMatrix>,2> coeff) {
-  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  // TODO for the time being I only use Coulomb term
-  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  if (ref_->breit()) throw logic_error("breit term not yet implemented in RelJop::compute_mo2e");
 
   auto compute = [&coeff, this](unordered_map<bitset<4>, shared_ptr<ZMatrix>>& out, const bool gaunt, const bool breit) {
     assert(!breit || gaunt);
@@ -262,7 +258,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
       half_complex[k] = DFock::make_half_complex(dfdists, rocoeff[k], iocoeff[k]);
 
     // (3) split and factorize
-    array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch;
+    array<list<shared_ptr<RelDFHalf>>,2> half_complex_exch, half_complex_exch2;
     for (size_t k = 0; k != 2; ++k) {
       for (auto& i : half_complex[k]) {
         list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
@@ -272,30 +268,71 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
       DFock::factorize(half_complex_exch[k]);
     }
 
-    // (4) compute (gamma|ii)
-    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
-    for (size_t t = 0; t != 4; ++t) {
-      list<shared_ptr<RelDFFull>> dffull;
-      for (auto& i : half_complex_exch[t/2])
-        dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
-      DFock::factorize(dffull);
-      assert(dffull.size() == 1);
-      dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-      full[bitset<2>(t)] = dffull.front()->apply_J();
+    if (breit) {
+      // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
+      auto breitint = make_shared<BreitInt>(geom_);
+      list<shared_ptr<Breit2Index>> breit_2index;
+      for (int i = 0; i != breitint->Nblocks(); ++i) {
+        breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
+        if (breitint->not_diagonal(i))
+          breit_2index.push_back(breit_2index.back()->cross());
+      }
+      for (size_t k = 0; k != 2; ++k) {
+        for (auto& i : half_complex_exch[k])
+          half_complex_exch2[k].push_back(i->apply_J());
+
+        for (auto& i : half_complex_exch[k])
+          for (auto& j : breit_2index)
+            if (i->alpha_matches(j)) {
+              half_complex_exch2[k].push_back(i->apply_J()->multiply_breit2index(j));
+              DFock::factorize(half_complex_exch2[k]);
+            }
+      }
     }
 
+    // (4) compute (gamma|ii)
+    auto compute_full = [&rocoeff, &iocoeff](array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj) {
+      unordered_map<bitset<2>, shared_ptr<const RelDFFull>> out;
+      for (size_t t = 0; t != 4; ++t) {
+        list<shared_ptr<RelDFFull>> dffull;
+        for (auto& i : half[t/2])
+          dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
+        DFock::factorize(dffull);
+        assert(dffull.size() == 1);
+        dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+        out[bitset<2>(t)] = dffull.front();
+        if (appj)
+          out.at(bitset<2>(t)) = out.at(bitset<2>(t))->apply_J();
+      }
+      return out;
+    };
+    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = compute_full(half_complex_exch, true);
+    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full2 = !breit ? full : compute_full(half_complex_exch2, false);
+
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
-    const complex<double> gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
+    const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
     for (size_t i = 0; i != 16; ++i) {
       // we do not need (1000, 0111, 1110, 0001, 1100, 0110)
       if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
         continue;
 
-      if (out.find(bitset<4>(i)) == out.end()) {
-        out[bitset<4>(i)] = full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0);
-        out[bitset<4>(i)]->scale(gscale);
+      const bitset<2> b2a = bitset<2>(i/4);
+      const bitset<2> b2b = bitset<2>(i%4);
+      const bitset<4> b4 = bitset<4>(i);
+      if (!breit) {
+        if (out.find(b4) == out.end()) {
+          out[b4] = full.at(b2a)->form_4index(full2.at(b2b), gscale);
+        } else {
+          *out.at(b4) += *full.at(b2a)->form_4index(full2.at(b2b), gscale);
+        }
       } else {
-        *out.at(bitset<4>(i)) += (*full.at(bitset<2>(i/4))->form_4index(full.at(bitset<2>(i%4)), 1.0) * gscale);
+        // in breit cases we explicitly symmetrize the Hamiltnian
+        if (out.find(b4) == out.end()) {
+          out[b4] = full.at(b2a)->form_4index(full2.at(b2b), gscale*0.5);
+        } else {
+          *out.at(b4) += *full.at(b2a)->form_4index(full2.at(b2b), gscale*0.5);
+        }
+        *out.at(b4) += *full2.at(b2a)->form_4index(full.at(b2b), gscale*0.5);
       }
     }
   };
@@ -305,7 +342,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   compute(out, false, false);
 
   if (ref_->gaunt())
-    compute(out, true, false);
+    compute(out, true, ref_->breit());
 
   // Kramers requirement
   assert((*out.at(bitset<4>("1111")) - *out.at(bitset<4>("0000"))->get_conjg()).rms() < 1.0e-8);
