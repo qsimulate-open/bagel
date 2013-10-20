@@ -58,7 +58,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = ref_->relcoeff()->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false);
+    core_fock_ = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -178,7 +178,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 #ifndef NDEBUG
   { // check reconstructed Fock matrix
     shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());
     auto diag0 = (*out[0] % *fock * *out[0]).diag();
     auto diag1 = (*out[1] % *fock * *out[1]).diag();
     for (int i = 0; i != out[0]->mdim(); ++i) {
