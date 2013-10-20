@@ -243,7 +243,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   }
 
   // this is a necessary condition if we use symmetry below (Exop) 
-//assert(half_complex_exch.size() == half_complex_exch2.size());
+  assert(half_complex_exch.size() == half_complex_exch2.size());
 
   // will use the zgemm3m-like algorithm
   for (auto& i : half_complex_exch)
