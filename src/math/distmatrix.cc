@@ -180,8 +180,10 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
     }
   }
 
+#ifndef USE_SERVER_THREAD
   accumer->flush();
   sender->flush();
+#endif
 
   //rotate locally
   for (auto& irot : local_rotations) {
@@ -194,8 +196,10 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
 
     drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
 
+#ifndef USE_SERVER_THREAD
     accumer->flush();
     sender->flush();
+#endif
   }
 
   // terminate accumulate
