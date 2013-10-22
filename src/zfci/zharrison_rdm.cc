@@ -111,9 +111,9 @@ void ZHarrison::compute_rdm12() {
         const int lenb = int_det->lenb();
         for (auto& s : int_det->stringa()) {
           for (int i = 0; i != norb_; ++i) {
-            if (!s[i]) continue;
+            if (s[i]) continue;
             const double sign = int_det->sign<0>(s, i);
-            auto cs = s; cs.reset(i);
+            auto cs = s; cs.set(i);
             complex<double>* target = d->data(i)->data()+int_det->lexical<0>(s)*lenb;
             const complex<double>* source = cc->data()+cc->det()->lexical<0>(cs)*lenb;
             transform(source, source+lenb, target, target, [&sign](complex<double> a, complex<double> b) { return a*sign+b; }); 
@@ -131,9 +131,9 @@ void ZHarrison::compute_rdm12() {
           for (int i = 0; i != norb_; ++i) {
             complex<double>* target = d->data(i)->data()+ia*lenbt;
             for (auto& s : int_det->stringb()) {
-              if (!s[i]) continue;
+              if (s[i]) continue;
               const double sign = int_det->sign<1>(s, i);
-              auto cs = s; cs.reset(i);
+              auto cs = s; cs.set(i);
               target[int_det->lexical<1>(s)] += sign*source[cc->det()->lexical<1>(cs)];
             }
           }
