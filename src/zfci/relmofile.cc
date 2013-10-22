@@ -316,6 +316,12 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
       if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
         continue;
 
+      // we will construct (1111, 1010, 1101, 0100) later
+      if (i == 15 || i == 12 || i == 16 || i == 8)
+        continue;
+
+      // we compute: 0000, 0010, 1001, 0101, 0011, 1011
+
       const bitset<2> b2a = bitset<2>(i/4);
       const bitset<2> b2b = bitset<2>(i%4);
       const bitset<4> b4 = bitset<4>(i);
@@ -344,8 +350,20 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   if (ref_->gaunt())
     compute(out, true, ref_->breit());
 
-  // Kramers requirement
-  assert((*out.at(bitset<4>("1111")) - *out.at(bitset<4>("0000"))->get_conjg()).rms() < 1.0e-8);
+  // Kramers and particle symmetry
+  out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();
+
+  out[bitset<4>("1010")] = out.at(bitset<4>("0101"))->clone();
+  shared_ptr<ZMatrix> m1010 = out.at(bitset<4>("0101"))->get_conjg();
+  SMITH::sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out[bitset<4>("1010")]->data(), nocc_, nocc_, nocc_, nocc_); 
+
+  out[bitset<4>("1101")] = out.at(bitset<4>("1011"))->clone();
+  shared_ptr<ZMatrix> m1101 = out.at(bitset<4>("1011"))->get_conjg();
+  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m1101->data(), out[bitset<4>("1101")]->data(), nocc_, nocc_, nocc_, nocc_); 
+
+  out[bitset<4>("0100")] = out.at(bitset<4>("0010"))->clone();
+  shared_ptr<ZMatrix> m0100 = out.at(bitset<4>("0010"))->get_conjg();
+  SMITH::sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_); 
 
   return unordered_map<bitset<4>, shared_ptr<const ZMatrix>>(out.begin(), out.end());
 }
