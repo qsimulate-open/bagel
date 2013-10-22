@@ -226,9 +226,16 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifdef HAVE_MPI_H
+    // Just to make it run in parallel. 
+    // Note that ZHarrison is not parallelized and there is no point of running this in parallel
+    cc_->sync();
+    sigma->sync();
+#endif
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const RelZDvec>(cc_);
     auto sigman = make_shared<const RelZDvec>(sigma);
+
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson.residual();

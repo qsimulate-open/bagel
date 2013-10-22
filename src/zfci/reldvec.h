@@ -158,6 +158,13 @@ class RelDvector {
         i.second->print(thresh);
     }
 
+#ifdef HAVE_MPI_H
+    void sync() {
+      for (auto& i : dvecs_)
+        mpi__->broadcast(i.second->data(), i.second->size(), 0); 
+    }
+#endif
+
 };
 
 using RelDvec = RelDvector<double>;
