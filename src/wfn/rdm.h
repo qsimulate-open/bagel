@@ -47,11 +47,15 @@ class RDM_base {
       dim_ = 1lu;
       for (int i = 0; i != rank; ++i) dim_ *= n;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::fill_n(data(), size(), static_cast<DataType>(0.0));
     }
 
     RDM_base(const RDM_base<DataType>& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_) {
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       std::copy_n(o.data(), size(), data());
+    }
+
+    RDM_base(RDM_base<DataType>&& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_), data_(std::move(o.data_)) {
     }
 
     DataType* first() { return data(); }
@@ -94,6 +98,7 @@ class RDM : public RDM_base<DataType> {
   public:
     RDM(const int n) : RDM_base<DataType>(n, rank) { }
     RDM(const RDM<rank,DataType>& o) : RDM_base<DataType>(o) { }
+    RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::forward(o)) { }
 
     std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb_); }
 
@@ -103,6 +108,10 @@ class RDM : public RDM_base<DataType> {
     template<typename ...args>
     const DataType& element(const args&... index) const { return this->data_[address_<0>(index...)]; }
 
+    RDM<rank,DataType>& operator+=(const RDM<rank,DataType>& o) { this->ax_plus_y(1.0, o); return *this; } 
+    RDM<rank,DataType>& operator-=(const RDM<rank,DataType>& o) { this->ax_plus_y(-1.0, o); return *this; } 
+    RDM<rank,DataType> operator+(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(1.0, o); return out; } 
+    RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(-1.0, o); return out; } 
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
@@ -130,6 +139,9 @@ class RDM : public RDM_base<DataType> {
 
     void print(const double thresh = 1.0e-3) const { throw std::logic_error("RDM<N>::print() (N>3) not implemented yet"); }
 };
+
+template <int rank>
+using ZRDM = RDM<rank, std::complex<double>>; 
 
 template<> bool RDM<1,double>::natural_orbitals() const;
 

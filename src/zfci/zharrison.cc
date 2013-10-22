@@ -73,7 +73,6 @@ void ZHarrison::common_init() {
 #endif
     if (ncore_ < 0)
       ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    // norb is a dimension of CI (!= nelec in relativistic cases)
     if (norb_  < 0)
       norb_ = relref->relcoeff()->mdim()/2-ncore_;
   }
@@ -87,12 +86,12 @@ void ZHarrison::common_init() {
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
 
-  const int nele = geom_->nele() - charge_ - ncore_*2;
+  nele_ = geom_->nele() - charge_ - ncore_*2;
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nele, 0);
-  int_space_ = make_shared<RelSpace>(norb_, nele-2, 0, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_, 0);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
 }
 
 

@@ -46,6 +46,7 @@ class ZHarrison : public Method {
     double print_thresh_;
 
     // numbers of electrons
+    int nele_;
     int ncore_;
     int norb_;
     int charge_;
@@ -110,11 +111,11 @@ class ZHarrison : public Method {
                    const int istate, const bool diag, const bool trans) const;
 
     // RDMs
-    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<1>>>> rdm1_;
-    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<2>>>> rdm2_;
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<1>>>> rdm1_;
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
     // state averaged RDMs
-    std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<1>>> rdm1_av_;
-    std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<2>>> rdm2_av_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
 
   public:
     // this constructor is ugly... to be fixed some day...
@@ -148,8 +149,8 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
-    std::shared_ptr<const RDM<1>> rdm1_av(const std::bitset<4>& b) const { return rdm1_av_.at(b); }
-    std::shared_ptr<const RDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+    std::shared_ptr<const ZRDM<1>> rdm1_av(const std::bitset<4>& b) const { return rdm1_av_.at(b); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
 };
 
 }
