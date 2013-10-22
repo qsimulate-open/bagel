@@ -101,6 +101,7 @@ class RDM : public RDM_base<DataType> {
     RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::forward(o)) { }
 
     std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb_); }
+    std::shared_ptr<RDM<rank,DataType>> copy() const { return std::make_shared<RDM<rank,DataType>>(*this); }
 
     template<typename ...args>
     DataType& element(const args&... index) { return this->data_[address_<0>(index...)]; }
