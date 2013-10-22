@@ -317,7 +317,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
         continue;
 
       // we will construct (1111, 1010, 1101, 0100) later
-      if (i == 15 || i == 12 || i == 16 || i == 8)
+      if (i == 15 || i == 10 || i == 13 || i == 4)
         continue;
 
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
