@@ -292,11 +292,10 @@ void ZHarrison::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<RelZDvec>(davidson.civec());
-  s->print(print_thresh_);
+  cc_ = make_shared<RelZDvec>(davidson.civec());
+  cc_->print(print_thresh_);
 
 #if 0
-  cc_ = make_shared<ZDvec>(s);
   for (auto& iprop : properties_) {
     iprop->compute(cc_);
     iprop->print();

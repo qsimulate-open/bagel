@@ -109,6 +109,13 @@ class ZHarrison : public Method {
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
 
+    // RDMs
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<1>>>> rdm1_;
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<2>>>> rdm2_;
+    // state averaged RDMs
+    std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<1>>> rdm1_av_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<RDM<2>>> rdm2_av_;
+
   public:
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
@@ -138,6 +145,11 @@ class ZHarrison : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 
     std::vector<double> energy() const { return energy_; }
+
+    void compute_rdm12();
+
+    std::shared_ptr<const RDM<1>> rdm1_av(const std::bitset<4>& b) const { return rdm1_av_.at(b); }
+    std::shared_ptr<const RDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
 };
 
 }
