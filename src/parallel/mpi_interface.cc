@@ -105,6 +105,28 @@ void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
 }
 
 
+void MPI_Interface::reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const {
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  MPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+}
+
+int MPI_Interface::ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) {
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  MPI_Request c;
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Ireduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &c);
+  rq.push_back(c);
+  request_.emplace(cnt_, rq);
+#endif
+  ++cnt_;
+  return cnt_-1;
+}
+
+
 void MPI_Interface::allreduce(double* a, const size_t size) const {
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H

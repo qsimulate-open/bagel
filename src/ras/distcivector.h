@@ -275,7 +275,7 @@ class DistRASCivector {
     }
 
     void terminate_mpi_recv() const {
-      assert( std::all_of(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock>& i) { if (i) { return i->put_; } else { return true; } }) && recv_);
+      assert( std::all_of(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock>& i) { if (i) { return static_cast<bool>(i->put_); } else { return true; } }) && recv_);
       bool done;
       do {
         done = recv_->test();
@@ -311,7 +311,7 @@ class DistRASCivector {
         if (!sblock) continue;
         std::shared_ptr<RBlock> tblock = out->block(sblock->stringa(), sblock->stringb());
         std::shared_ptr<RBlock> bufblock = trans->block(sblock->stringb(), sblock->stringa());
-        assert(tblock->size() == sblock->size() && bufblock->size() == sblock->size());
+        assert(tblock->global_size() == sblock->global_size() && bufblock->global_size() == sblock->global_size());
 
         for (int i = 0; i < mpi__->size(); ++i) {
           std::tuple<size_t, size_t> outrange = tblock->dist_.range(i);

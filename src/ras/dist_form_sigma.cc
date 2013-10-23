@@ -75,6 +75,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
 
     // start transpose
     shared_ptr<DistRASCivec> cctrans = cc->transpose();
+    pdebug.tick_print("transpose");
 
     // (taskbb)
     sigma_bb(cc, sigma, g->data(), jop->mo2e_ptr());
@@ -90,7 +91,8 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     pdebug.tick_print("taskaa");
 
     // start transpose back
-    shared_ptr<DistRASCivec> saa = strans->transpose();
+    shared_ptr<DistRASCivec> saa = strans->transpose(det);
+    pdebug.tick_print("transpose1");
 
     // (taskab) alpha-beta contributions
     sigma_ab(cc, sigma, jop->mo2e_ptr());
@@ -184,15 +186,22 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   shared_ptr<const RASDeterminants> det = cc->det();
 
   const int norb = det->norb();
+  list<tuple<int, shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<const StringSpace>, int>> requests;
 
   // mapping space offsets to process bounds
   map<size_t, tuple<size_t, size_t>> bounds_map;
+  map<size_t, vector<int>> scattering_map;
   for (auto& sp : det->stringspacea()) {
     if (sp) {
       StaticDist d(sp->size(), mpi__->size());
       bounds_map.emplace(sp->offset(), d.range(mpi__->rank()));
+      vector<int> scat(mpi__->size());
+      for (int i = 0; i < mpi__->size(); ++i)
+        scat[i] = d.size(i);
+      scattering_map.emplace(sp->offset(), scat);
     }
   }
+
 
   map<size_t, map<size_t, pair<vector<tuple<size_t, int, size_t>>, shared_ptr<SparseMatrix>>>> Fmatrices;
 
@@ -320,10 +329,81 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         }
 
         // Add up contributions from each node
-        mpi__->allreduce(Vt->data(), Vt->size());
+        const size_t astart = get<0>(bounds_map[ispace->offset()]);
+        const size_t aend = get<1>(bounds_map[ispace->offset()]);
+        const size_t asize = aend - astart;
+
+        shared_ptr<Matrix> V = Vt->transpose();
+
+        vector<int> recv_counts(mpi__->size());
+        vector<int>& asizes = scattering_map[ispace->offset()];
+        for (int i = 0; i < mpi__->size(); ++i)
+          recv_counts[i] = asizes[i] * phisize;
+        
+        auto V_chunk = make_shared<Matrix>(phisize, aend - astart);
+        //mpi__->reduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
+        //const int rq = mpi__->ireduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
+        //requests.emplace_back(rq, V, V_chunk, ispace, ij);
+      }
 
         // scatter
-        const double* vdata = Vt->data();
+      for (auto ir = requests.begin(); ir != requests.end(); ) {
+        const int rq = get<0>(*ir);
+        mpi__->wait(rq);
+        {
+        //if (mpi__->test(rq)) {
+          shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
+          shared_ptr<const StringSpace> ispace = get<3>(*ir);
+          const int ij = get<4>(*ir);
+
+          const size_t astart = get<0>(bounds_map[ispace->offset()]);
+          const size_t aend = get<1>(bounds_map[ispace->offset()]);
+          const size_t asize = aend - astart;
+
+          const double* vdata = Vt_chunk->data();
+          for (auto& iphiblock : det->phib_ij(ij) ) {
+            for (auto& iphi : iphiblock) {
+              shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+              if (det->allowed(ispace, betaspace)) {
+
+                shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+                double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
+
+                const size_t lb = sgblock->lenb();
+
+                for (size_t ii = sgblock->astart(), jj = 0; ii < sgblock->aend(); ++ii, ++jj)
+                  targetdata[jj*lb] += vdata[jj];
+              }
+
+              vdata += asize;
+            }
+          }
+          ir = requests.erase(ir);
+        }
+        //else {
+        //  ++ir;
+        //}
+      }
+    }
+  }
+
+  bool done;
+  do {
+    done = true;
+    for (auto ir = requests.begin(); ir != requests.end(); ) {
+      const int rq = get<0>(*ir);
+      mpi__->wait(rq);
+      {
+      //if (mpi__->test(rq)) {
+        shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
+        shared_ptr<const StringSpace> ispace = get<3>(*ir);
+        const int ij = get<4>(*ir);
+
+        const size_t astart = get<0>(bounds_map[ispace->offset()]);
+        const size_t aend = get<1>(bounds_map[ispace->offset()]);
+        const size_t asize = aend - astart;
+
+        const double* vdata = Vt_chunk->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
             shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
@@ -334,14 +414,21 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
               const size_t lb = sgblock->lenb();
 
-              for (size_t i = sgblock->astart(), j = 0; i < sgblock->aend(); ++i, ++j)
-                targetdata[j*lb] += vdata[i];
+              for (size_t ii = sgblock->astart(), jj = 0; ii < sgblock->aend(); ++ii, ++jj)
+                targetdata[jj*lb] += vdata[jj];
             }
 
-            vdata += la;
+            vdata += asize;
           }
         }
+        ir = requests.erase(ir);
       }
+      //else {
+      //  ++ir;
+      //  done = false;
+      //}
     }
-  }
+    if (!done) std::this_thread::sleep_for(sleeptime__);
+  } while (!done);
+  mpi__->barrier();
 }

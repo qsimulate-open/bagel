@@ -53,10 +53,11 @@ namespace bagel {
         const size_t lb = det_->lenb();
         const int norb = det_->norb();
 
-        buf_ = unique_ptr<double[]>(new double[lb * abit_.count() * (norb - abit_.count() + 1)]);
+        const size_t alexical = det_->lexical<0>(abit_);
+        buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);
 
         int k = 0;
-        for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
+        for (auto& iter : det_->phia(alexical)) {
           // loop through blocks
           for (auto& iblock : this_->allowed_blocks<0>(det_->stringa(iter.source))) {
             const int l = iblock->get_bstring_buf(buf_.get() + lb*k + iblock->stringb()->offset(), iter.source - iblock->stringa()->offset());
@@ -64,7 +65,6 @@ namespace bagel {
           }
           ++k;
         }
-        assert( k == abit_.count() * (norb - abit_.count() + 1) );
       }
 
       bool test() {
@@ -85,6 +85,8 @@ namespace bagel {
         const int norb = det_->norb();
         const size_t lex_a = det_->lexical<0, 0>(abit_);
 
+        vector<shared_ptr<DistRASBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
+
         int k = 0;
         for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
           const int j = iter.ij / norb;
@@ -95,7 +97,7 @@ namespace bagel {
           bitset<nbit__> maskij; maskij.set(j); maskij.flip(i);
 
           const double* source = buf_.get() + det_->lenb() * k++;
-          for (auto& iblock : out_->allowed_blocks<0>(abit_)) {
+          for (auto& iblock : allowed_blocks) {
             const size_t lb = iblock->lenb();
             double* odata = iblock->local() + lb * (lex_a - iblock->astart());
             for (auto& ib : *iblock->stringb()) {
@@ -119,8 +121,8 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   auto out = make_shared<DistRASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
-  for (auto& i : det_->stringb())
-    lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
+  for (size_t i = 0; i < det_->lenb(); ++i)
+    lexicalmap[det_->stringb(i).to_ullong()] = i;
 
   this->init_mpi_recv();
 

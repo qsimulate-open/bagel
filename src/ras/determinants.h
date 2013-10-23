@@ -29,6 +29,7 @@
 
 #include <tuple>
 #include <memory>
+#include <unordered_map>
 
 #include <src/ras/stringspace.h>
 
@@ -272,6 +273,10 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
   phi_ij.resize( nij );
   for (auto& iphi : phi_ij) iphi.reserve( stringsize );
 
+  std::unordered_map<size_t, size_t> lexmap;
+  for (size_t i = 0; i < stringsize; ++i)
+    lexmap[ (spin == 0 ? this->stringa(i) : this->stringb(i)).to_ullong() ] = i;
+
   std::vector<size_t> offsets(nij, 0);
 
   auto iphi = phi.begin();
@@ -282,7 +287,6 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<RAS::DMap>> pij;
       pij.resize( nij );
-      for (auto& ip : pij) ip.reserve( ispace->size() );
       for (int j = 0; j < norb_; ++j) {
         if ( !targetbit[j] ) continue;
         std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);
@@ -290,10 +294,11 @@ void RASDeterminants::construct_phis_(const std::vector<std::shared_ptr<const St
           if ( intermediatebit[i] ) continue;
           std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
           if ( allowed(sourcebit) ) {
-            iphi->emplace_back(lexical<spin>(sourcebit), tindex, j + i * norb_, sign(targetbit, i, j));
+            const size_t source_lex = lexmap[sourcebit.to_ullong()];
+            iphi->emplace_back(source_lex, tindex, j + i * norb_, sign(targetbit, i, j));
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
-            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(tindex - ispace->offset(), lexical<spin>(sourcebit), j + i * norb_, sign(targetbit, i, j));
+            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(tindex - ispace->offset(), source_lex, j + i * norb_, sign(targetbit, i, j));
           }
         }
       }
