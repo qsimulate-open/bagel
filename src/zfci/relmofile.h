@@ -69,6 +69,10 @@ class RelMOFile {
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i) const { return mo1e_.at(b)->data(i); }
     const std::complex<double>& mo1e(const std::bitset<2>& b, const size_t i, const size_t j) const { return mo1e_.at(b)->element(i,j); }
     const std::complex<double>& mo2e(const std::bitset<4>& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e_.at(b)->element(i+nocc_*j, k+nocc_*l); }
+    std::shared_ptr<const ZMatrix> mo1e(std::string&& b) const { return mo1e(std::bitset<2>(std::move(b))); }
+    std::shared_ptr<const ZMatrix> mo2e(std::string&& b) const { return mo2e(std::bitset<4>(std::move(b))); }
+    const std::complex<double>& mo1e(std::string&& b, const size_t i, const size_t j) const { return mo1e(std::bitset<2>(std::move(b)), i, j); }
+    const std::complex<double>& mo2e(std::string&& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e(std::bitset<4>(std::move(b)), i, j, k, l); }
 
     double core_energy() const { return core_energy_; }
 };

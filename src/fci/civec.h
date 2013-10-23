@@ -296,6 +296,9 @@ class DistCivector {
 
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
+        if (det_->nelea()*det_->neleb() & 1)
+          std::transform(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), trans->local()+off, [](DataType a){ return -a; });
+
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
           out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*std::get<0>(thisrange), out->asize()*dist_.size(i), i, i));
@@ -468,6 +471,9 @@ class Civector {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
       mytranspose_(cc(), lenb_, lena_, ct->data());
+
+      if (det_->nelea()*det_->neleb() & 1)
+        ct->scale(-1.0);
       return ct;
     }
 
@@ -499,11 +505,124 @@ class Civector {
       std::shared_ptr<Civector<DataType>> S2 = spin();
       return dot_product(*S2);
     }
-    std::shared_ptr<Civector<DataType>> spin() const { assert(false); return std::shared_ptr<Civector<DataType>>();} // returns S^2 | civec >
-    std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
-      { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_-
-    std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const
-      { assert(false); return std::shared_ptr<Civector<DataType>>(); } // S_+
+    std::shared_ptr<Civector<DataType>> spin() const {
+      auto out = std::make_shared<Civector<DataType>>(det_);
+
+      // First the easy part, S_z^2 + S_z
+      const double sz = 0.5*static_cast<double>(det_->nspin());
+      *out = *this;
+      *out *= sz*sz + sz + det_->neleb();
+
+      const int norb = det_->norb();
+      const int lena = det_->lena();
+      const int lenb = det_->lenb();
+
+      auto intermediate = std::make_shared<Civector<DataType>>(det_);
+
+      for (int i = 0; i < norb; ++i) {
+        for (int j = 0; j < norb; ++j) {
+          intermediate->zero();
+          for ( auto& iter : det_->phia(i,j) ) {
+            const DataType* source = this->element_ptr(0, iter.source);
+            DataType* target = intermediate->element_ptr(0, iter.target);
+            double sign = static_cast<double>(iter.sign);
+
+            std::transform(source, source+lenb, target, target, [&sign](DataType p, DataType q){ return q+sign*p; });
+          }
+          for (int ia = 0; ia < lena; ++ia) {
+            DataType* target_base = out->element_ptr(0, ia);
+            const DataType* source_base = intermediate->element_ptr(0, ia);
+            for ( auto& iter : det_->phib(j,i) ) {
+              target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
+            }
+          }
+        }
+      }
+      return out;
+    }
+
+    // S_- = \sum_i i_beta^\dagger i_alpha
+    std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const {
+      if (target_det == nullptr)
+        target_det = std::make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
+      assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
+      auto out = std::make_shared<Civector<DataType>>(target_det);
+      std::shared_ptr<const Determinants> source_det = det_;
+      const int norb = source_det->norb();
+      const int source_lena = source_det->lena();
+      const int source_lenb = source_det->lenb();
+
+      DataType* source_data = cc_ptr_;
+      // This is a safe but probably slow implementation
+      for (int aiter = 0; aiter < source_lena; ++aiter) {
+        auto alphastring = source_det->stringa(aiter);
+        for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
+          auto betastring = source_det->stringb(biter);
+          for (int i = 0; i < norb; ++i) {
+            std::bitset<nbit__> abit = alphastring;
+            std::bitset<nbit__> bbit = betastring;
+            if (abit[i]) {
+              abit.reset(i);
+              if (!bbit[i]) {
+                bbit.set(i);
+
+                const int atarget = target_det->lexical<0>(abit);
+                const int btarget = target_det->lexical<1>(bbit);
+                // Now the computation begins
+
+                const int aphase = source_det->sign<0>(alphastring, i);
+                const int bphase = -1*source_det->sign<1>(betastring, i);
+
+                out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
+              }
+            }
+          }
+        }
+      }
+      return out;
+    }
+
+    // S_+ = \sum_i i_alpha^\dagger i_beta
+    std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const {
+      if (target_det == nullptr)
+        target_det = std::make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
+      assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );
+      auto out = std::make_shared<Civector<DataType>>(target_det);
+
+      std::shared_ptr<const Determinants> source_det = det_;
+      const int norb = source_det->norb();
+      const int source_lena = source_det->lena();
+      const int source_lenb = source_det->lenb();
+
+      DataType* source_data = cc_ptr_;
+      // This is a safe but probably slow implementation
+      for (int aiter = 0; aiter < source_lena; ++aiter) {
+        auto alphastring = source_det->stringa(aiter);
+        for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
+          auto betastring = source_det->stringb(biter);
+          for (int i = 0; i < norb; ++i) {
+            std::bitset<nbit__> abit = alphastring;
+            std::bitset<nbit__> bbit = betastring;
+            if (bbit[i]) {
+              bbit.reset(i);
+              if (!abit[i]) {
+                abit.set(i);
+
+                const int atarget = target_det->lexical<0>(abit);
+                const int btarget = target_det->lexical<1>(bbit);
+
+                const int aphase = source_det->sign<0>(alphastring, i);
+                const int bphase = source_det->sign<1>(betastring, i);
+
+                out->element(btarget, atarget) += static_cast<double>(aphase*bphase) * (*source_data);
+              }
+            }
+          }
+        }
+      }
+      return out;
+    }
+
     void spin_decontaminate(const double thresh = 1.0e-12) { assert(false); }
 
     std::shared_ptr<Civector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
@@ -614,9 +733,6 @@ class Civector {
     }
 };
 
-template<> std::shared_ptr<Civector<double>> Civector<double>::spin() const; // returns S^2 | civec >
-template<> std::shared_ptr<Civector<double>> Civector<double>::spin_lower(std::shared_ptr<const Determinants>) const; // S_-
-template<> std::shared_ptr<Civector<double>> Civector<double>::spin_raise(std::shared_ptr<const Determinants>) const; // S_+
 template<> void Civector<double>::spin_decontaminate(const double thresh);
 
 using Civec = Civector<double>;

@@ -126,7 +126,10 @@ void Determinants::const_lexical_mapping_() {
 }
 
 
-pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int spin, const bitset<nbit__> alpha, const bitset<nbit__> beta) const {
+pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int spin, bitset<nbit__> alpha, bitset<nbit__> beta) const {
+  if (spin < 0)
+    swap(alpha, beta);
+
   vector<tuple<int, int, int>> out;
 
   // bit pattern for doubly occupied orbitals
@@ -138,8 +141,8 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
   // alpha pattern without highest spin orbitals
   vector<int> salpha_array = bit_to_numbers(alpha_without_common);
   vector<int> ualpha_array;
-  if (salpha_array.size() < spin) throw logic_error("Something is wrong? Determinants::spin_adapt");
-  for (int i = 0; i != spin; ++i) {
+  if (salpha_array.size() < abs(spin)) throw logic_error("Something is wrong? Determinants::spin_adapt");
+  for (int i = 0; i != abs(spin); ++i) {
     ualpha_array.push_back(salpha_array.back());
     salpha_array.pop_back();
   }
@@ -168,7 +171,11 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
     // our convention is (aaaa)(bbbb)|0> due to the alpha-beta string algorithm
     const double sign = 1.0;
 
-    out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
+    if (spin >= 0) {
+      out.push_back(make_tuple(lexical<1>(ibeta), lexical<0>(ialpha), sign));
+    } else {
+      out.push_back(make_tuple(lexical<1>(ialpha), lexical<0>(ibeta), sign));
+    }
     ++icnt;
   } while (boost::next_combination(open.begin(), open.begin()+nalpha, open.end()));
 

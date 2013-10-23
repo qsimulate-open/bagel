@@ -46,13 +46,14 @@ class ZHarrison : public Method {
     double print_thresh_;
 
     // numbers of electrons
-    int nelea_;
-    int neleb_;
+    int nele_;
     int ncore_;
     int norb_;
+    int charge_;
 
     // number of states
     int nstate_;
+    std::vector<int> states_;
 
     // total energy
     std::vector<double> energy_;
@@ -64,8 +65,8 @@ class ZHarrison : public Method {
     std::shared_ptr<RelMOFile> jop_;
 
     // Determinant space
-    std::shared_ptr<const Space_base> space_;
-    std::shared_ptr<const Space_base> int_space_;
+    std::shared_ptr<const RelSpace> space_;
+    std::shared_ptr<const RelSpace> int_space_;
 
     // denominator
     std::shared_ptr<RelDvec> denom_;
@@ -73,9 +74,9 @@ class ZHarrison : public Method {
     // some init functions
     void common_init(); // may end up unnecessary
     // obtain determinants for guess generation
-    void generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec>);
+    void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
-    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
+    virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb);
 
     // print functions
     void print_header() const;
@@ -83,14 +84,38 @@ class ZHarrison : public Method {
     void const_denom();
 
     // run-time functions.
+    // aaaa and bbbb
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    void sigma_bb(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop) const;
-    void sigma_2ab_1(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
-    void sigma_2ab_2(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
-    void sigma_2ab_3(std::shared_ptr<ZCivec> sigma, std::shared_ptr<ZDvec> e) const;
-    // alpha->beta contribution
-    void sigma_2ab_2_1(std::shared_ptr<ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    void sigma_2ab_3_1(std::shared_ptr<ZCivec> sigma, std::shared_ptr<ZDvec> e) const;
+    void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
+
+    void sigma_2e_annih_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
+    void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
+
+    void sigma_2e_create_bb(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
+    void sigma_2e_create_ab(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
+
+    void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+
+    template<int i, int j, int k, int l>
+    void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
+      static_assert(!((i|1)^1) && !((j|1)^1) && !((k|1)^1) && !((l|1)^1), "illegal call of sigma_2e_h"); 
+      const int ij = d->ij();
+      const int lenab = d->lena()*d->lenb();
+      std::stringstream ss; ss << i << j << k << l;
+      std::bitset<4> bit4(ss.str());
+      if (trans) bit4 = ~bit4;
+      zgemm3m_("n", "t", lenab, ij, ij, fac, d->data(), lenab, jop->mo2e(bit4)->data(), ij, 0.0, e->data(), lenab);
+    }
+
+    void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+                   const int istate, const bool diag, const bool trans) const;
+
+    // RDMs
+    std::vector<std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>>> rdm1_;
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
+    // state averaged RDMs
+    std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
 
   public:
     // this constructor is ugly... to be fixed some day...
@@ -101,7 +126,7 @@ class ZHarrison : public Method {
 
     void update() {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(ref_, ncore_, ncore_+norb_*2);
+      jop_ = std::make_shared<RelJop>(ref_, ncore_*2, (ncore_+norb_)*2);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
@@ -112,8 +137,6 @@ class ZHarrison : public Method {
 
     // returns members
     int norb() const { return norb_; }
-    int nelea() const { return nelea_; }
-    int neleb() const { return neleb_; }
     int ncore() const { return ncore_; }
     double core_energy() const { return jop_->core_energy(); }
 
@@ -121,6 +144,13 @@ class ZHarrison : public Method {
 
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+
+    std::vector<double> energy() const { return energy_; }
+
+    void compute_rdm12();
+
+    std::shared_ptr<const ZRDM<1>> rdm1_av(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
 };
 
 }

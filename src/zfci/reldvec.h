@@ -28,26 +28,27 @@
 
 #include <numeric>
 #include <src/fci/dvec.h>
-#include <src/fci/space_base.h>
+#include <src/zfci/relspace.h>
 
 namespace bagel {
 
 template <typename DataType>
 class RelDvector {
   protected:
-    using MapType = std::pair<std::shared_ptr<const Determinants>, std::shared_ptr<Dvector<DataType>>>;
+    using MapType = std::pair<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>;
 
-    std::map<std::shared_ptr<const Determinants>, std::shared_ptr<Dvector<DataType>>> dvecs_;
-    const std::shared_ptr<const Space_base> space_;
+    std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> dvecs_;
+    const std::shared_ptr<const RelSpace> space_;
 
   public:
     // make an empty Dvec
-    RelDvector(std::shared_ptr<const Space_base> space, const size_t ij) : space_(space) {
+    RelDvector(std::shared_ptr<const RelSpace> space, const size_t ij) : space_(space) {
       for (auto& isp : space->detmap())
-        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, ij)));
+        dvecs_.insert(std::make_pair(std::make_pair(isp.second->nelea(), isp.second->neleb()),
+                                     std::make_shared<Dvector<DataType>>(isp.second, ij)));
     }
 
-    RelDvector(const std::map<std::shared_ptr<const Determinants>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const Space_base> space) : dvecs_(o), space_(space) { }
+    RelDvector(const std::map<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const RelSpace> space) : dvecs_(o), space_(space) { }
 
     RelDvector(const RelDvector<DataType>& o) : space_(o.space_) {
       for (auto& i : o.dvecs_)
@@ -64,7 +65,7 @@ class RelDvector {
     // combines (opposite of split())
     RelDvector(const std::vector<std::shared_ptr<RelDvector<DataType>>>& o) : space_(o.front()->space_) {
       for (auto& isp : space_->detmap())
-        dvecs_.insert(std::make_pair(isp.second, std::make_shared<Dvector<DataType>>(isp.second, o.size())));
+        dvecs_.insert(std::make_pair(std::make_pair(isp.second->nelea(), isp.second->neleb()), std::make_shared<Dvector<DataType>>(isp.second, o.size())));
       int j = 0;
       for (auto& i : o)
         set_data(j++, i);
@@ -73,10 +74,10 @@ class RelDvector {
     std::shared_ptr<RelDvector<DataType>> clone() const { return std::make_shared<RelDvector<DataType>>(space_, dvecs_.begin()->second->ij()); }
     std::shared_ptr<RelDvector<DataType>> copy() const { return std::make_shared<RelDvector<DataType>>(*this); }
 
-    std::shared_ptr<Dvector<DataType>> find(std::shared_ptr<const Determinants> det) { return dvecs_.at(det); }
-    std::shared_ptr<const Dvector<DataType>> find(std::shared_ptr<const Determinants> det) const { return dvecs_.at(det); }
+    std::shared_ptr<Dvector<DataType>> find(int a, int b) { return dvecs_.at(std::make_pair(a, b)); }
+    std::shared_ptr<const Dvector<DataType>> find(int a, int b) const { return dvecs_.at(std::make_pair(a, b)); }
 
-    std::shared_ptr<const Space_base> space() const { return space_; }
+    std::shared_ptr<const RelSpace> space() const { return space_; }
 
     void set_data(const int istate, std::shared_ptr<const RelDvector<DataType>> o) {
       assert(space_ == o->space_ || o->dvecs_.begin()->second->ij() == 1);
@@ -115,7 +116,7 @@ class RelDvector {
     std::vector<std::shared_ptr<const RelDvector<DataType>>> split(const int nstart, const int nend) const {
       std::vector<std::shared_ptr<const RelDvector<DataType>>> out;
       for (int i = nstart; i != nend; ++i) {
-        std::map<std::shared_ptr<const Determinants>, std::shared_ptr<Dvector<DataType>>> tmp;
+        std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> tmp;
         // copy construct each of them
         for (auto& j : dvecs_) {
           std::vector<std::shared_ptr<Civector<DataType>>> tmp1 { std::make_shared<Civector<DataType>>(*j.second->data(i)) };
@@ -156,6 +157,13 @@ class RelDvector {
       for (auto& i : dvecs_)
         i.second->print(thresh);
     }
+
+#ifdef HAVE_MPI_H
+    void sync() {
+      for (auto& i : dvecs_)
+        mpi__->broadcast(i.second->data(), i.second->size(), 0); 
+    }
+#endif
 
 };
 
