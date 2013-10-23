@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #ifndef __SRC_PARALLEL_RESOURCES_H
 #define __SRC_PARALLEL_RESOURCES_H
 
@@ -33,14 +32,19 @@
 #include <memory>
 #include <atomic>
 #include <vector>
+#include <cassert>
+#include <stdexcept>
+#include <complex>
 #ifdef LIBINT_INTERFACE
   #include <libint2.h>
 #endif
 #include <src/parallel/process.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 
-class StackMem {
+template <typename DataType>
+ class StackMemory {
   protected:
     std::unique_ptr<double[]> stack_area_;
     size_t pointer_;
@@ -51,10 +55,32 @@ class StackMem {
 #endif
 
   public:
-    StackMem();
+    StackMemory() : pointer_(0LU), total_(20000000LU) { // TODO 80MByte
+      stack_area_ = std::unique_ptr<double[]>(new double[total_]);
 
-    double* get(const size_t size);
-    void release(const size_t size, double* p);
+      // in case we use Libint for ERI
+    #ifdef LIBINT_INTERFACE
+      // TODO 20LU should not be hardwired
+      libint_t_ = std::unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]);
+      if (libint2_need_memory_3eri1(LIBINT_MAX_AM) < libint2_need_memory_eri(LIBINT_MAX_AM)) {
+        LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
+      } else {
+        LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT_MAX_AM, 0);
+      }
+    #endif
+    }
+
+    double* get(const size_t size) {
+      assert(pointer_+size < total_);
+      double* out = stack_area_.get() + pointer_;
+      pointer_ += size;
+      return out;
+    }
+
+    void release(const size_t size, double* p) {
+      pointer_ -= size;
+      assert(p == stack_area_.get()+pointer_ || size == 0);
+    }
 
     void clear() { pointer_ = 0LU; }
     size_t pointer() const { return pointer_; }
@@ -66,22 +92,55 @@ class StackMem {
 };
 
 
-class Resources {
+template <typename DataType>
+ class MemResources {
   private:
     std::shared_ptr<Process> proc_;
-    std::vector<std::shared_ptr<StackMem>> stackmem_;
+    std::vector<std::shared_ptr<StackMemory<DataType>>> stackmem_;
     std::vector<std::shared_ptr<std::atomic_flag>> flag_;
     size_t max_num_threads_;
 
   public:
-    Resources(const int max);
+    MemResources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
+      for (int i = 0; i != max_num_threads_; ++i) {
+        flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
+        stackmem_.push_back(std::make_shared<StackMemory<DataType>>());
+      }
 
-    std::shared_ptr<StackMem> get();
-    void release(std::shared_ptr<StackMem> o);
+    #ifdef LIBINT_INTERFACE
+      LIBINT2_PREFIXED_NAME(libint2_static_init)();
+    #endif
+    }
+
+    std::shared_ptr<StackMemory<DataType>> get() {
+      for (int i = 0; i != max_num_threads_; ++i) {
+        bool used = flag_[i]->test_and_set();
+        if (!used) {
+          return stackmem_[i];
+        }
+      }
+      throw std::runtime_error("Stack Memory exhausted");
+      return stackmem_.front();
+    }
+    void release(std::shared_ptr<StackMemory<DataType>> o) {
+      bool found = false;
+      for (int i = 0; i != max_num_threads_; ++i) {
+        if (stackmem_[i] == o) {
+          o->clear();
+          flag_[i]->clear();
+          found = true;
+          break;
+        }
+      }
+      if (!found) throw std::logic_error("This should not happen: resources.h");
+    }
 
     size_t max_num_threads() const { return max_num_threads_; }
     std::shared_ptr<Process> proc() { return proc_; }
 };
+
+using Resources = MemResources<double>;
+using StackMem = StackMemory<double>;
 
 extern Resources* resources__;
 
