@@ -24,6 +24,7 @@
 //
 
 #include <src/zfci/zharrison.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -183,5 +184,24 @@ void ZHarrison::compute_rdm12() {
     rdm1_av_ = rdm1_.front(); 
     rdm2_av_ = rdm2_.front();
   }
+
+
+#ifndef NDEBUG
+  // Check the FCI energies computed by RDMs and integrals
+  const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+  auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
+  SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
+
+  cout << "    *  recalculated FCI energy (state averaged)" << endl;
+  cout << "           " <<
+          zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("00"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("00"))->data(), 1) 
+        + zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("01"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("01"))->data(), 1)*2.0 
+        + zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("11"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("11"))->data(), 1) 
+        + nuc_core 
+        + zdotc_(norb_*norb_*norb_*norb_, jop_->mo2e(bitset<4>("0000"))->get_conjg()->data(), 1, rdm2_av(bitset<4>("0000"))->data(), 1)*0.5   // 1
+        + zdotc_(norb_*norb_*norb_*norb_, jop_->mo2e(bitset<4>("1111"))->get_conjg()->data(), 1, rdm2_av(bitset<4>("1111"))->data(), 1)*0.5   // 1
+        + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av(bitset<4>("0101"))->data(), 1)                             // 4
+       << endl;
+#endif
 
 }
