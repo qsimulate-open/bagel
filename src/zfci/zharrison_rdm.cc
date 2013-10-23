@@ -46,7 +46,7 @@ void ZHarrison::compute_rdm12() {
       shared_ptr<const Determinants> int_det = int_space_->finddet(nelea, neleb);
 
       // map 
-      unordered_map<bitset<2>, shared_ptr<ZDvec>> intermediates;
+      map<string, shared_ptr<ZDvec>> intermediates;
 
       const int ij = norb_*norb_;
       const int nri = int_det->lena() * int_det->lenb(); 
@@ -55,7 +55,7 @@ void ZHarrison::compute_rdm12() {
         auto cc = cc_->find(nelea+1, neleb+1)->data(istate);
         auto d = make_shared<ZDvec>(int_det, ij);
         sigma_2e_annih_ab(cc, d);
-        intermediates[bitset<2>("01")] = d; 
+        intermediates["01"] = d; 
       }
       if (neleb+2 <= norb_) {
         // transpose the civec
@@ -67,23 +67,23 @@ void ZHarrison::compute_rdm12() {
         auto jptr = tmp->dvec().begin();
         for (auto& i : d->dvec())
           *i = **jptr++;
-        intermediates[bitset<2>("11")] = d; 
+        intermediates["11"] = d; 
       }
       if (nelea+2 <= norb_) {
         // to be implemeneted
         auto cc = cc_->find(nelea+2, neleb)->data(istate);
         auto d = make_shared<ZDvec>(int_det, ij);
         sigma_2e_annih_aa(cc, d); 
-        intermediates[bitset<2>("00")] = d; 
+        intermediates["00"] = d; 
       }
 
       for (auto& i : intermediates) {
         for (auto& j : intermediates) {
-          if (i.first.to_ulong() <= j.first.to_ulong()) { 
+          if (i.first <= j.first) { 
             auto rdm2 = make_shared<ZRDM<2>>(norb_);
             zgemm3m_("c", "n", ij, ij, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
-            bitset<4> key((i.first.to_ulong() << 2) + j.first.to_ulong());
+            bitset<4> key(i.first + j.first);
 
             if (rdm2_[istate].find(key) == rdm2_[istate].end()) {
               rdm2_[istate][key] = rdm2; 
@@ -103,7 +103,7 @@ void ZHarrison::compute_rdm12() {
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
       shared_ptr<const Determinants> int_det = space1->finddet(nelea, neleb);
-      unordered_map<bitset<1>, shared_ptr<ZDvec>> intermediates; 
+      map<string, shared_ptr<ZDvec>> intermediates; 
       const int nri = int_det->lena() * int_det->lenb(); 
   
       if (nelea+1 <= norb_) {
@@ -120,7 +120,7 @@ void ZHarrison::compute_rdm12() {
             transform(source, source+lenb, target, target, [&sign](complex<double> a, complex<double> b) { return a*sign+b; }); 
           }
         }
-        intermediates[bitset<1>("0")] = d;
+        intermediates["0"] = d;
       }
       if (neleb+1 <= norb_) {
         auto cc = cc_->find(nelea, neleb+1)->data(istate);
@@ -139,15 +139,15 @@ void ZHarrison::compute_rdm12() {
             }
           }
         }
-        intermediates[bitset<1>("1")] = d;
+        intermediates["1"] = d;
       }
       // almost the same code as above
       for (auto& i : intermediates) {
         for (auto& j : intermediates) {
-          if (i.first.to_ulong() <= j.first.to_ulong()) { 
+          if (i.first <= j.first) { 
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
             zgemm3m_("c", "n", norb_, norb_, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm1->data(), norb_);
-            bitset<2> key((i.first.to_ulong() << 1) + j.first.to_ulong());
+            bitset<2> key(i.first + j.first);
             if (rdm1_[istate].find(key) == rdm1_[istate].end()) {
               rdm1_[istate][key] = rdm1; 
             } else {
