@@ -40,14 +40,10 @@ MPI_Interface::MPI_Interface()
  : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
 
 #ifdef HAVE_MPI_H
-#ifndef USE_SERVER_THREAD
-  MPI_Init(0, 0);
-#else
   int provided;
   MPI_Init_thread(0, 0, MPI_THREAD_MULTIPLE, &provided);
   if (provided != MPI_THREAD_MULTIPLE)
     throw runtime_error("MPI_THREAD_MULTIPLE not provided");
-#endif
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
   MPI_Comm_size(MPI_COMM_WORLD, &size_);
