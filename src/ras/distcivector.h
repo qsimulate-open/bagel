@@ -268,12 +268,14 @@ class DistRASCivector {
     }
 
     // MPI routines
+    // Never call concurrently
     void init_mpi_recv() const {
       size_t off = 0;
       std::for_each(blocks_.begin(), blocks_.end(), [&off] (const std::shared_ptr<const RBlock>& i) { if (i) i->put_ = std::make_shared<PutRequest>(i->local(), off); ++off; });
       recv_ = std::make_shared<RecvRequest>( blocks_.size());
     }
 
+    // Never call concurrently
     void terminate_mpi_recv() const {
       assert( std::all_of(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock>& i) { if (i) { return static_cast<bool>(i->put_); } else { return true; } }) && recv_);
       bool done;

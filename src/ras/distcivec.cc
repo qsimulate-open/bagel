@@ -126,28 +126,46 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   this->init_mpi_recv();
 
+  //const size_t nthreads = resources__->max_num_threads();
+  const size_t nthreads = 2;
+  auto spin_task = [&nthreads, &out, &lexicalmap, this] (const size_t myid) {
 #ifndef USE_SERVER_THREAD
-  DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
+    DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
 #else
-  DistQueue<RAS::DistSpinTask> tasks;
+    DistQueue<RAS::DistSpinTask> tasks;
 #endif
 
-  for (auto& ispace : det_->stringspacea()) {
-    if (!ispace) continue;
-    StaticDist dist(ispace->size(), mpi__->size());
-    size_t astart, aend;
-    tie(astart, aend) = dist.range(mpi__->rank());
+    for (auto& ispace : this->det()->stringspacea()) {
+      if (!ispace) continue;
+      StaticDist global_dist(ispace->size(), mpi__->size());
+      size_t astart, aend;
+      tie(astart, aend) = global_dist.range(mpi__->rank());
 
-    for (size_t ia = astart; ia < aend; ++ia)
-      tasks.emplace_and_compute(det_->stringa(ia + ispace->offset()), this, out, det_, &lexicalmap);
-  }
+      StaticDist thread_dist(aend - astart, nthreads);
+      size_t thread_start, thread_end;
+      tie(thread_start, thread_end) = thread_dist.range(myid);
+
+      for (size_t ia = thread_start; ia < thread_end; ++ia)
+        tasks.emplace_and_compute(this->det()->stringa(ia + astart + ispace->offset()), this, out, this->det(), &lexicalmap);
+    }
+
+    tasks.finish();
+  };
+
+  vector<thread> thread_tasks;
+  for (size_t ith = 1; ith < nthreads; ++ith)
+    thread_tasks.push_back( thread(spin_task, ith) );
+
+  // This is master thread
+  spin_task(0);
 
   const double sz = static_cast<double>(det_->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
 
   out->ax_plus_y(fac, *this);
 
-  tasks.finish();
+  for (auto& th : thread_tasks)
+    th.join();
 
   this->terminate_mpi_recv();
 

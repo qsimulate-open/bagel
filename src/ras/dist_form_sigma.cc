@@ -342,8 +342,8 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         
         auto V_chunk = make_shared<Matrix>(phisize, aend - astart);
         //mpi__->reduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
-        //const int rq = mpi__->ireduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
-        //requests.emplace_back(rq, V, V_chunk, ispace, ij);
+        const int rq = mpi__->ireduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
+        requests.emplace_back(rq, V, V_chunk, ispace, ij);
       }
 
         // scatter
