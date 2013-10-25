@@ -30,16 +30,10 @@
 using namespace std;
 using namespace bagel;
 
-void BreitBatch::root_weight(const int ps) {
+void BreitBatch_base::root_weight(const int ps) {
   if (breit_ == 1) {
     breitroot__.root(rank_, T_, roots_, weights_, ps);
-  } else {
-    assert(false);
-  }
-}
-
-void Spin2Batch::root_weight(const int ps) {
-  if (breit_ == 2) {
+  } else if (breit_ == 2) {
     spin2root__.root(rank_, T_, roots_, weights_, ps);
   } else {
     assert(false);

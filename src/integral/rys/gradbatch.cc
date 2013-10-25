@@ -48,6 +48,8 @@ GradBatch::GradBatch(const array<shared_ptr<const Shell>,4>& shells, const doubl
   for (auto& i : shells) if (i->dummy()) --centers_;
 
   set_exponents();
+
+  root_weight(this->primsize_);
 }
 
 

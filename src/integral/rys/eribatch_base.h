@@ -42,32 +42,7 @@ template <typename DataType>
     // a hack for screening of three-center integrals
     static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
 
-    // TODO This function is causing problems for complex implementation.
-    // Find everywhere it's used and make this version purely virtual.
-    void root_weight(const int ps) override {
-      if (this->breit_ == 0) {
-        if (this->amax_ + this->cmax_ == 0) {
-          for (int j = 0; j != this->screening_size_; ++j) {
-            int i = this->screening_[j];
-            if (this->T_[i] < 1.0e-8 ) {
-              this->weights_[i] = 1.0;
-            } else {
-              const double sqrtt = std::sqrt(this->T_[i]);
-              const double erfsqt = inline_erf(sqrtt);
-              this->weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
-            }
-          }
-        } else {
-          eriroot__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
-        }
-      } else if (this->breit_ == 1) {
-        breitroot__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
-      } else if (this->breit_ == 2) {
-        spin2root__.root(this->rank_, this->T_, this->roots_, this->weights_, ps);
-      } else {
-        assert(false);
-      }
-    }
+    virtual void root_weight(const int ps) = 0;
 
     // this sets this->T_ (+ U_), this->p_, this->q_, this->xp_, this->xq_, this->coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
@@ -300,8 +275,6 @@ template <typename DataType>
 
       const DataType integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
       compute_ssss(integral_thresh);
-
-      root_weight(this->primsize_);
     }
  };
 
