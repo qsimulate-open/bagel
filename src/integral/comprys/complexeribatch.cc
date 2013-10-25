@@ -1,10 +1,10 @@
 #if 0
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: comperibatch.cc
+// Filename: complexeribatch.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Ryan Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,23 +24,35 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/comprys/comperibatch.h>
+#include <src/integral/comprys/complexeribatch.h>
+#include <src/integral/comprys/comperirootlist.h>
 #include <complex>
 
 using namespace std;
 using namespace bagel;
 
-
-CompERIBatch::CompERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum,
-                   shared_ptr<StackMem> stack) :  ERIBatch_Base<complex<double>>(_info, max_density, 0, 0, stack) {
+ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
+                   shared_ptr<StackMemory<complex<double>>> stack) :  ERIBatch_Base(_info, max_density, 0, 0, stack) {
 
 #ifdef LIBINT_INTERFACE
   assert(false);
 #endif
 }
 
+void ComplexERIBatch::root_weight(const int ps) {
+  if (breit_ == 0) {
+    complexeriroot__.root(rank_, T_, roots_, weights_, ps);
+  } else {
+    throw runtime_error("Relativistic calculations have not been set up for London orbitals");
+  }
+}
 
-void CompERIBatch::compute() {
-  throw logic_error("CompERIBatch::compute not yet implemented");
+void ComplexERIBatch::compute_ssss(const complex<double> integral_thresh) {
+      throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
+}
+
+
+void ComplexERIBatch::compute() {
+  throw logic_error("ComplexERIBatch::compute not yet implemented");
 }
 #endif

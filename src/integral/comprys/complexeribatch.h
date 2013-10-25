@@ -1,10 +1,10 @@
 #if 0
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: comperibatch.h
+// Filename: complexeribatch.h
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Ryan Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,35 +24,39 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_COMPRYS_COMPERIBATCH_H
-#define __SRC_INTEGRAL_COMPRYS_COMPERIBATCH_H
+#ifndef __SRC_INTEGRAL_COMPRYS_COMPLEXERIBATCH_H
+#define __SRC_INTEGRAL_COMPRYS_COMPLEXERIBATCH_H
 
 #include <src/integral/rys/eribatch_base.h>
 #include <complex>
 
 namespace bagel {
 
-class CompERIBatch : public ERIBatch_Base<complex<double>> {
+class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
 
   protected:
     void perform_VRR();
     void perform_VRR1();
     void perform_VRR2();
     void perform_VRR3();
+    void root_weight(const int ps) override;
 
   public:
 
     // dummy will never be used.
-    CompERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const double dummy = 0.0, const bool dum = true,
-             std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
+    ComplexERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const std::complex<double> dummy = std::complex<double>(0.0,0.0),
+             const bool dum = true, std::shared_ptr<StackMemory<std::complex<double>>> stack = std::shared_ptr<StackMemory<std::complex<double>>>());
 
     /// compute a batch of integrals
     void compute() override;
+    void compute_ssss(const std::complex<double> integral_thresh) override;
 
     constexpr static int Nblocks() { return 1; }
+
 };
 
 }
 
 #endif
+
 #endif

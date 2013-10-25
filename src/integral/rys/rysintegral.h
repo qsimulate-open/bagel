@@ -30,6 +30,7 @@
 #define __SRC_INTEGRAL_RYS_RYSINTEGRAL_H
 
 #include <tuple>
+#include <typeinfo>
 #include <complex>
 #include <src/molecule/shell.h>
 #include <src/util/constants.h>
@@ -40,7 +41,8 @@
 namespace bagel {
 
  template <typename DataType>
- class RysIntegral : public Integral {
+// class RysIntegral : public Integral {
+ class RysIntegral : public Integral_Base<DataType> {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -48,16 +50,15 @@ namespace bagel {
     std::array<double,3> AB_, CD_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
-    double *p_, *q_;
-    double *xp_, *xq_, *coeff_, *coeffy_;
-    DataType *T_;
-    double *U_;
+    DataType *p_, *q_;
+    DataType *xp_, *xq_, *coeff_, *coeffy_;
+    DataType *T_, *U_;
     unsigned int contsize_, primsize_;
     size_t size_block_, size_alloc_;
     int prim0size_, prim1size_, prim2size_, prim3size_;
     int cont0size_, cont1size_, cont2size_, cont3size_;
     int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
-    double *buff_;
+    DataType *buff_;
     double *bkup_;
 
     std::array<std::shared_ptr<const Shell>,4> basisinfo_;
@@ -71,8 +72,8 @@ namespace bagel {
     int tenno_;
     int breit_;
 
-    double *data_;
-    double *data2_;
+    DataType *data_;
+    DataType *data2_;
     unsigned int size_final_;
 
     /// info for Rys quadruture
@@ -199,14 +200,14 @@ namespace bagel {
     // virtual init functions. The default is for ERI, NAI and their derivatives.
     // should be overloaded in Slater-type integrals
     virtual void root_weight(const int ps) = 0;
-    virtual void compute_ssss(const double thr) = 0;
+    virtual void compute_ssss(const DataType thr) = 0;
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
     void allocate_arrays(const size_t ps) {
       size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
       buff_ = stack_->get(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
-      double* pointer = buff_;
+      DataType* pointer = buff_;
       screening_ = (int*)pointer;
       pointer += ps;
       p_ = pointer;     pointer += ps * 3;
@@ -225,9 +226,12 @@ namespace bagel {
 
     size_t size_allocated_;
 
+    // TODO Is there a way to avoid having adding the pointer to a MemResources object to this class?
+//    MemResources<DataType>* resources_;
+
     // for deallocation
-    double* stack_save_;
-    double* stack_save2_;
+    DataType* stack_save_;
+    DataType* stack_save2_;
 
 
     // contraction
@@ -316,11 +320,11 @@ namespace bagel {
     }
 
     bool allocated_here_;
-    std::shared_ptr<StackMem> stack_;
+    std::shared_ptr<StackMemory<DataType>> stack_;
 
   public:
 
-    RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMem> stack)
+    RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMemory<DataType>> stack)
      : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
       assert(spherical1_ == info[1]->spherical());
       assert(spherical2_ == info[3]->spherical());
@@ -334,7 +338,7 @@ namespace bagel {
       }
     }
 
-    RysIntegral(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMem> stack)
+    RysIntegral(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMemory<DataType>> stack)
      : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
       auto dum = std::make_shared<const Shell>(spherical2_);
       basisinfo_ = {{ info[0], info[1], dum, dum }};
@@ -363,9 +367,9 @@ namespace bagel {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    virtual double* data(const int i) override { assert(i == 0); return data_; }
-    const double* data() const { return data_; }
-    const double* data2() const { return data2_; }
+    virtual DataType* data(const int i) override { assert(i == 0); return data_; }
+    const DataType* data() const { return data_; }
+    const DataType* data2() const { return data2_; }
     bool data2_exists() const { return data2_ != nullptr; }
     size_t data_size() const { return size_final_; }
 

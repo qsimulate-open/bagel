@@ -46,7 +46,7 @@ namespace bagel {
 template <typename DataType>
  class StackMemory {
   protected:
-    std::unique_ptr<double[]> stack_area_;
+    std::unique_ptr<DataType[]> stack_area_;
     size_t pointer_;
     const size_t total_;
 
@@ -70,14 +70,14 @@ template <typename DataType>
     #endif
     }
 
-    double* get(const size_t size) {
+    DataType* get(const size_t size) {
       assert(pointer_+size < total_);
-      double* out = stack_area_.get() + pointer_;
+      DataType* out = stack_area_.get() + pointer_;
       pointer_ += size;
       return out;
     }
 
-    void release(const size_t size, double* p) {
+    void release(const size_t size, DataType* p) {
       pointer_ -= size;
       assert(p == stack_area_.get()+pointer_ || size == 0);
     }
@@ -142,7 +142,8 @@ template <typename DataType>
 using Resources = MemResources<double>;
 using StackMem = StackMemory<double>;
 
-extern Resources* resources__;
+extern MemResources<double>* resources__;
+extern MemResources<std::complex<double>>* complexresources__;
 
 }
 

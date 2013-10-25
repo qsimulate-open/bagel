@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_RYSINT_ERIROOTLIST_H
-#define __SRC_RYSINT_ERIROOTLIST_H
+#ifndef __SRC_INTEGRAL_RYS_ERIROOTLIST_H
+#define __SRC_INTEGRAL_RYS_ERIROOTLIST_H
 
 #include <functional>
 #include <src/util/constants.h>

@@ -3,7 +3,7 @@
 // Filename: comperirootlist.h
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_COMPRYSINT_ERIROOTLIST_H
-#define __SRC_COMPRYSINT_ERIROOTLIST_H
+#ifndef __SRC_INTEGRAL_COMPRYS_COMPERIROOTLIST_H
+#define __SRC_INTEGRAL_COMPRYS_COMPERIROOTLIST_H
 
 #include <functional>
 #include <complex>
@@ -71,6 +71,8 @@ namespace bagel {
       void root(const int i, const std::complex<double>* a1, std::complex<double>* a2, std::complex<double>* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
 
   };
+
+  const static ComplexERIRootList complexeriroot__;
  
 }
 

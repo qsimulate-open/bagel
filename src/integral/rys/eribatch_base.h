@@ -42,6 +42,8 @@ template <typename DataType>
     // a hack for screening of three-center integrals
     static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
 
+    // TODO This function is causing problems for complex implementation.
+    // Find everywhere it's used and make this version purely virtual.
     void root_weight(const int ps) override {
       if (this->breit_ == 0) {
         if (this->amax_ + this->cmax_ == 0) {
@@ -69,7 +71,7 @@ template <typename DataType>
 
     // this sets this->T_ (+ U_), this->p_, this->q_, this->xp_, this->xq_, this->coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
-    void compute_ssss(const double integral_thresh) override {
+    void compute_ssss(const DataType integral_thresh) override {
       const double ax = this->basisinfo_[0]->position(0);
       const double ay = this->basisinfo_[0]->position(1);
       const double az = this->basisinfo_[0]->position(2);
@@ -92,10 +94,10 @@ template <typename DataType>
       const int nexp2 = this->basisinfo_[2]->num_primitive();
       const int nexp3 = this->basisinfo_[3]->num_primitive();
 
-      double* const Ecd_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      double* const qx_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      double* const qy_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      double* const qz_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      DataType* const Ecd_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      DataType* const qx_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      DataType* const qy_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      DataType* const qz_save = this->stack_->get(this->prim2size_*this->prim3size_);
 
       const double minexp0 = *std::min_element(exp0, exp0+nexp0);
       const double minexp1 = *std::min_element(exp1, exp1+nexp1);
@@ -121,7 +123,7 @@ template <typename DataType>
       const double r23_sq = this->CD_[0] * this->CD_[0] + this->CD_[1] * this->CD_[1] + this->CD_[2] * this->CD_[2];
 
       unsigned int tuple_length = 0u;
-      double* const tuple_field = this->stack_->get(nexp2*nexp3*3);
+      DataType* const tuple_field = this->stack_->get(nexp2*nexp3*3);
       int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
       {
         const double cxp_min = minexp0 + minexp1;
@@ -146,9 +148,9 @@ template <typename DataType>
               const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
               const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
               const double tsqrt = std::sqrt(T);
-              const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
+              const DataType ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                                   * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-              if (ssss > integral_thresh) {
+              if (std::abs(ssss) > std::abs(integral_thresh)) {
                 tuple_field[tuple_length*2  ] = *expi2;
                 tuple_field[tuple_length*2+1] = *expi3;
                 tuple_index[tuple_length] = index23;
@@ -193,7 +195,7 @@ template <typename DataType>
             const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
             const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
                               * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-            if (ssss < integral_thresh) continue;
+            if (std::abs(ssss) < std::abs(integral_thresh)) continue;
           }
 
           const int index_base = this->prim2size_ * this->prim3size_ * index01;
@@ -201,19 +203,19 @@ template <typename DataType>
           for (unsigned int i = 0; i != tuple_length; ++i) {
             const int index23 = tuple_index[i];
             const int index = index_base + index23;
-            const double exp2value = tuple_field[2*i];
-            const double exp3value = tuple_field[2*i+1];
-            const double cxq = exp2value + exp3value;
+            const DataType exp2value = tuple_field[2*i];
+            const DataType exp3value = tuple_field[2*i+1];
+            const DataType cxq = exp2value + exp3value;
             this->xp_[index] = cxp;
             this->xq_[index] = cxq;
-            const double cxpxq = cxp * cxq;
-            const double onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
+            const DataType cxpxq = cxp * cxq;
+            const DataType onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
             this->coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
-            const double rho = cxpxq / (cxp + cxq);
-            const double xpq = qx_save[index23] - px;
-            const double ypq = qy_save[index23] - py;
-            const double zpq = qz_save[index23] - pz;
-            const double T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
+            const DataType rho = cxpxq / (cxp + cxq);
+            const DataType xpq = qx_save[index23] - px;
+            const DataType ypq = qy_save[index23] - py;
+            const DataType zpq = qz_save[index23] - pz;
+            const DataType T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
             const int index3 = index * 3;
             this->p_[index3] = px;
             this->p_[index3 + 1] = py;
@@ -273,7 +275,7 @@ template <typename DataType>
   public:
 
     ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0,
-                 std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType>(o, stack) {
+                 std::shared_ptr<StackMemory<DataType>> stack = std::shared_ptr<StackMemory<DataType>>()) : RysIntegral<DataType>(o, stack) {
 
       this->breit_ = breit;
 
@@ -296,12 +298,13 @@ template <typename DataType>
       allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
       this->allocate_arrays(this->primsize_);
 
-      const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+      const DataType integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
       compute_ssss(integral_thresh);
 
       root_weight(this->primsize_);
     }
  };
+
 
 using ERIBatch_base = ERIBatch_Base<double>;
 
