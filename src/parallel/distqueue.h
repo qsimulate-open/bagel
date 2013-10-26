@@ -31,6 +31,7 @@
 #include <list>
 #include <memory>
 #include <utility>
+#include <atomic>
 
 #include <src/util/constants.h>
 #include <src/parallel/mpi_interface.h>
@@ -60,8 +61,10 @@ class DistQueue {
     std::list<std::shared_ptr<TaskType>> tasks_;
     std::mutex listmut_;
 
+    std::atomic<bool> done_;
+
     public:
-      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)) {}
+      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)), done_(false) {}
 
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
@@ -101,7 +104,8 @@ class DistQueue {
         tasks_.push_back(std::make_shared<TaskType>(std::forward<Args>(args)...));
       }
 
-      void finish() {
+      // Only one thread should call this version
+      void finish_master() {
         bool done;
         do {
           bool full_pass = false;
@@ -133,7 +137,38 @@ class DistQueue {
 #endif
           if (!done) std::this_thread::sleep_for(sleeptime__);
         } while (!done);
+        done_ = true;
       }
+
+      // Similar to above, except it doesn't update done_ and doesn't flush
+      void finish_worker() {
+        do {
+          bool full_pass = false;
+          do {
+            std::shared_ptr<TaskType> task;
+            {
+              std::lock_guard<std::mutex> lock(listmut_);
+              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+                if ((*i)->test()) {
+                  task = *i;
+                  i = tasks_.erase(i);
+                  break;
+                }
+                else {
+                  ++i;
+                }
+              }
+            }
+            if (task) task->compute();
+            else full_pass = true;
+
+          } while (!full_pass);
+          if (!done_) std::this_thread::sleep_for(sleeptime__);
+        } while (!done_);
+      }
+
+      // for convenience
+      void finish() { finish_master(); }
 
     private:
 #ifndef USE_SERVER_THREAD
