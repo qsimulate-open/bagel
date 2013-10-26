@@ -126,8 +126,7 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   this->init_mpi_recv();
 
-  //const size_t nthreads = resources__->max_num_threads();
-  const size_t nthreads = 2;
+  const size_t nthreads = resources__->max_num_threads();
   auto spin_task = [&nthreads, &out, &lexicalmap, this] (const size_t myid) {
 #ifndef USE_SERVER_THREAD
     DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
