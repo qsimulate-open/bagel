@@ -57,24 +57,39 @@ class DistQueue {
   protected:
     std::tuple<FlushTypes...> flushed_;
 
-    std::list<TaskType> tasks_;
+    std::list<std::shared_ptr<TaskType>> tasks_;
+    std::mutex listmut_;
 
     public:
       DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)) {}
 
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
-
-        for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-          if (i->test()) {
-            i->compute();
-            i = tasks_.erase(i);
-          }
-          else {
-            ++i;
-          }
+        {
+          std::lock_guard<std::mutex> lock(listmut_);
+          tasks_.push_back(std::make_shared<TaskType>(std::forward<Args>(args)...));
         }
+
+        bool full_pass = false;
+        do {
+          std::shared_ptr<TaskType> task;
+          {
+            std::lock_guard<std::mutex> lock(listmut_);
+            for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+              if ((*i)->test()) {
+                task = *i;
+                i = tasks_.erase(i);
+                break;
+              }
+              else {
+                ++i;
+              }
+            }
+          }
+          if (task) task->compute();
+          else full_pass = true;
+        }  while (!full_pass);
+
 #ifndef USE_SERVER_THREAD
         flush();
 #endif
@@ -82,23 +97,34 @@ class DistQueue {
 
       template <typename... Args>
       void emplace(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
+        std::lock_guard<std::mutex> lock(listmut_);
+        tasks_.push_back(std::make_shared<TaskType>(std::forward<Args>(args)...));
       }
 
       void finish() {
         bool done;
         do {
-          done = true;
-          for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-            if (i->test()) {
-              i->compute();
-              i = tasks_.erase(i);
+          bool full_pass = false;
+          do {
+            done = true;
+            std::shared_ptr<TaskType> task;
+            {
+              std::lock_guard<std::mutex> lock(listmut_);
+              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+                if ((*i)->test()) {
+                  task = *i;
+                  i = tasks_.erase(i);
+                  break;
+                }
+                else {
+                  ++i;
+                  done = false;
+                }
+              }
             }
-            else {
-              ++i;
-              done = false;
-            }
-          }
+            if (task) task->compute();
+            else full_pass = true;
+          } while (!full_pass);
 #ifndef USE_SERVER_THREAD
           size_t d = done ? 0 : 1;
           mpi__->soft_allreduce(&d, 1);
