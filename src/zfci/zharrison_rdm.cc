@@ -63,10 +63,12 @@ void ZHarrison::compute_rdm12() {
         auto tmp = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), ij);
         sigma_2e_annih_aa(cc->transpose(), tmp); 
         // transpose back
-        auto d = tmp->clone(); 
+        auto d = make_shared<ZDvec>(int_space_->finddet(nelea, neleb), ij);
         auto jptr = tmp->dvec().begin();
-        for (auto& i : d->dvec())
-          *i = **jptr++;
+        for (auto& i : d->dvec()) {
+          *i = *(*jptr)->transpose();
+          ++jptr;
+        }
         intermediates["11"] = d; 
       }
       if (nelea+2 <= norb_) {
@@ -79,7 +81,7 @@ void ZHarrison::compute_rdm12() {
 
       for (auto& i : intermediates) {
         for (auto& j : intermediates) {
-          if (i.first <= j.first) { 
+          if (i.first >= j.first) { 
             auto rdm2 = make_shared<ZRDM<2>>(norb_);
             zgemm3m_("c", "n", ij, ij, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm2->data(), ij);
 
@@ -144,7 +146,7 @@ void ZHarrison::compute_rdm12() {
       // almost the same code as above
       for (auto& i : intermediates) {
         for (auto& j : intermediates) {
-          if (i.first <= j.first) { 
+          if (i.first >= j.first) { 
             auto rdm1 = make_shared<ZRDM<1>>(norb_);
             zgemm3m_("c", "n", norb_, norb_, nri, 1.0, i.second->data(0)->data(), nri, j.second->data(0)->data(), nri, 0.0, rdm1->data(), norb_);
             bitset<2> key(i.first + j.first);
@@ -192,16 +194,31 @@ void ZHarrison::compute_rdm12() {
   auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
   SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
 
+  const int n = norb_;
+  auto trace1 = [this](const string st) {
+    shared_ptr<const ZMatrix> a = jop_->mo1e(bitset<2>(st));
+    shared_ptr<const ZRDM<1>> b = rdm1_av(bitset<2>(st));
+    return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
+                         std::plus<complex<double>>(), [](complex<double> i, complex<double> j){ return i*j; });
+  };
+  auto trace2 = [this](const string st) {
+    shared_ptr<const ZMatrix> a = jop_->mo2e(bitset<4>(st));
+    shared_ptr<const ZRDM<2>> b = rdm2_av(bitset<4>(st));
+    return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
+                         std::plus<complex<double>>(), [](complex<double> i, complex<double> j){ return i*j; });
+  };
+
+  const double recomp_energy =
+          (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core
+        + (trace2("0000")*0.5 + trace2("1111")*0.5
+            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av(bitset<4>("0101"))->data(), 1)
+            + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
   cout << "    *  recalculated FCI energy (state averaged)" << endl;
-  cout << "           " <<
-          zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("00"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("00"))->data(), 1) 
-        + zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("01"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("01"))->data(), 1)*2.0 
-        + zdotc_(norb_*norb_, jop_->mo1e(bitset<2>("11"))->get_conjg()->data(), 1, rdm1_av(bitset<2>("11"))->data(), 1) 
-        + nuc_core 
-        + zdotc_(norb_*norb_*norb_*norb_, jop_->mo2e(bitset<4>("0000"))->get_conjg()->data(), 1, rdm2_av(bitset<4>("0000"))->data(), 1)*0.5   // 1
-        + zdotc_(norb_*norb_*norb_*norb_, jop_->mo2e(bitset<4>("1111"))->get_conjg()->data(), 1, rdm2_av(bitset<4>("1111"))->data(), 1)*0.5   // 1
-        + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av(bitset<4>("0101"))->data(), 1)                             // 4
-       << endl;
+  cout << setw(29) << setprecision(8) << recomp_energy << endl;
+
+  // checking against the original energies
+  const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size(); 
+  assert(fabs(orig_energy - recomp_energy) < 1.0e-8);
 #endif
 
 }

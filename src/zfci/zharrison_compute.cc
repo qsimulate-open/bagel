@@ -293,7 +293,7 @@ void ZHarrison::sigma_2e_create_ab(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
 
 void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
-  // compute |d> = b+_i b+_j|cc>
+  // compute |sigma> = b+_i b+_j|e_ij>
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
