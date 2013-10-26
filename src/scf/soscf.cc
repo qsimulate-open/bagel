@@ -24,39 +24,88 @@
 //
 
 #include <src/scf/soscf.h>
+#include <src/math/diis.h>
+#include <src/prop/multipole.h>
+#include <src/scf/atomicdensities.h>
+
 
 using namespace std;
 using namespace bagel;
 
 SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re) {
-  cout << "hello world" << endl;
-  cout << setprecision(10) << geom->nbasis() << " " << idata->get<double>("thresh", 0.0) << endl;
-  cout << setprecision(10) << geom->nbasis() << " " << idata->get<double>("thresha", 0.0) << endl;
+  cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
 }
 
+void SOSCF::initial_guess() {
+  shared_ptr<const Matrix> fock = hcore_;
+  shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
+  intermediate->diagonalize(eig_.get());
+  coeff_ = make_shared<const Coeff> (*tildex_ * *intermediate);
+  tie(aodensity_, aodensityD_, aodensityO1_, aodensityO2_) = form_density_soscf();
+}
 
 void SOSCF::compute() {
-  cout << "hello world from compute" << endl;
 
-#if 0
-    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
-         const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
-#endif
+  soeig_ = unique_ptr<double[]> (new double [geom_->nbasis() * 2]);
 
-  hcore_->print("hcore", 10);
-  shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *hcore_ * *tildex_);
-  intermediate->diagonalize(eig_.get());
-  shared_ptr<const Matrix> coeff = make_shared<Matrix>(*tildex_ * *intermediate);
+  initial_guess();
 
-  for (int i = 0; i != tildex_->mdim(); ++i)
-    cout << eig_[i] << endl; 
+  DIIS<Matrix> diis(diis_size_);
 
-  cout << nocc_ << endl;
+  for (int iter = 0; iter != max_iter_; ++iter) {
+    shared_ptr<const Matrix> fock = make_shared<const Fock<1>> (geom_,
+                             hcore_, aodensityD_, coeff_->slice(0, nocc_));
+    energy_ = 0.5 * ((*hcore_ + *fock) * *aodensityD_).trace() + geom_->nuclear_repulsion();
+    auto error_vector = make_shared<const Matrix>(*fock * *aodensityD_ * *overlap_ - 
+                                                  *overlap_ * *aodensityD_ * *fock);
+    const double error = error_vector->rms();
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
+    #if 1
 
-  auto fock = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff->slice(0, nocc_), false/*do_grad*/, true/*rhf*/);
-  fock->print();
+    if (error < thresh_scf_) {
+      cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
+      break;
+    } else if (iter == max_iter_-1) {
+      cout << indent << endl << indent << "  * Max iteration reached in SOSCF." << endl << endl;
+      break;
+    }
 
+    if (iter >= diis_start_) {
+      fock = diis.extrapolate(make_pair(fock, error_vector));
+    }
 
+    shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
+    intermediate->diagonalize(eig_.get());
+    coeff_ = make_shared<const Coeff>(*tildex_ * *intermediate);
+    aodensityD_ = coeff_->form_density_rhf(nocc_);
+    #endif
 
+  }
+}
+
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>> 
+SOSCF::form_density_soscf() const {
+  shared_ptr<Matrix> outD = coeff_->form_density_rhf(nocc_);
+  // TODO: off-diagonal blocks outO1 and outO2
+  shared_ptr<Matrix> outO1 = make_shared<Matrix>(outD->ndim(), outD->mdim());
+  shared_ptr<Matrix> outO2 = outO1;
+  shared_ptr<Matrix> out = make_shared<Matrix> (2 * outD->ndim(), 2 * outD->mdim());
+  out->add_block(1.0, 0, 0, outD->ndim(), outD->mdim(), outD);
+  out->add_block(1.0, outD->ndim(), outD->mdim(), outD->ndim(), outD->mdim(), outD);
+  out->add_block(1.0, 0, outD->mdim(), outD->ndim(), outD->mdim(), outO1);
+  out->add_block(1.0, outD->ndim(), 0, outD->ndim(), outD->mdim(), outO2);
+  return make_tuple(out, outD, outO1, outO2);
+}
+
+shared_ptr<Matrix> SOSCF::sofock(shared_ptr<const Matrix> fock, 
+                   shared_ptr<const Matrix> offd1, shared_ptr<const Matrix> offd2) {
+  assert(fock->ndim() == offd1->ndim());
+  assert(fock->mdim() == offd1->mdim());
+  shared_ptr<Matrix> out = make_shared<Matrix> (2 * fock->ndim(), 2 * fock->mdim());
+  out->add_block(1.0, 0, 0, fock->ndim(), fock->mdim(), fock);
+  out->add_block(1.0, fock->ndim(), fock->mdim(), fock->ndim(), fock->mdim(), fock);
+  out->add_block(1.0, 0, fock->mdim(), fock->ndim(), fock->mdim(), offd1);
+  out->add_block(1.0, fock->ndim(), 0, fock->ndim(), fock->mdim(), offd2);
+  return out;
 }

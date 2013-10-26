@@ -33,14 +33,32 @@ namespace bagel {
 
 class SOSCF : public SCF_base {
   protected:
+    std::shared_ptr<const Matrix> aodensity_;
+    std::shared_ptr<const Matrix> aodensityD_;
+    std::shared_ptr<const Matrix> aodensityO1_;
+    std::shared_ptr<const Matrix> aodensityO2_;
+    
+    std::shared_ptr<const Coeff> socoeff_;
+    std::unique_ptr<double[]> soeig_;
+    double* soeig() { return soeig_.get(); }
+    
 
   public:
     SOSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
 
+    void initial_guess();
+
     void compute() override;
 
+    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> form_density_soscf() const;
+
+    std::shared_ptr<Matrix> sofock(std::shared_ptr<const Matrix> fock, 
+                     std::shared_ptr<const Matrix> offd1, std::shared_ptr<const Matrix> offd2);
+
     std::shared_ptr<const Reference> conv_to_ref() const override { }
+
+    std::shared_ptr<const Matrix> aodensity() const { return aodensity_; }
 
 };
 
