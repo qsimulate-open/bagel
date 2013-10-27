@@ -149,8 +149,12 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
+    std::shared_ptr<const ZRDM<1>> rdm1_av(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
     std::shared_ptr<const ZRDM<1>> rdm1_av(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
     std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
 };
 
 }

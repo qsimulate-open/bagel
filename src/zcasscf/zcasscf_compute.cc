@@ -24,6 +24,7 @@
 //
 
 #include <src/math/bfgs.h>
+#include <src/rel/dfock.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;
@@ -43,6 +44,8 @@ void ZCASSCF::compute() {
   x->unit();
   shared_ptr<const ZMatrix> xstart;
 
+  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     mute_stdcout();
@@ -53,9 +56,51 @@ void ZCASSCF::compute() {
     energy_ = fci_->energy();
     resume_stdcout();
 
+    // closed Fock operator
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
+    shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
+
+    // active Fock operator
+    shared_ptr<const ZMatrix> afockao = active_fock();
+    shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
 
     // print energy
     const double gradient = 0.0; // TODO
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
   }
+}
+
+
+shared_ptr<const ZMatrix> ZCASSCF::active_fock() const {
+  assert(fci_);
+
+  array<shared_ptr<const ZMatrix>,2> kcoeff = fci_->kramers_coeff(); 
+
+  auto rdm1_tot = make_shared<ZMatrix>(nact_*2, nact_*2);
+  rdm1_tot->copy_block(    0,     0, nact_, nact_, fci_->rdm1_av("00")->data());
+  rdm1_tot->copy_block(nact_, nact_, nact_, nact_, fci_->rdm1_av("11")->data());
+  rdm1_tot->copy_block(nact_,     0, nact_, nact_, fci_->rdm1_av("10")->data());
+  rdm1_tot->copy_block(    0, nact_, nact_, nact_, rdm1_tot->get_submatrix(nact_, 0, nact_, nact_)->transpose_conjg());
+
+  auto coeff_tot = make_shared<ZMatrix>(kcoeff[0]->ndim(), nact_*2);
+  assert(nact_ == kcoeff[0]->mdim() && nact_ == kcoeff[1]->mdim() && kcoeff[0]->ndim() % 4 == 0); 
+  coeff_tot->copy_block(0,     0, kcoeff[0]->ndim(), nact_, kcoeff[0]);
+  coeff_tot->copy_block(0, nact_, kcoeff[1]->ndim(), nact_, kcoeff[1]);
+
+  // form natural orbitals
+  {
+    unique_ptr<double[]> eig(new double[nact_*2]);
+    rdm1_tot->diagonalize(eig.get());
+    *coeff_tot *= *rdm1_tot;
+
+    // scale using eigen values
+    for (int i = 0; i != nact_*2; ++i) {
+      assert(eig[i] >= -1.0e-14);
+      const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
+      transform(coeff_tot->element_ptr(0, i), coeff_tot->element_ptr(0, i+1), coeff_tot->element_ptr(0, i), [&fac](complex<double> a) { return fac*a; }); 
+    }
+  }
+
+  auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
+  return make_shared<const DFock>(geom_, zero, coeff_tot, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
 }

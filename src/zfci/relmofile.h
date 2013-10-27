@@ -43,6 +43,7 @@ class RelMOFile {
     std::shared_ptr<const RelReference> ref_;
     std::shared_ptr<const ZMatrix> core_fock_;
     std::shared_ptr<const ZMatrix> coeff_;
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff_;
 
     // creates integral files and returns the core energy.
     void init(const int nstart, const int nend);
@@ -52,13 +53,13 @@ class RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> mo2e_;
 
     // generates Kramers symmetry-adapted orbitals
-    std::array<std::shared_ptr<ZMatrix>,2> kramers(const int nstart, const int nfence) const;
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers(const int nstart, const int nfence) const;
 
     void compress_and_set(std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> buf1e,
                           std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> buf2e);
 
-    virtual std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
-    virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
+    virtual std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
+    virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
 
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>);
@@ -76,13 +77,15 @@ class RelMOFile {
     const std::complex<double>& mo2e(std::string&& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e(std::bitset<4>(std::move(b)), i, j, k, l); }
 
     double core_energy() const { return core_energy_; }
+
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
 };
 
 
 class RelJop : public RelMOFile {
   protected:
-    std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
-    std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
+    std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
 
   public:
     RelJop(const std::shared_ptr<const Reference> b, const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff)

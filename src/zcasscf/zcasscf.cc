@@ -100,6 +100,11 @@ void ZCASSCF::init() {
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
+  gaunt_ = relref->gaunt();
+  breit_ = relref->breit();
+  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl; 
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl; 
+
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;

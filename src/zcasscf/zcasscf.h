@@ -39,6 +39,9 @@ class ZCASSCF : public Method {
     int nvirt_;
     int nbasis_;
 
+    bool gaunt_;
+    bool breit_;
+
     double thresh_;
     double thresh_micro_;
 
@@ -57,6 +60,7 @@ class ZCASSCF : public Method {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
+    std::shared_ptr<const ZMatrix> active_fock() const;
   
     // energy
     std::vector<double> energy_;

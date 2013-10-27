@@ -73,20 +73,20 @@ void RelMOFile::init(const int nstart, const int nfence) {
   }
 
   // then compute Kramers adapated coefficient matrices
-  array<shared_ptr<ZMatrix>,2> coeff = kramers(nstart, nfence);
+  kramers_coeff_ = kramers(nstart, nfence);
 
   // calculate 1-e MO integrals
-  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(coeff);
+  unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
 
   // calculate 2-e MO integrals
-  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(coeff);
+  unordered_map<bitset<4>, shared_ptr<const ZMatrix>> buf2e = compute_mo2e(kramers_coeff_);
 
   // compress and set mo1e_ and mo2e_
   compress_and_set(buf1e, buf2e);
 }
 
 
-array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
+array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
   shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
   shared_ptr<ZMatrix> reordered = coeff->clone();
 
@@ -130,6 +130,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
   }
 
   // fix the phase - making the largest large-component element in each colomn real
+#if 0
   for (int i = 0; i != mdim; ++i) {
     const int iblock = i/(mdim/2);
     complex<double> ele = *max_element(reordered->element_ptr(iblock*nb,i), reordered->element_ptr((iblock+1)*nb,i),
@@ -137,6 +138,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     const complex<double> fac = norm(ele) / ele;
     transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
   }
+#endif
 
   // off diagonal
   auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
@@ -192,7 +194,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
     }
   }
 #endif
-  return out;
+  return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
 }
 
 
@@ -211,7 +213,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
 }
 
 
-unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<ZMatrix>,2> coeff) {
+unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const array<shared_ptr<const ZMatrix>,2> coeff) {
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> out;
 
   for (size_t i = 0; i != 4; ++i)
@@ -227,7 +229,7 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
 }
 
 
-unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<ZMatrix>,2> coeff) {
+unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const array<shared_ptr<const ZMatrix>,2> coeff) {
 
   auto compute = [&coeff, this](unordered_map<bitset<4>, shared_ptr<ZMatrix>>& out, const bool gaunt, const bool breit) {
     assert(!breit || gaunt);
