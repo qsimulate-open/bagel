@@ -29,7 +29,6 @@
 #include <cmath>
 #include <src/util/f77.h>
 #include <src/zfci/relmofile.h>
-#include <src/rel/dfock.h>
 #include <src/rel/reloverlap.h>
 #include <src/smith/prim_op.h>
 
@@ -299,23 +298,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
     }
 
     // (4) compute (gamma|ii)
-    auto compute_full = [&rocoeff, &iocoeff](array<list<shared_ptr<RelDFHalf>>,2> half, const bool appj) {
-      unordered_map<bitset<2>, shared_ptr<const RelDFFull>> out;
-      for (size_t t = 0; t != 4; ++t) {
-        list<shared_ptr<RelDFFull>> dffull;
-        for (auto& i : half[t/2])
-          dffull.push_back(make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
-        DFock::factorize(dffull);
-        assert(dffull.size() == 1);
-        dffull.front()->scale(dffull.front()->fac()); // take care of the factor
-        out[bitset<2>(t)] = dffull.front();
-        if (appj)
-          out.at(bitset<2>(t)) = out.at(bitset<2>(t))->apply_J();
-      }
-      return out;
-    };
-    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = compute_full(half_complex_exch, true);
-    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full2 = !breit ? full : compute_full(half_complex_exch2, false);
+    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = compute_full(rocoeff, iocoeff, half_complex_exch, true);
+    unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full2 = !breit ? full : compute_full(rocoeff, iocoeff, half_complex_exch2, false);
 
     // (5) compute 4-index quantities (16 of them - we are not using symmetry... and this is a very cheap step)
     const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;

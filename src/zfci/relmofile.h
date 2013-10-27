@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <src/math/zmatrix.h>
 #include <src/rel/reldffull.h>
+#include <src/rel/dfock.h>
 #include <src/rel/relreference.h>
 
 namespace bagel {
@@ -86,6 +87,25 @@ class RelMOFile {
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; } 
+
+
+    static std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>>
+        compute_full(std::array<std::array<std::shared_ptr<const Matrix>,4>,2> rocoeff, std::array<std::array<std::shared_ptr<const Matrix>,4>,2> iocoeff,
+                     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half, const bool appj) {
+      std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>> out;
+      for (size_t t = 0; t != 4; ++t) {
+        std::list<std::shared_ptr<RelDFFull>> dffull;
+        for (auto& i : half[t/2])
+          dffull.push_back(std::make_shared<RelDFFull>(i, rocoeff[t%2], iocoeff[t%2]));
+        DFock::factorize(dffull);
+        assert(dffull.size() == 1);
+        dffull.front()->scale(dffull.front()->fac()); // take care of the factor
+        out[std::bitset<2>(t)] = dffull.front();
+        if (appj)
+          out.at(std::bitset<2>(t)) = out.at(std::bitset<2>(t))->apply_J();
+      }
+      return out;
+    }
 };
 
 

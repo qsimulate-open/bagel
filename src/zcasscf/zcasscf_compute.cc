@@ -66,7 +66,7 @@ void ZCASSCF::compute() {
     shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
 
     // qvec
-    shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, fci_);  
+    shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, fci_, gaunt_, breit_);
 
     // print energy
     const double gradient = 0.0; // TODO

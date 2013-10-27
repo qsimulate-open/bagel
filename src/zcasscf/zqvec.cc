@@ -29,12 +29,30 @@ using namespace std;
 using namespace bagel;
     
 
-ZQvec::ZQvec(const int n, const int m, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZHarrison> fci)
+ZQvec::ZQvec(const int n, const int m, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit)
  : ZMatrix(n,m) {
 
-  array<list<shared_ptr<RelDFHalf>>,2> half_coulomb = fci->jop()->half_complex_coulomb();
-  array<list<shared_ptr<RelDFHalf>>,2> half_gaunt   = fci->jop()->half_complex_gaunt();
+  assert(gaunt || !breit);
+  if (gaunt) throw logic_error("Gaunt not implemented yet in ZQvec");
 
   array<shared_ptr<const ZMatrix>,2> kcoeff = fci->kramers_coeff();
+  array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+  array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
+  assert(geom->nbasis()*4 == kcoeff[0]->ndim());
+
+  const int nocc = kcoeff[0]->mdim();
+
+  for (int k = 0; k != 2; ++k) {
+    for (int i = 0; i != 4; ++i) {
+      shared_ptr<const ZMatrix> oc = kcoeff[k]->get_submatrix(i*geom->nbasis(), 0, geom->nbasis(), nocc);
+      rocoeff[k][i] = oc->get_real_part();
+      iocoeff[k][i] = oc->get_imag_part();
+    }
+  }
+
+  array<list<shared_ptr<RelDFHalf>>,2> half_coulomb = fci->jop()->half_complex_coulomb();
+//array<list<shared_ptr<RelDFHalf>>,2> half_gaunt   = fci->jop()->half_complex_gaunt();
+
+  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, false);  
 
 }
