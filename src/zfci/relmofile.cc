@@ -37,7 +37,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom) : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co)
+ : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)), coeff_(co) {
   // input should be RelReference
   assert(dynamic_pointer_cast<const RelReference>(ref));
 
@@ -58,8 +59,8 @@ void RelMOFile::init(const int nstart, const int nfence) {
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
-    shared_ptr<const ZMatrix> den = ref_->relcoeff()->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
+    shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -86,7 +87,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
 
 array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
-  shared_ptr<const ZMatrix> coeff = ref_->relcoeff()->slice(nstart, nfence);
+  shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
   shared_ptr<ZMatrix> reordered = coeff->clone();
 
   const int noff = reordered->mdim()/2;
@@ -179,7 +180,7 @@ array<shared_ptr<ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfen
 #ifndef NDEBUG
   { // check reconstructed Fock matrix
     shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, ref_->relcoeff()->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, coeff_->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());
     auto diag0 = (*out[0] % *fock * *out[0]).diag();
     auto diag1 = (*out[1] % *fock * *out[1]).diag();
     for (int i = 0; i != out[0]->mdim(); ++i) {

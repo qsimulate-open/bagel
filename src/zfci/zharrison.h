@@ -124,9 +124,9 @@ class ZHarrison : public Method {
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update() {
+    void update(std::shared_ptr<const ZMatrix> coeff) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(ref_, geom_, ncore_*2, (ncore_+norb_)*2);
+      jop_ = std::make_shared<RelJop>(ref_, geom_, ncore_*2, (ncore_+norb_)*2, coeff);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;

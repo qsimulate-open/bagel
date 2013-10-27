@@ -50,6 +50,7 @@ class ZCASSCF : public Method {
     std::shared_ptr<const ZMatrix> coeff_;
 
     void print_header() const;
+    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
     void mute_stdcout() const;
@@ -57,6 +58,9 @@ class ZCASSCF : public Method {
 
     std::shared_ptr<ZHarrison> fci_;
   
+    // energy
+    std::vector<double> energy_;
+
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,
             const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
@@ -65,6 +69,7 @@ class ZCASSCF : public Method {
 
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+
 };
 
 }

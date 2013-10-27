@@ -35,7 +35,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 
-  update();
+  update(dynamic_pointer_cast<const RelReference>(ref_)->relcoeff());
 }
 
 

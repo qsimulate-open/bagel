@@ -33,6 +33,8 @@ void ZHarrison::compute_rdm12() {
 
   // for one-body RDM
   auto space1 = make_shared<RelSpace>(norb_, nele_-1, 0);
+  rdm1_.clear();
+  rdm2_.clear();
   rdm1_.resize(nstate_);
   rdm2_.resize(nstate_);
 
@@ -163,6 +165,8 @@ void ZHarrison::compute_rdm12() {
     }
   }
 
+  rdm1_av_.clear();
+  rdm2_av_.clear();
   if (nstate_ > 1) {
     for (int istate = 0; istate != nstate_; ++istate) {
       for (auto& i : rdm1_[istate]) {
