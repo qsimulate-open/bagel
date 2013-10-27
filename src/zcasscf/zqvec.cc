@@ -24,6 +24,7 @@
 //
 
 #include <src/zcasscf/zqvec.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -53,6 +54,29 @@ ZQvec::ZQvec(const int n, const int m, shared_ptr<const Geometry> geom, shared_p
   array<list<shared_ptr<RelDFHalf>>,2> half_coulomb = fci->jop()->half_complex_coulomb();
 //array<list<shared_ptr<RelDFHalf>>,2> half_gaunt   = fci->jop()->half_complex_gaunt();
 
-  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, false);  
+  // in principle this is redundant, but cheap..
+  unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, /*apply_J*/true);  
+  assert(full.size() == 4);
+  unordered_map<bitset<2>, shared_ptr<RelDFFull>> full_d;
+  for (auto& i : full)
+    full_d.insert(make_pair(i.first, i.second->clone()));
+
+  for (auto& t : full_d) {
+    for (auto& s : full) {
+      bitset<4> b;
+      b[0] = s.first[0];
+      b[1] = t.first[0];
+      b[2] = s.first[1];
+      b[3] = t.first[1];
+      // t^+ s^+ t s
+      shared_ptr<const ZMatrix> rdmbuf = fci->jop()->mo2e(b);
+      // t^+ t s^+ s
+      shared_ptr<ZMatrix> rdm = rdmbuf->clone();
+      assert(rdm->ndim() == rdm->mdim() && rdm->ndim() == nocc*nocc);
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdmbuf->data(), rdm->data(), nocc, nocc, nocc, nocc); 
+// TODO implement
+//    *t.second += *s->apply_2rdm(rdm);
+    }
+  }
 
 }

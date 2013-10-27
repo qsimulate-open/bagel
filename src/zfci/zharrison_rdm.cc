@@ -160,8 +160,39 @@ void ZHarrison::compute_rdm12() {
           }
         }
       }
+    }
 
-
+    // for completeness we can compute all the blocks (2RDM), which are useful in CASSCF
+    for (int i = 0; i != 4; ++i) {
+      for (int j = 0; j != 4; ++j) {
+        bitset<4> target((j << 2) + i);
+        bitset<4> s2301((i << 2) + j);
+        bitset<4> s1032; s1032.set(0, target[1]); s1032.set(1, target[0]); s1032.set(2, target[3]); s1032.set(3, target[2]);
+        bitset<4> s3210; s3210.set(0, target[3]); s3210.set(1, target[2]); s3210.set(2, target[1]); s3210.set(3, target[0]);
+        bitset<4> s0132; s0132.set(0, target[0]); s0132.set(1, target[1]); s0132.set(2, target[3]); s0132.set(3, target[2]);
+        if (rdm2_[istate].find(target) != rdm2_[istate].end()) {
+          continue;
+        } else if (rdm2_[istate].find(s2301) != rdm2_[istate].end()) {
+          rdm2_[istate][target] = rdm2_[istate].at(s2301)->clone();
+          SMITH::sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate].at(s2301)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
+        } else if (rdm2_[istate].find(s1032) != rdm2_[istate].end()) {
+          rdm2_[istate][target] = rdm2_[istate].at(s1032)->clone();
+          SMITH::sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate].at(s1032)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+        } else if (rdm2_[istate].find(s3210) != rdm2_[istate].end()) {
+          rdm2_[istate][target] = rdm2_[istate].at(s3210)->clone();
+          SMITH::sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate].at(s3210)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
+        } else if (rdm2_[istate].find(s0132) != rdm2_[istate].end()) {
+          rdm2_[istate][target] = rdm2_[istate].at(s0132)->clone();
+          SMITH::sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
+          transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
+        } else {
+          cout << target << endl;
+          for (auto& i : rdm2_[istate]) cout << i.first << endl;
+          throw logic_error("debug .. ZHarrison::compute_rdm12()");
+        }
+      }
     }
   }
 
@@ -223,6 +254,17 @@ void ZHarrison::compute_rdm12() {
   // checking against the original energies
   const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size(); 
   assert(fabs(orig_energy - recomp_energy) < 1.0e-8);
+
+#if 0
+  complex<double> recomp_energy2 = (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core;
+  for (int i = 0; i != 16; ++i) {
+    stringstream ss; ss << bitset<4>(i); 
+    recomp_energy2 += trace2(ss.str())*0.5;
+  }
+  cout << "    *  recalculated FCI energy (state averaged)" << endl;
+  cout << setw(49) << setprecision(12) << recomp_energy2 << endl;
+  assert(fabs(orig_energy - recomp_energy2.real()) < 1.0e-8);
+#endif
 #endif
 
 }

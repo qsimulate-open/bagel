@@ -357,5 +357,19 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   shared_ptr<ZMatrix> m0100 = out.at(bitset<4>("0010"))->get_conjg();
   SMITH::sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out[bitset<4>("0100")]->data(), nocc_, nocc_, nocc_, nocc_); 
 
+#if 0
+  // for completeness we can compute the others too
+  vector<int> target{8, 7, 14, 1, 6};
+  for (auto& t : target) {
+    bitset<4> tb(t);
+    bitset<4> sb; sb[0] = tb[1]; sb[1] = tb[0]; sb[2] = tb[3]; sb[3] = tb[2];
+    assert(out.find(tb) == out.end());
+    out[tb] = out.at(sb)->clone();
+    SMITH::sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_); 
+    transform(out.at(tb)->data(), out.at(tb)->data()+nocc_*nocc_*nocc_*nocc_, out.at(tb)->data(), [](complex<double> a) { return conj(a); });
+  }
+  out[bitset<4>("1100")] = out.at(bitset<4>("0011"))->transpose();
+#endif
+
   return unordered_map<bitset<4>, shared_ptr<const ZMatrix>>(out.begin(), out.end());
 }
