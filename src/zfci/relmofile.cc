@@ -30,7 +30,6 @@
 #include <src/util/f77.h>
 #include <src/zfci/relmofile.h>
 #include <src/rel/dfock.h>
-#include <src/rel/reldffull.h>
 #include <src/rel/reloverlap.h>
 #include <src/smith/prim_op.h>
 
@@ -130,7 +129,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
   }
 
   // fix the phase - making the largest large-component element in each colomn real
-#if 0
   for (int i = 0; i != mdim; ++i) {
     const int iblock = i/(mdim/2);
     complex<double> ele = *max_element(reordered->element_ptr(iblock*nb,i), reordered->element_ptr((iblock+1)*nb,i),
@@ -138,7 +136,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     const complex<double> fac = norm(ele) / ele;
     transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
   }
-#endif
 
   // off diagonal
   auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
@@ -270,6 +267,13 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
       }
       half_complex[k].clear();
       DFock::factorize(half_complex_exch[k]);
+    }
+
+    // ** save 1 external integrals (to be used in CASSCF) *** //
+    if (!gaunt) {
+      half_complex_coulomb_ = half_complex_exch;
+    } else {
+      half_complex_gaunt_ = half_complex_exch;
     }
 
     if (breit) {

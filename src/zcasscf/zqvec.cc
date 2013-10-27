@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: qvec.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: zqvec.cc
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,25 +23,18 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/zcasscf/zqvec.h>
 
-#ifndef __BAGEL_SRC_CASSCF_QVEC
-#define __BAGEL_SRC_CASSCF_QVEC
+using namespace std;
+using namespace bagel;
+    
 
-#include <src/fci/fci.h> // 2RDM and half-transformed integrals
-#include <src/casscf/rotfile.h>
+ZQvec::ZQvec(const int n, const int m, shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZHarrison> fci)
+ : ZMatrix(n,m) {
 
-namespace bagel {
+  array<list<shared_ptr<RelDFHalf>>,2> half_coulomb = fci->jop()->half_complex_coulomb();
+  array<list<shared_ptr<RelDFHalf>>,2> half_gaunt   = fci->jop()->half_complex_gaunt();
 
-class Qvec : public Matrix {
-  protected:
-
-  public:
-    Qvec(const int n, const int m, std::shared_ptr<const DFDist> df, std::shared_ptr<const Coeff> c, const size_t nclosed,
-         std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm);
-    Qvec(const Matrix& a) : Matrix(a) {}
-
-};
+  array<shared_ptr<const ZMatrix>,2> kcoeff = fci->kramers_coeff();
 
 }
-
-#endif

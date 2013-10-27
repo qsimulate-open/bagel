@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: qvec.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: zqvec.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,22 +24,20 @@
 //
 
 
-#ifndef __BAGEL_SRC_CASSCF_QVEC
-#define __BAGEL_SRC_CASSCF_QVEC
+#ifndef __BAGEL_SRC_ZCASSCF_ZQVEC_H
+#define __BAGEL_SRC_ZCASSCF_ZQVEC_H
 
-#include <src/fci/fci.h> // 2RDM and half-transformed integrals
-#include <src/casscf/rotfile.h>
+#include <src/zfci/zharrison.h> // 2RDM and transformed integrals
 
 namespace bagel {
 
-class Qvec : public Matrix {
+class ZQvec : public ZMatrix {
   protected:
 
   public:
-    Qvec(const int n, const int m, std::shared_ptr<const DFDist> df, std::shared_ptr<const Coeff> c, const size_t nclosed,
-         std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm);
-    Qvec(const Matrix& a) : Matrix(a) {}
+    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZHarrison> fci);
 
+    ZQvec(const ZMatrix& a) : ZMatrix(a) {}
 };
 
 }

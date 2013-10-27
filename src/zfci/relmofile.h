@@ -29,6 +29,7 @@
 
 #include <unordered_map>
 #include <src/math/zmatrix.h>
+#include <src/rel/reldffull.h>
 #include <src/rel/relreference.h>
 
 namespace bagel {
@@ -61,6 +62,10 @@ class RelMOFile {
     virtual std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> compute_mo1e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
     virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) = 0;
 
+    // half transformed integrals for CASSCF
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb_;
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
+
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>);
 
@@ -79,6 +84,8 @@ class RelMOFile {
     double core_energy() const { return core_energy_; }
 
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; } 
 };
 
 

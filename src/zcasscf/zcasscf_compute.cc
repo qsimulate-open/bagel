@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/zcasscf/zqvec.h>
 #include <src/math/bfgs.h>
 #include <src/rel/dfock.h>
 #include <src/zcasscf/zcasscf.h>
@@ -63,6 +64,9 @@ void ZCASSCF::compute() {
     // active Fock operator
     shared_ptr<const ZMatrix> afockao = active_fock();
     shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
+
+    // qvec
+    shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, fci_);  
 
     // print energy
     const double gradient = 0.0; // TODO
