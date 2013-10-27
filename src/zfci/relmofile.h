@@ -60,7 +60,7 @@ class RelMOFile {
     virtual std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) = 0;
 
   public:
-    RelMOFile(const std::shared_ptr<const Reference>);
+    RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Geometry>);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -84,7 +84,7 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const int c, const int d) : RelMOFile(b) { init(c, d); }
+    RelJop(const std::shared_ptr<const Reference> b, const std::shared_ptr<const Geometry> geo, const int c, const int d) : RelMOFile(b, geo) { init(c, d); }
 };
 
 

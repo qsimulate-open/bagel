@@ -126,7 +126,7 @@ class ZHarrison : public Method {
 
     void update() {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(ref_, ncore_*2, (ncore_+norb_)*2);
+      jop_ = std::make_shared<RelJop>(ref_, geom_, ncore_*2, (ncore_+norb_)*2);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;

@@ -26,12 +26,36 @@
 #ifndef __SRC_ZCASSCF_ZCASSCF_H
 #define __SRC_ZCASSCF_ZCASSCF_H
 
+#include <src/zfci/zharrison.h>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
 class ZCASSCF : public Method {
   protected:
+    int nocc_;
+    int nclosed_;
+    int nact_;
+    int nvirt_;
+    int nbasis_;
+
+    double thresh_;
+    double thresh_micro_;
+
+    int nstate_;
+
+    int max_iter_;
+    int max_micro_iter_;
+
+    std::shared_ptr<const ZMatrix> coeff_;
+
+    void print_header() const;
+
+    void init();
+    void mute_stdcout() const;
+    void resume_stdcout() const;
+
+    std::shared_ptr<ZHarrison> fci_;
   
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,

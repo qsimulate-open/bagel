@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref) : geom_(ref->geom()), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
+RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom) : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)) {
   // input should be RelReference
   assert(dynamic_pointer_cast<const RelReference>(ref));
 
@@ -52,7 +52,8 @@ void RelMOFile::init(const int nstart, const int nfence) {
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
-  geom_ = geom_->relativistic(ref_->gaunt());
+  if (!geom_->dfs())
+    geom_ = geom_->relativistic(ref_->gaunt());
 
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);

@@ -82,7 +82,7 @@ void CASSCF::common_init() {
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nocc_);
+  nact_ = idata_->get<int>("nact_cas", nact_);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -118,12 +118,12 @@ void CASSCF::common_init() {
 
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
-};
+}
 
 
 CASSCF::~CASSCF() {
 
-};
+}
 
 
 void CASSCF::print_header() const {

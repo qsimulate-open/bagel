@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <fstream>
+#include <src/rel/dirac.h>
 #include <src/zcasscf/zcasscf.h>
 
 using namespace std;
@@ -31,9 +33,107 @@ using namespace bagel;
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) { 
 
+  if (!ref_) {
+    auto idata_tmp = make_shared<PTree>(*idata_);
+    const int ctmp = idata_->get<int>("charge", 0);
+    const int nele = geom->nele();
+    if ((nele - ctmp) % 2) {
+      idata_tmp->erase("charge");
+      idata_tmp->put<int>("charge", ctmp - 1);
+    }
+    auto scf = make_shared<Dirac>(idata_tmp, geom_);
+    scf->compute();
+    ref_ = scf->conv_to_ref();
+  }
+
+  init();
+
+}
+
+
+void ZCASSCF::init() {
+  print_header();
+
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+
+  if (!geom_->dfs())
+    geom_ = geom_->relativistic(relref->gaunt());
+
+  // first set coefficient
+  coeff_ = relref->relcoeff();
+
+  // get maxiter from the input
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  // get maxiter from the input
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
+  // get nstate from the input
+  nstate_ = idata_->get<int>("nstate", 1);
+#if 0
+  // get istate from the input (for geometry optimization)
+  istate_ = idata_->get<int>("istate", 0);
+#endif
+  // get thresh (for macro iteration) from the input
+  thresh_ = idata_->get<double>("thresh", 1.0e-10);
+  // get thresh (for micro iteration) from the input
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
+
+  // nocc from the input. If not present, full valence active space is generated.
+  nact_ = idata_->get<int>("nact", 0);
+  nact_ = idata_->get<int>("nact_cas", nact_);
+
+  // nclosed from the input. If not present, full core space is generated.
+  nclosed_ = idata_->get<int>("nclosed", -1);
+  if (nclosed_ < -1) {
+    throw runtime_error("It appears that nclosed < 0. Check nocc value.");
+  } else if (nclosed_ == -1) {
+    cout << "    * full core space generated for nclosed." << endl;
+    nclosed_ = geom_->num_count_ncore_only() / 2;
+  }
+  nocc_ = nclosed_ + nact_;
+
+  nbasis_ = coeff_->mdim();
+  nvirt_ = nbasis_ - nocc_;
+  if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
+
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
+  cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
+  cout << "    * nact     : " << setw(6) << nact_ << endl;
+  cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
+
+  const int idel = geom_->nbasis()*2 - nbasis_;
+  if (idel)
+    cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
+
+  // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
+//mute_stdcout();
+  fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+//resume_stdcout();
+
+}
+
+
+void ZCASSCF::print_header() const {
+  cout << "  ---------------------------" << endl;
+  cout << "      CASSCF calculation     " << endl;
+  cout << "  ---------------------------" << endl << endl;
+}
+
+static streambuf* backup_stream_;
+static ofstream* ofs_;
+
+void ZCASSCF::mute_stdcout() const {
+  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
+  ofs_ = ofs;
+  backup_stream_ = cout.rdbuf(ofs->rdbuf());
+}
+
+
+void ZCASSCF::resume_stdcout() const {
+  cout.rdbuf(backup_stream_);
+  delete ofs_;
 }
 
 
 void ZCASSCF::compute() {
-
+  fci_->compute();
 }
