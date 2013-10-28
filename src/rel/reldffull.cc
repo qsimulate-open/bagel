@@ -89,22 +89,22 @@ void RelDFFull::add_product(shared_ptr<const RelDFFull> o, const shared_ptr<cons
 }
 
 
-void RelDFFull::ax_plus_y(complex<double> a, shared_ptr<const RelDFFull> o) {
+void RelDFFull::ax_plus_y(complex<double> a, const RelDFFull& o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
-    dffull_[0]->ax_plus_y(fac, o->dffull_[0]);
-    dffull_[1]->ax_plus_y(fac, o->dffull_[1]);
+    dffull_[0]->ax_plus_y(fac, o.dffull_[0]);
+    dffull_[1]->ax_plus_y(fac, o.dffull_[1]);
   } else if (real(a) == 0.0) {
     const double fac = imag(a);
-    dffull_[0]->ax_plus_y(-fac, o->dffull_[1]);
-    dffull_[1]->ax_plus_y( fac, o->dffull_[0]);
+    dffull_[0]->ax_plus_y(-fac, o.dffull_[1]);
+    dffull_[1]->ax_plus_y( fac, o.dffull_[0]);
   } else {
     const double rfac = real(a);
-    dffull_[0]->ax_plus_y(rfac, o->dffull_[0]);
-    dffull_[1]->ax_plus_y(rfac, o->dffull_[1]);
+    dffull_[0]->ax_plus_y(rfac, o.dffull_[0]);
+    dffull_[1]->ax_plus_y(rfac, o.dffull_[1]);
     const double ifac = imag(a);
-    dffull_[0]->ax_plus_y(-ifac, o->dffull_[1]);
-    dffull_[1]->ax_plus_y( ifac, o->dffull_[0]);
+    dffull_[0]->ax_plus_y(-ifac, o.dffull_[1]);
+    dffull_[1]->ax_plus_y( ifac, o.dffull_[0]);
   }
 }
 
@@ -168,4 +168,19 @@ shared_ptr<ZMatrix> RelDFFull::form_4index(shared_ptr<const RelDFFull> a, const 
   *imag += *dffull_[1]->form_4index(a->dffull_[0], fac);
 
   return make_shared<ZMatrix>(*real, *imag);
+}
+
+
+shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> inp) const {
+  shared_ptr<ZMatrix> rdm2 = make_shared<ZMatrix>(inp->dim(), inp->dim());
+  copy_n(inp->data(), inp->size(), rdm2->data());
+  shared_ptr<const Matrix> rrdm = rdm2->get_real_part();
+  shared_ptr<const Matrix> irdm = rdm2->get_imag_part();
+
+  shared_ptr<DFFullDist> r  =  dffull_[0]->apply_2rdm(rrdm->data()); 
+  r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(irdm->data())); 
+
+  shared_ptr<DFFullDist> i  =  dffull_[1]->apply_2rdm(rrdm->data()); 
+  i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(irdm->data())); 
+  return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_); 
 }

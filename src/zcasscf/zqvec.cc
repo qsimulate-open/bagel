@@ -69,13 +69,12 @@ ZQvec::ZQvec(const int n, const int m, shared_ptr<const Geometry> geom, shared_p
       b[2] = s.first[1];
       b[3] = t.first[1];
       // t^+ s^+ t s
-      shared_ptr<const ZMatrix> rdmbuf = fci->jop()->mo2e(b);
+      shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av(b);
       // t^+ t s^+ s
-      shared_ptr<ZMatrix> rdm = rdmbuf->clone();
-      assert(rdm->ndim() == rdm->mdim() && rdm->ndim() == nocc*nocc);
+      shared_ptr<ZRDM<2>> rdm = rdmbuf->clone();
+      assert(rdm->norb() == nocc);
       SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdmbuf->data(), rdm->data(), nocc, nocc, nocc, nocc); 
-// TODO implement
-//    *t.second += *s->apply_2rdm(rdm);
+      *t.second += *s.second->apply_2rdm(rdm);
     }
   }
 
