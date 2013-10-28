@@ -35,34 +35,55 @@ using namespace bagel;
 SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re) {
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
+  soeig_ = unique_ptr<double[]> (new double[2 * geom_->nbasis()]);
+  sohcore_ = make_shared<SOhcore>(geom_, hcore_);
 }
 
 void SOSCF::initial_guess() {
+  sooverlap_ = SOSCF::sooverlap();
+  sotildex_ = SOSCF::sotildex();
+
   shared_ptr<const Matrix> fock = hcore_;
+#if 1
   shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
   intermediate->diagonalize(eig_.get());
   coeff_ = make_shared<const Coeff> (*tildex_ * *intermediate);
-  tie(aodensity_, aodensityD_, aodensityO1_, aodensityO2_) = form_density_soscf();
+  aodensityD_ = coeff_->form_density_rhf(nocc_);
+#endif
+
+#if 1
+  shared_ptr<const Matrix> sofock = SOSCF::sofock(fock, sohcore_);
+  shared_ptr<Matrix> sointermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
+  sointermediate->diagonalize(soeig_.get());
+  socoeff_ = make_shared<Coeff>(*sotildex_ * *sointermediate);
+  aodensity_ = socoeff_->form_density_rhf(2 * nocc_);
+#endif
 }
 
 void SOSCF::compute() {
-
-  soeig_ = unique_ptr<double[]> (new double [geom_->nbasis() * 2]);
-
+#if 1
   initial_guess();
 
   DIIS<Matrix> diis(diis_size_);
 
-  for (int iter = 0; iter != max_iter_; ++iter) {
+for (int iter = 0; iter != max_iter_; ++iter) {
     shared_ptr<const Matrix> fock = make_shared<const Fock<1>> (geom_,
                              hcore_, aodensityD_, coeff_->slice(0, nocc_));
+    #if 1
+    shared_ptr<const Matrix> sofock = SOSCF::sofock(fock, sohcore_);
+    energy_ = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
+    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ - 
+                                                  *sooverlap_ * *aodensity_ * *sofock);
+    const double error = error_vector->rms();
+    #endif
+    #if 0
     energy_ = 0.5 * ((*hcore_ + *fock) * *aodensityD_).trace() + geom_->nuclear_repulsion();
     auto error_vector = make_shared<const Matrix>(*fock * *aodensityD_ * *overlap_ - 
                                                   *overlap_ * *aodensityD_ * *fock);
     const double error = error_vector->rms();
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
-    #if 1
+    #endif
 
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       break;
@@ -72,40 +93,48 @@ void SOSCF::compute() {
     }
 
     if (iter >= diis_start_) {
-      fock = diis.extrapolate(make_pair(fock, error_vector));
+      sofock = diis.extrapolate(make_pair(sofock, error_vector));
     }
 
-    shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
-    intermediate->diagonalize(eig_.get());
-    coeff_ = make_shared<const Coeff>(*tildex_ * *intermediate);
-    aodensityD_ = coeff_->form_density_rhf(nocc_);
+    #if 1
+    shared_ptr<Matrix> sointermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
+    sointermediate->diagonalize(soeig_.get());
+    shared_ptr<Coeff> socoeff_ = make_shared<Coeff>(*sotildex_ * *sointermediate);
+    aodensity_ = socoeff_->form_density_rhf(2 * nocc_);
     #endif
 
+    #if 1
+    shared_ptr<Matrix> intermediate = make_shared<Matrix>(*tildex_ % *fock * *tildex_);
+    intermediate->diagonalize(eig_.get());
+    coeff_ = make_shared<Coeff>(*tildex_ * *intermediate);
+    aodensityD_ = coeff_->form_density_rhf(nocc_);
+    #endif
   }
+#endif
 }
 
-tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>> 
-SOSCF::form_density_soscf() const {
-  shared_ptr<Matrix> outD = coeff_->form_density_rhf(nocc_);
-  // TODO: off-diagonal blocks outO1 and outO2
-  shared_ptr<Matrix> outO1 = make_shared<Matrix>(outD->ndim(), outD->mdim());
-  shared_ptr<Matrix> outO2 = outO1;
-  shared_ptr<Matrix> out = make_shared<Matrix> (2 * outD->ndim(), 2 * outD->mdim());
-  out->add_block(1.0, 0, 0, outD->ndim(), outD->mdim(), outD);
-  out->add_block(1.0, outD->ndim(), outD->mdim(), outD->ndim(), outD->mdim(), outD);
-  out->add_block(1.0, 0, outD->mdim(), outD->ndim(), outD->mdim(), outO1);
-  out->add_block(1.0, outD->ndim(), 0, outD->ndim(), outD->mdim(), outO2);
-  return make_tuple(out, outD, outO1, outO2);
-}
-
-shared_ptr<Matrix> SOSCF::sofock(shared_ptr<const Matrix> fock, 
-                   shared_ptr<const Matrix> offd1, shared_ptr<const Matrix> offd2) {
-  assert(fock->ndim() == offd1->ndim());
-  assert(fock->mdim() == offd1->mdim());
-  shared_ptr<Matrix> out = make_shared<Matrix> (2 * fock->ndim(), 2 * fock->mdim());
+shared_ptr<Matrix> SOSCF::sofock(shared_ptr<const Matrix> fock, shared_ptr<const Matrix> sohcore) {
+  assert(sohcore->ndim() == 2 * fock->ndim());
+  assert(sohcore->mdim() == 2 * fock->mdim());
+  shared_ptr<Matrix> out = make_shared<Matrix>(sohcore->ndim(), sohcore->mdim());
   out->add_block(1.0, 0, 0, fock->ndim(), fock->mdim(), fock);
   out->add_block(1.0, fock->ndim(), fock->mdim(), fock->ndim(), fock->mdim(), fock);
-  out->add_block(1.0, 0, fock->mdim(), fock->ndim(), fock->mdim(), offd1);
-  out->add_block(1.0, fock->ndim(), 0, fock->ndim(), fock->mdim(), offd2);
   return out;
 }
+
+shared_ptr<Matrix> SOSCF::sotildex() {
+  shared_ptr<Matrix> out = make_shared<Matrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
+  out->zero();
+  out->add_block(1.0, 0, 0, tildex_->ndim(), tildex_->mdim(), tildex_);
+  out->add_block(1.0, tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), tildex_);
+  return out;
+}
+
+shared_ptr<Matrix> SOSCF::sooverlap() {
+  shared_ptr<Matrix> out = make_shared<Matrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
+  out->zero();
+  out->add_block(1.0, 0, 0, overlap_->ndim(), overlap_->mdim(), overlap_);
+  out->add_block(1.0, overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), overlap_);
+  return out;
+}
+

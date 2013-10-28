@@ -28,6 +28,7 @@
 #define __BAGEL_SRC_SCF_SOSCF_H
 
 #include <src/scf/scf_base.h>
+#include <src/scf/sohcore.h>
 
 namespace bagel {
 
@@ -35,12 +36,12 @@ class SOSCF : public SCF_base {
   protected:
     std::shared_ptr<const Matrix> aodensity_;
     std::shared_ptr<const Matrix> aodensityD_;
-    std::shared_ptr<const Matrix> aodensityO1_;
-    std::shared_ptr<const Matrix> aodensityO2_;
     
+    std::shared_ptr<const SOhcore> sohcore_;
     std::shared_ptr<const Coeff> socoeff_;
+    std::shared_ptr<const Matrix> sooverlap_;
+    std::shared_ptr<const Matrix> sotildex_;
     std::unique_ptr<double[]> soeig_;
-    double* soeig() { return soeig_.get(); }
     
 
   public:
@@ -51,14 +52,13 @@ class SOSCF : public SCF_base {
 
     void compute() override;
 
-    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> form_density_soscf() const;
-
-    std::shared_ptr<Matrix> sofock(std::shared_ptr<const Matrix> fock, 
-                     std::shared_ptr<const Matrix> offd1, std::shared_ptr<const Matrix> offd2);
-
-    std::shared_ptr<const Reference> conv_to_ref() const override { }
-
+    std::shared_ptr<Matrix> sofock(std::shared_ptr<const Matrix> fock, std::shared_ptr<const Matrix> sohcore);
+    std::shared_ptr<Matrix> sotildex();
+    std::shared_ptr<Matrix> sooverlap();
+    std::shared_ptr<const SOhcore> sohcore() const { return sohcore_; }
     std::shared_ptr<const Matrix> aodensity() const { return aodensity_; }
+    double* soeig() { return soeig_.get(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { }
 
 };
 
