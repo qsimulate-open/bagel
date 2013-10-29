@@ -91,7 +91,7 @@ void ZCASSCF::init() {
   }
   nocc_ = nclosed_ + nact_;
 
-  nbasis_ = coeff_->mdim();
+  nbasis_ = coeff_->mdim()/2;
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 
@@ -105,7 +105,7 @@ void ZCASSCF::init() {
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl; 
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl; 
 
-  const int idel = geom_->nbasis()*2 - nbasis_;
+  const int idel = geom_->nbasis() - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 

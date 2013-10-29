@@ -91,7 +91,7 @@ class RelMOFile {
 
     static std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>>
         compute_full(std::array<std::array<std::shared_ptr<const Matrix>,4>,2> rocoeff, std::array<std::array<std::shared_ptr<const Matrix>,4>,2> iocoeff,
-                     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half, const bool appj) {
+                     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half, const bool appj, const bool appjj = false) {
       std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull>> out;
       for (size_t t = 0; t != 4; ++t) {
         std::list<std::shared_ptr<RelDFFull>> dffull;
@@ -101,8 +101,11 @@ class RelMOFile {
         assert(dffull.size() == 1);
         dffull.front()->scale(dffull.front()->fac()); // take care of the factor
         out[std::bitset<2>(t)] = dffull.front();
+        assert(!appj || !appjj);
         if (appj)
           out.at(std::bitset<2>(t)) = out.at(std::bitset<2>(t))->apply_J();
+        else if (appjj)
+          out.at(std::bitset<2>(t)) = out.at(std::bitset<2>(t))->apply_JJ();
       }
       return out;
     }
