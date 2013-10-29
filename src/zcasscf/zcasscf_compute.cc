@@ -69,6 +69,8 @@ void ZCASSCF::compute() {
     // qvec
     shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
 
+    // compute orbital gradients
+
     // print energy
     const double gradient = 0.0; // TODO
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
@@ -108,4 +110,20 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock() const {
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
   return make_shared<const DFock>(geom_, zero, coeff_tot, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+}
+
+
+
+void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
+
+}
+
+
+void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr,   shared_ptr<ZRotFile> sigma) const {
+
+}
+
+
+void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<ZRotFile> sigma) const {
+
 }

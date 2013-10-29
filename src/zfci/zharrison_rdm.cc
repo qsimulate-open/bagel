@@ -234,13 +234,13 @@ void ZHarrison::compute_rdm12() {
     shared_ptr<const ZMatrix> a = jop_->mo1e(bitset<2>(st));
     shared_ptr<const ZRDM<1>> b = rdm1_av(bitset<2>(st));
     return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
-                         std::plus<complex<double>>(), [](complex<double> i, complex<double> j){ return i*j; });
+                         std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
   };
   auto trace2 = [this](const string st) {
     shared_ptr<const ZMatrix> a = jop_->mo2e(bitset<4>(st));
     shared_ptr<const ZRDM<2>> b = rdm2_av(bitset<4>(st));
     return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
-                         std::plus<complex<double>>(), [](complex<double> i, complex<double> j){ return i*j; });
+                         std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
   };
 
   const double recomp_energy =

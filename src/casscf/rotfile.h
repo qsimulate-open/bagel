@@ -31,93 +31,210 @@
 
 namespace bagel {
 
-class RotFile {
+template<typename DataType>
+class RotationMatrix {
   protected:
     const int nclosed_;
     const int nact_;
     const int nvirt_;
     const bool superci_;
     const int size_;
-    std::unique_ptr<double[]> data_;
+    std::unique_ptr<DataType[]> data_;
 
   public:
-    RotFile(const int iclos, const int iact, const int ivirt, const bool superci = true)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new double[size_]) {
+    RotationMatrix(const int iclos, const int iact, const int ivirt, const bool superci = true)
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new DataType[size_]) {
       zero();
     }
-    RotFile(const RotFile& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new double[o.size_]) {
+    RotationMatrix(const RotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new DataType[o.size_]) {
       *this = o;
     }
-    RotFile(std::shared_ptr<const RotFile> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new double[o->size_]) {
+    RotationMatrix(std::shared_ptr<const RotationMatrix> o)
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new DataType[o->size_]) {
       *this = *o;
     }
-    RotFile(std::shared_ptr<const Matrix> o, const int iclos, const int iact, const int ivirt, const bool superci = true);
+    RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, const bool superci = true)
+      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new DataType[size_]) {
+      const int nocc = nclosed_ + nact_;
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          ele_va(j, i) = o->element(j+nocc, i+nclosed_);
+        }
+        for (int j = 0; j != nclosed_; ++j) {
+          ele_ca(j, i) = o->element(i+nclosed_, j);
+        }
+      }
+      for (int i = 0; i != nclosed_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          ele_vc(j, i) = o->element(j+nocc, i);
+        }
+      }
+    }
 
-    std::shared_ptr<RotFile> clone() const;
-    std::shared_ptr<RotFile> copy() const;
+    std::shared_ptr<RotationMatrix<DataType>> clone() const {
+      return std::make_shared<RotationMatrix<DataType>>(nclosed_, nact_, nvirt_, superci_);
+    }
+    std::shared_ptr<RotationMatrix<DataType>> copy() const {
+      return std::make_shared<RotationMatrix<DataType>>(*this);
+    }
 
     // overloaded operators
-    RotFile operator+(const RotFile& o) const { RotFile out(*this); out.ax_plus_y(1.0, o); return out; }
-    RotFile operator-(const RotFile& o) const { RotFile out(*this); out.ax_plus_y(-1.0, o); return out; }
-    RotFile& operator+=(const RotFile& o) { ax_plus_y(1.0, o); return *this; }
-    RotFile& operator-=(const RotFile& o) { ax_plus_y(-1.0, o); return *this; }
-    RotFile& operator*=(const double a) { dscal_(size_, a, data_.get(), 1); return *this; }
-    RotFile& operator/=(const RotFile& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
-    RotFile operator/(const RotFile& o) const { RotFile out(*this); return out /= o; }
-    RotFile& operator=(const RotFile& o) { std::copy_n(o.data(), size(), data());  return *this; }
+    RotationMatrix<DataType> operator+(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); out.ax_plus_y(1.0, o); return out; }
+    RotationMatrix<DataType> operator-(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); out.ax_plus_y(-1.0, o); return out; }
+    RotationMatrix<DataType>& operator+=(const RotationMatrix<DataType>& o) { ax_plus_y(1.0, o); return *this; }
+    RotationMatrix<DataType>& operator-=(const RotationMatrix<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
+    RotationMatrix<DataType>& operator*=(const DataType a) { scal(a); return *this; }
+    RotationMatrix<DataType>& operator/=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
+    RotationMatrix<DataType> operator/(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out /= o; }
+    RotationMatrix<DataType>& operator=(const RotationMatrix<DataType>& o) { std::copy_n(o.data(), size(), data());  return *this; }
 
     // size of the file
     int size() const { return size_; }
     // zero out
-    void zero() { fill(0.0); }
-    void fill(const double a) { std::fill_n(data(), size_, a); }
+    void zero() { fill(DataType(0.0)); }
+    void fill(const DataType& a) { std::fill_n(data(), size_, a); }
     // returns dot product
-    double dot_product(const RotFile& o) const { return ddot_(size_, data(), 1, o.data(), 1); }
-    double dot_product(const std::shared_ptr<const RotFile> o) const { return dot_product(*o); }
+    DataType dot_product(const RotationMatrix<DataType>& o) const {
+      return std::inner_product(data(), data()+size_, o.data(), 0.0, std::plus<DataType>(), [](const DataType& a, const DataType& b){ return detail::conj(a)*b; });
+    }
+    DataType dot_product(const std::shared_ptr<const RotationMatrix<DataType>> o) const { return dot_product(*o); }
+    // scale function
+    void scale(const DataType& a) { std::transform(data(), data()+size_, data(), [&a](DataType p) { return a*p; }); }
     // returns norm of the vector
-    double norm() const { return std::sqrt(dot_product(*this)); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     // daxpy added to self
-    void ax_plus_y(double a, const RotFile& o) { daxpy_(size_, a, o.data(), 1, data(), 1); }
-    void ax_plus_y(double a, const std::shared_ptr<const RotFile> o) { ax_plus_y(a, *o); }
-    // orthogonalize to the liset of RotFile's
-    double orthog(std::list<std::shared_ptr<const RotFile>> c);
+    void ax_plus_y(const DataType& a, const RotationMatrix& o) { std::transform(o.data(), o.data()+size_, data(), data(), [&a](DataType p, DataType q) { return p*a+q; }); }
+    void ax_plus_y(const DataType& a, const std::shared_ptr<const RotationMatrix> o) { ax_plus_y(a, *o); }
+
+    // orthogonalize to the liset of RotationMatrix's
+    double orthog(std::list<std::shared_ptr<const RotationMatrix<DataType>>> c) {
+      for (auto iter = c.begin(); iter != c.end(); ++iter)
+        this->ax_plus_y(- this->dot_product(**iter), **iter);
+      const double scal = 1.0/this->norm();
+      scale(scal);
+      return 1.0/scal;
+    }
 
     // return data_
-    double* data() { return data_.get(); }
-    const double* data() const { return data_.get(); }
-    double& data(const size_t i) { return data_[i]; }
-    const double& data(const size_t i) const { return data_[i]; }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
+    DataType& data(const size_t i) { return data_[i]; }
+    const DataType& data(const size_t i) const { return data_[i]; }
     // return data_
-    double* begin() { return data(); }
+    DataType* begin() { return data(); }
     // return data_
-    double* end() { return data()+size_; }
+    DataType* end() { return data()+size_; }
 
     // closed-active block. closed runs first
-    double* ptr_ca() { return data(); }
-    double& ele_ca(const int ic, const int ia) { return data_[ic + ia*nclosed_]; }
+    DataType* ptr_ca() { return data(); }
+    DataType& ele_ca(const int ic, const int ia) { return data_[ic + ia*nclosed_]; }
     // active-virtual block. virtual runs first
-    double* ptr_va() { return data() + nclosed_*nact_; }
-    double& ele_va(const int iv, const int ia) { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
+    DataType* ptr_va() { return data() + nclosed_*nact_; }
+    DataType& ele_va(const int iv, const int ia) { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
     // closed-virtual block. virtual runs first
-    double* ptr_vc() { return data() + (nclosed_+nvirt_)*nact_; }
-    double& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
+    DataType* ptr_vc() { return data() + (nclosed_+nvirt_)*nact_; }
+    DataType& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
     // reference config.
-    double& ele_ref() { assert(superci_); return data_[size_-1]; }
+    DataType& ele_ref() { assert(superci_); return data_[size_-1]; }
     // const references
-    const double& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; }
-    const double& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
-    const double& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    const double& ele_ref() const { assert(superci_); return data_[size_-1]; }
+    const DataType& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; }
+    const DataType& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
+    const DataType& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
+    const DataType& ele_ref() const { assert(superci_); return data_[size_-1]; }
 
     // unpack to Matrix
-    std::shared_ptr<Matrix> unpack(const double a = 0.0) const;
-    std::shared_ptr<Matrix> unpack_sym(const double a = 0.0) const;
+    template<class MatType>
+    std::shared_ptr<MatType> unpack(const DataType a = 0.0) const {
+      const int nocc = nclosed_ + nact_;
+      const int nbasis = nclosed_ + nact_ + nvirt_;
+      auto out = std::make_shared<MatType>(nbasis, nbasis);
+      std::fill_n(out->data(), out->size(), a);
+
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          out->element(j+nocc, i+nclosed_) = ele_va(j, i);
+        }
+        for (int j = 0; j != nclosed_; ++j) {
+          out->element(i+nclosed_, j) = ele_ca(j, i);
+        }
+      }
+      for (int i = 0; i != nclosed_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          out->element(j+nocc, i) = ele_vc(j, i);
+        }
+      }
+      for (int i = 0; i != nbasis; ++i) {
+        for (int j = 0; j <= i; ++j) {
+          out->element(j, i) = -out->element(i, j);
+        }
+      }
+      return out;
+    }
+
+    template<class MatType>
+    std::shared_ptr<MatType> unpack_sym(const DataType a = 0.0) const {
+      const int nocc = nclosed_ + nact_;
+      const int nbasis = nclosed_ + nact_ + nvirt_;
+      auto out = std::make_shared<MatType>(nbasis, nbasis);
+      fill_n(out->data(), out->size(), a);
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          out->element(j+nocc, i+nclosed_) = ele_va(j, i);
+        }
+        for (int j = 0; j != nclosed_; ++j) {
+          out->element(i+nclosed_, j) = ele_ca(j, i);
+        }
+      }
+      for (int i = 0; i != nclosed_; ++i) {
+        for (int j = 0; j != nvirt_;   ++j) {
+          out->element(j+nocc, i) = ele_vc(j, i);
+        }
+      }
+      for (int i = 0; i != nbasis; ++i) {
+        for (int j = 0; j <= i; ++j) {
+          out->element(j, i) = out->element(i, j);
+        }
+      }
+      return out;
+    }
 
     // print matrix
-    void print() const;
+    void print() const {
+      if (nact_ && nclosed_) {
+        std::cout << " printing closed-active block" << std::endl;
+        for (int i = 0; i != nact_; ++i) {
+          for (int j = 0; j != nclosed_; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i);
+          }
+          std::cout << std::endl;
+        }
+      }
+      if (nact_ && nvirt_) {
+        std::cout << " printing virtual-active block" << std::endl;
+        for (int i = 0; i != nact_; ++i) {
+          for (int j = 0; j != nvirt_; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i);
+          }
+          std::cout << std::endl;
+        }
+      }
+      if (nclosed_ && nvirt_) {
+        std::cout << " printing virtual-closed block" << std::endl;
+        for (int i = 0; i != nclosed_; ++i) {
+          for (int j = 0; j != nvirt_; ++j) {
+            std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i);
+          }
+          std::cout << std::endl;
+        }
+      }
+      if (superci_) {
+        std::cout << "reference weight " << ele_ref() << std::endl;
+      }
+    }
 };
 
+using RotFile = RotationMatrix<double>;
+using ZRotFile = RotationMatrix<std::complex<double>>;
 
 }
 

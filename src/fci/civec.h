@@ -210,7 +210,7 @@ class DistCivector {
     // utility functions
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
-      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; })
+      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; })
                             : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
@@ -229,7 +229,7 @@ class DistCivector {
       assert(size() == o.size());
       for (size_t i = 0; i != asize(); ++i) {
         std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](DataType p, DataType q){ return a*p+q; });
+        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](const DataType& p, DataType q){ return a*p+q; });
       }
     }
     void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
@@ -490,7 +490,7 @@ class Civector {
 
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
-      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
+      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; });
     }
     DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
 
