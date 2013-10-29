@@ -34,6 +34,7 @@ namespace bagel {
 
 class ZCASSCF : public Method {
   protected:
+    int nneg_;
     int nocc_;
     int nclosed_;
     int nact_;

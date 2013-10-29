@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
-  : Method(idat, geom, ref) { 
+  : Method(idat, geom, ref) {
 
   if (!ref_) {
     auto idata_tmp = make_shared<PTree>(*idata_);
@@ -59,8 +59,18 @@ void ZCASSCF::init() {
   if (!geom_->dfs())
     geom_ = geom_->relativistic(relref->gaunt());
 
+  nneg_ = relref->nneg();
+
   // first set coefficient
-  coeff_ = relref->relcoeff();
+  {
+    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+    shared_ptr<ZMatrix> coeff = ctmp->clone();
+    const int npos = ctmp->mdim() - nneg_;
+    coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
+    coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
+    coeff_ = coeff;
+  }
+
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -102,8 +112,8 @@ void ZCASSCF::init() {
 
   gaunt_ = relref->gaunt();
   breit_ = relref->breit();
-  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl; 
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl; 
+  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 
   const int idel = geom_->nbasis() - nbasis_;
   if (idel)
