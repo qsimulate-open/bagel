@@ -62,15 +62,17 @@ class ZCASSCF : public Method {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
-    std::shared_ptr<const ZMatrix> active_fock() const;
-  
+    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>) const;
+    std::shared_ptr<const ZMatrix> transform_rdm1() const;
+
     // energy
     std::vector<double> energy_;
 
     // internal function
     void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
     void grad_va(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> qxr,   std::shared_ptr<ZRotFile> sigma) const;
-    void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<ZRotFile> sigma) const;
+    void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
+                 std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
 
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,

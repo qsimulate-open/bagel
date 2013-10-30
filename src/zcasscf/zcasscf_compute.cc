@@ -27,6 +27,7 @@
 #include <src/math/bfgs.h>
 #include <src/rel/dfock.h>
 #include <src/zcasscf/zcasscf.h>
+#include <src/rel/reloverlap.h>
 
 using namespace std;
 using namespace bagel;
@@ -57,12 +58,15 @@ void ZCASSCF::compute() {
     energy_ = fci_->energy();
     resume_stdcout();
 
+    // calculate 1RDM in an original basis set
+    shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+
     // closed Fock operator
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
 
     // active Fock operator
-    shared_ptr<const ZMatrix> afockao = active_fock();
+    shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
     shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
     assert(coeff_->mdim()== nbasis_*2);
 
@@ -70,6 +74,11 @@ void ZCASSCF::compute() {
     shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
 
     // compute orbital gradients
+    shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
+    grad_vc(cfock, afock, grad);
+    grad_ca(cfock, afock, qvec, rdm1, grad);
+
+grad->print();
 
     // print energy
     const double gradient = 0.0; // TODO
@@ -78,10 +87,10 @@ void ZCASSCF::compute() {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock() const {
+shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   assert(fci_);
 
-  array<shared_ptr<const ZMatrix>,2> kcoeff = fci_->kramers_coeff(); 
+  array<shared_ptr<const ZMatrix>,2> kcoeff = fci_->kramers_coeff();
 
   auto rdm1_tot = make_shared<ZMatrix>(nact_*2, nact_*2);
   rdm1_tot->copy_block(    0,     0, nact_, nact_, fci_->rdm1_av("00")->data());
@@ -90,40 +99,65 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock() const {
   rdm1_tot->copy_block(    0, nact_, nact_, nact_, rdm1_tot->get_submatrix(nact_, 0, nact_, nact_)->transpose_conjg());
 
   auto coeff_tot = make_shared<ZMatrix>(kcoeff[0]->ndim(), nact_*2);
-  assert(nact_ == kcoeff[0]->mdim() && nact_ == kcoeff[1]->mdim() && kcoeff[0]->ndim() % 4 == 0); 
+  assert(nact_ == kcoeff[0]->mdim() && nact_ == kcoeff[1]->mdim() && kcoeff[0]->ndim() % 4 == 0);
   coeff_tot->copy_block(0,     0, kcoeff[0]->ndim(), nact_, kcoeff[0]);
   coeff_tot->copy_block(0, nact_, kcoeff[1]->ndim(), nact_, kcoeff[1]);
 
-  // form natural orbitals
-  {
-    unique_ptr<double[]> eig(new double[nact_*2]);
-    rdm1_tot->diagonalize(eig.get());
-    *coeff_tot *= *rdm1_tot;
+  // TODO compute only once
+  auto overlap = make_shared<const RelOverlap>(geom_);
+  shared_ptr<const ZMatrix> ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
+  const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
+  return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
+}
 
-    // scale using eigen values
-    for (int i = 0; i != nact_*2; ++i) {
-      assert(eig[i] >= -1.0e-14);
-      const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-      transform(coeff_tot->element_ptr(0, i), coeff_tot->element_ptr(0, i+1), coeff_tot->element_ptr(0, i), [&fac](complex<double> a) { return fac*a; }); 
-    }
+
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
+  // form natural orbitals
+  unique_ptr<double[]> eig(new double[nact_*2]);
+  auto tmp = make_shared<ZMatrix>(*rdm1);
+  tmp->diagonalize(eig.get());
+  auto natorb = make_shared<ZMatrix>(*coeff_->slice(nclosed_*2, nclosed_*2+nact_*2) * *tmp);
+
+  // scale using eigen values
+  for (int i = 0; i != nact_*2; ++i) {
+    assert(eig[i] >= -1.0e-14);
+    const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
+    transform(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), natorb->element_ptr(0, i), [&fac](complex<double> a) { return fac*a; });
   }
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
-  return make_shared<const DFock>(geom_, zero, coeff_tot, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+  return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
 }
 
 
 
+// grad(a/i) (eq.4.3a): 2(cfock_ai+afock_ai)
 void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
-
+  if (!nvirt_ || !nclosed_) return;
+  complex<double>* target = sigma->ptr_vc();
+  for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2) {
+    zaxpy_(nvirt_*2, 2.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
+    zaxpy_(nvirt_*2, 2.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
+  }
 }
 
 
 void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr,   shared_ptr<ZRotFile> sigma) const {
-
+  assert(false);
 }
 
 
-void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<ZRotFile> sigma) const {
-
+// grad(r/i) (eq.4.3c): 2(cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
+void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
+  if (!nclosed_ || !nact_) return;
+  {
+    complex<double>* target = sigma->ptr_ca();
+    for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
+      zaxpy_(nclosed_*2, 2.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
+      zaxpy_(nclosed_*2, 2.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
+// TODO not sure if I need to take conjugate
+      zaxpy_(nclosed_*2, -2.0, qxr->get_conjg()->element_ptr(0, i), 1, target, 1);
+    }
+    zgemm3m_("N", "N", nclosed_*2, nact_*2, nact_*2, -2.0, afock->element_ptr(0,nclosed_*2), afock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
+  }
 }
