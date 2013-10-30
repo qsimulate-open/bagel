@@ -131,33 +131,40 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 
 
 
-// grad(a/i) (eq.4.3a): 2(cfock_ai+afock_ai)
+// grad(a/i) (eq.4.3a): (cfock_ai+afock_ai)
 void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nclosed_) return;
   complex<double>* target = sigma->ptr_vc();
   for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2) {
-    zaxpy_(nvirt_*2, 2.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
-    zaxpy_(nvirt_*2, 2.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
+    zaxpy_(nvirt_*2, 1.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
+    zaxpy_(nvirt_*2, 1.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
   }
 }
 
 
-void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr,   shared_ptr<ZRotFile> sigma) const {
-  assert(false);
+// grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
+void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
+  if (!nvirt_ || !nact_) return;
+  zgemm3m_("N", "N", nvirt_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
+  complex<double>* target = sigma->ptr_va();
+  for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
+    zaxpy_(nvirt_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2+i), 1, target, 1);
+  }
 }
 
 
-// grad(r/i) (eq.4.3c): 2(cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
+// grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
 void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
-  {
-    complex<double>* target = sigma->ptr_ca();
-    for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
-      zaxpy_(nclosed_*2, 2.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-      zaxpy_(nclosed_*2, 2.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-// TODO not sure if I need to take conjugate
-      zaxpy_(nclosed_*2, -2.0, qxr->get_conjg()->element_ptr(0, i), 1, target, 1);
-    }
-    zgemm3m_("N", "N", nclosed_*2, nact_*2, nact_*2, -2.0, afock->element_ptr(0,nclosed_*2), afock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
+
+  // TODO check
+  auto qxrc = qxr->get_conjg();
+  complex<double>* target = sigma->ptr_ca();
+  for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
+    zaxpy_(nclosed_*2, 1.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, 1.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
+    zaxpy_(nclosed_*2, -1.0, qxrc->element_ptr(0, i), 1, target, 1);
   }
+  // "T" effectively makes complex conjugate of cfock
+  zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
 }
