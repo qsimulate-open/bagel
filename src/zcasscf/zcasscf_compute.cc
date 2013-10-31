@@ -42,12 +42,10 @@ void ZCASSCF::compute() {
   // ============================
   Timer timer;
 
-  auto x = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto x = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
   x->unit();
-  shared_ptr<const ZMatrix> xstart;
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-
   shared_ptr<const ZMatrix> denom;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -75,9 +73,9 @@ void ZCASSCF::compute() {
     // qvec
     shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
 
-//  if (iter == 0) {
-if (true) {
-      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>();
+    if (iter == 0) {
+      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>(1.e10);
+      bfgs = make_shared<BFGS<ZMatrix>>(denom);
     }
 
     // compute orbital gradients
@@ -86,8 +84,21 @@ if (true) {
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
 
+    auto xlog = make_shared<ZMatrix>(*x->log(100));
+    shared_ptr<const ZMatrix> grad_mat = grad->unpack<ZMatrix>();
+    shared_ptr<ZMatrix> amat = bfgs->extrapolate(grad_mat, xlog);
+    *amat *= -1.0;
+
+    // restore the matrix from RotFile
+    shared_ptr<ZMatrix> expa = amat->exp(100);
+    expa->purify_unitary();
+
+    coeff_ = make_shared<const ZMatrix>(*coeff_**expa);
+    // for next BFGS extrapolation
+    *x *= *expa;
+
     // print energy
-    const double gradient = 0.0; // TODO
+    const double gradient = grad_mat->rms();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
   }
 }

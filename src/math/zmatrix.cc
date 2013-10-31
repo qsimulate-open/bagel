@@ -405,23 +405,6 @@ void ZMatrix::hermite() {
 
 void ZMatrix::purify_unitary() {
   assert(ndim_ == mdim_);
-#if 0
-  ZMatrix buf(*this ^ *this);
-  const int lwork = 5*ndim_;
-  unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-  unique_ptr<complex<double>[]> vec(new complex<double>[ndim_]);
-  int info;
-  dsyev_("V", "U", ndim_, buf.data(), ndim_, vec.get(), work.get(), lwork, info);
-  if (info) throw runtime_error("dsyev failed in ZMatrix::purify_unitary");
-  if (vec[0] < 0.95)        cout << "   --- smallest eigenvalue in purify_unitary() " << vec[0] << endl;
-  if (vec[ndim_-1] > 1.05)  cout << "   --- largest eigenvalue in purify_unitary() " << vec[ndim_-1] << endl;
-  for (int i = 0; i != ndim_; ++i) {
-    for (int j = 0; j != ndim_; ++j) {
-      buf.element(j,i) /= sqrt(sqrt(vec[i]));
-    }
-  }
-  *this = ((buf ^ buf) * *this);
-#else
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
@@ -431,8 +414,6 @@ void ZMatrix::purify_unitary() {
     const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
     zscal_(ndim_, b, &data_[i*ndim_], 1);
   }
-#endif
-
 }
 
 
@@ -450,9 +431,9 @@ void ZMatrix::purify_redrotation(const int nclosed, const int nact, const int nv
       element(h+nclosed+nact,g+nclosed+nact)=0.0;
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> ele = (element(j,i) - element(i,j)) * 0.5;
+      const complex<double> ele = (element(j,i) - conj(element(i,j))) * 0.5;
       element(j,i) = ele;
-      element(i,j) = -ele;
+      element(i,j) = - conj(ele);
     }
   }
 #endif

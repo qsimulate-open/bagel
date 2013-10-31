@@ -165,7 +165,7 @@ class RotationMatrix {
       }
       for (int i = 0; i != nbasis; ++i) {
         for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = -out->element(i, j);
+          out->element(j, i) = - detail::conj(out->element(i, j));
         }
       }
       return out;
