@@ -48,6 +48,8 @@ void ZCASSCF::compute() {
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
 
+  shared_ptr<const ZMatrix> denom;
+
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     mute_stdcout();
@@ -73,13 +75,16 @@ void ZCASSCF::compute() {
     // qvec
     shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
 
+//  if (iter == 0) {
+if (true) {
+      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>();
+    }
+
     // compute orbital gradients
     shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
     grad_vc(cfock, afock, grad);
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
-
-grad->print();
 
     // print energy
     const double gradient = 0.0; // TODO
@@ -128,6 +133,51 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
   return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+}
+
+
+shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
+  auto cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
+  // TODO double check later
+  cfockd->hermite();
+
+  // ia part (4.7a)
+  if (nvirt_ && nclosed_) {
+    complex<double>* target = out->ptr_vc();
+    for (int i = 0; i != nclosed_*2; ++i) {
+      for (int j = 0; j != nvirt_*2; ++j) {
+        *target++ = cfock->element(j+nocc_*2, j+nocc_*2) + afock->element(j+nocc_*2, j+nocc_*2) - cfock->element(i,i) - afock->element(i,i);
+      }
+    }
+  }
+  // ra part (4.7b)
+  if (nvirt_ && nact_) {
+    complex<double>* target = out->ptr_va();
+    for (int i = 0; i != nact_*2; ++i) {
+      for (int j = 0; j != nvirt_*2; ++j) {
+        *target++ = rdm1->element(i, i)*(cfock->element(j+nocc_*2, j+nocc_*2)+afock->element(j+nocc_*2, j+nocc_*2))
+                  - cfockd->element(i, i) - qxr->element(i+nclosed_*2, i);
+      }
+    }
+  }
+  // it part (4.7c)
+  if (nclosed_ && nact_) {
+    complex<double>* target = out->ptr_ca();
+    for (int i = 0; i != nact_*2; ++i) {
+      for (int j = 0; j != nclosed_*2; ++j) {
+        *target++ = (cfock->element(i+nclosed_*2, i+nclosed_*2)+afock->element(i+nclosed_*2, i+nclosed_*2) - cfock->element(j,j) - afock->element(j,j))
+                  + rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - cfockd->element(i,i) - qxr->element(i+nclosed_*2, i);
+      }
+    }
+  }
+
+  const double thresh = 1.0e-8;
+  for (int i = 0; i != out->size(); ++i)
+    if (fabs(out->data(i)) < thresh) {
+      out->data(i) = 1.0e10;
+    }
+  return out;
 }
 
 
