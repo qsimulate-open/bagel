@@ -47,7 +47,7 @@ SendRequest::~SendRequest() {
 void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, const int dest, const size_t off) {
   lock_guard<mutex> lock(mutex_);
   // sending size
-  auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, buf);
+  auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, move(buf));
   counter_ += mpi__->size();
   mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
