@@ -136,6 +136,14 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
   }
 
+#ifndef NDEBUG
+  {
+    ZMatrix tmp3 = *reordered % *overlap * *reordered;
+    for (int i = 0; i != tmp3.ndim(); ++i) tmp3(i,i) = 0.0;
+    assert(tmp3.rms() < 1.0e-6);
+  }
+#endif
+
   // off diagonal
   auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
   auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
@@ -175,7 +183,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     }
   }
 
-#ifndef NDEBUG
+#if 0
+//#ifndef NDEBUG
   { // check reconstructed Fock matrix
     shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
     shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, coeff_->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());

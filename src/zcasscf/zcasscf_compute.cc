@@ -98,7 +98,7 @@ void ZCASSCF::compute() {
     *x *= *expa;
 
     // print energy
-    const double gradient = grad_mat->rms();
+    const double gradient = amat->rms();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
   }
 }

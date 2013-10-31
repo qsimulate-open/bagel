@@ -115,7 +115,7 @@ void ZCASSCF::init() {
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 
-  const int idel = geom_->nbasis() - nbasis_;
+  const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
