@@ -58,6 +58,39 @@ class PutRequest : public ServerFlush {
     ~PutRequest();
 };
 
+// receives using MPI_irecv and sends while taking ownership of the sent data
+class BufferPutRequest : public ServerFlush {
+  protected:
+    struct Call {
+      std::unique_ptr<size_t[]> buf;
+      Call() : buf(new size_t[4]) { }
+    };
+    std::map<int, std::shared_ptr<Call>> calls_;
+
+    struct Buff {
+      std::unique_ptr<double[]> buf;
+      Buff(std::unique_ptr<double[]>&& b) : buf(std::move(b)) {}
+    };
+    std::map<int, std::shared_ptr<Buff>> buffs_;
+
+    void init();
+
+    const size_t probe_offset_;
+
+    // this mutex is for MPI calls
+    std::mutex block_;
+
+    // not to be used
+    void flush_() override;
+
+  public:
+    BufferPutRequest(const size_t probe_offset = 0);
+    ~BufferPutRequest();
+
+    void request_send(std::unique_ptr<double[]>&& buf, const size_t size, const size_t dest, const size_t tag);
+    std::vector<std::array<size_t, 4>> get_calls();
+};
+
 class RecvRequest {
   protected:
     struct Probe {

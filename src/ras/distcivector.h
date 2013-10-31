@@ -51,8 +51,6 @@ class DistRASBlock {
     std::shared_ptr<const StringSpace> astrings_;
     std::shared_ptr<const StringSpace> bstrings_;
 
-    mutable std::shared_ptr<PutRequest> put_;
-
     const StaticDist dist_;
 
     // allocation size
@@ -88,21 +86,6 @@ class DistRASBlock {
       mutex_ = std::vector<std::mutex>(asize());
     }
 
-    int get_bstring_buf(double* buf, const size_t a) const {
-      assert(put_);
-      const size_t mpirank = mpi__->rank();
-      size_t rank, off;
-      std::tie(rank, off) = dist_.locate(a);
-
-      int out = -1;
-      if (mpirank == rank) {
-        std::copy_n(local_.get()+off*lenb(), lenb(), buf);
-      } else {
-        out = cc_->recv_->request_recv(buf, lenb(), rank, off*lenb(), block_offset_);
-      }
-      return out;
-    }
-
     // mutex for write accesses to local_
     mutable std::vector<std::mutex> mutex_;
 
@@ -135,6 +118,7 @@ class DistRASCivector {
     std::shared_ptr<const RASDeterminants> det_;
 
     mutable std::shared_ptr<RecvRequest> recv_;
+    mutable std::shared_ptr<BufferPutRequest> put_;
 
     const size_t global_size_;
 
@@ -270,14 +254,13 @@ class DistRASCivector {
     // MPI routines
     // Never call concurrently
     void init_mpi_recv() const {
-      size_t off = 0;
-      std::for_each(blocks_.begin(), blocks_.end(), [&off] (const std::shared_ptr<const RBlock>& i) { if (i) i->put_ = std::make_shared<PutRequest>(i->local(), off); ++off; });
+      put_ = std::make_shared<BufferPutRequest>(0);
       recv_ = std::make_shared<RecvRequest>( blocks_.size());
     }
 
     // Never call concurrently
     void terminate_mpi_recv() const {
-      assert( std::all_of(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock>& i) { if (i) { return static_cast<bool>(i->put_); } else { return true; } }) && recv_);
+      assert( put_ && recv_);
       bool done;
       do {
         done = recv_->test();
@@ -286,17 +269,50 @@ class DistRASCivector {
         size_t d = done ? 0 : 1;
         mpi__->soft_allreduce(&d, 1);
         done = d == 0;
-        if (!done) std::for_each(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock>& i) { if (i) i->put_->flush(); });
+        if (!done) this->flush();
 #endif
         if (!done) std::this_thread::sleep_for(sleeptime__);
       } while (!done);
       // cancel all MPI calls
       recv_.reset();
-      std::for_each(blocks_.begin(), blocks_.end(), [] (const std::shared_ptr<const RBlock> i) { if (i) i->put_.reset(); });
+      put_.reset();
     }
 
     void flush() const {
-      std::for_each(blocks_.begin(), blocks_.end(), [] (std::shared_ptr<const RBlock> b) { if (b) if (b->put_) b->put_->flush(); });
+      for (auto i : put_->get_calls()) {
+        // off is interpreted as lexical number of the alpha string
+        const size_t tag = std::get<1>(i);
+        const size_t dest = std::get<2>(i);
+        const size_t astring = std::get<3>(i);
+        std::unique_ptr<double[]> buf(new double[det_->lenb()]);
+        std::fill_n(buf.get(), det_->lenb(), 0.0);
+        // locate astring
+        std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(astring));
+        size_t off;
+        std::tie(std::ignore, off) = aspace->dist().locate(astring - aspace->offset());
+        for (auto b : allowed_blocks<0>(aspace))
+          std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
+        put_->request_send(std::move(buf), det_->lenb(), dest, tag);
+      }
+      put_->flush();
+    }
+
+    int get_bstring_buf(double* buf, const size_t a) const {
+      assert(put_);
+      const size_t mpirank = mpi__->rank();
+      std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(a));
+      size_t rank, off;
+      std::tie(rank, off) = aspace->dist().locate(a - aspace->offset());
+
+      int out = -1;
+      if (mpirank == rank) {
+        std::fill_n(buf, det_->lenb(), 0.0);
+        for (auto b : allowed_blocks<0>(aspace))
+          std::copy_n(b->local()+off*b->lenb(), b->lenb(), buf + b->stringb()->offset());
+      } else {
+        out = recv_->request_recv(buf, det_->lenb(), rank, a);
+      }
+      return out;
     }
 
     void zero() { for (auto& i : blocks_) if (i) std::fill_n(i->local(), i->size(), 0.0); }

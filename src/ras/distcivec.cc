@@ -59,10 +59,8 @@ namespace bagel {
         int k = 0;
         for (auto& iter : det_->phia(alexical)) {
           // loop through blocks
-          for (auto& iblock : this_->allowed_blocks<0>(det_->stringa(iter.source))) {
-            const int l = iblock->get_bstring_buf(buf_.get() + lb*k + iblock->stringb()->offset(), iter.source - iblock->stringa()->offset());
-            if (l >= 0) requests_.push_back(l);
-          }
+          const int l = this_->get_bstring_buf(buf_.get() + lb*k, iter.source) ;
+          if (l >= 0) requests_.push_back(l);
           ++k;
         }
       }
