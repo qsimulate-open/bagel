@@ -149,7 +149,9 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
         tasks.emplace_and_compute(this->det()->stringa(ia + astart + ispace->offset()), this, out, this->det(), &lexicalmap);
     }
 
-    ( myid == 0 ) ? tasks.finish_master() : tasks.finish_worker();
+    // Call finish separately for master
+    if (myid != 0)
+      tasks.finish_worker();
   };
 
   vector<thread> thread_tasks;
@@ -163,6 +165,8 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
 
   out->ax_plus_y(fac, *this);
+
+  tasks.finish_master();
 
   for (auto& th : thread_tasks)
     th.join();
