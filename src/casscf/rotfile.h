@@ -83,7 +83,7 @@ class RotationMatrix {
     RotationMatrix<DataType> operator-(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); out.ax_plus_y(-1.0, o); return out; }
     RotationMatrix<DataType>& operator+=(const RotationMatrix<DataType>& o) { ax_plus_y(1.0, o); return *this; }
     RotationMatrix<DataType>& operator-=(const RotationMatrix<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
-    RotationMatrix<DataType>& operator*=(const DataType a) { scal(a); return *this; }
+    RotationMatrix<DataType>& operator*=(const DataType a) { scale(a); return *this; }
     RotationMatrix<DataType>& operator/=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
     RotationMatrix<DataType> operator/(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out /= o; }
     RotationMatrix<DataType>& operator=(const RotationMatrix<DataType>& o) { std::copy_n(o.data(), size(), data());  return *this; }
