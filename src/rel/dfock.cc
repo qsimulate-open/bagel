@@ -35,9 +35,8 @@ using namespace bagel;
 // TODO batch size should be automatically determined by the memory size etc.
 const static int batchsize = 250;
 
-void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_exchange) {
+void DFock::two_electron_part(const shared_ptr<const ZMatrix> coeff, const double scale_exchange) {
 
-  if (!rhf) throw logic_error("DFock::two_electron_part() is not implemented for non RHF cases");
   assert(geom_->nbasis()*4 == coeff->ndim());
 
   auto ocoeffall = make_shared<ZMatrix>(*coeff);
@@ -124,8 +123,7 @@ void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc
       const int index1 = i2->basis(1);
 
       add_block(-scale, n*index0, n*index1, n, n, out);
-
-      if (!diagonal || *i1 != *i2) {
+      if (!robust_ && (!diagonal || *i1 != *i2)) {
         add_block(-scale, n*index1, n*index0, n, n, out->transpose_conjg());
       }
     }
@@ -262,7 +260,7 @@ void DFock::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<
   for (auto i = half_complex_exch.begin(); i != half_complex_exch.end(); ++i, ++icnt) {
     int jcnt = 0;
     for (auto j = half_complex_exch2.begin(); j != half_complex_exch2.end(); ++j, ++jcnt) {
-      if ((*i)->alpha_matches((*j)) && icnt <= jcnt) {
+      if ((*i)->alpha_matches(*j) && ((!robust_ && icnt <= jcnt) || robust_)) {
         add_Exop_block(*i, *j, gscale*scale_exchange, icnt == jcnt);
       }
     }

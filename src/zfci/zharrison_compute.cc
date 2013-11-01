@@ -148,7 +148,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     if (base_det->neleb()+2 <= norb_) {
       shared_ptr<ZCivec> sigma_2 = sigmavec->find(nelea-2, neleb+2)->data(istate);
       // reusing
-      sigma_2e_h<1,1,0,0>(d, e, jop, trans);
+      sigma_2e_h<1,1,0,0>(d, e, jop, trans, 0.5);
       sigma_2e_create_bb(sigma_2, e);
     }
   }
@@ -293,7 +293,7 @@ void ZHarrison::sigma_2e_create_ab(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
 
 void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
-  // compute |d> = b+_i b+_j|cc>
+  // compute |sigma> = b+_i b+_j|e_ij>
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -316,7 +316,7 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
         complex<double>* target = target_base + ia*lbt;
         const complex<double>* source = source_base + ia*lbs;
 
-        for (const bitset<nbit__>& b : int_det->stringb()) {
+        for (auto& b : int_det->stringb()) {
           if (b[i] || b[j]) continue;
           bitset<nbit__> cb = b;
           cb.set(i); cb.set(j);

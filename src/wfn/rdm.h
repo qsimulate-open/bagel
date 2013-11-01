@@ -33,63 +33,87 @@
 
 namespace bagel {
 
+template<typename DataType>
 class RDM_base {
   protected:
-    std::unique_ptr<double[]> data_;
+    std::unique_ptr<DataType[]> data_;
     const int norb_;
     size_t dim_;
     int rank_;
 
   public:
-    RDM_base(const int n, const int rank);
-    RDM_base(const RDM_base& o);
+    RDM_base(const int n, const int rank) : norb_(n), rank_(rank) {
+      assert(rank > 0);
+      dim_ = 1lu;
+      for (int i = 0; i != rank; ++i) dim_ *= n;
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::fill_n(data(), size(), static_cast<DataType>(0.0));
+    }
 
-    double* first() { return data(); }
-    double* data() { return data_.get(); }
-    const double* data() const { return data_.get(); }
+    RDM_base(const RDM_base<DataType>& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_) {
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::copy_n(o.data(), size(), data());
+    }
 
-    void zero() { std::fill(data(), data()+dim_*dim_, 0.0); }
-    void ax_plus_y(const double a, const RDM_base& o) { daxpy_(dim_*dim_, a, o.data(), 1, data(), 1); }
-    void ax_plus_y(const double a, const std::shared_ptr<RDM_base>& o) { this->ax_plus_y(a, *o); }
-    void scale(const double a) { dscal_(dim_*dim_, a, data(), 1); }
+    RDM_base(RDM_base<DataType>&& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_), data_(std::move(o.data_)) {
+    }
+
+    DataType* first() { return data(); }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
+
+    void zero() { std::fill(data(), data()+dim_*dim_, static_cast<DataType>(0.0)); }
+    void ax_plus_y(const DataType a, const RDM_base<DataType>& o) {
+      assert(size() == o.size());
+      std::transform(o.data(), o.data()+size(), data(), data(), [&a](DataType p, DataType q){ return q+a*p;});
+    }
+    void ax_plus_y(const DataType& a, const std::shared_ptr<RDM_base<DataType>>& o) { this->ax_plus_y(a, *o); }
+    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
     size_t size() const { return dim_*dim_; }
 
     int norb() const { return norb_; }
+    size_t dim() const { return dim_; }
 
 };
 
 
-template <int rank>
-class RDM : public RDM_base {
+template <int rank, typename DataType = double>
+class RDM : public RDM_base<DataType> {
   protected:
     // T should be able to be multiplied by norb_
     template<int i, typename T, typename ...args>
     size_t address_(const T& head, const args&... tail) const {
       static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
       T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_;
+      for (int j = 0; j != i; ++j) out *= this->norb_;
       return out + address_<i+1>(tail...);
     }
     template<int i, typename T>
     size_t address_(const T& head) const {
       static_assert(i+1 == rank*2 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
       T out = head;
-      for (int j = 0; j != i; ++j) out *= norb_;
+      for (int j = 0; j != i; ++j) out *= this->norb_;
       return out;
     }
 
   public:
-    RDM(const int n) : RDM_base(n, rank) { }
-    RDM(const RDM& o) : RDM_base(o) { }
+    RDM(const int n) : RDM_base<DataType>(n, rank) { }
+    RDM(const RDM<rank,DataType>& o) : RDM_base<DataType>(o) { }
+    RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::forward(o)) { }
 
-    std::shared_ptr<RDM<rank>> clone() const { return std::make_shared<RDM<rank>>(norb_); }
+    std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb_); }
+    std::shared_ptr<RDM<rank,DataType>> copy() const { return std::make_shared<RDM<rank,DataType>>(*this); }
 
     template<typename ...args>
-    double& element(const args&... index) { return data_[address_<0>(index...)]; }
+    DataType& element(const args&... index) { return this->data_[address_<0>(index...)]; }
 
     template<typename ...args>
-    const double& element(const args&... index) const { return data_[address_<0>(index...)]; }
+    const DataType& element(const args&... index) const { return this->data_[address_<0>(index...)]; }
 
+    RDM<rank,DataType>& operator+=(const RDM<rank,DataType>& o) { this->ax_plus_y(1.0, o); return *this; }
+    RDM<rank,DataType>& operator-=(const RDM<rank,DataType>& o) { this->ax_plus_y(-1.0, o); return *this; }
+    RDM<rank,DataType> operator+(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(1.0, o); return out; }
+    RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(-1.0, o); return out; }
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
@@ -109,27 +133,30 @@ class RDM : public RDM_base {
 
     void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
 
-    std::vector<double> diag() const {
-      std::vector<double> out(dim_);
-      for (int i = 0; i != dim_; ++i) out[i] = element(i,i);
+    std::vector<DataType> diag() const {
+      std::vector<DataType> out(this->dim_);
+      for (int i = 0; i != this->dim_; ++i) out[i] = element(i,i);
       return out;
     }
 
     void print(const double thresh = 1.0e-3) const { throw std::logic_error("RDM<N>::print() (N>3) not implemented yet"); }
 };
 
-template<> bool RDM<1>::natural_orbitals() const;
+template <int rank>
+using ZRDM = RDM<rank, std::complex<double>>;
 
-template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1>::generate_natural_orbitals() const;
+template<> bool RDM<1,double>::natural_orbitals() const;
 
-template<> void RDM<1>::transform(const std::shared_ptr<Matrix>& coeff);
-template<> void RDM<2>::transform(const std::shared_ptr<Matrix>& coeff);
+template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1,double>::generate_natural_orbitals() const;
 
-template<> std::shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const;
+template<> void RDM<1,double>::transform(const std::shared_ptr<Matrix>& coeff);
+template<> void RDM<2,double>::transform(const std::shared_ptr<Matrix>& coeff);
 
-template<> void RDM<1>::print(const double thresh) const;
-template<> void RDM<2>::print(const double thresh) const;
-template<> void RDM<3>::print(const double thresh) const;
+template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, const bool all) const;
+
+template<> void RDM<1,double>::print(const double thresh) const;
+template<> void RDM<2,double>::print(const double thresh) const;
+template<> void RDM<3,double>::print(const double thresh) const;
 
 }
 

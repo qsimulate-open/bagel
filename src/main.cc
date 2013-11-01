@@ -204,6 +204,7 @@ throw logic_error("broken!");
       if (saveref != "") { saved.insert(make_pair(saveref, static_pointer_cast<const void>(ref))); }
 
       cout << endl;
+      mpi__->barrier();
       timer.tick_print("Method: " + title);
       cout << endl;
 

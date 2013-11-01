@@ -14,13 +14,14 @@
 
 {
   "title" : "dhf",
+  "gaunt" : true,
+  "breit" : false,
   "thresh" : 1.0e-10
 },
 
 {
   "title" : "zfci",
-  "algorithm" : "relkh",
-  "nstate" : 2
+  "state" : [1]
 }
 
 ]}

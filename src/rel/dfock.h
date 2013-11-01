@@ -42,7 +42,7 @@ class DFock : public ZMatrix {
     const bool gaunt_;
     const bool breit_;
 
-    void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
+    void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const double scale_ex);
 
 
     void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
@@ -52,18 +52,21 @@ class DFock : public ZMatrix {
                            const double scale_exchange);
 
     // when gradient is requested, we store half-transformed integrals
-    bool store_half_; 
-    std::list<std::shared_ptr<RelDFHalf>> half_; 
+    bool store_half_;
+    std::list<std::shared_ptr<RelDFHalf>> half_;
+
+    // if true, do not use bra-ket symmetry in the exchange build (only useful for breit when accurate orbitals are needed).
+    bool robust_;
 
   public:
     DFock(const std::shared_ptr<const Geometry> a,
           const std::shared_ptr<const ZMatrix> hc,
           const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool rhf = true, const double scale_ex = 1.0)
-     : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half) {
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0)
+     : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
 
        assert(breit ? gaunt : true);
-       two_electron_part(coeff, rhf, scale_ex);
+       two_electron_part(coeff, scale_exch);
     }
 
     // Utility functions. They are static so that it could be used from gradient codes

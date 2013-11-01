@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zharrison.h
+// Filename: zharrison.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -35,7 +35,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 
-  update();
+  update(dynamic_pointer_cast<const RelReference>(ref_)->relcoeff());
 }
 
 
@@ -43,6 +43,7 @@ void ZHarrison::common_init() {
   print_header();
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+  assert(relref);
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -51,7 +52,10 @@ void ZHarrison::common_init() {
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
-  if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
+  states_ = idata_->get_vector<int>("state", 0);
+  nstate_ = 0;
+  for (int i = 0; i != states_.size(); ++i)
+    nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
 #if 0
@@ -69,9 +73,8 @@ void ZHarrison::common_init() {
 #endif
     if (ncore_ < 0)
       ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    // norb is a dimension of CI (!= nelec in relativistic cases)
     if (norb_  < 0)
-      norb_ = relref ? relref->relcoeff()->mdim()/2-ncore_ : idata_->get<int>("norb", ref_->coeff()->ndim()-ncore_);
+      norb_ = relref->relcoeff()->mdim()/2-ncore_;
   }
 
 #if 0
@@ -81,19 +84,14 @@ void ZHarrison::common_init() {
 #endif
 
   // additional charge
-  const int charge = idata_->get<int>("charge", 0);
+  charge_ = idata_->get<int>("charge", 0);
 
-  // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
-  const int nspin = idata_->get<int>("nspin", 0);
-  if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
-
-  nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
-  neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
+  nele_ = geom_->nele() - charge_ - ncore_*2;
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nelea_, neleb_);
-  int_space_ = make_shared<RelSpace>(norb_, nelea_-1, neleb_-1, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_, 0);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
 }
 
 
@@ -105,17 +103,14 @@ void ZHarrison::print_header() const {
 
 
 // generate initial vectors
-//   - bits: bit patterns of low-energy determinants
-//   - nspin: #alpha - #beta
-//   - out:
-void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_ptr<RelZDvec> out) {
-  shared_ptr<const Determinants> cdet = space_->basedet();
-  int ndet = nstate_*10;
+void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
+  shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
+  int ndet = nstate*10;
   start_over:
-  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
   // Spin adapt detseeds
-  int oindex = 0;
+  int oindex = offset;
   vector<bitset<nbit__>> done;
   for (auto& it : bits) {
     bitset<nbit__> alpha = it.second;
@@ -125,25 +120,26 @@ void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_pt
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
-    if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
+    if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
     // check if this orbital configuration is already used
     if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
     done.push_back(open_bit);
 
-    pair<vector<tuple<int, int, int>>, double> adapt = space_->basedet()->spin_adapt(nelea_-neleb_, alpha, beta);
+    pair<vector<tuple<int, int, int>>, double> adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      out->find(cdet->nelea(), cdet->neleb())->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
+      out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << space_->basedet()->print_bit(alpha&beta) << " open " << setw(20) << space_->basedet()->print_bit(open_bit) << right << endl;
+          setw(20) << left << space_->finddet(nelea, neleb)->print_bit(alpha&beta) << " open " << setw(20) << space_->finddet(nelea, neleb)->print_bit(open_bit) << right << endl;
 
     ++oindex;
-    if (oindex == nstate) break;
+    if (oindex == offset+nstate) break;
   }
-  if (oindex < nstate) {
-    out->zero();
+  if (oindex < offset+nstate) {
+    for (int i = offset; i != offset+oindex; ++i)
+      out->find(nelea, neleb)->data(i)->zero();
     ndet *= 4;
     goto start_over;
   }
@@ -152,9 +148,8 @@ void ZHarrison::generate_guess(const int nspin, const int nstate, std::shared_pt
 
 
 // returns seed determinants for initial guess
-vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet) {
-  // initial guess is assumed to be in the (nelea, neleb) deterimnant - TODO is this OK?
-  shared_ptr<const Determinants> cdet = space_->basedet();
+vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet, const int nelea, const int neleb) {
+  shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
 
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
@@ -190,7 +185,26 @@ void ZHarrison::compute() {
   cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc_);
+  int offset = 0;
+  for (int ispin = 0; ispin != states_.size(); ++ispin) {
+    int nstate = 0;
+    for (int i = ispin; i != states_.size(); ++i)
+      nstate += states_[i];
+
+    if ((geom_->nele()+ispin-charge_) % 2 == 1) {
+      if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+      continue;
+    }
+
+    const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
+    const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
+    generate_guess(nelea, neleb, nstate, cc_, offset);
+    offset += nstate;
+    if (nelea != neleb) {
+      generate_guess(neleb, nelea, nstate, cc_, offset);
+      offset += nstate;
+    }
+  }
   pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
@@ -211,9 +225,16 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifdef HAVE_MPI_H
+    // Just to make it run in parallel.
+    // Note that ZHarrison is not parallelized and there is no point of running this in parallel
+    cc_->sync();
+    sigma->sync();
+#endif
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const RelZDvec>(cc_);
     auto sigman = make_shared<const RelZDvec>(sigma);
+
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson.residual();
@@ -270,11 +291,10 @@ void ZHarrison::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<RelZDvec>(davidson.civec());
-  s->print(print_thresh_);
+  cc_ = make_shared<RelZDvec>(davidson.civec());
+  cc_->print(print_thresh_);
 
 #if 0
-  cc_ = make_shared<ZDvec>(s);
   for (auto& iprop : properties_) {
     iprop->compute(cc_);
     iprop->print();

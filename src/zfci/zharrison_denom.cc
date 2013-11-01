@@ -25,7 +25,6 @@
 
 #include <iomanip>
 #include <stdexcept>
-#include <bitset>
 #include <src/zfci/zharrison.h>
 #include <src/fci/hzdenomtask.h>
 #include <src/util/combination.hpp>
@@ -45,17 +44,17 @@ void ZHarrison::const_denom() {
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
-      jop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("0000"), j, i, j, i).real();
-      kop->element(j, i) = 0.5*jop_->mo2e(bitset<4>("1111"), j, i, i, j).real();
+      jop->element(j, i) = 0.5*jop_->mo2e("0000", j, i, j, i).real();
+      kop->element(j, i) = 0.5*jop_->mo2e("1111", j, i, i, j).real();
       // assert for Kramers and symmetry
-      assert(fabs(jop_->mo2e(bitset<4>("0000"), j, i, j, i).imag()) < 1.0e-8);
-      assert(fabs(jop_->mo2e(bitset<4>("1111"), j, i, i, j).imag()) < 1.0e-8);
-      assert(fabs(jop_->mo2e(bitset<4>("0101"), j, i, j, i).imag()) < 1.0e-8);
+      assert(fabs(jop_->mo2e("0000", j, i, j, i).imag()) < 1.0e-8);
+      assert(fabs(jop_->mo2e("1111", j, i, i, j).imag()) < 1.0e-8);
+      assert(fabs(jop_->mo2e("0101", j, i, j, i).imag()) < 1.0e-8);
     }
-    h->data(i) = jop_->mo1e(bitset<2>("00"), i,i).real();
+    h->data(i) = jop_->mo1e("00", i,i).real();
     // assert for Kramers and symmetry
-    assert(abs(jop_->mo1e(bitset<2>("00"), i,i) - jop_->mo1e(bitset<2>("11"), i,i)) < 1.0e-8);
-    assert(abs(jop_->mo1e(bitset<2>("00"), i,i).imag()) < 1.0e-8);
+    assert(abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8);
+    assert(abs(jop_->mo1e("00", i,i).imag()) < 1.0e-8);
   }
   denom_t.tick_print("jop, kop");
 

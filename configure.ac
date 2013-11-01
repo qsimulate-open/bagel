@@ -80,19 +80,6 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
         ])
     ])
 ])
-AC_CHECK_LIB(python, main, , [
-    AC_CHECK_LIB(python${PYTHON_VERSION}, main, , [
-        AC_MSG_ERROR("Linking against python library failed.")
-    ])
-])
-AC_CHECK_LIB(boost_python-gcc-mt, main, , [
-    AC_CHECK_LIB(boost_python-mt, main, , [
-        AC_CHECK_LIB(boost_python, main, , [
-            AC_MSG_ERROR("Linking against boost::python library failed.")
-        ])
-    ])
-])
-AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
 
 # slatermem.h and srootlist.h need to be compiled with C++11
 AC_LANG([C++])
@@ -150,6 +137,7 @@ AC_CONFIG_FILES([Makefile
                  src/zfci/Makefile
                  src/ras/Makefile
                  src/casscf/Makefile
+                 src/zcasscf/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: wfn_py.cc
-// Copyright (C) 2013 Michael Caldwell
+// Filename: zqvec.h
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Michael Caldwell <caldwell@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,20 +23,24 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#if 0
-#include <boost/python.hpp>
-#include <src/input/input.h>
 
-using namespace boost::python;
+#ifndef __BAGEL_SRC_ZCASSCF_ZQVEC_H
+#define __BAGEL_SRC_ZCASSCF_ZQVEC_H
 
-BOOST_PYTHON_MODULE(bagel){
-  using namespace bagel;
-  class_<PTree>("PTree", init<const std::string>())
-    .def("pr1nt", &PTree::print)
-    .def("size", &PTree::size)
-    .def("get_child", &PTree::get_child)
-    .def("data", &PTree::data);
+#include <src/zfci/zharrison.h> // 2RDM and transformed integrals
 
-    register_ptr_to_python< std::shared_ptr< PTree > >();
+namespace bagel {
+
+class ZQvec : public ZMatrix {
+  protected:
+
+  public:
+    ZQvec(const int n, const int m, std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const int nclosed,
+          std::shared_ptr<const ZHarrison> fci, const bool gaunt, const bool breit);
+
+    ZQvec(const ZMatrix& a) : ZMatrix(a) {}
+};
+
 }
+
 #endif

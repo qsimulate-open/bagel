@@ -384,7 +384,9 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
       }
     }
 
+#ifndef USE_SERVER_THREAD
     this->flush();
+#endif
 
     bool done;
     do {

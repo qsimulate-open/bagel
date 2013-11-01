@@ -55,8 +55,12 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<RelDFFull> apply_JJ() const;
 
     // zaxpy
-    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o);
+    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o) { ax_plus_y(a, *o); }
+    void ax_plus_y(std::complex<double> a, const RelDFFull& o);
     void scale(std::complex<double> a);
+
+    RelDFFull& operator+=(const RelDFFull& o) { ax_plus_y(1.0, o); return *this; }
+    RelDFFull& operator-=(const RelDFFull& o) { ax_plus_y(-1.0, o); return *this; }
 
     void add_product(std::shared_ptr<const RelDFFull> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset); 
 
@@ -71,7 +75,10 @@ class RelDFFull : public RelDFBase {
     std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
                                                           std::array<std::shared_ptr<const Matrix>,4>) const;
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const RelDFFull>, const double fac) const;
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const RelDFFull>, const double fac) const;
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
+
+    std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
 };
 
 }

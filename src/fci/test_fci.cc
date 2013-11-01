@@ -26,6 +26,7 @@
 
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
+#include <src/fci/distfci.h>
 
 std::vector<double> fci_energy(std::string inp) {
 
@@ -56,14 +57,19 @@ std::vector<double> fci_energy(std::string inp) {
       ref = scf->conv_to_ref();
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
+      std::shared_ptr<DistFCI> dfci;
       std::string algorithm = itree->get<std::string>("algorithm", "");
       if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
       else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, geom, ref);
+      else if (algorithm == "dist" || algorithm == "parallel")
+        dfci = std::make_shared<DistFCI>(itree, geom, ref);
       else assert(false);
 
-      fci->compute();
+      if (fci) fci->compute();
+      else if (dfci) dfci->compute();
+      else assert(false);
       std::cout.rdbuf(backup_stream);
-      return fci->energy();
+      return fci ? fci->energy() : dfci->energy();
     }
   }
   assert(false);
@@ -95,5 +101,11 @@ BOOST_AUTO_TEST_CASE(HARRISON_ZARRABIAN) {
     BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_hz"), reference_fci_energy()));
     BOOST_CHECK(compare(fci_energy("hhe_svp_fci_hz_trip"), reference_fci_energy2()));
 }
+
+#ifdef HAVE_MPI_H
+BOOST_AUTO_TEST_CASE(DIST_FCI) {
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_dist"), reference_fci_energy()));
+}
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
