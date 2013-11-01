@@ -37,7 +37,7 @@ ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double m
   assert(false);
 #endif
 
-      root_weight(this->primsize_);
+  root_weight(this->primsize_);
 }
 
 void ERIBatch::root_weight(const int ps) {

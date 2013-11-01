@@ -30,7 +30,6 @@
 #define __SRC_INTEGRAL_RYS_RYSINTEGRAL_H
 
 #include <tuple>
-#include <typeinfo>
 #include <complex>
 #include <src/molecule/shell.h>
 #include <src/util/constants.h>
@@ -41,8 +40,7 @@
 namespace bagel {
 
  template <typename DataType>
-// class RysIntegral : public Integral {
- class RysIntegral : public Integral_Base<DataType> {
+ class RysIntegral : public Integral {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -72,8 +70,8 @@ namespace bagel {
     int tenno_;
     int breit_;
 
-    DataType *data_;
-    DataType *data2_;
+    double *data_;
+    double *data2_;
     unsigned int size_final_;
 
     /// info for Rys quadruture
@@ -206,7 +204,7 @@ namespace bagel {
     void allocate_arrays(const size_t ps) {
       size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
-      buff_ = stack_->get(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
+      buff_ = stack_->get<DataType>(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
       DataType* pointer = buff_;
       screening_ = (int*)pointer;
       pointer += ps;
@@ -226,12 +224,9 @@ namespace bagel {
 
     size_t size_allocated_;
 
-    // TODO Is there a way to avoid having adding the pointer to a MemResources object to this class?
-//    MemResources<DataType>* resources_;
-
     // for deallocation
-    DataType* stack_save_;
-    DataType* stack_save2_;
+    double* stack_save_;
+    double* stack_save2_;
 
 
     // contraction
@@ -239,7 +234,7 @@ namespace bagel {
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
       const int worksize = nsize * pdim1;
-      double* const work = stack_->get(worksize);
+      double* const work = stack_->get<double>(worksize);
       double* current_cont = cont;
 
       for (int i = 0; i != cdim0; ++i) {
@@ -265,7 +260,7 @@ namespace bagel {
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
       const int worksize = pdim1 * ac;
-      double* const work = stack_->get(worksize);
+      double* const work = stack_->get<double>(worksize);
       double* current_cont = cont;
 
       for (int n = 0; n != nsize; ++n) { // loop of cdim * cdim
@@ -298,7 +293,7 @@ namespace bagel {
                                const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1) {
       // transformation of index1
       const int worksize = pdim1 * asize;
-      double* const work = stack_->get(worksize);
+      double* const work = stack_->get<double>(worksize);
 
       for (int i = 0; i != cdim0; ++i) {
         const int begin0 = ranges0[i].first;
@@ -320,11 +315,11 @@ namespace bagel {
     }
 
     bool allocated_here_;
-    std::shared_ptr<StackMemory<DataType>> stack_;
+    std::shared_ptr<StackMem> stack_;
 
   public:
 
-    RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMemory<DataType>> stack)
+    RysIntegral(const std::array<std::shared_ptr<const Shell>,4>& info, std::shared_ptr<StackMem> stack)
      : basisinfo_(info), spherical1_(info[0]->spherical()), spherical2_(info[2]->spherical()), deriv_rank_(0), tenno_(0), breit_(0) {
       assert(spherical1_ == info[1]->spherical());
       assert(spherical2_ == info[3]->spherical());
@@ -338,7 +333,7 @@ namespace bagel {
       }
     }
 
-    RysIntegral(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMemory<DataType>> stack)
+    RysIntegral(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMem> stack)
      : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
       auto dum = std::make_shared<const Shell>(spherical2_);
       basisinfo_ = {{ info[0], info[1], dum, dum }};
@@ -367,9 +362,9 @@ namespace bagel {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    virtual DataType* data(const int i) override { assert(i == 0); return data_; }
-    const DataType* data() const { return data_; }
-    const DataType* data2() const { return data2_; }
+    virtual double* data(const int i) override { assert(i == 0); return data_; }
+    const double* data() const { return data_; }
+    const double* data2() const { return data2_; }
     bool data2_exists() const { return data2_ != nullptr; }
     size_t data_size() const { return size_final_; }
 

@@ -1,4 +1,3 @@
-#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexeribatch.cc
@@ -32,11 +31,13 @@ using namespace std;
 using namespace bagel;
 
 ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
-                   shared_ptr<StackMemory<complex<double>>> stack) :  ERIBatch_Base(_info, max_density, 0, 0, stack) {
+                   shared_ptr<StackMem> stack) :  ERIBatch_Base(_info, max_density, 0, 0, stack) {
 
 #ifdef LIBINT_INTERFACE
   assert(false);
 #endif
+
+  root_weight(this->primsize_);
 }
 
 void ComplexERIBatch::root_weight(const int ps) {
@@ -55,4 +56,3 @@ void ComplexERIBatch::compute_ssss(const complex<double> integral_thresh) {
 void ComplexERIBatch::compute() {
   throw logic_error("ComplexERIBatch::compute not yet implemented");
 }
-#endif

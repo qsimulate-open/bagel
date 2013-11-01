@@ -31,20 +31,17 @@
 
 namespace bagel {
 
-template <typename DataType>
-class Integral_Base {
+class Integral {
   protected:
 
   public:
-    Integral_Base() {}
+    Integral () {}
 
     virtual void compute() = 0;
 
-    virtual DataType* data(const int i) = 0;
+    virtual double* data(const int i) = 0;
 
 };
-
-using Integral = Integral_Base<double>;
 
 }
 

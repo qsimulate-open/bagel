@@ -32,6 +32,7 @@
 #include <src/integral/rys/erirootlist.h>
 #include <src/integral/rys/breitrootlist.h>
 #include <src/integral/rys/spin2rootlist.h>
+#include <complex>
 
 namespace bagel {
 
@@ -69,10 +70,10 @@ template <typename DataType>
       const int nexp2 = this->basisinfo_[2]->num_primitive();
       const int nexp3 = this->basisinfo_[3]->num_primitive();
 
-      DataType* const Ecd_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      DataType* const qx_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      DataType* const qy_save = this->stack_->get(this->prim2size_*this->prim3size_);
-      DataType* const qz_save = this->stack_->get(this->prim2size_*this->prim3size_);
+      DataType* const Ecd_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const qx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const qy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const qz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
 
       const double minexp0 = *std::min_element(exp0, exp0+nexp0);
       const double minexp1 = *std::min_element(exp1, exp1+nexp1);
@@ -98,7 +99,7 @@ template <typename DataType>
       const double r23_sq = this->CD_[0] * this->CD_[0] + this->CD_[1] * this->CD_[1] + this->CD_[2] * this->CD_[2];
 
       unsigned int tuple_length = 0u;
-      DataType* const tuple_field = this->stack_->get(nexp2*nexp3*3);
+      DataType* const tuple_field = this->stack_->template get<DataType>(nexp2*nexp3*3);
       int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
       {
         const double cxp_min = minexp0 + minexp1;
@@ -250,7 +251,7 @@ template <typename DataType>
   public:
 
     ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0,
-                 std::shared_ptr<StackMemory<DataType>> stack = std::shared_ptr<StackMemory<DataType>>()) : RysIntegral<DataType>(o, stack) {
+                 std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType>(o, stack) {
 
       this->breit_ = breit;
 

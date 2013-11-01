@@ -1,4 +1,3 @@
-#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexeribatch.h
@@ -45,7 +44,7 @@ class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
 
     // dummy will never be used.
     ComplexERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const std::complex<double> dummy = std::complex<double>(0.0,0.0),
-             const bool dum = true, std::shared_ptr<StackMemory<std::complex<double>>> stack = std::shared_ptr<StackMemory<std::complex<double>>>());
+             const bool dum = true, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
 
     /// compute a batch of integrals
     void compute() override;
@@ -56,7 +55,5 @@ class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
 };
 
 }
-
-#endif
 
 #endif

@@ -43,10 +43,9 @@
 
 namespace bagel {
 
-template <typename DataType>
- class StackMemory {
+ class StackMem {
   protected:
-    std::unique_ptr<DataType[]> stack_area_;
+    std::unique_ptr<double[]> stack_area_;
     size_t pointer_;
     const size_t total_;
 
@@ -55,7 +54,7 @@ template <typename DataType>
 #endif
 
   public:
-    StackMemory() : pointer_(0LU), total_(20000000LU) { // TODO 80MByte
+    StackMem() : pointer_(0LU), total_(20000000LU) { // TODO 80MByte
       stack_area_ = std::unique_ptr<double[]>(new double[total_]);
 
       // in case we use Libint for ERI
@@ -70,16 +69,20 @@ template <typename DataType>
     #endif
     }
 
+    template <typename DataType = double>
     DataType* get(const size_t size) {
-      assert(pointer_+size < total_);
-      DataType* out = stack_area_.get() + pointer_;
-      pointer_ += size;
+      assert(pointer_ + size < total_);
+      assert(size * sizeof(DataType) % sizeof(double) == 0);
+      DataType* out = reinterpret_cast<DataType*> (stack_area_.get() + pointer_);
+      pointer_ += (size * sizeof(DataType) / sizeof(double));
       return out;
     }
 
+    template <typename DataType = double>
     void release(const size_t size, DataType* p) {
-      pointer_ -= size;
-      assert(p == stack_area_.get()+pointer_ || size == 0);
+      assert(size * sizeof(DataType) % sizeof(double) == 0);
+      pointer_ -= (size * sizeof(DataType) / sizeof(double));
+      assert(p == reinterpret_cast<DataType*> (stack_area_.get()+pointer_) || size == 0);
     }
 
     void clear() { pointer_ = 0LU; }
@@ -92,19 +95,18 @@ template <typename DataType>
 };
 
 
-template <typename DataType>
- class MemResources {
+ class Resources {
   private:
     std::shared_ptr<Process> proc_;
-    std::vector<std::shared_ptr<StackMemory<DataType>>> stackmem_;
+    std::vector<std::shared_ptr<StackMem>> stackmem_;
     std::vector<std::shared_ptr<std::atomic_flag>> flag_;
     size_t max_num_threads_;
 
   public:
-    MemResources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
+    Resources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
       for (int i = 0; i != max_num_threads_; ++i) {
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-        stackmem_.push_back(std::make_shared<StackMemory<DataType>>());
+        stackmem_.push_back(std::make_shared<StackMem>());
       }
 
     #ifdef LIBINT_INTERFACE
@@ -112,17 +114,18 @@ template <typename DataType>
     #endif
     }
 
-    std::shared_ptr<StackMemory<DataType>> get() {
+    std::shared_ptr<StackMem> get() {
       for (int i = 0; i != max_num_threads_; ++i) {
         bool used = flag_[i]->test_and_set();
         if (!used) {
           return stackmem_[i];
         }
       }
-      throw std::runtime_error("Stack Memory exhausted");
+      throw std::runtime_error("Stack Memory exhausted (using real numbers)");
       return stackmem_.front();
     }
-    void release(std::shared_ptr<StackMemory<DataType>> o) {
+
+    void release(std::shared_ptr<StackMem> o) {
       bool found = false;
       for (int i = 0; i != max_num_threads_; ++i) {
         if (stackmem_[i] == o) {
@@ -139,11 +142,7 @@ template <typename DataType>
     std::shared_ptr<Process> proc() { return proc_; }
 };
 
-using Resources = MemResources<double>;
-using StackMem = StackMemory<double>;
-
-extern MemResources<double>* resources__;
-extern MemResources<std::complex<double>>* complexresources__;
+extern Resources* resources__;
 
 }
 

@@ -104,4 +104,5 @@ inline double inline_erf(const double inpt) {
   }
   return t;
 };
+
 #endif
