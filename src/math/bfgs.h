@@ -83,12 +83,12 @@ class BFGS {
 
         // (4)
         for (int i = 0; i < n; ++i) {
-          auto s1 = 1.0 / delta[i]->dot_product(D[i]);
-          auto s2 = 1.0 / D[i]->dot_product(y[i]);
+          auto s1 = detail::real(1.0 / D[i]->dot_product(delta[i]));
+          auto s2 = detail::real(1.0 / D[i]->dot_product(y[i]));
           auto s3 = delta[i]->dot_product(grad);
-          auto s4 =     y[i]->dot_product(grad);
+          auto s4 = y[i]->dot_product(grad);
           auto s5 = delta[i]->dot_product(D[n]);
-          auto s6 =     y[i]->dot_product(D[n]);
+          auto s6 = y[i]->dot_product(D[n]);
           auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           auto t2 = s1 * s3;
           auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
@@ -99,8 +99,8 @@ class BFGS {
           yy->ax_plus_y(-t4, y[i]);
         }
         { // (5)
-          auto s1 = 1.0 / delta[n]->dot_product(D[n]);
-          auto s2 = 1.0 /     D[n]->dot_product(std::shared_ptr<const T>(yy));
+          auto s1 = detail::real(1.0 / D[n]->dot_product(delta[n]));
+          auto s2 = detail::real(1.0 / D[n]->dot_product(std::shared_ptr<const T>(yy)));
           auto s3 = delta[n]->dot_product(grad);
           auto s4 =       yy->dot_product(grad);
           auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
