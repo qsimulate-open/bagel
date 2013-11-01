@@ -254,8 +254,8 @@ class DistRASCivector {
     // MPI routines
     // Never call concurrently
     void init_mpi_recv() const {
-      put_ = std::make_shared<BufferPutRequest>(0);
-      recv_ = std::make_shared<RecvRequest>( blocks_.size());
+      put_ = std::make_shared<BufferPutRequest>();
+      recv_ = std::make_shared<RecvRequest>();
     }
 
     // Never call concurrently
@@ -269,8 +269,8 @@ class DistRASCivector {
         size_t d = done ? 0 : 1;
         mpi__->soft_allreduce(&d, 1);
         done = d == 0;
-        if (!done) this->flush();
 #endif
+        if (!done) this->flush();
         if (!done) std::this_thread::sleep_for(sleeptime__);
       } while (!done);
       // cancel all MPI calls
@@ -281,15 +281,16 @@ class DistRASCivector {
     void flush() const {
       for (auto i : put_->get_calls()) {
         // off is interpreted as lexical number of the alpha string
-        const size_t tag = std::get<1>(i);
-        const size_t dest = std::get<2>(i);
-        const size_t astring = std::get<3>(i);
+        const size_t tag = i[1];
+        const size_t dest = i[2];
+        const size_t astring = i[3];
         std::unique_ptr<double[]> buf(new double[det_->lenb()]);
         std::fill_n(buf.get(), det_->lenb(), 0.0);
         // locate astring
         std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(astring));
-        size_t off;
-        std::tie(std::ignore, off) = aspace->dist().locate(astring - aspace->offset());
+        size_t rank, off;
+        std::tie(rank, off) = aspace->dist().locate(astring - aspace->offset());
+        assert(rank == mpi__->rank());
         for (auto b : allowed_blocks<0>(aspace))
           std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
         put_->request_send(std::move(buf), det_->lenb(), dest, tag);
@@ -298,7 +299,7 @@ class DistRASCivector {
     }
 
     int get_bstring_buf(double* buf, const size_t a) const {
-      assert(put_);
+      assert(put_ && recv_);
       const size_t mpirank = mpi__->rank();
       std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(a));
       size_t rank, off;

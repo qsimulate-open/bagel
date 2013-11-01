@@ -69,8 +69,14 @@ class DistQueue {
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
         {
-          std::lock_guard<std::mutex> lock(listmut_);
-          tasks_.push_back(std::make_shared<TaskType>(std::forward<Args>(args)...));
+          auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
+          if (t->test()) {
+            t->compute();
+          }
+          else {
+            std::lock_guard<std::mutex> lock(listmut_);
+            tasks_.push_back(t);
+          }
         }
 
         bool full_pass = false;
@@ -91,17 +97,21 @@ class DistQueue {
           }
           if (task) task->compute();
           else full_pass = true;
-        }  while (!full_pass);
+        } while (!full_pass);
 
-#ifndef USE_SERVER_THREAD
         flush();
-#endif
       }
 
       template <typename... Args>
       void emplace(Args&&... args) {
-        std::lock_guard<std::mutex> lock(listmut_);
-        tasks_.push_back(std::make_shared<TaskType>(std::forward<Args>(args)...));
+        auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
+        if (t->test()) {
+          t->compute();
+        }
+        else {
+          std::lock_guard<std::mutex> lock(listmut_);
+          tasks_.push_back(t);
+        }
       }
 
       // Only one thread should call this version
@@ -133,8 +143,8 @@ class DistQueue {
           size_t d = done ? 0 : 1;
           mpi__->soft_allreduce(&d, 1);
           done = (d == 0);
-          if (!done) flush();
 #endif
+          if (!done) flush();
           if (!done) std::this_thread::sleep_for(sleeptime__);
         } while (!done);
         done_ = true;
@@ -161,7 +171,6 @@ class DistQueue {
             }
             if (task) task->compute();
             else full_pass = true;
-
           } while (!full_pass);
           if (!done_) std::this_thread::sleep_for(sleeptime__);
         } while (!done_);
@@ -171,7 +180,6 @@ class DistQueue {
       void finish() { finish_master(); }
 
     private:
-#ifndef USE_SERVER_THREAD
       // Calls flush() on all of the flushable objects
       void flush() { _flush<0, FlushTypes...>(); }
 
@@ -180,7 +188,6 @@ class DistQueue {
         _flush<iter+1, Tail...>();
       }
       template <int iter> void _flush() {}
-#endif
 };
 
 }

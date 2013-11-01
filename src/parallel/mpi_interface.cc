@@ -160,7 +160,7 @@ int MPI_Interface::iallreduce(size_t* a, const size_t size) {
 #endif
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
-  request_.insert(make_pair(cnt_, rq));
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_;
@@ -267,7 +267,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 #endif
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
-  request_.insert(make_pair(cnt_, rq));
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -288,7 +288,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
 #endif
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
-  request_.insert(make_pair(cnt_, rq));
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -308,7 +308,7 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
 #endif
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
-  request_.insert(make_pair(cnt_, rq));
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -327,7 +327,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
 #endif
   lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
-  request_.insert(make_pair(cnt_, rq));
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -336,6 +336,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
 
 void MPI_Interface::wait(const int rq) {
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second)
@@ -346,6 +347,7 @@ void MPI_Interface::wait(const int rq) {
 
 void MPI_Interface::cancel(const int rq) {
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second)
@@ -357,6 +359,7 @@ void MPI_Interface::cancel(const int rq) {
 bool MPI_Interface::test(const int rq) {
   bool out = true;
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second) {

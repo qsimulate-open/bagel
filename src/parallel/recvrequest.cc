@@ -171,22 +171,22 @@ RecvRequest::RecvRequest(const size_t nprobes)
 
 
 int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off, const size_t probe_offset) {
-  lock_guard<mutex> lock(block_);
   // sending size
+  lock_guard<mutex> lock(block_);
   auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, buf);
   counter_ += mpi__->size()*nprobes_;
   const int srq = mpi__->request_send(p->size, 4, dest, probe_key2__ + probe_offset);
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
-  auto m = request_.insert(make_pair(rrq, p));
+  auto m = request_.emplace(rrq, p);
   assert(m.second);
   return rrq;
 }
 
 
 bool RecvRequest::test() {
-  lock_guard<mutex> lock(block_);
   bool done = true;
+  lock_guard<mutex> lock(block_);
   for (auto i = request_.begin(); i != request_.end(); ) {
     if (mpi__->test(i->first)) {
       i = request_.erase(i);
@@ -197,4 +197,3 @@ bool RecvRequest::test() {
   }
   return done;
 }
-

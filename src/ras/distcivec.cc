@@ -59,9 +59,8 @@ namespace bagel {
         int k = 0;
         for (auto& iter : det_->phia(alexical)) {
           // loop through blocks
-          const int l = this_->get_bstring_buf(buf_.get() + lb*k, iter.source) ;
+          const int l = this_->get_bstring_buf(buf_.get() + lb*k++, iter.source) ;
           if (l >= 0) requests_.push_back(l);
-          ++k;
         }
       }
 
@@ -124,24 +123,19 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   this->init_mpi_recv();
 
-#ifndef USE_SERVER_THREAD
-    DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
-#else
-    DistQueue<RAS::DistSpinTask> tasks;
-#endif
+  DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
 
   const size_t nthreads = resources__->max_num_threads();
   auto spin_task = [&nthreads, &out, &lexicalmap, &tasks, this] (const size_t myid) {
-
     for (auto& ispace : this->det()->stringspacea()) {
       if (!ispace) continue;
-      StaticDist global_dist(ispace->size(), mpi__->size());
       size_t astart, aend;
-      tie(astart, aend) = global_dist.range(mpi__->rank());
+      tie(astart, aend) = ispace->dist().range(mpi__->rank());
 
       StaticDist thread_dist(aend - astart, nthreads);
       size_t thread_start, thread_end;
       tie(thread_start, thread_end) = thread_dist.range(myid);
+      cout << "size of this space: " << thread_end - thread_start << endl;
 
       for (size_t ia = thread_start; ia < thread_end; ++ia)
         tasks.emplace_and_compute(this->det()->stringa(ia + astart + ispace->offset()), this, out, this->det(), &lexicalmap);
