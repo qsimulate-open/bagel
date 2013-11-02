@@ -1,10 +1,8 @@
-//#if 0
-//
 // Author:  Ryan Reynolds
 // Date Created:  July 2013
-// Based heavily upon a related file from April-May 2009
+// Based upon a related file for 1-D quadrature from April-May 2009
 
-// These three lines all realate to the error function evaluation for complex numbers
+// These three lines all relate to the error function evaluation for complex numbers
 constexpr double CUTOFF  = 0.5;    // If the argument's real part is smaller than this, use the Taylor expansion around 0; otherwise use the continued fraction 
 constexpr int NTAYLOR = 200;    // This is the number of terms in the Taylor expansion used to represent the error function
 constexpr int NTERMS  = 14000;   // This is the number of terms in the continued fraction used to represent the error function
@@ -752,4 +750,3 @@ using namespace boost;
   return 0;
 }           // End main function
 #endif
-//#endif

@@ -29,10 +29,6 @@
 
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/rysintegral.h>
-#include <src/integral/rys/erirootlist.h>
-#include <src/integral/rys/breitrootlist.h>
-#include <src/integral/rys/spin2rootlist.h>
-#include <complex>
 
 namespace bagel {
 
