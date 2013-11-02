@@ -58,7 +58,8 @@ class SlaterBatch : public RysInt {
 
   public:
 
-    SlaterBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double, const double gamma, const bool doyukawa = false);
+    SlaterBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double, const double gamma, const bool doyukawa = false,
+                std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
     ~SlaterBatch();
 
     /// compute a batch of integrals
