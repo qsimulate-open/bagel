@@ -105,6 +105,10 @@ void ZCASSCF::init() {
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 
+  charge_ = idata_->get<int>("charge", 0);
+  if (nclosed_*2 > geom_->nele() - charge_)
+    throw runtime_error("two many closed orbitals in the input");
+
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
@@ -120,9 +124,11 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
-  mute_stdcout();
-  fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
-  resume_stdcout();
+  if (nact_) {
+    mute_stdcout();
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    resume_stdcout();
+  }
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
@@ -142,7 +148,7 @@ void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<doub
   for (auto& e : energy) {
     cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
                  << setw(20) << fixed << setprecision(12) << e << "   "
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
+                 << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                  << time << endl;
     ++i;
   }

@@ -41,6 +41,8 @@ class ZCASSCF : public Method {
     int nvirt_;
     int nbasis_;
 
+    int charge_;
+
     bool gaunt_;
     bool breit_;
 

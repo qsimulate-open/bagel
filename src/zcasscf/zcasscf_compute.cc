@@ -50,28 +50,48 @@ void ZCASSCF::compute() {
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
-    mute_stdcout();
-    if (iter) fci_->update(coeff_);
-    fci_->compute();
-    fci_->compute_rdm12();
-    // get energy
-    energy_ = fci_->energy();
-    resume_stdcout();
+    if (nact_) {
+      mute_stdcout();
+      if (iter) fci_->update(coeff_);
+      fci_->compute();
+      fci_->compute_rdm12();
+      resume_stdcout();
+    }
 
     // calculate 1RDM in an original basis set
-    shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+    shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : shared_ptr<const ZMatrix>();
 
     // closed Fock operator
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
 
     // active Fock operator
-    shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
-    shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
+    shared_ptr<const ZMatrix> afock;
+    if (nact_) {
+      shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
+      afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
+    } else {
+      afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
+    }
     assert(coeff_->mdim()== nbasis_*2);
 
     // qvec
-    shared_ptr<const ZMatrix> qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
+    shared_ptr<const ZMatrix> qvec;
+    if (nact_) {
+      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
+    }
+
+    // get energy
+    if (nact_) {
+      energy_ = fci_->energy();
+    } else {
+      assert(nstate_ == 1);
+      energy_.resize(1);
+      energy_[0] = geom_->nuclear_repulsion();
+      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
+      for (int i = 0; i != nclosed_*2; ++i)
+        energy_[0] += 0.5*mo->element(i,i).real();
+    }
 
     if (iter == 0) {
       denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>(1.e10);
@@ -100,6 +120,8 @@ void ZCASSCF::compute() {
     // print energy
     const double gradient = amat->rms();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+
+    if (gradient < thresh_) break;
   }
 }
 
@@ -153,9 +175,13 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 
 shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
-  auto cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-  // TODO double check later
-  cfockd->hermite();
+
+  shared_ptr<ZMatrix> cfockd;
+  if (nact_) {
+    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
+    // TODO check
+    cfockd->hermite();
+  }
 
   // ia part (4.7a)
   if (nvirt_ && nclosed_) {
