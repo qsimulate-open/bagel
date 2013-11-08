@@ -117,81 +117,51 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     const int n = j-i;
 
     auto cnow = coeff->slice(i, j);
+    auto corig = cnow->copy();
     auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
     s->diagonalize(tmp.get());
     *cnow *= *s;
 
+    // fix the phase - making the largest large-component element in each colomn real
+    for (int i = 0; i != n; ++i) {
+      const int iblock = i/(n/2);
+      complex<double> ele = *max_element(cnow->element_ptr(iblock*nb,i), cnow->element_ptr((iblock+1)*nb,i),
+                                         [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
+      const complex<double> fac = norm(ele) / ele;
+      transform(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), cnow->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
+    }
+
+    // off diagonal
+    const int m = n/2;
+    cnow->add_block(-1.0, nb, 0, nb, m, cnow->get_submatrix(0, m, nb, m)->get_conjg());
+    cnow->copy_block(0, m, nb, m, (*cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->add_block(-1.0, nb*3, 0, nb, m, cnow->get_submatrix(nb*2, m, nb, m)->get_conjg());
+    cnow->copy_block(nb*2, m, nb, m, (*cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0)));
+
+    // diagonal
+    cnow->add_block(1.0, 0, 0, nb, m, cnow->get_submatrix(nb, m, nb, m)->get_conjg());
+    cnow->copy_block(nb, m, nb, m, cnow->get_submatrix(0, 0, nb, m)->get_conjg());
+    cnow->add_block(1.0, nb*2, 0, nb, m, cnow->get_submatrix(nb*3, m, nb, m)->get_conjg());
+    cnow->copy_block(nb*3, m, nb, m, cnow->get_submatrix(nb*2, 0, nb, m)->get_conjg());
+
+    auto diag = (*cnow % *overlap * *cnow).diag();
+    for (int i = 0; i != n; ++i)
+      for (int j = 0; j != ndim; ++j)
+        cnow->element(j,i) /= sqrt(diag[i].real());
+
+    ZMatrix unit = *corig % *overlap * *cnow;
+    unit.purify_unitary();
+    *cnow = *corig * unit;
+
     assert(i%2 == 0);
     reordered->copy_block(0, i/2,      ndim, n/2, cnow->element_ptr(0, 0));
     reordered->copy_block(0, i/2+noff, ndim, n/2, cnow->element_ptr(0, n/2));
+
     i = j;
   }
 
-  // fix the phase - making the largest large-component element in each colomn real
-  for (int i = 0; i != mdim; ++i) {
-    const int iblock = i/(mdim/2);
-    complex<double> ele = *max_element(reordered->element_ptr(iblock*nb,i), reordered->element_ptr((iblock+1)*nb,i),
-                                       [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
-    const complex<double> fac = norm(ele) / ele;
-    transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
-  }
-
-#ifndef NDEBUG
-  {
-    ZMatrix tmp3 = *reordered % *overlap * *reordered;
-    for (int i = 0; i != tmp3.ndim(); ++i) tmp3(i,i) = 0.0;
-    assert(tmp3.rms() < 1.0e-6);
-  }
-#endif
-
-  // off diagonal
-  reordered->add_block(-1.0, nb, 0, nb, noff, reordered->get_submatrix(0, noff, nb, noff)->get_conjg());
-  reordered->copy_block(0, noff, nb, noff, (*reordered->get_submatrix(nb, 0, nb, noff)->get_conjg() * (-1.0)));
-  reordered->add_block(-1.0, nb*3, 0, nb, noff, reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg());
-  reordered->copy_block(nb*2, noff, nb, noff, (*reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg() * (-1.0)));
-
-  // diagonal
-  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
-  reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
-  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
-  reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
-
-  auto diag = (*reordered % *overlap * *reordered).diag();
-  for (int i = 0; i != mdim; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      reordered->element(j,i) /= sqrt(diag[i].real());
-    }
-  }
-
-
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
-#ifndef NDEBUG
-  {
-    ZMatrix tmp = *out[0] % *overlap * *out[0];
-    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
-    assert(tmp.rms() < 1.0e-6);
-    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
-    assert(tmp2.rms() < 1.0e-6);
-  }
-#endif
-
-#if 0
-//#ifndef NDEBUG
-  { // check reconstructed Fock matrix
-    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, coeff_->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());
-    auto diag0 = (*out[0] % *fock * *out[0]).diag();
-    auto diag1 = (*out[1] % *fock * *out[1]).diag();
-    for (int i = 0; i != out[0]->mdim(); ++i) {
-      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
-        stringstream ss; ss << "Fock reconstruction failed. " << diag0[i] << " " << ref_->eig()[i*2+nstart] << endl
-                            << "                            " << diag1[i] << " " << ref_->eig()[i*2+nstart] << endl;
-        throw logic_error(ss.str());
-      }
-    }
-  }
-#endif
   return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
 }
 
