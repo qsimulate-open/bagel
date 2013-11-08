@@ -47,11 +47,11 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   array<list<shared_ptr<RelDFHalf>>,2> half_coulomb = fci->jop()->half_complex_coulomb();
 //array<list<shared_ptr<RelDFHalf>>,2> half_gaunt   = fci->jop()->half_complex_gaunt();
 
-  // (rj|kl) G(ij,kl) = (rj|g)(g|kl) G(ij,kl)
+  // (jr|kl) G(ji,kl) = (jr|g)(g|kl) G(ji,kl)
   //
   // [1] compute (g|kl)
-  // [2] compute [g|ji]* = (g|kl)*G(ij|kl)
-  // [3] compute (g|jr)->form_2index([g|ji]*)
+  // [2] compute [g|ji] = (g|kl)*G(ji|kl)
+  // [3] compute [(g|jr)->form_2index([g|ji])]*
 
   // in principle this is redundant, but cheap..
   unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
@@ -76,39 +76,17 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   for (auto& t : full_d) {
     for (auto& s : full) {
       bitset<4> b;
-      b[0] = s.first[0];
-      b[1] = t.first[1];
-      b[2] = s.first[1];
-      b[3] = t.first[0];
+      // TODO check!
+      b[3] = t.first[1]; b[2] = s.first[1]; b[1] = t.first[0]; b[0] = s.first[0];
       // t^+ s^+ t s
       shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av(b);
       // t^+ t s^+ s
       shared_ptr<ZRDM<2>> rdm = rdmbuf->clone();
       assert(rdm->norb() == nact);
-      SMITH::sort_indices<2,0,1,3,0,1,1,1>(rdmbuf->data(), rdm->data(), nact, nact, nact, nact);
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdmbuf->data(), rdm->data(), nact, nact, nact, nact);
       *t.second += *s.second->apply_2rdm(rdm);
     }
   }
-
-#if 0
-  // code to check full_d
-  double energy = 0.0;
-  double tmp = 0.0;
-  for (auto& t : full_d) {
-    for (auto& s : full) {
-      if (t.first == s.first) {
-        array<std::shared_ptr<DFFullDist>,2> sdata = s.second->get_data();
-        array<std::shared_ptr<DFFullDist>,2> tdata = t.second->get_data();
-        energy += ddot_(sdata[0]->size(), sdata[0]->block(0)->get(), 1, tdata[0]->block(0)->get(), 1)
-                - ddot_(sdata[1]->size(), sdata[1]->block(0)->get(), 1, tdata[1]->block(0)->get(), 1);
-        tmp    += ddot_(sdata[0]->size(), sdata[1]->block(0)->get(), 1, tdata[0]->block(0)->get(), 1)
-                + ddot_(sdata[1]->size(), sdata[0]->block(0)->get(), 1, tdata[1]->block(0)->get(), 1);
-      }
-    }
-  }
-  cout << setprecision(10) << energy*0.5 << endl;
-  cout << setprecision(10) << tmp*0.5 << endl;
-#endif
 
   // make another transformed integral
   unordered_map<bitset<1>, shared_ptr<const RelDFFull>> fullia;
@@ -132,10 +110,10 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   }
 
   unordered_map<bitset<1>, shared_ptr<ZMatrix>> qri;
-  for (auto& i : fullia) { // (g|ir)
+  for (auto& i : fullia) { // (g|jr)
     for (auto& j : full_d) { // (g|ji)
       if (i.first[0] == j.first[1]) {
-        shared_ptr<ZMatrix> tmp = i.second->form_2index(j.second, 1.0);
+        shared_ptr<ZMatrix> tmp = i.second->form_2index(j.second, 1.0, false);
         bitset<1> target; target[0] = j.first[0];
         if (qri.find(target) == qri.end()) {
           qri[target] = tmp;
@@ -150,6 +128,9 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   // I need overlap..
   auto overlap = make_shared<const RelOverlap>(geom);
   shared_ptr<const ZMatrix> ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
+
+  qri[bitset<1>("0")] = qri[bitset<1>("0")]->get_conjg();
+  qri[bitset<1>("1")] = qri[bitset<1>("1")]->get_conjg();
 
   *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * *ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * *ocoeff);
 

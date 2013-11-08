@@ -87,6 +87,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
 array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
   shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
   shared_ptr<ZMatrix> reordered = coeff->clone();
+  auto overlap = make_shared<RelOverlap>(geom_);
 
   const int noff = reordered->mdim()/2;
   const int ndim = reordered->ndim();
@@ -98,7 +99,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
-  auto overlap = make_shared<RelOverlap>(geom_);
   auto sigmaz = overlap->copy();
   sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb));
   sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb));
@@ -145,15 +145,10 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
 #endif
 
   // off diagonal
-  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
-  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
-  reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
-  reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
-
-  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg();
-  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg();
-  reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
-  reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
+  reordered->add_block(-1.0, nb, 0, nb, noff, reordered->get_submatrix(0, noff, nb, noff)->get_conjg());
+  reordered->copy_block(0, noff, nb, noff, (*reordered->get_submatrix(nb, 0, nb, noff)->get_conjg() * (-1.0)));
+  reordered->add_block(-1.0, nb*3, 0, nb, noff, reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg());
+  reordered->copy_block(nb*2, noff, nb, noff, (*reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg() * (-1.0)));
 
   // diagonal
   reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
@@ -161,7 +156,13 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
   reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
   reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
 
-  reordered->scale(0.5);
+  auto diag = (*reordered % *overlap * *reordered).diag();
+  for (int i = 0; i != mdim; ++i) {
+    for (int j = 0; j != ndim; ++j) {
+      reordered->element(j,i) /= sqrt(diag[i].real());
+    }
+  }
+
 
   array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
@@ -174,14 +175,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     assert(tmp2.rms() < 1.0e-6);
   }
 #endif
-
-  auto diag = (*out[0] % *overlap * *out[0]).diag();
-  for (int i = 0; i != noff; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      out[0]->element(j,i) /= sqrt(diag[i].real());
-      out[1]->element(j,i) /= sqrt(diag[i].real());
-    }
-  }
 
 #if 0
 //#ifndef NDEBUG

@@ -75,7 +75,7 @@ class RelDFFull : public RelDFBase {
     std::list<std::shared_ptr<RelDFHalfB>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
                                                           std::array<std::shared_ptr<const Matrix>,4>) const;
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const RelDFFull>, const double fac) const;
-    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const RelDFFull>, const double fac) const;
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const RelDFFull>, const double fac, const bool conjugate_left = true) const;
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;

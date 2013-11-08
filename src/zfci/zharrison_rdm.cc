@@ -163,6 +163,9 @@ void ZHarrison::compute_rdm12() {
     }
 
     // for completeness we can compute all the blocks (2RDM), which are useful in CASSCF
+    if (rdm1_[istate].find(bitset<2>("10")) == rdm1_[istate].end())
+      rdm1_[istate][bitset<2>("10")] = rdm1_[istate].at(bitset<2>("00"))->clone();
+
     for (int i = 0; i != 4; ++i) {
       for (int j = 0; j != 4; ++j) {
         bitset<4> target((j << 2) + i);
@@ -188,9 +191,13 @@ void ZHarrison::compute_rdm12() {
           SMITH::sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
         } else {
+          // This is dangerous.. TODO
+          rdm2_[istate][target] = rdm2_[istate][bitset<4>("0000")]->clone();
+#if 0
           cout << target << endl;
           for (auto& i : rdm2_[istate]) cout << i.first << endl;
           throw logic_error("debug .. ZHarrison::compute_rdm12()");
+#endif
         }
       }
     }
@@ -223,7 +230,7 @@ void ZHarrison::compute_rdm12() {
   }
 
 
-#ifndef NDEBUG
+#if 0
   // Check the FCI energies computed by RDMs and integrals
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
   auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
