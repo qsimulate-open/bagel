@@ -26,7 +26,6 @@
 
 #include <iomanip>
 #include <unordered_map>
-
 #include <src/ras/distcivector.h>
 #include <src/parallel/distqueue.h>
 
@@ -63,6 +62,9 @@ namespace bagel {
           if (l >= 0) requests_.push_back(l);
         }
       }
+
+      DistSpinTask(const DistSpinTask& o)=delete;
+      DistSpinTask& operator=(const DistSpinTask& o)=delete;
 
       bool test() {
         bool out = true;
@@ -125,33 +127,32 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
 
+//This is the code that WOULD be included if you wanted to thread this. Threading doesn't really work yet.
+//#define THREADING
+#ifdef THREADING
+  atomic<bool> still_flushing(true);
+  thread flush_thread([this, &still_flushing] () { do { this->flush(); this_thread::sleep_for(sleeptime__); } while(still_flushing); });
+
   const size_t nthreads = resources__->max_num_threads();
-  auto spin_task = [&nthreads, &out, &lexicalmap, &tasks, this] (const size_t myid) {
-    for (auto& ispace : this->det()->stringspacea()) {
-      if (!ispace) continue;
-      size_t astart, aend;
-      tie(astart, aend) = ispace->dist().range(mpi__->rank());
-
-      StaticDist thread_dist(aend - astart, nthreads);
-      size_t thread_start, thread_end;
-      tie(thread_start, thread_end) = thread_dist.range(myid);
-      cout << "size of this space: " << thread_end - thread_start << endl;
-
-      for (size_t ia = thread_start; ia < thread_end; ++ia)
-        tasks.emplace_and_compute(this->det()->stringa(ia + astart + ispace->offset()), this, out, this->det(), &lexicalmap);
-    }
-
-    // Call finish separately for master
-    if (myid != 0)
-      tasks.finish_worker();
-  };
+  auto finish_worker = [&]() { tasks.finish_worker(); };
 
   vector<thread> thread_tasks;
   for (size_t ith = 1; ith < nthreads; ++ith)
-    thread_tasks.push_back( thread(spin_task, ith) );
+    thread_tasks.push_back( thread(finish_worker));
+#endif
 
-  // This is master thread
-  spin_task(0);
+  // task construction by master
+  for (auto& ispace : this->det()->stringspacea()) {
+    if (!ispace) continue;
+    size_t astart, aend;
+    tie(astart, aend) = ispace->dist().range(mpi__->rank());
+    if (astart == aend) continue;
+
+    for (size_t ia = astart; ia < aend; ++ia) {
+      tasks.emplace_and_compute(this->det()->stringa(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
+    }
+  }
+
 
   const double sz = static_cast<double>(det_->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
@@ -160,8 +161,13 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   tasks.finish_master();
 
+#ifdef THREADING
   for (auto& th : thread_tasks)
     th.join();
+
+  still_flushing = false;
+  flush_thread.join();
+#endif
 
   this->terminate_mpi_recv();
 

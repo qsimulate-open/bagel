@@ -103,7 +103,6 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     pdebug.tick_print("wait1");
     sigma->ax_plus_y(1.0, *saa);
   }
-
   return sigmavec;
 }
 
@@ -359,6 +358,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
           const size_t astart = get<0>(bounds_map[ispace->offset()]);
           const size_t aend = get<1>(bounds_map[ispace->offset()]);
           const size_t asize = aend - astart;
+          if (asize == 0) continue;
 
           const double* vdata = Vt_chunk->data();
           for (auto& iphiblock : det->phib_ij(ij) ) {

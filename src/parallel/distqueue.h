@@ -34,6 +34,7 @@
 #include <atomic>
 
 #include <src/util/constants.h>
+#include <src/parallel/plist.h>
 #include <src/parallel/mpi_interface.h>
 
 // TODO until GCC fixes this bug
@@ -54,130 +55,77 @@
 namespace bagel {
 
 template <typename TaskType, typename... FlushTypes>
-class DistQueue {
+class DistQueue : public ParallelList<TaskType> {
   protected:
     std::tuple<FlushTypes...> flushed_;
-
-    std::list<std::shared_ptr<TaskType>> tasks_;
-    std::mutex listmut_;
 
     std::atomic<bool> done_;
 
     public:
       DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)), done_(false) {}
+      ~DistQueue() { this->remove_if( [] (const TaskType& t) { return true; } ); }
 
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
-        {
-          auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
-          if (t->test()) {
-            t->compute();
-          }
-          else {
-            std::lock_guard<std::mutex> lock(listmut_);
-            tasks_.push_back(t);
-          }
-        }
-
-        bool full_pass = false;
-        do {
-          std::shared_ptr<TaskType> task;
-          {
-            std::lock_guard<std::mutex> lock(listmut_);
-            for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-              if ((*i)->test()) {
-                task = *i;
-                i = tasks_.erase(i);
-                break;
-              }
-              else {
-                ++i;
-              }
-            }
-          }
-          if (task) task->compute();
-          else full_pass = true;
-        } while (!full_pass);
-
-        flush();
-      }
-
-      template <typename... Args>
-      void emplace(Args&&... args) {
         auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
+
         if (t->test()) {
           t->compute();
         }
         else {
-          std::lock_guard<std::mutex> lock(listmut_);
-          tasks_.push_back(t);
+          this->push_front(t);
         }
+
+        flush();
+
+        while (std::shared_ptr<TaskType> task = pop_first_ready()) {
+          task->compute();
+        }
+      }
+
+      template <typename... Args>
+      void emplace(Args&&... args) {
+        this->emplace_front(std::forward<Args>(args)...);
       }
 
       // Only one thread should call this version
       void finish_master() {
         bool done;
         do {
-          bool full_pass = false;
-          do {
-            done = true;
-            std::shared_ptr<TaskType> task;
-            {
-              std::lock_guard<std::mutex> lock(listmut_);
-              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-                if ((*i)->test()) {
-                  task = *i;
-                  i = tasks_.erase(i);
-                  break;
-                }
-                else {
-                  ++i;
-                  done = false;
-                }
-              }
-            }
-            if (task) task->compute();
-            else full_pass = true;
-          } while (!full_pass);
-#ifndef USE_SERVER_THREAD
+          while (std::shared_ptr<TaskType> t = pop_first_ready())
+            t->compute();
+
+          done = this->empty();
+
           size_t d = done ? 0 : 1;
           mpi__->soft_allreduce(&d, 1);
           done = (d == 0);
-#endif
-          if (!done) flush();
+
+          flush();
+
           if (!done) std::this_thread::sleep_for(sleeptime__);
         } while (!done);
         done_ = true;
       }
 
       // Similar to above, except it doesn't update done_ and doesn't flush
+      // TODO unclear whether this is working
       void finish_worker() {
         do {
-          bool full_pass = false;
-          do {
-            std::shared_ptr<TaskType> task;
-            {
-              std::lock_guard<std::mutex> lock(listmut_);
-              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-                if ((*i)->test()) {
-                  task = *i;
-                  i = tasks_.erase(i);
-                  break;
-                }
-                else {
-                  ++i;
-                }
-              }
-            }
-            if (task) task->compute();
-            else full_pass = true;
-          } while (!full_pass);
+          while (std::shared_ptr<TaskType> t = pop_first_ready())
+            t->compute();
+
           if (!done_) std::this_thread::sleep_for(sleeptime__);
         } while (!done_);
       }
 
       // for convenience
       void finish() { finish_master(); }
+
+      std::shared_ptr<TaskType> pop_first_ready() {
+        return this->pop_first_if([] (TaskType& t) { return t.test(); });
+      }
+
 
     private:
       // Calls flush() on all of the flushable objects
