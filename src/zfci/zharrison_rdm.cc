@@ -40,7 +40,7 @@ void ZHarrison::compute_rdm12() {
 
   for (int istate = 0; istate != nstate_; ++istate) {
     // loop over n-2 determinant spaces
-    for (int nelea = 0; nelea != nele_-2; ++nelea) {
+    for (int nelea = 0; nelea <= nele_-2; ++nelea) {
       const int neleb = nele_-2 - nelea;
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
@@ -102,7 +102,7 @@ void ZHarrison::compute_rdm12() {
 
     // one body RDM
     // loop over n-1 determinant spaces
-    for (int nelea = 0; nelea != nele_-1; ++nelea) {
+    for (int nelea = 0; nelea <= nele_-1; ++nelea) {
       const int neleb = nele_-1 - nelea;
       if (nelea > norb_ || neleb > norb_ || neleb < 0) continue;
 
@@ -176,23 +176,23 @@ void ZHarrison::compute_rdm12() {
         if (rdm2_[istate].find(target) != rdm2_[istate].end()) {
           continue;
         } else if (rdm2_[istate].find(s2301) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = rdm2_[istate].at(s2301)->clone();
+          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
           SMITH::sort_indices<2,3,0,1,0,1,1,1>(rdm2_[istate].at(s2301)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
         } else if (rdm2_[istate].find(s1032) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = rdm2_[istate].at(s1032)->clone();
+          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
           SMITH::sort_indices<1,0,3,2,0,1,1,1>(rdm2_[istate].at(s1032)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
         } else if (rdm2_[istate].find(s3210) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = rdm2_[istate].at(s3210)->clone();
+          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
           SMITH::sort_indices<3,2,1,0,0,1,1,1>(rdm2_[istate].at(s3210)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return conj(a); });
         } else if (rdm2_[istate].find(s0132) != rdm2_[istate].end()) {
-          rdm2_[istate][target] = rdm2_[istate].at(s0132)->clone();
+          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
           SMITH::sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
         } else {
           // This is dangerous.. TODO
-          rdm2_[istate][target] = rdm2_[istate][bitset<4>("0000")]->clone();
+          rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
 #if 0
           cout << target << endl;
           for (auto& i : rdm2_[istate]) cout << i.first << endl;
@@ -228,7 +228,6 @@ void ZHarrison::compute_rdm12() {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
   }
-
 
 #if 0
   // Check the FCI energies computed by RDMs and integrals
