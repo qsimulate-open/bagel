@@ -26,7 +26,7 @@
 #ifndef __SRC_DF_DFINTTASK_OLD
 #define __SRC_DF_DFINTTASK_OLD
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 
 namespace bagel {
 

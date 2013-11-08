@@ -27,7 +27,7 @@
 #define __SRC_INTEGRAL_RYS_SLATERBATCH_H
 
 #include <src/integral/rys/int2d.h>
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 
 namespace bagel {
 
@@ -54,10 +54,12 @@ class SlaterBatch : public RysInt {
     void root2_direct();
 
     void compute_ssss(const double) override;
+    void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:
 
-    SlaterBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double, const double gamma, const bool doyukawa = false);
+    SlaterBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double, const double gamma, const bool doyukawa = false,
+                std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
     ~SlaterBatch();
 
     /// compute a batch of integrals

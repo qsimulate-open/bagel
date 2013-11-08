@@ -1,0 +1,3 @@
+lib_LTLIBRARIES = libbagel_zcasscf.la
+libbagel_zcasscf_la_SOURCES = zcasscf.cc zcasscf_compute.cc zqvec.cc
+AM_CXXFLAGS=-I$(top_srcdir)

@@ -27,7 +27,7 @@
 #ifndef __SRC_RYSINT_NAIBATCH_BASE_H
 #define __SRC_RYSINT_NAIBATCH_BASE_H
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
@@ -43,6 +43,7 @@ class NAIBatch_base : public RysInt {
 
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
+    void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:
     NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,

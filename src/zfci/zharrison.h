@@ -89,7 +89,7 @@ class ZHarrison : public Method {
     void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
 
     void sigma_2e_annih_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
-    void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const; 
+    void sigma_2e_annih_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
 
     void sigma_2e_create_bb(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2e_create_ab(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
@@ -98,7 +98,7 @@ class ZHarrison : public Method {
 
     template<int i, int j, int k, int l>
     void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
-      static_assert(!((i|1)^1) && !((j|1)^1) && !((k|1)^1) && !((l|1)^1), "illegal call of sigma_2e_h"); 
+      static_assert(!((i|1)^1) && !((j|1)^1) && !((k|1)^1) && !((l|1)^1), "illegal call of sigma_2e_h");
       const int ij = d->ij();
       const int lenab = d->lena()*d->lenb();
       std::stringstream ss; ss << i << j << k << l;
@@ -124,9 +124,9 @@ class ZHarrison : public Method {
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update() {
+    void update(std::shared_ptr<const ZMatrix> coeff) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(ref_, ncore_*2, (ncore_+norb_)*2);
+      jop_ = std::make_shared<RelJop>(ref_, geom_, ncore_*2, (ncore_+norb_)*2, coeff);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
@@ -149,8 +149,13 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
+    std::shared_ptr<const ZRDM<1>> rdm1_av(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
     std::shared_ptr<const ZRDM<1>> rdm1_av(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
     std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+
+    std::shared_ptr<const RelMOFile> jop() const { return jop_; }
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
 };
 
 }

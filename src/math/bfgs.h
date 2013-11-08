@@ -83,28 +83,28 @@ class BFGS {
 
         // (4)
         for (int i = 0; i < n; ++i) {
-          const double s1 = 1.0 / delta[i]->dot_product(D[i]);
-          const double s2 = 1.0 / D[i]->dot_product(y[i]);
-          const double s3 = delta[i]->dot_product(grad);
-          const double s4 =     y[i]->dot_product(grad);
-          const double s5 = delta[i]->dot_product(D[n]);
-          const double s6 =     y[i]->dot_product(D[n]);
-          const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
-          const double t2 = s1 * s3;
-          const double t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
-          const double t4 = s1 * s5;
+          auto s1 = detail::real(1.0 / D[i]->dot_product(delta[i]));
+          auto s2 = detail::real(1.0 / D[i]->dot_product(y[i]));
+          auto s3 = delta[i]->dot_product(grad);
+          auto s4 = y[i]->dot_product(grad);
+          auto s5 = delta[i]->dot_product(D[n]);
+          auto s6 = y[i]->dot_product(D[n]);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
+          auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
+          auto t4 = s1 * s5;
           out->ax_plus_y(t1, delta[i]);
           out->ax_plus_y(-t2, y[i]);
           yy->ax_plus_y(t3, delta[i]);
           yy->ax_plus_y(-t4, y[i]);
         }
         { // (5)
-          const double s1 = 1.0 / delta[n]->dot_product(D[n]);
-          const double s2 = 1.0 /     D[n]->dot_product(std::shared_ptr<const T>(yy));
-          const double s3 = delta[n]->dot_product(grad);
-          const double s4 =       yy->dot_product(grad);
-          const double t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
-          const double t2 = s1 * s3;
+          auto s1 = detail::real(1.0 / D[n]->dot_product(delta[n]));
+          auto s2 = detail::real(1.0 / D[n]->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = delta[n]->dot_product(grad);
+          auto s4 =       yy->dot_product(grad);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
           out->ax_plus_y(t1, delta[n]);
           out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }

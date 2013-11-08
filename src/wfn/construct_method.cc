@@ -34,6 +34,7 @@
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
 #include <src/casscf/casbfgs.h>
+#include <src/zcasscf/zcasscf.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
@@ -95,6 +96,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
   }
+  else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
 
   return out;
 }

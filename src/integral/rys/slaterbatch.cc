@@ -34,6 +34,8 @@
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/sinline.h>
 #include <src/integral/rys/slaterbatch.h>
+#include <src/integral/rys/eribatch_base.h>
+#include <src/integral/rys/naibatch_base.h>
 
 #ifdef HAVE_LIBSLATER
 #include <srootlist.h>
@@ -50,8 +52,8 @@ static const double pitwohalf__ = ::pow(pi__, 2.5);
 // TODO need to update
 const static SRootList root;
 
-SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
-:  RysInt(_info), gamma_(gmm), yukawa_(yukawa) {
+SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa, shared_ptr<StackMem> stack)
+:  RysIntegral<double>(_info, stack), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
 
@@ -341,4 +343,25 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
     }
   }
 }
+
+void SlaterBatch::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+  size_final_ = asize_final_sph * csize_final_sph * contsize_;
+
+  const unsigned int size_start = asize_ * csize_ * primsize_;
+  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
+  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
+  size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
+  size_alloc_ = size_block_;
+
+  stack_save_ = stack_->get(size_alloc_);
+  stack_save2_ = nullptr;
+
+  // if Slater/Yukawa integrals
+  if (tenno_)
+    stack_save2_ = stack_->get(size_alloc_);
+
+  data_ = stack_save_;
+  data2_ = stack_save2_;
+}
+
 #endif

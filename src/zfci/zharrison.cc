@@ -35,7 +35,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 
-  update();
+  update(dynamic_pointer_cast<const RelReference>(ref_)->relcoeff());
 }
 
 
@@ -226,7 +226,7 @@ void ZHarrison::compute() {
     pdebug.tick_print("sigma vector");
 
 #ifdef HAVE_MPI_H
-    // Just to make it run in parallel. 
+    // Just to make it run in parallel.
     // Note that ZHarrison is not parallelized and there is no point of running this in parallel
     cc_->sync();
     sigma->sync();
@@ -251,8 +251,8 @@ void ZHarrison::compute() {
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
 
-      auto ctmp = errvec.front()->clone(); 
-       
+      auto ctmp = errvec.front()->clone();
+
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         for (auto& ib : space_->detmap()) {

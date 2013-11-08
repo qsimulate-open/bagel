@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_RYSINT_ERIROOTLIST_H
-#define __SRC_RYSINT_ERIROOTLIST_H
+#ifndef __SRC_INTEGRAL_RYS_ERIROOTLIST_H
+#define __SRC_INTEGRAL_RYS_ERIROOTLIST_H
 
 #include <functional>
 #include <src/util/constants.h>
@@ -71,6 +71,8 @@ struct ERIRootList  {
     void root(const int i, const double* a1, double* a2, double* a3, const int a4) const { rfunc[i](a1, a2, a3, a4); }
 
 };
+
+const static ERIRootList eriroot__;
 
 }
 

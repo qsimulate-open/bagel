@@ -87,7 +87,7 @@ void GammaForest<DistDvec, 2>::compute() {
           GammaTask<DistDvec> task(itree, GammaSQ(i), a);
           task.compute();
         }
-      }   
-    }   
-  }   
+      }
+    }
+  }
 }
