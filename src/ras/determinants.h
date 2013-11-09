@@ -240,8 +240,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     template <int spin> void link(std::shared_ptr<RASDeterminants> odet);
 
-    std::vector<std::shared_ptr<const StringSpace>>& stringspacea() { return alphaspaces_; }
-    std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() { return betaspaces_; }
     const std::vector<std::shared_ptr<const StringSpace>>& stringspacea() const { return alphaspaces_; }
     const std::vector<std::shared_ptr<const StringSpace>>& stringspaceb() const { return betaspaces_; }
 
