@@ -44,15 +44,18 @@ void ComplexERIBatch::root_weight(const int ps) {
   if (breit_ == 0) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
   } else {
+    assert(0);
     throw runtime_error("Relativistic calculations have not been set up for London orbitals");
   }
 }
 
 void ComplexERIBatch::compute_ssss(const complex<double> integral_thresh) {
-      throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
+  assert(0);
+  throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
 }
 
 
 void ComplexERIBatch::compute() {
+  assert(0);
   throw logic_error("ComplexERIBatch::compute not yet implemented");
 }
