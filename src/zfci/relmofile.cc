@@ -86,14 +86,16 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
 array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
   shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
-  shared_ptr<ZMatrix> reordered = coeff->clone();
+
   auto overlap = make_shared<RelOverlap>(geom_);
 
-  const int noff = reordered->mdim()/2;
-  const int ndim = reordered->ndim();
-  const int mdim = reordered->mdim();
+  const int noff = coeff->mdim()/2;
+  const int ndim = coeff->ndim();
+  const int mdim = coeff->mdim();
   const int nb = ndim / 4;
   assert(nb == nbasis_);
+
+  array<shared_ptr<ZMatrix>,2> out{{make_shared<ZMatrix>(ndim, noff), make_shared<ZMatrix>(ndim, noff)}};
 
   if (nfence-nstart <= 0 || (nfence-nstart)%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
@@ -154,13 +156,11 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     *cnow = *corig * unit;
 
     assert(i%2 == 0);
-    reordered->copy_block(0, i/2,      ndim, n/2, cnow->element_ptr(0, 0));
-    reordered->copy_block(0, i/2+noff, ndim, n/2, cnow->element_ptr(0, n/2));
+    out[0]->copy_block(0, i/2, ndim, n/2, cnow->element_ptr(0, 0));
+    out[1]->copy_block(0, i/2, ndim, n/2, cnow->element_ptr(0, n/2));
 
     i = j;
   }
-
-  array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
   return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
 }
