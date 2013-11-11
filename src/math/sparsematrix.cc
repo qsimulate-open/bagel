@@ -150,7 +150,7 @@ void SparseMatrix::print_block_structure(const size_t nsize, const size_t msize)
 
   for (int i = 0; i < ndim_; ++i) {
     for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
-      const size_t j = cols_[rowdata];
+      const size_t j = cols_[rowdata] - 1;
       const size_t si = i / nsize;
       const size_t sj = j / msize;
       structure[si + nblocks * sj] = true;
