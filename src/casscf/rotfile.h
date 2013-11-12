@@ -176,7 +176,7 @@ class RotationMatrix {
       const int nocc = nclosed_ + nact_;
       const int nbasis = nclosed_ + nact_ + nvirt_;
       auto out = std::make_shared<MatType>(nbasis, nbasis);
-      fill_n(out->data(), out->size(), a);
+      std::fill_n(out->data(), out->size(), a);
       for (int i = 0; i != nact_; ++i) {
         for (int j = 0; j != nvirt_;   ++j) {
           out->element(j+nocc, i+nclosed_) = ele_va(j, i);
@@ -192,7 +192,7 @@ class RotationMatrix {
       }
       for (int i = 0; i != nbasis; ++i) {
         for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = out->element(i, j);
+          out->element(j, i) = detail::conj(out->element(i, j));
         }
       }
       return out;

@@ -109,8 +109,8 @@ void ZCASSCF::compute() {
     }
 
     if (iter == 0) {
-      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>(1.e10);
       bfgs = make_shared<BFGS<ZMatrix>>(denom);
+      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack_sym<ZMatrix>(1.e10);
     }
 
     // compute orbital gradients
@@ -241,6 +241,17 @@ void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
     zaxpy_(nvirt_*2, 1.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
     zaxpy_(nvirt_*2, 1.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
   }
+
+  // symmetry adaptation
+  for (int i = 0; i != nclosed_; ++i) {
+    for (int j = 0; j != nvirt_; ++j) {
+      sigma->ele_vc(j, i) = (sigma->ele_vc(j, i) + conj(sigma->ele_vc(j+nvirt_, i+nclosed_))) * 0.5;
+      sigma->ele_vc(j+nvirt_, i+nclosed_) = conj(sigma->ele_vc(j, i));
+
+      sigma->ele_vc(j+nvirt_, i) = (sigma->ele_vc(j+nvirt_, i) - conj(sigma->ele_vc(j, i+nclosed_))) * 0.5;
+      sigma->ele_vc(j, i+nclosed_) = - conj(sigma->ele_vc(j+nvirt_, i));
+    }
+  }
 }
 
 
@@ -252,6 +263,16 @@ void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
   complex<double>* target = sigma->ptr_va();
   for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
     zaxpy_(nvirt_*2, 1.0, qxr->element_ptr(nocc_*2, i), 1, target, 1);
+  }
+  // symmetry adaptation
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nvirt_; ++j) {
+      sigma->ele_va(j, i) = (sigma->ele_va(j, i) + conj(sigma->ele_va(j+nvirt_, i+nact_))) * 0.5;
+      sigma->ele_va(j+nvirt_, i+nact_) = conj(sigma->ele_va(j, i));
+
+      sigma->ele_va(j+nvirt_, i) = (sigma->ele_va(j+nvirt_, i) - conj(sigma->ele_va(j, i+nact_))) * 0.5;
+      sigma->ele_va(j, i+nact_) = - conj(sigma->ele_va(j+nvirt_, i));
+    }
   }
 }
 
@@ -269,4 +290,15 @@ void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
   }
   // "T" effectively makes complex conjugate of cfock
   zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
+
+  // symmetry adaptation
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nclosed_; ++j) {
+      sigma->ele_ca(j, i) = (sigma->ele_ca(j, i) + conj(sigma->ele_ca(j+nclosed_, i+nact_))) * 0.5;
+      sigma->ele_ca(j+nclosed_, i+nact_) = conj(sigma->ele_ca(j, i));
+
+      sigma->ele_ca(j+nclosed_, i) = (sigma->ele_ca(j+nclosed_, i) - conj(sigma->ele_ca(j, i+nact_))) * 0.5;
+      sigma->ele_ca(j, i+nact_) = - conj(sigma->ele_ca(j+nclosed_, i));
+    }
+  }
 }
