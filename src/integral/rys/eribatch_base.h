@@ -221,12 +221,12 @@ template <typename DataType>
         if (this->breit_)
           this->size_alloc_ = 6 * this->size_block_;
 
-        this->stack_save_ = this->stack_->get(this->size_alloc_);
+        this->stack_save_ = this->stack_->template get<DataType>(this->size_alloc_);
         this->stack_save2_ = nullptr;
 
         // if Slater/Yukawa integrals
         if (this->tenno_)
-          this->stack_save2_ = this->stack_->get(this->size_alloc_);
+          this->stack_save2_ = this->stack_->template get<DataType>(this->size_alloc_);
 
       // derivative integrals
       } else if (this->deriv_rank_ == 1) {
@@ -237,7 +237,7 @@ template <typename DataType>
         } else {
           throw std::logic_error("something is strange in ERIBatch_Base::allocate_data");
         }
-        this->stack_save_ = this->stack_->get(this->size_alloc_);
+        this->stack_save_ = this->stack_->template get<DataType>(this->size_alloc_);
         this->stack_save2_ = nullptr;
       }
       this->data_ = this->stack_save_;
