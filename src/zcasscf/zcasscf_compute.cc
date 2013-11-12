@@ -109,8 +109,8 @@ void ZCASSCF::compute() {
     }
 
     if (iter == 0) {
-      bfgs = make_shared<BFGS<ZMatrix>>(denom);
       denom = compute_denom(cfock, afock, qvec, rdm1)->unpack_sym<ZMatrix>(1.e10);
+      bfgs = make_shared<BFGS<ZMatrix>>(denom);
     }
 
     // compute orbital gradients
