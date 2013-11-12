@@ -46,7 +46,22 @@ void ZCASSCF::compute() {
   x->unit();
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
+  shared_ptr<const ZMatrix> overlap = make_shared<RelOverlap>(geom_);
   shared_ptr<const ZMatrix> denom;
+
+  // coeff_ is a kramers adapted coefficient..
+  {
+    array<shared_ptr<const ZMatrix>,2> tmp = RelMOFile::kramers(coeff_, overlap, hcore);
+    auto ctmp = coeff_->clone();
+    int i = 0;
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
+    coeff_ = ctmp;
+  }
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
@@ -129,19 +144,14 @@ void ZCASSCF::compute() {
 shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   assert(fci_);
 
-  array<shared_ptr<const ZMatrix>,2> kcoeff = fci_->kramers_coeff();
-
+  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
   auto rdm1_tot = make_shared<ZMatrix>(nact_*2, nact_*2);
   rdm1_tot->copy_block(    0,     0, nact_, nact_, fci_->rdm1_av("00")->data());
   rdm1_tot->copy_block(nact_, nact_, nact_, nact_, fci_->rdm1_av("11")->data());
   rdm1_tot->copy_block(nact_,     0, nact_, nact_, fci_->rdm1_av("10")->data());
   rdm1_tot->copy_block(    0, nact_, nact_, nact_, rdm1_tot->get_submatrix(nact_, 0, nact_, nact_)->transpose_conjg());
 
-  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  auto coeff_tot = make_shared<ZMatrix>(kcoeff[0]->ndim(), nact_*2);
-  assert(nact_ == kcoeff[0]->mdim() && nact_ == kcoeff[1]->mdim() && kcoeff[0]->ndim() % 4 == 0);
-  coeff_tot->copy_block(0,     0, kcoeff[0]->ndim(), nact_, kcoeff[0]->get_conjg());
-  coeff_tot->copy_block(0, nact_, kcoeff[1]->ndim(), nact_, kcoeff[1]->get_conjg());
+  auto coeff_tot = fci_->coeff()->get_conjg();
 
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
   // TODO compute RelOverlap only once (this is comptued also in qzvec)
@@ -249,7 +259,6 @@ void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 // grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
 void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
-
   // TODO check
   auto qxrc = qxr->get_conjg();
   complex<double>* target = sigma->ptr_ca();

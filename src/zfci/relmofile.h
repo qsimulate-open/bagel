@@ -55,8 +55,6 @@ class RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> mo2e_;
 
     // generates Kramers symmetry-adapted orbitals
-    std::array<std::shared_ptr<const ZMatrix>,2> kramers(const int nstart, const int nfence) const;
-
     void compress_and_set(std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> buf1e,
                           std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> buf2e);
 
@@ -69,6 +67,10 @@ class RelMOFile {
 
   public:
     RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>);
+
+    // static function
+    static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
+
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -85,6 +87,12 @@ class RelMOFile {
     double core_energy() const { return core_energy_; }
 
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
+    std::shared_ptr<const ZMatrix> coeff() const {
+      auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_[0]->ndim(), nocc_*2);
+      coeff_tot->copy_block(0,     0, kramers_coeff_[0]->ndim(), nocc_, kramers_coeff_[0]);
+      coeff_tot->copy_block(0, nocc_, kramers_coeff_[1]->ndim(), nocc_, kramers_coeff_[1]);
+      return coeff_tot;
+    }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; }
 

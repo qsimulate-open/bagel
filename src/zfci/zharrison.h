@@ -155,6 +155,7 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
 };
 
