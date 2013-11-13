@@ -142,8 +142,8 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 #endif
 
   // task construction by master
-  for (auto& ispace : this->det()->stringspacea()) {
-    if (!ispace) continue;
+  for (auto& spaceiter : this->det()->stringspacea()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
     size_t astart, aend;
     tie(astart, aend) = ispace->dist().range(mpi__->rank());
     if (astart == aend) continue;

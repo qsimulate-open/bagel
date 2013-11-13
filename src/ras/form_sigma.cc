@@ -122,8 +122,8 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   const size_t la = det->lena();
 
   // Let's just get it working first, thread it later
-  for (auto& ispace : det->stringspacea()) {
-    if (!ispace) continue;
+  for (auto& spaceiter : det->stringspacea()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
     double* fdata = F.get();
@@ -173,9 +173,9 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   map<size_t, map<size_t, pair<vector<tuple<size_t, int, int>>, shared_ptr<SparseMatrix>>>> Fmatrices;
 
   if (sparse_) {
-    for (auto& ispace : det->stringspacea()) {
-      if (!ispace) continue;
-      const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
+    for (auto& spaceiter : det->stringspacea()) {
+      shared_ptr<const StringSpace> ispace = spaceiter.second;
+      const int nspaces = det->stringspacea().size();
       const size_t la = ispace->size();
 
       // These are for building the initial versions of the sparse matrices
@@ -185,7 +185,10 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       vector<vector<tuple<size_t, int, int>>> sparse_info(nspaces);
 
       vector<pair<size_t, int>> bounds;
-      for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
+      for (auto& spaceiter : det->stringspacea()) {
+        shared_ptr<const StringSpace> isp = spaceiter.second;
+        bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
+      }
       assert(bounds.size() == nspaces);
 
       for (int ia = 0; ia < la; ++ia) {
@@ -256,21 +259,24 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       }
 
       // build V(I), block by block
-      for (auto& ispace : det->stringspacea()) {
-        if (!ispace) continue;
+      for (auto& spaceiter : det->stringspacea()) {
+        shared_ptr<const StringSpace> ispace = spaceiter.second;
         const size_t la = ispace->size();
 
         auto Vt = make_shared<Matrix>(la, phisize);
         if ( sparse_ ) {
           // Making several SparseMatrix objects
           // First, how many?
-          const int nspaces = accumulate(det->stringspacea().begin(), det->stringspacea().end(), 0, [] (int i, shared_ptr<const StringSpace> s) { return i + ( s ? 1 : 0); });
+          const int nspaces = det->stringspacea().size();
           vector<vector<double>> data(nspaces);
           vector<vector<int>> cols(nspaces);
           vector<vector<int>> rind(nspaces);
 
           vector<pair<size_t, int>> bounds;
-          for (auto& isp : det->stringspacea()) if (isp) bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
+          for (auto& spaceiter : det->stringspacea()) {
+            shared_ptr<const StringSpace> isp = spaceiter.second;
+            bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
+          }
           assert(bounds.size() == nspaces);
 
           auto& Fmap = Fmatrices.at(ispace->offset());

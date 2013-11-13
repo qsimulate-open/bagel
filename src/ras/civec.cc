@@ -129,15 +129,15 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : sdet->stringspacea()) {
-    if (ispace)
-      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& spaceiter : sdet->stringspacea()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : sdet->stringspaceb()) {
-    if (ispace)
-      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& spaceiter : sdet->stringspaceb()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -191,15 +191,15 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : det_->stringspacea()) {
-    if (ispace)
-      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& spaceiter : det_->stringspacea()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : det_->stringspaceb()) {
-    if (ispace)
-      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& spaceiter : det_->stringspaceb()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
