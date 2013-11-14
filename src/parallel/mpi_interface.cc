@@ -172,8 +172,8 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
   vector<size_t> msg(size_*size);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
-    request_send(a, size, i, (1<<30)+1);
-    receive.push_back(request_recv(&msg[i*size], size, i, (1<<30)+1));
+    request_send(a, size, i, (1<<30)-1);
+    receive.push_back(request_recv(&msg[i*size], size, i, (1<<30)-1));
   }
   bool done;
   do {
