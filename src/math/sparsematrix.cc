@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <iostream>
+
 #include <src/math/sparsematrix.h>
 #include <src/util/mkl_sparse.h>
 
@@ -137,4 +139,28 @@ Matrix SparseMatrix::operator+(const Matrix& o) const {
   }
 
   return out;
+}
+
+void SparseMatrix::print_block_structure(const size_t nsize, const size_t msize) const {
+  assert( nsize * msize > 0 );
+  const size_t nblocks = (ndim_ - 1) / nsize + 1;
+  const size_t mblocks = (mdim_ - 1) / msize + 1;
+
+  vector<bool> structure(nblocks * mblocks, false);
+
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
+      const size_t j = cols_[rowdata] - 1;
+      const size_t si = i / nsize;
+      const size_t sj = j / msize;
+      structure[si + nblocks * sj] = true;
+    }
+  }
+
+  for (size_t is = 0; is < nblocks; ++is) {
+    for (size_t js = 0; js < mblocks; ++js) {
+      cout << ( structure[is + nblocks * js] ? "  1" : "  0" );
+    }
+    cout << endl;
+  }
 }

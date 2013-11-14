@@ -131,6 +131,8 @@ class DistRASCivector {
     mutable std::shared_ptr<DistRASCivector<DataType>> buf_;
     mutable std::vector<int> transp_;
 
+    mutable std::mutex mutex_;
+
   public:
     DistRASCivector(std::shared_ptr<const RASDeterminants> det) : det_(det), global_size_(det->size()) {
       size_t block_offset = 0;
@@ -254,12 +256,14 @@ class DistRASCivector {
     // MPI routines
     // Never call concurrently
     void init_mpi_recv() const {
+      std::lock_guard<std::mutex> lock(mutex_);
       put_ = std::make_shared<BufferPutRequest>();
       recv_ = std::make_shared<RecvRequest>();
     }
 
     // Never call concurrently
     void terminate_mpi_recv() const {
+      std::lock_guard<std::mutex> lock(mutex_);
       assert( put_ && recv_);
       bool done;
       do {
@@ -279,6 +283,7 @@ class DistRASCivector {
     }
 
     void flush() const {
+      std::lock_guard<std::mutex> lock(mutex_);
       for (auto i : put_->get_calls()) {
         // off is interpreted as lexical number of the alpha string
         const size_t tag = i[1];
@@ -367,10 +372,13 @@ class DistRASCivector {
       buf_ = clone();
       for (auto i = blocks_.begin(), j = buf_->blocks().begin(); i != blocks_.end(); ++i, ++j) {
         if (!(*i)) continue;
-        mytranspose_((*i)->local(), (*i)->asize(), (*i)->lenb(), (*j)->local());
-        std::copy_n((*j)->local(), (*i)->asize() * (*i)->lenb(), (*i)->local());
+        const size_t asize = (*i)->asize();
+        const size_t lb = (*i)->lenb();
+        if ( asize * lb == 0 ) continue;
+        mytranspose_((*i)->local(), asize, lb, (*j)->local());
+        std::copy_n((*j)->local(), asize * lb, (*i)->local());
       }
-      buf_ = std::shared_ptr<DistRASCivector<DataType>>();
+      buf_.reset();
     }
 
     // Safe for any structure of blocks.
