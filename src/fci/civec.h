@@ -337,12 +337,11 @@ class DistCivector {
           }
         }
       }
-      std::unique_ptr<size_t[]> nelements(new size_t[mpi__->size()]);
-      std::fill_n(nelements.get(), mpi__->size(), 0);
+      std::vector<size_t> nelements(mpi__->size(), 0);
       const size_t nn = data.size();
-      mpi__->allgather(&nn, 1, nelements.get(), 1);
+      mpi__->allgather(&nn, 1, nelements.data(), 1);
 
-      const size_t chunk = *std::max_element(nelements.get(), nelements.get() + mpi__->size());
+      const size_t chunk = *std::max_element(nelements.begin(), nelements.end());
       data.resize(chunk, 0);
       abits.resize(chunk, 0);
       bbits.resize(chunk, 0);

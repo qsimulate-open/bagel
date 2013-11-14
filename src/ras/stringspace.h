@@ -34,6 +34,9 @@
 #include <algorithm>
 
 #include <src/util/constants.h>
+#include <src/math/comb.h>
+#include <src/parallel/staticdist.h>
+#include <src/parallel/mpi_interface.h>
 
 namespace bagel {
 
@@ -43,6 +46,8 @@ class StringSpace {
     std::array<const std::pair<const int, const int>, 3> ras_;
 
     std::vector<std::bitset<nbit__>> strings_;
+
+    StaticDist dist_;
 
     // Lexical ordering
     std::vector<size_t> weights_;
@@ -67,6 +72,11 @@ class StringSpace {
       const size_t max() const { return *std::max_element(data_.get(), data_.get() + ndim_ * mdim_); }
     };
 
+    const size_t nstrings() const {
+      Comb comb;
+      return comb.c(ras_[0].second, ras_[0].first) * comb.c(ras_[1].second, ras_[1].first) * comb.c(ras_[2].second, ras_[2].first);
+    }
+
   public:
     StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset = 0);
 
@@ -89,6 +99,8 @@ class StringSpace {
     std::vector<std::bitset<nbit__>>::iterator end() { return strings_.end(); }
     std::vector<std::bitset<nbit__>>::const_iterator begin() const { return strings_.cbegin(); }
     std::vector<std::bitset<nbit__>>::const_iterator end() const { return strings_.cend(); }
+
+    const StaticDist& dist() const { return dist_; }
 
     // Assumes bit is within this graph
     template <int off = 1>

@@ -31,6 +31,7 @@
 #include <list>
 #include <memory>
 #include <utility>
+#include <atomic>
 
 #include <src/util/constants.h>
 #include <src/parallel/mpi_interface.h>
@@ -57,60 +58,128 @@ class DistQueue {
   protected:
     std::tuple<FlushTypes...> flushed_;
 
-    std::list<TaskType> tasks_;
+    std::list<std::shared_ptr<TaskType>> tasks_;
+    std::mutex listmut_;
+
+    std::atomic<bool> done_;
 
     public:
-      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)) {}
+      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)), done_(false) {}
 
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
-
-        for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-          if (i->test()) {
-            i->compute();
-            i = tasks_.erase(i);
+        {
+          auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
+          if (t->test()) {
+            t->compute();
           }
           else {
-            ++i;
+            std::lock_guard<std::mutex> lock(listmut_);
+            tasks_.push_back(t);
           }
         }
-#ifndef USE_SERVER_THREAD
+
+        bool full_pass = false;
+        do {
+          std::shared_ptr<TaskType> task;
+          {
+            std::lock_guard<std::mutex> lock(listmut_);
+            for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+              if ((*i)->test()) {
+                task = *i;
+                i = tasks_.erase(i);
+                break;
+              }
+              else {
+                ++i;
+              }
+            }
+          }
+          if (task) task->compute();
+          else full_pass = true;
+        } while (!full_pass);
+
         flush();
-#endif
       }
 
       template <typename... Args>
       void emplace(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
+        auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
+        if (t->test()) {
+          t->compute();
+        }
+        else {
+          std::lock_guard<std::mutex> lock(listmut_);
+          tasks_.push_back(t);
+        }
       }
 
-      void finish() {
+      // Only one thread should call this version
+      void finish_master() {
         bool done;
         do {
-          done = true;
-          for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-            if (i->test()) {
-              i->compute();
-              i = tasks_.erase(i);
+          bool full_pass = false;
+          do {
+            done = true;
+            std::shared_ptr<TaskType> task;
+            {
+              std::lock_guard<std::mutex> lock(listmut_);
+              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+                if ((*i)->test()) {
+                  task = *i;
+                  i = tasks_.erase(i);
+                  break;
+                }
+                else {
+                  ++i;
+                  done = false;
+                }
+              }
             }
-            else {
-              ++i;
-              done = false;
-            }
-          }
+            if (task) task->compute();
+            else full_pass = true;
+          } while (!full_pass);
 #ifndef USE_SERVER_THREAD
           size_t d = done ? 0 : 1;
           mpi__->soft_allreduce(&d, 1);
           done = (d == 0);
-          if (!done) flush();
 #endif
+          if (!done) flush();
           if (!done) std::this_thread::sleep_for(sleeptime__);
         } while (!done);
+        done_ = true;
       }
 
+      // Similar to above, except it doesn't update done_ and doesn't flush
+      void finish_worker() {
+        do {
+          bool full_pass = false;
+          do {
+            std::shared_ptr<TaskType> task;
+            {
+              std::lock_guard<std::mutex> lock(listmut_);
+              for (auto i = tasks_.begin(); i != tasks_.end(); ) {
+                if ((*i)->test()) {
+                  task = *i;
+                  i = tasks_.erase(i);
+                  break;
+                }
+                else {
+                  ++i;
+                }
+              }
+            }
+            if (task) task->compute();
+            else full_pass = true;
+          } while (!full_pass);
+          if (!done_) std::this_thread::sleep_for(sleeptime__);
+        } while (!done_);
+      }
+
+      // for convenience
+      void finish() { finish_master(); }
+
     private:
-#ifndef USE_SERVER_THREAD
       // Calls flush() on all of the flushable objects
       void flush() { _flush<0, FlushTypes...>(); }
 
@@ -119,7 +188,6 @@ class DistQueue {
         _flush<iter+1, Tail...>();
       }
       template <int iter> void _flush() {}
-#endif
 };
 
 }

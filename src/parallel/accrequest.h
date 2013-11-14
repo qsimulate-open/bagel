@@ -47,7 +47,7 @@ class SendRequest : public ServerFlush {
       const size_t targetrank;
       const size_t off;
       std::unique_ptr<double[]> buf;
-      Probe(const size_t s, const size_t c, const size_t r, const size_t t, const size_t o, std::unique_ptr<double[]>& b)
+      Probe(const size_t s, const size_t c, const size_t r, const size_t t, const size_t o, std::unique_ptr<double[]>&& b)
         : size{s,c,r,o}, tag(c), myrank(r), targetrank(t), off(o), buf(std::move(b)) { }
     };
 

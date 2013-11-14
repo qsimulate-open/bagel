@@ -74,7 +74,6 @@ MPI_Interface::~MPI_Interface() {
 
 
 void MPI_Interface::barrier() const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -101,15 +100,36 @@ void MPI_Interface::soft_barrier() {
 
 
 void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root, MPI_COMM_WORLD);
 #endif
 }
 
 
-void MPI_Interface::allreduce(double* a, const size_t size) const {
+void MPI_Interface::reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const {
+#ifdef HAVE_MPI_H
+  MPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+}
+
+int MPI_Interface::ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) {
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  MPI_Request c;
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Ireduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &c);
+  rq.push_back(c);
+#endif
   lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
+#endif
+  ++cnt_;
+  return cnt_-1;
+}
+
+
+void MPI_Interface::allreduce(double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
@@ -117,7 +137,6 @@ void MPI_Interface::allreduce(double* a, const size_t size) const {
 
 
 void MPI_Interface::allreduce(int* a, const size_t size) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #endif
@@ -125,17 +144,32 @@ void MPI_Interface::allreduce(int* a, const size_t size) const {
 
 
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 
+int MPI_Interface::iallreduce(size_t* a, const size_t size) {
+  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  MPI_Request c;
+  MPI_Iallreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD, &c);
+  rq.push_back(c);
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
+#endif
+  ++cnt_;
+  return cnt_;
+}
+
+
 void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
   vector<size_t> receive;
   vector<size_t> msg(size_*size);
-
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
     request_send(a, size, i, (1<<30)+1);
@@ -148,7 +182,6 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
       if (!test(i)) { done = false; break; }
     if (!done) this_thread::sleep_for(sleeptime__);
   } while (!done);
-
   for (int i = 0; i != size_; ++i)
     if (i != rank_) {
       for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
@@ -157,7 +190,6 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
 
 
 void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   MPI_Bcast(static_cast<void*>(a), size, MPI_LONG_LONG, root, MPI_COMM_WORLD);
@@ -166,7 +198,6 @@ void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) cons
 
 
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
 #endif
@@ -174,7 +205,6 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 
 
 void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
 #endif
@@ -182,7 +212,6 @@ void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int r
 
 
 void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // sometimes we need to broadcast const objects for consistency...
   double* aa = const_cast<double*>(a);
@@ -192,7 +221,6 @@ void MPI_Interface::broadcast_force(const double* a, const size_t size, const in
 
 
 void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
@@ -204,7 +232,6 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 
 
 void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   // I hate const_cast. Blame the MPI C binding
@@ -217,7 +244,6 @@ void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* re
 
 
 void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
@@ -229,7 +255,6 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest, const int tag) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -239,7 +264,10 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
     MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
-  request_.insert(make_pair(cnt_, rq));
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -247,7 +275,6 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 
 
 int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest, const int tag) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   vector<MPI_Request> rq;
@@ -258,7 +285,10 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
     MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
-  request_.insert(make_pair(cnt_, rq));
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -267,7 +297,6 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
 
 
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin, const int tag) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -276,7 +305,10 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
     MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
-  request_.insert(make_pair(cnt_, rq));
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -284,7 +316,6 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
 
 
 int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origin, const int tag) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -293,7 +324,10 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
     MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
-  request_.insert(make_pair(cnt_, rq));
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
   return cnt_-1;
@@ -301,8 +335,8 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
 
 
 void MPI_Interface::wait(const int rq) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second)
@@ -312,8 +346,8 @@ void MPI_Interface::wait(const int rq) {
 
 
 void MPI_Interface::cancel(const int rq) {
-  lock_guard<mutex> lock(mpimutex_);
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second)
@@ -323,9 +357,9 @@ void MPI_Interface::cancel(const int rq) {
 
 
 bool MPI_Interface::test(const int rq) {
-  lock_guard<mutex> lock(mpimutex_);
   bool out = true;
 #ifdef HAVE_MPI_H
+  lock_guard<mutex> lock(mpimutex_);
   auto i = request_.find(rq);
   assert(i != request_.end());
   for (auto& j : i->second) {

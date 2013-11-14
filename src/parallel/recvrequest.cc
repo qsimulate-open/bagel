@@ -32,7 +32,7 @@ using namespace bagel;
 
 
 // PutRequest receives probe and returns data
-PutRequest::PutRequest(const double* d) : data_(d) {
+PutRequest::PutRequest(const double* d, const size_t probe_offset) : data_(d), probe_offset_(probe_offset) {
   for (size_t i = 0; i != pool_size__; ++i)
     init();
   turn_on();
@@ -40,11 +40,11 @@ PutRequest::PutRequest(const double* d) : data_(d) {
 
 
 void PutRequest::init() {
-  // we should compute the number of messnages to receive?
+  // we should compute the number of messages to receive?
   // receives
   auto call = make_shared<Call>();
   // receives size,tag,rank
-  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__);
+  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__ + probe_offset_);
   {
     lock_guard<mutex> lock(block_);
     auto m = calls_.insert(make_pair(rq, call));
@@ -86,29 +86,107 @@ void PutRequest::flush_() {
 
 /////////////////////////
 
+// BufferPutRequest receives probe and returns information on data requested
+BufferPutRequest::BufferPutRequest(const size_t probe_offset) : probe_offset_(probe_offset) {
+  for (size_t i = 0; i != pool_size__; ++i)
+    init();
+  turn_on();
+}
 
-RecvRequest::RecvRequest() : counter_(probe_key2__ + mpi__->rank() + 1) {
-
+void BufferPutRequest::init() {
+  // we should compute the number of messages to receive?
+  // receives
+  auto call = make_shared<Call>();
+  // receives size,tag,rank
+  const int rq = mpi__->request_recv(call->buf.get(), 4, -1, probe_key2__ + probe_offset_);
+  {
+    lock_guard<mutex> lock(block_);
+    auto m = calls_.emplace(rq, call);
+    assert(m.second);
+  }
 }
 
 
-int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off) {
+BufferPutRequest::~BufferPutRequest() {
+  turn_off();
+  for (auto& i : calls_)
+    mpi__->cancel(i.first);
+}
+
+
+// cleans out finished sends
+void BufferPutRequest::flush_() {
   lock_guard<mutex> lock(block_);
+  for (auto i = buffs_.begin(); i != buffs_.end(); ) {
+    if (mpi__->test(i->first)) {
+      i = buffs_.erase(i);
+    }
+    else {
+      ++i;
+    }
+  }
+}
+
+// takes ownership of buf and initiates a send
+void BufferPutRequest::request_send(unique_ptr<double[]>&& buf, const size_t size, const size_t dest, const size_t tag) {
+  auto buffer = make_shared<Buff>(move(buf));
+  lock_guard<mutex> lock(block_);
+  const int srq = mpi__->request_send(buffer->buf.get(), size, dest, tag);
+  buffs_.emplace(srq, buffer);
+}
+
+// returns all of the requests for data
+vector<array<size_t, 4>> BufferPutRequest::get_calls() {
+  size_t cnt = 0;
+  vector<array<size_t, 4>> out;
+  {
+    lock_guard<mutex> lock(block_);
+    for (auto i = calls_.begin(); i != calls_.end(); ) {
+      // if this has already arrived, send data
+      if (mpi__->test(i->first)) {
+        const size_t size = i->second->buf[0];
+        const size_t tag  = i->second->buf[1];
+        const size_t rank = i->second->buf[2];
+        const size_t off  = i->second->buf[3];
+        out.push_back( array<size_t, 4>{size, tag, rank, off} );
+        i = calls_.erase(i);
+        ++cnt;
+      } else {
+        ++i;
+      }
+    }
+  }
+  for (int i = 0; i != cnt; ++i)
+    init();
+
+  return out;
+}
+
+
+/////////////////////////
+
+RecvRequest::RecvRequest(const size_t nprobes)
+  : counter_(probe_key2__ + nprobes*(mpi__->rank() + 1)), nprobes_(nprobes)
+{ }
+
+
+int RecvRequest::request_recv(double* buf, const size_t size, const int dest, const size_t off, const size_t probe_offset) {
   // sending size
+  lock_guard<mutex> lock(block_);
   auto p = make_shared<Probe>(size, counter_, mpi__->rank(), dest, off, buf);
-  counter_ += mpi__->size();
-  const int srq = mpi__->request_send(p->size, 4, dest, probe_key2__);
+  counter_ += mpi__->size()*nprobes_;
+  const int srq = mpi__->request_send(p->size, 4, dest, probe_key2__ + probe_offset);
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
-  auto m = request_.insert(make_pair(rrq, p));
+  auto m = request_.emplace(rrq, p);
   assert(m.second);
   return rrq;
 }
 
 
 bool RecvRequest::test() {
-  lock_guard<mutex> lock(block_);
   bool done = true;
+  lock_guard<mutex> lock(block_);
   for (auto i = request_.begin(); i != request_.end(); ) {
     if (mpi__->test(i->first)) {
       i = request_.erase(i);
@@ -119,4 +197,3 @@ bool RecvRequest::test() {
   }
   return done;
 }
-
