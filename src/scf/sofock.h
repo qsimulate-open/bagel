@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fock.h
+// Filename: sofock.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>

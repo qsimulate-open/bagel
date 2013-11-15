@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: hcore.cc
+// Filename: sohcore.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-SOhcore::SOhcore(const shared_ptr<const Geometry> geom, const shared_ptr<const Hcore> h)
+SOhcore::SOhcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOhcore_base> h)
             : Matrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
   form_sohcore();
 }

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sohcore.h
+// Filename: sohcore_base.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,31 +24,19 @@
 //
 
 
-#ifndef __SRC_SCF_SOHCORE_H
-#define __SRC_SCF_SOHCORE_H
+#ifndef __SRC_MOLECULE_SOHCORE_BASE_H
+#define __SRC_MOLECULE_SOHCORE_BASE_H
 
-#include <src/math/matrix.h>
-#include <src/wfn/geometry.h>
-#include <src/scf/sohcore_base.h>
+#include <src/molecule/matrix1e.h>
 
 namespace bagel {
 
-class SOhcore : public Matrix {
+class SOhcore_base : public Matrix1e {
   protected:
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const SOhcore_base> hcore_;
-//  std::shared_ptr<const Matrix> so1_;
-//  std::shared_ptr<const Matrix> so2_;
-//  std::shared_ptr<const Matrix> ecp_;
-    std::shared_ptr<const Matrix> so1();
-    std::shared_ptr<const Matrix> so2();
-    std::shared_ptr<const Matrix> ecp();
-
-    // initialize "this"
-    void form_sohcore();
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    SOhcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const SOhcore_base> h);
+    SOhcore_base(const std::shared_ptr<const Molecule>);
 
 };
 
