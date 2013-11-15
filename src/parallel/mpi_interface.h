@@ -61,6 +61,9 @@ class MPI_Interface {
     // mutex for isend and irecv
     mutable std::mutex mpimutex_;
 
+    // MPI's internal variables
+    int tag_ub_;
+
   public:
     MPI_Interface();
     ~MPI_Interface();
