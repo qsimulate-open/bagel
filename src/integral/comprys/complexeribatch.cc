@@ -54,8 +54,10 @@ void ComplexERIBatch::compute_ssss(const complex<double> integral_thresh) {
   throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
 }
 
-
+/*
 void ComplexERIBatch::compute() {
   assert(0);
   throw logic_error("ComplexERIBatch::compute not yet implemented");
 }
+*/
+
