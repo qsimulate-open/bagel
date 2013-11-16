@@ -27,6 +27,7 @@
 #include <src/scf/sohcore_base.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
+//#include <src/integral/rys/sonaibatch.h>
 #include <src/integral/rys/naibatch.h>
 
 using namespace std;

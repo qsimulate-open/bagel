@@ -27,6 +27,7 @@
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/eribatch_base.h>
 #include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/sonaibatch_base.h>
 #include <src/integral/rys/erirootlist.h>
 #include <src/integral/rys/breitrootlist.h>
 #include <src/integral/rys/spin2rootlist.h>
@@ -122,6 +123,22 @@ void NAIBatch_base::root_weight(const int ps) {
   }
 }
 
+void SONAIBatch_base::root_weight(const int ps) {
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (T_[i] < T_thresh__) {
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+      }
+    }
+  } else {
+    eri.root(rank_, T_, roots_, weights_, ps);
+  }
+}
 
 // a hack for screening of three-center integrals
 static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
