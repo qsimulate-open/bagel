@@ -79,7 +79,7 @@ class RASBlock {
 };
 
 template <typename DataType>
-class RASCivector {
+class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
   protected:
@@ -116,6 +116,10 @@ class RASCivector {
 
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
       std::copy_n(o.data(), size_, data_.get());
+    }
+
+    RASCivector(RASCivector<DataType>&& o) : RASCivector(o.det_) {
+      data_ = std::move(o.data_);
     }
 
     DataType* data() { return data_.get(); }
@@ -395,7 +399,7 @@ class RASCivector {
       return orthog(std::list<std::shared_ptr<const RASCivector<DataType>>>{o});
     }
 
-    void print(const double thr) const {
+    void print(const double thr = 0.05) const {
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {

@@ -26,9 +26,13 @@
 
 #include <src/integral/rys/naibatch_base.h>
 #include <src/util/constants.h>
+#include <src/integral/rys/inline.h>
+#include <src/integral/rys/erirootlist.h>
 
 using namespace std;
 using namespace bagel;
+
+static constexpr double T_thresh__ = 1.0e-8;
 
 NAIBatch_base::NAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              shared_ptr<StackMem> stack, const int L, const double A)
@@ -101,3 +105,59 @@ void NAIBatch_base::compute_ssss(const double integral_thresh) {
     }
   }
 }
+
+void NAIBatch_base::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+  size_final_ = asize_final_sph * csize_final_sph * contsize_;
+  if (deriv_rank_ == 0) {
+    const unsigned int size_start = asize_ * csize_ * primsize_;
+    const unsigned int size_intermediate = asize_final * csize_ * contsize_;
+    const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
+    size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
+    size_alloc_ = size_block_;
+
+    // if this is a two-electron Breit integral
+    if (breit_)
+      size_alloc_ = 6 * size_block_;
+
+    stack_save_ = stack_->get(size_alloc_);
+    stack_save2_ = nullptr;
+
+    // if Slater/Yukawa integrals
+    if (tenno_)
+      stack_save2_ = stack_->get(size_alloc_);
+
+  // derivative integrals
+  } else if (deriv_rank_ == 1) {
+    size_block_ = asize_final * csize_final * primsize_;
+    // if this is an NAI gradient integral
+    if (dynamic_cast<NAIBatch_base*>(this)) {
+      // in this case, we store everything
+      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
+      assert(csize_final == 1);
+    } else {
+      throw std::logic_error("something is strange in NAIBatch_base::allocate_data");
+    }
+    stack_save_ = stack_->get(size_alloc_);
+    stack_save2_ = nullptr;
+  }
+  data_ = stack_save_;
+  data2_ = stack_save2_;
+}
+
+void NAIBatch_base::root_weight(const int ps) {
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (T_[i] < T_thresh__) {
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+      }
+    }
+  } else {
+    eriroot__.root(rank_, T_, roots_, weights_, ps);
+  }
+}
+

@@ -38,10 +38,10 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   ras_{{norb1, norb2, norb3}}, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
     lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
 {
-  // Construct spaces and with them, a list of strings
-  alphaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
-  betaspaces_.reserve( (max_holes_+1) * (max_particles_+1) );
+  // check that large__ is big enough
+  if (max_particles_ >= large__) throw logic_error("Inappropriate value for \"large__\". Must be greater than max_particles");
 
+  // Construct spaces and with them, a list of strings
   if (!mute) cout << " o Restricted Active Spaces:" << endl;
   if (!mute) cout << "   - RAS1 -> " << ras_[0] << endl;
   if (!mute) cout << "   - RAS2 -> " << ras_[1] << endl;
@@ -57,24 +57,16 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
       if ( (nele1 >= 0) && (nele3 <= norb3) ) {
         if ( (nele2a >= 0) && (nele2a <= norb2) ) {
-          alphaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size()) );
-          stringa_.insert(stringa_.end(), alphaspaces_.back()->strings().begin(), alphaspaces_.back()->strings().end());
-        }
-        else {
-          alphaspaces_.push_back( shared_ptr<const StringSpace>() );
+          auto sp = make_shared<const StringSpace>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size());
+          alphaspaces_.emplace(nparticles + nholes * large__, sp);
+          stringa_.insert(stringa_.end(), sp->strings().begin(), sp->strings().end());
         }
 
         if ( (nele2b >= 0) && (nele2b <= norb2) ) {
-          betaspaces_.push_back( make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size()) );
-          stringb_.insert(stringb_.end(), betaspaces_.back()->strings().begin(), betaspaces_.back()->strings().end());
+          auto sp = make_shared<const StringSpace>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size());
+          betaspaces_.emplace(nparticles + nholes * large__, sp);
+          stringb_.insert(stringb_.end(), sp->strings().begin(), sp->strings().end());
         }
-        else {
-          betaspaces_.push_back( shared_ptr<const StringSpace>() );
-        }
-      }
-      else {
-        alphaspaces_.push_back( shared_ptr<const StringSpace>() );
-        betaspaces_.push_back( shared_ptr<const StringSpace>() );
       }
     }
   }

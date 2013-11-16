@@ -24,10 +24,11 @@
 //
 
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/inline.h>
+#include <src/integral/rys/erirootlist.h>
 
 using namespace std;
 using namespace bagel;
-
 
 ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double dummy, const bool dum,
                    shared_ptr<StackMem> stack) :  ERIBatch_base(_info, max_density, 0, 0, stack) {
@@ -35,5 +36,28 @@ ERIBatch::ERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double m
 #ifdef LIBINT_INTERFACE
   assert(false);
 #endif
+
+  root_weight(this->primsize_);
+}
+
+void ERIBatch::root_weight(const int ps) {
+  if (breit_ == 0) {
+    if (amax_ + cmax_ == 0) {
+      for (int j = 0; j != screening_size_; ++j) {
+        int i = screening_[j];
+        if (T_[i] < 1.0e-8) {
+          weights_[i] = 1.0;
+        } else {
+          const double sqrtt = sqrt(T_[i]);
+          const double erfsqt = inline_erf(sqrtt);
+          weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+        }
+      }
+    } else {
+      eriroot__.root(rank_, T_, roots_, weights_, ps);
+    }
+  } else {
+    assert(false);
+  }
 }
 

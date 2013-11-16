@@ -35,7 +35,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
   common_init();
 
-  update();
+  update(dynamic_pointer_cast<const RelReference>(ref_)->relcoeff());
 }
 
 
@@ -73,7 +73,6 @@ void ZHarrison::common_init() {
 #endif
     if (ncore_ < 0)
       ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    // norb is a dimension of CI (!= nelec in relativistic cases)
     if (norb_  < 0)
       norb_ = relref->relcoeff()->mdim()/2-ncore_;
   }
@@ -87,12 +86,12 @@ void ZHarrison::common_init() {
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
 
-  const int nele = geom_->nele() - charge_ - ncore_*2;
+  nele_ = geom_->nele() - charge_ - ncore_*2;
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nele, 0);
-  int_space_ = make_shared<RelSpace>(norb_, nele-2, 0, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_, 0);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
 }
 
 
@@ -226,9 +225,16 @@ void ZHarrison::compute() {
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifdef HAVE_MPI_H
+    // Just to make it run in parallel.
+    // Note that ZHarrison is not parallelized and there is no point of running this in parallel
+    cc_->sync();
+    sigma->sync();
+#endif
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const RelZDvec>(cc_);
     auto sigman = make_shared<const RelZDvec>(sigma);
+
     const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
     vector<shared_ptr<RelZDvec>> errvec = davidson.residual();
@@ -245,8 +251,8 @@ void ZHarrison::compute() {
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
 
-      auto ctmp = errvec.front()->clone(); 
-       
+      auto ctmp = errvec.front()->clone();
+
       for (int ist = 0; ist != nstate_; ++ist) {
         if (conv[ist]) continue;
         for (auto& ib : space_->detmap()) {
@@ -285,11 +291,10 @@ void ZHarrison::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<RelZDvec>(davidson.civec());
-  s->print(print_thresh_);
+  cc_ = make_shared<RelZDvec>(davidson.civec());
+  cc_->print(print_thresh_);
 
 #if 0
-  cc_ = make_shared<ZDvec>(s);
   for (auto& iprop : properties_) {
     iprop->compute(cc_);
     iprop->print();

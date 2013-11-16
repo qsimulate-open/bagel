@@ -97,7 +97,7 @@ void DistFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  space_ = make_shared<Space>(norb_, nelea_, neleb_, 1); 
+  space_ = make_shared<Space>(norb_, nelea_, neleb_, 1);
   det_ = space_->basedet();
 }
 
@@ -135,7 +135,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
       const int aloc = get<1>(ad) - out[oindex]->astart();
       if (aloc >= 0 && aloc < out[oindex]->asize())
         out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
-    }   
+    }
     out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
@@ -365,6 +365,6 @@ void DistFCI::compute() {
       cout << endl << "     * ci vector " << setw(3) << ist
                    << ", <S^2> = " << setw(6) << setprecision(4) << s2
                    << ", E = " << setw(17) << fixed << setprecision(8) << energy_[ist] << endl;
-    cc_->data(ist)->print(print_thresh_); 
+    cc_->data(ist)->print(print_thresh_);
   }
 }

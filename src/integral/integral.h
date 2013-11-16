@@ -35,7 +35,7 @@ class Integral {
   protected:
 
   public:
-    Integral() {}
+    Integral () {}
 
     virtual void compute() = 0;
 

@@ -40,8 +40,8 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
   auto sigmavec = make_shared<RelZDvec>(space_, nstate_);
   auto sigmavec_trans = sigmavec->clone(); // important note: the space stays the same after transposition
 
-  for (auto& isp : space_->detmap()) { 
-    shared_ptr<const Determinants> base_det = isp.second; 
+  for (auto& isp : space_->detmap()) {
+    shared_ptr<const Determinants> base_det = isp.second;
     const int nelea = base_det->nelea();
     const int neleb = base_det->neleb();
 
@@ -60,7 +60,7 @@ shared_ptr<RelZDvec> ZHarrison::form_sigma(shared_ptr<const RelZDvec> ccvec, sha
     const int nelea = isp.second->nelea();
     const int neleb = isp.second->neleb();
     shared_ptr<ZDvec> sigma = sigmavec->find(nelea, neleb);
-    shared_ptr<ZDvec> sigma_trans = sigmavec_trans->find(neleb, nelea); 
+    shared_ptr<ZDvec> sigma_trans = sigmavec_trans->find(neleb, nelea);
 
     // daxpy for each Civec
     for (int ist = 0; ist != nstate_; ++ist) {
@@ -133,7 +133,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     auto d = make_shared<ZDvec>(int_det, ij);
     auto e = make_shared<ZDvec>(int_det, ij);
 
-    sigma_2e_annih_aa(cc, d); 
+    sigma_2e_annih_aa(cc, d);
     pdebug.tick_print("task2aa-1 (2)");
 
     // (a^+ b^+ a a) contribution
@@ -192,7 +192,7 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
   shared_ptr<const ZMatrix> h1 = jop->mo1e(bit2);
 
   shared_ptr<const Determinants> ccdet = cc->det();
-  shared_ptr<const Determinants> sigmadet = sigma->det(); 
+  shared_ptr<const Determinants> sigmadet = sigma->det();
 
   // One-electron part
   for (int i = 0; i != norb_; ++i) {
@@ -230,13 +230,13 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
       if (i == j) continue;
       complex<double>* target = d->data(j+norb_*i)->data();
       for (auto& a : d->det()->stringa()) {
-        if (a[i] || a[j]) continue; 
+        if (a[i] || a[j]) continue;
         auto ca = a; ca.set(i); ca.set(j);
         const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
-        const size_t offas = cc->det()->lexical<0>(ca); 
-        const size_t offat = d->det()->lexical<0>(a); 
+        const size_t offas = cc->det()->lexical<0>(ca);
+        const size_t offat = d->det()->lexical<0>(a);
         transform(source + lb*offas, source + lb*(offas+1), target + lb*offat, target + lb*offat,
-                  [&factor](complex<double> p, complex<double> q) { return factor*p+q; }); 
+                  [&factor](complex<double> p, complex<double> q) { return factor*p+q; });
       }
     }
   }
@@ -293,7 +293,7 @@ void ZHarrison::sigma_2e_create_ab(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
 
 
 void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZDvec> e) const {
-  // compute |d> = b+_i b+_j|cc>
+  // compute |sigma> = b+_i b+_j|e_ij>
   const shared_ptr<const Determinants> base_det = sigma->det();
   const shared_ptr<const Determinants> int_det = e->det();
 
@@ -316,10 +316,10 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
         complex<double>* target = target_base + ia*lbt;
         const complex<double>* source = source_base + ia*lbs;
 
-        for (const bitset<nbit__>& b : int_det->stringb()) {
+        for (auto& b : int_det->stringb()) {
           if (b[i] || b[j]) continue;
           bitset<nbit__> cb = b;
-          cb.set(i); cb.set(j); 
+          cb.set(i); cb.set(j);
 
           const double sign = (i < j ? 1.0 : -1.0) * Determinants::sign(b, i, j);
 

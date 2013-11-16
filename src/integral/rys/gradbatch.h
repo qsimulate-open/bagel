@@ -39,6 +39,7 @@ class GradBatch : public ERIBatch_base {
     int centers_;
 
     void perform_VRR();
+    void root_weight(const int ps) override;
 
     void set_exponents();
     std::unique_ptr<double[]> exponents_;

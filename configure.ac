@@ -80,24 +80,10 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
         ])
     ])
 ])
-AC_CHECK_LIB(python, main, , [
-    AC_CHECK_LIB(python${PYTHON_VERSION}, main, , [
-        AC_MSG_ERROR("Linking against python library failed.")
-    ])
-])
-AC_CHECK_LIB(boost_python-gcc-mt, main, , [
-    AC_CHECK_LIB(boost_python-mt, main, , [
-        AC_CHECK_LIB(boost_python, main, , [
-            AC_MSG_ERROR("Linking against boost::python library failed.")
-        ])
-    ])
-])
-AC_CHECK_HEADERS([pyconfig.h], [], [AC_MSG_ERROR(["Include path to pyconfig.h required"])], [])
 
-# slatermem.h and srootlist.h need to be compiled with C++11
+# srootlist.h need to be compiled with C++11
 AC_LANG([C++])
 if test x${slater} = xyes; then
-  AC_CHECK_HEADERS([slatermem.h], [], [AC_MSG_ERROR(["slatermem.h not found"])], [])
   AC_CHECK_HEADERS([srootlist.h], [], [AC_MSG_ERROR(["srootlist.h not found"])], [])
   AC_CHECK_LIB(slater, main, , AC_MSG_ERROR(["libslater not found"]))
 fi
@@ -150,6 +136,7 @@ AC_CONFIG_FILES([Makefile
                  src/zfci/Makefile
                  src/ras/Makefile
                  src/casscf/Makefile
+                 src/zcasscf/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile

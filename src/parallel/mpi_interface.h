@@ -61,6 +61,9 @@ class MPI_Interface {
     // mutex for isend and irecv
     mutable std::mutex mpimutex_;
 
+    // MPI's internal variables
+    int tag_ub_;
+
   public:
     MPI_Interface();
     ~MPI_Interface();
@@ -76,10 +79,14 @@ class MPI_Interface {
     void soft_barrier();
     // sum reduce to the root process
     void reduce(double*, const size_t size, const int root) const;
+    // sum reduce and scatter to each process
+    void reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const;
+    int ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts);
     // sum reduce and broadcast to each process
     void allreduce(int*, const size_t size) const;
     void allreduce(double*, const size_t size) const;
     void allreduce(std::complex<double>*, const size_t size) const;
+    int iallreduce(size_t*, const size_t size);
     // all reduce but with less mutex lock
     void soft_allreduce(size_t*, const size_t size);
     // broadcast

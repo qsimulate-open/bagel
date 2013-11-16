@@ -151,7 +151,7 @@ void HarrisonZarrabian::sigma_2ab_2(shared_ptr<Dvec> d, shared_ptr<Dvec> e, shar
 
 void HarrisonZarrabian::sigma_2ab_3(shared_ptr<Civec> sigma, shared_ptr<Dvec> e) const {
   const shared_ptr<const Determinants> base_det = sigma->det();
-  const shared_ptr<const Determinants> int_det = e->det(); 
+  const shared_ptr<const Determinants> int_det = e->det();
 
   const int norb = norb_;
   const int lbt = base_det->lenb();

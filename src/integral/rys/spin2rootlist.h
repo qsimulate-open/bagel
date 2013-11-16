@@ -71,6 +71,8 @@ struct Spin2RootList  {
 
 };
 
+const static Spin2RootList spin2root__;
+
 }
 
 #endif

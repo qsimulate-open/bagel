@@ -30,10 +30,12 @@
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
 #include <src/ras/rasci.h>
+#include <src/ras/distrasci.h>
 #include <src/zfci/zharrison.h>
 #include <src/casscf/superci.h>
 #include <src/casscf/werner.h>
 #include <src/casscf/casbfgs.h>
+#include <src/zcasscf/zcasscf.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
@@ -58,7 +60,19 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
   else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
   else if (title == "zfci")   out = make_shared<ZHarrison>(itree, geom, ref);
-  else if (title == "ras")    out = make_shared<RASCI>(itree, geom, ref);
+  else if (title == "ras") {
+    const string algorithm = itree->get<string>("algorithm", "");
+    if ( algorithm == "local" || algorithm == "" ) {
+      out = make_shared<RASCI>(itree, geom, ref);
+    }
+#ifdef HAVE_MPI_H
+    else if ( algorithm == "dist" || algorithm == "parallel" ) {
+      out = make_shared<DistRASCI>(itree, geom, ref);
+    }
+#endif
+    else
+      throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
+  }
   else if (title == "fci") {
     const string algorithm = itree->get<string>("algorithm", "");
     const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
@@ -71,7 +85,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       out = make_shared<DistFCI>(itree, geom, ref);
 #endif
     } else
-      throw runtime_error("unknown FCI algorithm specified." + algorithm);
+      throw runtime_error("unknown FCI algorithm specified. " + algorithm);
   }
   else if (title == "casscf") {
     string algorithm = itree->get<string>("algorithm", "");
@@ -84,6 +98,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
   }
+  else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
 
   return out;
 }

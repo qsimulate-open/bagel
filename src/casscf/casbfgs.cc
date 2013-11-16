@@ -106,7 +106,7 @@ void CASBFGS::compute() {
 //  if (iter == 0) {
   if (true) {
       // BFGS and DIIS should start at the same time
-      shared_ptr<const Matrix> denom = compute_denom(cfock, afock, qxr)->unpack(1.0e10);
+      shared_ptr<const Matrix> denom = compute_denom(cfock, afock, qxr)->unpack<Matrix>(1.0e10);
       bfgs = make_shared<BFGS<Matrix>>(denom);
     }
     if (iter == 0) {
@@ -119,7 +119,7 @@ void CASBFGS::compute() {
     // extrapolation using BFGS
     *x *= *natorb_mat;
     auto xlog = make_shared<Matrix>(*x->log(100));
-    shared_ptr<const Matrix> sigma_mat = sigma->unpack();
+    shared_ptr<const Matrix> sigma_mat = sigma->unpack_sym<Matrix>();
     shared_ptr<Matrix> a = bfgs->extrapolate(sigma_mat, xlog);
     *a *= -1.0;
 

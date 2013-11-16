@@ -36,11 +36,15 @@ class BreitBatch_base : public ERIBatch_base {
     virtual void perform_VRR1() = 0;
   public:
     BreitBatch_base(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy, const bool dum, const int N)
-      :  ERIBatch_base(a, max_density, 0, N) {}
+      :  ERIBatch_base(a, max_density, 0, N) {
+
+      root_weight(this->primsize_);
+    }
 
     /// compute a batch of integrals
     void compute() override;
 
+    void root_weight(const int ps) override;
     double* data(const int i) override { return data_ + i*size_block_; }
     constexpr static int nblocks() { return 6; }
 };
@@ -52,7 +56,7 @@ class BreitBatch : public BreitBatch_base {
     void perform_VRR1() override;
 
   public:
-    // dummy will never used.
+    // dummy will never be used.
     BreitBatch(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy = 0.0, const bool dum = true)
      :  BreitBatch_base(a, max_density, dummy, dum, 1) { }
 
@@ -65,7 +69,7 @@ class Spin2Batch : public BreitBatch_base {
     void perform_VRR1() override;
 
   public:
-    // dummy will never used.
+    // dummy will never be used.
     Spin2Batch(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy = 0.0, const bool dum = true)
      :  BreitBatch_base(a, max_density, dummy, dum, 2) { }
 

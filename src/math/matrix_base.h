@@ -88,6 +88,7 @@ class Matrix_base {
     // some functions for implementation in derived classes
     template<class T>
     std::shared_ptr<T> get_submatrix_impl(const int nstart, const int mstart, const int nsize, const int msize) const {
+      assert(nstart >= 0 && mstart >= 0 && nsize >= 0 && msize >= 0 && nstart+nsize <= ndim_ && mstart+msize <= mdim_);
       auto out = std::make_shared<T>(nsize, msize, localized_);
       for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
         std::copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));

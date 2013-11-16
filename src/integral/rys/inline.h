@@ -27,6 +27,14 @@
 #ifndef __src_rysint_inline_h
 #define __src_rysint_inline_h
 
+// TODO Temporary hack to avoid having to set up complex inline_erf
+// Figure out what's the best way to handle integral screening for London orbitals
+#include <complex>
+#include <stdexcept>
+inline std::complex<double> inline_erf (std::complex<double> z) {
+  throw std::runtime_error("Inline erf has not been implemented for complex arguments.");
+}
+
 inline double inline_erf(const double inpt) {
   static const double a[65] = {
     0.00000000005958930743, -0.00000000113739022964, 0.00000001466005199839, -0.00000016350354461960,
@@ -96,4 +104,5 @@ inline double inline_erf(const double inpt) {
   }
   return t;
 };
+
 #endif

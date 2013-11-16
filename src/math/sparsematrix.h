@@ -75,6 +75,9 @@ class SparseMatrix {
     Matrix operator+(const Matrix& o) const;
 
     void zero() { std::fill_n(data_.get(), size_, 0.0); }
+
+    // diagnostics
+    void print_block_structure(const size_t nsize, const size_t msize) const;
 };
 
 }

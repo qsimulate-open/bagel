@@ -210,7 +210,7 @@ class DistCivector {
     // utility functions
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
-      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; })
+      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; })
                             : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
@@ -229,7 +229,7 @@ class DistCivector {
       assert(size() == o.size());
       for (size_t i = 0; i != asize(); ++i) {
         std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](DataType p, DataType q){ return a*p+q; });
+        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](const DataType& p, DataType q){ return a*p+q; });
       }
     }
     void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
@@ -337,12 +337,11 @@ class DistCivector {
           }
         }
       }
-      std::unique_ptr<size_t[]> nelements(new size_t[mpi__->size()]);
-      std::fill_n(nelements.get(), mpi__->size(), 0);
+      std::vector<size_t> nelements(mpi__->size(), 0);
       const size_t nn = data.size();
-      mpi__->allgather(&nn, 1, nelements.get(), 1);
+      mpi__->allgather(&nn, 1, nelements.data(), 1);
 
-      const size_t chunk = *std::max_element(nelements.get(), nelements.get() + mpi__->size());
+      const size_t chunk = *std::max_element(nelements.begin(), nelements.end());
       data.resize(chunk, 0);
       abits.resize(chunk, 0);
       bbits.resize(chunk, 0);
@@ -364,7 +363,7 @@ class DistCivector {
         for (auto& i : tmp) {
           std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
-          
+
         }
       }
     }
@@ -490,7 +489,7 @@ class Civector {
 
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
-      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
+      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; });
     }
     DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
 
@@ -679,7 +678,7 @@ class Civector {
     Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }
     Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
 
-    Civector<DataType>& operator=(const Civector<DataType>& o) { assert(size() == o.size()); std::copy_n(o.cc(), size(), cc()); return *this; }
+    Civector<DataType>& operator=(const Civector<DataType>& o) { assert(det()->lena() == o.det()->lena() && det()->lenb() == o.det()->lenb()); std::copy_n(o.cc(), size(), cc()); return *this; }
     Civector<DataType>& operator+=(const Civector<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
     Civector<DataType>& operator-=(const Civector<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
     Civector<DataType>& operator/=(const Civector<DataType>& o) {
