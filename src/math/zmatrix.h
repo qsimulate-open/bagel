@@ -59,7 +59,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(double* vec);
-    void diagonalize_skew(double* vec);
 
     std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 

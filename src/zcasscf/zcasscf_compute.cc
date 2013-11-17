@@ -35,7 +35,7 @@ using namespace bagel;
 
 void ZCASSCF::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
-  shared_ptr<BFGS<ZMatrix>> bfgs;
+  shared_ptr<BFGS<ZRotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -47,7 +47,6 @@ void ZCASSCF::compute() {
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   shared_ptr<const ZMatrix> overlap = make_shared<RelOverlap>(geom_);
-  shared_ptr<const ZMatrix> denom;
 
   // coeff_ is a kramers adapted coefficient..
   {
@@ -109,8 +108,8 @@ void ZCASSCF::compute() {
     }
 
     if (iter == 0) {
-      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack_sym<ZMatrix>(1.e10);
-      bfgs = make_shared<BFGS<ZMatrix>>(denom);
+      shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
+      bfgs = make_shared<BFGS<ZRotFile>>(denom);
     }
 
     // compute orbital gradients
@@ -119,21 +118,29 @@ void ZCASSCF::compute() {
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
 
-    auto xlog = make_shared<ZMatrix>(*x->log(100));
-    shared_ptr<const ZMatrix> grad_mat = grad->unpack<ZMatrix>();
-    shared_ptr<ZMatrix> amat = bfgs->extrapolate(grad_mat, xlog);
-    *amat *= -1.0;
+    auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
+    shared_ptr<ZMatrix> amat = bfgs->extrapolate(grad, xlog)->unpack<ZMatrix>();
+
+    const double gradient = amat->rms();
+
+    // multiply -1 from the formula. multiply -i to make amat hermite (will be compensated)
+    *amat *= -1.0 * complex<double>(0.0, -1.0);
 
     // restore the matrix from RotFile
-    shared_ptr<ZMatrix> expa = amat->exp(100);
-    expa->purify_unitary();
+    unique_ptr<double[]> teig(new double[amat->ndim()]);
+    amat->diagonalize(teig.get());
+    auto amat_sav = amat->copy();
+    for (int i = 0; i != amat->ndim(); ++i) {
+      complex<double> ex = exp(complex<double>(0.0, teig[i]));
+      transform(amat->element_ptr(0,i), amat->element_ptr(0,i+1), amat->element_ptr(0,i), [&ex](complex<double> a) { return a*ex; });
+    }
+    auto expa = make_shared<const ZMatrix>(*amat ^ *amat_sav);
 
     coeff_ = make_shared<const ZMatrix>(*coeff_**expa);
     // for next BFGS extrapolation
     *x *= *expa;
 
     // print energy
-    const double gradient = amat->rms();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) break;

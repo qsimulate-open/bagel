@@ -95,7 +95,7 @@ class RotationMatrix {
     void fill(const DataType& a) { std::fill_n(data(), size_, a); }
     // returns dot product
     DataType dot_product(const RotationMatrix<DataType>& o) const {
-      return std::inner_product(data(), data()+size_, o.data(), 0.0, std::plus<DataType>(), [](const DataType& a, const DataType& b){ return detail::conj(a)*b; });
+      return std::inner_product(data(), data()+size_, o.data(), DataType(0.0), std::plus<DataType>(), [](const DataType& a, const DataType& b){ return detail::conj(a)*b; });
     }
     DataType dot_product(const std::shared_ptr<const RotationMatrix<DataType>> o) const { return dot_product(*o); }
     // scale function
