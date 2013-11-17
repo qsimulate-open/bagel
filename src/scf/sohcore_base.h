@@ -31,12 +31,12 @@
 
 namespace bagel {
 
-class SOhcore_base : public Matrix1e {
+class SOHcore_base : public Matrix1e {
   protected:
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
   public:
-    SOhcore_base(const std::shared_ptr<const Molecule>);
+    SOHcore_base(const std::shared_ptr<const Molecule>);
 
 };
 

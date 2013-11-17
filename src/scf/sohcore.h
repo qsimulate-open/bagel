@@ -33,10 +33,10 @@
 
 namespace bagel {
 
-class SOhcore : public Matrix {
+class SOHcore : public Matrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const SOhcore_base> hcore_;
+    std::shared_ptr<const SOHcore_base> hcore_;
 //  std::shared_ptr<const Matrix> so1_;
 //  std::shared_ptr<const Matrix> so2_;
 //  std::shared_ptr<const Matrix> ecp_;
@@ -48,7 +48,7 @@ class SOhcore : public Matrix {
     void form_sohcore();
 
   public:
-    SOhcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const SOhcore_base> h);
+    SOHcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const SOHcore_base> h);
 
 };
 

@@ -36,8 +36,8 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
  : SCF_base(idata, geom, re) {
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
   soeig_ = unique_ptr<double[]> (new double[geom_->nbasis() * 2]);
-  sohcore_base_ = make_shared<const SOhcore_base>(geom);
-  sohcore_ = make_shared<SOhcore>(geom_, sohcore_base_);
+  sohcore_base_ = make_shared<const SOHcore_base>(geom);
+  sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 }
 
 void SOSCF::initial_guess() {

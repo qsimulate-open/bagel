@@ -35,8 +35,8 @@ namespace bagel {
 class SOSCF : public SCF_base {
   protected:
     std::shared_ptr<const Matrix> aodensity_;
-    std::shared_ptr<const SOhcore> sohcore_;
-    std::shared_ptr<const SOhcore_base> sohcore_base_;
+    std::shared_ptr<const SOHcore> sohcore_;
+    std::shared_ptr<const SOHcore_base> sohcore_base_;
     std::shared_ptr<const Coeff> socoeff_;
     std::shared_ptr<const Matrix> sooverlap_;
     std::shared_ptr<const Matrix> sotildex_;

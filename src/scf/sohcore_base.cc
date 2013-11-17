@@ -27,13 +27,12 @@
 #include <src/scf/sohcore_base.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
-//#include <src/integral/rys/sonaibatch.h>
-#include <src/integral/rys/naibatch.h>
+#include <src/integral/rys/sonaibatch.h>
 
 using namespace std;
 using namespace bagel;
 
-SOhcore_base::SOhcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init();
   fill_upper();
@@ -41,7 +40,7 @@ SOhcore_base::SOhcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol)
 }
 
 
-void SOhcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -55,7 +54,7 @@ void SOhcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    NAIBatch nai(input, mol_);
+    SONAIBatch nai(input, mol_);
     nai.compute();
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());

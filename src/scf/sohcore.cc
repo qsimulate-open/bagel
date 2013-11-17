@@ -29,27 +29,27 @@
 using namespace std;
 using namespace bagel;
 
-SOhcore::SOhcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOhcore_base> h)
+SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOHcore_base> h)
             : Matrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
   form_sohcore();
 }
 
 // TODO: so1, so2, ecp
-shared_ptr<const Matrix> SOhcore::so1() {
+shared_ptr<const Matrix> SOHcore::so1() {
   return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
 }
 
-shared_ptr<const Matrix> SOhcore::so2() {
+shared_ptr<const Matrix> SOHcore::so2() {
   return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
 }
 
-shared_ptr<const Matrix> SOhcore::ecp() {
+shared_ptr<const Matrix> SOHcore::ecp() {
   shared_ptr<Matrix> out = make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
   *out += *hcore_;
   return out;
 }
 
-void SOhcore::form_sohcore() {
+void SOHcore::form_sohcore() {
   shared_ptr<const Matrix> ecpmat = ecp();
 
   add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), ecpmat);
