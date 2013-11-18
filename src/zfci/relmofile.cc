@@ -35,11 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co)
- : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)), coeff_(co) {
-  // input should be RelReference
-  assert(dynamic_pointer_cast<const RelReference>(ref));
-
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -52,13 +49,13 @@ void RelMOFile::init(const int nstart, const int nfence) {
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
   if (!geom_->dfs())
-    geom_ = geom_->relativistic(ref_->gaunt());
+    geom_ = geom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -321,8 +318,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // Dirac-Coulomb term
   compute(out, false, false);
 
-  if (ref_->gaunt())
-    compute(out, true, ref_->breit());
+  if (gaunt_)
+    compute(out, true, breit_);
 
   // Kramers and particle symmetry
   out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();

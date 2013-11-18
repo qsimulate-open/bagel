@@ -33,17 +33,11 @@ using namespace bagel;
 ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
-  common_init();
 
-  update(dynamic_pointer_cast<const RelReference>(ref_)->relcoeff());
-}
-
-
-void ZHarrison::common_init() {
   print_header();
 
-  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-  assert(relref);
+  auto rr = dynamic_pointer_cast<const RelReference>(ref_);
+  assert(rr);
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -57,31 +51,15 @@ void ZHarrison::common_init() {
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
-  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-#if 0
-  // TODO not verified
-  if (iactive) {
-    set<int> tmp;
-    for (auto& i : *iactive) tmp.insert(lexical_cast<int>(i->data()));
-    ref_ = ref_->set_active(tmp);
-    ncore_ = ref_->nclosed();
-    norb_ = ref_->nact();
-  }
-  else {
-#else
-  {
-#endif
-    if (ncore_ < 0)
-      ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
-    if (norb_  < 0)
-      norb_ = relref->relcoeff()->mdim()/2-ncore_;
-  }
+  gaunt_ = rr->gaunt();
+  breit_ = rr->breit();
 
-#if 0
-  // TODO
-  // Configure properties to be calculated on the final wavefunctions
-  if (idata_->get<bool>("dipoles", true)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
-#endif
+  if (ncore_ < 0)
+    ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
+  if (norb_  < 0)
+    norb_ = rr->relcoeff()->mdim()/2-ncore_;
+
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
 
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
@@ -92,6 +70,8 @@ void ZHarrison::common_init() {
 
   space_ = make_shared<RelSpace>(norb_, nele_, 0);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
+
+  update(rr->relcoeff());
 }
 
 
