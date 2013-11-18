@@ -135,7 +135,7 @@ void ZCASSCF::compute() {
     auto amat_sav = amat->copy();
     for (int i = 0; i != amat->ndim(); ++i) {
       complex<double> ex = exp(complex<double>(0.0, teig[i]));
-      transform(amat->element_ptr(0,i), amat->element_ptr(0,i+1), amat->element_ptr(0,i), [&ex](complex<double> a) { return a*ex; });
+      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<const ZMatrix>(*amat ^ *amat_sav);
 
@@ -185,7 +185,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
   for (int i = 0; i != nact_*2; ++i) {
     assert(eig[i] >= -1.0e-14);
     const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-    transform(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), natorb->element_ptr(0, i), [&fac](complex<double> a) { return fac*a; });
+    for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
   }
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);

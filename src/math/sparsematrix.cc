@@ -85,7 +85,7 @@ SparseMatrix::SparseMatrix(SparseMatrix&& o) : data_(move(o.data_)), cols_(move(
 
 //Scalar operations
 void SparseMatrix::scale(const double& a) {
-  transform(data_.get(), data_.get() + size_, data_.get(), [&a] (double p) { return p * a; });
+  for_each(data_.get(), data_.get() + size_, [&a] (double& p) { p *= a; });
 }
 
 SparseMatrix SparseMatrix::operator*(const double& a) const {

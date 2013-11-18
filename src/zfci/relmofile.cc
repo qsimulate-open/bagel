@@ -134,8 +134,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
       const int iblock = i/(n/2);
       complex<double> ele = *max_element(cnow->element_ptr(iblock*nb,i), cnow->element_ptr((iblock+1)*nb,i),
                                          [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
-      const complex<double> fac = norm(ele) / ele;
-      transform(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), cnow->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
+      const complex<double> fac = norm(ele) / ele*complex<double>(1.0,1.0);
+      for_each(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), [&fac](complex<double>& a) { a *= fac; });
     }
 #endif
 

@@ -403,7 +403,7 @@ class DistRASCivector {
     void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) {
       for (auto& i : blocks_)
-        if (i) std::transform( i->local(), i->local() + i->size(), i->local(), [&a] (DataType p) { return a * p; } );
+        if (i) std::for_each( i->local(), i->local() + i->size(), [&a] (DataType& p) { p *= a; } );
     }
     void ax_plus_y(const DataType a, const DistRASCivector<DataType>& o) {
       for (auto& iblock : this->blocks()) {

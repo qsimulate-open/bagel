@@ -99,7 +99,7 @@ class RotationMatrix {
     }
     DataType dot_product(const std::shared_ptr<const RotationMatrix<DataType>> o) const { return dot_product(*o); }
     // scale function
-    void scale(const DataType& a) { std::transform(data(), data()+size_, data(), [&a](DataType p) { return a*p; }); }
+    void scale(const DataType& a) { std::for_each(data(), data()+size_, [&a](DataType& p) { p *= a; }); }
     // returns norm of the vector
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     // daxpy added to self

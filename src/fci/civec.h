@@ -221,7 +221,7 @@ class DistCivector {
     void scale(const DataType a) {
       for (size_t i = 0; i != asize(); ++i) {
         std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::transform(local()+i*lenb_, local()+(i+1)*lenb_, local()+i*lenb_, [&a](DataType p){ return a*p; });
+        std::for_each(local()+i*lenb_, local()+(i+1)*lenb_, [&a](DataType& p) { p *= a; });
       }
     }
 
@@ -297,7 +297,7 @@ class DistCivector {
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
         if (det_->nelea()*det_->neleb() & 1)
-          std::transform(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), trans->local()+off, [](DataType a){ return -a; });
+          std::for_each(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), [](DataType& a){ a = -a; });
 
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
@@ -497,7 +497,7 @@ class Civector {
     double variance() const { return detail::real(dot_product(*this)) / size(); }
 
     void scale(const DataType a) {
-      std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; });
+      std::for_each(cc(), cc()+size(), [&a](DataType& p){ p *= a; });
     }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
@@ -675,8 +675,8 @@ class Civector {
     }
 
     Civector<DataType>& operator*=(const double& a) { scale(a); return *this; }
-    Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }
-    Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
+    Civector<DataType>& operator+=(const double& a) { std::for_each(cc(), cc()+size(), [&a](DataType& p){ p += a; }); return *this; }
+    Civector<DataType>& operator-=(const double& a) { std::for_each(cc(), cc()+size(), [&a](DataType& p){ p -= a; }); return *this; }
 
     Civector<DataType>& operator=(const Civector<DataType>& o) { assert(det()->lena() == o.det()->lena() && det()->lenb() == o.det()->lenb()); std::copy_n(o.cc(), size(), cc()); return *this; }
     Civector<DataType>& operator+=(const Civector<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
