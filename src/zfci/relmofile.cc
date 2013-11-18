@@ -119,7 +119,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
         current.push_back(j);
     }
     const int n = current.size();
-    assert(n%2 == 0);
+    if (n%2 != 0) throw runtime_error("orbitals are not kramers paired");
 
     auto cnow = make_shared<ZMatrix>(ndim, n);
     int j = 0;
