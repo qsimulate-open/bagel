@@ -300,7 +300,9 @@ class DistRASCivector {
           std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
         put_->request_send(std::move(buf), det_->lenb(), dest, tag);
       }
+#ifndef USE_SERVER_THREAD
       put_->flush();
+#endif
     }
 
     int get_bstring_buf(double* buf, const size_t a) const {

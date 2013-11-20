@@ -193,11 +193,11 @@ class DistCivector {
       bool done;
       do {
         done = recv_->test();
-#ifndef USE_SERVER_THREAD
         // in case no thread is running behind, we need to cycle this to flush
         size_t d = done ? 0 : 1;
         mpi__->soft_allreduce(&d, 1);
         done = d == 0;
+#ifndef USE_SERVER_THREAD
         if (!done) put_->flush();
 #endif
         if (!done) std::this_thread::sleep_for(sleeptime__);
