@@ -342,33 +342,34 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         if (reduced_phisize == 0) continue;
 
         auto Vt = make_shared<Matrix>(la, reduced_phisize);
+
         // Grabbing sparse matrices
         auto& Fmap = Fmatrices.at(ispace->offset());
-
-        // Replace data in SparseMatrix
         const double* mo2e_ij = mo2e + i + norb*norb*j;
-        for (auto& f : Fmap) {
-          shared_ptr<SparseMatrix> sparse = f.second.second;
-          if (sparse) {
-            sparse->zero();
-            double* fdata = sparse->data();
-            for (auto& i : f.second.first)
-              fdata[get<0>(i)] += static_cast<double>(get<1>(i)) * mo2e_ij[get<2>(i)];
-          }
-        }
 
         for (auto& cpblock : Cp_map) {
           shared_ptr<const StringSpace> source_space = cpblock.first;
           shared_ptr<Cprime> cp = cpblock.second;
           shared_ptr<Matrix> cp_matrix = cp->get_matrix(ispace);
-          shared_ptr<SparseMatrix> Ft_block = Fmap[source_space->offset()].second;
-          if (Ft_block && cp_matrix) {
-            auto Vt_block = make_shared<Matrix>(*Ft_block * *cp_matrix);
-            size_t current = 0;
-            for (auto& phiblock : reduced_phi) {
-              if (!det->allowed(phiblock.space(), source_space)) continue;
-              Vt->add_block(1.0, 0, phiblock.offset(), Vt_block->ndim(), phiblock.size(), Vt_block->element_ptr(0, current));
-              current += phiblock.size();
+          if (cp_matrix) {
+            shared_ptr<SparseMatrix> Ft_block = Fmap[source_space->offset()].second;
+            if (Ft_block) {
+              // Update data
+              Ft_block->zero();
+              double* fdata = Ft_block->data();
+              vector<tuple<size_t, int, int>>& replace_data = Fmap[source_space->offset()].first;
+              for_each(replace_data.begin(), replace_data.end(),
+                        [&mo2e_ij, &fdata] (tuple<size_t, int, int> i)
+                          { fdata[get<0>(i)] += static_cast<double>(get<1>(i)) * mo2e_ij[get<2>(i)]; });
+
+              // multiply
+              auto Vt_block = make_shared<Matrix>(*Ft_block * *cp_matrix);
+              size_t current = 0;
+              for (auto& phiblock : reduced_phi) {
+                if (!det->allowed(phiblock.space(), source_space)) continue;
+                Vt->add_block(1.0, 0, phiblock.offset(), Vt_block->ndim(), phiblock.size(), Vt_block->element_ptr(0, current));
+                current += phiblock.size();
+              }
             }
           }
         }
