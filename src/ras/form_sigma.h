@@ -47,6 +47,8 @@ class FormSigmaRAS {
     void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
     void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
     void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
+
+    //void sigma_ab_1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
 };
 
 }

@@ -75,9 +75,7 @@ class StringSpace {
 
     std::vector<std::bitset<nbit__>> strings_;
 
-    std::shared_ptr<RASGraph> ras1_;
-    std::shared_ptr<RASGraph> ras2_;
-    std::shared_ptr<RASGraph> ras3_;
+    std::array<std::shared_ptr<RASGraph>, 3> graphs_;
 
     StaticDist dist_;
 
@@ -101,6 +99,10 @@ class StringSpace {
     const size_t size() const { return strings_.size(); }
     const size_t offset() const { return offset_; }
 
+    const size_t size1() const { return graphs_[0]->size(); }
+    const size_t size2() const { return graphs_[1]->size(); }
+    const size_t size3() const { return graphs_[2]->size(); }
+
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__> strings(const size_t i) const { return strings_[i]; }
 
@@ -120,12 +122,12 @@ class StringSpace {
       const size_t r2 = ras_[1].second;
       const size_t r3 = ras_[2].second;
 
-      const size_t n2 = ras2_->size();
-      const size_t n1 = ras1_->size();
+      const size_t n2 = graphs_[1]->size();
+      const size_t n1 = graphs_[0]->size();
 
-      out += ras2_->lexical(r1, r1+r2, bit);
-      out += n2 * ras1_->lexical(0, r1, bit);
-      out += n2 * n1 * ras3_->lexical(r1+r2, r1+r2+r3, bit);
+      out += graphs_[1]->lexical(r1, r1+r2, bit);
+      out += n2 * graphs_[0]->lexical(0, r1, bit);
+      out += n2 * n1 * graphs_[2]->lexical(r1+r2, r1+r2+r3, bit);
 
       return out;
     }

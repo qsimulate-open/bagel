@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include <src/math/sparsematrix.h>
-#include <src/util/mkl_sparse.h>
+#include <src/math/algo.h>
 
 using namespace bagel;
 using namespace std;
@@ -108,21 +108,7 @@ Matrix SparseMatrix::operator*(const Matrix& o) const {
   const int n = this->ndim();
 
   Matrix out(n, m);
-
-#ifdef HAVE_MKL_H
-  mkl_dcsrmm_("N", n, m, l, 1.0, data_.get(), cols_.get(), rind_.get(), o.data(), o.ndim(), 0.0, out.data(), out.ndim());
-#else
-  for (int j = 0; j < m; ++j) {
-    double* target = out.element_ptr(0,j);
-    const double* source = o.element_ptr(0,j);
-
-    for (int i = 0; i < n; ++i) {
-      for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
-        target[i] += data_[rowdata] * source[cols_[rowdata] - 1];
-      }
-    }
-  }
-#endif
+  dcsrmm_("N", n, m, l, 1.0, data_.get(), cols_.get(), rind_.get(), o.data(), o.ndim(), 0.0, out.data(), out.ndim());
 
   return out;
 }
