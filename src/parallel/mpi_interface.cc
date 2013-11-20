@@ -54,6 +54,12 @@ MPI_Interface::MPI_Interface()
   sl_init_(context_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
 #endif
+  {
+    int flag, *get_val;
+    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &get_val, &flag);
+    assert(flag && *get_val >= 32767); // this is what the standard says
+    tag_ub_ = *get_val;
+  }
 #else
   rank_ = 0;
   size_ = 1;
@@ -86,8 +92,9 @@ void MPI_Interface::soft_barrier() {
   vector<size_t> msg(size_);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
-    request_send(&msg[rank_], 1, i, (1<<30));
-    receive.push_back(request_recv(&msg[i], 1, i, (1<<30)));
+    // using the biggest tag value
+    request_send(&msg[rank_], 1, i, tag_ub_);
+    receive.push_back(request_recv(&msg[i], 1, i, tag_ub_));
   }
   bool done;
   do {
@@ -172,8 +179,8 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
   vector<size_t> msg(size_*size);
   for (int i = 0; i != size_; ++i) {
     if (i == rank_) continue;
-    request_send(a, size, i, (1<<30)+1);
-    receive.push_back(request_recv(&msg[i*size], size, i, (1<<30)+1));
+    request_send(a, size, i, tag_ub_-1);
+    receive.push_back(request_recv(&msg[i*size], size, i, tag_ub_-1));
   }
   bool done;
   do {
@@ -256,6 +263,7 @@ void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, con
 
 int MPI_Interface::request_send(const double* sbuf, const size_t size, const int dest, const int tag) {
 #ifdef HAVE_MPI_H
+  assert(tag <= tag_ub_);
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
@@ -276,6 +284,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
 
 int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest, const int tag) {
 #ifdef HAVE_MPI_H
+  assert(tag <= tag_ub_);
   static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
@@ -298,6 +307,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
 
 int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origin, const int tag) {
 #ifdef HAVE_MPI_H
+  assert(tag <= tag_ub_);
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
@@ -317,6 +327,7 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
 
 int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origin, const int tag) {
 #ifdef HAVE_MPI_H
+  assert(tag <= tag_ub_);
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {

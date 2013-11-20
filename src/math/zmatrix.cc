@@ -271,28 +271,6 @@ void ZMatrix::diagonalize(double* eig) {
 }
 
 
-void ZMatrix::diagonalize_skew(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
-  antisymmetrize();
-  const int n = ndim_;
-  unique_ptr<complex<double>[]> vr(new complex<double>[n*n]);
-  unique_ptr<complex<double>[]> w(new complex<double>[n]);
-  const int lwork = n*3;
-  unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-  unique_ptr<double[]> rwork(new double[lwork]);
-  int info;
-  zgeev_("N", "V", n, data(), n, w.get(), vr.get(), n, vr.get(), n, work.get(), lwork, rwork.get(), info);
-  for (int i = 0; i != n; ++i) {
-    if (fabs(w[i].imag()) > 1.0e-8) {
-      stringstream ss; ss << "eigenvalue is found complex in ZMatrix::diagonalize_skew " << setprecision(10) << w[i];
-      throw runtime_error(ss.str());
-    }
-    eig[i] = w[i].real();
-  }
-  copy_n(vr.get(), n*n, data());
-}
-
-
 void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
   assert(U->ndim() == ndim_ && U->mdim() == ndim_);
   assert(V->ndim() == mdim_ && V->mdim() == mdim_);

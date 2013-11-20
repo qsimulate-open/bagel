@@ -35,7 +35,7 @@ using namespace bagel;
 
 void ZCASSCF::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
-  shared_ptr<BFGS<ZMatrix>> bfgs;
+  shared_ptr<BFGS<ZRotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -46,7 +46,21 @@ void ZCASSCF::compute() {
   x->unit();
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-  shared_ptr<const ZMatrix> denom;
+  shared_ptr<const ZMatrix> overlap = make_shared<RelOverlap>(geom_);
+
+  // coeff_ is a kramers adapted coefficient..
+  {
+    array<shared_ptr<const ZMatrix>,2> tmp = RelMOFile::kramers(coeff_, overlap, hcore);
+    auto ctmp = coeff_->clone();
+    int i = 0;
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
+    coeff_ = ctmp;
+  }
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
@@ -94,8 +108,8 @@ void ZCASSCF::compute() {
     }
 
     if (iter == 0) {
-      denom = compute_denom(cfock, afock, qvec, rdm1)->unpack<ZMatrix>(1.e10);
-      bfgs = make_shared<BFGS<ZMatrix>>(denom);
+      shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
+      bfgs = make_shared<BFGS<ZRotFile>>(denom);
     }
 
     // compute orbital gradients
@@ -103,22 +117,33 @@ void ZCASSCF::compute() {
     grad_vc(cfock, afock, grad);
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
+    kramers_adapt(grad);
 
-    auto xlog = make_shared<ZMatrix>(*x->log(100));
-    shared_ptr<const ZMatrix> grad_mat = grad->unpack<ZMatrix>();
-    shared_ptr<ZMatrix> amat = bfgs->extrapolate(grad_mat, xlog);
-    *amat *= -1.0;
+    auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
+    shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
+    kramers_adapt(a);
+    shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
+
+    const double gradient = amat->rms();
+
+    // multiply -1 from the formula. multiply -i to make amat hermite (will be compensated)
+    *amat *= -1.0 * complex<double>(0.0, -1.0);
 
     // restore the matrix from RotFile
-    shared_ptr<ZMatrix> expa = amat->exp(100);
-    expa->purify_unitary();
+    unique_ptr<double[]> teig(new double[amat->ndim()]);
+    amat->diagonalize(teig.get());
+    auto amat_sav = amat->copy();
+    for (int i = 0; i != amat->ndim(); ++i) {
+      complex<double> ex = exp(complex<double>(0.0, teig[i]));
+      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+    }
+    auto expa = make_shared<const ZMatrix>(*amat ^ *amat_sav);
 
     coeff_ = make_shared<const ZMatrix>(*coeff_**expa);
     // for next BFGS extrapolation
     *x *= *expa;
 
     // print energy
-    const double gradient = amat->rms();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) break;
@@ -129,19 +154,14 @@ void ZCASSCF::compute() {
 shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   assert(fci_);
 
-  array<shared_ptr<const ZMatrix>,2> kcoeff = fci_->kramers_coeff();
-
+  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
   auto rdm1_tot = make_shared<ZMatrix>(nact_*2, nact_*2);
   rdm1_tot->copy_block(    0,     0, nact_, nact_, fci_->rdm1_av("00")->data());
   rdm1_tot->copy_block(nact_, nact_, nact_, nact_, fci_->rdm1_av("11")->data());
   rdm1_tot->copy_block(nact_,     0, nact_, nact_, fci_->rdm1_av("10")->data());
   rdm1_tot->copy_block(    0, nact_, nact_, nact_, rdm1_tot->get_submatrix(nact_, 0, nact_, nact_)->transpose_conjg());
 
-  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  auto coeff_tot = make_shared<ZMatrix>(kcoeff[0]->ndim(), nact_*2);
-  assert(nact_ == kcoeff[0]->mdim() && nact_ == kcoeff[1]->mdim() && kcoeff[0]->ndim() % 4 == 0);
-  coeff_tot->copy_block(0,     0, kcoeff[0]->ndim(), nact_, kcoeff[0]->get_conjg());
-  coeff_tot->copy_block(0, nact_, kcoeff[1]->ndim(), nact_, kcoeff[1]->get_conjg());
+  auto coeff_tot = fci_->coeff()->get_conjg();
 
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
   // TODO compute RelOverlap only once (this is comptued also in qzvec)
@@ -165,7 +185,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
   for (int i = 0; i != nact_*2; ++i) {
     assert(eig[i] >= -1.0e-14);
     const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-    transform(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), natorb->element_ptr(0, i), [&fac](complex<double> a) { return fac*a; });
+    for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
   }
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
@@ -237,7 +257,8 @@ void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 // grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
 void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
-  zgemm3m_("N", "N", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
+  // TODO not sure about complex conjugation of rdm1
+  zgemm3m_("N", "T", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
   complex<double>* target = sigma->ptr_va();
   for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
     zaxpy_(nvirt_*2, 1.0, qxr->element_ptr(nocc_*2, i), 1, target, 1);
@@ -248,7 +269,6 @@ void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 // grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
 void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
-
   // TODO check
   auto qxrc = qxr->get_conjg();
   complex<double>* target = sigma->ptr_ca();
@@ -259,4 +279,35 @@ void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
   }
   // "T" effectively makes complex conjugate of cfock
   zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
+}
+
+
+void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o) const {
+  for (int i = 0; i != nclosed_; ++i) {
+    for (int j = 0; j != nvirt_; ++j) {
+      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt_, i+nclosed_))) * 0.5;
+      o->ele_vc(j+nvirt_, i+nclosed_) = conj(o->ele_vc(j, i));
+
+      o->ele_vc(j+nvirt_, i) = (o->ele_vc(j+nvirt_, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
+      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt_, i));
+    }
+  }
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nvirt_; ++j) {
+      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt_, i+nact_))) * 0.5;
+      o->ele_va(j+nvirt_, i+nact_) = conj(o->ele_va(j, i));
+
+      o->ele_va(j+nvirt_, i) = (o->ele_va(j+nvirt_, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
+      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt_, i));
+    }
+  }
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nclosed_; ++j) {
+      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
+      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
+
+      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
+      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
+    }
+  }
 }

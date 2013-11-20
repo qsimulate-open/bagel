@@ -35,11 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co)
- : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)), coeff_(co) {
-  // input should be RelReference
-  assert(dynamic_pointer_cast<const RelReference>(ref));
-
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -52,13 +49,13 @@ void RelMOFile::init(const int nstart, const int nfence) {
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
   if (!geom_->dfs())
-    geom_ = geom_->relativistic(ref_->gaunt());
+    geom_ = geom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -71,7 +68,8 @@ void RelMOFile::init(const int nstart, const int nfence) {
   }
 
   // then compute Kramers adapated coefficient matrices
-  kramers_coeff_ = kramers(nstart, nfence);
+  auto overlap = make_shared<RelOverlap>(geom_);
+  kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
@@ -84,18 +82,18 @@ void RelMOFile::init(const int nstart, const int nfence) {
 }
 
 
-array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
-  shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
-  shared_ptr<ZMatrix> reordered = coeff->clone();
-  auto overlap = make_shared<RelOverlap>(geom_);
 
-  const int noff = reordered->mdim()/2;
-  const int ndim = reordered->ndim();
-  const int mdim = reordered->mdim();
+// this is a static function!
+array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+  const int noff = coeff->mdim()/2;
+  const int ndim = coeff->ndim();
+  const int mdim = coeff->mdim();
   const int nb = ndim / 4;
-  assert(nb == nbasis_);
+  unique_ptr<complex<double>[]> eig = (*coeff % *hcore * *coeff).diag();
 
-  if (nfence-nstart <= 0 || (nfence-nstart)%2 != 0 || ndim%4 != 0)
+  array<shared_ptr<ZMatrix>,2> out{{make_shared<ZMatrix>(ndim, noff), make_shared<ZMatrix>(ndim, noff)}};
+
+  if (ndim%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
@@ -106,30 +104,40 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
   sigmaz->scale(-1.0);
 
   unique_ptr<double[]> tmp(new double[mdim]);
-  int i;
-  for (i = 0; i != mdim; ) {
-    const double eig = ref_->eig()[nstart+i];
-    int j = i+1;
-    // pick up degenerate orbitals
-    while (j != mdim && (fabs(ref_->eig()[nstart+j]-eig) < 1.0e-8))
-      ++j;
-    assert((j-i)%2 == 0);
-    const int n = j-i;
 
-    auto cnow = coeff->slice(i, j);
+  list<int> done;
+  for (int i = 0; i != mdim; ++i) {
+    if (find(done.begin(), done.end(), i) != done.end()) continue;
+    list<int> current{i};
+    const double e = eig[i].real();
+
+    for (int j = i+1; j < mdim; ++j) {
+      if (fabs(eig[j].real()-e)/fabs(e) < 1.0e-8)
+        current.push_back(j);
+    }
+    const int n = current.size();
+    if (n%2 != 0) throw runtime_error("orbitals are not kramers paired");
+
+    auto cnow = make_shared<ZMatrix>(ndim, n);
+    int j = 0;
+    for (auto& i : current)
+      cnow->copy_block(0, j++, ndim, 1, coeff->element_ptr(0,i));
+
     auto corig = cnow->copy();
     auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
     s->diagonalize(tmp.get());
     *cnow *= *s;
 
     // fix the phase - making the largest large-component element in each colomn real
+#if 1
     for (int i = 0; i != n; ++i) {
       const int iblock = i/(n/2);
       complex<double> ele = *max_element(cnow->element_ptr(iblock*nb,i), cnow->element_ptr((iblock+1)*nb,i),
                                          [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
-      const complex<double> fac = norm(ele) / ele;
-      transform(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), cnow->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
+      const complex<double> fac = norm(ele) / ele*complex<double>(1.0,1.0);
+      for_each(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), [&fac](complex<double>& a) { a *= fac; });
     }
+#endif
 
     // off diagonal
     const int m = n/2;
@@ -153,14 +161,13 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
     unit.purify_unitary();
     *cnow = *corig * unit;
 
-    assert(i%2 == 0);
-    reordered->copy_block(0, i/2,      ndim, n/2, cnow->element_ptr(0, 0));
-    reordered->copy_block(0, i/2+noff, ndim, n/2, cnow->element_ptr(0, n/2));
+    const int d = done.size();
+    assert(d % 2 == 0);
+    out[0]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, 0));
+    out[1]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, n/2));
 
-    i = j;
+    done.insert(done.end(), current.begin(), current.end());
   }
-
-  array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
 
   return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
 }
@@ -311,8 +318,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // Dirac-Coulomb term
   compute(out, false, false);
 
-  if (ref_->gaunt())
-    compute(out, true, ref_->breit());
+  if (gaunt_)
+    compute(out, true, breit_);
 
   // Kramers and particle symmetry
   out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();

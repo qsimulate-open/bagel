@@ -148,7 +148,7 @@ vector<array<size_t, 4>> BufferPutRequest::get_calls() {
         const size_t tag  = i->second->buf[1];
         const size_t rank = i->second->buf[2];
         const size_t off  = i->second->buf[3];
-        out.push_back( array<size_t, 4>{size, tag, rank, off} );
+        out.push_back( array<size_t, 4>{{size, tag, rank, off}} );
         i = calls_.erase(i);
         ++cnt;
       } else {

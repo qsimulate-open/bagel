@@ -68,7 +68,7 @@ class RDM_base {
       std::transform(o.data(), o.data()+size(), data(), data(), [&a](DataType p, DataType q){ return q+a*p;});
     }
     void ax_plus_y(const DataType& a, const std::shared_ptr<RDM_base<DataType>>& o) { this->ax_plus_y(a, *o); }
-    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
+    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
     size_t size() const { return dim_*dim_; }
 
     int norb() const { return norb_; }

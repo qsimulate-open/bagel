@@ -163,6 +163,8 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   const size_t npos = coeff_->mdim() - nneg_;
   auto out =  make_shared<RelReference>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
   vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_+npos);
+  vector<double> eigm(eig_.get(), eig_.get()+nneg_);
+  eig.insert(eig.end(), eigm.begin(), eigm.end());
   out->set_eig(eig);
   return out;
 }

@@ -269,7 +269,7 @@ class Matrix_base {
       return out;
     }
 
-    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
+    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
 
     void allreduce() {
       mpi__->allreduce(data_.get(), size());
