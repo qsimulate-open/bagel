@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sonaibatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: naidampbatch.h
+// Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,33 +23,33 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_SONAIBATCH_H
-#define __SRC_INTEGRAL_RYS_SONAIBATCH_H
 
-#include <src/integral/rys/sonaibatch_base.h>
+#ifndef __SRC_RYSINT_NAIDAMPBATCH_H
+#define __SRC_RYSINT_NAIDAMPBATCH_H
+
+#include <src/integral/rys/coulombbatch_energy.h>
 
 namespace bagel {
 
-class SONAIBatch : public SONAIBatch_base {
-
+class NAIdampBatch: public CoulombBatch_energy {
   protected:
+    double zeta_;
+
+    void root_weight(const int ps) override;
+    void compute_ssss(const double) override;
 
   public:
+    NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      : CoulombBatch_energy (_info, mol, stack) {}
 
-    SONAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  SONAIBatch_base(_info, mol, 0, stack, 0, 0.0) {};
+    NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+      : CoulombBatch_energy (_info, mol, L, A) {}
+      
 
-    SONAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  SONAIBatch_base(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
-     ~SONAIBatch() {};
+    ~NAIdampBatch() {}
 
-    /// compute a batch of integrals
-    void compute() override;
-
-    constexpr static int Nblocks() { return 1; }
 };
 
 }
 
 #endif
-

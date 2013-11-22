@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sonaibatch_base.cc
+// Filename: coulombbatch_base.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,7 +24,7 @@
 //
 
 
-#include <src/integral/rys/sonaibatch_base.h>
+#include <src/integral/rys/coulombbatch_base.h>
 #include <src/util/constants.h>
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/erirootlist.h>
@@ -34,17 +34,16 @@ using namespace bagel;
 
 static constexpr double T_thresh__ = 1.0e-8;
 
-SONAIBatch_base::SONAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
+CoulombBatch_base::CoulombBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              shared_ptr<StackMem> stack, const int L, const double A)
  : RysInt(_info, stack), mol_(mol), L_(L), A_(A) {
-
-  zeta_ = 0.8;  
 
   deriv_rank_ = deriv;
   const double integral_thresh = PRIM_SCREEN_THRESH;
 
-  if (_info.size() != 2) throw logic_error("SONAIBatch_base should be called with shell pairs");
+  if (_info.size() != 2) throw logic_error("CoulombBatch_base should be called with shell pairs");
 
+  // natom_
   natom_ = mol_->natom() * (2 * L + 1);
 
   set_swap_info();
@@ -64,7 +63,7 @@ SONAIBatch_base::SONAIBatch_base(const std::array<std::shared_ptr<const Shell>,2
 
 }
 
-void SONAIBatch_base::compute_ssss(const double integral_thresh) {
+void CoulombBatch_base::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
   const vector<double> exp0 = basisinfo_[0]->exponents();
@@ -80,21 +79,18 @@ void SONAIBatch_base::compute_ssss(const double integral_thresh) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
         double Z = (*aiter)->atom_charge();
         const double cxp = *expi0 + *expi1;
-        const double socxp = cxp + zeta_;
         xp_[index] = cxp;
         const double ab = *expi0 * *expi1;
         const double cxp_inv = 1.0 / cxp;
-        const double socxp_inv = 1.0 / socxp;
         p_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
         p_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         p_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = ::exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        // Z needs to be removed
-        coeff_[index] = - 2 * Z * pi__ * socxp_inv * ::exp( cxp * zeta_ * socxp_inv ) * Eab;
+        coeff_[index] = - 2 * Z * pi__ * cxp_inv * Eab;
         const double PCx = p_[index * 3    ] - (*aiter)->position(0);
         const double PCy = p_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = p_[index * 3 + 2] - (*aiter)->position(2);
-        const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
+        const double T = cxp * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = ::sqrt(T);
         const double ss = - coeff_[index] * ::pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? sqrtpi * ::erf(sqrtt) / sqrtt * 0.5 : 1.0);
         if (ss > integral_thresh) {
@@ -110,7 +106,7 @@ void SONAIBatch_base::compute_ssss(const double integral_thresh) {
   }
 }
 
-void SONAIBatch_base::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+void CoulombBatch_base::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
     const unsigned int size_start = asize_ * csize_ * primsize_;
@@ -134,12 +130,12 @@ void SONAIBatch_base::allocate_data(const int asize_final, const int csize_final
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
     // if this is an NAI gradient integral
-    if (dynamic_cast<SONAIBatch_base*>(this)) {
+    if (dynamic_cast<CoulombBatch_base*>(this)) {
       // in this case, we store everything
-      size_alloc_ = (dynamic_cast<SONAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
+      size_alloc_ = (dynamic_cast<CoulombBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
       assert(csize_final == 1);
     } else {
-      throw std::logic_error("something is strange in SONAIBatch_base::allocate_data");
+      throw std::logic_error("something is strange in CoulombBatch_base::allocate_data");
     }
     stack_save_ = stack_->get(size_alloc_);
     stack_save2_ = nullptr;
@@ -148,7 +144,7 @@ void SONAIBatch_base::allocate_data(const int asize_final, const int csize_final
   data2_ = stack_save2_;
 }
 
-void SONAIBatch_base::root_weight(const int ps) {
+void CoulombBatch_base::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];

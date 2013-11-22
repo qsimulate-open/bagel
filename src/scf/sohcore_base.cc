@@ -27,7 +27,7 @@
 #include <src/scf/sohcore_base.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
-#include <src/integral/rys/sonaibatch.h>
+#include <src/integral/rys/naidampbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -54,7 +54,7 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    SONAIBatch nai(input, mol_);
+    NAIdampBatch nai(input, mol_);
     nai.compute();
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());

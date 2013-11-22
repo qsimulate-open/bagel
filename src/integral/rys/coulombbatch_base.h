@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sonaibatch_base.h
+// Filename: coulombbatch_base.h
 // Copyright (C) 2012 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,19 +24,18 @@
 //
 
 
-#ifndef __SRC_RYSINT_SONAIBATCH_BASE_H
-#define __SRC_RYSINT_SONAIBATCH_BASE_H
+#ifndef __SRC_RYSINT_COULOMBBATCH_BASE_H
+#define __SRC_RYSINT_COULOMBBATCH_BASE_H
 
 #include <src/integral/rys/rysintegral.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class SONAIBatch_base : public RysInt {
+class CoulombBatch_base : public RysInt {
   protected:
     std::shared_ptr<const Molecule> mol_;
     int natom_;
-    double zeta_;
 
     /// for periodic calculations (UNCHECKED!!)
     const int L_;
@@ -47,10 +46,10 @@ class SONAIBatch_base : public RysInt {
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:
-    SONAIBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
+    CoulombBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>(),
                   const int L = 0, const double A = 0.0);
-    ~SONAIBatch_base() {};
+    ~CoulombBatch_base() {};
 
     std::shared_ptr<const Molecule> mol() const { return mol_; }
 

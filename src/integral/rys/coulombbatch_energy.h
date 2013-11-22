@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: naibatch.h
+// Filename: coulombbatch_energy.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,27 +23,30 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_NAIBATCH_H
-#define __SRC_INTEGRAL_RYS_NAIBATCH_H
+#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
+#define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
 
-#include <src/integral/rys/coulombbatch_energy.h>
+#include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class NAIBatch : public CoulombBatch_energy {
+class CoulombBatch_energy: public CoulombBatch_base {
 
   protected:
 
   public:
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) 
-      : CoulombBatch_energy(_info, mol, stack) {}
+    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      :  CoulombBatch_base(_info, mol, 0, stack, 0, 0.0) {};
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0) 
-      : CoulombBatch_energy (_info, mol, L, A) {}
+    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+      :  CoulombBatch_base(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
 
-    ~NAIBatch() {};
+     ~CoulombBatch_energy() {};
 
+    void compute() override;
+
+    constexpr static int Nblocks() { return 1; }
 };
 
 }

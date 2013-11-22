@@ -35,7 +35,7 @@
 #include <src/integral/rys/sinline.h>
 #include <src/integral/rys/slaterbatch.h>
 #include <src/integral/rys/eribatch_base.h>
-#include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/coulombbatch_base.h>
 
 #ifdef HAVE_LIBSLATER
 #include <srootlist.h>

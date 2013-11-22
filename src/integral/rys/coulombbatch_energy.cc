@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sonaibatch.cc
+// Filename: coulombbatch_energy.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -26,7 +26,7 @@
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
-#include <src/integral/rys/sonaibatch.h>
+#include <src/integral/rys/coulombbatch_energy.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,7 +35,7 @@ constexpr static double PITWOHALF = 17.493418327624862;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-void SONAIBatch::compute() {
+void CoulombBatch_energy::compute() {
   const double zero = 0.0;
   const int zeroint = 0;
   const int unit = 1;
