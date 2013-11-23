@@ -300,7 +300,9 @@ class DistRASCivector {
           std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
         put_->request_send(std::move(buf), det_->lenb(), dest, tag);
       }
+#ifndef USE_SERVER_THREAD
       put_->flush();
+#endif
     }
 
     int get_bstring_buf(double* buf, const size_t a) const {
@@ -403,7 +405,7 @@ class DistRASCivector {
     void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) {
       for (auto& i : blocks_)
-        if (i) std::transform( i->local(), i->local() + i->size(), i->local(), [&a] (DataType p) { return a * p; } );
+        if (i) std::for_each( i->local(), i->local() + i->size(), [&a] (DataType& p) { p *= a; } );
     }
     void ax_plus_y(const DataType a, const DistRASCivector<DataType>& o) {
       for (auto& iblock : this->blocks()) {

@@ -61,7 +61,7 @@ class DistMatrix_base {
       assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
       DataType sum = size() ? inner_product(local_.get(), local_.get()+size(), o.local_.get(), DataType(0.0), std::plus<DataType>(),
                                             [](DataType p, DataType q){ return detail::conj(p)*q; })
-                            : 0.0; 
+                            : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
     }
@@ -149,7 +149,7 @@ class DistMatrix_base {
     double norm() const { return std::sqrt(detail::real(dot_product_impl(*this))); }
     double rms() const { return norm()/std::sqrt(ndim_*mdim_); }
 
-    void scale(const DataType a) { std::for_each(local_.get(), local_.get()+size(), [&a](DataType p) { p *= a; }); }  
+    void scale(const DataType a) { std::for_each(local_.get(), local_.get()+size(), [&a](DataType& p) { p *= a; }); }
 
     void scale(const double* vec) {
       const int localrow = std::get<0>(localsize_);

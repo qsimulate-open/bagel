@@ -42,10 +42,12 @@ class RelMOFile {
     double core_energy_;
 
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const RelReference> ref_;
     std::shared_ptr<const ZMatrix> core_fock_;
     std::shared_ptr<const ZMatrix> coeff_;
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff_;
+
+    bool gaunt_;
+    bool breit_;
 
     // creates integral files and returns the core energy.
     void init(const int nstart, const int nend);
@@ -66,7 +68,7 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZMatrix>, const bool gaunt, const bool breit);
 
     // static function
     static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
@@ -126,8 +128,8 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Reference> b, const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff)
-      : RelMOFile(b, geo, coeff) { init(c, d); }
+    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit)
+      : RelMOFile(geo, coeff, gaunt, breit) { init(c, d); }
 };
 
 

@@ -226,6 +226,13 @@ class Matrix_base {
       add_block(a, nstart, mstart, nsize, msize, o.get());
     }
 
+    void add_strided_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize,
+                            const int ld, const DataType* o) {
+      for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
+        std::transform(o + j*ld, o + (j+1)*ld, data_.get() + nstart + i*ndim_, data_.get() + nstart + i*ndim_,
+                        [&a] (const DataType& p, const DataType& q) { return q + a*p; });
+    }
+
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
       std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
@@ -262,7 +269,7 @@ class Matrix_base {
       return out;
     }
 
-    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
+    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
 
     void allreduce() {
       mpi__->allreduce(data_.get(), size());
