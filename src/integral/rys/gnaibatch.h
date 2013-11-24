@@ -50,6 +50,9 @@ class GNAIBatch : public CoulombBatch_base {
         std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
       }
       set_exponents();
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
     }
 
     /// compute a batch of integrals

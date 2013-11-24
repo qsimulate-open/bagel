@@ -40,10 +40,21 @@ class NAIdampBatch: public CoulombBatch_energy {
 
   public:
     NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      : CoulombBatch_energy (_info, mol, stack) {}
+      : CoulombBatch_energy (_info, mol, stack) { 
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      zeta_ = 0.0;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
+    }
+
 
     NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {}
+      : CoulombBatch_energy (_info, mol, L, A) {
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      zeta_ = 0.0;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
+    }
       
 
     ~NAIdampBatch() {}

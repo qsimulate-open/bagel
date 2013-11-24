@@ -57,10 +57,6 @@ CoulombBatch_base::CoulombBatch_base(const std::array<std::shared_ptr<const Shel
 
   allocate_arrays(primsize_*natom_);
 
-  compute_ssss(integral_thresh);
-
-  root_weight(primsize_*natom_);
-
 }
 
 void CoulombBatch_base::compute_ssss(const double integral_thresh) {
