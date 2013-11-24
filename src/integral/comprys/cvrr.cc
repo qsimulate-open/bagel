@@ -1,4 +1,3 @@
-#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: cvrr.cc
@@ -5536,4 +5535,3 @@ void ComplexERIBatch::perform_VRR() {
   stack_->release(rank_*isize*3, workx);
 
 }
-#endif

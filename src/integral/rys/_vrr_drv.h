@@ -39,7 +39,7 @@ namespace bagel {
 
 template<int a_, int b_, int c_, int d_, int rank_, typename DataType>
 void vrr_driver(DataType* out, const DataType* const roots, const DataType* const weights, const DataType& coeff,
-                const std::array<DataType,3>& a, const std::array<DataType,3>& b, const std::array<DataType,3>& c, const std::array<DataType,3>& d,
+                const std::array<double,3>& a, const std::array<double,3>& b, const std::array<double,3>& c, const std::array<double,3>& d,
                 const DataType* const p, const DataType* const q, const DataType& xp, const DataType& xq,
                 const int* const amap, const int* const cmap, const int& asize_, DataType* const workx, DataType* const worky, DataType* const workz) {
 
@@ -87,7 +87,8 @@ void vrr_driver(DataType* out, const DataType* const roots, const DataType* cons
               const int offsetx = rank_ * (amax1_ * ix + jx);
               const int jposition = amap[jx + jyz];
               const int ijposition = jposition + ipos_asize;
-              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, 0.0);
+              DataType zero = 0.0;
+              out[ijposition] = std::inner_product(iyiz, iyiz+rank_, workx+offsetx, zero);
             }
           }
         }
