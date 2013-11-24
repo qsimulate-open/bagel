@@ -220,13 +220,13 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
 }
 
 
-/*   Use this function only for testing ComplexERIBatch
-pair<const double*, shared_ptr<RysIntegral<std::complex<double>>>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
+///*   Use this function only for testing ComplexERIBatch
+pair<const std::complex<double>*, shared_ptr<RysIntegral<std::complex<double>>>> DFDist::compute_batch_complex(array<shared_ptr<const Shell>,4>& input) {
   shared_ptr<RysIntegral<std::complex<double>>> eribatch = make_shared<ComplexERIBatch>(input, 2.0);
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
 }
-*/
+//*/
 
 ///*    This is the standard version of the function.
 pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
