@@ -104,23 +104,12 @@ int main(int argc, char** argv) {
 
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
-        shared_ptr<const PTree> dimdata = itree;
-
-        const string form = dimdata->get<string>("form", "displace");
+        const string form = itree->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
-          double scale = (dimdata->get<bool>("angstrom", false) ? ang2bohr__ : 1.0 ) ;
-
-          double dx = dimdata->get<double>("dx", 0.0) * scale;
-          double dy = dimdata->get<double>("dy", 0.0) * scale;
-          double dz = dimdata->get<double>("dz", 0.0) * scale;
-          array<double,3> disp = {{dx,dy,dz}};
-
-          if (static_cast<bool>(ref)) {
-            dimer = make_shared<Dimer>(ref, disp);
-          }
-          else {
+          if (static_cast<bool>(ref))
+            dimer = make_shared<Dimer>(itree, ref);
+          else
             throw runtime_error("dimerize needs a reference calculation (for now)");
-          }
         }
         else if (form == "r" || form == "refs") {
           vector<shared_ptr<const Reference>> dimer_refs;
@@ -131,7 +120,7 @@ int main(int argc, char** argv) {
             else dimer_refs.push_back(static_pointer_cast<const Reference>(tmp->second));
           }
 
-          dimer = make_shared<Dimer>(dimer_refs.at(0), dimer_refs.at(1));
+          dimer = make_shared<Dimer>(itree, dimer_refs.at(0), dimer_refs.at(1));
         }
 
         dimer->scf(itree);
