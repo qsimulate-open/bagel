@@ -85,7 +85,7 @@ std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<cons
 
   for (int iatom = 0; iatom != 3; ++iatom) {
     for (int i = 0; i != 3; ++i) {
-      out->data(atoms_[iatom]*3+i) += ddot_(s0size_*a1_*a2_, denc, 1, data(iatom*3+i), 1);
+      out->element(i, atoms_[iatom]) += ddot_(s0size_*a1_*a2_, denc, 1, data(i+3*iatom), 1);
     }
   }
 

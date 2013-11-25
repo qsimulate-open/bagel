@@ -36,14 +36,16 @@
 extern "C" {
   // mkl_sparse routines
   //void mkl_dcsrmm (char *transa, MKL_INT *m, MKL_INT *n, MKL_INT *k, double *alpha, char *matdescra, double *val, MKL_INT *indx, MKL_INT *pntrb, MKL_INT *pntre, double *b, MKL_INT *ldb, double *beta, double *c, MKL_INT *ldc);
-  void mkl_dcsrmm_(const char *transa, int *m, int *n, int *k, double *alpha, char *matdescra, double *val, int *indx, int *pntrb, int *pntre, double *b, int *ldb, double *beta, double *c, int *ldc);
+  void mkl_dcsrmm_(const char *transa, const int *m, const int *n, const int *k, const double *alpha, const char *matdescra, const double *val, const int *indx, const int *pntrb, const int *pntre,
+                   const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
 }
 
 // All arguments passed in
-static void mkl_dcsrmm_(const char *transa, int m, int n, int k, double alpha, char *matdescra, double* val, int* indx, int* pntrb, int* pntre, double* b, int ldb, double beta, double* c, int ldc) { mkl_dcsrmm_(transa, &m, &n, &k, &alpha, matdescra, val, indx, pntrb, pntre, b, &ldb, &beta, c, &ldc); }
+static void mkl_dcsrmm_(const char *transa, int m, int n, int k, double alpha, const char *matdescra, const double* val, const int* indx, const int* pntrb, const int* pntre, const double* b, int ldb, double beta, double* c, int ldc)
+    { mkl_dcsrmm_(transa, &m, &n, &k, &alpha, matdescra, val, indx, pntrb, pntre, b, &ldb, &beta, c, &ldc); }
 
 // Special case
-static void mkl_dcsrmm_(const char *transa, int m, int n, int k, double alpha, double* val, int* cols, int* rind, double* b, int ldb, double beta, double* c, int ldc) {
+static void mkl_dcsrmm_(const char *transa, int m, int n, int k, double alpha, const double* val, const int* cols, const int* rind, const double* b, int ldb, double beta, double* c, int ldc) {
   std::unique_ptr<char[]> matdescra(new char[6]);
   matdescra[0] = 'G'; // General
   matdescra[3] = 'F'; // Fortran 1-based indexing (this is required to use a column-major dense matrix)

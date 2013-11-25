@@ -240,14 +240,16 @@ class Matrix_base {
       return out;
     }
 
-    DataType& operator[](const size_t& i) { return data_[i]; }
-    const DataType& operator[](const size_t& i) const { return data_[i]; }
     DataType& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
     const DataType& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
 
-    DataType* data() const { return data_.get(); }
-    DataType& data(const size_t i) { return *(data()+i); }
-    const DataType& data(const size_t i) const { return *(data()+i); }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
+
+    DataType* begin() { return data_.get(); }
+    DataType* end() { return data_.get() + size(); }
+    const DataType* cbegin() const { return data_.get(); }
+    const DataType* cend() const { return data_.get() + size(); }
 
     DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }

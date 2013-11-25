@@ -32,8 +32,8 @@
 using namespace std;
 
 namespace bagel {
-void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, double* adata,
-                                 int* acols, int* arind, double* b, const int ldb, const double beta,
+void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
+                                 const int* acols, const int* arind, const double* b, const int ldb, const double beta,
                                  double* c, const int ldc) {
 #ifdef HAVE_MKL_H
   mkl_dcsrmm_(transa, m, n, k, alpha, adata, acols, arind, b, ldb, beta, c, ldc);

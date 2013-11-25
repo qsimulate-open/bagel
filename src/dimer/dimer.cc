@@ -285,8 +285,8 @@ void Dimer::construct_coeff() {
   proj_coeff_ = make_shared<Coeff>(sgeom_);
   // TODO - Ideally, these would all be projections onto the new basis.
 
-  double *Adata = coeffs_.first->data();
-  double *Bdata = coeffs_.second->data();
+  const double *Adata = coeffs_.first->data();
+  const double *Bdata = coeffs_.second->data();
   double *Sdata = proj_coeff_->data();
 
   for(int i = 0; i < nbasisA; ++i, Adata += nbasisA) {

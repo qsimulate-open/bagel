@@ -192,7 +192,7 @@ void SuperCI::compute() {
     }
 #endif
 
-    mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
     resume_stdcout();

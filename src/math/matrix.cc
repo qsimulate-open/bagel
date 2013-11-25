@@ -217,8 +217,9 @@ Matrix Matrix::operator/(const Matrix& o) const {
 
 Matrix& Matrix::operator/=(const Matrix& o) {
   assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-  for (int i = 0; i != size(); ++i) {
-    data(i) /= o.data(i);
+  auto oiter = o.cbegin();
+  for (auto& i : *this) {
+    i /= *oiter++;
   }
   return *this;
 }

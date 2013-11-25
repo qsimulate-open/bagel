@@ -220,8 +220,9 @@ ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
 
 ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
   assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
-  for (int i = 0; i != size(); ++i) {
-    data(i) /= o.data(i);
+  auto oiter = o.cbegin();
+  for (auto& i : *this) {
+    i /= *oiter++;
   }
   return *this;
 }
@@ -526,27 +527,27 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 
 shared_ptr<Matrix> ZMatrix::get_real_part() const {
   auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
-  for (int i = 0; i != size(); ++i) {
-    out->data(i) = real(data(i));
-  }
+  auto i = cbegin();
+  for (auto& o : *out)
+    o = real(*i++);
   return out;
 }
 
 
 shared_ptr<Matrix> ZMatrix::get_imag_part() const {
   auto out = make_shared<Matrix>(ndim_, mdim_, localized_);
-  for (int i = 0; i != size(); ++i) {
-    out->data(i) = imag(data(i));
-  }
+  auto i = cbegin();
+  for (auto& o : *out)
+    o = imag(*i++);
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
   auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
-  for (int i = 0; i != size(); ++i) {
-    out->data(i) = conj(data(i));
-  }
+  auto i = cbegin();
+  for (auto& o : *out)
+    o = conj(*i++);
   return out;
 }
 

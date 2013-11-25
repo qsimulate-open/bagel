@@ -35,8 +35,8 @@ extern void mytranspose_(const double* a, const int b, const int c, double* d, c
 extern void mytranspose_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
 extern void mytranspose_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
 
-extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, double* adata,
-                                 int* acols, int* arind, double* b, const int ldb, const double beta,
+extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
+                                 const int* acols, const int* arind, const double* b, const int ldb, const double beta,
                                  double* c, const int ldc);
 
 namespace detail {
