@@ -220,14 +220,20 @@ void Dimer::construct_coeff() {
   const int nvirtB = nvirt_.second;
 
   // form "projected" coefficients
-  shared_ptr<Matrix> tmpcoeff = proj_coeff_->slice(0,ncloA);
-  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA, nbasisA+ncloB));
+  const int dimerbasis = dimerbasis_;
+  auto tmpcoeff = make_shared<Matrix>(dimerbasis, dimerbasis);
 
-  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(ncloA, ncloA+nactA));
-  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB, nbasisA+ncloB+nactB));
+  size_t current = 0;
+  auto cp_block = [&current, &tmpcoeff, &dimerbasis] (const size_t msize, const double* source) {
+    tmpcoeff->copy_block(0, current, dimerbasis, msize, source); current += msize;
+  };
 
-  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(ncloA+nactA, ncloA+nactA+nvirtA));
-  tmpcoeff = tmpcoeff->merge(proj_coeff_->slice(nbasisA+ncloB+nactB, nbasisA+ncloB+nactB+nvirtB));
+  cp_block(ncloA, proj_coeff_->element_ptr(0,0));
+  cp_block(ncloB, proj_coeff_->element_ptr(0, nbasisA));
+  cp_block(nactA, proj_coeff_->element_ptr(0, ncloA));
+  cp_block(nactB, proj_coeff_->element_ptr(0, nbasisA + ncloB));
+  cp_block(nvirtA, proj_coeff_->element_ptr(0, ncloA + nactA));
+  cp_block(nvirtB, proj_coeff_->element_ptr(0, nbasisA + ncloB + nactB));
 
   // orthonormalize the "projected" coefficients
   shared_ptr<Matrix> atomic_ovlp = make_shared<Overlap>(sgeom_);
@@ -304,54 +310,40 @@ void Dimer::localize(const std::shared_ptr<const PTree> idata) {
   const int nclosed = nclosed_;
   const int nact = nact_.first + nact_.second;
   const int nvirt = nvirt_.first + nvirt_.second;
+  const int nbasisA = nbasis_.first;
 
-  multimap<double, int> Anorms;
-  set<int> closed_setA, closed_setB;
-  for(int i = 0; i < nclosed; ++i) {
+  auto check_and_insert = [&overlaps, &nbasisA] (const int i, set<int>& setA, set<int>& setB) {
     double* cdata = overlaps->element_ptr(0,i);
-    double norm = ddot_(nbasis_.first, cdata, 1, cdata, 1);
+    double norm = ddot_(nbasisA, cdata, 1, cdata, 1);
 
-    if (norm > 0.7) closed_setA.insert(i);
-    else if (norm < 0.3) closed_setB.insert(i);
+    if (norm > 0.7) setA.insert(i);
+    else if (norm < 0.3) setB.insert(i);
     else throw runtime_error("Trouble in classifying orbitals");
-  }
+  };
+
+  set<int> closed_setA, closed_setB;
+  for(int i = 0; i < nclosed; ++i)
+    check_and_insert(i, closed_setA, closed_setB);
 
   set<int> active_setA, active_setB;
-  for(int i = nclosed; i < nclosed + nact; ++i) {
-    double* cdata = overlaps->element_ptr(0,i);
-    double norm = ddot_(nbasis_.first, cdata, 1, cdata, 1);
+  for(int i = nclosed; i < nclosed + nact; ++i)
+    check_and_insert(i, active_setA, active_setB);
 
-    if (norm > 0.7) active_setA.insert(i);
-    else if (norm < 0.3) active_setB.insert(i);
-    else throw runtime_error("Trouble in classifying orbitals");
-  }
+  const int dimerbasis = dimerbasis_;
+  auto new_coeff = make_shared<Matrix>(dimerbasis, dimerbasis);
 
-  auto new_coeff = make_shared<Matrix>(dimerbasis_, dimerbasis_);
-  int imo = 0;
-
-  for(auto& iset : closed_setA) {
-    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
-    ++imo;
-  }
-  for(auto& iset : closed_setB) {
-    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
-    ++imo;
-  }
-
-  for(auto& iset : active_setA) {
-    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
-    ++imo;
-  }
-  for(auto& iset : active_setB) {
-    copy_n(local_coeff->element_ptr(0,iset), dimerbasis_, new_coeff->element_ptr(0,imo));
-    ++imo;
-  }
+  size_t imo = 0;
+  auto cp_one = [&local_coeff, &new_coeff, &dimerbasis, &imo] (const int i) {
+    copy_n(local_coeff->element_ptr(0, i), dimerbasis, new_coeff->element_ptr(0, imo++));
+  };
+  for_each(closed_setA.begin(), closed_setA.end(), cp_one);
+  for_each(closed_setB.begin(), closed_setB.end(), cp_one);
+  for_each(active_setA.begin(), active_setA.end(), cp_one);
+  for_each(active_setB.begin(), active_setB.end(), cp_one);
 
   copy_n(local_coeff->element_ptr(0,nclosed + nact), dimerbasis_*nvirt, new_coeff->element_ptr(0,imo));
 
-  auto out = make_shared<const Coeff>(*new_coeff);
-
-  set_coeff(out);
+  set_coeff(make_shared<Coeff>(*new_coeff));
 }
 
 void Dimer::set_active(const std::shared_ptr<const PTree> idata) {

@@ -59,7 +59,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<int, int> nact_;
       std::pair<int, int> nfilledactive_;
       std::pair<int, int> nvirt_;
-      std::pair<int, int> nstates_;
       std::pair<int, int> nbasis_;
       std::pair<int, int> nele_;
 
@@ -83,10 +82,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
         scoeff_ = std::make_shared<Coeff>(*ref->coeff());
         sref_ = std::make_shared<Reference>(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt());
       }
-      void set_coeff(std::shared_ptr<const Coeff> coeff) {
-        scoeff_ = std::make_shared<Coeff>(*coeff);
-        sref_->set_coeff(coeff);
-      };
       void set_coeff(std::shared_ptr<const Matrix> mat) {
         scoeff_ = std::make_shared<Coeff>(*mat);
         sref_->set_coeff(std::make_shared<const Coeff>(*mat));
