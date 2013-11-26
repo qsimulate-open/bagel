@@ -30,7 +30,7 @@
 {
   "title" : "dimerize",
   "angstrom" : true,
-  "dy" : 4.0,
+  "translate" : [0.0, 4.0, 0.0],
   "dimer_active" : [17, 20, 21, 22, 23, 30],
   "hf" : {
     "thresh" : 1.0e-12
