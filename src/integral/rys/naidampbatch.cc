@@ -58,9 +58,9 @@ void NAIdampBatch::compute_ssss(const double integral_thresh) {
         p_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
         p_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         p_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
-        const double Eab = ::exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
+        const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
         // Z needs to be removed
-        coeff_[index] = - 2 * Z * pi__ * socxp_inv * ::exp( cxp * zeta_ * socxp_inv ) * Eab;
+        coeff_[index] = - 2 * Z * pi__ * socxp_inv * exp(-cxp * zeta_ * socxp_inv ) * Eab;
         const double PCx = p_[index * 3    ] - (*aiter)->position(0);
         const double PCy = p_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = p_[index * 3 + 2] - (*aiter)->position(2);
@@ -94,6 +94,13 @@ void NAIdampBatch::root_weight(const int ps) {
     }
   } else {
     eriroot__.root(rank_, T_, roots_, weights_, ps);
+    for (int xj = 0; xj != screening_size_; ++xj) {
+      const int i = screening_[xj];
+      double* croots = roots_ + i * rank_;
+      for (int r = 0; r != rank_; ++r) {
+        croots[r] = (xp_[i] * croots[r] + zeta_) /(xp_[i] + zeta_);
+      }
+    }
   }
 }
 
