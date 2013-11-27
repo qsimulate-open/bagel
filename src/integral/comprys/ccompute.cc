@@ -43,6 +43,8 @@ void ComplexERIBatch::compute() {
   bkup_ = stack_save;
   fill_n(data_, size_alloc_, 0.0);
 
+#if 0
+
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
   switch (rank_) {
@@ -52,7 +54,6 @@ void ComplexERIBatch::compute() {
     default: perform_VRR(); break;
   }
   assert(0);
-#if 0
 
   // contract indices 01
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
@@ -199,8 +200,8 @@ void ComplexERIBatch::compute() {
 
   if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
 
-  stack_->release(size_alloc_, stack_save);
 #endif
+  stack_->release(size_alloc_, stack_save);
 }
 
 
