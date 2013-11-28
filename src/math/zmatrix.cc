@@ -65,19 +65,26 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
   ZMatrix out(*this);
-  out.ax_plus_y(complex<double>(1.0,0.0), o);
+  out += o;
+  return out;
+}
+
+
+ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
+  ZMatrix out(*this);
+  out -= o;
   return out;
 }
 
 
 ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
-  ax_plus_y(complex<double>(1.0,0.0), o);
+  ax_plus_y(1.0, o);
   return *this;
 }
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  ax_plus_y(complex<double>(-1.0,0.0), o);
+  ax_plus_y(-1.0, o);
   return *this;
 }
 
@@ -93,13 +100,6 @@ ZMatrix& ZMatrix::operator=(ZMatrix&& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   data_ = move(o.data_);
   return *this;
-}
-
-
-ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
-  ZMatrix out(*this);
-  out.ax_plus_y(complex<double>(-1.0,0.0), o);
-  return out;
 }
 
 
@@ -153,6 +153,8 @@ ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
   scale(a);
   return *this;
 }
+
+
 ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
   *this *= 1.0/a;
   return *this;
@@ -363,6 +365,7 @@ shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   mytranspose_conjg_(data_.get(), ndim_, mdim_, out->data());
   return out;
 }
+
 
 void ZMatrix::antisymmetrize() {
   assert(ndim_ == mdim_);
