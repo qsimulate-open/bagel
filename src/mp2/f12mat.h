@@ -59,7 +59,7 @@ class F12Ten {
 
     F12Ten operator*(const double a) const {
       F12Ten f(*this);
-      dscal_(size(), a, f.data(), 1);
+      std::for_each(f.data(), f.data()+size(), [&a](double& b) { b *= a; });
       return f;
     }
     F12Ten operator-(const F12Ten& o) const {
@@ -104,7 +104,7 @@ class F12Mat : public F12Ten {
 
     F12Mat operator*(const double a) const {
       F12Mat f(*this);
-      dscal_(size(), a, f.data(), 1);
+      std::for_each(f.data(), f.data()+size(), [&a](double& b) { b *= a; });
       return f;
     }
     F12Mat operator-(const F12Mat& o) const {

@@ -146,7 +146,7 @@ Matrix Matrix::operator/(const double& a) const {
 
 
 Matrix& Matrix::operator*=(const double& a) {
-  dscal_(ndim_*mdim_, a, data_, 1);
+  scale(a);
   return *this;
 }
 Matrix& Matrix::operator/=(const double& a) {
@@ -340,7 +340,7 @@ void Matrix::purify_unitary() {
       daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
     const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
-    dscal_(ndim_, b, &data_[i*ndim_], 1);
+    for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });
   }
 }
 
@@ -414,7 +414,7 @@ bool Matrix::inverse_symmetric(const double thresh) {
 
   for (int i = 0; i != n; ++i) {
     double s = vec[i] > thresh ? 1.0/std::sqrt(vec[i]) : 0.0;
-    dscal_(n, s, data_.get()+i*n, 1);
+    for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
   }
   *this = *this ^ *this;
   vector<double> rm;
@@ -442,7 +442,7 @@ bool Matrix::inverse_half(const double thresh) {
     diagonalize(vec.get());
     for (int i = 0; i != n; ++i) {
       double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
-      dscal_(n, s, data_.get()+i*n, 1);
+      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
     }
     *this = *this ^ *this;
 #ifdef HAVE_SCALAPACK
@@ -477,7 +477,7 @@ void Matrix::sqrt() {
   for (int i = 0; i != n; ++i) {
     if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
     double s = std::sqrt(std::sqrt(vec[i]));
-    dscal_(n, s, data_.get()+i*n, 1);
+    for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
   }
 
   *this = *this ^ *this;

@@ -150,7 +150,7 @@ ZMatrix ZMatrix::operator/(const complex<double>& a) const {
 
 
 ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
-  zscal_(ndim_*mdim_, a, data_, 1);
+  scale(a);
   return *this;
 }
 ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
@@ -391,7 +391,7 @@ void ZMatrix::purify_unitary() {
       zaxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
     }
     const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
-    zscal_(ndim_, b, &data_[i*ndim_], 1);
+    for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }
 
@@ -450,7 +450,7 @@ void ZMatrix::inverse_half(const double thresh) {
 
   for (int i = 0; i != n; ++i) {
     double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
-    zscal_(n, s, data_.get()+i*n, 1);
+    for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
 
 #ifndef NDEBUG
