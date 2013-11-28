@@ -40,7 +40,7 @@ namespace bagel {
 template<int a_, int b_, int c_, int d_, int rank_, typename DataType>
 void vrr_driver(DataType* out, const DataType* const roots, const DataType* const weights, const DataType& coeff,
                 const std::array<double,3>& a, const std::array<double,3>& b, const std::array<double,3>& c, const std::array<double,3>& d,
-                const DataType* const p, const DataType* const q, const DataType& xp, const DataType& xq,
+                const DataType* const p, const DataType* const q, const double& xp, const double& xq,
                 const int* const amap, const int* const cmap, const int& asize_, DataType* const workx, DataType* const worky, DataType* const workz) {
 
   // compile time
@@ -60,9 +60,9 @@ void vrr_driver(DataType* out, const DataType* const roots, const DataType* cons
   alignas(32) DataType iyiz[rank_];
 #endif
 
-  const DataType oxp2 = 0.5 / xp;
-  const DataType oxq2 = 0.5 / xq;
-  const DataType opq = 1.0 / (xp + xq);
+  const double oxp2 = 0.5 / xp;
+  const double oxq2 = 0.5 / xq;
+  const double opq = 1.0 / (xp + xq);
 
   int2d<amax_,cmax_,rank_, DataType>(p[0], q[0], a[0], b[0], c[0], d[0], xp, xq, oxp2, oxq2, opq, roots, workx);
   scaledata<rank_, worksize, DataType>(workx, weights, coeff, workx);

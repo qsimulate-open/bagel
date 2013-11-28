@@ -47,7 +47,8 @@ namespace bagel {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     DataType *p_, *q_;
-    DataType *xp_, *xq_, *coeff_, *coeffy_;
+    double *xp_, *xq_;
+    DataType *coeff_, *coeffy_;
     DataType *T_, *U_;
     unsigned int contsize_, primsize_;
     size_t size_block_, size_alloc_;
@@ -208,8 +209,8 @@ namespace bagel {
       pointer += ps;
       p_ = pointer;     pointer += ps * 3;
       q_ = pointer;     pointer += ps * 3;
-      xp_ = pointer;    pointer += ps;
-      xq_ = pointer;    pointer += ps;
+      xp_ = reinterpret_cast<double*>(pointer);    pointer += ps;
+      xq_ = reinterpret_cast<double*>(pointer);    pointer += ps;
       coeff_ = pointer; pointer += ps;
       T_ = pointer;     pointer += ps;
       roots_ = pointer; pointer += rank_ * ps;

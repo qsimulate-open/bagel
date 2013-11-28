@@ -95,7 +95,7 @@ template <typename DataType>
       const double r23_sq = this->CD_[0] * this->CD_[0] + this->CD_[1] * this->CD_[1] + this->CD_[2] * this->CD_[2];
 
       unsigned int tuple_length = 0u;
-      DataType* const tuple_field = this->stack_->template get<DataType>(nexp2*nexp3*3);
+      double* const tuple_field = this->stack_->get(nexp2*nexp3*3);
       int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
       {
         const double cxp_min = minexp0 + minexp1;
@@ -154,7 +154,7 @@ template <typename DataType>
           const double cxp_inv = 1.0 / cxp;
           const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
           const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
-          const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
+          const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;      //  TODO These will need to become complex when Abar, etc. are defined
           const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
           const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
           if (integral_thresh != 0.0) {
@@ -175,15 +175,15 @@ template <typename DataType>
           for (unsigned int i = 0; i != tuple_length; ++i) {
             const int index23 = tuple_index[i];
             const int index = index_base + index23;
-            const DataType exp2value = tuple_field[2*i];
-            const DataType exp3value = tuple_field[2*i+1];
-            const DataType cxq = exp2value + exp3value;
+            const double exp2value = tuple_field[2*i];
+            const double exp3value = tuple_field[2*i+1];
+            const double cxq = exp2value + exp3value;
             this->xp_[index] = cxp;
             this->xq_[index] = cxq;
-            const DataType cxpxq = cxp * cxq;
-            const DataType onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
+            const double cxpxq = cxp * cxq;
+            const double onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
             this->coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
-            const DataType rho = cxpxq / (cxp + cxq);
+            const double rho = cxpxq / (cxp + cxq);
             const DataType xpq = qx_save[index23] - px;
             const DataType ypq = qy_save[index23] - py;
             const DataType zpq = qz_save[index23] - pz;
