@@ -105,4 +105,14 @@ inline double inline_erf(const double inpt) {
   return t;
 };
 
+
+inline const double get_ABCD (const double coord, double mag_vec_pot, const double *exp, double dum) {
+  return coord;
+}
+
+inline const std::complex<double> get_ABCD (const double& coord, double mag_vec_pot, const double *exp, std::complex<double> dum) {
+  return std::complex<double> (coord,-0.5*mag_vec_pot / *exp);
+}
+
+
 #endif

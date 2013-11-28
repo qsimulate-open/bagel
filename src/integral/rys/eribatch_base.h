@@ -44,6 +44,7 @@ template <typename DataType>
     // this sets this->T_ (+ U_), this->p_, this->q_, this->xp_, this->xq_, this->coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const DataType integral_thresh) override {
+
       const double ax = this->basisinfo_[0]->position(0);
       const double ay = this->basisinfo_[0]->position(1);
       const double az = this->basisinfo_[0]->position(2);
@@ -56,6 +57,7 @@ template <typename DataType>
       const double dx = this->basisinfo_[3]->position(0);
       const double dy = this->basisinfo_[3]->position(1);
       const double dz = this->basisinfo_[3]->position(2);
+      const DataType dum = 2.0;
 
       const double* exp0 = this->basisinfo_[0]->exponents_pointer();
       const double* exp1 = this->basisinfo_[1]->exponents_pointer();
@@ -70,6 +72,12 @@ template <typename DataType>
       DataType* const qx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
       DataType* const qy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
       DataType* const qz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Cx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Cy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Cz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Dx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Dy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
+      DataType* const Dz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
 
       const double minexp0 = *std::min_element(exp0, exp0+nexp0);
       const double minexp1 = *std::min_element(exp1, exp1+nexp1);
@@ -104,14 +112,21 @@ template <typename DataType>
         int index23 = 0;
         for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) {
           for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) {
+            // TODO This setup should work, but it's probably better to not call vector_potential when it's not needed.
+            Cx_save[index23] = get_ABCD(cx,this->basisinfo_[2]->vector_potential(0),expi2,dum);
+            Cy_save[index23] = get_ABCD(cy,this->basisinfo_[2]->vector_potential(1),expi2,dum);
+            Cz_save[index23] = get_ABCD(cz,this->basisinfo_[2]->vector_potential(2),expi2,dum);
+            Dx_save[index23] = get_ABCD(dx,this->basisinfo_[3]->vector_potential(0),expi3,dum);
+            Dy_save[index23] = get_ABCD(dy,this->basisinfo_[3]->vector_potential(1),expi3,dum);
+            Dz_save[index23] = get_ABCD(dz,this->basisinfo_[3]->vector_potential(2),expi3,dum);
             const double cxq = *expi2 + *expi3;
             const double cdp = *expi2 * *expi3;
             const double cd = rnd(*expi2) * rnd(*expi3);
             const double cxq_inv = 1.0 / cxq;
             Ecd_save[index23] = exp(-r23_sq * (cdp * cxq_inv) );
-            qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
-            qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
-            qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
+            qx_save[index23] = (Cx_save[index23] * *expi2 + Dx_save[index23] * *expi3) * cxq_inv;
+            qy_save[index23] = (Cy_save[index23] * *expi2 + Dy_save[index23] * *expi3) * cxq_inv;
+            qz_save[index23] = (Cz_save[index23] * *expi2 + Dz_save[index23] * *expi3) * cxq_inv;
             if (integral_thresh != 0.0) {
               const double rho = cxp_min * cxq / (cxp_min + cxq);
               const double T = rho * min_pq_sq;
@@ -148,15 +163,22 @@ template <typename DataType>
       const double min_Ecd = exp(-r23_sq * min_cdp * cxq_inv_min);
       for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) {
         for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) {
+          // TODO This setup should work, but it's probably better to not look up the vector potential when it's not needed.
+          const DataType Ax = get_ABCD(ax,this->basisinfo_[0]->vector_potential(0),expi0,dum);
+          const DataType Ay = get_ABCD(ay,this->basisinfo_[0]->vector_potential(1),expi0,dum);
+          const DataType Az = get_ABCD(az,this->basisinfo_[0]->vector_potential(2),expi0,dum);
+          const DataType Bx = get_ABCD(bx,this->basisinfo_[1]->vector_potential(0),expi1,dum);
+          const DataType By = get_ABCD(by,this->basisinfo_[1]->vector_potential(1),expi1,dum);
+          const DataType Bz = get_ABCD(bz,this->basisinfo_[1]->vector_potential(2),expi1,dum);
           const double cxp = *expi0 + *expi1;
           const double abp = *expi0 * *expi1;
           const double ab = rnd(*expi0) * rnd(*expi1);
           const double cxp_inv = 1.0 / cxp;
           const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
           const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
-          const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;      //  TODO These will need to become complex when Abar, etc. are defined
-          const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
-          const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
+          const DataType px = (Ax * *expi0 + Bx * *expi1) * cxp_inv;
+          const DataType py = (Ay * *expi0 + By * *expi1) * cxp_inv;
+          const DataType pz = (Az * *expi0 + Bz * *expi1) * cxp_inv;
           if (integral_thresh != 0.0) {
             const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
             const double T_sc = rho_sc * min_pq_sq;
@@ -189,6 +211,18 @@ template <typename DataType>
             const DataType zpq = qz_save[index23] - pz;
             const DataType T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
             const int index3 = index * 3;
+            this->A_[index3] = Ax;
+            this->A_[index3 + 1] = Ay;
+            this->A_[index3 + 2] = Az;
+            this->B_[index3] = Bx;
+            this->B_[index3 + 1] = By;
+            this->B_[index3 + 2] = Bz;
+            this->C_[index3] = Cx_save[index23];
+            this->C_[index3 + 1] = Cy_save[index23];
+            this->C_[index3 + 2] = Cz_save[index23];
+            this->D_[index3] = Dx_save[index23];
+            this->D_[index3 + 1] = Dy_save[index23];
+            this->D_[index3 + 2] = Dz_save[index23];
             this->p_[index3] = px;
             this->p_[index3 + 1] = py;
             this->p_[index3 + 2] = pz;
@@ -202,6 +236,12 @@ template <typename DataType>
         }
       }
       this->stack_->release(nexp2*nexp3*3, tuple_field);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dz_save);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dy_save);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dx_save);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cz_save);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cy_save);
+      this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cx_save);
       this->stack_->release(this->prim2size_*this->prim3size_, qz_save);
       this->stack_->release(this->prim2size_*this->prim3size_, qy_save);
       this->stack_->release(this->prim2size_*this->prim3size_, qx_save);

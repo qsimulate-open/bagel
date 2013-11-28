@@ -39,7 +39,6 @@ class Atom {
 
     std::string name_;
     std::array<double,3> position_;
-//    std::array<double,3> mag_vec_pot_;
     std::vector<std::shared_ptr<const Shell>> shells_;
     int atom_number_;
     double atom_charge_;
@@ -77,7 +76,6 @@ class Atom {
     double cov_radius() const;
     const std::array<double,3>& position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
-//    double mag_vec_pot(const unsigned int i) const { return mag_vec_pot_[i]; }
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
 

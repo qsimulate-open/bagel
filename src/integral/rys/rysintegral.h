@@ -47,6 +47,7 @@ namespace bagel {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     DataType *p_, *q_;
+    DataType *A_, *B_, *C_, *D_;
     double *xp_, *xq_;
     DataType *coeff_, *coeffy_;
     DataType *T_, *U_;
@@ -201,12 +202,16 @@ namespace bagel {
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
     void allocate_arrays(const size_t ps) {
-      size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
+      size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 25) * ps) : ((rank_ * 2 + 23) * ps);
 
       buff_ = stack_->get<DataType>(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
       DataType* pointer = buff_;
       screening_ = (int*)pointer;
       pointer += ps;
+      A_ = pointer;     pointer += ps * 3;
+      B_ = pointer;     pointer += ps * 3;
+      C_ = pointer;     pointer += ps * 3;
+      D_ = pointer;     pointer += ps * 3;
       p_ = pointer;     pointer += ps * 3;
       q_ = pointer;     pointer += ps * 3;
       xp_ = reinterpret_cast<double*>(pointer);    pointer += ps;
