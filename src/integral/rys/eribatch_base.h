@@ -41,7 +41,7 @@ template <typename DataType>
 
     virtual void root_weight(const int ps) = 0;
 
-    // this sets this->T_ (+ U_), this->p_, this->q_, this->xp_, this->xq_, this->coeff_, and screening_size_
+    // this sets this->T_ (+ U_), this->P_, this->Q_, this->xp_, this->xq_, this->coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const DataType integral_thresh) override {
 
@@ -223,12 +223,12 @@ template <typename DataType>
             this->D_[index3] = Dx_save[index23];
             this->D_[index3 + 1] = Dy_save[index23];
             this->D_[index3 + 2] = Dz_save[index23];
-            this->p_[index3] = px;
-            this->p_[index3 + 1] = py;
-            this->p_[index3 + 2] = pz;
-            this->q_[index3] =     qx_save[index23];
-            this->q_[index3 + 1] = qy_save[index23];
-            this->q_[index3 + 2] = qz_save[index23];
+            this->P_[index3] = px;
+            this->P_[index3 + 1] = py;
+            this->P_[index3 + 2] = pz;
+            this->Q_[index3] =     qx_save[index23];
+            this->Q_[index3 + 1] = qy_save[index23];
+            this->Q_[index3 + 2] = qz_save[index23];
             this->T_[index] = T;
             this->screening_[this->screening_size_] = index;
             ++this->screening_size_;

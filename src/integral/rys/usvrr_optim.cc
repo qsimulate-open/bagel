@@ -76,15 +76,15 @@ void SlaterBatch::perform_USVRR2() {
       const double xqopq = cxq * one_pq;
       double x0, y0, z0, x1, y1, z1;
       {
-        const double px = p_[ii3];
-        const double py = p_[ii3 + 1];
-        const double pz = p_[ii3 + 2];
+        const double px = P_[ii3];
+        const double py = P_[ii3 + 1];
+        const double pz = P_[ii3 + 2];
         const double c00i0x = px - ax;
-        const double c00i1x = (px - q_[ii3]) * xqopq;
+        const double c00i1x = (px - Q_[ii3]) * xqopq;
         const double c00i0y = py - ay;
-        const double c00i1y = (py - q_[ii3 + 1]) * xqopq;
+        const double c00i1y = (py - Q_[ii3 + 1]) * xqopq;
         const double c00i0z = pz - az;
-        const double c00i1z = (pz - q_[ii3 + 2]) * xqopq;
+        const double c00i1z = (pz - Q_[ii3 + 2]) * xqopq;
         const double root0 = roots_[offset];
         const double root1 = roots_[offset + 1];
         x0 = c00i0x - c00i1x * root0;
@@ -127,15 +127,15 @@ void SlaterBatch::perform_USVRR2() {
       const double xpopq = cxp * one_pq;
       double x0, y0, z0, x1, y1, z1;
       {
-        const double qx = q_[ii3];
-        const double qy = q_[ii3 + 1];
-        const double qz = q_[ii3 + 2];
+        const double qx = Q_[ii3];
+        const double qy = Q_[ii3 + 1];
+        const double qz = Q_[ii3 + 2];
         const double d00i0x = qx - cx;
-        const double d00i1x = (p_[ii3] - qx) * xpopq;
+        const double d00i1x = (P_[ii3] - qx) * xpopq;
         const double d00i0y = qy - cy;
-        const double d00i1y = (p_[ii3 + 1] - qy) * xpopq;
+        const double d00i1y = (P_[ii3 + 1] - qy) * xpopq;
         const double d00i0z = qz - cz;
-        const double d00i1z = (p_[ii3 + 2] - qz) * xpopq;
+        const double d00i1z = (P_[ii3 + 2] - qz) * xpopq;
         const double root0 = roots_[offset    ];
         const double root1 = roots_[offset + 1];
         x0 = d00i0x + d00i1x * root0;
@@ -176,12 +176,12 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double oxp2 = 0.5 / xp_[ii];
         const double xqopq = xq_[ii] / (xp_[ii] + xq_[ii]);
-        const double c00i0x = p_[ii3]     - ax;
-        const double c00i0y = p_[ii3 + 1] - ay;
-        const double c00i0z = p_[ii3 + 2] - az;
-        const double c00i1x = (p_[ii3]     - q_[ii3])     * xqopq;
-        const double c00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xqopq;
-        const double c00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xqopq;
+        const double c00i0x = P_[ii3]     - ax;
+        const double c00i0y = P_[ii3 + 1] - ay;
+        const double c00i0z = P_[ii3 + 2] - az;
+        const double c00i1x = (P_[ii3]     - Q_[ii3])     * xqopq;
+        const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
+        const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
         const double b10i0 = xqopq * oxp2;
         const double b10_0 = oxp2 - b10i0 * roots_[offset];
         const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
@@ -245,12 +245,12 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] / (xp_[ii] + xq_[ii]);
-        const double d00i0x = q_[ii3] - cx;
-        const double d00i0y = q_[ii3 + 1] - cy;
-        const double d00i0z = q_[ii3 + 2] - cz;
-        const double d00i1x = (p_[ii3] - q_[ii3]) * xpopq;
-        const double d00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xpopq;
-        const double d00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xpopq;
+        const double d00i0x = Q_[ii3] - cx;
+        const double d00i0y = Q_[ii3 + 1] - cy;
+        const double d00i0z = Q_[ii3 + 2] - cz;
+        const double d00i1x = (P_[ii3] - Q_[ii3]) * xpopq;
+        const double d00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xpopq;
+        const double d00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xpopq;
         const double b01i0 = xpopq * oxq2;
         const double b01_0 = oxq2 - b01i0 * roots_[offset];
         const double b01_1 = oxq2 - b01i0 * roots_[offset + 1];
@@ -317,12 +317,12 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double oxp2 = 0.5 / xp_[ii];
         const double xqopq = xq_[ii] / (xp_[ii] + xq_[ii]);
-        const double c00i0x = p_[ii3]     - ax;
-        const double c00i0y = p_[ii3 + 1] - ay;
-        const double c00i0z = p_[ii3 + 2] - az;
-        const double c00i1x = (p_[ii3]     - q_[ii3])     * xqopq;
-        const double c00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xqopq;
-        const double c00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xqopq;
+        const double c00i0x = P_[ii3]     - ax;
+        const double c00i0y = P_[ii3 + 1] - ay;
+        const double c00i0z = P_[ii3 + 2] - az;
+        const double c00i1x = (P_[ii3]     - Q_[ii3])     * xqopq;
+        const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
+        const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
         const double b10i0 = xqopq * oxp2;
         const double b10_0 = oxp2 - b10i0 * roots_[offset];
         const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
@@ -395,12 +395,12 @@ void SlaterBatch::perform_USVRR2() {
       {
         const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] / (xp_[ii] + xq_[ii]);
-        const double d00i0x = q_[ii3] - cx;
-        const double d00i0y = q_[ii3 + 1] - cy;
-        const double d00i0z = q_[ii3 + 2] - cz;
-        const double d00i1x = (p_[ii3] - q_[ii3]) * xpopq;
-        const double d00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xpopq;
-        const double d00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xpopq;
+        const double d00i0x = Q_[ii3] - cx;
+        const double d00i0y = Q_[ii3 + 1] - cy;
+        const double d00i0z = Q_[ii3 + 2] - cz;
+        const double d00i1x = (P_[ii3] - Q_[ii3]) * xpopq;
+        const double d00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xpopq;
+        const double d00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xpopq;
         const double b01i0 = xpopq * oxq2;
         const double b01_0 = oxq2 - b01i0 * roots_[offset];
         const double b01_1 = oxq2 - b01i0 * roots_[offset + 1];
@@ -474,21 +474,21 @@ void SlaterBatch::perform_USVRR2() {
         const double oxp2 = 0.5 / xp_[ii];
         const double opq = 1.0 / (xp_[ii] + xq_[ii]);
         const double xqopq = xq_[ii] * opq;
-        const double c00i0x = p_[ii3]     - ax;
-        const double c00i0y = p_[ii3 + 1] - ay;
-        const double c00i0z = p_[ii3 + 2] - az;
-        const double c00i1x = (p_[ii3]     - q_[ii3])     * xqopq;
-        const double c00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xqopq;
-        const double c00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xqopq;
+        const double c00i0x = P_[ii3]     - ax;
+        const double c00i0y = P_[ii3 + 1] - ay;
+        const double c00i0z = P_[ii3 + 2] - az;
+        const double c00i1x = (P_[ii3]     - Q_[ii3])     * xqopq;
+        const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
+        const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
 
         const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] * opq;
-        const double d00i0x = q_[ii3] - cx;
-        const double d00i0y = q_[ii3 + 1] - cy;
-        const double d00i0z = q_[ii3 + 2] - cz;
-        const double d00i1x = (p_[ii3] - q_[ii3]) * xpopq;
-        const double d00i1y = (p_[ii3 + 1] - q_[ii3 + 1]) * xpopq;
-        const double d00i1z = (p_[ii3 + 2] - q_[ii3 + 2]) * xpopq;
+        const double d00i0x = Q_[ii3] - cx;
+        const double d00i0y = Q_[ii3 + 1] - cy;
+        const double d00i0z = Q_[ii3 + 2] - cz;
+        const double d00i1x = (P_[ii3] - Q_[ii3]) * xpopq;
+        const double d00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xpopq;
+        const double d00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xpopq;
 
         const double b00_0 = 0.5 * opq * roots_[offset];
         const double b00_1 = 0.5 * opq * roots_[offset + 1];

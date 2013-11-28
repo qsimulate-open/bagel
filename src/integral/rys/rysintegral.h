@@ -46,7 +46,7 @@ namespace bagel {
     std::array<double,3> AB_, CD_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
-    DataType *p_, *q_;
+    DataType *P_, *Q_;
     DataType *A_, *B_, *C_, *D_;
     double *xp_, *xq_;
     DataType *coeff_, *coeffy_;
@@ -212,8 +212,8 @@ namespace bagel {
       B_ = pointer;     pointer += ps * 3;
       C_ = pointer;     pointer += ps * 3;
       D_ = pointer;     pointer += ps * 3;
-      p_ = pointer;     pointer += ps * 3;
-      q_ = pointer;     pointer += ps * 3;
+      P_ = pointer;     pointer += ps * 3;
+      Q_ = pointer;     pointer += ps * 3;
       xp_ = reinterpret_cast<double*>(pointer);    pointer += ps;
       xq_ = reinterpret_cast<double*>(pointer);    pointer += ps;
       coeff_ = pointer; pointer += ps;
