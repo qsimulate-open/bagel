@@ -48,6 +48,19 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   atom_number_ = atommap_.atom_number(name_);
 
   position_ = inp->get_array<double,3>("xyz");
+
+/*
+  // TODO Set these values to those of the applied magnetic field vector ultimately coming from an input file.
+  // Probably the best approach is to pass it as an argument of the constructor.
+  std::array<double,3> mag_field;
+  mag_field[0] = 0.0;
+  mag_field[1] = 0.0;
+  mag_field[2] = 0.0;
+
+  mag_vec_pot_[0] = 0.5*(mag_field[1]*position_[2] - mag_field[2]*position_[1]);
+  mag_vec_pot_[1] = 0.5*(mag_field[2]*position_[0] - mag_field[0]*position_[2]);
+  mag_vec_pot_[2] = 0.5*(mag_field[0]*position_[1] - mag_field[1]*position_[0]);
+*/
   for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
 
   if (name_ == "q") {
