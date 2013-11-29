@@ -31,19 +31,12 @@
 #include <memory>
 #include <utility>
 #include <iostream>
+#include <thread>
+#include <vector>
 
 #include <src/util/constants.h>
 #include <src/parallel/mpi_interface.h>
 
-// TODO until GCC fixes this bug
-#ifdef __GNUC__
-#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-#define _GLIBCXX_USE_NANOSLEEP
-#endif
-#endif
-#include <thread>
-
-#include <vector>
 #include <bagel_config.h>
 #include <src/parallel/resources.h>
 
