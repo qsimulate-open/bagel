@@ -274,7 +274,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
       compute_ssss(integral_thresh);
     }
 
-  public:
+  protected:
     using RysIntegral<DataType>::basisinfo_;
     using RysIntegral<DataType>::stack_;
     using RysIntegral<DataType>::stack_save_;
