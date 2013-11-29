@@ -111,25 +111,12 @@ namespace bagel {
     }
 
     void set_ab_cd() {
-      const double ax = basisinfo_[0]->position(0);
-      const double ay = basisinfo_[0]->position(1);
-      const double az = basisinfo_[0]->position(2);
-      const double bx = basisinfo_[1]->position(0);
-      const double by = basisinfo_[1]->position(1);
-      const double bz = basisinfo_[1]->position(2);
-      const double cx = basisinfo_[2]->position(0);
-      const double cy = basisinfo_[2]->position(1);
-      const double cz = basisinfo_[2]->position(2);
-      const double dx = basisinfo_[3]->position(0);
-      const double dy = basisinfo_[3]->position(1);
-      const double dz = basisinfo_[3]->position(2);
-
-      AB_[0] = ax - bx;
-      AB_[1] = ay - by;
-      AB_[2] = az - bz;
-      CD_[0] = cx - dx;
-      CD_[1] = cy - dy;
-      CD_[2] = cz - dz;
+      AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
+      AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
+      AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
+      CD_[0] = basisinfo_[2]->position(0) - basisinfo_[3]->position(0);
+      CD_[1] = basisinfo_[2]->position(1) - basisinfo_[3]->position(1);
+      CD_[2] = basisinfo_[2]->position(2) - basisinfo_[3]->position(2);
     }
 
     void set_prim_contsizes() {
