@@ -144,8 +144,8 @@ void RysIntegral<DataType>::allocate_arrays(const size_t ps) {
   DataType* pointer = buff_;
   screening_ = (int*)pointer;
   pointer += ps;
-  p_ = pointer;     pointer += ps * 3;
-  q_ = pointer;     pointer += ps * 3;
+  P_ = pointer;     pointer += ps * 3;
+  Q_ = pointer;     pointer += ps * 3;
   xp_ = pointer;    pointer += ps;
   xq_ = pointer;    pointer += ps;
   coeff_ = pointer; pointer += ps;

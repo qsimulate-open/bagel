@@ -43,17 +43,22 @@ void ComplexERIBatch::compute() {
   bkup_ = stack_save;
   fill_n(data_, size_alloc_, 0.0);
 
-#if 0
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
+//  perform_VRR();
+
+/* TODO Implement complex versions of perform_VRR1(), -2(), and -3(), then activate this switch statement so it
+   runs more efficiently when only 1, 2, or 3 roots are needed.
   switch (rank_) {
-//    case 1: perform_VRR1(); break;
-//    case 2: perform_VRR2(); break;
-//    case 3: perform_VRR3(); break;
+    case 1: perform_VRR1(); break;
+    case 2: perform_VRR2(); break;
+    case 3: perform_VRR3(); break;
     default: perform_VRR(); break;
   }
-  assert(0);
+*/
+
+#if 0
 
   // contract indices 01
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }

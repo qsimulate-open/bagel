@@ -38,7 +38,7 @@ void dcsrmm_(const char *transa, const int m, const int n, const int k, const do
 #ifdef HAVE_MKL_H
   mkl_dcsrmm_(transa, m, n, k, alpha, adata, acols, arind, b, ldb, beta, c, ldc);
 #else
-  if (transa != "N") throw logic_error("Only \"N\" case implemented for dcsrmm_");
+  if (transa[0] != 'N') throw logic_error("Only \"N\" case implemented for dcsrmm_");
   for (int j = 0; j < n; ++j) {
     double* target = c + j*ldc;
     const double* source = b + j*ldb;

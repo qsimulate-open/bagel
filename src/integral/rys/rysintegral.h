@@ -47,7 +47,7 @@ class RysIntegral : public Integral {
     std::array<double,3> AB_, CD_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
-    DataType *p_, *q_;
+    DataType *P_, *Q_;
     DataType *xp_, *xq_, *coeff_, *coeffy_;
     DataType *T_, *U_;
     unsigned int contsize_, primsize_;
