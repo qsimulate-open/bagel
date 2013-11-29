@@ -38,8 +38,8 @@
 
 namespace bagel {
 
- template <typename DataType>
- class RysIntegral : public Integral {
+template <typename DataType>
+class RysIntegral : public Integral {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -320,18 +320,8 @@ namespace bagel {
     }
 
     RysIntegral(const std::array<std::shared_ptr<const Shell>,2>& info, std::shared_ptr<StackMem> stack)
-     : spherical1_(info[0]->spherical()), spherical2_(spherical1_), deriv_rank_(0), tenno_(0), breit_(0) {
-      auto dum = std::make_shared<const Shell>(spherical2_);
-      basisinfo_ = {{ info[0], info[1], dum, dum }};
+     : RysIntegral({{ info[0], info[1], std::make_shared<const Shell>(info[0]->spherical()), std::make_shared<const Shell>(info[0]->spherical()) }}, stack) { }
 
-      if (stack == nullptr) {
-        stack_ = resources__->get();
-        allocated_here_ = true;
-      } else {
-        stack_ = stack;
-        allocated_here_ = false;
-      }
-    }
 
     ~RysIntegral() {
       // TODO this is a little inconsistent
