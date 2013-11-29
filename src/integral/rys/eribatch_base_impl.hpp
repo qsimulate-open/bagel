@@ -34,15 +34,8 @@ namespace bagel {
 // for ERI evaulation. Other than that, we need to overload this function in a derived class
 template <typename DataType>
 void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
-/*
-  DataType* const Cx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-  DataType* const Cy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-  DataType* const Cz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-  DataType* const Dx_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-  DataType* const Dy_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-  DataType* const Dz_save = this->stack_->template get<DataType>(this->prim2size_*this->prim3size_);
-*/
 
+  // set atomic coordinates
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
   const double az = basisinfo_[0]->position(2);
@@ -56,20 +49,25 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   const double dy = basisinfo_[3]->position(1);
   const double dz = basisinfo_[3]->position(2);
 
+  // set Gaussian exponents
   const double* exp0 = basisinfo_[0]->exponents_pointer();
   const double* exp1 = basisinfo_[1]->exponents_pointer();
   const double* exp2 = basisinfo_[2]->exponents_pointer();
   const double* exp3 = basisinfo_[3]->exponents_pointer();
+
+  // set number of primitive Gaussians for each center
   const int nexp0 = basisinfo_[0]->num_primitive();
   const int nexp1 = basisinfo_[1]->num_primitive();
   const int nexp2 = basisinfo_[2]->num_primitive();
   const int nexp3 = basisinfo_[3]->num_primitive();
 
+  // allocate temporary Q storage
   DataType* const Ecd_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qx_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qy_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qz_save = stack_->template get<DataType>(prim2size_*prim3size_);
 
+  // determine smallest a, b, c, d, p, q
   const double minexp0 = *std::min_element(exp0, exp0+nexp0);
   const double minexp1 = *std::min_element(exp1, exp1+nexp1);
   const double minexp2 = *std::min_element(exp2, exp2+nexp2);
@@ -96,6 +94,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   unsigned int tuple_length = 0u;
   double* const tuple_field = stack_->template get<double>(nexp2*nexp3*3);
   int* tuple_index = (int*)(tuple_field+nexp2*nexp3*2);
+
+  // compute Q values and save them for later
   {
     const double cxp_min = minexp0 + minexp1;
     const double cxp_inv_min = 1.0 / cxp_min;
@@ -103,16 +103,6 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
     int index23 = 0;
     for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) {
       for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) {
-/*
-        // TODO This setup should work, but it's probably better to not call vector_potential when it's not needed.
-        Cx_save[index23] = get_ABCD(this->C_[0],this->basisinfo_[2]->vector_potential(0),expi2,dum);
-        Cy_save[index23] = get_ABCD(this->C_[1],this->basisinfo_[2]->vector_potential(1),expi2,dum);
-        Cz_save[index23] = get_ABCD(this->C_[2],this->basisinfo_[2]->vector_potential(2),expi2,dum);
-        Dx_save[index23] = get_ABCD(this->D_[0],this->basisinfo_[3]->vector_potential(0),expi3,dum);
-        Dy_save[index23] = get_ABCD(this->D_[1],this->basisinfo_[3]->vector_potential(1),expi3,dum);
-        Dz_save[index23] = get_ABCD(this->D_[2],this->basisinfo_[3]->vector_potential(2),expi3,dum);
-*/
-
         const double cxq = *expi2 + *expi3;
         const double cdp = *expi2 * *expi3;
         const double cd = rnd(*expi2) * rnd(*expi3);
@@ -121,6 +111,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
         qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
         qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
+
+        // integral screening using Q
         if (integral_thresh != 0.0) {
           const double rho = cxp_min * cxq / (cxp_min + cxq);
           const double T = rho * min_pq_sq;
@@ -147,6 +139,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
     }
   }
 
+  // compute P values
   int index = 0;
   int index01 = 0;
   std::fill_n(T_, primsize_, -1.0);
@@ -156,15 +149,6 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   const double min_Ecd = exp(-r23_sq * min_cdp * cxq_inv_min);
   for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) {
     for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) {
-/*
-      // TODO This setup should work, but it's probably better to not look up the vector potential when it's not needed.
-      const DataType Ax = get_ABCD(this->A_[0],this->basisinfo_[0]->vector_potential(0),expi0,dum);
-      const DataType Ay = get_ABCD(this->A_[1],this->basisinfo_[0]->vector_potential(1),expi0,dum);
-      const DataType Az = get_ABCD(this->A_[2],this->basisinfo_[0]->vector_potential(2),expi0,dum);
-      const DataType Bx = get_ABCD(this->B_[0],this->basisinfo_[1]->vector_potential(0),expi1,dum);
-      const DataType By = get_ABCD(this->B_[1],this->basisinfo_[1]->vector_potential(1),expi1,dum);
-      const DataType Bz = get_ABCD(this->B_[2],this->basisinfo_[1]->vector_potential(2),expi1,dum);
-*/
       const double cxp = *expi0 + *expi1;
       const double abp = *expi0 * *expi1;
       const double ab = rnd(*expi0) * rnd(*expi1);
@@ -174,6 +158,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
       const DataType px = (ax * *expi0 + bx * *expi1) * cxp_inv;
       const DataType py = (ay * *expi0 + by * *expi1) * cxp_inv;
       const DataType pz = (az * *expi0 + bz * *expi1) * cxp_inv;
+
+      // integral screening using P
       if (integral_thresh != 0.0) {
         const double rho_sc = cxp * cxq_min / (cxp + cxq_min);
         const double T_sc = rho_sc * min_pq_sq;
@@ -189,6 +175,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
+      // store calculated values as members of RysIntegral
       for (unsigned int i = 0; i != tuple_length; ++i) {
         const int index23 = tuple_index[i];
         const int index = index_base + index23;
@@ -206,14 +193,6 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         const DataType zpq = qz_save[index23] - pz;
         const DataType T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
         const int index3 = index * 3;
-/*
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dz_save);
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dy_save);
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Dx_save);
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cz_save);
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cy_save);
-  this->stack_->template release<DataType>(this->prim2size_*this->prim3size_, Cx_save);
-*/
         P_[index3] = px;
         P_[index3 + 1] = py;
         P_[index3 + 2] = pz;
@@ -226,6 +205,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
       }
     }
   }
+
+  // release temporary Q storage
   stack_->release(nexp2*nexp3*3, tuple_field);
   stack_->release(prim2size_*prim3size_, qz_save);
   stack_->release(prim2size_*prim3size_, qy_save);
@@ -248,7 +229,7 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
     if (breit_)
       size_alloc_ = 6 * size_block_;
 
-    stack_save_ = stack_->get(size_alloc_);
+    stack_save_ = stack_->template get<DataType>(size_alloc_);
     stack_save2_ = nullptr;
 
     // if Slater/Yukawa integrals
@@ -264,7 +245,7 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
     } else {
       throw std::logic_error("something is strange in ERIBatch_Base::allocate_data");
     }
-    stack_save_ = stack_->get(size_alloc_);
+    stack_save_ = stack_->template get<DataType>(size_alloc_);
     stack_save2_ = nullptr;
   }
   data_ = stack_save_;

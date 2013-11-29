@@ -146,8 +146,8 @@ void RysIntegral<DataType>::allocate_arrays(const size_t ps) {
   pointer += ps;
   P_ = pointer;     pointer += ps * 3;
   Q_ = pointer;     pointer += ps * 3;
-  xp_ = pointer;    pointer += ps;
-  xq_ = pointer;    pointer += ps;
+  xp_ = reinterpret_cast<double*>(pointer);    pointer += ps;
+  xq_ = reinterpret_cast<double*>(pointer);    pointer += ps;
   coeff_ = pointer; pointer += ps;
   T_ = pointer;     pointer += ps;
   roots_ = pointer; pointer += rank_ * ps;

@@ -112,7 +112,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
   protected:
-    std::pair<const double*, std::shared_ptr<RysIntegral<std::complex<double>>>> compute_batch_complex(std::array<std::shared_ptr<const Shell>,4>& input); // Use only for testing ComplexERIBatch
+    std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>>>> compute_batch_complex(std::array<std::shared_ptr<const Shell>,4>& input); // Use only for testing ComplexERIBatch
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input); // Original version; keep this
 
     std::shared_ptr<const StaticDist> make_table(const size_t nmax);

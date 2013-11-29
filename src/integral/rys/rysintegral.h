@@ -39,7 +39,7 @@
 namespace bagel {
 
 template <typename DataType>
-class RysIntegral : public Integral {
+class RysIntegral : public Integral_base<DataType> {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -48,7 +48,8 @@ class RysIntegral : public Integral {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     DataType *P_, *Q_;
-    DataType *xp_, *xq_, *coeff_, *coeffy_;
+    double *xp_, *xq_;
+    DataType *coeff_, *coeffy_;
     DataType *T_, *U_;
     unsigned int contsize_, primsize_;
     size_t size_block_, size_alloc_;
@@ -69,7 +70,7 @@ class RysIntegral : public Integral {
     int tenno_;
     int breit_;
 
-    double *data_;
+    DataType *data_;
     double *data2_;
     unsigned int size_final_;
 
@@ -99,7 +100,7 @@ class RysIntegral : public Integral {
     size_t size_allocated_;
 
     // for deallocation
-    double* stack_save_;
+    DataType* stack_save_;
     double* stack_save2_;
 
 
@@ -154,8 +155,8 @@ class RysIntegral : public Integral {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    virtual double* data(const int i) override { assert(i == 0); return data_; }
-    const double* data() const { return data_; }
+    virtual DataType* data(const int i) override { assert(i == 0); return data_; }
+    const DataType* data() const { return data_; }
     const double* data2() const { return data2_; }
     bool data2_exists() const { return data2_ != nullptr; }
     size_t data_size() const { return size_final_; }
