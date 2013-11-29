@@ -45,18 +45,18 @@ template <typename DataType>
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const DataType integral_thresh) override {
 
-      const double ax = this->basisinfo_[0]->position(0);
-      const double ay = this->basisinfo_[0]->position(1);
-      const double az = this->basisinfo_[0]->position(2);
-      const double bx = this->basisinfo_[1]->position(0);
-      const double by = this->basisinfo_[1]->position(1);
-      const double bz = this->basisinfo_[1]->position(2);
-      const double cx = this->basisinfo_[2]->position(0);
-      const double cy = this->basisinfo_[2]->position(1);
-      const double cz = this->basisinfo_[2]->position(2);
-      const double dx = this->basisinfo_[3]->position(0);
-      const double dy = this->basisinfo_[3]->position(1);
-      const double dz = this->basisinfo_[3]->position(2);
+      this->A_[0] = this->basisinfo_[0]->position(0);
+      this->A_[1] = this->basisinfo_[0]->position(1);
+      this->A_[2] = this->basisinfo_[0]->position(2);
+      this->B_[0] = this->basisinfo_[1]->position(0);
+      this->B_[1] = this->basisinfo_[1]->position(1);
+      this->B_[2] = this->basisinfo_[1]->position(2);
+      this->C_[0] = this->basisinfo_[2]->position(0);
+      this->C_[1] = this->basisinfo_[2]->position(1);
+      this->C_[2] = this->basisinfo_[2]->position(2);
+      this->D_[0] = this->basisinfo_[3]->position(0);
+      this->D_[1] = this->basisinfo_[3]->position(1);
+      this->D_[2] = this->basisinfo_[3]->position(2);
       const DataType dum = 2.0;
 
       const double* exp0 = this->basisinfo_[0]->exponents_pointer();
@@ -92,9 +92,9 @@ template <typename DataType>
       const double x_ab_cd = this->AB_[1] * this->CD_[2] - this->AB_[2] * this->CD_[1];
       const double y_ab_cd = this->AB_[2] * this->CD_[0] - this->AB_[0] * this->CD_[2];
       const double z_ab_cd = this->AB_[0] * this->CD_[1] - this->AB_[1] * this->CD_[0];
-      const double x_n_ac = x_ab_cd * (ax - cx);
-      const double y_n_ac = y_ab_cd * (ay - cy);
-      const double z_n_ac = z_ab_cd * (az - cz);
+      const double x_n_ac = x_ab_cd * (this->A_[0] - this->C_[0]);
+      const double y_n_ac = y_ab_cd * (this->A_[1] - this->C_[1]);
+      const double z_n_ac = z_ab_cd * (this->A_[2] - this->C_[2]);
       const double innerproduct = x_n_ac + y_n_ac + z_n_ac;
       const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
       const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq;
@@ -113,12 +113,12 @@ template <typename DataType>
         for (const double* expi2 = exp2; expi2 != exp2+nexp2; ++expi2) {
           for (const double* expi3 = exp3; expi3 != exp3+nexp3; ++expi3, ++index23) {
             // TODO This setup should work, but it's probably better to not call vector_potential when it's not needed.
-            Cx_save[index23] = get_ABCD(cx,this->basisinfo_[2]->vector_potential(0),expi2,dum);
-            Cy_save[index23] = get_ABCD(cy,this->basisinfo_[2]->vector_potential(1),expi2,dum);
-            Cz_save[index23] = get_ABCD(cz,this->basisinfo_[2]->vector_potential(2),expi2,dum);
-            Dx_save[index23] = get_ABCD(dx,this->basisinfo_[3]->vector_potential(0),expi3,dum);
-            Dy_save[index23] = get_ABCD(dy,this->basisinfo_[3]->vector_potential(1),expi3,dum);
-            Dz_save[index23] = get_ABCD(dz,this->basisinfo_[3]->vector_potential(2),expi3,dum);
+            Cx_save[index23] = get_ABCD(this->C_[0],this->basisinfo_[2]->vector_potential(0),expi2,dum);
+            Cy_save[index23] = get_ABCD(this->C_[1],this->basisinfo_[2]->vector_potential(1),expi2,dum);
+            Cz_save[index23] = get_ABCD(this->C_[2],this->basisinfo_[2]->vector_potential(2),expi2,dum);
+            Dx_save[index23] = get_ABCD(this->D_[0],this->basisinfo_[3]->vector_potential(0),expi3,dum);
+            Dy_save[index23] = get_ABCD(this->D_[1],this->basisinfo_[3]->vector_potential(1),expi3,dum);
+            Dz_save[index23] = get_ABCD(this->D_[2],this->basisinfo_[3]->vector_potential(2),expi3,dum);
             const double cxq = *expi2 + *expi3;
             const double cdp = *expi2 * *expi3;
             const double cd = rnd(*expi2) * rnd(*expi3);
@@ -164,12 +164,12 @@ template <typename DataType>
       for (const double* expi0 = exp0; expi0 != exp0+nexp0; ++expi0) {
         for (const double* expi1 = exp1; expi1 != exp1+nexp1; ++expi1, ++index01) {
           // TODO This setup should work, but it's probably better to not look up the vector potential when it's not needed.
-          const DataType Ax = get_ABCD(ax,this->basisinfo_[0]->vector_potential(0),expi0,dum);
-          const DataType Ay = get_ABCD(ay,this->basisinfo_[0]->vector_potential(1),expi0,dum);
-          const DataType Az = get_ABCD(az,this->basisinfo_[0]->vector_potential(2),expi0,dum);
-          const DataType Bx = get_ABCD(bx,this->basisinfo_[1]->vector_potential(0),expi1,dum);
-          const DataType By = get_ABCD(by,this->basisinfo_[1]->vector_potential(1),expi1,dum);
-          const DataType Bz = get_ABCD(bz,this->basisinfo_[1]->vector_potential(2),expi1,dum);
+          const DataType Ax = get_ABCD(this->A_[0],this->basisinfo_[0]->vector_potential(0),expi0,dum);
+          const DataType Ay = get_ABCD(this->A_[1],this->basisinfo_[0]->vector_potential(1),expi0,dum);
+          const DataType Az = get_ABCD(this->A_[2],this->basisinfo_[0]->vector_potential(2),expi0,dum);
+          const DataType Bx = get_ABCD(this->B_[0],this->basisinfo_[1]->vector_potential(0),expi1,dum);
+          const DataType By = get_ABCD(this->B_[1],this->basisinfo_[1]->vector_potential(1),expi1,dum);
+          const DataType Bz = get_ABCD(this->B_[2],this->basisinfo_[1]->vector_potential(2),expi1,dum);
           const double cxp = *expi0 + *expi1;
           const double abp = *expi0 * *expi1;
           const double ab = rnd(*expi0) * rnd(*expi1);
@@ -211,18 +211,6 @@ template <typename DataType>
             const DataType zpq = qz_save[index23] - pz;
             const DataType T = rho * (xpq * xpq + ypq * ypq + zpq * zpq);
             const int index3 = index * 3;
-            this->A_[index3] = Ax;
-            this->A_[index3 + 1] = Ay;
-            this->A_[index3 + 2] = Az;
-            this->B_[index3] = Bx;
-            this->B_[index3 + 1] = By;
-            this->B_[index3 + 2] = Bz;
-            this->C_[index3] = Cx_save[index23];
-            this->C_[index3 + 1] = Cy_save[index23];
-            this->C_[index3 + 2] = Cz_save[index23];
-            this->D_[index3] = Dx_save[index23];
-            this->D_[index3 + 1] = Dy_save[index23];
-            this->D_[index3 + 2] = Dz_save[index23];
             this->P_[index3] = px;
             this->P_[index3 + 1] = py;
             this->P_[index3 + 2] = pz;

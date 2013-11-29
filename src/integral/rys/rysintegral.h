@@ -47,7 +47,7 @@ namespace bagel {
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     DataType *P_, *Q_;
-    DataType *A_, *B_, *C_, *D_;
+    std::array<double,3> A_, B_, C_, D_;
     double *xp_, *xq_;
     DataType *coeff_, *coeffy_;
     DataType *T_, *U_;
@@ -125,12 +125,12 @@ namespace bagel {
       const double dy = basisinfo_[3]->position(1);
       const double dz = basisinfo_[3]->position(2);
 
-      AB_[0] = ax - bx;
-      AB_[1] = ay - by;
-      AB_[2] = az - bz;
-      CD_[0] = cx - dx;
-      CD_[1] = cy - dy;
-      CD_[2] = cz - dz;
+      AB_[0] = A_[0] - B_[0];
+      AB_[1] = A_[1] - B_[1];
+      AB_[2] = A_[2] - B_[2];
+      CD_[0] = C_[0] - D_[0];
+      CD_[1] = C_[1] - D_[1];
+      CD_[2] = C_[2] - D_[2];
     }
 
     void set_prim_contsizes() {
@@ -202,16 +202,12 @@ namespace bagel {
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
     void allocate_arrays(const size_t ps) {
-      size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 25) * ps) : ((rank_ * 2 + 23) * ps);
+      size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
       buff_ = stack_->get<DataType>(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
       DataType* pointer = buff_;
       screening_ = (int*)pointer;
       pointer += ps;
-      A_ = pointer;     pointer += ps * 3;
-      B_ = pointer;     pointer += ps * 3;
-      C_ = pointer;     pointer += ps * 3;
-      D_ = pointer;     pointer += ps * 3;
       P_ = pointer;     pointer += ps * 3;
       Q_ = pointer;     pointer += ps * 3;
       xp_ = reinterpret_cast<double*>(pointer);    pointer += ps;
