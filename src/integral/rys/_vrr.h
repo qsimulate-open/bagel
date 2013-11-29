@@ -178,7 +178,7 @@ void vrr(DataType* data_, const DataType* C00, const DataType* D00, const DataTy
     if (c_ == 2) {
       for (int t = 0; t != rank_; ++t)
         data_[rank_*2+t] = D00_[t] * data_[rank_*1+t] + B01_[t];
-    } else {
+    } else if (c_ > 2) {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
       DataType B01_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
@@ -279,7 +279,7 @@ void vrr(DataType* data_, const DataType* C00, const DataType* D00, const DataTy
     if (a_ == 2) {
       for (int t = 0; t != rank_; ++t)
         data_[rank_*2+t] = C00_[t] * data_[rank_*1+t] + B10_[t];
-    } else {
+    } else if (a_ > 2) {
 #if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
       DataType B10_current[rank_]__attribute__((aligned(32))); // TODO deprecated
 #else
@@ -302,7 +302,7 @@ void vrr(DataType* data_, const DataType* C00, const DataType* D00, const DataTy
     for (int t = 0; t != rank_; ++t)
       data_[t] = 1.0;
   } else {
-
+    throw std::runtime_error("strange");
   }
 }
 
