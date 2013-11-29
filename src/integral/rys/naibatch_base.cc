@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// This file is being replaced by coulombbatch_base.cc
 
 #include <src/integral/rys/naibatch_base.h>
 #include <src/util/constants.h>
