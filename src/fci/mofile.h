@@ -88,10 +88,8 @@ class MOFile {
     std::shared_ptr<const CSymMatrix> mo1e() const { return mo1e_; }
     std::shared_ptr<const Matrix> mo2e() const { return mo2e_; }
     double& mo1e(const size_t i) { return mo1e_->data(i); }
-    double& mo2e(const size_t i) { return mo2e_->data(i); }
     double& mo2e(const size_t i, const size_t j) { return mo2e_->element(i,j); }
     const double& mo1e(const size_t i) const { return mo1e_->data(i); }
-    const double& mo2e(const size_t i) const { return mo2e_->data(i); }
     const double& mo2e(const size_t i, const size_t j) const { return mo2e_->element(i,j); }
     // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l

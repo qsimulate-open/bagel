@@ -31,43 +31,32 @@
 using namespace std;
 using namespace bagel;
 
-StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
-  ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}}, norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
-{
-  RASGraph graph(norb_ + 1, nele_ + 1);
+RASGraph::RASGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
+  if ( nele*norb != 0 ) {
+    weights_ = unique_ptr<size_t[]>(new size_t[nele * norb]);
+    fill_n(weights_.get(), nele * norb, 0ull);
 
-  auto fill_ras_graph = [&graph](const int istart, const int jstart, const int norb, const int nele) {
-    const int nholes = norb - nele;
+    Comb comb;
 
-    for (int i = 0; i <= nholes; ++i) {
-      for (int j = 0; j <= nele; ++j) {
-        if (i + j + istart == 0) graph(i+j+istart,j+jstart) = 1;
-        else if (j + jstart == 0) graph(i+j+istart,j+jstart) = graph(i+j+istart-1,j+jstart);
-        else graph(i+j+istart,j+jstart) = graph(i+j+istart-1,j+jstart-1) + graph(i+j+istart-1,j+jstart);
+    size_ = comb.c(norb, nele);
+
+    const size_t nholes = norb - nele;
+    for(size_t k = 1; k <= nele; ++k) {
+      for (size_t l = k; l < nholes + k; ++l) {
+        size_t node_val = comb.c(l, k);
+        weight(l, k-1) = node_val;
       }
     }
-  };
-
-  fill_ras_graph(0, 0, norb1, nele1);
-  fill_ras_graph(norb1, nele1, norb2, nele2);
-  fill_ras_graph(norb1 + norb2, nele1 + nele2, norb3, nele3);
-
-  size_t size = graph.max();
-
-  weights_.reserve( (norb1 - nele1)*nele1 + (norb2 - nele2)*nele2 + (norb3 - nele3)*nele3 );
-  offsets_.reserve( nele_ );
-
-  for (int j = 0; j < nele_; ++j) {
-    int i = 0;
-    while ( (graph(i+1,j+1) == 0) || (graph(i,j) == 0) ) ++i;
-
-    offsets_.push_back( weights_.size() - i );
-
-    for ( ; i < norb_; ++i) {
-      if (graph(i+1,j+1) == 0 || graph(i,j) == 0) break;
-      weights_.push_back( graph(i,j+1) );
-    }
   }
+}
+
+StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
+  ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}},
+    graphs_{{ make_shared<RASGraph>(nele1, norb1), make_shared<RASGraph>(nele2, norb2), make_shared<RASGraph>(nele3, norb3) }},
+    dist_(graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size(), mpi__->size()),
+    norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
+{
+  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
 
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));

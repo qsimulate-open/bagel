@@ -41,6 +41,8 @@ class ZCASSCF : public Method {
     int nvirt_;
     int nbasis_;
 
+    int charge_;
+
     bool gaunt_;
     bool breit_;
 
@@ -75,6 +77,8 @@ class ZCASSCF : public Method {
                  std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
 
     std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
+
+    void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
 
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,

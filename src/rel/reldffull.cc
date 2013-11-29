@@ -171,13 +171,14 @@ shared_ptr<ZMatrix> RelDFFull::form_4index(shared_ptr<const RelDFFull> a, const 
 }
 
 
-shared_ptr<ZMatrix> RelDFFull::form_2index(shared_ptr<const RelDFFull> a, const double fac) const {
-  // Note the complex conjugation..
+shared_ptr<ZMatrix> RelDFFull::form_2index(shared_ptr<const RelDFFull> a, const double fac, const bool conjugate_left) const {
+  const double ifac = conjugate_left ? -1.0 : 1.0;
+
   shared_ptr<Matrix> real = dffull_[0]->form_2index(a->dffull_[0], fac);
-  *real += *dffull_[1]->form_2index(a->dffull_[1], fac);
+  *real -= *dffull_[1]->form_2index(a->dffull_[1], fac*ifac);
 
   shared_ptr<Matrix> imag = dffull_[0]->form_2index(a->dffull_[1], fac);
-  *imag -= *dffull_[1]->form_2index(a->dffull_[0], fac);
+  *imag += *dffull_[1]->form_2index(a->dffull_[0], fac*ifac);
 
   return make_shared<ZMatrix>(*real, *imag);
 }

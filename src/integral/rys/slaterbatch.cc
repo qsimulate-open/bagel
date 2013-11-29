@@ -52,8 +52,8 @@ static const double pitwohalf__ = ::pow(pi__, 2.5);
 // TODO need to update
 const static SRootList root;
 
-SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa)
-:  RysIntegral<double>(_info, stack_), gamma_(gmm), yukawa_(yukawa) {
+SlaterBatch::SlaterBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const double gmm, const bool yukawa, shared_ptr<StackMem> stack)
+:  RysIntegral<double>(_info, stack), gamma_(gmm), yukawa_(yukawa) {
   // ten-no == 1 means it is Slater/Yukawa int
   ++tenno_;
 
@@ -329,12 +329,12 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
           const double T = rho * pq_sq;
           coeff_[index] = coeffy_[index] * twogamma * U;
           const int index3 = index * 3;
-          P_[index3] = px;
-          P_[index3 + 1] = py;
-          P_[index3 + 2] = pz;
-          Q_[index3] =     qx_save[index23];
-          Q_[index3 + 1] = qy_save[index23];
-          Q_[index3 + 2] = qz_save[index23];
+          p_[index3] = px;
+          p_[index3 + 1] = py;
+          p_[index3 + 2] = pz;
+          q_[index3] =     qx_save[index23];
+          q_[index3 + 1] = qy_save[index23];
+          q_[index3 + 2] = qz_save[index23];
           T_[index] = T;
           U_[index] = U;
           screening_[screening_size_] = index;
@@ -346,41 +346,20 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
 
 void SlaterBatch::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
-  if (deriv_rank_ == 0) {
-    const unsigned int size_start = asize_ * csize_ * primsize_;
-    const unsigned int size_intermediate = asize_final * csize_ * contsize_;
-    const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
-    size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
-    size_alloc_ = size_block_;
 
-    // if this is a two-electron Breit integral
-    if (breit_)
-      size_alloc_ = 6 * size_block_;
+  const unsigned int size_start = asize_ * csize_ * primsize_;
+  const unsigned int size_intermediate = asize_final * csize_ * contsize_;
+  const unsigned int size_intermediate2 = asize_final_sph * csize_final * contsize_;
+  size_block_ = std::max(size_start, std::max(size_intermediate, size_intermediate2));
+  size_alloc_ = size_block_;
 
-    stack_save_ = stack_->get(size_alloc_);
-    stack_save2_ = nullptr;
+  stack_save_ = stack_->get(size_alloc_);
+  stack_save2_ = nullptr;
 
-    // if Slater/Yukawa integrals
-    if (tenno_)
-      stack_save2_ = stack_->get(size_alloc_);
+  // if Slater/Yukawa integrals
+  if (tenno_)
+    stack_save2_ = stack_->get(size_alloc_);
 
-  // derivative integrals
-  } else if (deriv_rank_ == 1) {
-    size_block_ = asize_final * csize_final * primsize_;
-    // if this is a two-electron gradient integral
-    if (dynamic_cast<ERIBatch_base*>(this)) {
-      size_alloc_ = 12 * size_block_;
-    // if this is an NAI gradient integral
-    }else if (dynamic_cast<NAIBatch_base*>(this)) {
-      // in this case, we store everything
-      size_alloc_ = (dynamic_cast<NAIBatch_base*>(this)->mol()->natom()) * 3.0 * size_block_;
-      assert(csize_final == 1);
-    } else {
-      throw std::logic_error("something is strange in SlaterBatch::allocate_data");
-    }
-    stack_save_ = stack_->get(size_alloc_);
-    stack_save2_ = nullptr;
-  }
   data_ = stack_save_;
   data2_ = stack_save2_;
 }

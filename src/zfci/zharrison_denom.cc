@@ -51,7 +51,7 @@ void ZHarrison::const_denom() {
       assert(fabs(jop_->mo2e("1111", j, i, i, j).imag()) < 1.0e-8);
       assert(fabs(jop_->mo2e("0101", j, i, j, i).imag()) < 1.0e-8);
     }
-    h->data(i) = jop_->mo1e("00", i,i).real();
+    h->element(i, 0) = jop_->mo1e("00", i,i).real();
     // assert for Kramers and symmetry
     assert(abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8);
     assert(abs(jop_->mo1e("00", i,i).imag()) < 1.0e-8);

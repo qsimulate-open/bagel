@@ -107,7 +107,7 @@ void SCF::compute() {
 
     if (!dodf_) {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
-      mpi__->broadcast(previous_fock->data(), previous_fock->size(), 0);
+      mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
       previous_fock = make_shared<Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }

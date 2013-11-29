@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/form_sigma.h
+// Filename: ras/dist_form_sigma.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,32 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __BAGEL_RAS_FORM_SIGMA_RAS_H
-#define __BAGEL_RAS_FORM_SIGMA_RAS_H
+#ifndef __BAGEL_RAS_DIST_FORM_SIGMA_RAS_H
+#define __BAGEL_RAS_DIST_FORM_SIGMA_RAS_H
 
-#include <src/ras/civector.h>
+#include <src/ras/distcivector.h>
 #include <src/fci/mofile.h>
 
 namespace bagel {
 
-class FormSigmaRAS {
+class DistFormSigmaRAS {
   protected:
     const bool sparse_;
 
   public:
-    FormSigmaRAS(const bool sparse) : sparse_(sparse) {}
+    DistFormSigmaRAS(const bool sparse) : sparse_(sparse) {}
 
     // This is really all this class is
-    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
-    std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, const double* mo1e) const;
+    std::shared_ptr<DistRASDvec> operator()(std::shared_ptr<const DistRASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
+    std::shared_ptr<DistRASDvec> operator()(std::shared_ptr<const DistRASDvec> cc, const double* mo1e) const;
 
   private:
     // Helper functions for sigma formation
-    void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
-    void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* g, const double* mo2e) const;
-    void sigma_ab(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
-
-    //void sigma_ab_1(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* mo2e) const;
+    void sigma_bb(std::shared_ptr<const DistRASCivec> cc, std::shared_ptr<DistRASCivec> sigma, const double* g, const double* mo2e) const;
+    void sigma_ab(std::shared_ptr<const DistRASCivec> cc, std::shared_ptr<DistRASCivec> sigma, const double* mo2e) const;
 };
 
 }

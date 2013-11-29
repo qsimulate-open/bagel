@@ -379,7 +379,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
         }
         else {
           const int sign = iter.sign;
-          transform(dest, dest + lbt, dest, [&sign] (const double& t) { return sign * t; });
+          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
         }
       }
     }
@@ -395,7 +395,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
         if (mpi__->test(get<0>(*i))) {
           double* dest = get<1>(*i);
           const int sign = get<2>(*i);
-          transform(dest, dest + lbt, dest, [&sign] (const double& t) { return sign * t; });
+          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
           i = requests.erase(i);
         }
         else {
@@ -475,7 +475,7 @@ shared_ptr<DistDvec> DistDvec::apply(const int orbital, const bool action, const
           }
           else {
             const int sign = iter.sign;
-            transform(dest, dest + lbt, dest, [&sign] (const double& t) { return sign * t; });
+            for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
           }
         }
       }
@@ -489,7 +489,7 @@ shared_ptr<DistDvec> DistDvec::apply(const int orbital, const bool action, const
         if (mpi__->test(get<0>(*i))) {
           double* dest = get<1>(*i);
           const int sign = get<2>(*i);
-          transform(dest, dest + lbt, dest, [&sign] (const double& t) { return sign * t; });
+          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
           i = requests.erase(i);
         }
         else {

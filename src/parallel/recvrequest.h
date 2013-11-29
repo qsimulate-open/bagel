@@ -46,14 +46,49 @@ class PutRequest : public ServerFlush {
     void init();
     const double* const data_;
 
+    const size_t probe_offset_;
+
     // this mutex is for MPI calls
     std::mutex block_;
 
     void flush_() override;
 
   public:
-    PutRequest(const double* d);
+    PutRequest(const double* d, const size_t probe_offset = 0);
     ~PutRequest();
+};
+
+// receives using MPI_irecv and sends while taking ownership of the sent data
+class BufferPutRequest : public ServerFlush {
+  protected:
+    struct Call {
+      std::unique_ptr<size_t[]> buf;
+      Call() : buf(new size_t[4]) { }
+    };
+    std::map<int, std::shared_ptr<Call>> calls_;
+
+    struct Buff {
+      std::unique_ptr<double[]> buf;
+      Buff(std::unique_ptr<double[]>&& b) : buf(std::move(b)) {}
+    };
+    std::map<int, std::shared_ptr<Buff>> buffs_;
+
+    void init();
+
+    const size_t probe_offset_;
+
+    // this mutex is for MPI calls
+    std::mutex block_;
+
+    // not to be used
+    void flush_() override;
+
+  public:
+    BufferPutRequest(const size_t probe_offset = 0);
+    ~BufferPutRequest();
+
+    void request_send(std::unique_ptr<double[]>&& buf, const size_t size, const size_t dest, const size_t tag);
+    std::vector<std::array<size_t, 4>> get_calls();
 };
 
 class RecvRequest {
@@ -72,6 +107,7 @@ class RecvRequest {
     };
 
     size_t counter_;
+    const size_t nprobes_;
 
     // tuple contains: size, if ready, target rank, and buffer
     std::map<int, std::shared_ptr<Probe>> request_;
@@ -80,9 +116,9 @@ class RecvRequest {
     std::mutex block_;
 
   public:
-    RecvRequest();
+    RecvRequest(const size_t nprobes = 1);
     // return mpi tag
-    int request_recv(double* target, const size_t size, const int dest, const size_t off);
+    int request_recv(double* target, const size_t size, const int dest, const size_t off, const size_t probe_offset = 0);
     bool test();
 
 };
@@ -90,4 +126,3 @@ class RecvRequest {
 }
 
 #endif
-

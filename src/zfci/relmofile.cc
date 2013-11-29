@@ -35,11 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co)
- : geom_(geom), ref_(dynamic_pointer_cast<const RelReference>(ref)), coeff_(co) {
-  // input should be RelReference
-  assert(dynamic_pointer_cast<const RelReference>(ref));
-
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> co, const bool gaunt, const bool breit)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -52,13 +49,13 @@ void RelMOFile::init(const int nstart, const int nfence) {
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
   if (!geom_->dfs())
-    geom_ = geom_->relativistic(ref_->gaunt());
+    geom_ = geom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), ref_->gaunt(), ref_->breit(), /*do_grad = */false, /*robust*/ref_->breit());
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -71,7 +68,8 @@ void RelMOFile::init(const int nstart, const int nfence) {
   }
 
   // then compute Kramers adapated coefficient matrices
-  kramers_coeff_ = kramers(nstart, nfence);
+  auto overlap = make_shared<RelOverlap>(geom_);
+  kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
@@ -84,21 +82,21 @@ void RelMOFile::init(const int nstart, const int nfence) {
 }
 
 
-array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const int nfence) const {
-  shared_ptr<const ZMatrix> coeff = coeff_->slice(nstart, nfence);
-  shared_ptr<ZMatrix> reordered = coeff->clone();
 
-  const int noff = reordered->mdim()/2;
-  const int ndim = reordered->ndim();
-  const int mdim = reordered->mdim();
+// this is a static function!
+array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+  const int noff = coeff->mdim()/2;
+  const int ndim = coeff->ndim();
+  const int mdim = coeff->mdim();
   const int nb = ndim / 4;
-  assert(nb == nbasis_);
+  unique_ptr<complex<double>[]> eig = (*coeff % *hcore * *coeff).diag();
 
-  if (nfence-nstart <= 0 || (nfence-nstart)%2 != 0 || ndim%4 != 0)
+  array<shared_ptr<ZMatrix>,2> out{{make_shared<ZMatrix>(ndim, noff), make_shared<ZMatrix>(ndim, noff)}};
+
+  if (ndim%2 != 0 || ndim%4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers");
 
   // overlap matrix
-  auto overlap = make_shared<RelOverlap>(geom_);
   auto sigmaz = overlap->copy();
   sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb));
   sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb));
@@ -106,99 +104,71 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(const int nstart, const in
   sigmaz->scale(-1.0);
 
   unique_ptr<double[]> tmp(new double[mdim]);
-  int i;
-  for (i = 0; i != mdim; ) {
-    const double eig = ref_->eig()[nstart+i];
-    int j = i+1;
-    // pick up degenerate orbitals
-    while (j != mdim && (fabs(ref_->eig()[nstart+j]-eig) < 1.0e-8))
-      ++j;
-    assert((j-i)%2 == 0);
-    const int n = j-i;
 
-    auto cnow = coeff->slice(i, j);
+  list<int> done;
+  for (int i = 0; i != mdim; ++i) {
+    if (find(done.begin(), done.end(), i) != done.end()) continue;
+    list<int> current{i};
+    const double e = eig[i].real();
+
+    for (int j = i+1; j < mdim; ++j) {
+      if (fabs(eig[j].real()-e)/fabs(e) < 1.0e-8)
+        current.push_back(j);
+    }
+    const int n = current.size();
+    if (n%2 != 0) throw runtime_error("orbitals are not kramers paired");
+
+    auto cnow = make_shared<ZMatrix>(ndim, n);
+    int j = 0;
+    for (auto& i : current)
+      cnow->copy_block(0, j++, ndim, 1, coeff->element_ptr(0,i));
+
+    auto corig = cnow->copy();
     auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
     s->diagonalize(tmp.get());
     *cnow *= *s;
 
-    assert(i%2 == 0);
-    reordered->copy_block(0, i/2,      ndim, n/2, cnow->element_ptr(0, 0));
-    reordered->copy_block(0, i/2+noff, ndim, n/2, cnow->element_ptr(0, n/2));
-    i = j;
-  }
-
-  // fix the phase - making the largest large-component element in each colomn real
-  for (int i = 0; i != mdim; ++i) {
-    const int iblock = i/(mdim/2);
-    complex<double> ele = *max_element(reordered->element_ptr(iblock*nb,i), reordered->element_ptr((iblock+1)*nb,i),
-                                       [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
-    const complex<double> fac = norm(ele) / ele;
-    transform(reordered->element_ptr(0,i), reordered->element_ptr(0,i+1), reordered->element_ptr(0,i), [&fac](complex<double> a) { return a*fac; });
-  }
-
-#ifndef NDEBUG
-  {
-    ZMatrix tmp3 = *reordered % *overlap * *reordered;
-    for (int i = 0; i != tmp3.ndim(); ++i) tmp3(i,i) = 0.0;
-    assert(tmp3.rms() < 1.0e-6);
-  }
-#endif
-
-  // off diagonal
-  auto zstar = reordered->get_submatrix(nb, 0, nb, noff)->get_conjg();
-  auto ystar = reordered->get_submatrix(0, noff, nb, noff)->get_conjg();
-  reordered->add_block(-1.0,  0, noff, nb, noff, zstar);
-  reordered->add_block(-1.0, nb,    0, nb, noff, ystar);
-
-  zstar = reordered->get_submatrix(nb*3, 0, nb, noff)->get_conjg();
-  ystar = reordered->get_submatrix(nb*2, noff, nb, noff)->get_conjg();
-  reordered->add_block(-1.0, nb*2, noff, nb, noff, zstar);
-  reordered->add_block(-1.0, nb*3,    0, nb, noff, ystar);
-
-  // diagonal
-  reordered->add_block(1.0, 0, 0, nb, noff, reordered->get_submatrix(nb, noff, nb, noff)->get_conjg());
-  reordered->copy_block(nb, noff, nb, noff, reordered->get_submatrix(0, 0, nb, noff)->get_conjg());
-  reordered->add_block(1.0, nb*2, 0, nb, noff, reordered->get_submatrix(nb*3, noff, nb, noff)->get_conjg());
-  reordered->copy_block(nb*3, noff, nb, noff, reordered->get_submatrix(nb*2, 0, nb, noff)->get_conjg());
-
-  reordered->scale(0.5);
-
-  array<shared_ptr<ZMatrix>,2> out{{reordered->slice(0,noff), reordered->slice(noff, noff*2)}};
-
-#ifndef NDEBUG
-  {
-    ZMatrix tmp = *out[0] % *overlap * *out[0];
-    for (int i = 0; i != tmp.ndim(); ++i) tmp(i,i) = 0.0;
-    assert(tmp.rms() < 1.0e-6);
-    ZMatrix tmp2 = *out[1] % *overlap * *out[0];
-    assert(tmp2.rms() < 1.0e-6);
-  }
-#endif
-
-  auto diag = (*out[0] % *overlap * *out[0]).diag();
-  for (int i = 0; i != noff; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      out[0]->element(j,i) /= sqrt(diag[i].real());
-      out[1]->element(j,i) /= sqrt(diag[i].real());
+    // fix the phase - making the largest large-component element in each colomn real
+#if 1
+    for (int i = 0; i != n; ++i) {
+      const int iblock = i/(n/2);
+      complex<double> ele = *max_element(cnow->element_ptr(iblock*nb,i), cnow->element_ptr((iblock+1)*nb,i),
+                                         [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
+      const complex<double> fac = norm(ele) / ele*complex<double>(1.0,1.0);
+      for_each(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), [&fac](complex<double>& a) { a *= fac; });
     }
+#endif
+
+    // off diagonal
+    const int m = n/2;
+    cnow->add_block(-1.0, nb, 0, nb, m, cnow->get_submatrix(0, m, nb, m)->get_conjg());
+    cnow->copy_block(0, m, nb, m, (*cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->add_block(-1.0, nb*3, 0, nb, m, cnow->get_submatrix(nb*2, m, nb, m)->get_conjg());
+    cnow->copy_block(nb*2, m, nb, m, (*cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0)));
+
+    // diagonal
+    cnow->add_block(1.0, 0, 0, nb, m, cnow->get_submatrix(nb, m, nb, m)->get_conjg());
+    cnow->copy_block(nb, m, nb, m, cnow->get_submatrix(0, 0, nb, m)->get_conjg());
+    cnow->add_block(1.0, nb*2, 0, nb, m, cnow->get_submatrix(nb*3, m, nb, m)->get_conjg());
+    cnow->copy_block(nb*3, m, nb, m, cnow->get_submatrix(nb*2, 0, nb, m)->get_conjg());
+
+    auto diag = (*cnow % *overlap * *cnow).diag();
+    for (int i = 0; i != n; ++i)
+      for (int j = 0; j != ndim; ++j)
+        cnow->element(j,i) /= sqrt(diag[i].real());
+
+    ZMatrix unit = *corig % *overlap * *cnow;
+    unit.purify_unitary();
+    *cnow = *corig * unit;
+
+    const int d = done.size();
+    assert(d % 2 == 0);
+    out[0]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, 0));
+    out[1]->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, n/2));
+
+    done.insert(done.end(), current.begin(), current.end());
   }
 
-#if 0
-//#ifndef NDEBUG
-  { // check reconstructed Fock matrix
-    shared_ptr<ZMatrix> hcore = make_shared<RelHcore>(geom_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore, coeff_->slice(0, ref_->nocc()), ref_->gaunt(), ref_->breit(), /*store half*/false, /*robust*/ref_->breit());
-    auto diag0 = (*out[0] % *fock * *out[0]).diag();
-    auto diag1 = (*out[1] % *fock * *out[1]).diag();
-    for (int i = 0; i != out[0]->mdim(); ++i) {
-      if (fabs(diag0[i] - ref_->eig()[i*2+nstart]) > 1.0e-6 || fabs(diag1[i] - ref_->eig()[i*2+nstart]) > 1.0e-6) {
-        stringstream ss; ss << "Fock reconstruction failed. " << diag0[i] << " " << ref_->eig()[i*2+nstart] << endl
-                            << "                            " << diag1[i] << " " << ref_->eig()[i*2+nstart] << endl;
-        throw logic_error(ss.str());
-      }
-    }
-  }
-#endif
   return array<shared_ptr<const ZMatrix>,2>{{out[0], out[1]}};
 }
 
@@ -348,8 +318,8 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop::compute_mo2e(const a
   // Dirac-Coulomb term
   compute(out, false, false);
 
-  if (ref_->gaunt())
-    compute(out, true, ref_->breit());
+  if (gaunt_)
+    compute(out, true, breit_);
 
   // Kramers and particle symmetry
   out[bitset<4>("1111")] = out.at(bitset<4>("0000"))->get_conjg();

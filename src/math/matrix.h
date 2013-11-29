@@ -168,8 +168,8 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix& operator*=(const DistMatrix&);
     DistMatrix operator%(const DistMatrix&) const; // caution
     DistMatrix operator^(const DistMatrix&) const; // caution
-    DistMatrix operator+(const DistMatrix& o) const { DistMatrix out(*this); out.ax_plus_y(1.0, o); return out; }
-    DistMatrix operator-(const DistMatrix& o) const { DistMatrix out(*this); out.ax_plus_y(-1.0, o); return out; }
+    DistMatrix operator+(const DistMatrix& o) const { DistMatrix out(*this); out += o; return out; }
+    DistMatrix operator-(const DistMatrix& o) const { DistMatrix out(*this); out -= o; return out; }
     DistMatrix& operator+=(const DistMatrix& o) { ax_plus_y(1.0, o); return *this; }
     DistMatrix& operator-=(const DistMatrix& o) { ax_plus_y(-1.0, o); return *this; }
     DistMatrix& operator=(const DistMatrix& o);

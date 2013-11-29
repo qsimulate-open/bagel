@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/civector.cc
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: ras/distcivector.cc
+// Copyright (C) 2013 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -26,61 +26,85 @@
 
 #include <iomanip>
 #include <unordered_map>
-
-#include <src/ras/civector.h>
-#include <src/util/taskqueue.h>
+#include <src/ras/distcivector.h>
+#include <src/parallel/distqueue.h>
 
 using namespace std;
 using namespace bagel;
 
 // Computes <S^2>
-template<>
-double RASCivector<double>::spin_expectation() const {
-  shared_ptr<const RASCivector<double>> S2 = spin();
-  return dot_product(*S2);
-}
 
 namespace bagel {
   namespace RAS {
-    struct SpinTask {
-      const std::bitset<nbit__> target_;
-      const RASCivector<double>* this_;
-      shared_ptr<RASCivector<double>> out_;
+    struct DistSpinTask {
+      const std::bitset<nbit__> abit_;
+      const DistRASCivector<double>* this_;
+      shared_ptr<DistRASCivector<double>> out_;
       shared_ptr<const RASDeterminants> det_;
       unordered_map<size_t, size_t>* lexicalmap_;
 
-      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
-        target_(t), this_(th), out_(o), det_(d), lexicalmap_(lex) {}
+      unique_ptr<double[]> buf_;
+      list<int> requests_;
+
+      DistSpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
+        abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
+      {
+        const size_t lb = det_->lenb();
+        const int norb = det_->norb();
+
+        const size_t alexical = det_->lexical<0>(abit_);
+        buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);
+
+        int k = 0;
+        for (auto& iter : det_->phia(alexical)) {
+          // loop through blocks
+          const int l = this_->get_bstring_buf(buf_.get() + lb*k++, iter.source) ;
+          if (l >= 0) requests_.push_back(l);
+        }
+      }
+
+      DistSpinTask(const DistSpinTask& o)=delete;
+      DistSpinTask& operator=(const DistSpinTask& o)=delete;
+
+      bool test() {
+        bool out = true;
+        for (auto i = requests_.begin(); i != requests_.end(); ) {
+          if (mpi__->test(*i)) {
+            i = requests_.erase(i);
+          }
+          else {
+            ++i;
+            out = false;
+          }
+        }
+        return out;
+      }
 
       void compute() {
         const int norb = det_->norb();
+        const size_t lex_a = det_->lexical<0, 0>(abit_);
 
-        unique_ptr<double[]> source(new double[det_->lenb()]);
+        vector<shared_ptr<DistRASBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
 
-        for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
-          const int ii = iter.ij / norb;
-          const int jj = iter.ij % norb;
-          bitset<nbit__> mask1; mask1.set(ii); mask1.set(jj);
-          bitset<nbit__> mask2; mask2.set(ii);
+        int k = 0;
+        for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
+          const int j = iter.ij / norb;
+          const int i = iter.ij % norb;
+          bitset<nbit__> mask1; mask1.set(j); mask1.set(i);
+          bitset<nbit__> mask2; mask2.set(j);
 
-          bitset<nbit__> maskij; maskij.set(ii); maskij.flip(jj);
+          bitset<nbit__> maskij; maskij.set(j); maskij.flip(i);
 
-          fill_n(source.get(), det_->lenb(), 0.0);
-          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
-          for (auto& iblock : sourceblocks) {
-            const size_t offset = iblock->stringb()->offset();
-            copy_n(&this_->element(iblock->stringb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
-          }
-
-          for (auto& iblock : out_->allowed_blocks<0>(target_)) {
-            double* outelement = &out_->element(iblock->stringb()->strings(0), target_);
-            for (auto& btstring : *iblock->stringb()) {
-              if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
-                const bitset<nbit__> bsostring = btstring ^ maskij;
-                if (det_->allowed(det_->stringa(iter.source), bsostring))
-                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
+          const double* source = buf_.get() + det_->lenb() * k++;
+          for (auto& iblock : allowed_blocks) {
+            const size_t lb = iblock->lenb();
+            double* odata = iblock->local() + lb * (lex_a - iblock->astart());
+            for (auto& ib : *iblock->stringb()) {
+              if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
+                const bitset<nbit__> bsostring = ib ^ maskij;
+                *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
               }
-              ++outelement;
+              ++odata;
             }
           }
         }
@@ -92,35 +116,71 @@ namespace bagel {
 // Returns S^2 | civec >
 // S^2 = S_z^2 + S_z + S_-S_+ with S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_beta
 template<>
-shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
-  auto out = make_shared<RASCivector<double>>(det_);
+shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
+  auto out = make_shared<DistRASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
-  for (auto& i : det_->stringb())
-    lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
+  for (size_t i = 0; i < det_->lenb(); ++i)
+    lexicalmap[det_->stringb(i).to_ullong()] = i;
 
-  TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
+  this->init_mpi_recv();
 
-  for (auto& istring : det_->stringa()) {
-    tasks.emplace_back(istring, this, out, det_, &lexicalmap);
+  DistQueue<RAS::DistSpinTask, const DistRASCivector<double>*> tasks(this);
+
+//This is the code that WOULD be included if you wanted to thread this. Threading doesn't really work yet.
+//#define THREADING
+#ifdef THREADING
+  atomic<bool> still_flushing(true);
+  thread flush_thread([this, &still_flushing] () { do { this->flush(); this_thread::sleep_for(sleeptime__); } while(still_flushing); });
+
+  const size_t nthreads = resources__->max_num_threads();
+  auto finish_worker = [&]() { tasks.finish_worker(); };
+
+  vector<thread> thread_tasks;
+  for (size_t ith = 1; ith < nthreads; ++ith)
+    thread_tasks.push_back( thread(finish_worker));
+#endif
+
+  // task construction by master
+  for (auto& spaceiter : this->det()->stringspacea()) {
+    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    size_t astart, aend;
+    tie(astart, aend) = ispace->dist().range(mpi__->rank());
+    if (astart == aend) continue;
+
+    for (size_t ia = astart; ia < aend; ++ia) {
+      tasks.emplace_and_compute(this->det()->stringa(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
+    }
   }
 
-  tasks.compute();
 
   const double sz = static_cast<double>(det_->nspin()) * 0.5;
   const double fac = sz*sz + sz + static_cast<double>(det_->neleb());
 
   out->ax_plus_y(fac, *this);
 
+  tasks.finish_master();
+
+#ifdef THREADING
+  for (auto& th : thread_tasks)
+    th.join();
+
+  still_flushing = false;
+  flush_thread.join();
+#endif
+
+  this->terminate_mpi_recv();
+
   return out;
 }
 
 // S_- = \sum_i i^dagger_beta i_alpha
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
+template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
+#if 0
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
   assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
-  auto out = make_shared<RASCivec>(tdet);
+  auto out = make_shared<DistRASCivec>(tdet);
 
   const int norb = sdet->norb();
   const int ras1 = sdet->ras(0);
@@ -129,15 +189,15 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& spaceiter : sdet->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& ispace : sdet->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& spaceiter : sdet->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& ispace : sdet->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -175,14 +235,18 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   }
 
   return out;
+#else
+  return shared_ptr<DistRASCivector<double>>();
+#endif
 }
 
 // S_+ = \sum_i i^dagger_alpha i_beta
-template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
+template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
+#if 0
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()+1, sdet->neleb()-1);
   assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
-  auto out = make_shared<RASCivec>(tdet);
+  auto out = make_shared<DistRASCivec>(tdet);
 
   const int norb = sdet->norb();
   const int ras1 = sdet->ras(0);
@@ -191,15 +255,15 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& spaceiter : det_->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+  for (auto& ispace : det_->stringspacea()) {
+    if (ispace)
+      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& spaceiter : det_->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+  for (auto& ispace : det_->stringspaceb()) {
+    if (ispace)
+      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -237,15 +301,18 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   }
 
   return out;
+#else
+  return shared_ptr<DistRASCivector<double>>();
+#endif
 }
 
-template<> void RASCivector<double>::spin_decontaminate(const double thresh) {
+template<> void DistRASCivector<double>::spin_decontaminate(const double thresh) {
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
   const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
-  shared_ptr<RASCivec> S2 = spin();
+  shared_ptr<DistRASCivec> S2 = spin();
   double actual_expectation = dot_product(*S2);
 
   int k = nspin + 2;

@@ -60,6 +60,9 @@ class SparseMatrix {
     double* data() { return data_.get(); }
     const double* data() const { return data_.get(); }
 
+    int* cols() { return cols_.get(); }
+    int* rind() { return rind_.get(); }
+
     const int ndim() const { return ndim_; }
     const int mdim() const { return mdim_; }
     const int size() const { return size_; }
@@ -75,6 +78,9 @@ class SparseMatrix {
     Matrix operator+(const Matrix& o) const;
 
     void zero() { std::fill_n(data_.get(), size_, 0.0); }
+
+    // diagnostics
+    void print_block_structure(const size_t nsize, const size_t msize) const;
 };
 
 }

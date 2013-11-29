@@ -88,6 +88,7 @@ class Matrix_base {
     // some functions for implementation in derived classes
     template<class T>
     std::shared_ptr<T> get_submatrix_impl(const int nstart, const int mstart, const int nsize, const int msize) const {
+      assert(nstart >= 0 && mstart >= 0 && nsize >= 0 && msize >= 0 && nstart+nsize <= ndim_ && mstart+msize <= mdim_);
       auto out = std::make_shared<T>(nsize, msize, localized_);
       for (int i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
         std::copy_n(element_ptr(nstart, i), nsize, out->element_ptr(0, j));
@@ -225,6 +226,13 @@ class Matrix_base {
       add_block(a, nstart, mstart, nsize, msize, o.get());
     }
 
+    void add_strided_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize,
+                            const int ld, const DataType* o) {
+      for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
+        std::transform(o + j*ld, o + (j+1)*ld, data_.get() + nstart + i*ndim_, data_.get() + nstart + i*ndim_,
+                        [&a] (const DataType& p, const DataType& q) { return q + a*p; });
+    }
+
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
       std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
@@ -232,14 +240,16 @@ class Matrix_base {
       return out;
     }
 
-    DataType& operator[](const size_t& i) { return data_[i]; }
-    const DataType& operator[](const size_t& i) const { return data_[i]; }
     DataType& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
     const DataType& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
 
-    DataType* data() const { return data_.get(); }
-    DataType& data(const size_t i) { return *(data()+i); }
-    const DataType& data(const size_t i) const { return *(data()+i); }
+    DataType* data() { return data_.get(); }
+    const DataType* data() const { return data_.get(); }
+
+    DataType* begin() { return data_.get(); }
+    DataType* end() { return data_.get() + size(); }
+    const DataType* cbegin() const { return data_.get(); }
+    const DataType* cend() const { return data_.get() + size(); }
 
     DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }
@@ -261,7 +271,7 @@ class Matrix_base {
       return out;
     }
 
-    void scale(const DataType& a) { std::transform(data(), data()+size(), data(), [&a](DataType p){ return a*p; }); }
+    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
 
     void allreduce() {
       mpi__->allreduce(data_.get(), size());

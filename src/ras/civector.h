@@ -79,7 +79,7 @@ class RASBlock {
 };
 
 template <typename DataType>
-class RASCivector {
+class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
   protected:
@@ -116,6 +116,10 @@ class RASCivector {
 
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
       std::copy_n(o.data(), size_, data_.get());
+    }
+
+    RASCivector(RASCivector<DataType>&& o) : RASCivector(o.det_) {
+      data_ = std::move(o.data_);
     }
 
     DataType* data() { return data_.get(); }
@@ -260,7 +264,7 @@ class RASCivector {
     double variance() const { return dot_product(*this) / size_; }
 
     void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
-    void scale(const DataType a) { std::transform( data(), data() + size_, data(), [&a] (DataType p) { return a * p; } ); }
+    void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
       { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
     void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); }
@@ -395,7 +399,7 @@ class RASCivector {
       return orthog(std::list<std::shared_ptr<const RASCivector<DataType>>>{o});
     }
 
-    void print(const double thr) const {
+    void print(const double thr = 0.05) const {
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
       for (auto& iblock : blocks_) {

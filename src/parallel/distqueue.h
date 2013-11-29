@@ -31,19 +31,14 @@
 #include <list>
 #include <memory>
 #include <utility>
+#include <atomic>
+#include <thread>
+#include <vector>
 
 #include <src/util/constants.h>
+#include <src/parallel/plist.h>
 #include <src/parallel/mpi_interface.h>
 
-// TODO until GCC fixes this bug
-#ifdef __GNUC__
-#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-#define _GLIBCXX_USE_NANOSLEEP
-#endif
-#endif
-#include <thread>
-
-#include <vector>
 #include <bagel_config.h>
 #ifdef HAVE_MKL_H
   #include "mkl_service.h"
@@ -53,64 +48,79 @@
 namespace bagel {
 
 template <typename TaskType, typename... FlushTypes>
-class DistQueue {
+class DistQueue : public ParallelList<TaskType> {
   protected:
     std::tuple<FlushTypes...> flushed_;
 
-    std::list<TaskType> tasks_;
+    std::atomic<bool> done_;
 
     public:
-      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)) {}
+      DistQueue(FlushTypes... f) : flushed_(std::make_tuple(f...)), done_(false) {}
+      ~DistQueue() { this->remove_if( [] (const TaskType& t) { return true; } ); }
 
       template <typename... Args>
       void emplace_and_compute(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
+        auto t = std::make_shared<TaskType>(std::forward<Args>(args)...);
 
-        for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-          if (i->test()) {
-            i->compute();
-            i = tasks_.erase(i);
-          }
-          else {
-            ++i;
-          }
+        if (t->test()) {
+          t->compute();
         }
-#ifndef USE_SERVER_THREAD
+        else {
+          this->push_front(t);
+        }
+
         flush();
-#endif
+
+        while (std::shared_ptr<TaskType> task = pop_first_ready()) {
+          task->compute();
+        }
       }
 
       template <typename... Args>
       void emplace(Args&&... args) {
-        tasks_.emplace_back(std::forward<Args>(args)...);
+        this->emplace_front(std::forward<Args>(args)...);
       }
 
-      void finish() {
+      // Only one thread should call this version
+      void finish_master() {
         bool done;
         do {
-          done = true;
-          for (auto i = tasks_.begin(); i != tasks_.end(); ) {
-            if (i->test()) {
-              i->compute();
-              i = tasks_.erase(i);
-            }
-            else {
-              ++i;
-              done = false;
-            }
-          }
-#ifndef USE_SERVER_THREAD
+          while (std::shared_ptr<TaskType> t = pop_first_ready())
+            t->compute();
+
+          done = this->empty();
+
           size_t d = done ? 0 : 1;
           mpi__->soft_allreduce(&d, 1);
           done = (d == 0);
-          if (!done) flush();
-#endif
+
+          flush();
+
           if (!done) std::this_thread::sleep_for(sleeptime__);
         } while (!done);
+        done_ = true;
       }
 
+      // Similar to above, except it doesn't update done_ and doesn't flush
+      // TODO unclear whether this is working
+      void finish_worker() {
+        do {
+          while (std::shared_ptr<TaskType> t = pop_first_ready())
+            t->compute();
+
+          if (!done_) std::this_thread::sleep_for(sleeptime__);
+        } while (!done_);
+      }
+
+      // for convenience
+      void finish() { finish_master(); }
+
+      std::shared_ptr<TaskType> pop_first_ready() {
+        return this->pop_first_if([] (TaskType& t) { return t.test(); });
+      }
+
+
     private:
-#ifndef USE_SERVER_THREAD
       // Calls flush() on all of the flushable objects
       void flush() { _flush<0, FlushTypes...>(); }
 
@@ -119,7 +129,6 @@ class DistQueue {
         _flush<iter+1, Tail...>();
       }
       template <int iter> void _flush() {}
-#endif
 };
 
 }

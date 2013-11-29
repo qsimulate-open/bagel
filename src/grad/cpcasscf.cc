@@ -73,8 +73,8 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
   {
     shared_ptr<Matrix> d0 = eig_->copy();
-    for (int i = 0; i != d0->size(); ++i)
-      if (::fabs(d0->data(i)) < 1.0e-10) d0->data(i) = 1.0;
+    for (auto& i : *d0)
+      if (fabs(i) < 1.0e-10) i = 1.0;
     auto d1_tmp = make_shared<const Civec>(*fci_->denom());
     auto d1 = make_shared<Dvec>(d1_tmp, ref_->nstate());
     for (int i = 0; i != ref_->nstate(); ++i)
@@ -199,14 +199,14 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
       for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
         for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
           for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
-            Htilde2->data(ll+nact*(kk+nact*(jj+nact*ii))) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
+            Htilde2->element(ll+nact*kk, jj+nact*ii) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
 
     auto Htilde1 = make_shared<Matrix>(nact,nact, true);
     for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
       for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
-        (*Htilde1)[jj+nact*ii] = htilde->element(j,i);
+        (*Htilde1)(jj, ii) = htilde->element(j,i);
         for (int k = 0; k != nclosed; ++k)
-          (*Htilde1)[jj+nact*ii] += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
+          (*Htilde1)(jj, ii) += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
       }
     }
     // factor of 2 in the equation

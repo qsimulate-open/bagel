@@ -45,7 +45,8 @@ MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
   return *this;
 }
 
-MoldenIn& MoldenIn::operator>> (shared_ptr<const Coeff>& coeff) {
+
+MoldenIn& MoldenIn::operator>> (shared_ptr<Coeff>& coeff) {
   assert(!mo_coefficients_.empty());
 
   vector<int> atom_offsets;
@@ -93,12 +94,6 @@ MoldenIn& MoldenIn::operator>> (shared_ptr<const Coeff>& coeff) {
   return *this;
 }
 
-MoldenIn& MoldenIn::operator>> (shared_ptr<const Reference>& ref) {
-  shared_ptr<const Coeff> coeff = ref->coeff();
-  *this >> coeff;
-
-  return *this;
-}
 
 void MoldenIn::read() {
   /************************************************************

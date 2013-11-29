@@ -193,11 +193,11 @@ class DistCivector {
       bool done;
       do {
         done = recv_->test();
-#ifndef USE_SERVER_THREAD
         // in case no thread is running behind, we need to cycle this to flush
         size_t d = done ? 0 : 1;
         mpi__->soft_allreduce(&d, 1);
         done = d == 0;
+#ifndef USE_SERVER_THREAD
         if (!done) put_->flush();
 #endif
         if (!done) std::this_thread::sleep_for(sleeptime__);
@@ -221,7 +221,7 @@ class DistCivector {
     void scale(const DataType a) {
       for (size_t i = 0; i != asize(); ++i) {
         std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::transform(local()+i*lenb_, local()+(i+1)*lenb_, local()+i*lenb_, [&a](DataType p){ return a*p; });
+        std::for_each(local()+i*lenb_, local()+(i+1)*lenb_, [&a](DataType& p) { p *= a; });
       }
     }
 
@@ -297,7 +297,7 @@ class DistCivector {
         const size_t off = std::get<0>(outrange)*asize();
         std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
         if (det_->nelea()*det_->neleb() & 1)
-          std::transform(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), trans->local()+off, [](DataType a){ return -a; });
+          std::for_each(trans->local()+off, trans->local()+off+out->dist_.size(i)*asize(), [](DataType& a){ a = -a; });
 
         if (i != myrank) {
           out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
@@ -337,12 +337,11 @@ class DistCivector {
           }
         }
       }
-      std::unique_ptr<size_t[]> nelements(new size_t[mpi__->size()]);
-      std::fill_n(nelements.get(), mpi__->size(), 0);
+      std::vector<size_t> nelements(mpi__->size(), 0);
       const size_t nn = data.size();
-      mpi__->allgather(&nn, 1, nelements.get(), 1);
+      mpi__->allgather(&nn, 1, nelements.data(), 1);
 
-      const size_t chunk = *std::max_element(nelements.get(), nelements.get() + mpi__->size());
+      const size_t chunk = *std::max_element(nelements.begin(), nelements.end());
       data.resize(chunk, 0);
       abits.resize(chunk, 0);
       bbits.resize(chunk, 0);
@@ -498,7 +497,7 @@ class Civector {
     double variance() const { return detail::real(dot_product(*this)) / size(); }
 
     void scale(const DataType a) {
-      std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return a*p; });
+      std::for_each(cc(), cc()+size(), [&a](DataType& p){ p *= a; });
     }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
@@ -676,8 +675,8 @@ class Civector {
     }
 
     Civector<DataType>& operator*=(const double& a) { scale(a); return *this; }
-    Civector<DataType>& operator+=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p+a; }); return *this; }
-    Civector<DataType>& operator-=(const double& a) { std::transform(cc(), cc()+size(), cc(), [&a](DataType p){ return p-a; }); return *this; }
+    Civector<DataType>& operator+=(const double& a) { std::for_each(cc(), cc()+size(), [&a](DataType& p){ p += a; }); return *this; }
+    Civector<DataType>& operator-=(const double& a) { std::for_each(cc(), cc()+size(), [&a](DataType& p){ p -= a; }); return *this; }
 
     Civector<DataType>& operator=(const Civector<DataType>& o) { assert(det()->lena() == o.det()->lena() && det()->lenb() == o.det()->lenb()); std::copy_n(o.cc(), size(), cc()); return *this; }
     Civector<DataType>& operator+=(const Civector<DataType>& o) { ax_plus_y( 1.0, o); return *this; }

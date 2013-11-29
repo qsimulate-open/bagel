@@ -23,8 +23,10 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <iostream>
+
 #include <src/math/sparsematrix.h>
-#include <src/util/mkl_sparse.h>
+#include <src/math/algo.h>
 
 using namespace bagel;
 using namespace std;
@@ -83,7 +85,7 @@ SparseMatrix::SparseMatrix(SparseMatrix&& o) : data_(move(o.data_)), cols_(move(
 
 //Scalar operations
 void SparseMatrix::scale(const double& a) {
-  transform(data_.get(), data_.get() + size_, data_.get(), [&a] (double p) { return p * a; });
+  for_each(data_.get(), data_.get() + size_, [&a] (double& p) { p *= a; });
 }
 
 SparseMatrix SparseMatrix::operator*(const double& a) const {
@@ -106,21 +108,7 @@ Matrix SparseMatrix::operator*(const Matrix& o) const {
   const int n = this->ndim();
 
   Matrix out(n, m);
-
-#ifdef HAVE_MKL_H
-  mkl_dcsrmm_("N", n, m, l, 1.0, data_.get(), cols_.get(), rind_.get(), o.data(), o.ndim(), 0.0, out.data(), out.ndim());
-#else
-  for (int j = 0; j < m; ++j) {
-    double* target = out.element_ptr(0,j);
-    const double* source = o.element_ptr(0,j);
-
-    for (int i = 0; i < n; ++i) {
-      for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
-        target[i] += data_[rowdata] * source[cols_[rowdata] - 1];
-      }
-    }
-  }
-#endif
+  dcsrmm_("N", n, m, l, 1.0, data_.get(), cols_.get(), rind_.get(), o.data(), o.ndim(), 0.0, out.data(), out.ndim());
 
   return out;
 }
@@ -137,4 +125,28 @@ Matrix SparseMatrix::operator+(const Matrix& o) const {
   }
 
   return out;
+}
+
+void SparseMatrix::print_block_structure(const size_t nsize, const size_t msize) const {
+  assert( nsize * msize > 0 );
+  const size_t nblocks = (ndim_ - 1) / nsize + 1;
+  const size_t mblocks = (mdim_ - 1) / msize + 1;
+
+  vector<bool> structure(nblocks * mblocks, false);
+
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
+      const size_t j = cols_[rowdata] - 1;
+      const size_t si = i / nsize;
+      const size_t sj = j / msize;
+      structure[si + nblocks * sj] = true;
+    }
+  }
+
+  for (size_t is = 0; is < nblocks; ++is) {
+    for (size_t js = 0; js < mblocks; ++js) {
+      cout << ( structure[is + nblocks * js] ? "  1" : "  0" );
+    }
+    cout << endl;
+  }
 }

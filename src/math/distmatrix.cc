@@ -173,7 +173,7 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
       sender->request_send(move(sbuf), localrow, remoterank, remoteoffset);
 
       const double localfactor = cos(gamma);
-      transform(localdata, localdata + localrow, localdata, [&localfactor](double a) { return localfactor * a; });
+      for_each(localdata, localdata + localrow, [&localfactor](double& a) { a *= localfactor; });
     }
     else if ( (ipcol == mypcol) && (jpcol == mypcol) ) {
       local_rotations.emplace_back(ioffset, joffset, gamma);
