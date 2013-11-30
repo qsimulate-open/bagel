@@ -55,15 +55,15 @@ void R1Batch::compute_ssss(const double integral_thresh) {
         const double ab = *expi0 * *expi1;
         const double cxp_inv = 1.0 / cxp;
         const double socxp_inv = 1.0 / socxp;
-        p_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-        p_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-        p_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+        P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
+        P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
+        P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
         // Z needs to be removed
         coeff_[index] = - 2 * Z * pi__ * socxp_inv * exp(-cxp * zeta_ * socxp_inv ) * Eab;
-        const double PCx = p_[index * 3    ] - (*aiter)->position(0);
-        const double PCy = p_[index * 3 + 1] - (*aiter)->position(1);
-        const double PCz = p_[index * 3 + 2] - (*aiter)->position(2);
+        const double PCx = P_[index * 3    ] - (*aiter)->position(0);
+        const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
+        const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = ::sqrt(T);
         const double ss = - coeff_[index] * ::pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? sqrtpi * ::erf(sqrtt) / sqrtt * 0.5 : 1.0);
