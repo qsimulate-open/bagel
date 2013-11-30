@@ -77,7 +77,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   const double min_abp = minexp0 * minexp1;
   const double min_cdp = minexp2 * minexp3;
 
-  // minimum distance between two lines (AB and CD)
+  // minimum distance between two lines (AB and CD) - used only for integral screening
   const double x_ab_cd = AB_[1] * CD_[2] - AB_[2] * CD_[1];
   const double y_ab_cd = AB_[2] * CD_[0] - AB_[0] * CD_[2];
   const double z_ab_cd = AB_[0] * CD_[1] - AB_[1] * CD_[0];
@@ -88,6 +88,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   const double norm_ab_cd_sq = x_ab_cd * x_ab_cd + y_ab_cd * y_ab_cd + z_ab_cd * z_ab_cd;
   const double min_pq_sq = norm_ab_cd_sq == 0.0 ? 0.0 : innerproduct * innerproduct / norm_ab_cd_sq;
 
+  // used for prefactors Eab and Ecd (and integral screening)
   const double r01_sq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
