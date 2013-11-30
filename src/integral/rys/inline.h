@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-inline double inline_erf(const double inpt) {
+static inline double inline_erf(const double inpt) {
   constexpr std::array<std::array<double,13>,5> a {{
   std::array<double,13>{{
     0.00000000005958930743, -0.00000000113739022964, 0.00000001466005199839, -0.00000016350354461960,
@@ -90,12 +90,12 @@ inline double inline_erf(const double inpt) {
   double t = inpt;
   if (t < 2.2) {
     t *= t;
-    int k = static_cast<int>(t);
-    t = t - static_cast<double>(k);
+    const int k = static_cast<int>(t);
+    t -= k;
     t = detail::taylor_expansion<13>(t, a[k]) *inpt;
   } else if (t < 6.9) {
-    int k = static_cast<int>(t);
-    t = t - static_cast<double>(k);
+    const int k = static_cast<int>(t);
+    t -= k;
     t = detail::taylor_expansion<13>(t, b[k-2]);
     t *= t;
     t *= t;
@@ -105,14 +105,62 @@ inline double inline_erf(const double inpt) {
     t = 1.0;
   }
   return t;
-};
+}
+
+
+static inline double inline_dawson(double xx) {
+  // based on the rational approximation - see details in Moshier, Methods and Programs for Mathematical Functions, Prentice-Hall, 1989.
+  constexpr std::array<double, 10> num0 {{
+    1.13681498971755972054e-11, 8.49262267667473811108e-10, 1.94434204175553054283e-8, 9.53151741254484363489e-7, 3.07828309874913200438e-6,
+    3.52513368520288738649e-4, -8.50149846724410912031e-4,  4.22618223005546594270e-2,-9.17480371773452345351e-2, 9.99999999999999994612e-1
+  }};
+  constexpr std::array<double, 11> num1 {{
+    5.08955156417900903354e-1, -2.44754418142697847934e-1, 9.41512335303534411857e-2, -2.18711255142039025206e-2, 3.66207612329569181322e-3,
+    -4.23209114460388756528e-4, 3.59641304793896631888e-5, -2.14640351719968974225e-6, 9.10010780076391431042e-8, -2.40274520828250956942e-9, 3.59233385440928410398e-11
+  }};
+  constexpr std::array<double, 5> num2 {{
+    -5.90592860534773254987e-1, 6.29235242724368800674e-1, -1.72858975380388136411e-1, 1.64837047825189632310e-2, -4.86827613020462700845e-4
+  }};
+  constexpr std::array<double, 11> denom0 {{
+    2.40372073066762605484e-11, 1.48864681368493396752e-9, 5.21265281010541664570e-8, 1.27258478273186970203e-6, 2.32490249820789513991e-5,
+    3.25524741826057911661e-4, 3.48805814657162590916e-3, 2.79448531198828973716e-2, 1.58874241960120565368e-1, 5.74918629489320327824e-1, 1.00000000000000000539e0
+  }};
+  constexpr std::array<double, 11> denom1 {{
+    1.00000000000000000000e0, -6.31839869873368190192e-1, 2.36706788228248691528e-1, -5.31806367003223277662e-2, 8.48041718586295374409e-3,
+    -9.47996768486665330168e-4, 7.81025592944552338085e-5, -4.55875153252442634831e-6, 1.89100358111421846170e-7, -4.91324691331920606875e-9, 7.18466403235734541950e-11
+  }};
+  constexpr std::array<double, 6> denom2 {{
+    1.00000000000000000000e0, -2.69820057197544900361e0, 1.73270799045947845857e0, -3.93708582281939493482e-1, 3.44278924041233391079e-2, -9.73655226040941223894e-4
+  }};
+
+  const int sign = xx < 0 ? -1 : 1;
+  const double x = std::fabs(xx);
+  if (x < 3.25) {
+    const double x2 = x*x;
+    const double an = detail::taylor_expansion<10>(x2, num0);
+    const double ad = detail::taylor_expansion<11>(x2, denom0);
+    return sign*x*an/ad;
+  } else if (x < 6.25) {
+    const double x2 = 1.0/(x*x);
+    const double an = detail::taylor_expansion<11>(x2, num1);
+    const double ad = detail::taylor_expansion<11>(x2, denom1);
+    return sign*0.5*(1.0/x+x2*an/(ad*x));
+  } else if (x < 1.0e9) {
+    const double x2 = 1.0/(x*x);
+    const double an = detail::taylor_expansion<5>(x2, num2);
+    const double ad = detail::taylor_expansion<6>(x2, denom2);
+    return sign*0.5*(1.0/x+x2*an/(ad*x));
+  } else {
+    return sign*0.5/x;
+  }
+}
 
 
 // TODO Temporary hack to avoid having to set up complex inline_erf >>>>>>>>>
 // Figure out what's the best way to handle integral screening for London orbitals
 #include <complex>
 #include <stdexcept>
-inline std::complex<double> inline_erf (std::complex<double> z) {
+static inline std::complex<double> inline_erf (std::complex<double> z) {
   throw std::runtime_error("Inline erf has not been implemented for complex arguments.");
 }
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
