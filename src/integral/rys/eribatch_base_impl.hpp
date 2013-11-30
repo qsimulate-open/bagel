@@ -109,9 +109,9 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         const double cd = rnd(*expi2) * rnd(*expi3);
         const double cxq_inv = 1.0 / cxq;
         Ecd_save[index23] = exp(-r23_sq * (cdp * cxq_inv) );
-        qx_save[index23] = (cx * *expi2 + dx * *expi3) * cxq_inv;
-        qy_save[index23] = (cy * *expi2 + dy * *expi3) * cxq_inv;
-        qz_save[index23] = (cz * *expi2 + dz * *expi3) * cxq_inv;
+        qx_save[index23] = get_PQ(cx, dx, *expi2, *expi3, cxq_inv, 2, 0);
+        qy_save[index23] = get_PQ(cy, dy, *expi2, *expi3, cxq_inv, 2, 1);
+        qz_save[index23] = get_PQ(cz, dz, *expi2, *expi3, cxq_inv, 2, 2);
 
         // integral screening using Q
         if (integral_thresh != 0.0) {
@@ -156,9 +156,9 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
       const double cxp_inv = 1.0 / cxp;
       const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
       const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
-      const DataType px = (ax * *expi0 + bx * *expi1) * cxp_inv;
-      const DataType py = (ay * *expi0 + by * *expi1) * cxp_inv;
-      const DataType pz = (az * *expi0 + bz * *expi1) * cxp_inv;
+      const DataType px = get_PQ(ax, bx, *expi0, *expi1, cxp_inv, 0, 0);
+      const DataType py = get_PQ(ay, by, *expi0, *expi1, cxp_inv, 0, 1);
+      const DataType pz = get_PQ(az, bz, *expi0, *expi1, cxp_inv, 0, 2);
 
       // integral screening using P
       if (integral_thresh != 0.0) {
@@ -253,6 +253,10 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
   data2_ = stack_save2_;
 }
 
+template <typename DataType>
+inline DataType ERIBatch_Base<DataType>::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
+  return ( (coord1*exp1 + coord2*exp2) * one12 );
+}
 
 
 }

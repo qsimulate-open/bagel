@@ -46,6 +46,8 @@ class ERIBatch_Base : public RysIntegral<DataType> {
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const DataType integral_thresh) override;
 
+    virtual inline DataType get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim);
+
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
   public:

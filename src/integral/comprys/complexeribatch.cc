@@ -66,12 +66,3 @@ inline std::complex<double> ComplexERIBatch::get_PQ (const double coord1, const 
   return ( num * one12 );
 }
 
-// no screening for London orbitals at this point
-//void ComplexERIBatch::screen_CD() {}
-
-// no screening for London orbitals at this point
-//void ComplexERIBatch::screen_AB() {}
-
-
-//void ComplexERIBatch::save_ssss() {}
-
