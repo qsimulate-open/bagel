@@ -26,6 +26,7 @@
 #ifndef __SRC_MATH_ALGO_H
 #define __SRC_MATH_ALGO_H
 
+#include <array>
 #include <complex>
 #include <stdexcept>
 
@@ -51,6 +52,22 @@ namespace detail {
   static double real(const T& a) { throw std::logic_error("detail::real"); }
   template<> double real(const double& a) { return a; }
   template<> double real(const std::complex<double>& a) { return a.real(); }
+
+  // taylor expansion
+  template<int M, int N>
+  struct taylor {
+    double operator()(const double& x, const std::array<double,N>& a) { return a[M-1] + x * taylor<M-1, N>()(x, a); }
+  };
+  template<int N>
+  struct taylor<1, N> {
+    double operator()(const double& x, std::array<double,N> a) { return a[0]; }
+  };
+  template<int N>
+  double taylor_expansion(const double& x, const std::array<double,N>& a) {
+    static_assert(N > 0, "illegal call of taylor_expansion");
+    return taylor<N, N>()(x, a);
+  }
+
 }
 
 }
