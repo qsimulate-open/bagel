@@ -70,7 +70,7 @@ for a in range(0,7):
       int ii = screening_[j];\n\
       usvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, data2_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii], coeffy_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);\n\
+                    P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz, workx2);\n\
     } break;\n"
 ss += "\
   }\n\

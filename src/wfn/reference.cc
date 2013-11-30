@@ -41,7 +41,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 
   // we need to make sure that all the quantities are consistent in every MPI process
   if (coeff_)
-    mpi__->broadcast(coeff_->data(), coeff_->size(), 0);
+    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
   for (auto& i : rdm1_)
     mpi__->broadcast(i->data(), i->size(), 0);
@@ -147,14 +147,14 @@ void Reference::set_eig(const std::vector<double>& eig) {
 
 
 void Reference::set_erdm1(const shared_ptr<const Matrix> o) {
-  mpi__->broadcast(o->data(), o->size(), 0);
+  mpi__->broadcast(const_pointer_cast<Matrix>(o)->data(), o->size(), 0);
   erdm1_ = o;
 }
 
 
 void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<const Coeff> b) {
-  mpi__->broadcast(a->data(), a->size(), 0);
-  mpi__->broadcast(b->data(), b->size(), 0);
+  mpi__->broadcast(const_pointer_cast<Coeff>(a)->data(), a->size(), 0);
+  mpi__->broadcast(const_pointer_cast<Coeff>(b)->data(), b->size(), 0);
   coeffA_ = a;
   coeffB_ = b;
 }

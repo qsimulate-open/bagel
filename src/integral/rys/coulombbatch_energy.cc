@@ -81,9 +81,9 @@ void CoulombBatch_energy::compute() {
     const double* croots = &roots_[i * rank_];
     const double* cweights = &weights_[i * rank_];
     for (int r = 0; r != rank_; ++r) {
-      r1x[r] = p_[i * 3    ] - ax - (p_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
-      r1y[r] = p_[i * 3 + 1] - ay - (p_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
-      r1z[r] = p_[i * 3 + 2] - az - (p_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
+      r1x[r] = P_[i * 3    ] - ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
+      r1y[r] = P_[i * 3 + 1] - ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
+      r1z[r] = P_[i * 3 + 2] - az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
       r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
 
       workx[r] = cweights[r] * coeff_[i];

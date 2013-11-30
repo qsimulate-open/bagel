@@ -156,7 +156,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // core-occ density matrix elements
   for (int i = 0; i != ncore; ++i)
     for (int j = ncore; j != nocca; ++j)
-      dmp2->element(j,i) = dmp2->element(i,j) = lif[(j-ncore)+nocc*i] / (eig_tm[j]-eig_tm[i]);
+      dmp2->element(j,i) = dmp2->element(i,j) = lif(j-ncore, i) / (eig_tm[j]-eig_tm[i]);
 
   // 2*J_al(d_rs)
   auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
@@ -168,7 +168,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   for (int i = 0; i != nocca; ++i)
     for (int a = 0; a != nvirt; ++a)
       // minus sign is due to the convention in the solvers which solve Ax+B=0..
-      grad->element(a+nocca, i) = - (lai[a+nvirt*i] - lia[i+nocca*a] - jai[a+nvirt*i] - kia[i+nocca*a]);
+      grad->element(a+nocca, i) = - (lai(a,i) - lia(i,a) - jai(a,i) - kia(i,a));
 
   {
     auto d_unrelaxed = make_shared<Matrix>(*dmp2);

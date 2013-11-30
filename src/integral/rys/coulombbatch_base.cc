@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+// This file is being replaced by coulombbatch_base.cc
 
 #include <src/integral/rys/coulombbatch_base.h>
 #include <src/util/constants.h>
@@ -78,14 +79,14 @@ void CoulombBatch_base::compute_ssss(const double integral_thresh) {
         xp_[index] = cxp;
         const double ab = *expi0 * *expi1;
         const double cxp_inv = 1.0 / cxp;
-        p_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-        p_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-        p_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+        P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
+        P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
+        P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = ::exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
         coeff_[index] = - 2 * Z * pi__ * cxp_inv * Eab;
-        const double PCx = p_[index * 3    ] - (*aiter)->position(0);
-        const double PCy = p_[index * 3 + 1] - (*aiter)->position(1);
-        const double PCz = p_[index * 3 + 2] - (*aiter)->position(2);
+        const double PCx = P_[index * 3    ] - (*aiter)->position(0);
+        const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
+        const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = ::sqrt(T);
         const double ss = - coeff_[index] * ::pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? sqrtpi * ::erf(sqrtt) / sqrtt * 0.5 : 1.0);

@@ -48,6 +48,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   atom_number_ = atommap_.atom_number(name_);
 
   position_ = inp->get_array<double,3>("xyz");
+
   for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
 
   if (name_ == "q") {

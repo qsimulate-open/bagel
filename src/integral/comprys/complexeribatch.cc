@@ -31,28 +31,27 @@ using namespace std;
 using namespace bagel;
 
 ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
-                   shared_ptr<StackMem> stack) :  ERIBatch_Base(_info, max_density, 0, 0, stack) {
+                   shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, max_density, 0, 0, stack) {
 
 #ifdef LIBINT_INTERFACE
   assert(false);
 #endif
 
-  root_weight(this->primsize_);
+//  root_weight(this->primsize_);
 }
 
 void ComplexERIBatch::root_weight(const int ps) {
   if (breit_ == 0) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
   } else {
+    assert(0);
     throw runtime_error("Relativistic calculations have not been set up for London orbitals");
   }
 }
 
 void ComplexERIBatch::compute_ssss(const complex<double> integral_thresh) {
-      throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
+  assert(0);
+  throw std::runtime_error("compute_ssss not yet implemented for London orbitals");
 }
 
 
-void ComplexERIBatch::compute() {
-  throw logic_error("ComplexERIBatch::compute not yet implemented");
-}

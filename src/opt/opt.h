@@ -173,7 +173,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   auto displ = std::make_shared<XYZFile>(current_->natom());
   assert(size_ == x.length());
   for (int i = 0; i != size_; ++i)
-    displ->data(i) = x[i];
+    displ->element(i%3, i/3) = x[i]; // TODO this is just a hack
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
@@ -228,7 +228,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
 
   assert(size_ == grad.length());
   for (int i = 0; i != size_; ++i)
-    grad[i] = cgrad->data(i);
+    grad[i] = cgrad->element(i%3, i/3); // TODO this is just a hack
 
   resume_stdcout();
 

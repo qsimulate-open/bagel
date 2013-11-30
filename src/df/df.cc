@@ -28,6 +28,8 @@
 #include <src/df/dfdistt.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/libint/libint.h>
+#include <src/integral/comprys/complexeribatch.h>  // needed only for testing ComplexERIBatch
+#include <complex>                                 // needed only for testing ComplexERIBatch
 
 using namespace std;
 using namespace bagel;
@@ -134,7 +136,7 @@ void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const
 
   auto d = dd.begin();
   for (auto& c : cd) {
-    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1); 
+    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1);
     block_[0]->add_direct_product(aslice, *d++, a);
   }
   assert(d == dd.end());
@@ -218,6 +220,15 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
 }
 
 
+///*   Use this function only for testing ComplexERIBatch
+pair<const std::complex<double>*, shared_ptr<RysIntegral<std::complex<double>>>> DFDist::compute_batch_complex(array<shared_ptr<const Shell>,4>& input) {
+  shared_ptr<RysIntegral<std::complex<double>>> complexeribatch = make_shared<ComplexERIBatch>(input, 2.0);
+  complexeribatch->compute();
+  return make_pair(complexeribatch->data(), complexeribatch);
+}
+//*/
+
+///*    This is the standard version of the function.
 pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
   shared_ptr<RysInt> eribatch = make_shared<Libint>(input);
@@ -227,12 +238,12 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
 }
+//*/
 
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) const {
   return compute_Jop(shared_from_this(), den);
 }
-
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE

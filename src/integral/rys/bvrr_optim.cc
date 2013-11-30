@@ -43,7 +43,7 @@ void BreitBatch::perform_VRR1() {
     const double root = 1.0 - roots_[ii];
 
     for (int i = 0; i != 3; ++i) {
-      const double PQ = p_[ii3+i] - q_[ii3+i];
+      const double PQ = P_[ii3+i] - Q_[ii3+i];
       t[i] = PQ;
       s[i] = (root*PQ*PQ + oxpq2)*rho2;
     }
@@ -75,7 +75,7 @@ void Spin2Batch::perform_VRR1() {
     const double root = 1.0 - roots_[ii];
 
     for (int i = 0; i != 3; ++i) {
-      const double PQ = p_[ii3+i] - q_[ii3+i];
+      const double PQ = P_[ii3+i] - Q_[ii3+i];
       t[i] = PQ;
       s[i] = (root*PQ*PQ + oxpq2)*rho2;
     }

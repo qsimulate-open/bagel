@@ -127,7 +127,7 @@ for a in range(0,7):
       int ii = screening_[j];\n\
       gvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                    p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_,\n\
+                    P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], size_block_,\n\
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);\n\
     } break;\n"

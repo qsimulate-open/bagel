@@ -337,7 +337,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         vector<int>& asizes = scattering_map[ispace->offset()];
         for (int i = 0; i < mpi__->size(); ++i)
           recv_counts[i] = asizes[i] * phisize;
-        
+
         auto V_chunk = make_shared<Matrix>(phisize, aend - astart);
         //mpi__->reduce_scatter(V->data(), V_chunk->data(), recv_counts.data());
         const int rq = mpi__->ireduce_scatter(V->data(), V_chunk->data(), recv_counts.data());

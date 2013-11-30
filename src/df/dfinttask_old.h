@@ -27,6 +27,7 @@
 #define __SRC_DF_DFINTTASK_OLD
 
 #include <src/integral/rys/rysintegral.h>
+#include <complex>   // needed only for testing ComplexERIBatch
 
 namespace bagel {
 
@@ -44,7 +45,13 @@ class DFIntTask_OLD {
      : shell_(a), offset_(b), rank_(offset_.size()), df_(df) { }
 
     void compute() {
-      std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);
+
+      {
+        // Comment out this next line to run normally; leave it active to call (i.e., test) ComplexERIBatch
+        std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>>>> ptest = df_->compute_batch_complex(shell_);  // Needed only for testing ComplexERIBatch
+      }
+
+      std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);  // Original version; keep this
       const double* ppt = p.first;
 
       const size_t naux = df_->naux();

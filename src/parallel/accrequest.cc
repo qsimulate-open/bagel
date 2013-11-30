@@ -23,9 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// TODO until GCC fixes this bug
-#define _GLIBCXX_USE_NANOSLEEP
-
 #include <src/parallel/accrequest.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>

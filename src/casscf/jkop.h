@@ -106,7 +106,7 @@ class JKop {
         for (int j = 0; j != nocc; ++j) {
           for (int k = 0; k != nbasis_; ++k) {
             for (int l = 0; l != nbasis_; ++l) {
-              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_->data(j+nocc*(l+nbasis_*(i+nocc*k)));
+              buf[l+nbasis_*(k+nbasis_*(j+nocc*i))] = data_->element(j+nocc*l,i+nocc*k);
             }
           }
         }
@@ -126,8 +126,8 @@ class JKop {
           }
         }
       }
-    };
-    ~JKop() {};
+    }
+    ~JKop() {}
 
     std::shared_ptr<Matrix> contract(const std::shared_ptr<Matrix> in) {
       auto out = std::make_shared<Matrix>(nbasis_, nbasis_);
@@ -140,7 +140,7 @@ class JKop {
         }
       }
       return out;
-    };
+    }
 
     std::shared_ptr<Matrix> denom() const {
       const size_t nbasis = nbasis_;
@@ -163,17 +163,17 @@ class JKop {
       out->fill(1.0e100);
       for (int i = 0; i != nocc; ++i) {
         for (int j = nocc; j != nbasis; ++j) {
-          out->element(j, i) = out->element(i, j) = 2.0*data_->data(j+nbasis*(j+nbasis*(i+nocc*i))); // FIXME -- is this right?? looks as if it accesses to Jop
+          out->element(j, i) = out->element(i, j) = 2.0*jdata_->element(j+nbasis*j, i+nocc*i); // FIXME -- is this right?? looks as if it accesses to Jop
         }
       }
       // occ-occ part
       for (int i = 0; i != nclosed; ++i) {
         for (int j = nclosed; j != nocc; ++j) {
-          out->element(j, i) = out->element(i, j) = (2.0*data_->data(j+nbasis*(j+nbasis*(i+nocc*i))) - 2.0*data_->data(i+nbasis*(i+nbasis*(j+nocc*j))));
+          out->element(j, i) = out->element(i, j) = (2.0*data_->element(j+nbasis*j, i+nocc*i) - 2.0*data_->element(i+nbasis*i, j+nocc*j));
         }
       }
       return out;
-    };
+    }
 
 };
 

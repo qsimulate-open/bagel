@@ -90,13 +90,14 @@ void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const M
   mo2e_ = make_shared<Matrix>(sizeij_, sizeij_, true);
 
   if (!hz_) {
-    int ijkl = 0;
+    int ij = 0;
     for (int i = 0; i != nocc; ++i) {
-      for (int j = 0; j <= i; ++j) {
+      for (int j = 0; j <= i; ++j, ++ij) {
         const int ijo = (j + i*nocc)*nocc*nocc;
+        int kl = 0;
         for (int k = 0; k != nocc; ++k)
-          for (int l = 0; l <= k; ++l, ++ijkl)
-            mo2e(ijkl) = buf2e->data(l+k*nocc+ijo);
+          for (int l = 0; l <= k; ++l, ++kl)
+            mo2e(kl, ij) = buf2e->element(l+k*nocc, j+i*nocc);
       }
     }
   } else {
@@ -114,7 +115,7 @@ void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const M
       mo1e(ij) = buf1e->element(j,i);
       if (!hz_) {
         for (int k = 0; k != nocc; ++k)
-          mo1e(ij) -= 0.5*buf2e->data((k+j*nocc)*nocc*nocc+(k+i*nocc));
+          mo1e(ij) -= 0.5*buf2e->element(k+i*nocc, k+j*nocc);
       }
     }
   }

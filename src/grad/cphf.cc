@@ -80,7 +80,7 @@ shared_ptr<Matrix> CPHF::solve() const {
 
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)
-        (*sigma)(a+nocca,i) += jai[a+nvirt*i] + kia[i+nocca*a];
+        (*sigma)(a+nocca,i) += jai(a,i) + kia(i,a);
 
     t = solver_->compute_residual(t, sigma);
 

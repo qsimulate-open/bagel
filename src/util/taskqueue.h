@@ -33,13 +33,6 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
-
-// TODO until GCC fixes this bug
-#ifdef __GNUC__
-#if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-#define _GLIBCXX_USE_NANOSLEEP
-#endif
-#endif
 #include <thread>
 
 #include <vector>

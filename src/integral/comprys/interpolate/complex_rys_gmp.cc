@@ -3,14 +3,14 @@
 // Based upon a related file for 1-D quadrature from April-May 2009
 
 // These three lines all relate to the error function evaluation for complex numbers
-constexpr double CUTOFF  = 0.5;    // If the argument's real part is smaller than this, use the Taylor expansion around 0; otherwise use the continued fraction 
-constexpr int NTAYLOR = 200;    // This is the number of terms in the Taylor expansion used to represent the error function
-constexpr int NTERMS  = 14000;   // This is the number of terms in the continued fraction used to represent the error function
-constexpr int NBOYS   = 500;    // This is the number of terms in the series expansion used for the Boys function at low values of T
+constexpr double CUTOFF  = 0.5;    // If the argument's real part is smaller than this, use the Taylor expansion around 0; otherwise use the continued fraction
+constexpr int NTAYLOR = 2000;    // Number of terms in the Taylor expansion used to represent the error function - 200 seems to be sufficient
+constexpr int NTERMS  = 140000;  // Number of terms in the continued fraction used to represent the error function - 14,000 seems to be usfficient
+constexpr int NBOYS   = 5000;    // Number of terms in the series expansion used for the Boys function at low values of T
 
 // These next five lines all relate to the random number generation algorithm
 constexpr int NTESTS  = 5000;  // This is the number of random T values we want to generate
-constexpr double MAXERROR = 1.0e-15;  // If the error is greater than this, it will yell at us.  
+constexpr double MAXERROR = 1.0e-15;  // If the error is greater than this, it will yell at us.
 constexpr int MINTR =  -500;  // Minimum random T value - real component
 constexpr int MAXTR =  1200;  // Maximum random T value - real component
 constexpr int MINTI = -1000;  // Minimum random T value - imag component
@@ -19,11 +19,11 @@ constexpr int MAXTI =  1000;  // Maximum random T value - imag component
 #include <fstream>
 #include <cassert>
 #include <cmath>
-#include <complex> 
+#include <complex>
 #include <cstring>
 #include <iostream>
-#include <iomanip> 
-#include <stdexcept> 
+#include <iomanip>
+#include <stdexcept>
 #include "mpreal.h"
 #include "gmp_macros.h"
 #include <algorithm>
@@ -32,14 +32,14 @@ constexpr int MAXTI =  1000;  // Maximum random T value - imag component
 #include <ctime>                   // For debugging - use time to generate a seed for the random number generator
 #include <boost/lexical_cast.hpp>  // For debugging - used to interpret inputs to main{argc, **argv)
 
-using namespace std; 
-using namespace mpfr; 
+using namespace std;
+using namespace mpfr;
 
-// This function calculates the error function of complex number z using a continued fraction approximation.  
-// It is only valid when the real part of z is positive and larger than about 0.5 or so (depending on the number of terms used).  
+// This function calculates the error function of complex number z using a continued fraction approximation.
+// It is only valid when the real part of z is positive and larger than about 0.5 or so (depending on the number of terms used).
 complex<mpreal> erffrac(const complex<mpreal> z){
   mpfr::mpreal::set_default_prec(GMPPREC);
-  
+
   const mpreal one = "1.0";
   const mpreal half = "0.5";
   const mpreal sqrtpi = GMPPISQRT;
@@ -52,8 +52,8 @@ complex<mpreal> erffrac(const complex<mpreal> z){
   return one - exp(- z*z) / sqrtpi / (z + K) ;
 }
 
-// This function calculates the error function of complex number z using a Taylor series expansion centered at zero.  
-// It is only valid when z is close to zero.   
+// This function calculates the error function of complex number z using a Taylor series expansion centered at zero.
+// It is only valid when z is close to zero.
 complex<mpreal> erfsum(const complex<mpreal> z){
   mpfr::mpreal::set_default_prec(GMPPREC);
 
@@ -76,8 +76,8 @@ complex<mpreal> erfsum(const complex<mpreal> z){
   return two / sqrtpi * factor;
 }
 
-// This is a generally-applicable function to calculate the error function of complex z.  
-// It calls whichever of the two above functions is more appropriate given the value of z.  
+// This is a generally-applicable function to calculate the error function of complex z.
+// It calls whichever of the two above functions is more appropriate given the value of z.
 complex<mpreal> complexerf(const complex<mpreal> z){
   mpfr::mpreal::set_default_prec(GMPPREC);
 
@@ -96,8 +96,9 @@ complex<mpreal> complexerf(const complex<mpreal> z){
   return z.real() < zero ? -erf : erf;
 }
 
-// Here is a function to calculate the zeroth order Boys function, given complex T.  It is only valid when the real part of 
-// T is negative and large.  See notebook page RDR-003-22 for details.  
+// Here is a function to calculate the zeroth order Boys function, given complex T.  It is only valid when the real part of
+// T is negative and large.  See notebook page RDR-003-22 for details.
+// It turns out that for problems of chemical interest, T should never be small enough to need this.
 complex<mpreal> lowboys(const complex<mpreal> T){
   mpfr::mpreal::set_default_prec(GMPPREC);
 
@@ -131,7 +132,7 @@ complex<mpreal> randcomplex(const int mintr, const int maxtr, const int minti, c
   const mpreal realdouble = randreal/100 + mintr;
   const mpreal imagdouble = randimag/100 + minti;
   complex<mpreal> random (realdouble, imagdouble);
-  return random; 
+  return random;
 }
 
 // Here is a random number generator for the calculation of a random complex number, where the imaginary part cannot be greater than the real
@@ -150,7 +151,7 @@ complex<mpreal> randconstrained(const int mintr, const int maxtr) {
   const mpreal imagdouble = randimag/100 - fabs(realdouble);
 
   complex<mpreal> random (realdouble, imagdouble);
-  return random; 
+  return random;
 }
 
 void sortroots(vector<complex<mpreal>>& dx, vector<complex<mpreal>>& dw, const int nrank){
@@ -183,8 +184,8 @@ void sortweights(vector<complex<mpreal>>& dx, vector<complex<mpreal>>& dw, const
   } while (sorted == false);
 }
 
-// Here is the meat and potatoes of this file:  A function to determine the roots and weights for the 
-// Gaussian quadrature of an electron repulsion integral, given the value of T.  
+// Here is the meat and potatoes of this file:  A function to determine the roots and weights for the
+// Gaussian quadrature of an electron repulsion integral, given the value of T.
 void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx, vector<complex<mpreal>>& dw, const int nrank){
 
   mpfr::mpreal::set_default_prec(GMPPREC);
@@ -214,7 +215,7 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
     const complex<mpreal> halfpT = half / T;
 
 
-    // First, we have to calculate the Boys function at zeroth order...  
+    // First, we have to calculate the Boys function at zeroth order...
     const mpreal cutoff2 = "-500.0";
     if (T.real() > cutoff2){
       fm[0] = sqrt(pi) / sqrtt * half * complexerf(sqrtt);
@@ -229,8 +230,8 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
       fm[i] = halfpT * ((two*i-one) * fm[i-1] - exp(-T));
 
       assert ( fabs(fm[i].real() < 1) || T.real() < 0 );
-      // If this assertion has been triggered, than an unbelievable value for fm[i] was obtained.  
-      // This often results from inaccuracy in the complex error function that accumulates later on...  Try increasing the number of terms in the complexerf expansion.  
+      // If this assertion has been triggered, than an unbelievable value for fm[i] was obtained.
+      // This often results from inaccuracy in the complex error function that accumulates later on...  Try increasing the number of terms in the complexerf expansion.
 
     }
 
@@ -252,13 +253,13 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
     const mpreal mpone = "1.0";
     const int n = nrank;
 
-    mlp[0] = mpone / fm[0];              
-    x[0] = fm[1] * mlp [0];             
+    mlp[0] = mpone / fm[0];
+    x[0] = fm[1] * mlp [0];
 
     // The loop of k runs nroot/2 times, rounded down (never for n == 1)
-    for (int k = 0; k <= n - 2; k += 2) {            
-      for (int l = k; l <= 2 * n - k - 3; ++l) {      
-        sigma[l + 1] = fm[l + 2] - x[k] * fm[l + 1] - w[k] * sigma[l + 1] ;  
+    for (int k = 0; k <= n - 2; k += 2) {
+      for (int l = k; l <= 2 * n - k - 3; ++l) {
+        sigma[l + 1] = fm[l + 2] - x[k] * fm[l + 1] - w[k] * sigma[l + 1] ;
       }
       // This section defines the odd-numbered entries of x, w, and mlp
       mlp[k + 1] = mpone / sigma[k + 1];
@@ -282,7 +283,7 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
 
 // This portion of the code executes a four-term recurrence relation in order to find the elements of the Jacobi Matrix
 // I think of the large phi array as an (n) by (2n) matrix.  Each row corresponds to a particular orthogonal polynomial p_i,
-// and each column to a power of t.  The a_i and b_i values needed are simply the ratio of different phi elements.  
+// and each column to a power of t.  The a_i and b_i values needed are simply the ratio of different phi elements.
 // Each term of phi represents a weighted product of polynomials:  phi[2*n*i+k] = \int_0^1 e^-Tt/(2*sqrt{t}) t^k p_i p_i dt
 /*
 //    const int n = nrank;
@@ -322,7 +323,7 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
         a[1] = phi[2*n+1] / phi[2*n];
         b[1] = phi[2*n]   / phi[0];
 
-      // For the i = 2 case: 
+      // For the i = 2 case:
         for(int k=0; k!=2*(n-2); k++){
           phi[4*n+k] = phi[2*n+k+2] - two * a[1] * phi[2*n+k+1] + a[1] * a[1] * phi[2*n+k] + b[1] * b[1] * phi[k];
           cout << "\n i = 2, k = " << k << " and the value " << setprecision(10) << phi[4*n+k] << " comes from " << phi[2*n+k+2] << phi[2*n+k+1]<< phi[2*n+k]<< phi[k];
@@ -334,7 +335,7 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
       for(int i=3; i<n; i++){
         for(int k=0; k!=2*(n-i); k++){
           phi[2*n*i+k] = phi[2*n*(i-1)+k+2] - two * a[i-1] * phi[2*n*(i-1)+k+1] + a[i-1] * a[i-1] * phi[2*n*(i-1)+k] + b[i-1] * b[i-1] * phi[2*n*(i-2)+k];
-          // The preceding line of code works correctly for i = 1.  
+          // The preceding line of code works correctly for i = 1.
           cout << "\n i = " << i << ", k = " << k << " and the value " << setprecision(10) << phi[2*n*i+k] << " comes from " << phi[2*n*(i-1)+k+2] << phi[2*n*(i-1)+k+1]<< phi[2*n*(i-1)+k]<< phi[2*n*(i-2)+k];
         }
         a[i] = phi[2*n*i+1] / phi[2*n*i];
@@ -342,8 +343,8 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
       }
     }
 *////////////////////////////////////////////////////
- 
-    // Now we use what was done above to define the elements of dx and dw based on x and w.  
+
+    // Now we use what was done above to define the elements of dx and dw based on x and w.
     // dx is the same as x; we could probably simplify this as just dx = x
     // dw is a little more complicated - dw[i] is the square root of w[i+1]
     dx[0] = x[0];
@@ -352,7 +353,7 @@ void complex_rysroot_gmp(const complex<mpreal>& ta, vector<complex<mpreal>>& dx,
       dx[i] = x[i];
     }
     dw[n - 1] = "0.0";
-/*  
+/*
     // For Ryan's alternate derivation of the a_i and b_i terms
     dx[0] = a[0];
     for (int i = 1; i !=n; ++i){
@@ -432,7 +433,7 @@ line2:
         rset.imag( g.imag() );
         const complex<mpreal> r = rset;
         // const complex<mpreal> r = sqrt(g * g + one);
-        g = dx[mm] - dx[l] + dw[l] / ( g.real() >= zero ? ( g + r ) : ( g - r ) ); 
+        g = dx[mm] - dx[l] + dw[l] / ( g.real() >= zero ? ( g + r ) : ( g - r ) );
         complex<mpreal> s = one;
         complex<mpreal> c = one;
         complex<mpreal> p = zero;
@@ -440,11 +441,11 @@ line2:
           complex<mpreal> f = s * dw[i];
           complex<mpreal> bb = c * dw[i];
           // So f = bb at this point...
-          complex<mpreal> r = sqrt(f * f + g * g);  // This appears to be distinct from the constant r declared above.  
+          complex<mpreal> r = sqrt(f * f + g * g);  // This appears to be distinct from the constant r declared above.
           dw[i + 1] = r;
           // If r = 0 (because f = g = 0), we execute the next three lines & are done with line2
           if(r == zero) {
-            dx[i + 1] -= p; //Stylistic change here 
+            dx[i + 1] -= p; //Stylistic change here
             dx[mm] = zero;
             goto line1;
           }
@@ -468,16 +469,16 @@ line2:
       }
     }
 //*/
-    // We redefine dw at the end here...  
-    for (int i = 0; i != n; ++i) dw[i] = lp[i] * lp[i] * mone;  
+    // We redefine dw at the end here...
+    for (int i = 0; i != n; ++i) dw[i] = lp[i] * lp[i] * mone;
     for (int i = 0; i != n; i++) {
       if ( dx[i].real() < 0 || dx[i].real() > 1 || dx[i].imag() > 0) {
 //        cout << "Unusual value for root " << i+1 << " of " << n << ";  T = " << T << ", root = " << dx[i] << ", weight = " << dw[i] << ".  " << endl;
 //        assert ( fabs(T.imag()) > fabs(T.real()) || T.real() < 0 );
-          // I had added an assertion here.  For the time being, I will deactivate it since I'm not sure that it's right.  For some absurd values of T I can trigger this 
-          // assertion without other things occuring that I know are wrong.  
-          // If this assertion has been triggered, then you obtained a root with an unexpected value, not between 0 and 1.  I have seen this 
-          // result from errors in the complex error function, but don't know of any examples that would cause problems here and not in the Boys function assert statement above.  
+          // I had added an assertion here.  For the time being, I will deactivate it since I'm not sure that it's right.  For some absurd values of T I can trigger this
+          // assertion without other things occuring that I know are wrong.
+          // If this assertion has been triggered, then you obtained a root with an unexpected value, not between 0 and 1.  I have seen this
+          // result from errors in the complex error function, but don't know of any examples that would cause problems here and not in the Boys function assert statement above.
       }
     }
   }
@@ -498,23 +499,23 @@ using namespace boost;
 
 ///*
   // This next section allows you to specify the form of the integral you want to evaluate at runtime
-  // The first three arguments of int(main) are the number of roots to be calculated, then the real and imaginary parts of T  
+  // The first three arguments of int(main) are the number of roots to be calculated, then the real and imaginary parts of T
   if(argc > 2) {
     const string nvalue = argv[1];
     const int n = lexical_cast<int>(nvalue);
 
     const string Treal = argv[2];
     const double Tr = lexical_cast<double>(Treal);
-    
+
     const complex<mpreal> zero (0,0);
     complex<mpreal> T = zero;
     T.real(Tr);
 
     vector<complex<mpreal>> dx(50, zero);
     vector<complex<mpreal>> dw(50, zero);
-    
+
     cout << endl << "For the " << n << "-point quadrature of an ERI where T = " << Tr;
-    if(argc > 3){ 
+    if(argc > 3){
       const string Timag = argv[3];
       const double Ti = lexical_cast<double>(Timag);
       T.imag(Ti);
@@ -549,8 +550,8 @@ using namespace boost;
 
     // If you enter more than 3 parameters, the rest will be interpreted as coefficients of a polynomial (real then imaginary parts)
     // It will then calculate the definite integral from 0 to 1 of e^-Tt/(2 sqrt(t)) * {Your polynomial of t} dt
-    if(argc > 4 && argc % 2 == 0){ 
-  
+    if(argc > 4 && argc % 2 == 0){
+
       // Define the coefficients of the polynomial
       complex<mpreal> coefficient[argc-4];
       cout << "Using the polynomial P(t) = ";
@@ -558,17 +559,17 @@ using namespace boost;
         int power = i / 2;
         coefficient[power].real(argv[i + 4]);
         coefficient[power].imag(argv[i + 5]);
-        cout << "(" << coefficient[power].real() << " + " << coefficient[power].imag() << "i)t^" << setprecision(1) << power; 
-        if (i != 0)  
+        cout << "(" << coefficient[power].real() << " + " << coefficient[power].imag() << "i)t^" << setprecision(1) << power;
+        if (i != 0)
           cout << " + ";
         else
-          cout << endl; 
+          cout << endl;
       }
 
       // Evaluate the integral by Gaussian quadrature
       complex<mpreal> intterm;
       complex<mpreal> integral (0,0);
-      for(int j = 0; j!=n; j++){                 // For each root and weight pair...  
+      for(int j = 0; j!=n; j++){                 // For each root and weight pair...
         complex<mpreal> polyterm;
         complex<mpreal> polynomial(0,0);
         for(int i = argc-6; i >=0; i -= 2){       // For each term in the polynomial
@@ -587,8 +588,8 @@ using namespace boost;
   if(argc > 1) {
     const string toggle = argv[1];
 
-    // Here is a feature to facilitate checking of the complex error function and total integral quadrature.  It creates many random complex numbers,  
-    // evaluates them, and prints off the results in a format that makes it easy to check against Wolfram-Alpha or some other external source.  
+    // Here is a feature to facilitate checking of the complex error function and total integral quadrature.  It creates many random complex numbers,
+    // evaluates them, and prints off the results in a format that makes it easy to check against Wolfram-Alpha or some other external source.
     if (toggle == "-w") {
       const complex<mpreal> zero (0,0);
       constexpr int runs = NTESTS;
@@ -599,7 +600,7 @@ using namespace boost;
       complex<mpreal> integral[runs];
       srand (time(NULL));
 
-      for (int i = 0; i!=runs; i++){  
+      for (int i = 0; i!=runs; i++){
         // For checking of the error function
         values[i] = randcomplex(MINTR, MAXTR, MINTI, MAXTI);   // For unconstrained imaginary parts
 //        values[i] = randconstrained(MINTR, MAXTR);             // For imaginary parts no greater than the real parts (in terms of abs)
@@ -623,7 +624,7 @@ using namespace boost;
         const int nroot = rank/2+1;
         complex_rysroot_gmp(values[i], dx, dw, nroot);
         integral[i] = zero;
-        for(int j = 0; j!=nroot; j++){                 // For each root and weight pair...  
+        for(int j = 0; j!=nroot; j++){                 // For each root and weight pair...
           complex<mpreal> polyterm;
           complex<mpreal> polynomial(0,0);
           for(int k = 0; k != npoly; k++){       // For each term in the polynomial
@@ -667,18 +668,18 @@ using namespace boost;
       ofstream ofs;
       string filename = "erftestvalues.txt";
       ofs.open(filename.c_str());
-      for (int i = 0; i!=runs; i++){  
+      for (int i = 0; i!=runs; i++){
         ofs << "erf( " << values[i].real() << " + i * " << values[i].imag() << " ) to 15 digits" << endl;
         ofs << values[i].real() << " , " << values[i].imag() << " , ";
         ofs << setprecision(15) << results[i].real() << " , " << results[i].imag() << " ,       ,       "<< endl << endl;
       }
-    ofs.close();  
-*/  
+    ofs.close();
+*/
     }  // End -w test
 
-    // Here is a general automated test:  Generate NTESTS random values of T, and for each one evalute the Boys function 
-    // of a random order both through the known expressions and by quadrature of the integral; compare results to ensure accuracy.  
-    // If we have a problem calculating roots or weights, this should reveal it.  
+    // Here is a general automated test:  Generate NTESTS random values of T, and for each one evalute the Boys function
+    // of a random order both through the known expressions and by quadrature of the integral; compare results to ensure accuracy.
+    // If we have a problem calculating roots or weights, this should reveal it.
     if (toggle == "-t") {
 ///*
       int failcount = 0;
@@ -693,7 +694,7 @@ using namespace boost;
       srand (time(NULL));
       complex<mpreal> Trandom[runs];
       int order[runs];
-  
+
       for (int i = 0; i != runs; i++){
         Trandom[i] = randcomplex(MINTR, MAXTR, MINTI, MAXTI);
         order[i] = (rand()%30);
@@ -707,7 +708,7 @@ using namespace boost;
         // Evaluate the integral by Gaussian quadrature
         complex<mpreal> integral (0,0);
         mpreal power = order[i];
-        for(int j = 0; j != nroot; j++){         
+        for(int j = 0; j != nroot; j++){
           const complex<mpreal> polynomial = one * pow(dx[j],power);
           integral += dw[j] * polynomial;
         }
@@ -723,7 +724,7 @@ using namespace boost;
 //        cout << "The Boys function of order " << order[i] << " is " << F_[order[i]] << "\n";
         mpreal realerror = integral.real() - F_[order[i]].real();
         mpreal imagerror = integral.imag() - F_[order[i]].imag();
-        mpreal realrelative = fabs(realerror / F_[order[i]].real()); 
+        mpreal realrelative = fabs(realerror / F_[order[i]].real());
         mpreal imagrelative = fabs(realerror / F_[order[i]].imag());
         mpreal maxerror = MAXERROR;
 //        cout << "Error = " << error << "\n";

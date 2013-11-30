@@ -40,16 +40,12 @@ namespace bagel {
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
    template <class T> using Ref = std::shared_ptr<const T>;
-   using TreeInput = const std::shared_ptr<const PTree>;
 
    protected:
       std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
       std::pair<Ref<Reference>, Ref<Reference>> refs_;
       std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_;
-
       std::pair<Ref<Coeff>, Ref<Coeff>> coeffs_;
-      std::pair<Ref<Dvec>, Ref<Dvec>> ccvecs_;
-      std::pair<Ref<CIWfn>, Ref<CIWfn>> ci_;
 
       std::shared_ptr<const Geometry>   sgeom_;
       std::shared_ptr<Reference>  sref_;
@@ -63,23 +59,19 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<int, int> nact_;
       std::pair<int, int> nfilledactive_;
       std::pair<int, int> nvirt_;
-      std::pair<int, int> nstates_;
       std::pair<int, int> nbasis_;
       std::pair<int, int> nele_;
 
    public:
       // Constructors
-      Dimer(Ref<Geometry> a, Ref<Geometry> b);
-      Dimer(Ref<Geometry> a, std::array<double,3> displacement);
-      Dimer(Ref<Reference> A, Ref<Reference> B);
-      Dimer(Ref<Reference> a, std::array<double,3> displacement);
-      Dimer(Ref<Reference> superref, std::pair<int,int> regions);
-      Dimer(Ref<CIWfn> a, std::array<double,3> displacement);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a);
 
       // Return functions
       std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
       std::pair<Ref<Coeff>, Ref<Coeff>> coeffs() const { return coeffs_; };
-      std::pair<Ref<Dvec>, Ref<Dvec>> ccvec() const { return ccvecs_; };
 
       std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<Reference> sref() const { return sref_; };
@@ -90,10 +82,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
         scoeff_ = std::make_shared<Coeff>(*ref->coeff());
         sref_ = std::make_shared<Reference>(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt());
       }
-      void set_coeff(std::shared_ptr<const Coeff> coeff) {
-        scoeff_ = std::make_shared<Coeff>(*coeff);
-        sref_->set_coeff(coeff);
-      };
       void set_coeff(std::shared_ptr<const Matrix> mat) {
         scoeff_ = std::make_shared<Coeff>(*mat);
         sref_->set_coeff(std::make_shared<const Coeff>(*mat));
@@ -105,29 +93,24 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
       int dimerbasis() const { return dimerbasis_; }
 
-      // Utility functions
-      std::shared_ptr<Coeff> overlap() const;
-      std::shared_ptr<Matrix> form_density_rhf(std::shared_ptr<const Coeff> coeff) const { return std::shared_ptr<Matrix>(); };
-
-      void set_active(TreeInput idata);
-      void localize(TreeInput idata);
-
+      // Utility
+      void set_active(std::shared_ptr<const PTree> idata);
+      void localize(std::shared_ptr<const PTree> idata);
 
       // Calculations
-      void scf(TreeInput idata); // SCF on dimer and then localize
-      template <int unit> Ref<Dvec> embedded_casci(TreeInput idata, const int charge, const int spin, const int nstates) const;
-      template <int unit> Ref<DistDvec> embedded_distcasci(TreeInput idata, const int charge, const int spin, const int nstates) const;
-      std::shared_ptr<DimerCAS> compute_cispace(TreeInput idata);
-      std::shared_ptr<DimerDistCAS> compute_distcispace(TreeInput idata);
+      void scf(std::shared_ptr<const PTree> idata); // SCF on dimer and then localize
+      template <int unit> Ref<Dvec> embedded_casci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
+      template <int unit> Ref<DistDvec> embedded_distcasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
+      std::shared_ptr<DimerCAS> compute_cispace(std::shared_ptr<const PTree> idata);
+      std::shared_ptr<DimerDistCAS> compute_distcispace(std::shared_ptr<const PTree> idata);
 
-      template <int unit> Ref<RASDvec> embedded_rasci(TreeInput idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
-      std::shared_ptr<DimerRAS> compute_rcispace(TreeInput idata);
+      template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
+      std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
 
    private:
       void construct_geometry();
       void construct_coeff();
       void embed_refs();
-      void orthonormalize();
 };
 
 template<int unit>

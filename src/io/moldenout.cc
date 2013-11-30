@@ -116,7 +116,7 @@ void MoldenOut::write_mos() {
   const int num_mos = ref_->coeff()->mdim();
   int nocc = ref_->nclosed();
 
-  double* modata = ref_->coeff()->data();
+  const double* modata = ref_->coeff()->data();
 
   vector<double> eigvec = ref_->eig();
   if (eigvec.empty()) eigvec = vector<double>(num_mos,0.0);
