@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: naidampbatch.h
+// Filename: r2batch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,14 +24,14 @@
 //
 
 
-#ifndef __SRC_RYSINT_NAIDAMPBATCH_H
-#define __SRC_RYSINT_NAIDAMPBATCH_H
+#ifndef __SRC_RYSINT_R2BATCH_H
+#define __SRC_RYSINT_R2BATCH_H
 
 #include <src/integral/rys/coulombbatch_energy.h>
 
 namespace bagel {
 
-class NAIdampBatch: public CoulombBatch_energy {
+class R2Batch: public CoulombBatch_energy {
   protected:
     double zeta_;
 
@@ -39,16 +39,16 @@ class NAIdampBatch: public CoulombBatch_energy {
     void compute_ssss(const double) override;
 
   public:
-    NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
       : CoulombBatch_energy (_info, mol, stack) { 
       const double integral_thresh = PRIM_SCREEN_THRESH;
-      zeta_ = 1.0;
+      zeta_ = 0.0;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
 
 
-    NAIdampBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
       : CoulombBatch_energy (_info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       zeta_ = 0.0;
@@ -57,7 +57,7 @@ class NAIdampBatch: public CoulombBatch_energy {
     }
       
 
-    ~NAIdampBatch() {}
+    ~R2Batch() {}
 
 };
 
