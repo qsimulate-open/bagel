@@ -75,8 +75,6 @@ class ERIBatch_Base : public RysIntegral<DataType> {
       allocate_data(asize_final, csize_final, asize_final_sph, csize_final_sph);
       this->allocate_arrays(primsize_);
 
-      const DataType integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
-      compute_ssss(integral_thresh);
     }
 
 

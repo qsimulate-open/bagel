@@ -38,6 +38,9 @@ class BreitBatch_base : public ERIBatch_base {
     BreitBatch_base(const std::array<std::shared_ptr<const Shell>,4>& a, const double max_density, const double dummy, const bool dum, const int N)
       :  ERIBatch_base(a, max_density, 0, N) {
 
+      const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+      compute_ssss(integral_thresh);
+
       root_weight(this->primsize_);
     }
 

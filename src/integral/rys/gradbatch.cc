@@ -44,6 +44,9 @@ GradBatch::GradBatch(const array<shared_ptr<const Shell>,4>& shells, const doubl
                      shared_ptr<StackMem> stack)
  : ERIBatch_base(shells, max_density, 1, 0, stack) {
 
+  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+  compute_ssss(integral_thresh);
+
   centers_ = 4;
   for (auto& i : shells) if (i->dummy()) --centers_;
 
