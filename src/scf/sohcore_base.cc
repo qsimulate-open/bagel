@@ -27,7 +27,7 @@
 #include <src/scf/sohcore_base.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
-#include <src/integral/rys/r0batch.h>
+#include <src/integral/rys/r1batch.h>
 
 using namespace std;
 using namespace bagel;
@@ -46,6 +46,7 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
+  const double zeta = 0.0;
 
   {
     KineticBatch kinetic(input);
@@ -54,10 +55,10 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    R0Batch nai(input, mol_);
-    nai.compute();
+    R1Batch ecpi(zeta, input, mol_);
+    ecpi.compute();
 
-    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecpi.data());
   }
 
   if (mol_->external()) {

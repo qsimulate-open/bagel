@@ -27,7 +27,6 @@
 #include <src/integral/rys/r2batch.h>
 #include <src/util/constants.h>
 #include <src/integral/rys/erirootlist.h>
-#include <gsl/gsl_sf_dawson.h>
 
 using namespace std;
 using namespace bagel;
@@ -65,7 +64,7 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = sqrt(T);
-        const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * gsl_sf_dawson(sqrtt) / sqrtt : 1.0);
+        const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
         if (ss > integral_thresh) {
           T_[index] = T;
           screening_[screening_size_] = index;
@@ -92,7 +91,7 @@ void R2Batch::root_weight(const int ps) {
       }
     }
   } else {
-    eriroot__.root(rank_, T_, roots_, weights_, ps);
+    eriroot__.root(rank_, T_, roots_, weights_, ps); // TODO: roots
     for (int xj = 0; xj != screening_size_; ++xj) {
       const int i = screening_[xj];
       double* croots = roots_ + i * rank_;
