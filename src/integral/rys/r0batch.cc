@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: r2batch.cc
+// Filename: r0batch.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,17 +24,13 @@
 //
 
 
-#include <src/integral/rys/r2batch.h>
+#include <src/integral/rys/r0batch.h>
 #include <src/util/constants.h>
-#include <src/integral/rys/erirootlist.h>
-#include <gsl/gsl_sf_dawson.h>
 
 using namespace std;
 using namespace bagel;
 
-static constexpr double T_thresh__ = 1.0e-8;
-
-void R2Batch::compute_ssss(const double integral_thresh) {
+void R0Batch::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
   const vector<double> exp0 = basisinfo_[0]->exponents();
@@ -44,7 +40,7 @@ void R2Batch::compute_ssss(const double integral_thresh) {
   vector<shared_ptr<const Atom>> atoms = mol_->atoms();
 
   const double onepi2 = 1.0 / (pi__ * pi__);
-  const double sqrtpi = sqrt(pi__);
+  const double sqrtpi = ::sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
@@ -59,19 +55,15 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp) * Eab;
+        coeff_[index] = exp(-cxp * zeta_ * socxp_inv ) * Eab;
         const double PCx = P_[index * 3    ] - (*aiter)->position(0);
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
-        const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
-        const double sqrtt = sqrt(T);
-        const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * gsl_sf_dawson(sqrtt) / sqrtt : 1.0);
+        const double ss = coeff_[index] * ::pow(4.0 * ab * onepi2, 0.75) * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv) ;
         if (ss > integral_thresh) {
-          T_[index] = T;
           screening_[screening_size_] = index;
           ++screening_size_;
         } else {
-          T_[index] = -1.0;
           coeff_[index] = 0.0;
         }
       }
@@ -79,27 +71,11 @@ void R2Batch::compute_ssss(const double integral_thresh) {
   }
 }
 
-void R2Batch::root_weight(const int ps) {
-  if (amax_ + cmax_ == 0) {
-    for (int j = 0; j != screening_size_; ++j) {
-      int i = screening_[j];
-      if (T_[i] < T_thresh__) {
-        weights_[i] = 1.0;
-      } else {
-        const double sqrtt = sqrt(T_[i]);
-        const double dawsonsqt = inline_dawson(sqrtt);
-        weights_[i] = dawsonsqt * sqrt(pi__) * 0.5 / sqrtt;
-      }
-    }
-  } else {
-    eriroot__.root(rank_, T_, roots_, weights_, ps);
-    for (int xj = 0; xj != screening_size_; ++xj) {
-      const int i = screening_[xj];
-      double* croots = roots_ + i * rank_;
-      for (int r = 0; r != rank_; ++r) {
-        croots[r] = 1.0 - (xp_[i] * croots[r]) /(xp_[i] + zeta_);
-      }
-    }
+void R0Batch::root_weight(const int ps) {
+  for (int j = 0; j != screening_size_; ++j) {
+    int i = screening_[j];
+    weights_[i] = 1.0;
+    roots_[i] = zeta_ * (xp_[i] + zeta_);
   }
 }
 

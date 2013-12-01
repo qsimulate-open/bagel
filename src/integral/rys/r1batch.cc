@@ -59,7 +59,7 @@ void R1Batch::compute_ssss(const double integral_thresh) {
         P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        // Z needs to be removed
+        // -Z needs to be removed
         coeff_[index] = - 2 * Z * pi__ * socxp_inv * exp(-cxp * zeta_ * socxp_inv ) * Eab;
         const double PCx = P_[index * 3    ] - (*aiter)->position(0);
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
