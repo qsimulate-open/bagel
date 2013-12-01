@@ -105,7 +105,22 @@ inline double inline_erf(const double inpt) {
   return t;
 };
 
+// crude fix to avoid type mismatches in compute_ssss - should improve upon this
+#include <cassert>
+template <typename DataType>
+inline DataType londonfactor (std::complex<double> pow) {
+  assert(0);
+  return 1.0;
+}
 
+template <>
+inline double londonfactor <double> (std::complex<double> pow) {
+  return 1.0;
+}
 
+template <>
+inline std::complex<double> londonfactor <std::complex<double>> (std::complex<double> pow) {
+  return std::exp(pow);
+}
 
 #endif
