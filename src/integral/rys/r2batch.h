@@ -27,31 +27,29 @@
 #ifndef __SRC_RYSINT_R2BATCH_H
 #define __SRC_RYSINT_R2BATCH_H
 
-#include <src/integral/rys/coulombbatch_energy.h>
+#include <src/integral/rys/rnbatch.h>
 
 namespace bagel {
 
-class R2Batch: public CoulombBatch_energy {
+class R2Batch: public RnBatch {
   protected:
-    double zeta_;
-
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
 
   public:
-    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      : CoulombBatch_energy (_info, mol, stack) { 
+    R2Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+            std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      : RnBatch (zeta, _info, mol, stack) { 
       const double integral_thresh = PRIM_SCREEN_THRESH;
-      zeta_ = 0.0;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
 
 
-    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {
+    R2Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+            const int L, const double A = 0.0)
+      : RnBatch (zeta, _info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
-      zeta_ = 0.0;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }

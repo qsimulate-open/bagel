@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: r1batch.h
+// Filename: r0batch.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,21 +24,20 @@
 //
 
 
-#ifndef __SRC_RYSINT_R1BATCH_H
-#define __SRC_RYSINT_R1BATCH_H
+#ifndef __SRC_RYSINT_R0BATCH_H
+#define __SRC_RYSINT_R0BATCH_H
 
 #include <src/integral/rys/rnbatch.h>
 
 namespace bagel {
 
-class R1Batch: public RnBatch {
+class R0Batch: public RnBatch {
   protected:
-
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
 
   public:
-    R1Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R0Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
       : RnBatch (zeta, _info, mol, stack) { 
       const double integral_thresh = PRIM_SCREEN_THRESH;
@@ -47,7 +46,7 @@ class R1Batch: public RnBatch {
     }
 
 
-    R1Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R0Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             const int L, const double A = 0.0)
       : RnBatch (zeta, _info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
@@ -55,7 +54,8 @@ class R1Batch: public RnBatch {
       root_weight(primsize_*natom_);
     }
       
-    ~R1Batch() {}
+
+    ~R0Batch() {}
 
 };
 

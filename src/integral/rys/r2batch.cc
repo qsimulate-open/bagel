@@ -27,7 +27,6 @@
 #include <src/integral/rys/r2batch.h>
 #include <src/util/constants.h>
 #include <src/integral/rys/erirootlist.h>
-#include <gsl/gsl_sf_dawson.h>
 
 using namespace std;
 using namespace bagel;
@@ -59,14 +58,13 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        // Z needs to be removed
-        coeff_[index] = 2 * Z * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp) * Eab;
+        coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp) * Eab;
         const double PCx = P_[index * 3    ] - (*aiter)->position(0);
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = sqrt(T);
-        const double ss = - coeff_[index] * (T > 1.0e-15 ? exp(sqrtt) * gsl_sf_dawson(sqrtt) / sqrtt : 1.0);
+        const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
         if (ss > integral_thresh) {
           T_[index] = T;
           screening_[screening_size_] = index;
@@ -88,12 +86,12 @@ void R2Batch::root_weight(const int ps) {
         weights_[i] = 1.0;
       } else {
         const double sqrtt = sqrt(T_[i]);
-        const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+        const double dawsonsqt = inline_dawson(sqrtt);
+        weights_[i] = dawsonsqt * sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else {
-    eriroot__.root(rank_, T_, roots_, weights_, ps);
+    eriroot__.root(rank_, T_, roots_, weights_, ps); // TODO: roots
     for (int xj = 0; xj != screening_size_; ++xj) {
       const int i = screening_[xj];
       double* croots = roots_ + i * rank_;
