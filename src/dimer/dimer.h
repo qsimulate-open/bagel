@@ -31,6 +31,7 @@
 #include <src/ras/rasci.h>
 #include <src/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
+#include <src/util/muffle.h>
 
 namespace bagel {
 
@@ -130,20 +131,11 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
   input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
 
   // Hiding normal cout
-  std::stringstream trash;
-  std::streambuf* saved_cout = std::cout.rdbuf();
-  std::cout.rdbuf(trash.rdbuf());
+  Muffle hide;
 
   std::shared_ptr<FCI> fci;
-  try {
-    fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
-    fci->compute();
-  }
-  catch (...) {
-    std::cout.rdbuf(saved_cout); // Restore cout to throw an error
-    throw; // Rethrow
-  }
-  std::cout.rdbuf(saved_cout);
+  fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
+  fci->compute();
 
   return fci->civectors();
 }
@@ -166,20 +158,11 @@ std::shared_ptr<const DistDvec> Dimer::embedded_distcasci(const std::shared_ptr<
   input->erase("algorithm"); input->put("algorithm", "dist");
 
   // Hiding normal cout
-  std::stringstream trash;
-  std::streambuf* saved_cout = std::cout.rdbuf();
-  std::cout.rdbuf(trash.rdbuf());
+  Muffle hide;
 
   std::shared_ptr<DistFCI> fci;
-  try {
-    fci = std::dynamic_pointer_cast<DistFCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
-    fci->compute();
-  }
-  catch (...) {
-    std::cout.rdbuf(saved_cout); // Restore cout to throw an error
-    throw; // Rethrow
-  }
-  std::cout.rdbuf(saved_cout);
+  fci = std::dynamic_pointer_cast<DistFCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
+  fci->compute();
 
   return fci->civectors();
 }
@@ -215,20 +198,11 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
   input->add_child("active", parent);
 
   // Hiding normal cout
-  std::stringstream trash;
-  std::streambuf* saved_cout = std::cout.rdbuf();
-  std::cout.rdbuf(trash.rdbuf());
+  Muffle hide;
 
   std::shared_ptr<RASCI> rasci;
-  try {
-    rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
-    rasci->compute();
-  }
-  catch (...) {
-    std::cout.rdbuf(saved_cout); // Restore cout to throw an error
-    throw; // Rethrow
-  }
-  std::cout.rdbuf(saved_cout);
+  rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
+  rasci->compute();
 
   return rasci->civectors();
 }
