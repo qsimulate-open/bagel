@@ -45,13 +45,6 @@ class GSmallNAIBatch {
     // specific to gradients
     std::tuple<int,int> iatom_;
 
-    size_t a0size_inc_;
-    size_t a0size_dec_;
-    size_t a1size_inc_;
-    size_t a1size_dec_;
-    size_t a0_;
-    size_t a1_;
-
   public:
     GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i);
 

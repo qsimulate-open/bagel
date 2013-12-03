@@ -46,10 +46,10 @@ class SmallInts1e {
     std::array<std::shared_ptr<Matrix>,Batch::Nblocks()> int_compute() const {
       const int s0size = shells_[0]->nbasis();
       const int s1size = shells_[1]->nbasis();
-      const int a0size_inc = shells_[0]->aux_inc()->nbasis();
-      const int a1size_inc = shells_[1]->aux_inc()->nbasis();
-      const int a0size_dec = shells_[0]->aux_dec() ? shells_[0]->aux_dec()->nbasis() : 0;
-      const int a1size_dec = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
+      const int a0size_inc = shells_[0]->aux_increment()->nbasis();
+      const int a1size_inc = shells_[1]->aux_increment()->nbasis();
+      const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
+      const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
       const int a0 = a0size_inc + a0size_dec;
       const int a1 = a1size_inc + a1size_dec;
 
@@ -60,25 +60,25 @@ class SmallInts1e {
         unc[n] = std::make_shared<Matrix>(a0, a1, true);
 
       {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, mol_);
+        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_increment()}}, mol_);
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(0, 0, a0size_inc, a1size_inc, uncc->data(n));
       }
-      if (shells_[0]->aux_dec() && shells_[1]->aux_dec()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, mol_);
+      if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
+        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}}, mol_);
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
       }
-      if (shells_[0]->aux_dec()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, mol_);
+      if (shells_[0]->aux_decrement()) {
+        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_increment()}}, mol_);
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
       }
-      if (shells_[1]->aux_dec()) {
-        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, mol_);
+      if (shells_[1]->aux_decrement()) {
+        auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_decrement()}}, mol_);
         uncc->compute();
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));

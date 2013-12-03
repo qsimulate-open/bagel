@@ -54,8 +54,8 @@ class Shell {
 
     // protected members for relativistic calculations
     std::array<std::shared_ptr<const Matrix>,3> small_;
-    std::shared_ptr<const Shell> aux_inc_;
-    std::shared_ptr<const Shell> aux_dec_;
+    std::shared_ptr<const Shell> aux_increment_;
+    std::shared_ptr<const Shell> aux_decrement_;
     std::shared_ptr<const Matrix> overlap_compute_() const;
     std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
 
@@ -105,8 +105,10 @@ class Shell {
     // Relativistic
     bool relativistic() const { return relativistic_; }
     const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
-    const std::shared_ptr<const Shell> aux_inc() const { assert(relativistic_); return aux_inc_; }
-    const std::shared_ptr<const Shell> aux_dec() const { assert(relativistic_); return aux_dec_; }
+    const std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
+    const std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
+    int nbasis_aux_increment() const { return aux_increment_ ? aux_increment_->nbasis() : 0; }
+    int nbasis_aux_decrement() const { return aux_decrement_ ? aux_decrement_->nbasis() : 0; }
 
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;

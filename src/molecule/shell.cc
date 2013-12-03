@@ -154,10 +154,10 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 }
 
 
-// returns uncontracted cartesian shell with one higher or lower angular number if inc is + or - 1 respectively
-template<int inc>
+// returns uncontracted cartesian shell with one higher or lower angular number if increment is + or - 1 respectively
+template<int increment>
 shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
-  static_assert(inc==1||inc==-1, "illegal call of Shell::kinetic_balance_uncont");
+  static_assert(increment==1||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
@@ -167,7 +167,7 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     conts.push_back(cont);
     ranges.push_back(make_pair(i,i+1));
   }
-  return angular_number_+inc < 0 ? shared_ptr<const Shell>() : make_shared<const Shell>(false, position_, angular_number_+inc, exponents_, conts, ranges);
+  return angular_number_+increment < 0 ? shared_ptr<const Shell>() : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
 }
 
 
@@ -179,8 +179,8 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 
 void Shell::init_relativistic() {
   relativistic_ = true;
-  aux_dec_ = kinetic_balance_uncont<-1>();
-  aux_inc_ = kinetic_balance_uncont<1>();
+  aux_decrement_ = kinetic_balance_uncont<-1>();
+  aux_increment_ = kinetic_balance_uncont<1>();
 
   // overlap = S^-1 between auxiliary functions
   shared_ptr<const Matrix> overlap = overlap_compute_();
@@ -192,27 +192,27 @@ void Shell::init_relativistic() {
 
 shared_ptr<const Matrix> Shell::overlap_compute_() const {
 
-  const int asize_inc = aux_inc_->nbasis();
-  const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
+  const int asize_inc = aux_increment_->nbasis();
+  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
   auto overlap = make_shared<Matrix>(a,a, true);
 
   {
-    OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_inc_}});
+    OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_increment_}});
     ovl.compute();
-    for (int i = 0; i != aux_inc_->nbasis(); ++i)
+    for (int i = 0; i != aux_increment_->nbasis(); ++i)
       copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
   }
-  if (aux_dec_) {
+  if (aux_decrement_) {
     {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_dec_, aux_dec_}});
+      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_decrement_, aux_decrement_}});
       ovl.compute();
       for (int i = 0; i != asize_dec; ++i)
         copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
     }
     {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_inc_, aux_dec_}});
+      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
       ovl.compute();
       for (int i = 0; i != asize_dec; ++i)
         for (int j = 0; j != asize_inc; ++j)
@@ -226,16 +226,16 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
 
 array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
   const int ssize = nbasis();
-  const int asize_inc = aux_inc_->nbasis();
-  const int asize_dec = aux_dec_ ? aux_dec_->nbasis() : 0;
+  const int asize_inc = aux_increment_->nbasis();
+  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
   const int a = asize_inc + asize_dec;
 
-  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_inc_}});
+  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_increment_}});
   coeff0->compute();
 
   shared_ptr<MomentumBatch> coeff1;
-  if (aux_dec_) {
-    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_dec_}});
+  if (aux_decrement_) {
+    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_decrement_}});
     coeff1->compute();
   } else {
     // just to run. coeff1 is not referenced in the code
@@ -258,7 +258,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
       assert(coeff0->size_block() == asize_inc*ssize);
       copy(carea0, carea0+coeff0->size_block(), tmparea->data());
     }
-    if (aux_dec_) {
+    if (aux_decrement_) {
       if (spherical_) {
         const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
         const int nloop = num_contracted() * asize_dec;

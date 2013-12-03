@@ -50,14 +50,6 @@ class GSmallERIBatch {
 
     std::shared_ptr<StackMem> stack_;
 
-    size_t s0size_;
-    size_t a1size_inc_;
-    size_t a1size_dec_;
-    size_t a2size_inc_;
-    size_t a2size_dec_;
-    size_t a1_;
-    size_t a2_;
-
     double* data(const int i) { return data_+i*size_block_; }
     const double* data(const int i) const { return data_+i*size_block_; }
 
