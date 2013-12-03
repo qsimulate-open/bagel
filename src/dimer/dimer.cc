@@ -40,59 +40,59 @@ using namespace std;
 using namespace bagel;
 
 /************************************************************************************
-*  Single reference plus translation vector constructors                            *
-************************************************************************************/
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : dimerbasis_(2*A->nbasis()),
- nbasis_(A->nbasis(), A->nbasis()) {
-   array<double, 3> translation = input->get_array<double, 3>("translate");
-   if (input->get<bool>("angstrom", false))
-     for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
-   auto geomB = make_shared<const Geometry>((*A), translation);
+ *  Single reference plus translation vector constructors                            *
+ ************************************************************************************/
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : input_(input), dimerbasis_(2*A->nbasis()),
+  nbasis_(A->nbasis(), A->nbasis()) {
+    array<double, 3> translation = input->get_array<double, 3>("translate");
+    if (input->get<bool>("angstrom", false))
+      for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+    auto geomB = make_shared<const Geometry>((*A), translation);
 
-   geoms_ = make_pair(A, geomB);
-   construct_geometry();
+    geoms_ = make_pair(A, geomB);
+    construct_geometry();
+  }
+
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input), dimerbasis_(2*A->geom()->nbasis()),
+  nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
+{
+  array<double, 3> translation = input->get_array<double, 3>("translate");
+  if (input->get<bool>("angstrom", false))
+    for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+
+  assert(A);
+  auto geomB = make_shared<const Geometry>((*A->geom()), translation);
+  geoms_ = make_pair(A->geom(), geomB);
+  construct_geometry();
+
+  coeffs_ = make_pair(A->coeff(), A->coeff());
+  auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
+      A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
+  refs_ = make_pair(A, tmpref);
+  nclosed_ = 2*A->nclosed();
+  construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+
+  sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, 2*A->nact(), 2*A->nvirt());
 }
 
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : dimerbasis_(2*A->geom()->nbasis()),
-nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input),
+  nbasis_(A->geom()->nbasis(), B->geom()->nbasis())
 {
-   array<double, 3> translation = input->get_array<double, 3>("translate");
-   if (input->get<bool>("angstrom", false))
-     for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+  geoms_ = make_pair(A->geom(), B->geom());
+  construct_geometry();
 
-   assert(A);
-   auto geomB = make_shared<const Geometry>((*A->geom()), translation);
-   geoms_ = make_pair(A->geom(), geomB);
-   construct_geometry();
+  coeffs_ = make_pair(A->coeff(), B->coeff());
+  refs_ = make_pair(A, B);
+  nclosed_ = A->nclosed() + B->nclosed();
+  construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
 
-   coeffs_ = make_pair(A->coeff(), A->coeff());
-   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
-            A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
-   refs_ = make_pair(A, tmpref);
-   nclosed_ = 2*A->nclosed();
-   construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
-
-   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, 2*A->nact(), 2*A->nvirt());
-}
-
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : dimerbasis_(A->geom()->nbasis() + B->geom()->nbasis()),
-nbasis_(A->geom()->nbasis(), B->geom()->nbasis())
-{
-   geoms_ = make_pair(A->geom(), B->geom());
-   construct_geometry();
-
-   coeffs_ = make_pair(A->coeff(), B->coeff());
-   refs_ = make_pair(A, B);
-   nclosed_ = A->nclosed() + B->nclosed();
-   construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
-
-   sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, A->nact() + B->nact(), A->nvirt() + B->nvirt());
+  sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, A->nact() + B->nact(), A->nvirt() + B->nvirt());
 }
 
 #if 0
 Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeom_(superref->geom()), dimerbasis_(superref->geom()->nbasis())
 {
-   /************************************************************
+  /************************************************************
    *  Set up variables that will contain the organized info    *
    ************************************************************/
   int nbasisA = 0;
@@ -174,20 +174,32 @@ Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeo
 #endif
 
 void Dimer::construct_geometry() {
-   cout << " ===== Constructing Dimer geometry ===== " << endl;
-   nele_ = make_pair(geoms_.first->nele(), geoms_.second->nele());
+  cout << " ===== Constructing Dimer geometry ===== " << endl;
 
-   vector<shared_ptr<const Geometry>> geo_vec;
-   geo_vec.push_back(geoms_.first);
-   geo_vec.push_back(geoms_.second);
+  const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
+  if (mdata) {
+    Muffle hide_cout;
+    geoms_ = make_pair(make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata));
+  }
 
-   nbasis_ = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
+  nele_ = make_pair(geoms_.first->nele(), geoms_.second->nele());
+  nbasis_ = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
+  dimerbasis_ = nbasis_.first + nbasis_.second;
 
-   sgeom_ = make_shared<Geometry>(geo_vec);
+  vector<shared_ptr<const Geometry>> geo_vec = {{ geoms_.first, geoms_.second }};
+  sgeom_ = make_shared<Geometry>(geo_vec);
 }
 
 void Dimer::construct_coeff() {
   cout << " ===== Constructing Dimer reference =====" << endl;
+
+  const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
+  if (mdata) {
+    shared_ptr<Reference> refA = refs_.first->project_coeff(geoms_.first);
+    shared_ptr<Reference> refB = refs_.second->project_coeff(geoms_.second);
+    refs_ = make_pair(refA, refB);
+    coeffs_ = make_pair(refA->coeff(), refB->coeff());
+  }
 
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
@@ -204,14 +216,16 @@ void Dimer::construct_coeff() {
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
 
-  // TODO - Ideally, these would all be projections onto the new basis.
   const size_t Amos = coeffs_.first->mdim();
   const size_t Bmos = coeffs_.second->mdim();
 
-  auto projected = make_shared<Matrix>(nbasisA + nbasisB, Amos + Bmos);
-  projected->copy_block(0, 0, nbasisA, Amos, *coeffs_.first);
-  projected->copy_block(nbasisA, Amos, nbasisB, Bmos, *coeffs_.second);
-  proj_coeff_ = make_shared<Coeff>(*projected);
+  {
+    shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
+    shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
+
+    shared_ptr<Matrix> projected = projectedA->merge(projectedB);
+    proj_coeff_ = make_shared<Coeff>(*projected);
+  }
 
   const int ncloA = ncore_.first;
   const int ncloB = ncore_.second;
@@ -227,7 +241,7 @@ void Dimer::construct_coeff() {
 
   // form "projected" coefficients
   const int dimerbasis = dimerbasis_;
-  auto tmpcoeff = projected->clone();
+  auto tmpcoeff = proj_coeff_->clone();
 
   size_t current = 0;
   auto cp_block = [&current, &tmpcoeff, &dimerbasis] (const size_t msize, const double* source) {

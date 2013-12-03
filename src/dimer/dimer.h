@@ -43,6 +43,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
    template <class T> using Ref = std::shared_ptr<const T>;
 
    protected:
+      std::shared_ptr<const PTree> input_;
+
       std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
       std::pair<Ref<Reference>, Ref<Reference>> refs_;
       std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_;

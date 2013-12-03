@@ -53,7 +53,7 @@ class RelReference : public Reference {
     bool breit() const { return breit_; }
     int nneg() const { return nneg_; }
 
-    std::shared_ptr<const Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 
 };
 
