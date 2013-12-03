@@ -187,6 +187,11 @@ void Dimer::construct_geometry() {
   dimerbasis_ = nbasis_.first + nbasis_.second;
 
   vector<shared_ptr<const Geometry>> geo_vec = {{ geoms_.first, geoms_.second }};
+  shared_ptr<const PTree> env_data = input_->get_child_optional("environment");
+  if (env_data) {
+    Muffle hide_cout;
+    geo_vec.push_back(make_shared<Geometry>(env_data));
+  }
   sgeom_ = make_shared<Geometry>(geo_vec);
 }
 

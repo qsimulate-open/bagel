@@ -191,14 +191,13 @@ void PMLocalization::common_init() {
   S_ = lS->distmatrix();
 
   vector<vector<int>> offsets = geom_->offsets();
-  for(auto ioffset = offsets.begin(); ioffset != offsets.end(); ++ioffset) {
-    const int start = ioffset->front();
-    int end;
-    if((ioffset+1) == offsets.end()) end = geom_->nbasis();
-    else end = (ioffset+1)->front();
-
-    atom_bounds_.push_back(make_pair(start, end));
+  int nbasis = 0;
+  for(auto& atom : geom_->atoms()) {
+    const int start = nbasis;
+    nbasis +=  atom->nbasis();
+    atom_bounds_.emplace_back(start, nbasis);
   }
+  assert(nbasis == geom_->nbasis());
 }
 
 shared_ptr<const Matrix> PMLocalization::localize() {
