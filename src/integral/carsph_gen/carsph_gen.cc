@@ -160,8 +160,9 @@ using namespace bagel;\n\
       assert(l1mtuv.size() == spherical_xyz[l1]);
       const int lcartsize = cartesian_xyz[l1];
 
-      code += "\
-void CarSphList::carsph_" + l1str + l0str + "(const int nloop, const double* source, double* target) {\n";
+auto function = [&](const string T, const string classname) {
+string code = "\
+void " + classname + "::carsph_" + l1str + l0str + "(const int nloop, const " + T + "* source, " + T + "* target) {\n";
       if (l1 > 1) {
         vector<vector<pair<int, mpreal>>>::const_iterator m0;
         vector<vector<pair<int, mpreal>>>::const_iterator m1;
@@ -228,6 +229,10 @@ void CarSphList::carsph_" + l1str + l0str + "(const int nloop, const double* sou
       }
     code += "\
 }\n\n";
+  return code;
+};
+    code += function("double", "CarSphList");
+    code += function("complex<double>", "CCarSphList");
 
     ofstream ofs;
     ofs.open(filename.c_str());

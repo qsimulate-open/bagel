@@ -32,7 +32,7 @@
 using namespace std;
 using namespace bagel;
 
-static const CarSphList carsphlist;
+static const CCarSphList carsphlist;
 static const CHRRList hrr;
 
 void ComplexERIBatch::compute() {
@@ -89,7 +89,6 @@ void ComplexERIBatch::compute() {
   const int csph = 2 * ang2 + 1;
   const int dsph = 2 * ang3 + 1;
 
-#if 0
   // Cartesian to spherical 01 if necesarry
   // data will be stored in data_
   const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
@@ -152,9 +151,10 @@ void ComplexERIBatch::compute() {
 
   // if swapped  bkup contains info
   // if !swapped  data contains info
-  double *target_now = swapped ? bkup_ : data_;
-  double *source_now = swapped ? data_ : bkup_;
+  complex<double>* target_now = swapped ? bkup_ : data_;
+  complex<double>* source_now = swapped ? data_ : bkup_;
 
+#if 0
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   if (basisinfo_[2]->angular_number() != 0) {
