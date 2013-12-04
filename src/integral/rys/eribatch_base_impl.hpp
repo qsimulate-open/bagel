@@ -66,7 +66,10 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   DataType* const qx_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qy_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qz_save = stack_->template get<DataType>(prim2size_*prim3size_);
-  std::complex<double>* const factor_cd_save = stack_->template get<std::complex<double>>(prim2size_*prim3size_);
+  std::complex<double>* factor_cd_save = 0;
+  if (london_orbital()) {
+    factor_cd_save = stack_->template get<std::complex<double>>(prim2size_*prim3size_);
+  }
 
   // determine smallest a, b, c, d, p, q
   const double minexp0 = *std::min_element(exp0, exp0+nexp0);
@@ -115,7 +118,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         qz_save[index23] = get_PQ(cz, dz, *expi2, *expi3, cxq_inv, 2, 2);
 
         // only used for London orbitals
-        if (typeid(DataType) == typeid(std::complex<double>)) {
+        if (london_orbital()) {
           const double A_DC_x = (basisinfo_[3]->vector_potential(0) - basisinfo_[2]->vector_potential(0));
           const double A_DC_y = (basisinfo_[3]->vector_potential(1) - basisinfo_[2]->vector_potential(1));
           const double A_DC_z = (basisinfo_[3]->vector_potential(2) - basisinfo_[2]->vector_potential(2));
@@ -205,7 +208,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         // Also, it should be generic enough to let us use complex functions other than London orbitals
         // Consider using an inline virtual function to move the bulk of it into derived classes?
         DataType factor = 1.0;
-        if (typeid(DataType) == typeid(std::complex<double>)) {
+        if (london_orbital()) {
           const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
           const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
           const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
@@ -238,7 +241,9 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
 
   // release temporary Q storage
   stack_->release(nexp2*nexp3*3, tuple_field);
-  stack_->release(prim2size_*prim3size_, factor_cd_save);
+  if (london_orbital()) {
+    stack_->release(prim2size_*prim3size_, factor_cd_save);
+  }
   stack_->release(prim2size_*prim3size_, qz_save);
   stack_->release(prim2size_*prim3size_, qy_save);
   stack_->release(prim2size_*prim3size_, qx_save);
@@ -284,7 +289,7 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
 }
 
 template <typename DataType>
-inline DataType ERIBatch_Base<DataType>::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
+DataType ERIBatch_Base<DataType>::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
   return ( (coord1*exp1 + coord2*exp2) * one12 );
 }
 

@@ -59,12 +59,13 @@ void ComplexERIBatch::root_weight(const int ps) {
 
 
 // TODO For efficiency's sake, it's probably best to find a way to avoid repeatedly running basisinfo_[i]->vector_potential(j) each time we want to get a P or Q value
-inline std::complex<double> ComplexERIBatch::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
+std::complex<double> ComplexERIBatch::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
   const double Areal = coord1*exp1;
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[center1]->vector_potential(dim);
   const double Bimag = basisinfo_[center1+1]->vector_potential(dim);
   const std::complex<double> num ( (Areal + Breal) , (0.5*(Aimag - Bimag)) );
-  return ( num * one12 );
+  const std::complex<double> out = num * one12;
+  return out;
 }
 
