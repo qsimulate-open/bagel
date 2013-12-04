@@ -57,7 +57,7 @@ class RysIntegral : public Integral_base<DataType> {
     int cont0size_, cont1size_, cont2size_, cont3size_;
     int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
     DataType *buff_;
-    double *bkup_;
+    DataType *bkup_;
 
     std::array<std::shared_ptr<const Shell>,4> basisinfo_;
     bool spherical1_;

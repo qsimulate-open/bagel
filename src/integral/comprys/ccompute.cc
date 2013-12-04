@@ -33,22 +33,20 @@ using namespace std;
 using namespace bagel;
 
 static const CarSphList carsphlist;
-static const HRRList hrr;
+static const CHRRList hrr;
 
 void ComplexERIBatch::compute() {
 
   bool swapped = false;
 
-  double* const stack_save = stack_->get(size_alloc_);
+  complex<double>* const stack_save = stack_->get<complex<double>>(size_alloc_);
   bkup_ = stack_save;
-  fill_n(data_, size_alloc_, 0.0);
+  fill_n(data_, size_alloc_, complex<double>(0.0));
 
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }
   perform_VRR();
-
-#if 0
 
   // contract indices 01
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
@@ -91,7 +89,7 @@ void ComplexERIBatch::compute() {
   const int csph = 2 * ang2 + 1;
   const int dsph = 2 * ang3 + 1;
 
-
+#if 0
   // Cartesian to spherical 01 if necesarry
   // data will be stored in data_
   const bool need_sph01 = basisinfo_[0]->angular_number() > 1;
