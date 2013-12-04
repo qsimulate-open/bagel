@@ -92,7 +92,7 @@ class RysIntegral : public Integral_base<DataType> {
     // virtual init functions. The default is for ERI, NAI and their derivatives.
     // should be overloaded in Slater-type integrals
     virtual void root_weight(const int ps) = 0;
-    virtual void compute_ssss(const DataType thr) = 0;
+    virtual void compute_ssss(const double thr) = 0;
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
     void allocate_arrays(const size_t ps);

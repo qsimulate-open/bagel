@@ -36,7 +36,7 @@ class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
   protected:
     void perform_VRR();
     void root_weight(const int ps) override;
-    inline std::complex<double> get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) override;
+    std::complex<double> get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) override;
 
   public:
 

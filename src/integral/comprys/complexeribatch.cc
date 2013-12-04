@@ -37,7 +37,7 @@ ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, 
 // then the second argument to the constructor of ERIBatch_Base should be max_density.  Since we currently pass
 // 0.0 as an argument, it should compute every integral.
 
-  const complex<double> integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
+  const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
   compute_ssss(integral_thresh);
 
 #ifdef LIBINT_INTERFACE

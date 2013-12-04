@@ -33,7 +33,7 @@ namespace bagel {
 // this sets T_ (+ U_), P_, Q_, xp_, xq_, coeff_, and screening_size_
 // for ERI evaulation. Other than that, we need to overload this function in a derived class
 template <typename DataType>
-void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
+void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
 
   // set atomic coordinates
   const double ax = basisinfo_[0]->position(0);
@@ -62,7 +62,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   const int nexp3 = basisinfo_[3]->num_primitive();
 
   // allocate temporary Q storage
-  DataType* const Ecd_save = stack_->template get<DataType>(prim2size_*prim3size_);
+  double* const Ecd_save = stack_->template get<double>(prim2size_*prim3size_);
   DataType* const qx_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qy_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qz_save = stack_->template get<DataType>(prim2size_*prim3size_);
@@ -137,9 +137,9 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
           const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
           const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
           const double tsqrt = std::sqrt(T);
-          const DataType ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
+          const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                               * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-          if (std::abs(ssss) > std::abs(integral_thresh)) {
+          if (std::abs(ssss) > integral_thresh) {
             tuple_field[tuple_length*2  ] = *expi2;
             tuple_field[tuple_length*2+1] = *expi3;
             tuple_index[tuple_length] = index23;
@@ -214,9 +214,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         const double onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
 
         // only used for London orbitals
-        // TODO This can be done more efficiently if we move some parts of it into the outer loop.
-        // Also, it should be generic enough to let us use complex functions other than London orbitals
-        // Consider using an inline virtual function to move the bulk of it into derived classes?
+        // It should be generic enough to let us use complex functions other than London orbitals
         DataType factor = 1.0;
         if (london_orbital()) {
           const std::complex<double> power = factor_ab * factor_cd_save[index23];
