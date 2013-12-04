@@ -105,16 +105,16 @@ class RysIntegral : public Integral_base<DataType> {
 
 
     // contraction
-    void perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction_new_outer(const int nsize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1);
 
-    void perform_contraction_new_inner(const int nsize, const int ac, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction_new_inner(const int nsize, const int ac, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1);
 
     // contraction for 1-e integrals
-    void perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction(const int asize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                                const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
                                const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1);
 

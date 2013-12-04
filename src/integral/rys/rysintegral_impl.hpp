@@ -160,26 +160,26 @@ void RysIntegral<DataType>::allocate_arrays(const size_t ps) {
 
 
 template<typename DataType>
-void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont,
+void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
   const int worksize = nsize * pdim1;
-  double* const work = stack_->get<double>(worksize);
-  double* current_cont = cont;
+  DataType* const work = stack_->get<DataType>(worksize);
+  DataType* current_cont = cont;
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = lower0[i];
     const int end0   = upper0[i];
-    std::fill_n(work, worksize, 0.0);
+    std::fill_n(work, worksize, DataType(0.0));
     for (int j = begin0; j != end0; ++j)
-      daxpy_(worksize, coeff0[i][j], &prim[j * worksize], 1, work, 1);
+      std::transform(prim + j*worksize, prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
 
     for (int k = 0; k != cdim1; ++k, current_cont += nsize) {
       const int begin1 = lower1[k];
       const int end1   = upper1[k];
-      std::fill_n(current_cont, nsize, 0.0);
+      std::fill_n(current_cont, nsize, DataType(0.0));
       for (int j = begin1; j != end1; ++j)
-        daxpy_(nsize, coeff1[k][j], &work[j * nsize], 1, current_cont, 1);
+        std::transform(work + j*nsize, work + (j+1)*nsize, current_cont, current_cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
     }
   }
 
@@ -188,30 +188,30 @@ void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const
 
 
 template<typename DataType>
-void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const int ac, const double* prim, const int pdim0, const int pdim1, double* cont,
+void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const int ac, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                  const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                  const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
   const int worksize = pdim1 * ac;
-  double* const work = stack_->get<double>(worksize);
-  double* current_cont = cont;
+  DataType* const work = stack_->get<DataType>(worksize);
+  DataType* current_cont = cont;
 
   for (int n = 0; n != nsize; ++n) { // loop of cdim * cdim
-    const double* current_prim = &prim[ac * pdim1 * pdim0 * n];
+    const DataType* current_prim = &prim[ac * pdim1 * pdim0 * n];
 
     for (int i = 0; i != cdim0; ++i) {
 
       const int begin0 = lower0[i];
       const int end0   = upper0[i];
-      std::fill_n(work, worksize,  0.0);
+      std::fill_n(work, worksize,  DataType(0.0));
       for (int j = begin0; j != end0; ++j)
-        daxpy_(worksize, coeff0[i][j], &current_prim[j * worksize], 1, work, 1);
+        std::transform(current_prim + j*worksize, current_prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
 
       for (int k = 0; k != cdim1; ++k, current_cont += ac) {
         const int begin1 = lower1[k];
         const int end1   = upper1[k];
-        std::fill_n(current_cont, ac, 0.0);
+        std::fill_n(current_cont, ac, DataType(0.0));
         for (int j = begin1; j != end1; ++j) {
-          daxpy_(ac, coeff1[k][j], &work[j * ac], 1, current_cont, 1);
+          std::transform(work + j*ac, work + (j+1)*ac, current_cont, current_cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
         }
       }
     }
@@ -221,26 +221,26 @@ void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const
 
 
 template<typename DataType>
-void RysIntegral<DataType>::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
+void RysIntegral<DataType>::perform_contraction(const int asize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                            const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
                            const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
-  double* const work = stack_->get<double>(worksize);
+  DataType* const work = stack_->get<DataType>(worksize);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    std::fill_n(work, worksize, 0.0);
+    std::fill_n(work, worksize, DataType(0.0));
     for (int j = begin0; j != end0; ++j)
-      daxpy_(worksize, coeff0[i][j], &prim[j * worksize], 1, work, 1);
+      std::transform(prim + j*worksize, prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
 
     for (int k = 0; k != cdim1; ++k, cont += asize) {
       const int begin1 = ranges1[k].first;
       const int end1   = ranges1[k].second;
-      std::fill_n(cont, asize, 0.0);
+      std::fill_n(cont, asize, DataType(0.0));
       for (int j = begin1; j != end1; ++j) {
-        daxpy_(asize, coeff1[k][j], &work[j * asize], 1, cont, 1);
+        std::transform(work + j*asize, work + (j+1)*asize, cont, cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
       }
     }
   }

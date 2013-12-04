@@ -49,7 +49,7 @@ class CoulombBatch_base : public RysInt {
     CoulombBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                   std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>(),
                   const int L = 0, const double A = 0.0);
-    ~CoulombBatch_base() {};
+    ~CoulombBatch_base() {}
 
     std::shared_ptr<const Molecule> mol() const { return mol_; }
 
