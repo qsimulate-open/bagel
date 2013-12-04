@@ -154,11 +154,10 @@ void ComplexERIBatch::compute() {
   complex<double>* target_now = swapped ? bkup_ : data_;
   complex<double>* source_now = swapped ? data_ : bkup_;
 
-#if 0
   // Sort cont23 and xyzcd
   // data will be stored in data_: cont01{ xyzab{ cont3d{ cont2c{ } } } }
   if (basisinfo_[2]->angular_number() != 0) {
-    const SortList sort2(spherical2_);
+    const CSortList sort2(spherical2_);
     const int nloop = a * b * cont0size_ * cont1size_;
     const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
     sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
@@ -183,7 +182,7 @@ void ComplexERIBatch::compute() {
   // Sort cont01 and xyzab
   // data will be stored in data_: cont3d{ cont2c{ cont1b{ cont0a{ } } } }
   if (basisinfo_[0]->angular_number() != 0) {
-    const SortList sort1(spherical1_);
+    const CSortList sort1(spherical1_);
     const int nloop = c * d * cont2size_ * cont3size_;
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
@@ -191,9 +190,8 @@ void ComplexERIBatch::compute() {
     swapped = (swapped ^ true);
   }
 
-  if (swapped) copy(bkup_, bkup_+size_alloc_, data_);
+  if (swapped) copy_n(bkup_, size_alloc_, data_);
 
-#endif
   stack_->release(size_alloc_, stack_save);
 }
 
