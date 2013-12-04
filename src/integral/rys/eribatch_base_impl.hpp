@@ -66,7 +66,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
   DataType* const qx_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qy_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qz_save = stack_->template get<DataType>(prim2size_*prim3size_);
-  std::complex<double>* factor_cd_save = 0;
+  std::complex<double>* factor_cd_save = nullptr;
   if (london_orbital()) {
     factor_cd_save = stack_->template get<std::complex<double>>(prim2size_*prim3size_);
   }
@@ -191,6 +191,16 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
+      std::complex<double> factor_ab;
+      if (london_orbital()) {
+        const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
+        const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
+        const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
+        const double BA_BA_innerproduct = A_BA_x * A_BA_x + A_BA_y * A_BA_y + A_BA_z * A_BA_z;
+        const double P_BA_innerproduct = std::real(px) * A_BA_x + std::real(py) * A_BA_y + std::real(pz) * A_BA_z;
+        factor_ab = std::complex<double>( -0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct );
+      }
+
       // store calculated values as members of RysIntegral
       for (unsigned int i = 0; i != tuple_length; ++i) {
         const int index23 = tuple_index[i];
@@ -209,14 +219,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const DataType integral_thresh) {
         // Consider using an inline virtual function to move the bulk of it into derived classes?
         DataType factor = 1.0;
         if (london_orbital()) {
-          const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
-          const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
-          const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
-          const double BA_BA_innerproduct = A_BA_x * A_BA_x + A_BA_y * A_BA_y + A_BA_z * A_BA_z;
-          const double P_BA_innerproduct = std::real(px) * A_BA_x + std::real(py) * A_BA_y + std::real(pz) * A_BA_z;
-          const std::complex<double> factor_ab ( -0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct );
           const std::complex<double> power = factor_ab * factor_cd_save[index23];
-        factor = londonfactor <DataType> (power);
+          factor = londonfactor <DataType> (power);
         }
         coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q * factor;
 
