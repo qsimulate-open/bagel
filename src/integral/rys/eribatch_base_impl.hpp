@@ -279,12 +279,9 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
   // derivative integrals
   } else if (deriv_rank_ == 1) {
     size_block_ = asize_final * csize_final * primsize_;
-    // if this is a two-electron gradient integral
-    if (dynamic_cast<ERIBatch_Base*>(this)) {
-      size_alloc_ = 12 * size_block_;
-    } else {
-      throw std::logic_error("something is strange in ERIBatch_Base::allocate_data");
-    }
+    size_alloc_ = 12 * size_block_;
+    if (breit_ || tenno_)
+      throw std::logic_error("Gradient integrals for the Breit and Slater operators not implemented");
     stack_save_ = stack_->template get<DataType>(size_alloc_);
     stack_save2_ = nullptr;
   }
