@@ -120,11 +120,13 @@ int main() {
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
-\n\
-void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* data_start, const array<double,3>& AB, double* data_out) {\n\
+\n";
+      auto function = [&](const string T, const string classname) {
+        string out = "\
+void " + classname + "::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const " + T + "* data_start, const array<double,3>& AB, " + T + "* data_out) {\n\
   for (int c = 0; c != nloop; ++c) {\n\
-    const double* current_data = &data_start[c * " + ssize + "];\n\
-    double* current_out = &data_out[c * " + osize + "];\n";
+    auto current_data = &data_start[c * " + ssize + "];\n\
+    auto current_out = &data_out[c * " + osize + "];\n";
 
     int cnt = 0;
     string text0, text1, text2, text3;
@@ -155,7 +157,7 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
 //            out1 += "\
 //    const int ja" + ai.show() + "_0 = mapping[" + offset + "];\n";
               out2 += "\
-      const double a" + ai.show() + "_0 = current_data[" + lexical_cast<string>(mapinto) + "];\n";
+      const auto a" + ai.show() + "_0 = current_data[" + lexical_cast<string>(mapinto) + "];\n";
 //    const double a" + ai.show() + "_0 = current_data[ja" + ai.show() + "_0];\n";
             }
           }
@@ -191,7 +193,7 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
                         string number_str = lexical_cast<string>(number);
                         if (m != b) {
                           const string sprim = "\
-      const double " + indexpair.show() + " = " + get<0>(next).show() +
+      const auto " + indexpair.show() + " = " + get<0>(next).show() +
                         " + AB[" + lexical_cast<string>(get<2>(next)) + "] * " + get<1>(next).show() + ";\n";
                           mylist[ixyz].push_back(sprim);
                         } else {
@@ -229,6 +231,11 @@ void HRRList::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const double* d
       out +="\
   }\n\
 }\n";
+        return out;
+      }; // end of function
+      out += function("double", "HRRList");
+      out += "\n\n";
+      out += function("complex<double>", "CHRRList");
       ofstream ofs;
       ofs.open(filename.c_str());
       ofs << out << endl;
