@@ -328,7 +328,11 @@ int main(int argc, char** argv) {
     ofstream ofs;
 #ifndef SPIN2
 #ifndef BREIT
+#ifndef DAWSON
     const string func = "eriroot";
+#else
+    const string func = "dawsonroot";
+#endif
 #else
     const string func = "breitroot";
 #endif

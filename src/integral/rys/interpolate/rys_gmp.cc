@@ -14,6 +14,7 @@
 #include "gmp_macros.h"
 #include <algorithm>
 #include <vector>
+#include <gsl/gsl_sf_dawson.h>
 
 using namespace std;
 using namespace mpfr;
@@ -60,6 +61,17 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       // in case of Spin-Spin, we shift by two
       for (int i = 0; i != 38; ++i)
         fm[i] = fm[i+2];
+#endif
+#ifdef DAWSON
+      const mpreal one = "1.0";
+      double dawson_double = gsl_sf_dawson(sqrtt.toDouble());
+      mpreal dawson = dawson_double;
+      fm[0] = dawson / sqrtt;
+      for (int i = 1; i != 40; ++i) {
+        fm[i] = halfpT * (one - (2*i-1) * exp(-T) * fm[i - 1]);
+        // debug
+        cout << fm[0] << "   " << i << "   " << fm[i].toDouble() << "  " << T.toDouble() << endl;
+      }
 #endif
       mone = fm[0];
     }
