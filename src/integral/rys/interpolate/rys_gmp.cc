@@ -48,6 +48,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       // target Fm(T)
       const mpreal pi = GMPPI;
       const mpreal halfpT = half / T;
+#ifndef DAWSON
       fm[0] = sqrt(pi) / sqrtt * half * erf(sqrtt);
       for (int i = 1; i != 40; ++i) {
         fm[i] = halfpT * ((2*i-1) * fm[i - 1] - exp(-T));
@@ -62,7 +63,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       for (int i = 0; i != 38; ++i)
         fm[i] = fm[i+2];
 #endif
-#ifdef DAWSON
+#else
       const mpreal one = "1.0";
       double dawson_double = gsl_sf_dawson(sqrtt.toDouble());
       mpreal dawson = dawson_double;
