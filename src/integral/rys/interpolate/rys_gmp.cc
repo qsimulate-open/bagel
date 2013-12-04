@@ -66,13 +66,18 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
 #else
       const mpreal one = "1.0";
       double dawson_double = gsl_sf_dawson(sqrtt.toDouble());
-      mpreal dawson = dawson_double;
-      fm[0] = dawson / sqrtt;
-      for (int i = 1; i != 40; ++i) {
-        fm[i] = halfpT * (one - (2*i-1) * exp(-T) * fm[i - 1]);
-        // debug
-        cout << fm[0] << "   " << i << "   " << fm[i].toDouble() << "  " << T.toDouble() << endl;
+      // based on taylor expansion
+      for (int i = 0; i != 40; ++i) {
+        fm[i] = 0;
+        mpreal current = one/(2*i+1) * exp(-T);
+        int j = 0;
+        do {
+          fm[i] += current;
+          ++j;
+          current *= mpreal(2*i+2*j-1)/mpreal(2*i+2*j+1) * T / j;
+        } while (abs(current) > machine_epsilon(fm[i]));
       }
+      assert(abs(gsl_sf_dawson(sqrtt.toDouble())/sqrtt.toDouble() - fm[0].toDouble()) < 1.0e-12);
 #endif
       mone = fm[0];
     }
