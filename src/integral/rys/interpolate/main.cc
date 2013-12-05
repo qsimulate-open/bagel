@@ -331,7 +331,7 @@ int main(int argc, char** argv) {
 #ifndef DAWSON
     const string func = "eriroot";
 #else
-    const string func = "dawsonroot";
+    const string func = "r2root";
 #endif
 #else
     const string func = "breitroot";
@@ -377,12 +377,21 @@ using namespace bagel;\n\
 \n\
 void BreitRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #else
+#ifndef DAWSON
 ofs << "#include <src/integral/rys/erirootlist.h>\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
 \n\
 void ERIRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
+#else
+ofs << "#include <src/integral/rys/r2rootlist.h>\n\
+\n\
+using namespace std;\n\
+using namespace bagel;\n\
+\n\
+void R2RootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
+#endif
 #endif
 #else
 ofs << "#include <src/integral/rys/spin2rootlist.h>\n\
