@@ -274,9 +274,9 @@ void ZMatrix::diagonalize(double* eig) {
 }
 
 
-void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
-  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
-  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+tuple<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> ZMatrix::svd() {
+  auto U = make_shared<ZMatrix>(ndim_, ndim_);
+  auto V = make_shared<ZMatrix>(mdim_, mdim_);
   const int lwork = 10*max(ndim_, mdim_);
   unique_ptr<double[]> rwork(new double[5*max(ndim_, mdim_)]);
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
@@ -291,6 +291,8 @@ void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
   int info = 0;
   zgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, rwork.get(), info);
   if (info != 0) throw runtime_error("zgesvd failed in ZMatrix::svd");
+
+  return make_tuple(U, V);
 }
 
 

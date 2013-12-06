@@ -63,7 +63,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     // diagonalize this matrix (overwritten by a coefficient matrix)
     void diagonalize(double* vec) override;
     std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<Matrix>(eig, blocks); }
-    void svd(std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
+    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> svd();
     // compute S^-1. Assumes positive definite matrix
     void inverse();
     // compute S^-1 using symmetric form. Returns if some roots were discarded

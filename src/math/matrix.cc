@@ -264,9 +264,10 @@ void Matrix::diagonalize(double* eig) {
 }
 
 
-void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
-  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
-  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd() {
+  auto U = make_shared<Matrix>(ndim_, ndim_);
+  auto V = make_shared<Matrix>(mdim_, mdim_);
+
   const int lwork = 10*max(ndim_, mdim_);
   unique_ptr<double[]> work(new double[lwork]);
   unique_ptr<double[]> S(new double[min(ndim_, mdim_)]);
@@ -280,6 +281,8 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   int info = 0;
   dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
+
+  return make_tuple(U,V);
 }
 
 
