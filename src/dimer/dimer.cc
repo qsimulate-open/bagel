@@ -338,14 +338,20 @@ void Dimer::localize(const std::shared_ptr<const PTree> idata) {
 
   assert(proj_coeff_->mdim() == nclosed + nact + nvirt);
   const size_t nmosA = coeffs_.first->mdim();
+  const size_t nmosB = coeffs_.second->mdim();
 
-  auto check_and_insert = [&overlaps, &nmosA] (const int i, set<int>& setA, set<int>& setB) {
+  auto check_and_insert = [&overlaps, &nmosA, &nmosB] (const int i, set<int>& setA, set<int>& setB) {
     double* cdata = overlaps->element_ptr(0,i);
-    double norm = ddot_(nmosA, cdata, 1, cdata, 1);
+    const double Anorm = ddot_(nmosA, cdata, 1, cdata, 1);
+    const double Bnorm = ddot_(nmosB, cdata + nmosA, 1, cdata + nmosA, 1);
+    const double polarized = (Anorm - Bnorm)/(Anorm + Bnorm);
 
-    if (norm > 0.7) setA.insert(i);
-    else if (norm < 0.3) setB.insert(i);
-    else throw runtime_error("Trouble in classifying orbitals");
+    if (polarized > 0.5)
+      setA.insert(i);
+    else if (polarized < -0.5)
+      setB.insert(i);
+    else
+      throw runtime_error(string("Trouble assigning orbital to a monomer. |A|^2 = ") + to_string(Anorm) + string(", |B|^2 = ") + to_string(Bnorm));
   };
 
   set<int> closed_setA, closed_setB;
@@ -431,9 +437,23 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
     norms.emplace(norm, i);
   }
 
-  auto norm_iter = norms.rbegin();
+#if 0
+  {
+    cout << endl << "   --- overlaps with monomer active spaces ---" << endl;
+    auto niter = norms.rbegin();
+    for (int i = 0; i < overlaps->mdim(); ++i, ++niter)
+      cout << setw(12) << setprecision(8) << niter->first << setw(6) << niter->second << endl;
+    cout << endl;
+  }
+#endif
+
   set<int> active_list;
-  for(int i = 0; i < nact; ++i, ++norm_iter) active_list.insert(norm_iter->second);
+  {
+    auto niter = norms.rbegin();
+    for (int i = 0; i < nact; ++i, ++niter)
+      active_list.insert(niter->second);
+  }
+
 
   auto out = sref_->set_active(active_list);
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
