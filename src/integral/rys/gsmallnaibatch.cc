@@ -37,15 +37,15 @@ GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, 
     : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()), iatom_(i) {
 
   assert(shells_[0]->relativistic() && shells_[1]->relativistic());
-  a0size_inc_ = shells_[0]->aux_inc()->nbasis();
-  a1size_inc_ = shells_[1]->aux_inc()->nbasis();
-  a0size_dec_ = shells_[0]->aux_dec() ? shells_[0]->aux_dec()->nbasis() : 0;
-  a1size_dec_ = shells_[1]->aux_dec() ? shells_[1]->aux_dec()->nbasis() : 0;
-  a0_ = a0size_inc_ + a0size_dec_;
-  a1_ = a1size_inc_ + a1size_dec_;
+  const size_t a0size_inc = shells_[0]->nbasis_aux_increment();
+  const size_t a1size_inc = shells_[1]->nbasis_aux_increment();
+  const size_t a0size_dec = shells_[0]->nbasis_aux_decrement();
+  const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
+  const size_t a0 = a0size_inc + a0size_dec;
+  const size_t a1 = a1size_inc + a1size_dec;
 
   for (int i = 0; i != mol_->natom()*3; ++i)
-     data_.push_back(make_shared<Matrix>(a0_, a1_, true));
+     data_.push_back(make_shared<Matrix>(a0, a1, true));
 }
 
 
@@ -54,7 +54,14 @@ shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Mat
   static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallNAIBatch::compute_gradient");
   array<int,3> xyz{{Comp::X, Comp::Y, Comp::Z}};
 
-  Matrix denc(a0_, a1_, true);
+  const size_t a0size_inc = shells_[0]->nbasis_aux_increment();
+  const size_t a1size_inc = shells_[1]->nbasis_aux_increment();
+  const size_t a0size_dec = shells_[0]->nbasis_aux_decrement();
+  const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
+  const size_t a0 = a0size_inc + a0size_dec;
+  const size_t a1 = a1size_inc + a1size_dec;
+
+  Matrix denc(a0, a1, true);
   int cnt = 0;
   for (int& i : xyz)
     for (int& j : xyz)
@@ -69,29 +76,33 @@ shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Mat
 
 
 void GSmallNAIBatch::compute() {
+  const size_t a0size_inc = shells_[0]->nbasis_aux_increment();
+  const size_t a1size_inc = shells_[1]->nbasis_aux_increment();
+  const size_t a0size_dec = shells_[0]->nbasis_aux_decrement();
+  const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
   {
-    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_inc()}}, mol_, iatom_);
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_increment()}}, mol_, iatom_);
     naic->compute();
     assert(naic->nblocks() == mol_->natom()*3);
     for (int i = 0; i != naic->nblocks(); ++i)
-      data_[i]->copy_block(0, 0, a0size_inc_, a1size_inc_, naic->data(i));
+      data_[i]->copy_block(0, 0, a0size_inc, a1size_inc, naic->data(i));
   }
-  if (shells_[0]->aux_dec() && shells_[1]->aux_dec()) {
-    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_dec()}}, mol_, iatom_);
+  if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}}, mol_, iatom_);
     naic->compute();
     for (int i = 0; i != naic->nblocks(); ++i)
-      data_[i]->copy_block(a0size_inc_, a1size_inc_, a0size_dec_, a1size_dec_, naic->data(i));
+      data_[i]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, naic->data(i));
   }
-  if (shells_[0]->aux_dec()) {
-    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_dec(), shells_[1]->aux_inc()}}, mol_, iatom_);
+  if (shells_[0]->aux_decrement()) {
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_increment()}}, mol_, iatom_);
     naic->compute();
     for (int i = 0; i != naic->nblocks(); ++i)
-      data_[i]->copy_block(a0size_inc_, 0, a0size_dec_, a1size_inc_, naic->data(i));
+      data_[i]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, naic->data(i));
   }
-  if (shells_[1]->aux_dec()) {
-    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_inc(), shells_[1]->aux_dec()}}, mol_, iatom_);
+  if (shells_[1]->aux_decrement()) {
+    auto naic = make_shared<GNAIBatch>(array<shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_decrement()}}, mol_, iatom_);
     naic->compute();
     for (int i = 0; i != naic->nblocks(); ++i)
-      data_[i]->copy_block(0, a1size_inc_, a0size_inc_, a1size_dec_, naic->data(i));
+      data_[i]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, naic->data(i));
   }
 }

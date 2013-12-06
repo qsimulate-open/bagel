@@ -61,7 +61,7 @@
   "title" : "dimerize",
   "form" : "refs",
   "refs" : [ "unitA", "unitB" ],
-  "dimer_active" : [17, 20, 21, 22, 23, 30],
+  "dimer_active" : [17, 20, 21, 22, 23, 24],
   "hf" : {
     "thresh" : 1.0e-12
   },
