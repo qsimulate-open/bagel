@@ -418,21 +418,21 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   const int nvirtB = active_refs.second->nvirt();
   nvirt_ = make_pair(nvirtA, nvirtB);
 
-  auto active = make_shared<Matrix>(dimerbasis_, nact);
+  Matrix active(dimerbasis_, nact);
 
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
 
-  active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
-  active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
+  active.copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
+  active.copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
 
-  auto S = make_shared<Overlap>(sgeom_);
-  auto overlaps = make_shared<Matrix>((*active) % (*S) * (*scoeff_));
+  Overlap S(sgeom_);
+  Matrix overlaps( active % S * *scoeff_ );
 
   multimap<double, int> norms;
 
-  for(int i = 0; i < overlaps->mdim(); ++i) {
-    const double* odata = overlaps->element_ptr(0, i);
+  for(int i = 0; i < overlaps.mdim(); ++i) {
+    const double* odata = overlaps.element_ptr(0, i);
     const double norm = ddot_(nact, odata, 1, odata, 1);
     norms.emplace(norm, i);
   }
@@ -441,21 +441,47 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   {
     cout << endl << "   --- overlaps with monomer active spaces ---" << endl;
     auto niter = norms.rbegin();
-    for (int i = 0; i < overlaps->mdim(); ++i, ++niter)
+    for (int i = 0; i < overlaps.mdim(); ++i, ++niter)
       cout << setw(12) << setprecision(8) << niter->first << setw(6) << niter->second << endl;
     cout << endl;
   }
 #endif
 
-  set<int> active_list;
+  active_thresh_ = input_->get<double>("active_thresh", 0.5);
+
+  vector<int> active_list;
   {
     auto niter = norms.rbegin();
-    for (int i = 0; i < nact; ++i, ++niter)
-      active_list.insert(niter->second);
+    for (int i = 0; i < nact; ++i, ++niter) {
+      active_list.emplace_back(niter->second);
+    }
+    while (niter->first >= active_thresh_) {
+      active_list.emplace_back(niter->second);
+      ++niter;
+    }
   }
 
+  const size_t active_size = active_list.size();
+  Matrix subspace(dimerbasis_, active_size);
+  for (int i = 0; i < active_size; ++i)
+    copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
 
-  auto out = sref_->set_active(active_list);
+  Matrix Sactive(active % S * active);
+  Sactive.inverse_half();
+
+  Matrix projector( Sactive * ( active % S * subspace ) );
+  shared_ptr<Matrix> U;
+  tie(U, ignore) = projector.svd();
+
+  subspace = subspace * *U;
+
+  for (int i = 0; i < active_size; ++i)
+    copy_n(subspace.element_ptr(0, i), dimerbasis_, scoeff_->element_ptr(0, active_list[i]));
+  sref_->set_coeff(scoeff_);
+  
+  set<int> active_set(active_list.begin(), active_list.begin() + nact);
+
+  auto out = sref_->set_active(active_set);
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
   nfilledactive_ = make_pair( nfilledA, nfilledB );

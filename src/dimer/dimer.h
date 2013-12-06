@@ -65,6 +65,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<int, int> nbasis_;
       std::pair<int, int> nele_;
 
+      double active_thresh_;
+
    public:
       // Constructors
       Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b);
