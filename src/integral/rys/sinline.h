@@ -33,8 +33,14 @@
 // else
 // inline static double experfcm(const double t)
 
-inline static double experfc(const double t) {
- static const double x[140] = {
+#ifndef __SRC_INTEGRAL_RYS_SINLINE_H
+#define __SRC_INTEGRAL_RYS_SINLINE_H
+
+namespace bagel {
+namespace {
+
+double experfc(const double t) {
+  constexpr double x[140] = {
   1.32735090960991231e+00,  -2.78469065276597649e-01,
   4.90341793971706408e-02,  -7.59975102038317526e-03,
   1.06541074275299879e-03,  -1.37503478565861853e-04,
@@ -167,8 +173,8 @@ inline static double experfc(const double t) {
 
 // input: x < 0 (kappa)
 // output: exp(x^2)erfc(x)
-inline static double experfcm(const double t) {
- static const double x[84] = {
+double experfcm(const double t) {
+  constexpr double x[84] = {
   2.93926583578230005e+00,   4.25824458043810417e-01,
  -4.95526267962043687e-02,  -4.49293488768379243e-03,
   1.29194104658500171e-03,   1.83638929215046704e-05,
@@ -246,3 +252,7 @@ inline static double experfcm(const double t) {
 
   return rr;
 }
+
+}
+}
+#endif
