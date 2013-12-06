@@ -41,15 +41,14 @@ extern void dcsrmm_(const char *transa, const int m, const int n, const int k, c
                                  double* c, const int ldc);
 
 namespace detail {
+namespace {
   // conj function
-  template<typename T>
-  static T conj(const T& a) { throw std::logic_error("detail::conj"); }
+  template<typename T> T conj(const T& a) { throw std::logic_error("detail::conj"); }
   template<> double conj(const double& a) { return a; }
   template<> std::complex<double> conj(const std::complex<double>& a) { return std::conj(a); }
 
   // real function
-  template<typename T>
-  static double real(const T& a) { throw std::logic_error("detail::real"); }
+  template<typename T> double real(const T& a) { throw std::logic_error("detail::real"); }
   template<> double real(const double& a) { return a; }
   template<> double real(const std::complex<double>& a) { return a.real(); }
 
@@ -67,8 +66,7 @@ namespace detail {
     static_assert(N > 0, "illegal call of taylor_expansion");
     return taylor<N, N>()(x, a);
   }
-
-}
+} }
 
 }
 

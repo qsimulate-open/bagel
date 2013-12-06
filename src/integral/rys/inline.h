@@ -31,8 +31,9 @@
 #include <src/math/algo.h>
 
 namespace bagel {
+namespace {
 
-static inline double inline_erf(const double inpt) {
+double inline_erf(const double inpt) {
   constexpr std::array<std::array<double,13>,5> a {{
   std::array<double,13>{{
     0.00000000005958930743, -0.00000000113739022964, 0.00000001466005199839, -0.00000016350354461960,
@@ -110,7 +111,7 @@ static inline double inline_erf(const double inpt) {
 }
 
 
-static inline double inline_dawson(double xx) {
+double inline_dawson(double xx) {
   // based on the rational approximation - see details in Moshier, Methods and Programs for Mathematical Functions, Prentice-Hall, 1989.
   constexpr std::array<double, 10> num0 {{
     1.13681498971755972054e-11, 8.49262267667473811108e-10, 1.94434204175553054283e-8, 9.53151741254484363489e-7, 3.07828309874913200438e-6,
@@ -157,16 +158,7 @@ static inline double inline_dawson(double xx) {
   }
 }
 
-
-// TODO Temporary hack to avoid having to set up complex inline_erf >>>>>>>>>
-// Figure out what's the best way to handle integral screening for London orbitals
-#include <complex>
-#include <stdexcept>
-static inline std::complex<double> inline_erf (std::complex<double> z) {
-  throw std::runtime_error("Inline erf has not been implemented for complex arguments.");
 }
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 }
 
 #endif
