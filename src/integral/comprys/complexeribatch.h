@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
+class ComplexERIBatch : public ERIBatch_Base<std::complex<double>,Int_t::London> {
 
   protected:
     void perform_VRR();

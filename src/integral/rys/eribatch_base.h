@@ -32,7 +32,11 @@
 
 namespace bagel {
 
-template <typename DataType>
+namespace {
+  enum class Int_t { Standard, London };
+}
+
+template <typename DataType, Int_t IntType = Int_t::Standard>
 class ERIBatch_Base : public RysIntegral<DataType> {
 
   protected:
@@ -40,16 +44,15 @@ class ERIBatch_Base : public RysIntegral<DataType> {
     // a hack for screening of three-center integrals
     static double rnd(const double& a) { return (a > 0.0) ? a : 1.0; };
 
-    // TODO should come up with a more elegant way to differentiate Gaussian and London integrals
-    bool london_orbital() const { return (typeid(DataType) == typeid(std::complex<double>)); };
-
     virtual void root_weight(const int ps) = 0;
 
     // this sets T_ (+ U_), P_, Q_, xp_, xq_, coeff_, and screening_size_
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const double integral_thresh) override;
 
-    virtual DataType get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim);
+    virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
+      return (coord1*exp1 + coord2*exp2) * one12;
+    }
 
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
@@ -114,7 +117,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
     using RysIntegral<DataType>::data2_;
 };
 
-using ERIBatch_base = ERIBatch_Base<double>;
+using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;
 
 }
 

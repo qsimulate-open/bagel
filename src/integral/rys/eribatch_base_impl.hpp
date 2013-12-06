@@ -32,8 +32,9 @@ namespace bagel {
 
 // this sets T_ (+ U_), P_, Q_, xp_, xq_, coeff_, and screening_size_
 // for ERI evaulation. Other than that, we need to overload this function in a derived class
-template <typename DataType>
-void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
+template <typename DataType, Int_t IntType>
+void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh) {
+  static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
 
   // set atomic coordinates
   const double ax = basisinfo_[0]->position(0);
@@ -66,9 +67,9 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
   DataType* const qx_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qy_save = stack_->template get<DataType>(prim2size_*prim3size_);
   DataType* const qz_save = stack_->template get<DataType>(prim2size_*prim3size_);
-  std::complex<double>* factor_cd_save = nullptr;
-  if (london_orbital()) {
-    factor_cd_save = stack_->template get<std::complex<double>>(prim2size_*prim3size_);
+  DataType* factor_cd_save;
+  if (IntType == Int_t::London) {
+    factor_cd_save = stack_->template get<DataType>(prim2size_*prim3size_);
   }
 
   // determine smallest a, b, c, d, p, q
@@ -117,15 +118,13 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
         qy_save[index23] = get_PQ(cy, dy, *expi2, *expi3, cxq_inv, 2, 1);
         qz_save[index23] = get_PQ(cz, dz, *expi2, *expi3, cxq_inv, 2, 2);
 
-        // only used for London orbitals
-        if (london_orbital()) {
+        if (IntType == Int_t::London) {
           const double A_DC_x = (basisinfo_[3]->vector_potential(0) - basisinfo_[2]->vector_potential(0));
           const double A_DC_y = (basisinfo_[3]->vector_potential(1) - basisinfo_[2]->vector_potential(1));
           const double A_DC_z = (basisinfo_[3]->vector_potential(2) - basisinfo_[2]->vector_potential(2));
           const double DC_DC_innerproduct = A_DC_x * A_DC_x + A_DC_y * A_DC_y + A_DC_z * A_DC_z;
           const double Q_DC_innerproduct = std::real(qx_save[index23]) * A_DC_x + std::real(qy_save[index23]) * A_DC_y + std::real(qz_save[index23]) * A_DC_z;
-          factor_cd_save[index23].real ( -0.25*cxq_inv*DC_DC_innerproduct );
-          factor_cd_save[index23].imag ( -1*Q_DC_innerproduct );
+          detail::make_complex(-0.25*cxq_inv*DC_DC_innerproduct, -1*Q_DC_innerproduct, factor_cd_save[index23]);
         }
 
         // integral screening using Q
@@ -191,14 +190,14 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
 
       const int index_base = prim2size_ * prim3size_ * index01;
 
-      std::complex<double> factor_ab;
-      if (london_orbital()) {
+      DataType factor_ab;
+      if (IntType == Int_t::London) {
         const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
         const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
         const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
         const double BA_BA_innerproduct = A_BA_x * A_BA_x + A_BA_y * A_BA_y + A_BA_z * A_BA_z;
         const double P_BA_innerproduct = std::real(px) * A_BA_x + std::real(py) * A_BA_y + std::real(pz) * A_BA_z;
-        factor_ab = std::complex<double>( -0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct );
+        detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct, factor_ab);
       }
 
       // store calculated values as members of RysIntegral
@@ -213,14 +212,13 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
         const double cxpxq = cxp * cxq;
         const double onepqp_q = 1.0 / (std::sqrt(cxp + cxq) * cxpxq);
 
+        coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q;
+
         // only used for London orbitals
         // It should be generic enough to let us use complex functions other than London orbitals
-        DataType factor = 1.0;
-        if (london_orbital()) {
-          const std::complex<double> power = factor_ab * factor_cd_save[index23];
-          factor = londonfactor <DataType> (power);
+        if (IntType == Int_t::London) {
+          coeff_[index] *= std::exp(factor_ab * factor_cd_save[index23]);
         }
-        coeff_[index] = Ecd_save[index23] * coeff_half * onepqp_q * factor;
 
         const double rho = cxpxq / (cxp + cxq);
         const DataType xpq = qx_save[index23] - px;
@@ -243,7 +241,7 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
 
   // release temporary Q storage
   stack_->release(nexp2*nexp3*3, tuple_field);
-  if (london_orbital()) {
+  if (IntType == Int_t::London) {
     stack_->release(prim2size_*prim3size_, factor_cd_save);
   }
   stack_->release(prim2size_*prim3size_, qz_save);
@@ -253,8 +251,8 @@ void ERIBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
 }
 
 
-template <typename DataType>
-void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+template <typename DataType, Int_t IntType>
+void ERIBatch_Base<DataType, IntType>::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
     const unsigned int size_start = asize_ * csize_ * primsize_;
@@ -286,12 +284,6 @@ void ERIBatch_Base<DataType>::allocate_data(const int asize_final, const int csi
   data_ = stack_save_;
   data2_ = stack_save2_;
 }
-
-template <typename DataType>
-DataType ERIBatch_Base<DataType>::get_PQ (const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
-  return ( (coord1*exp1 + coord2*exp2) * one12 );
-}
-
 
 }
 

@@ -157,34 +157,6 @@ static inline double inline_dawson(double xx) {
   }
 }
 
-
-// TODO Temporary hack to avoid having to set up complex inline_erf >>>>>>>>>
-// Figure out what's the best way to handle integral screening for London orbitals
-#include <complex>
-#include <stdexcept>
-static inline std::complex<double> inline_erf (std::complex<double> z) {
-  throw std::runtime_error("Inline erf has not been implemented for complex arguments.");
-}
-//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-}
-
-// crude fix to avoid type mismatches in compute_ssss - should improve upon this
-#include <cassert>
-template <typename DataType>
-inline DataType londonfactor (std::complex<double> pow) {
-  assert(0);
-  return 1.0;
-}
-
-template <>
-inline double londonfactor <double> (std::complex<double> pow) {
-  return 1.0;
-}
-
-template <>
-inline std::complex<double> londonfactor <std::complex<double>> (std::complex<double> pow) {
-  return std::exp(pow);
 }
 
 #endif
