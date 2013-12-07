@@ -448,36 +448,52 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 #endif
 
   active_thresh_ = input_->get<double>("active_thresh", 0.5);
+  cout << endl << "  o Forming dimer's active space. Threshold for inclusion in cadidate space: " << setw(6) << setprecision(3) << active_thresh_ << endl;
 
   vector<int> active_list;
+  double max_overlap, min_overlap;
   {
-    auto niter = norms.rbegin();
-    for (int i = 0; i < nact; ++i, ++niter) {
-      active_list.emplace_back(niter->second);
-    }
-    while (niter->first >= active_thresh_) {
-      active_list.emplace_back(niter->second);
-      ++niter;
-    }
+    auto end = norms.rbegin(); advance(end, nact);
+    end = find_if(end, norms.rend(), [this] (const pair<const double, int>& p) { return p.first < active_thresh_; });
+    for_each(norms.rbegin(), end, [&active_list] (const pair<const double, int>& p) { active_list.emplace_back(p.second); });
+    auto mnmx = minmax_element(norms.rbegin(), end);
+    tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
   }
 
   const size_t active_size = active_list.size();
-  Matrix subspace(dimerbasis_, active_size);
-  for (int i = 0; i < active_size; ++i)
-    copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
+  cout << "    - size of candidate space: " << active_size << endl;
+  cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl << endl;
 
-  Matrix Sactive(active % S * active);
-  Sactive.inverse_half();
+  if (active_size != nact) {
+    cout << "  o Performing SVD in candidate space" << endl;
+    Matrix subspace(dimerbasis_, active_size);
+    for (int i = 0; i < active_size; ++i)
+      copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
 
-  Matrix projector( Sactive * ( active % S * subspace ) );
-  shared_ptr<Matrix> U;
-  tie(U, ignore) = projector.svd();
+    Matrix Sactive(active % S * active);
+    Sactive.inverse_half();
 
-  subspace = subspace * *U;
+    Matrix projector( Sactive * ( active % S * subspace ) );
+    shared_ptr<Matrix> V;
+    vector<double> singulars(nact, 0.0);
+    tie(ignore, V) = projector.svd(singulars.data());
 
-  for (int i = 0; i < active_size; ++i)
-    copy_n(subspace.element_ptr(0, i), dimerbasis_, scoeff_->element_ptr(0, active_list[i]));
-  sref_->set_coeff(scoeff_);
+    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl << endl;
+
+#if 0
+    cout << "singular values:" << endl;
+    cout << setw(12) << setprecision(8);
+    for_each(singulars.begin(), singulars.end(), [] (const double& s) { cout << s*s << endl; });
+    cout << endl;
+#endif
+
+    subspace = subspace ^ *V;
+
+    for (int i = 0; i < active_size; ++i)
+      copy_n(subspace.element_ptr(0, i), dimerbasis_, scoeff_->element_ptr(0, active_list[i]));
+
+    sref_->set_coeff(scoeff_);
+  }
   
   set<int> active_set(active_list.begin(), active_list.begin() + nact);
 

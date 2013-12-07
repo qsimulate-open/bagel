@@ -264,13 +264,19 @@ void Matrix::diagonalize(double* eig) {
 }
 
 
-tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd() {
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd(double* sing) {
   auto U = make_shared<Matrix>(ndim_, ndim_);
   auto V = make_shared<Matrix>(mdim_, mdim_);
 
   const int lwork = 10*max(ndim_, mdim_);
   unique_ptr<double[]> work(new double[lwork]);
-  unique_ptr<double[]> S(new double[min(ndim_, mdim_)]);
+
+  // If singular values are not requested
+  unique_ptr<double[]> S;
+  if (!sing) {
+    S = unique_ptr<double[]>(new double[min(ndim_, mdim_)]);
+    sing = S.get();
+  }
 /*
   SUBROUTINE DGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
  $                   WORK, LWORK, INFO )
@@ -279,7 +285,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd() {
   double* ublock = U->data();
   double* vblock = V->data();
   int info = 0;
-  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
+  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, sing, ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
 
   return make_tuple(U,V);
