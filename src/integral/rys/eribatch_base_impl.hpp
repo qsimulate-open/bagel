@@ -217,7 +217,7 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         // only used for London orbitals
         // It should be generic enough to let us use complex functions other than London orbitals
         if (IntType == Int_t::London) {
-          coeff_[index] *= std::exp(factor_ab * factor_cd_save[index23]);
+          coeff_[index] *= std::exp(factor_ab + factor_cd_save[index23]);
         }
 
         const double rho = cxpxq / (cxp + cxq);
