@@ -416,6 +416,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 
   const int nvirtA = active_refs.first->nvirt();
   const int nvirtB = active_refs.second->nvirt();
+  const int nvirt = nvirtA + nvirtB;
   nvirt_ = make_pair(nvirtA, nvirtB);
 
   Matrix active(dimerbasis_, nact);
@@ -464,6 +465,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   cout << "    - size of candidate space: " << active_size << endl;
   cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl << endl;
 
+  shared_ptr<Reference> out;
+
   if (active_size != nact) {
     cout << "  o Performing SVD in candidate space" << endl;
     Matrix subspace(dimerbasis_, active_size);
@@ -478,7 +481,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
     vector<double> singulars(nact, 0.0);
     tie(ignore, V) = projector.svd(singulars.data());
 
-    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl << endl;
+    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl;
 
 #if 0
     cout << "singular values:" << endl;
@@ -487,17 +490,51 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
     cout << endl;
 #endif
 
-    subspace = subspace ^ *V;
-
+    Matrix occupations = *V->clone();
+    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
     for (int i = 0; i < active_size; ++i)
-      copy_n(subspace.element_ptr(0, i), dimerbasis_, scoeff_->element_ptr(0, active_list[i]));
+      if (active_list[i] < nocc) occupations(i,i) = 2.0;
+    occupations = *V * occupations ^ *V;
 
-    sref_->set_coeff(scoeff_);
+    // non-active candidate orbitals are mixtures of closed and virtual orbitals
+    // diagonalizing the corresponding block of the density matrix separates the closed from the virtual
+    {
+      vector<double> eigs(active_size, 0.0);
+      Matrix transform = *occupations.diagonalize_blocks(eigs.data(), {{static_cast<int>(nact), static_cast<int>(active_size - nact)}});
+
+      occupations = transform % occupations * transform;
+      subspace = (subspace ^ *V) * transform;
+    }
+
+    int nactive_ele = 0;
+    double occ_in_active = 0.0;
+    for (int i = 0; i < nact; ++i) {
+      occ_in_active += occupations(i,i);
+      nactive_ele += ( occupations(i,i) > 1.0 ? 2 : 0 );
+    }
+
+    cout << "    - trace of density matrix in new active space: " << occ_in_active << endl;
+    cout << "    - electrons assigned to new active space: " << nactive_ele << endl << endl;
+
+    auto new_coeff = make_shared<Coeff>(*scoeff_);
+    size_t iocc = 0, ivirt = nclosed_ + nact;
+    for (size_t i = 0; i < scoeff_->mdim(); ++i) {
+      if ( count(active_list.begin(), active_list.end(), i) == 0 )
+        copy_n(scoeff_->element_ptr(0, i), dimerbasis_, new_coeff->element_ptr(0, ( i < nocc ? iocc++ : ivirt++ )));
+    }
+    copy_n(subspace.data(), dimerbasis_ * nact, new_coeff->element_ptr(0, nclosed_));
+    for (size_t i = nact; i < active_size; ++i)
+      copy_n(subspace.element_ptr(0, i), dimerbasis_, new_coeff->element_ptr(0, ( occupations(i,i) > 1.0 ? iocc++ : ivirt++ )));
+
+    if ( iocc != nclosed_ ) throw runtime_error("Improper number of closed orbitals after SVD.");
+
+    out = make_shared<Reference>(sgeom_, new_coeff, nclosed_, nact, nvirt);
   }
-  
-  set<int> active_set(active_list.begin(), active_list.begin() + nact);
+  else {
+    set<int> active_set(active_list.begin(), active_list.end());
+    out = sref_->set_active(active_set);
+  }
 
-  auto out = sref_->set_active(active_set);
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
   nfilledactive_ = make_pair( nfilledA, nfilledB );
