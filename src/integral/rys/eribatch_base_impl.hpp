@@ -235,6 +235,26 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         T_[index] = T;
         screening_[screening_size_] = index;
         ++screening_size_;
+/*
+        if (IntType == Int_t::London && ax != bx && bx != cx && cx != dx && ax != cx && ax != dx && bx != dx) {
+          std::cout << std::setprecision(14) << "A = " << ax << ", " << ay << ", " << az << std::endl;
+          std::cout << "B = " << bx << ", " << by << ", " << bz << std::endl;
+          std::cout << "C = " << cx << ", " << cy << ", " << cz << std::endl;
+          std::cout << "D = " << dx << ", " << dy << ", " << dz << std::endl;
+          std::cout << "A_A = " << basisinfo_[0]->vector_potential(0) << ", " << basisinfo_[0]->vector_potential(1) << ", " << basisinfo_[0]->vector_potential(2) << std::endl;
+          std::cout << "A_B = " << basisinfo_[1]->vector_potential(0) << ", " << basisinfo_[1]->vector_potential(1) << ", " << basisinfo_[1]->vector_potential(2) << std::endl;
+          std::cout << "A_C = " << basisinfo_[2]->vector_potential(0) << ", " << basisinfo_[2]->vector_potential(1) << ", " << basisinfo_[2]->vector_potential(2) << std::endl;
+          std::cout << "A_D = " << basisinfo_[3]->vector_potential(0) << ", " << basisinfo_[3]->vector_potential(1) << ", " << basisinfo_[3]->vector_potential(2) << std::endl;
+          std::cout << "exponents = " << *expi0 << ", " << *expi1 << ", " << exp2value << ", " << exp3value << std::endl;
+          std::cout << "p = " << cxp << ", q = " << cxq << ", rho = " << rho << std::endl;
+          std::cout << "P = " << P_[index3] << ", " << P_[index3+1] << ", " << P_[index3+2] << std::endl;
+          std::cout << "Q = " << Q_[index3] << ", " << Q_[index3+1] << ", " << Q_[index3+2] << std::endl;
+          std::cout << "T = " << T_[index] << std::endl;
+          std::cout << "Eab (real) = " << Eab << ", Ecd (real) = " << Ecd_save[index23] << std::endl;
+          std::cout << "factor_ab = " << factor_ab << ", factor_cd = " << factor_cd_save[index23] << std::endl;
+          std::cout << "coefficient = " << coeff_[index] << std::endl << std::endl;
+        }
+*/
       }
     }
   }

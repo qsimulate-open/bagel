@@ -176,6 +176,8 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
             {
               // Include the next line to run (i.e., test) ComplexERIBatch; comment it out to run normally.
               ComplexERIBatch complexeribatch(input,0.0); //for testing - you won't want max_density to be 0.0 in the long run
+              complexeribatch.compute();
+              const std::complex<double>* complexeridata = complexeribatch.data();
             }
             ERIBatch eribatch(input, mulfactor);
 #endif

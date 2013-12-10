@@ -595,6 +595,8 @@ vector<double> Geometry::schwarz() const {
       {
         // Include the next line to run (i.e., test) ComplexERIBatch; comment it out to run normally.
         ComplexERIBatch complexeribatch(input,0.0); //for testing
+        complexeribatch.compute();
+        const std::complex<double>* complexeridata = complexeribatch.data();
       }
       ERIBatch eribatch(input, 1.0);
 #endif
