@@ -170,7 +170,7 @@ int MPI_Interface::iallreduce(size_t* a, const size_t size) {
   request_.emplace(cnt_, rq);
 #endif
   ++cnt_;
-  return cnt_;
+  return cnt_-1;
 }
 
 
@@ -215,6 +215,22 @@ void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int r
 #ifdef HAVE_MPI_H
   MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
 #endif
+}
+
+
+int MPI_Interface::ibroadcast(double* a, const size_t size, const int root) {
+#ifdef HAVE_MPI_H
+  vector<MPI_Request> rq;
+  MPI_Request c;
+  MPI_Ibcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD, &c);
+  rq.push_back(c);
+#endif
+  lock_guard<mutex> lock(mpimutex_);
+#ifdef HAVE_MPI_H
+  request_.emplace(cnt_, rq);
+#endif
+  ++cnt_;
+  return cnt_-1;
 }
 
 
