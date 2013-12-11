@@ -26,30 +26,76 @@
 #ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
 #define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_H
 
+#include <src/integral/sortlist.h>
+#include <src/integral/carsphlist.h>
+#include <src/integral/hrrlist.h>
+#include <src/integral/rys/coulombbatch_energy.h>
 #include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class CoulombBatch_energy: public CoulombBatch_base {
+template <typename DataType>
+class CoulombBatch_Energy : public CoulombBatch_Base<DataType> {
 
   protected:
 
   public:
 
-    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  CoulombBatch_base(_info, mol, 0, stack, 0, 0.0) {};
+    CoulombBatch_Energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      :  CoulombBatch_Base<DataType>(_info, mol, 0, stack, 0, 0.0) {};
 
-    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  CoulombBatch_base(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
+    CoulombBatch_Energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+      :  CoulombBatch_Base<DataType>(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
 
-     ~CoulombBatch_energy() {};
+     ~CoulombBatch_Energy() {};
 
     void compute() override;
 
     constexpr static int Nblocks() { return 1; }
+
+  protected:
+
+    using CoulombBatch_Base<DataType>::natom_;
+    using CoulombBatch_Base<DataType>::L_;
+    using CoulombBatch_Base<DataType>::A_;
+    using CoulombBatch_Base<DataType>::mol_;
+
+    using RysIntegral<DataType>::bkup_;
+    using RysIntegral<DataType>::spherical1_;
+    using RysIntegral<DataType>::basisinfo_;
+    using RysIntegral<DataType>::prim0size_;
+    using RysIntegral<DataType>::prim1size_;
+    using RysIntegral<DataType>::contsize_;
+    using RysIntegral<DataType>::cont0size_;
+    using RysIntegral<DataType>::cont1size_;
+    using RysIntegral<DataType>::swap01_;
+    using RysIntegral<DataType>::screening_;
+    using RysIntegral<DataType>::screening_size_;
+    using RysIntegral<DataType>::size_alloc_;
+    using RysIntegral<DataType>::size_final_;
+    using RysIntegral<DataType>::stack_;
+    using RysIntegral<DataType>::xp_;
+    using RysIntegral<DataType>::P_;
+    using RysIntegral<DataType>::AB_;
+    using RysIntegral<DataType>::coeff_;
+    using RysIntegral<DataType>::rank_;
+    using RysIntegral<DataType>::roots_;
+    using RysIntegral<DataType>::weights_;
+    using RysIntegral<DataType>::asize_;
+    using RysIntegral<DataType>::amapping_;
+    using RysIntegral<DataType>::amax_;
+    using RysIntegral<DataType>::amin_;
+    using RysIntegral<DataType>::amax1_;
+    using RysIntegral<DataType>::data_;
+
 };
+
+using CoulombBatch_energy = CoulombBatch_Energy<double>;
 
 }
 
-#endif
+#define COULOMBBATCH_ENERGY_HEADERS
+#include <src/integral/rys/coulombbatch_energy_impl.hpp>
+#undef COULOMBBATCH_ENERGY_HEADERS
 
+#endif
