@@ -23,54 +23,55 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// This file is being replaced by coulombbatch_base.cc
 
-#include <src/integral/rys/coulombbatch_base.h>
-#include <src/util/constants.h>
-#include <src/integral/rys/inline.h>
-#include <src/integral/rys/erirootlist.h>
+#ifdef COULOMBBATCH_BASE_HEADERS
 
-using namespace std;
-using namespace bagel;
+#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_BASE_HPP
+#define __SRC_INTEGRAL_RYS_COULOMBBATCH_BASE_HPP
+
+
+namespace bagel {
 
 static constexpr double T_thresh__ = 1.0e-8;
 
-CoulombBatch_base::CoulombBatch_base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
-                             shared_ptr<StackMem> stack, const int L, const double A)
- : RysInt(_info, stack), mol_(mol), L_(L), A_(A) {
+template <typename DataType>
+CoulombBatch_Base<DataType>::CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
+                             std::shared_ptr<StackMem> stack, const int L, const double A)
+ : RysIntegral<DataType>(_info, stack), mol_(mol), L_(L), A_(A) {
 
   deriv_rank_ = deriv;
   const double integral_thresh = PRIM_SCREEN_THRESH;
 
-  if (_info.size() != 2) throw logic_error("CoulombBatch_base should be called with shell pairs");
+  if (_info.size() != 2) throw std::logic_error("CoulombBatch_base should be called with shell pairs");
 
   // natom_
   natom_ = mol_->natom() * (2 * L + 1);
 
-  set_swap_info();
-  set_ab_cd();
-  set_prim_contsizes();
+  this->set_swap_info();
+  this->set_ab_cd();
+  this->set_prim_contsizes();
 
   int asize_intermediate, asize_final, dum0, dum1;
-  tie(asize_intermediate, dum0, asize_final, dum1) = set_angular_info();
+  std::tie(asize_intermediate, dum0, asize_final, dum1) = this->set_angular_info();
 
   allocate_data(asize_intermediate, 1, asize_final, 1);
 
-  allocate_arrays(primsize_*natom_);
+  this->allocate_arrays(primsize_*natom_);
 
 }
 
-void CoulombBatch_base::compute_ssss(const double integral_thresh) {
+template <typename DataType>
+void CoulombBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
-  const vector<double> exp0 = basisinfo_[0]->exponents();
-  const vector<double> exp1 = basisinfo_[1]->exponents();
+  const std::vector<double> exp0 = basisinfo_[0]->exponents();
+  const std::vector<double> exp1 = basisinfo_[1]->exponents();
 
   int index = 0;
-  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
+  std::vector<std::shared_ptr<const Atom>> atoms = mol_->atoms();
 
   const double onepi2 = 1.0 / (pi__ * pi__);
-  const double sqrtpi = sqrt(pi__);
+  const double sqrtpi = std::sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
@@ -103,7 +104,8 @@ void CoulombBatch_base::compute_ssss(const double integral_thresh) {
   }
 }
 
-void CoulombBatch_base::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+template <typename DataType>
+void CoulombBatch_Base<DataType>::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
     const unsigned int size_start = asize_ * csize_ * primsize_;
@@ -141,16 +143,17 @@ void CoulombBatch_base::allocate_data(const int asize_final, const int csize_fin
   data2_ = stack_save2_;
 }
 
-void CoulombBatch_base::root_weight(const int ps) {
+template <typename DataType>
+void CoulombBatch_Base<DataType>::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
       if (T_[i] < T_thresh__) {
         weights_[i] = 1.0;
       } else {
-        const double sqrtt = sqrt(T_[i]);
+        const double sqrtt = std::sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
+        weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else {
@@ -158,3 +161,7 @@ void CoulombBatch_base::root_weight(const int ps) {
   }
 }
 
+}
+
+#endif
+#endif
