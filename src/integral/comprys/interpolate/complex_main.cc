@@ -685,7 +685,7 @@ ofs << "\n\
     complex<double> t = ta[i-1];\n\
     offset += " << nroot << ";\n\
     if (t.real() < " << MINTR << ") {\n\
-      throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain\");\n\
+      throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength\");\n\
     } else if (t.real() >= " << MAXTR << ") {\n";
 //      cout << \"T = \" << t << \", need " << nroot << " roots:  Used high-T approximation\" << endl;\n
       ofs << "\
@@ -695,7 +695,7 @@ ofs << "\n\
         ww[offset+r] = aw[r]*t;\n\
       }\n\
     } else if ( fabs(t.imag()) > " << MAXTI << "){\n\
-      throw runtime_error (\"ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  Consider regenerating interpolation files with a larger domain.\");\n\
+      throw runtime_error (\"ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.\");\n\
     } else {\n\
       const complex<double> torig = t;\n\
       if (torig.imag() < 0) t = conj(torig);\n\
