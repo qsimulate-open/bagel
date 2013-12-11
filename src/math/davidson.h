@@ -44,8 +44,8 @@ class DavidsonDiag {
   protected:
     const int nstate_;
     const int max_;
+    const int collapse_;
     int size_;
-    bool orthogonalize_; // has linear dependence been encountered yet?
 
     std::list<std::shared_ptr<const T>> c_;
     std::list<std::shared_ptr<const T>> sigma_;
@@ -62,9 +62,11 @@ class DavidsonDiag {
     std::shared_ptr<MatType> ovlp_scr_;
 
   public:
-    DavidsonDiag(int n, int m) : nstate_(n), max_(m*n), size_(0), orthogonalize_(false), mat_(std::make_shared<MatType>(max_,max_,true)),
-                                 scr_(std::make_shared<MatType>(max_,max_,true)), vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)),
-                                 ovlp_scr_(std::make_shared<MatType>(max_,max_,true)) {
+    // Davidson with periodic collapse of the subspace
+    // floor <= 0 will throw instead of collapse
+    DavidsonDiag(int n, int ceiling, int floor = 0) : nstate_(n), max_((ceiling+1)*n), collapse_(floor*n), size_(0), mat_(std::make_shared<MatType>(max_,max_,true)),
+                                 vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)) {
+      if (floor > ceiling) throw std::runtime_error("collapse size must be smaller than max size in Davidson");
     }
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
@@ -74,7 +76,6 @@ class DavidsonDiag {
     }
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
-      if (size_ == max_) throw std::runtime_error("max size reached in Davidson");
       // add entry
       for (auto& it : cc) c_.push_back(it);
       for (auto& it : cs) sigma_.push_back(it);
@@ -91,29 +92,24 @@ class DavidsonDiag {
 
           overlap_->element(i, size_-1) = (*cciter)->dot_product(**icivec);
           overlap_->element(size_-1, i) = detail::conj(overlap_->element(i, size_-1));
-
-          if (!orthogonalize_) {
-            overlap_row += std::abs(overlap_->element(i, size_-1));
-          }
-        }
-        if ( fabs(overlap_row - 1.0) > 1.0e-8 ) {
-          orthogonalize_ = true;
         }
       }
 
-      if (orthogonalize_) {
-        std::shared_ptr<MatType> tmp = overlap_->get_submatrix(0, 0, size_, size_);
-        tmp->inverse_half();
-
-        ovlp_scr_->copy_block(0, 0, size_, size_, tmp);
-      }
+      if ( std::fabs(static_cast<double>(size_) - overlap_->dot_product(*overlap_)) > 1.0e-8 )
+        ovlp_scr_ = overlap_->get_submatrix(0, 0, size_, size_)->tildex();
 
       // diagonalize matrix to get
-      *scr_ = orthogonalize_ ? *ovlp_scr_ % *mat_ * *ovlp_scr_ : *mat_;
-      std::shared_ptr<MatType> tmp = scr_->get_submatrix(0, 0, size_, size_);
-      tmp->diagonalize(vec_.get());
-      scr_->copy_block(0, 0, size_, size_, tmp);
-      if ( orthogonalize_ ) *scr_ = *ovlp_scr_ * *scr_;
+      scr_ = mat_->get_submatrix(0, 0, size_, size_);
+      if (ovlp_scr_) scr_ = std::make_shared<MatType>(*ovlp_scr_ % *scr_ * *ovlp_scr_);
+      scr_->diagonalize(vec_.get());
+      if (ovlp_scr_) scr_ = std::make_shared<MatType>(*ovlp_scr_ * *scr_);
+
+      // collapse
+      if (size_ > (max_ - nstate_))
+        collapse_subspace(collapse_);
+      else if (ovlp_scr_)
+        collapse_subspace(scr_->mdim());
+
       eig_ = scr_->slice(0,nstate_);
 
       return std::vector<double>(vec_.get(), vec_.get()+nstate_);
@@ -153,6 +149,48 @@ class DavidsonDiag {
 
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
+
+    void collapse_subspace(const int size) {
+      if (size <= 0) throw std::runtime_error("Maximum size of Davidson algorithm reached.");
+      assert(size <= scr_->mdim());
+      {
+        std::list<std::shared_ptr<const T>> collapsed_c;
+        for (int i = 0; i < size; ++i) {
+          auto tmp_c = c_.front()->clone();
+          int k = 0;
+          for (auto ic = c_.begin(); ic != c_.end(); ++ic, ++k)
+            tmp_c->ax_plus_y(scr_->element(k, i), *ic);
+          collapsed_c.push_back(tmp_c);
+        }
+        c_ = std::move(collapsed_c);
+      }
+      {
+        std::list<std::shared_ptr<const T>> collapsed_s;
+        for (int i = 0; i < size; ++i) {
+          auto tmp_s = sigma_.front()->clone();
+          int k = 0;
+          for (auto is = sigma_.begin(); is != sigma_.end(); ++is, ++k)
+            tmp_s->ax_plus_y(scr_->element(k, i), *is);
+          collapsed_s.push_back(tmp_s);
+        }
+        sigma_ = std::move(collapsed_s);
+      }
+
+      // update mat_ which should be diagonal
+      mat_->zero();
+      for (int i = 0; i < size; ++i)
+        mat_->element(i,i) = vec_[i];
+
+      overlap_->zero();
+      for (int i = 0; i < size; ++i)
+        overlap_->element(i,i) = 1.0;
+
+      scr_ = std::make_shared<MatType>(size, size); scr_->unit();
+      ovlp_scr_.reset();
+
+      std::fill(vec_.get() + size, vec_.get() + max_, 0.0);
+      size_ = size;
+    }
 
 };
 

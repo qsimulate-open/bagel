@@ -39,6 +39,8 @@ class FCI : public Method {
   protected:
     // max #iteration
     int max_iter_;
+    int davidsonfloor_;
+    int davidsonceiling_;
     // threshold for variants
     double thresh_;
     double print_thresh_;

@@ -452,7 +452,7 @@ void ZMatrix::inverse() {
 
 
 // compute S^{-1/2}
-void ZMatrix::inverse_half(const double thresh) {
+bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -470,6 +470,27 @@ void ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
+  return std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+}
+
+shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
+  shared_ptr<ZMatrix> out = this->copy();
+  bool nolindep = out->inverse_half(thresh);
+  if (!nolindep) {
+    // use canonical orthogonalization. Start over
+    out = this->copy();
+    unique_ptr<double[]> eig(new double[ndim_]);
+    out->diagonalize(eig.get());
+    int m = 0;
+    for (int i = 0; i != mdim_; ++i) {
+      if (eig[i] > thresh) {
+        const double e = 1.0/std::sqrt(eig[i]);
+        transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](complex<double> a) { return a*e; });
+      }
+    }
+    out = out->slice(0,m);
+  }
+  return out;
 }
 
 

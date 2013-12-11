@@ -402,7 +402,7 @@ void Matrix::inverse() {
 // this is a vector B, and solve AC = B, returns C
 shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
-  auto out = this->copy(); 
+  auto out = this->copy();
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
 
   unique_ptr<int[]> ipiv(new int[n]);
@@ -474,6 +474,27 @@ bool Matrix::inverse_half(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
   return rm.empty();
+}
+
+shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
+  shared_ptr<Matrix> out = this->copy();
+  bool nolindep = out->inverse_half(thresh);
+  if (!nolindep) {
+    // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
+    out = this->copy();
+    unique_ptr<double[]> eig(new double[ndim_]);
+    out->diagonalize(eig.get());
+    int m = 0;
+    for (int i = 0; i != mdim_; ++i) {
+      if (eig[i] > thresh) {
+        const double e = 1.0/std::sqrt(eig[i]);
+        transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
+      }
+    }
+    out = out->slice(0,m);
+  }
+  return out;
 }
 
 // compute Hermitian square root, S^{1/2}

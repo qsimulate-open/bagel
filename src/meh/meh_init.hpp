@@ -36,6 +36,8 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 {
   nstates_ = input->get<int>("nstates", 10);
   max_iter_ = input->get<int>("max_iter", 50);
+  davidsonfloor_ = input->get<int>("davidsonfloor", 2);
+  davidsonceiling_ = input->get<int>("davidsonceiling", 4);
   dipoles_ = input->get<bool>("dipoles", false);
   thresh_ = input->get<double>("thresh", 1.0e-12);
   print_thresh_ = input->get<double>("print_thresh", 0.05);

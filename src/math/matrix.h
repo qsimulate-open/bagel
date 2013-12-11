@@ -68,8 +68,9 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void inverse();
     // compute S^-1 using symmetric form. Returns if some roots were discarded
     bool inverse_symmetric(const double thresh = 1.0e-8);
-    // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded. Returs if some roots were discarded
+    // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded. Returns if some roots were discarded
     bool inverse_half(const double thresh = 1.0e-8);
+    std::shared_ptr<Matrix> tildex(const double thresh = 1.0e-8) const;
     // compute S^1/2. Same algorithm as above.
     void sqrt();
 

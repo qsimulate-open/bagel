@@ -128,6 +128,8 @@ class MultiExcitonHamiltonian {
       int nstates_;
       int nspin_;
       int max_iter_;
+      int davidsonfloor_;
+      int davidsonceiling_;
       bool store_matrix_;
       bool dipoles_;
 
