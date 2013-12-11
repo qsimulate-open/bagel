@@ -60,7 +60,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
 
   public:
 
-    ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const double max_density, const int deriv, const int breit = 0,
+    ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const int deriv, const int breit = 0,
               std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType>(o, stack) {
 
       breit_ = breit;
