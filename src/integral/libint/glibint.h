@@ -29,7 +29,7 @@
 #ifndef __SRC_RYSINT_GLIBINT_H
 #define __SRC_RYSINT_GLIBINT_H
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 
 namespace bagel {
 
@@ -44,6 +44,8 @@ class GLibint : public RysInt {
     void compute() override {}
 
     double* data(const int i) override { return data_ + i*size_block_; }
+
+    virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) { assert(false); }
 };
 
 }

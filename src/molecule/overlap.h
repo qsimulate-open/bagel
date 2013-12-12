@@ -38,7 +38,6 @@ class Overlap : public Matrix1e {
   public:
     Overlap(const std::shared_ptr<const Molecule>);
 
-    std::shared_ptr<Matrix> tildex(const double thresh) const;
 };
 
 }

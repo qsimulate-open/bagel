@@ -42,6 +42,7 @@ void FCI::common_init() {
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
+  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
@@ -188,7 +189,7 @@ void FCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<Civec> davidson(nstate_, max_iter_);
+  DavidsonDiag<Civec> davidson(nstate_, davidsonceiling_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;

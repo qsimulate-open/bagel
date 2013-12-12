@@ -338,14 +338,20 @@ void Dimer::localize(const std::shared_ptr<const PTree> idata) {
 
   assert(proj_coeff_->mdim() == nclosed + nact + nvirt);
   const size_t nmosA = coeffs_.first->mdim();
+  const size_t nmosB = coeffs_.second->mdim();
 
-  auto check_and_insert = [&overlaps, &nmosA] (const int i, set<int>& setA, set<int>& setB) {
+  auto check_and_insert = [&overlaps, &nmosA, &nmosB] (const int i, set<int>& setA, set<int>& setB) {
     double* cdata = overlaps->element_ptr(0,i);
-    double norm = ddot_(nmosA, cdata, 1, cdata, 1);
+    const double Anorm = ddot_(nmosA, cdata, 1, cdata, 1);
+    const double Bnorm = ddot_(nmosB, cdata + nmosA, 1, cdata + nmosA, 1);
+    const double polarized = (Anorm - Bnorm)/(Anorm + Bnorm);
 
-    if (norm > 0.7) setA.insert(i);
-    else if (norm < 0.3) setB.insert(i);
-    else throw runtime_error("Trouble in classifying orbitals");
+    if (polarized > 0.5)
+      setA.insert(i);
+    else if (polarized < -0.5)
+      setB.insert(i);
+    else
+      throw runtime_error(string("Trouble assigning orbital to a monomer. |A|^2 = ") + to_string(Anorm) + string(", |B|^2 = ") + to_string(Bnorm));
   };
 
   set<int> closed_setA, closed_setB;
@@ -410,32 +416,125 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 
   const int nvirtA = active_refs.first->nvirt();
   const int nvirtB = active_refs.second->nvirt();
+  const int nvirt = nvirtA + nvirtB;
   nvirt_ = make_pair(nvirtA, nvirtB);
 
-  auto active = make_shared<Matrix>(dimerbasis_, nact);
+  Matrix active(dimerbasis_, nact);
 
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
 
-  active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
-  active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
+  active.copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
+  active.copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
 
-  auto S = make_shared<Overlap>(sgeom_);
-  auto overlaps = make_shared<Matrix>((*active) % (*S) * (*scoeff_));
+  Overlap S(sgeom_);
+  Matrix overlaps( active % S * *scoeff_ );
 
   multimap<double, int> norms;
 
-  for(int i = 0; i < overlaps->mdim(); ++i) {
-    const double* odata = overlaps->element_ptr(0, i);
+  for(int i = 0; i < overlaps.mdim(); ++i) {
+    const double* odata = overlaps.element_ptr(0, i);
     const double norm = ddot_(nact, odata, 1, odata, 1);
     norms.emplace(norm, i);
   }
 
-  auto norm_iter = norms.rbegin();
-  set<int> active_list;
-  for(int i = 0; i < nact; ++i, ++norm_iter) active_list.insert(norm_iter->second);
+#if 0
+  {
+    cout << endl << "   --- overlaps with monomer active spaces ---" << endl;
+    auto niter = norms.rbegin();
+    for (int i = 0; i < overlaps.mdim(); ++i, ++niter)
+      cout << setw(12) << setprecision(8) << niter->first << setw(6) << niter->second << endl;
+    cout << endl;
+  }
+#endif
 
-  auto out = sref_->set_active(active_list);
+  active_thresh_ = input_->get<double>("active_thresh", 0.5);
+  cout << endl << "  o Forming dimer's active space. Threshold for inclusion in cadidate space: " << setw(6) << setprecision(3) << active_thresh_ << endl;
+
+  vector<int> active_list;
+  double max_overlap, min_overlap;
+  {
+    auto end = norms.rbegin(); advance(end, nact);
+    end = find_if(end, norms.rend(), [this] (const pair<const double, int>& p) { return p.first < active_thresh_; });
+    for_each(norms.rbegin(), end, [&active_list] (const pair<const double, int>& p) { active_list.emplace_back(p.second); });
+    auto mnmx = minmax_element(norms.rbegin(), end);
+    tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
+  }
+
+  const size_t active_size = active_list.size();
+  cout << "    - size of candidate space: " << active_size << endl;
+  cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl << endl;
+
+  shared_ptr<Reference> out;
+
+  if (active_size != nact) {
+    cout << "  o Performing SVD in candidate space" << endl;
+    Matrix subspace(dimerbasis_, active_size);
+    for (int i = 0; i < active_size; ++i)
+      copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
+
+    Matrix Sactive(active % S * active);
+    Sactive.inverse_half();
+
+    Matrix projector( Sactive * ( active % S * subspace ) );
+    shared_ptr<Matrix> V;
+    vector<double> singulars(nact, 0.0);
+    tie(ignore, V) = projector.svd(singulars.data());
+
+    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl;
+
+#if 0
+    cout << "singular values:" << endl;
+    cout << setw(12) << setprecision(8);
+    for_each(singulars.begin(), singulars.end(), [] (const double& s) { cout << s*s << endl; });
+    cout << endl;
+#endif
+
+    Matrix occupations = *V->clone();
+    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
+    for (int i = 0; i < active_size; ++i)
+      if (active_list[i] < nocc) occupations(i,i) = 2.0;
+    occupations = *V * occupations ^ *V;
+
+    // non-active candidate orbitals are mixtures of closed and virtual orbitals
+    // diagonalizing the corresponding block of the density matrix separates the closed from the virtual
+    {
+      vector<double> eigs(active_size, 0.0);
+      Matrix transform = *occupations.diagonalize_blocks(eigs.data(), {{static_cast<int>(nact), static_cast<int>(active_size - nact)}});
+
+      occupations = transform % occupations * transform;
+      subspace = (subspace ^ *V) * transform;
+    }
+
+    int nactive_ele = 0;
+    double occ_in_active = 0.0;
+    for (int i = 0; i < nact; ++i) {
+      occ_in_active += occupations(i,i);
+      nactive_ele += ( occupations(i,i) > 1.0 ? 2 : 0 );
+    }
+
+    cout << "    - trace of density matrix in new active space: " << occ_in_active << endl;
+    cout << "    - electrons assigned to new active space: " << nactive_ele << endl << endl;
+
+    auto new_coeff = make_shared<Coeff>(*scoeff_);
+    size_t iocc = 0, ivirt = nclosed_ + nact;
+    for (size_t i = 0; i < scoeff_->mdim(); ++i) {
+      if ( count(active_list.begin(), active_list.end(), i) == 0 )
+        copy_n(scoeff_->element_ptr(0, i), dimerbasis_, new_coeff->element_ptr(0, ( i < nocc ? iocc++ : ivirt++ )));
+    }
+    copy_n(subspace.data(), dimerbasis_ * nact, new_coeff->element_ptr(0, nclosed_));
+    for (size_t i = nact; i < active_size; ++i)
+      copy_n(subspace.element_ptr(0, i), dimerbasis_, new_coeff->element_ptr(0, ( occupations(i,i) > 1.0 ? iocc++ : ivirt++ )));
+
+    if ( iocc != nclosed_ ) throw runtime_error("Improper number of closed orbitals after SVD.");
+
+    out = make_shared<Reference>(sgeom_, new_coeff, nclosed_, nact, nvirt);
+  }
+  else {
+    set<int> active_set(active_list.begin(), active_list.end());
+    out = sref_->set_active(active_set);
+  }
+
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
   nfilledactive_ = make_pair( nfilledA, nfilledB );

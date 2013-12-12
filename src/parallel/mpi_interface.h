@@ -93,6 +93,7 @@ class MPI_Interface {
     void broadcast(size_t*, const size_t size, const int root) const;
     void broadcast(double*, const size_t size, const int root) const;
     void broadcast(std::complex<double>*, const size_t size, const int root) const;
+    int ibroadcast(double*, const size_t size, const int root);
     // broadcast of const objects. Use with caution...
     void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const;

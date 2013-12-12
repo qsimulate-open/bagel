@@ -29,11 +29,11 @@
 #ifndef __SRC_RYSINT_LIBINT_H
 #define __SRC_RYSINT_LIBINT_H
 
-#include <src/integral/rys/rysint.h>
+#include <src/integral/rys/rysintegral.h>
 
 namespace bagel {
 
-class Libint : public RysInt {
+class Libint : public RysIntegral<double> {
   protected:
     void root_weight(int) {}
     void compute_ssss(double) {}
@@ -45,6 +45,7 @@ class Libint : public RysInt {
 
     constexpr static int Nblocks() { return 1; }
 
+    virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) { assert(false); }
 };
 
 }

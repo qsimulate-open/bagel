@@ -80,7 +80,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   }
 
   std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
-  DavidsonDiag<Matrix> davidson(nstates_, max_iter_);
+  DavidsonDiag<Matrix> davidson(nstates_, davidsonceiling_);
 
   // Generate initial guesses
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
