@@ -30,6 +30,7 @@
 #include <src/df/df.h>
 #include <src/integral/libint/libint.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/comprys/complexeribatch.h> // for testing ComplexERIBatch
 #include <src/scf/fock_base.h>
 
 namespace bagel {
@@ -172,6 +173,12 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 #ifdef LIBINT_INTERFACE
             Libint eribatch(input);
 #else
+            {
+              // Include the next line to run (i.e., test) ComplexERIBatch; comment it out to run normally.
+              ComplexERIBatch complexeribatch(input,0.0); //for testing - you won't want max_density to be 0.0 in the long run
+              complexeribatch.compute();
+              const std::complex<double>* complexeridata = complexeribatch.data();
+            }
             ERIBatch eribatch(input, mulfactor);
 #endif
             eribatch.compute();

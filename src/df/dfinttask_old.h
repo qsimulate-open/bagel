@@ -48,7 +48,7 @@ class DFIntTask_OLD {
 
       {
         // Comment out this next line to run normally; leave it active to call (i.e., test) ComplexERIBatch
-        std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>>>> ptest = df_->compute_batch_complex(shell_);  // Needed only for testing ComplexERIBatch
+//        std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>>>> ptest = df_->compute_batch_complex(shell_);  // Needed only for testing ComplexERIBatch
       }
 
       std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);  // Original version; keep this

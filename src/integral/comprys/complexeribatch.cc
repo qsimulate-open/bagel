@@ -31,11 +31,7 @@ using namespace std;
 using namespace bagel;
 
 ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
-                   shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, 0.0, 0, 0, stack) {
-
-// TODO Integral screening has not yet been implemented for London orbitals.  If we want to use integral screening,
-// then the second argument to the constructor of ERIBatch_Base should be max_density.  Since we currently pass
-// 0.0 as an argument, it should compute every integral.
+                   shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, 0, 0, stack) {
 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
   compute_ssss(integral_thresh);
@@ -44,7 +40,7 @@ ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, 
   assert(false);
 #endif
 
-//  root_weight(this->primsize_);
+  root_weight(this->primsize_);
 }
 
 
