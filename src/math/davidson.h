@@ -44,7 +44,6 @@ class DavidsonDiag {
   protected:
     const int nstate_;
     const int max_;
-    const int collapse_;
     int size_;
 
     std::list<std::shared_ptr<const T>> c_;
@@ -63,10 +62,8 @@ class DavidsonDiag {
 
   public:
     // Davidson with periodic collapse of the subspace
-    // floor <= 0 will throw instead of collapse
-    DavidsonDiag(int n, int ceiling, int floor = 0) : nstate_(n), max_((ceiling+1)*n), collapse_(floor*n), size_(0), mat_(std::make_shared<MatType>(max_,max_,true)),
+    DavidsonDiag(int n, int max) : nstate_(n), max_(max*n), size_(0), mat_(std::make_shared<MatType>(max_,max_,true)),
                                  vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)) {
-      if (floor > ceiling) throw std::runtime_error("collapse size must be smaller than max size in Davidson");
     }
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
@@ -76,6 +73,9 @@ class DavidsonDiag {
     }
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
+      if (size_ + cc.size() > max_)
+        collapse_subspace();
+
       // add entry
       for (auto& it : cc) c_.push_back(it);
       for (auto& it : cs) sigma_.push_back(it);
@@ -84,7 +84,6 @@ class DavidsonDiag {
       auto icivec = cc.begin();
       for (auto isigma = cs.begin(); isigma != cs.end(); ++isigma, ++icivec) {
         ++size_;
-        double overlap_row = 0.0;
         auto cciter = c_.begin();
         for (int i = 0; i != size_; ++i, ++cciter) {
           mat_->element(i, size_-1) = (*cciter)->dot_product(**isigma);
@@ -95,7 +94,7 @@ class DavidsonDiag {
         }
       }
 
-      if ( std::fabs(static_cast<double>(size_) - overlap_->dot_product(*overlap_)) > 1.0e-8 )
+      if ( std::fabs(static_cast<double>(size_) - overlap_->dot_product(*overlap_)) > 1.0e-6 )
         ovlp_scr_ = overlap_->get_submatrix(0, 0, size_, size_)->tildex();
 
       // diagonalize matrix to get
@@ -104,11 +103,9 @@ class DavidsonDiag {
       scr_->diagonalize(vec_.get());
       if (ovlp_scr_) scr_ = std::make_shared<MatType>(*ovlp_scr_ * *scr_);
 
-      // collapse
-      if (size_ > (max_ - nstate_))
-        collapse_subspace(collapse_);
-      else if (ovlp_scr_)
-        collapse_subspace(scr_->mdim());
+      // orthogonalize ci vectors
+      if (ovlp_scr_)
+        orthogonalize_subspace();
 
       eig_ = scr_->slice(0,nstate_);
 
@@ -150,9 +147,44 @@ class DavidsonDiag {
     // make cc orthogonal to cc_ vectors
     double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
 
-    void collapse_subspace(const int size) {
-      if (size <= 0) throw std::runtime_error("Maximum size of Davidson algorithm reached.");
-      assert(size <= scr_->mdim());
+    void collapse_subspace() {
+      mat_->zero();
+      for (int i = 0; i < nstate_; ++i)
+        mat_->element(i,i) = vec_[i];
+
+      overlap_->zero();
+      for (int i = 0; i < nstate_; ++i)
+        overlap_->element(i,i) = 1.0;
+
+      {
+        std::list<std::shared_ptr<const T>> collapsed_c;
+        for (int i = 0; i < nstate_; ++i) {
+          auto tmp_c = c_.front()->clone();
+          int k = 0;
+          for (auto ic = c_.begin(); ic != c_.end(); ++ic, ++k)
+            tmp_c->ax_plus_y(eig_->element(k, i), *ic);
+          collapsed_c.push_back(tmp_c);
+        }
+        c_ = std::move(collapsed_c);
+      }
+      {
+        std::list<std::shared_ptr<const T>> collapsed_s;
+        for (int i = 0; i < nstate_; ++i) {
+          auto tmp_s = sigma_.front()->clone();
+          int k = 0;
+          for (auto is = sigma_.begin(); is != sigma_.end(); ++is, ++k)
+            tmp_s->ax_plus_y(eig_->element(k, i), *is);
+          collapsed_s.push_back(tmp_s);
+        }
+        sigma_ = std::move(collapsed_s);
+      }
+
+      std::fill(vec_.get() + nstate_, vec_.get() + max_, 0.0);
+      size_ = nstate_;
+    }
+
+    void orthogonalize_subspace() {
+      const int size = scr_->mdim();
       {
         std::list<std::shared_ptr<const T>> collapsed_c;
         for (int i = 0; i < size; ++i) {

@@ -47,8 +47,7 @@ void DistRASCI::common_init() {
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  davidsonfloor_ = idata_->get<int>("davidsonfloor", 2);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 4);
+  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   sparse_ = idata_->get<bool>("sparse", true);
@@ -240,7 +239,7 @@ void DistRASCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<DistRASCivec> davidson(nstate_, davidsonceiling_, davidsonfloor_);
+  DavidsonDiag<DistRASCivec> davidson(nstate_, davidsonceiling_);
 
   // Object in charge of forming sigma vector
   DistFormSigmaRAS form_sigma(sparse_);
