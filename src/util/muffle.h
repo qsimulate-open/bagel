@@ -27,19 +27,25 @@
 #define __SRC_UTIL_MUFFLE_H
 
 #include <iostream>
+#include <fstream>
 
 namespace bagel {
 
 // Hides cout and restores it when the object is destroyed
 class Muffle {
   private:
-    std::stringstream trash_;
+    std::shared_ptr<std::ostream> redirect_;
     std::streambuf* saved_;
 
   public:
-    Muffle() {
+    Muffle(std::string filename = "") {
       saved_ = std::cout.rdbuf();
-      std::cout.rdbuf(trash_.rdbuf());
+      if (filename != "")
+        redirect_ = std::make_shared<std::ofstream>(filename);
+      else
+        redirect_ = std::make_shared<std::ostringstream>();
+
+      std::cout.rdbuf(redirect_->rdbuf());
     }
 
     ~Muffle() {

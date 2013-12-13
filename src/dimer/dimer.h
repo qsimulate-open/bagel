@@ -135,7 +135,9 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
   input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
 
   // Hiding normal cout
-  Muffle hide;
+  std::stringstream outfilename;
+  outfilename << "meh_cas_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
+  Muffle hide(outfilename.str());
 
   std::shared_ptr<FCI> fci;
   fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
@@ -162,7 +164,9 @@ std::shared_ptr<const DistDvec> Dimer::embedded_distcasci(const std::shared_ptr<
   input->erase("algorithm"); input->put("algorithm", "dist");
 
   // Hiding normal cout
-  Muffle hide;
+  std::stringstream outfilename;
+  outfilename << "meh_distcas_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
+  Muffle hide(outfilename.str());
 
   std::shared_ptr<DistFCI> fci;
   fci = std::dynamic_pointer_cast<DistFCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
@@ -202,7 +206,9 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
   input->add_child("active", parent);
 
   // Hiding normal cout
-  Muffle hide;
+  std::stringstream outfilename;
+  outfilename << "meh_ras_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
+  Muffle hide(outfilename.str());
 
   std::shared_ptr<RASCI> rasci;
   rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
