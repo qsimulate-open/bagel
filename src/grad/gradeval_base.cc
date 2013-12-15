@@ -283,7 +283,6 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e_2index(const shared_
 
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_ptr<const Matrix> nmat) {
   vector<shared_ptr<GradTask>> out;
-#if 0
   const size_t nshell = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nfatom = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
   out.reserve(nshell*nshell*nfatom);
@@ -291,10 +290,11 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_pt
   int cnt = 0;
 
   // loop over finite nucleus
-  int iatomf = 0;
-  for (auto af = geom_->atoms().begin(); af != geom_->atoms().end(); ++af, ++iatomf) {
+  int iatomf = -1;
+  for (auto& af : geom_->atoms()) {
+    ++iatomf;
     // skip if this atom is not finite nucleus
-    if (!(*af)->finite_nucleus()) continue;
+    if (!af->finite_nucleus()) continue;
 
     // construct nuclear shell
     const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
@@ -322,14 +322,12 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_pt
             vector<int> atom = {iatom0, iatom1, iatomf};
             vector<int> offset_ = {*o0, *o1, 0};
 
-            GradTask task(input, atom, offset_, nmat, this);
-            out.push_back(task);
+            out.push_back(make_shared<GradTask1f>(input, atom, offset_, nmat, this));
           }
         }
       }
     }
   }
-#endif
   return out;
 }
 

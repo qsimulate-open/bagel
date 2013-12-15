@@ -98,6 +98,20 @@ class GradTask1 : public GradTask {
     void compute();
 };
 
+
+/// 2-index 1-electron finite NAI gradient integrals
+class GradTask1f : public GradTask {
+  private:
+    std::array<std::shared_ptr<const Shell>, 4> shell_;
+    std::shared_ptr<const Matrix> den_;
+  public:
+    GradTask1f(const std::array<std::shared_ptr<const Shell>,4>& s, const std::vector<int>& a, const std::vector<int>& o,
+               const std::shared_ptr<const Matrix> d, GradEval_base* p)
+      : GradTask(a, o, p), shell_(s), den_(d) { }
+    void compute();
+};
+
+
 /// 3-index 2-electron relativistic gradient integrals (small components)
 class GradTask3r : public GradTask {
   private:

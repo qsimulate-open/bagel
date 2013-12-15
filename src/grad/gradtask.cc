@@ -75,6 +75,40 @@ void GradTask3::compute() {
 }
 
 
+// significant repetition, but not sure how to nicely eliminate them
+void GradTask1f::compute() {
+#ifdef LIBINT_INTERFACE
+  GLibint gradbatch(shell_);
+#else
+  GradBatch gradbatch(shell_, 0.0);
+#endif
+  gradbatch.compute();
+  const size_t block = gradbatch.size_block();
+  const size_t sblock = shell_[2]->nbasis()*shell_[3]->nbasis();
+  assert(sblock <= block && shell_[1]->nbasis() == 1);
+
+  // unfortunately the convention is different...
+  array<int,4> jatom = {{-1, atomindex_[2], atomindex_[1], atomindex_[0]}};
+  if (gradbatch.swap0123()) { swap(jatom[0], jatom[2]); swap(jatom[1], jatom[3]); }
+  if (gradbatch.swap01()) swap(jatom[0], jatom[1]);
+  if (gradbatch.swap23()) swap(jatom[2], jatom[3]);
+
+  shared_ptr<Matrix> db1 = den_->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis());
+
+  for (int iatom = 0; iatom != 4; ++iatom) {
+    if (jatom[iatom] < 0) continue;
+    array<double,3> sum = {{0.0, 0.0, 0.0}};
+    for (int icart = 0; icart != 3; ++icart) {
+      const double* ppt = gradbatch.data(icart+iatom*3);
+      sum[icart] += inner_product(ppt, ppt+sblock, db1->data(), 0.0);
+    }
+    lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
+    for (int icart = 0; icart != 3; ++icart)
+      ge_->grad_->element(icart, jatom[iatom]) += sum[icart];
+  }
+}
+
+
 void GradTask2::compute() {
 #ifdef LIBINT_INTERFACE
   GLibint gradbatch(shell_);

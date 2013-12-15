@@ -45,12 +45,8 @@
 namespace bagel {
 
 namespace {
-  template<typename T> void call_compute(T& task) {
-    task.compute();
-  }
-  template<typename T> void call_compute(std::shared_ptr<T>& task) {
-    task->compute();
-  }
+  template<typename T> void call_compute(T& task) { task.compute(); }
+  template<typename T> void call_compute(std::shared_ptr<T>& task) { task->compute(); }
 }
 
 template<typename T>

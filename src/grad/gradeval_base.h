@@ -41,11 +41,6 @@ class GradEval_base;
 
 // base class for gradient evaluations
 class GradEval_base {
-  friend class GradTask1;
-  friend class GradTask2;
-  friend class GradTask3;
-  friend class GradTask1r;
-  friend class GradTask3r;
   protected:
     std::shared_ptr<const Geometry> geom_;
 
@@ -83,6 +78,12 @@ class GradEval_base {
                                                 const std::shared_ptr<const Matrix> g2o2 = std::shared_ptr<const Matrix>());
     virtual std::shared_ptr<GradFile> compute() { assert(false); return std::shared_ptr<GradFile>(); }
 
+  friend class GradTask1;
+  friend class GradTask2;
+  friend class GradTask3;
+  friend class GradTask1r;
+  friend class GradTask1f;
+  friend class GradTask3r;
 };
 
 
