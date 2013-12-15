@@ -117,6 +117,11 @@ class Molecule {
       return out;
     }
 
+    // finite nucleus
+    bool has_finite_nucleus() const {
+      return std::any_of(atoms_.begin(), atoms_.end(), [](std::shared_ptr<const Atom> a) { return a->finite_nucleus(); });
+    }
+
     // external field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
     double external(const int i) const { return external_[i]; }

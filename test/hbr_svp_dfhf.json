@@ -1,0 +1,20 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "Br",  "xyz" : [ -0.000000,     -0.000000,      2.720616], "exponent" : 2.4305454351e+08 },
+    { "atom" : "H",  "xyz" : [ -0.000000,     -0.000000,      0.305956]}
+  ]
+},
+
+{
+  "title" : "hf",
+  "thresh" : 1.0e-10
+}
+
+]}

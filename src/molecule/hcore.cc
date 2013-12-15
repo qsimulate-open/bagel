@@ -28,6 +28,7 @@
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
+#include <src/integral/rys/eribatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -58,6 +59,24 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     nai.compute();
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+  }
+
+  if (mol_->has_finite_nucleus()) {
+    auto dummy = make_shared<const Shell>(input[0]->spherical());
+    for (auto& i : mol_->atoms()) {
+      if (i->finite_nucleus()) {
+        auto in = make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()}, vector<vector<double>>{{1.0}}, vector<pair<int,int>>{make_pair(0,1)});
+        const array<shared_ptr<const Shell>,4> shells{{ input[0], input[1], dummy, in }};
+        ERIBatch eri(shells, 0.0);
+        eri.compute();
+
+        const double fac = i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
+        const double* data = eri.data();
+        for (int i = offsetb0; i != dimb0 + offsetb0; ++i)
+          for (int j = offsetb1; j != dimb1 + offsetb1; ++j)
+            data_[i*ndim_ + j] -= fac * *data++;
+      }
+    }
   }
 
   if (mol_->external()) {
