@@ -152,7 +152,7 @@ void GradTask::compute() {
       array<double,3> sum = {{0.0, 0.0, 0.0}};
       for (int icart = 0; icart != 3; ++icart) {
         const double* ppt = gradbatch.data(icart+iatom*3);
-        sum[icart] += ddot_(sblock, ppt, 1, db1->data(), 1);
+        sum[icart] += inner_product(ppt, ppt+sblock, db1->data(), 0.0);
       }
       lock_guard<mutex> lock(ge_->mutex_[jatom[iatom]]);
       for (int icart = 0; icart != 3; ++icart)

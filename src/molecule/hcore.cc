@@ -71,10 +71,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
         eri.compute();
 
         const double fac = i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
-        const double* data = eri.data();
-        for (int i = offsetb0; i != dimb0 + offsetb0; ++i)
-          for (int j = offsetb1; j != dimb1 + offsetb1; ++j)
-            data_[i*ndim_ + j] -= fac * *data++;
+        add_block(-fac, offsetb1, offsetb0, dimb1, dimb0, eri.data());
       }
     }
   }

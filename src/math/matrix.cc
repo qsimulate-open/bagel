@@ -345,10 +345,10 @@ void Matrix::purify_unitary() {
   assert(ndim_ == mdim_);
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
-      daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const double a = inner_product(element_ptr(0,i), element_ptr(0,i+1), element_ptr(0,j), 0.0);
+      transform(element_ptr(0,j), element_ptr(0,j+1), element_ptr(0,i), element_ptr(0,i), [&a](double p, double q) { return q-a*p; });
     }
-    const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/std::sqrt(inner_product(element_ptr(0,i), element_ptr(0,i+1), element_ptr(0,i), 0.0));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });
   }
 }

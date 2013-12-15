@@ -341,9 +341,8 @@ void Dimer::localize(const std::shared_ptr<const PTree> idata) {
   const size_t nmosB = coeffs_.second->mdim();
 
   auto check_and_insert = [&overlaps, &nmosA, &nmosB] (const int i, set<int>& setA, set<int>& setB) {
-    double* cdata = overlaps->element_ptr(0,i);
-    const double Anorm = ddot_(nmosA, cdata, 1, cdata, 1);
-    const double Bnorm = ddot_(nmosB, cdata + nmosA, 1, cdata + nmosA, 1);
+    const double Anorm = inner_product(overlaps->element_ptr(0,i),     overlaps->element_ptr(nmosA,i),       overlaps->element_ptr(0,i),     0.0);
+    const double Bnorm = inner_product(overlaps->element_ptr(nmosA,i), overlaps->element_ptr(nmosA+nmosB,i), overlaps->element_ptr(nmosA,i), 0.0);
     const double polarized = (Anorm - Bnorm)/(Anorm + Bnorm);
 
     if (polarized > 0.5)
@@ -433,8 +432,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
   multimap<double, int> norms;
 
   for(int i = 0; i < overlaps.mdim(); ++i) {
-    const double* odata = overlaps.element_ptr(0, i);
-    const double norm = ddot_(nact, odata, 1, odata, 1);
+    const double norm = inner_product(overlaps.element_ptr(0, i), overlaps.element_ptr(0, i+1), overlaps.element_ptr(0, i), 0.0);
     norms.emplace(norm, i);
   }
 
