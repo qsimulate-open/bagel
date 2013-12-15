@@ -119,7 +119,7 @@ std::vector<double> reference_dcf_opt() {
 std::vector<double> reference_hcl_opt() {
   std::vector<double> out(6);
   out[2] = 2.719961;
-  out[5] =-0.317095;
+  out[5] = 0.317095;
   return out;
 }
 
