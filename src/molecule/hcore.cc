@@ -72,7 +72,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 #ifdef LIBINT_INTERFACE
         Libint eri(shells);
 #else
-        ERIBatch eri(shells, 0.0);
+        ERIBatch eri(shells, 2.0);
 #endif
         eri.compute();
         add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, eri.data());

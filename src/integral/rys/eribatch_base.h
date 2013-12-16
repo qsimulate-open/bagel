@@ -121,7 +121,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
               const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
               const double tsqrt = std::sqrt(T);
               const DataType ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
-                                  * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
+                                  * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(pi__) );
               if (std::abs(ssss) > std::abs(integral_thresh)) {
                 tuple_field[tuple_length*2  ] = *expi2;
                 tuple_field[tuple_length*2+1] = *expi3;
@@ -153,7 +153,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
           const double ab = rnd(*expi0) * rnd(*expi1);
           const double cxp_inv = 1.0 / cxp;
           const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
-          const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
+          const double coeff_half = 2 * Eab * std::pow(pi__, 2.5);
           const double px = (ax * *expi0 + bx * *expi1) * cxp_inv;
           const double py = (ay * *expi0 + by * *expi1) * cxp_inv;
           const double pz = (az * *expi0 + bz * *expi1) * cxp_inv;
@@ -166,7 +166,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
             const double abcd_sc_3 = abcd_sc * abcd_sc * abcd_sc;
             const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
             const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
-                              * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
+                              * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(pi__) );
             if (std::abs(ssss) < std::abs(integral_thresh)) continue;
           }
 
