@@ -91,6 +91,8 @@ class MOFile {
     double& mo2e(const size_t i, const size_t j) { return mo2e_->element(i,j); }
     const double& mo1e(const size_t i) const { return mo1e_->data(i); }
     const double& mo2e(const size_t i, const size_t j) const { return mo2e_->element(i,j); }
+    // input in (ij|kl), accesses the right way
+    const double& mo2e(size_t i, size_t j, size_t k, size_t l) const { return (hz_ ? mo2e_hz(i, k, j, l) : mo2e_kh(i, j, k, l)); }
     // This is really ugly but will work until I can think of some elegant solution that keeps mo2e(i,j,k,l) inline but doesn't require more derived classes
     // strictly i <= j, k <= l
     double& mo2e_kh(const int i, const int j, const int k, const int l) { return mo2e(address_(i,j), address_(k,l)); }
@@ -107,6 +109,7 @@ class MOFile {
     const double* mo1e_ptr() const { return mo1e_->data(); }
     const double* mo2e_ptr() const { return mo2e_->data(); }
 
+    bool hz() const { return hz_; }
     const int nocc() const { return nocc_; }
 
     std::shared_ptr<const Matrix> core_fock() const { return core_fock_; }
