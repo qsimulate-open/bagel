@@ -52,6 +52,7 @@ class GradEval_base {
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
     /// contract finite-nucleus NAI gradient
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(const std::shared_ptr<const Matrix> n);
+    std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(std::array<std::shared_ptr<const Matrix>,6> n, const std::shared_ptr<const Geometry> geom = std::shared_ptr<const Geometry>());
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<std::shared_ptr<GradTask>> contract_grad2e(const std::shared_ptr<const DFDist> o,
@@ -84,6 +85,7 @@ class GradEval_base {
   friend class GradTask1r;
   friend class GradTask1f;
   friend class GradTask3r;
+  friend class GradTask1rf;
 };
 
 

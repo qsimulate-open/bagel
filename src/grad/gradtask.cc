@@ -75,6 +75,8 @@ void GradTask3::compute() {
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // significant repetition, but not sure how to nicely eliminate them
 void GradTask1f::compute() {
 #ifdef LIBINT_INTERFACE
@@ -108,6 +110,8 @@ void GradTask1f::compute() {
   }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GradTask2::compute() {
 #ifdef LIBINT_INTERFACE
@@ -144,6 +148,8 @@ void GradTask2::compute() {
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void GradTask1::compute() {
   auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   *grad_local += *compute_nai();
@@ -169,6 +175,8 @@ shared_ptr<GradFile> GradTask1::compute_nai() const {
   return batch2.compute_gradient(cden, dummy, dummy, ge_->geom_->natom());
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GradTask3r::compute() {
   shared_ptr<GradFile> grad_local = compute_smalleri();
@@ -199,6 +207,40 @@ shared_ptr<GradFile> GradTask3r::compute_smalleri() const {
   return batch.compute_gradient(d);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GradTask1rf::compute() {
+  shared_ptr<GradFile> grad_local = compute_smalleri();
+  list<int> done;
+  for (int i = 0; i != 3; ++i) {
+    const int iatom = atomindex_[i];
+    if (find(done.begin(), done.end(), iatom) != done.end()) continue; // should not add twice
+    done.push_back(iatom);
+
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
+  }
+}
+
+
+shared_ptr<GradFile> GradTask1rf::compute_smalleri() const {
+  GSmallERIBatch batch(shell_, array<int,3>{{atomindex_[0], atomindex_[1], atomindex_[2]}}, ge_->geom_->natom());
+  batch.compute();
+  array<shared_ptr<const Matrix>,6> d = {{
+    rden_[0]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
+    rden_[1]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
+    rden_[2]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
+    rden_[3]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
+    rden_[4]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()),
+    rden_[5]->get_submatrix(offset_[1], offset_[0], shell_[2]->nbasis(), shell_[3]->nbasis()) }};
+  return batch.compute_gradient(d);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GradTask1r::compute() {
   shared_ptr<GradFile> grad_local = compute_smallnai();

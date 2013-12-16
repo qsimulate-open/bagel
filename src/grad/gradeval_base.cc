@@ -193,6 +193,55 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const array<shared_p
 }
 
 
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const array<shared_ptr<const Matrix>,6> o, const shared_ptr<const Geometry> geom) {
+  shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
+  vector<shared_ptr<GradTask>> out;
+  const size_t nshell = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  const size_t nfatom = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
+  out.reserve(nshell*nshell*nfatom);
+
+  // loop over atoms
+  int iatomf = -1;
+  int cnt = 0;
+  for (auto& af : cgeom->atoms()) {
+    ++iatomf;
+    if (!af->finite_nucleus()) continue;
+    // construct nuclear shell
+    const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
+    auto b2 = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+
+    // dummy shell
+    auto b3 = make_shared<Shell>(af->spherical());
+
+    int iatom0 = 0;
+    auto oa0 = cgeom->offsets().begin();
+    for (auto a0 = cgeom->atoms().begin(); a0 != cgeom->atoms().end(); ++a0, ++oa0, ++iatom0) {
+      int iatom1 = 0;
+      auto oa1 = cgeom->offsets().begin();
+      for (auto a1 = cgeom->atoms().begin(); a1 != cgeom->atoms().end(); ++a1, ++oa1, ++iatom1) {
+        auto o0 = oa0->begin();
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+          auto o1 = oa1->begin();
+          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+            // static distribution since this is cheap
+            if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+            array<shared_ptr<const Shell>,4> input = {{b3, b2, *b1, *b0}};
+            vector<int> atoms = {iatom0, iatom1, iatomf};
+            vector<int> offs = {*o0, *o1, 0};
+
+            out.push_back(make_shared<GradTask1rf>(input, atoms, offs, o, this));
+          }
+
+        }
+      }
+    }
+  }
+  return out;
+}
+
+
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o, const shared_ptr<const Geometry> geom) {
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<shared_ptr<GradTask>> out;

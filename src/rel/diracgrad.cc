@@ -112,9 +112,15 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   array<shared_ptr<const Matrix>,6> rmat;
   auto riter = rmat.begin();
   for (auto& i : mat) *riter++ = i.second->get_real_part();
+
   // *** adding task here ****
   {
     vector<shared_ptr<GradTask>> tmp = contract_gradsmall1e(rmat);
+    task.insert(task.end(), tmp.begin(), tmp.end());
+  }
+
+  if (geom_->has_finite_nucleus()) {
+    vector<shared_ptr<GradTask>> tmp = contract_grad1e_fnai(rmat);
     task.insert(task.end(), tmp.begin(), tmp.end());
   }
 #ifdef LOCAL_TIMING
