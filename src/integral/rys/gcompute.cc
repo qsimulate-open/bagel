@@ -181,7 +181,7 @@ void GradBatch::compute() {
       swapped = (swapped ^ true);
     }
 
-    if (swapped) copy(bkup_, bkup_+size_block_, cdata);
+    if (swapped) copy_n(bkup_, size_block_, cdata);
 
   } // end of loop 12
 

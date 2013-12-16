@@ -141,8 +141,8 @@ class Opt {
     }
 
     void print_iteration(const double energy, const double residual, const double time) const {
-      std::cout << std::setw(7) << iter_ << std::setw(20) << std::setprecision(12) << std::fixed << energy
-                                         << std::setw(20) << std::setprecision(12) << std::fixed << residual
+      std::cout << std::setw(7) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << energy
+                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual
                                          << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
     }
 

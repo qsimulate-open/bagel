@@ -72,26 +72,18 @@ void GradBatch::set_exponents() {
 }
 
 void GradBatch::root_weight(const int ps) {
-  if (breit_ == 0) {
-    if (amax_ + cmax_ == 0) {
-      for (int j = 0; j != screening_size_; ++j) {
-        int i = screening_[j];
-        if (T_[i] < 1.0e-8) {
-          weights_[i] = 1.0;
-        } else {
-          const double sqrtt = sqrt(T_[i]);
-          const double erfsqt = inline_erf(sqrtt);
-          weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
-        }
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (T_[i] < 1.0e-8) {
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
       }
-    } else {
-      eriroot__.root(rank_, T_, roots_, weights_, ps);
     }
-  } else if (breit_ == 1) {
-    breitroot__.root(rank_, T_, roots_, weights_, ps);
-  } else if (breit_ == 2) {
-    spin2root__.root(rank_, T_, roots_, weights_, ps);
   } else {
-    assert(false);
+    eriroot__.root(rank_, T_, roots_, weights_, ps);
   }
 }
