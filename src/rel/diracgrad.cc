@@ -204,7 +204,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // (6) two-index gamma
     shared_ptr<Matrix> cdr = cd->get_real_part();
-    assert(cd->get_imag_part()->norm() < 1.0e-10); // by symmetry the imaginary part is zero
+    assert(cd->get_imag_part()->rms() < 1.0e-10); // by symmetry the imaginary part is zero
     auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
 
 #ifdef LOCAL_TIMING

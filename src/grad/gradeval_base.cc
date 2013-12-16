@@ -52,12 +52,6 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
     task.insert(task.end(), task0.begin(), task0.end());
   }
 
-  // if finite nucleus are used, we need to insert additional tasks that are omitted from the 1e part
-  if (geom_->has_finite_nucleus()) {
-    vector<shared_ptr<GradTask>> task0 = contract_grad1e_fnai(d);
-    task.insert(task.end(), task0.begin(), task0.end());
-  }
-
   TaskQueue<shared_ptr<GradTask>> tq(move(task));
   tq.compute();
 
@@ -105,6 +99,13 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
       }
     }
   }
+
+  // if finite nucleus are used, we need to insert additional tasks that are omitted from the 1e part
+  if (geom_->has_finite_nucleus()) {
+    vector<shared_ptr<GradTask>> task0 = contract_grad1e_fnai(nmat);
+    out.insert(out.end(), task0.begin(), task0.end());
+  }
+
   return out;
 }
 
