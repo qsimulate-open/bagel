@@ -32,7 +32,11 @@ template<> void Small1e<ERIBatch>::computebatch(const array<shared_ptr<const She
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
+#ifdef LIBINT_INTERFACE
+  SmallInts1e<Libint> batch(input, this->mol_);
+#else
   SmallInts1e<ERIBatch> batch(input, this->mol_);
+#endif
 
   vector<shared_ptr<const Shell>> nshells;
   for (auto& i : this->mol_->atoms()) {

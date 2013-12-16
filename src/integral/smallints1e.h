@@ -29,6 +29,7 @@
 
 #include <src/molecule/molecule.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/libint/libint.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 
@@ -140,7 +141,11 @@ class SmallInts1e {
 // in the case of finite nucleus
 template<>
 template<typename Value>
+#ifdef LIBINT_INTERFACE
+void SmallInts1e<Libint>::compute(const Value& nshells) {
+#else
 void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
+#endif
   const int s0size = shells_[0]->nbasis();
   const int s1size = shells_[1]->nbasis();
   const int a0size_inc = shells_[0]->aux_increment()->nbasis();
@@ -152,7 +157,11 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 
   auto dummy = std::make_shared<const Shell>(shells_[0]->spherical());
 
+#ifdef LIBINT_INTERFACE
+  constexpr int N = Libint::Nblocks();
+#else
   constexpr int N = ERIBatch::Nblocks();
+#endif
   static_assert(N == 1, "ERIBatch::Nblocks() should be 1");
 
   std::array<std::shared_ptr<Matrix>,N> unc;
@@ -161,25 +170,41 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 
   for (auto& nshell : nshells) {
     {
+#ifdef LIBINT_INTERFACE
+      auto uncc = std::make_shared<Libint>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_increment()}});
+#else
       auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_increment()}}, 2.0);
+#endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
         unc[n]->copy_block(0, 0, a0size_inc, a1size_inc, uncc->data(n));
     }
     if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
+#ifdef LIBINT_INTERFACE
+      auto uncc = std::make_shared<Libint>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}});
+#else
       auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}}, 2.0);
+#endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
         unc[n]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
     }
     if (shells_[0]->aux_decrement()) {
+#ifdef LIBINT_INTERFACE
+      auto uncc = std::make_shared<Libint>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_increment()}});
+#else
       auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_increment()}}, 2.0);
+#endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
         unc[n]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
     }
     if (shells_[1]->aux_decrement()) {
+#ifdef LIBINT_INTERFACE
+      auto uncc = std::make_shared<Libint>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_decrement()}});
+#else
       auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_decrement()}}, 2.0);
+#endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
         unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
