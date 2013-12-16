@@ -45,6 +45,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells, const d
 
   tenno_ = 0;
   size_allocated_ = 0LU;
+  size_alloc_ = 0LU;
 
   array<int,4> order {{ 0,1,2,3 }};
 
