@@ -28,6 +28,7 @@
 #define __SRC_INTEGRAL_SMALLINTS1E_H
 
 #include <src/molecule/molecule.h>
+#include <src/integral/rys/eribatch.h>
 
 // computes (sigma p)Vnuc(sigma p), and returns 4 blocks of data
 
@@ -43,7 +44,48 @@ class SmallInts1e {
 
     const size_t size_block_;
 
-    std::array<std::shared_ptr<Matrix>,Batch::Nblocks()> int_compute() const {
+    template<typename Value>
+    std::array<std::shared_ptr<Matrix>,Batch::Nblocks()> int_compute(const Value&) const {
+    }
+
+    void transform(const std::array<std::shared_ptr<Matrix>,Batch::Nblocks()>& unc) {
+      constexpr int N = Batch::Nblocks();
+
+      for (int n = 0; n != N; ++n) {
+        std::array<std::shared_ptr<Matrix>,3> ints;
+        for (int i = 0; i != 3; ++i)
+          ints[i] = std::make_shared<Matrix>(*shells_[0]->small(i) % *unc[n]);
+
+        std::array<int,3> f = {{2,3,1}};
+        std::array<int,3> b = {{3,1,2}};
+
+        // 0) x^x + y^y + z^z
+        // 1) x^y - y^x
+        // 2) y^z - z^y
+        // 3) z^x - x^z
+
+        // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
+        for (int i = 0; i != 3; ++i) {
+          *data_[4*n+0]    += *ints[i]      * *shells_[1]->small(i);
+          *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->small(i);
+          *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->small(i);
+        }
+      }
+    }
+
+  public:
+    SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
+      : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
+
+      for (int i = 0; i != Nblocks(); ++i)
+        data_[i] = std::make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
+    }
+
+    void compute() { compute<void*>(nullptr); }
+
+    template<typename Value>
+    void compute(const Value&) {
+      static_assert(std::is_same<Value, void*>::value, "SmallInts1e::compute called illegally");
       const int s0size = shells_[0]->nbasis();
       const int s1size = shells_[1]->nbasis();
       const int a0size_inc = shells_[0]->aux_increment()->nbasis();
@@ -56,7 +98,7 @@ class SmallInts1e {
       constexpr int N = Batch::Nblocks();
 
       std::array<std::shared_ptr<Matrix>,N> unc;
-      for (int n = 0; n != N; ++n) 
+      for (int n = 0; n != N; ++n)
         unc[n] = std::make_shared<Matrix>(a0, a1, true);
 
       {
@@ -83,42 +125,8 @@ class SmallInts1e {
         for (int n = 0; n != N; ++n)
           unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
       }
-      return unc;
-    }
 
-  public:
-    SmallInts1e(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
-      : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
-
-      for (int i = 0; i != Nblocks(); ++i)
-        data_[i] = std::make_shared<Matrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);
-    }
-
-    void compute() {
-      // first compute uncontracted 1e integrals with auxiliary basis (cartesian)
-      constexpr int N = Batch::Nblocks();
-      const std::array<std::shared_ptr<Matrix>,N> unc = int_compute();
-
-      for (int n = 0; n != N; ++n) {
-        std::array<std::shared_ptr<Matrix>,3> ints;
-        for (int i = 0; i != 3; ++i)
-          ints[i] = std::make_shared<Matrix>(*shells_[0]->small(i) % *unc[n]);
-
-        std::array<int,3> f = {{2,3,1}};
-        std::array<int,3> b = {{3,1,2}};
-
-        // 0) x^x + y^y + z^z
-        // 1) x^y - y^x
-        // 2) y^z - z^y
-        // 3) z^x - x^z
-
-        // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
-        for (int i = 0; i != 3; ++i) {
-          *data_[4*n+0]    += *ints[i]      * *shells_[1]->small(i);
-          *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->small(i);
-          *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->small(i);
-        }
-      }
+      transform(unc);
     }
 
     std::shared_ptr<Matrix> operator[](const int i) { return data_[i]; }
@@ -127,6 +135,59 @@ class SmallInts1e {
     constexpr static int Nblocks() { return Batch::Nblocks() * 4; }
 
 };
+
+
+// in the case of finite nucleus
+template<>
+template<typename Value>
+void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
+  const int s0size = shells_[0]->nbasis();
+  const int s1size = shells_[1]->nbasis();
+  const int a0size_inc = shells_[0]->aux_increment()->nbasis();
+  const int a1size_inc = shells_[1]->aux_increment()->nbasis();
+  const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
+  const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
+  const int a0 = a0size_inc + a0size_dec;
+  const int a1 = a1size_inc + a1size_dec;
+
+  auto dummy = std::make_shared<const Shell>(shells_[0]->spherical());
+
+  constexpr int N = ERIBatch::Nblocks();
+  static_assert(N == 1, "ERIBatch::Nblocks() should be 1");
+
+  std::array<std::shared_ptr<Matrix>,N> unc;
+  for (int n = 0; n != N; ++n)
+    unc[n] = std::make_shared<Matrix>(a0, a1, true);
+
+  for (auto& nshell : nshells) {
+    {
+      auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_increment()}}, 0.0);
+      uncc->compute();
+      for (int n = 0; n != N; ++n)
+        unc[n]->copy_block(0, 0, a0size_inc, a1size_inc, uncc->data(n));
+    }
+    if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
+      auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_decrement()}}, 0.0);
+      uncc->compute();
+      for (int n = 0; n != N; ++n)
+        unc[n]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
+    }
+    if (shells_[0]->aux_decrement()) {
+      auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_increment()}}, 0.0);
+      uncc->compute();
+      for (int n = 0; n != N; ++n)
+        unc[n]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
+    }
+    if (shells_[1]->aux_decrement()) {
+      auto uncc = std::make_shared<ERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_decrement()}}, 0.0);
+      uncc->compute();
+      for (int n = 0; n != N; ++n)
+        unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
+    }
+  }
+
+  transform(unc);
+}
 
 }
 
