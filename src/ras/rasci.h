@@ -41,6 +41,7 @@ class RASCI : public Method {
     // max #iteration
     int max_iter_;
     int davidsonceiling_;
+    int nguess_;
 
     // threshold for variants
     double thresh_;
@@ -94,6 +95,7 @@ class RASCI : public Method {
     void create_Jiiii();
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<RASDvec>& out);
+    void model_guess(std::shared_ptr<RASDvec>& out);
     // generate spin-adapted guess configurations
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 
