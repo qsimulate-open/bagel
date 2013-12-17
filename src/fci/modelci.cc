@@ -32,8 +32,6 @@
 using namespace std;
 using namespace bagel;
 
-using SD = pair<bitset<nbit__>, bitset<nbit__>>;
-
 // ColumnTask computes two columns for the sake of load balancing
 class CIHamTask : public CITask {
   protected:

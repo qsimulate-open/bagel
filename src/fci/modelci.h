@@ -32,7 +32,9 @@
 namespace bagel {
 
 class CIHamiltonian : public Matrix {
-  using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+  private:
+    using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+
   protected:
     std::vector<SD> basis_;
     std::shared_ptr<const MOFile> jop_;
@@ -42,7 +44,9 @@ class CIHamiltonian : public Matrix {
 };
 
 class CISpin : public Matrix {
-  using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+  private:
+    using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+
   protected:
     std::vector<SD> basis_;
 

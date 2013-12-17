@@ -30,7 +30,9 @@ namespace bagel {
 
 // ColumnTask computes two columns for the sake of load balancing
 class CITask {
-  public: using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+  protected:
+    using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+
   protected:
     std::vector<SD>* basis_;
     const int norb_;
