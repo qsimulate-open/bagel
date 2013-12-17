@@ -23,7 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-//#include <pair>
+#ifndef __SRC_FCI_CITASK_H
+#define __SRC_FCI_CITASK_H
 
 namespace bagel {
 
@@ -75,3 +76,5 @@ class CITask {
 };
 
 }
+
+#endif
