@@ -51,20 +51,7 @@ class Molecule {
     std::array<double,3> external_;
 
     // Computes the nuclear repulsion energy.
-    double compute_nuclear_repulsion() {
-      double out = 0.0;
-      for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-        const double c = (*iter)->atom_charge();
-        for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
-          const double dist = (*iter)->distance(*titer);
-          const double charge = c * (*titer)->atom_charge();
-          // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
-          if (!(*iter)->dummy() || !(*titer)->dummy())
-            out += charge / dist;
-        }
-      }
-      return out;
-    }
+    double compute_nuclear_repulsion();
 
   public:
     Molecule() : symmetry_("c1"), nirrep_(1) {}
@@ -80,47 +67,13 @@ class Molecule {
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
     const std::string symmetry() const { return symmetry_; }
 
-    void print_atoms() const {
-      std::cout << "  *** Geometry ***" << std::endl << std::endl;
-      std::cout << "  Symmetry: " << symmetry() << std::endl;
-      std::cout << std::endl;
-      for (auto i : atoms_) i->print();
-      std::cout << std::endl;
-    }
+    void print_atoms() const;
 
-    std::array<double,3> charge_center() const {
-      std::array<double,3> out{{0.0, 0.0, 0.0}};
-      double sum = 0.0;
-      for (auto& i : atoms_) {
-        out[0] += i->atom_charge() * i->position(0);
-        out[1] += i->atom_charge() * i->position(1);
-        out[2] += i->atom_charge() * i->position(2);
-        sum += i->atom_charge();
-      }
-      out[0] /= sum;
-      out[1] /= sum;
-      out[2] /= sum;
-      return out;
-    }
-
-    std::array<double,6> quadrupole() const {
-      std::array<double,6> out;
-      std::array<double,3> c = charge_center();
-      for (auto& i : atoms_) {
-        out[0] += i->atom_charge() * std::pow(i->position(0) - c[0], 2);
-        out[1] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(1) - c[1]);
-        out[2] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(2) - c[2]);
-        out[3] += i->atom_charge() * std::pow(i->position(1) - c[1], 2);
-        out[4] += i->atom_charge() * (i->position(1) - c[1]) * (i->position(2) - c[2]);
-        out[5] += i->atom_charge() * std::pow(i->position(2) - c[2], 2);
-      }
-      return out;
-    }
+    std::array<double,3> charge_center() const;
+    std::array<double,6> quadrupole() const;
 
     // finite nucleus
-    bool has_finite_nucleus() const {
-      return std::any_of(atoms_.begin(), atoms_.end(), [](std::shared_ptr<const Atom> a) { return a->finite_nucleus(); });
-    }
+    bool has_finite_nucleus() const;
 
     // external field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
@@ -131,17 +84,7 @@ class Molecule {
     virtual size_t naux() const { return std::accumulate(aux_atoms_.begin(), aux_atoms_.end(), 0,
                                     [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
 
-    std::shared_ptr<const XYZFile> xyz() const {
-      auto out = std::make_shared<XYZFile>(natom());
-      int iat = 0;
-      for (auto& i : atoms_) {
-        out->element(0, iat) = i->position(0);
-        out->element(1, iat) = i->position(1);
-        out->element(2, iat) = i->position(2);
-        ++iat;
-      }
-      return out;
-    }
+    std::shared_ptr<const XYZFile> xyz() const;
 
 };
 
