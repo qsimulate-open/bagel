@@ -33,11 +33,26 @@ double Molecule::compute_nuclear_repulsion() {
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     const double c = (*iter)->atom_charge();
     for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
-      const double dist = (*iter)->distance(*titer);
-      const double charge = c * (*titer)->atom_charge();
       // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
-      if (!(*iter)->dummy() || !(*titer)->dummy())
-        out += charge / dist;
+      if (!(*iter)->dummy() || !(*titer)->dummy()) {
+        const double dist = (*iter)->distance(*titer);
+        const double charge = c * (*titer)->atom_charge();
+// it turned out that the deviation is numerically zero in double precision if the exponent is more than 1.0e-6. I will leave them for a while
+#ifdef BEYOND_DOUBLE
+        if (!(*iter)->finite_nucleus() && !(*titer)->finite_nucleus()) { // both point charges
+#endif
+          out += charge / dist;
+#ifdef BEYOND_DOUBLE
+        } else if ((*iter)->finite_nucleus() && (*titer)->finite_nucleus()) { // both gaussian charges
+          const double gamma0 = (*iter)->finite_nucleus();
+          const double gamma1 = (*titer)->finite_nucleus();
+          out += charge * erf(sqrt(gamma0 * gamma1 / (gamma0 + gamma1)) * dist) / dist;
+        } else { // one point charge, the other gaussian
+          const double gamma = (*iter)->finite_nucleus() ? (*iter)->atom_exponent() : (*titer)->atom_exponent();
+          out += charge * erf(sqrt(gamma) * dist) / dist;
+        }
+#endif
+      }
     }
   }
   return out;
