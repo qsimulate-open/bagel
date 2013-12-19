@@ -118,8 +118,6 @@ class GammaTree {
     static const int Beta = 1;
     static const int Create = 0;
     static const int Annihilate = 1;
-
-    std::unique_ptr<double[]> dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets) const;
 };
 
 template <typename VecType>
@@ -143,38 +141,28 @@ class GammaTask {
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
 
       std::shared_ptr<const VecType> avec = tree_->ket()->apply(a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
-      for (auto& ibra : first->bras()) {
-        const int nstates = avec->ij() * ibra.second->ij();
-        std::unique_ptr<double[]> tmp = dot_product(ibra.second, avec);
-        double* target = first->gammas().find(ibra.first)->second->element_ptr(0,a_);
-        std::copy_n(tmp.get(), nstates, target);
-      }
+      for (auto& ibra : first->bras())
+        dot_product(ibra.second, avec, first->gammas().find(ibra.first)->second->element_ptr(0,a_));
 
       for (int j = 0; j < nops; ++j) {
         auto second = first->branch(j);
         if (!second->active()) continue;
 
         for (int b = 0; b < norb; ++b) {
+          if (b==a_ && j==static_cast<int>(operation_)) continue;
           std::shared_ptr<const VecType> bvec = avec->apply(b, action(j), spin(j));
-          for (auto& jbra : second->bras()) {
-            const int nstates = bvec->ij() * jbra.second->ij();
-            std::unique_ptr<double[]> tmp = dot_product(jbra.second, bvec);
-            double* target = second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b);
-            std::copy_n(tmp.get(), nstates, target);
-          }
+          for (auto& jbra : second->bras())
+            dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b));
 
           for (int k = 0; k < nops; ++k) {
             std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
             if (!third->active()) continue;
 
             for (int c = 0; c < norb; ++c) {
+              if (b==c && k==j) continue;
               std::shared_ptr<const VecType> cvec = bvec->apply(c, action(k), spin(k));
-              for (auto& kbra : third->bras()) {
-                const int nstates = cvec->ij() * kbra.second->ij();
-                std::unique_ptr<double[]> tmp = dot_product(kbra.second, cvec);
-                double* target = third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c);
-                std::copy_n(tmp.get(), nstates, target);
-              }
+              for (auto& kbra : third->bras())
+                dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c));
             }
           }
         }
@@ -182,20 +170,15 @@ class GammaTask {
     }
 
     private:
-      std::unique_ptr<double[]> dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets) const {
+      void dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets, double* target) const {
         const int nbras = bras->ij();
         const int nkets = kets->ij();
 
-        std::unique_ptr<double[]> out(new double[nbras*nkets]);
-        double* odata = out.get();
-
         for (int iket = 0; iket < nkets; ++iket) {
-          for (int jbra = 0; jbra < nbras; ++jbra, ++odata) {
-            *odata = bras->data(jbra)->dot_product(*kets->data(iket));
+          for (int jbra = 0; jbra < nbras; ++jbra, ++target) {
+            *target = bras->data(jbra)->dot_product(*kets->data(iket));
           }
         }
-
-        return out;
       }
 };
 
