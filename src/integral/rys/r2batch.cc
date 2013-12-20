@@ -47,9 +47,10 @@ void R2Batch::compute_ssss(const double integral_thresh) {
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
+        double zeta = (*aiter)->ecp(0);
         double Z = (*aiter)->atom_charge();
         const double cxp = *expi0 + *expi1;
-        const double socxp = cxp + zeta_;
+        const double socxp = cxp + zeta;
         xp_[index] = cxp;
         const double ab = *expi0 * *expi1;
         const double cxp_inv = 1.0 / cxp;
@@ -92,13 +93,9 @@ void R2Batch::root_weight(const int ps) {
     }
   } else {
     r2root__.root(rank_, T_, roots_, weights_, ps);
-    for (int xj = 0; xj != screening_size_; ++xj) {
-      const int i = screening_[xj];
-      double* croots = roots_ + i * rank_;
-      for (int r = 0; r != rank_; ++r) {
-        croots[r] = 1.0 - (xp_[i] * croots[r]) /(xp_[i] + zeta_);
-      }
-    }
   }
 }
 
+double R2Batch::scale_root(double root, const double p, const double zeta) {
+  return 1.0 - (p * root)/(p + zeta);
+}

@@ -35,20 +35,21 @@ class R2Batch: public RnBatch {
   protected:
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
+    double scale_root(double root, const double p, const double zeta) override;
 
   public:
-    R2Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      : RnBatch (zeta, _info, mol, stack) { 
+      : RnBatch (_info, mol, stack) { 
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
 
 
-    R2Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R2Batch( const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             const int L, const double A = 0.0)
-      : RnBatch (zeta, _info, mol, L, A) {
+      : RnBatch (_info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);

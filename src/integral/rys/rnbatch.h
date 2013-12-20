@@ -33,15 +33,14 @@ namespace bagel {
 
 class RnBatch: public CoulombBatch_energy {
   protected:
-    const double zeta_;
 
   public:
-    RnBatch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      : CoulombBatch_energy (_info, mol, stack), zeta_(zeta) {}
+    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      : CoulombBatch_energy (_info, mol, stack) {}
 
 
-    RnBatch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A), zeta_(zeta) {}
+    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+      : CoulombBatch_energy (_info, mol, L, A) {}
       
     ~RnBatch() {}
 
