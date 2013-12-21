@@ -35,6 +35,7 @@ class CoulombBatch_energy: public CoulombBatch_base {
   protected:
 
     virtual double scale_root(const double root, const double p, const double zeta) { return root; }
+    virtual double scale_weight(const double weight, const double coef) { return weight; }
 
   public:
 
