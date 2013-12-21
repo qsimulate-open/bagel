@@ -96,10 +96,3 @@ void R2Batch::root_weight(const int ps) {
   }
 }
 
-double R2Batch::scale_root(double root, const double p, const double zeta) {
-  return 1.0 - (p * root)/(p + zeta);
-}
-
-double R2Batch::scale_weight(const double weight, const double coef) {
-  return weight * coef;
-}

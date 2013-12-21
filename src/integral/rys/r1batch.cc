@@ -98,10 +98,3 @@ void R1Batch::root_weight(const int ps) {
   }
 }
 
-double R1Batch::scale_root(double root, const double p, const double zeta) {
-  return (p * root + zeta)/(p + zeta);
-}
-
-double R1Batch::scale_weight(const double weight, const double coef) {
-  return weight * coef;
-}

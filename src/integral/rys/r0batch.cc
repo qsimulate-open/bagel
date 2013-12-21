@@ -71,10 +71,4 @@ void R0Batch::compute_ssss(const double integral_thresh) {
   }
 }
 
-double R0Batch::scale_root(double root, const double p, const double zeta) {
-   return zeta * (p + zeta);
-}
 
-double R0Batch::scale_weight(const double weight, const double coef) {
-  return 1.0;
-}
