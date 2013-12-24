@@ -346,7 +346,7 @@ void Matrix::purify_unitary() {
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
       const double a = inner_product(element_ptr(0,i), element_ptr(0,i+1), element_ptr(0,j), 0.0);
-      transform(element_ptr(0,j), element_ptr(0,j+1), element_ptr(0,i), element_ptr(0,i), [&a](double p, double q) { return q-a*p; });
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
     const double b = 1.0/std::sqrt(inner_product(element_ptr(0,i), element_ptr(0,i+1), element_ptr(0,i), 0.0));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });

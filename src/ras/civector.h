@@ -265,8 +265,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
 
     void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
-    void ax_plus_y(const DataType a, const RASCivector<DataType>& o)
-      { std::transform( o.data(), o.data() + size_, data(), data(), [&a] (DataType p, DataType q) { return (a*p + q); } ); }
+    void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }
     void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
@@ -333,7 +332,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
             if (condition(tabit)) { // Also sets bit appropriately
               DataType* targetdata = tarblock->data() + tarblock->stringa()->template lexical<0>(tabit) * lb;
               const DataType sign = static_cast<DataType>(sdet->sign<0>(abit, orbital));
-              std::transform(sourcedata, sourcedata + lb, targetdata, targetdata, [&sign] (DataType p, DataType q) { return p*sign + q; });
+              blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
             }
             sourcedata += lb;
           }

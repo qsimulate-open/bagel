@@ -26,6 +26,7 @@
 #include <src/math/algo.h>
 #include <bagel_config.h>
 #ifdef HAVE_MKL_H
+#define MKL_Complex16 std::complex<double>
 #include <mkl.h>
 #endif
 

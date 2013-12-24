@@ -49,7 +49,8 @@ class Matrix1eArray {
     Matrix1eArray(const Matrix1eArray&);
 
     void ax_plus_y(const double a, const Matrix1eArray<N>& o) {
-      std::transform(o.matrices_.begin(), o.matrices_.end(), matrices_.begin(), matrices_.begin(), [&a](std::shared_ptr<Matrix> p, std::shared_ptr<Matrix> q) { q->ax_plus_y(a, p); return q; });
+      std::transform(o.matrices_.begin(), o.matrices_.end(), matrices_.begin(), matrices_.begin(),
+                     [&a](std::shared_ptr<Matrix> p, std::shared_ptr<Matrix> q) { q->ax_plus_y(a, p); return q; });
     }
 
     const std::shared_ptr<const Molecule> mol() const { return mol_; }

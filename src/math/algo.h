@@ -29,6 +29,8 @@
 #include <array>
 #include <complex>
 #include <stdexcept>
+#include <algorithm>
+#include <src/util/f77.h>
 
 namespace bagel {
 
@@ -66,7 +68,32 @@ namespace {
     static_assert(N > 0, "illegal call of taylor_expansion");
     return taylor<N, N>()(x, a);
   }
+
 } }
+
+namespace blas {
+namespace {
+  template<class T, class U, typename Type,
+           // T and U have to be either raw pointers or random access iterators
+           class = typename std::enable_if< (std::is_pointer<T>::value) &&
+                                            (std::is_pointer<U>::value) >::type >
+  void ax_plus_y_n(const Type& a, const T p, const size_t n, U q) {
+    std::transform(p, p+n, q, q, [&a](decltype(*p) i, decltype(*q) j) { return j+a*i; });
+  }
+  template<>
+  void ax_plus_y_n(const double& a, const double* p, const size_t n, double* q) {
+    daxpy_(n, a, p, 1, q, 1);
+  }
+  template<>
+  void ax_plus_y_n(const std::complex<double>& a, const std::complex<double>* p, const size_t n, std::complex<double>* q) {
+    zaxpy_(n, a, p, 1, q, 1);
+  }
+  template<>
+  void ax_plus_y_n(const double& a, const std::complex<double>* p, const size_t n, std::complex<double>* q) {
+    zaxpy_(n, static_cast<std::complex<double>>(a), p, 1, q, 1);
+  }
+
+}}
 
 }
 
