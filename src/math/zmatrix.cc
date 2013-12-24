@@ -362,14 +362,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose(data(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_conjg_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose_conjg(data(), ndim_, mdim_, out->data());
   return out;
 }
 

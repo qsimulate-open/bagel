@@ -328,7 +328,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor);
+  blas::transpose(data(), ndim_, mdim_, out->data(), factor);
   return out;
 }
 

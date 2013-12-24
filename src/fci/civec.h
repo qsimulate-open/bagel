@@ -315,7 +315,7 @@ class DistCivector {
         mpi__->wait(i);
       buf_ = std::shared_ptr<DistCivector<DataType>>();
       buf_ = clone();
-      mytranspose_(local(), asize(), lenb_, buf_->local());
+      blas::transpose(local(), asize(), lenb_, buf_->local());
       std::copy_n(buf_->local(), asize()*lenb_, local());
       buf_ = std::shared_ptr<DistCivector<DataType>>();
     }
@@ -469,7 +469,7 @@ class Civector {
     std::shared_ptr<Civector<DataType>> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
-      mytranspose_(cc(), lenb_, lena_, ct->data());
+      blas::transpose(cc(), lenb_, lena_, ct->data());
 
       if (det_->nelea()*det_->neleb() & 1)
         ct->scale(-1.0);

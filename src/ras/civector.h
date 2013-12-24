@@ -232,7 +232,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
       auto out = std::make_shared<RASCivector<DataType>>(det);
       for (auto& iblock : blocks_) {
         if (iblock)
-          mytranspose_(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
+          blas::transpose(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
       }
       return out;
     }

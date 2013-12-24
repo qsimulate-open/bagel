@@ -30,13 +30,11 @@
 #include <complex>
 #include <stdexcept>
 #include <algorithm>
+#include <cassert>
 #include <src/util/f77.h>
 
 namespace bagel {
 
-extern void mytranspose_(const double* a, const int b, const int c, double* d, const double fac = 1.0);
-extern void mytranspose_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
-extern void mytranspose_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
 
 extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
                                  const int* acols, const int* arind, const double* b, const int ldb, const double beta,
@@ -72,6 +70,25 @@ namespace {
 } }
 
 namespace blas {
+
+// Transpose
+template<typename T,
+         class = typename std::enable_if< std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value >::type
+        >
+void transpose(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose(const double* a, const int b, const int c, double* d, const double fac);
+template<>
+void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+
+template<typename T,
+         class = typename std::enable_if< std::is_same<std::complex<double>,T>::value >::type
+        >
+void transpose_conjg(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+
+
 namespace {
   // AXPY
   template<class T, class U, typename Type,

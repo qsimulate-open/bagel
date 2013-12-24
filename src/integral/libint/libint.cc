@@ -441,7 +441,7 @@ Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells, const d
             } else {
               copy_n(ints, m*n, area);
             }
-            mytranspose_(area, m, n, ints);
+            transpose(area, m, n, ints);
             if (spherical1_) {
               carsphlist.carsphfunc_call(carsphindex2, m, ints, area);
               copy_n(area, nn*m, ints);

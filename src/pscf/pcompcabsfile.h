@@ -609,7 +609,7 @@ std::shared_ptr<PMOFile<std::complex<double>>>
         if (true) { // start from j & b contractions -- needs transposition
           const int mn = nbasis_i_ * nbasis_a_;
           const int mnc = nbasis_j_ * nbasis_b_;
-          mytranspose_(data, mnc, mn, datas);
+          blas::transpose(data, mnc, mn, datas);
           ::memcpy(data, datas, nbasis4 * sizeof(std::complex<double>));
         }
 
@@ -668,7 +668,7 @@ std::shared_ptr<PMOFile<std::complex<double>>>
         intermediate_mKK.get_block(nov*nbj, nov, datas);
         const int m = nbasis_i_ * nbasis_a_;
         const int n = jsize * bsize;
-        mytranspose_(datas, m, n, data);
+        blas::transpose(datas, m, n, data);
 
         for (int nka = -k; nka < maxK1; ++nka, ++nbja) {
           const int nkac = nka + k;

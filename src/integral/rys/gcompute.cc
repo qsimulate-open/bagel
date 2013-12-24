@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/math/algo.h>
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/rys/gradbatch.h>
@@ -118,7 +119,7 @@ void GradBatch::compute() {
       const int nloop = cont0size_ * cont1size_;
       int offset = 0;
       for (int i = 0; i != nloop; ++i, offset += m * n)
-        mytranspose_(source_now+offset, m, n, target_now+offset);
+        blas::transpose(source_now+offset, m, n, target_now+offset);
     } else {
       swapped = (swapped ^ true);
     }
@@ -163,7 +164,7 @@ void GradBatch::compute() {
     if (!swap0123_) {
       const int m = c * d * cont2size_ * cont3size_;
       const int n = a * b * cont0size_ * cont1size_;
-      mytranspose_(source_now, m, n, target_now);
+      blas::transpose(source_now, m, n, target_now);
     } else {
       swapped = (swapped ^ true);
     }
