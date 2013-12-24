@@ -377,7 +377,7 @@ class DistRASCivector {
         const size_t asize = (*i)->asize();
         const size_t lb = (*i)->lenb();
         if ( asize * lb == 0 ) continue;
-        transpose((*i)->local(), asize, lb, (*j)->local());
+        blas::transpose((*i)->local(), asize, lb, (*j)->local());
         std::copy_n((*j)->local(), asize * lb, (*i)->local());
       }
       buf_.reset();
