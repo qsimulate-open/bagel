@@ -237,14 +237,6 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
       return out;
     }
 
-#if 0
-    // When the Determinants structures are identical. Used in most cases.
-    DataType dot_product(const RASCivector<DataType>& o) const {
-      assert( (*det_) == (*o.det_) );
-      return std::inner_product(data_.get(), data_.get() + size_, o.data(), 0.0);
-    }
-#endif
-
     // Safe for any structure of blocks. Used only in MEH.
     DataType dot_product(const RASCivector<DataType>& o) const {
       assert( det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb() );
@@ -254,7 +246,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
         std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
         if (!jblock) continue;
 
-        out += std::inner_product(iblock->data(), iblock->data() + iblock->lena()*iblock->lenb(), jblock->data(), 0.0);
+        out += blas::dot_product(iblock->data(), iblock->lena()*iblock->lenb(), jblock->data());
       }
 
       return out;

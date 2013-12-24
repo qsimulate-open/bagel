@@ -210,8 +210,7 @@ class DistCivector {
     // utility functions
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
-      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; })
-                            : 0.0;
+      DataType sum = size() ? blas::dot_product(local(), size(), o.local()) : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
     }
@@ -489,7 +488,7 @@ class Civector {
 
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
-      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; });
+      return blas::dot_product(cc(), size(), other.data());
     }
     DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
 

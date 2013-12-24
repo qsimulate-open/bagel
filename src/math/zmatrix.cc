@@ -397,10 +397,10 @@ void ZMatrix::purify_unitary() {
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> a = zdotc_(ndim_, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
-      zaxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const complex<double> a = blas::dot_product(element_ptr(0,j), ndim_, element_ptr(0,i));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
-    const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }

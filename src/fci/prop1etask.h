@@ -57,7 +57,7 @@ class Prop1eTask {
           std::bitset <nbit__> sourcestring = ibs; sourcestring.set(j);
 
           const double hc = integrals_[j + i*norb] * static_cast<double>(det->sign(sourcestring, i, j));
-          daxpy_(lb, hc, cc_->element_ptr(0, det->lexical<0>(sourcestring)), 1, target_, 1);
+          blas::ax_plus_y_n(hc, cc_->element_ptr(0, det->lexical<0>(sourcestring)), lb, target_);
         }
       }
     }

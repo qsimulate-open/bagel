@@ -686,10 +686,8 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
           for (size_t r1 = 0; r1 < nr1; ++r1) {
             for (size_t r2 = 0; r2 < nr2; ++r2, ++col) {
               double* targ = VI_out->element_ptr(0, col);
-              transform(targ, targ + phisize, VI[0]->element_ptr(0, r1 + nr1*r2 + nr1*nr2*r3), targ,
-                  [] (const double& p, const double& q) { return p + q; });
-              transform(targ, targ + phisize, VI[2]->element_ptr(0, r3 + nr3*r2 + nr3*nr2*r1), targ,
-                  [] (const double& p, const double& q) { return p + q; });
+              blas::ax_plus_y_n(1.0, VI[0]->element_ptr(0, r1 + nr1*r2 + nr1*nr2*r3), phisize, targ);
+              blas::ax_plus_y_n(1.0, VI[2]->element_ptr(0, r3 + nr3*r2 + nr3*nr2*r1), phisize, targ);
             }
           }
         }

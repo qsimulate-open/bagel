@@ -120,9 +120,9 @@ class JKop {
       for (int i = 0; i != nocc; ++i) {
         for (int j = 0; j != nocc; ++j, icnt += nbasis_*nbasis_) {
           if (i >= nclosed && j >= nclosed) {
-            daxpy_(nbasis_*nbasis_, rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), 1, data_->data()+icnt, 1);
+            blas::ax_plus_y_n(rdm1_av->element(j-nclosed,i-nclosed), hcore->data(), nbasis_*nbasis_, data_->data()+icnt);
           } else if (i == j) {
-            daxpy_(nbasis_*nbasis_, 2.0, hcore->data(), 1, data_->data()+icnt, 1);
+            blas::ax_plus_y_n(2.0, hcore->data(), nbasis_*nbasis_, data_->data()+icnt);
           }
         }
       }

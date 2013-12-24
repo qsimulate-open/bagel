@@ -235,8 +235,7 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
         const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
         const size_t offas = cc->det()->lexical<0>(ca);
         const size_t offat = d->det()->lexical<0>(a);
-        transform(source + lb*offas, source + lb*(offas+1), target + lb*offat, target + lb*offat,
-                  [&factor](complex<double> p, complex<double> q) { return factor*p+q; });
+        blas::ax_plus_y_n(factor, source+lb*offas, lb, target+lb*offat);
       }
     }
   }

@@ -73,6 +73,7 @@ namespace {
 
 namespace blas {
 namespace {
+  // AXPY
   template<class T, class U, typename Type,
            // T and U have to be either raw pointers or random access iterators
            class = typename std::enable_if< (std::is_pointer<T>::value) &&
@@ -91,6 +92,24 @@ namespace {
   template<>
   void ax_plus_y_n(const double& a, const std::complex<double>* p, const size_t n, std::complex<double>* q) {
     zaxpy_(n, static_cast<std::complex<double>>(a), p, 1, q, 1);
+  }
+
+  // DOT
+  template<class T, class U,
+           // T and U have to be either raw pointers or random access iterators
+           class = typename std::enable_if< (std::is_pointer<T>::value) &&
+                                            (std::is_pointer<U>::value) >::type >
+  auto dot_product(const T p, const size_t n, const U q) -> decltype(*p * *q) {
+    using ResultType = decltype(*p * *q);
+    return std::inner_product(p, p+n, q, static_cast<ResultType>(0.0), std::plus<ResultType>(), [](decltype(*p) i, decltype(*q) j) { return detail::conj(i)*j; });
+  }
+  template<>
+  double dot_product(const double* p, const size_t n, const double* q) {
+    return ddot_(n, p, 1, q, 1);
+  }
+  template<>
+  std::complex<double> dot_product(const std::complex<double>* p, const size_t n, const std::complex<double>* q) {
+    return zdotc_(n, p, 1, q, 1);
   }
 
 }}

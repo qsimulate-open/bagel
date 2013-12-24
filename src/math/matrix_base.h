@@ -117,7 +117,7 @@ class Matrix_base {
     }
     template<class T>
     DataType dot_product_impl(const T& o) const {
-      return std::inner_product(data(), data()+size(), o.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
+      return blas::dot_product(data(), size(), o.data());
     }
     template<class T>
     double orthog_impl(const std::list<std::shared_ptr<const T>> o) { 
