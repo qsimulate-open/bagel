@@ -31,7 +31,7 @@
 #include <sstream>
 #include <memory>
 #include <vector>
-#include <src/util/lexical_cast.h>
+#include <src/util/string.h>
 
 namespace bagel {
 

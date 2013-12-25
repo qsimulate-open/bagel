@@ -56,8 +56,7 @@ MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g
   if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented with DF");
 
   // if three is a aux_basis keyword, we use that basis
-  abasis_ = idata_->get<string>("aux_basis", "");
-  transform(abasis_.begin(), abasis_.end(), abasis_.begin(), ::tolower);
+  abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
 
 }
 

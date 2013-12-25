@@ -61,8 +61,7 @@ DMP2::DMP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry>
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
   // if three is a aux_basis keyword, we use that basis
-  abasis_ = idata_->get<string>("aux_basis", "");
-  transform(abasis_.begin(), abasis_.end(), abasis_.begin(), ::tolower);
+  abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
 
 }
 

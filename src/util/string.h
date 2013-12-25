@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: lexical_cast.h
+// Filename: string.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -25,19 +25,20 @@
 
 // Degraded version of lexical_cast.
 
-#ifndef __SRC_UTIL_LEXICAL_CAST
-#define __SRC_UTIL_LEXICAL_CAST
+#ifndef __SRC_UTIL_STRING_H
+#define __SRC_UTIL_STRING_H
 
 #include <sstream>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace bagel {
-template<typename T, typename U> T lexical_cast(U in) {
-  std::stringstream ss;
-  ss << in;
-  T out;
-  ss >> out;
-  return out;
-}
-}
+namespace {
+
+template<typename T, typename U> T lexical_cast(U in) { return boost::lexical_cast<T>(in); }
+
+std::string to_lower(const std::string& in) { std::string tmp(in); boost::algorithm::to_lower(tmp); return tmp; }
+
+}}
 
 #endif

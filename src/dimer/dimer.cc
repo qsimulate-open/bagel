@@ -34,7 +34,7 @@
 #include <src/fci/knowles.h>
 #include <src/wfn/reference.h>
 #include <src/molecule/localization.h>
-#include <src/util/lexical_cast.h>
+#include <src/util/string.h>
 
 using namespace std;
 using namespace bagel;

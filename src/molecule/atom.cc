@@ -36,13 +36,11 @@ static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
-  name_ = inp->get<string>("atom");
-  transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
+  name_ = to_lower(inp->get<string>("atom"));
 
   if (elem)
     for (auto& i : *elem) {
-      string key = i->key();
-      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
   atom_number_ = atommap_.atom_number(name_);
@@ -73,8 +71,7 @@ Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<s
   } else {
     if (elem)
       for (auto& i : *elem) {
-        string key = i->key();
-        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        const string key = to_lower(i->key());
         if (name_ == key) basis_ = i->data();
       }
     string na = name_;
@@ -143,8 +140,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
   if (elem)
     for (auto& i : *elem) {
-      string key = i->key();
-      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
   string na = name_;
