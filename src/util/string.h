@@ -38,6 +38,7 @@ namespace {
 template<typename T, typename U> T lexical_cast(U in) { return boost::lexical_cast<T>(in); }
 
 std::string to_lower(const std::string& in) { std::string tmp(in); boost::algorithm::to_lower(tmp); return tmp; }
+std::string to_upper(const std::string& in) { std::string tmp(in); boost::algorithm::to_upper(tmp); return tmp; }
 
 }}
 
