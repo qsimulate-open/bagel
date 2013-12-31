@@ -52,7 +52,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
     // for ERI evaulation. Other than that, we need to overload this function in a derived class
     void compute_ssss(const double integral_thresh) override;
 
-    virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim) {
+    virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) {
       return (coord1*exp1 + coord2*exp2) * one12;
     }
 
@@ -117,6 +117,8 @@ class ERIBatch_Base : public RysIntegral<DataType> {
     using RysIntegral<DataType>::breit_;
     using RysIntegral<DataType>::data_;
     using RysIntegral<DataType>::data2_;
+    using RysIntegral<DataType>::swap01_;
+    using RysIntegral<DataType>::swap23_;
 };
 
 using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;

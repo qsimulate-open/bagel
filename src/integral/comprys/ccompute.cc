@@ -75,11 +75,13 @@ void ComplexERIBatch::compute() {
     swapped = (swapped ^ true);
   }
 
+  // get total angular momentum quantum number from Shell
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
   const int ang3 = basisinfo_[3]->angular_number();
 
+  // calculate number of cartesian or spherical atomic orbitals in the shell
   int a = (ang0 + 1) * (ang0 + 2) / 2;
   int b = (ang1 + 1) * (ang1 + 2) / 2;
   int c = (ang2 + 1) * (ang2 + 2) / 2;

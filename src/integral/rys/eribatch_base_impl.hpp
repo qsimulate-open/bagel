@@ -114,9 +114,9 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         const double cd = rnd(*expi2) * rnd(*expi3);
         const double cxq_inv = 1.0 / cxq;
         Ecd_save[index23] = exp(-r23_sq * (cdp * cxq_inv) );
-        qx_save[index23] = get_PQ(cx, dx, *expi2, *expi3, cxq_inv, 2, 0);
-        qy_save[index23] = get_PQ(cy, dy, *expi2, *expi3, cxq_inv, 2, 1);
-        qz_save[index23] = get_PQ(cz, dz, *expi2, *expi3, cxq_inv, 2, 2);
+        qx_save[index23] = get_PQ(cx, dx, *expi2, *expi3, cxq_inv, 2, 0, swap23_);
+        qy_save[index23] = get_PQ(cy, dy, *expi2, *expi3, cxq_inv, 2, 1, swap23_);
+        qz_save[index23] = get_PQ(cz, dz, *expi2, *expi3, cxq_inv, 2, 2, swap23_);
 
         if (IntType == Int_t::London) {
           const double A_DC_x = (basisinfo_[3]->vector_potential(0) - basisinfo_[2]->vector_potential(0));
@@ -124,7 +124,8 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
           const double A_DC_z = (basisinfo_[3]->vector_potential(2) - basisinfo_[2]->vector_potential(2));
           const double DC_DC_innerproduct = A_DC_x * A_DC_x + A_DC_y * A_DC_y + A_DC_z * A_DC_z;
           const double Q_DC_innerproduct = std::real(qx_save[index23]) * A_DC_x + std::real(qy_save[index23]) * A_DC_y + std::real(qz_save[index23]) * A_DC_z;
-          detail::make_complex(-0.25*cxq_inv*DC_DC_innerproduct, -1*Q_DC_innerproduct, factor_cd_save[index23]);
+          if (swap23_) detail::make_complex(-0.25*cxq_inv*DC_DC_innerproduct, Q_DC_innerproduct, factor_cd_save[index23]);
+          else detail::make_complex(-0.25*cxq_inv*DC_DC_innerproduct, -1*Q_DC_innerproduct, factor_cd_save[index23]);
         }
 
         // integral screening using Q
@@ -170,9 +171,9 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
       const double cxp_inv = 1.0 / cxp;
       const double Eab = std::exp(-r01_sq * (abp * cxp_inv) );
       const double coeff_half = 2 * Eab * std::pow(std::atan(1.0)*4.0, 2.5);
-      const DataType px = get_PQ(ax, bx, *expi0, *expi1, cxp_inv, 0, 0);
-      const DataType py = get_PQ(ay, by, *expi0, *expi1, cxp_inv, 0, 1);
-      const DataType pz = get_PQ(az, bz, *expi0, *expi1, cxp_inv, 0, 2);
+      const DataType px = get_PQ(ax, bx, *expi0, *expi1, cxp_inv, 0, 0, swap01_);
+      const DataType py = get_PQ(ay, by, *expi0, *expi1, cxp_inv, 0, 1, swap01_);
+      const DataType pz = get_PQ(az, bz, *expi0, *expi1, cxp_inv, 0, 2, swap01_);
 
       // integral screening using P
       if (integral_thresh != 0.0) {
@@ -197,7 +198,8 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
         const double BA_BA_innerproduct = A_BA_x * A_BA_x + A_BA_y * A_BA_y + A_BA_z * A_BA_z;
         const double P_BA_innerproduct = std::real(px) * A_BA_x + std::real(py) * A_BA_y + std::real(pz) * A_BA_z;
-        detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct, factor_ab);
+        if (swap01_) detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , P_BA_innerproduct, factor_ab);
+        else detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct, factor_ab);
       }
 
       // store calculated values as members of RysIntegral
