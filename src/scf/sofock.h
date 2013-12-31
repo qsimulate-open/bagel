@@ -29,7 +29,7 @@
 
 #include <src/df/df.h>
 #include <src/integral/libint/libint.h>
-#include <src/integral/rys/eribatch.h>
+//#include <src/integral/rys/eribatch.h>
 
 namespace bagel {
 
