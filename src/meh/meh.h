@@ -95,7 +95,6 @@ class MultiExcitonHamiltonian {
    protected:
       std::shared_ptr<const Dimer> dimer_;
       std::shared_ptr<const Reference> ref_;
-      std::shared_ptr<const Coeff> coeff_;
 
       std::shared_ptr<DimerJop> jop_;
 

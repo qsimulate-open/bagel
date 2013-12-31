@@ -121,7 +121,7 @@ void ZHarrison::compute_rdm12() {
             auto cs = s; cs.set(i);
             complex<double>* target = d->data(i)->data()+int_det->lexical<0>(s)*lenb;
             const complex<double>* source = cc->data()+cc->det()->lexical<0>(cs)*lenb;
-            transform(source, source+lenb, target, target, [&sign](complex<double> a, complex<double> b) { return a*sign+b; });
+            blas::ax_plus_y_n(sign, source, lenb, target);
           }
         }
         intermediates["0"] = d;

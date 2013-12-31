@@ -42,8 +42,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     std::shared_ptr<const Reference> ref;
 
     for (auto& itree : *keys) {
-      std::string method = itree->get<std::string>("title", "");
-      std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+      const std::string method = to_lower(itree->get<std::string>("title", ""));
 
       if (method == "molecule") {
         geom = std::make_shared<Geometry>(itree);
@@ -72,8 +71,7 @@ double molden_out_energy(std::string inp1, std::string inp2) {
     std::shared_ptr<const PTree> keys = idata->get_child("bagel");
     std::shared_ptr<const PTree> mol = *keys->begin();
 
-    std::string method = mol->get<std::string>("title", "");
-    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    const std::string method = to_lower(mol->get<std::string>("title", ""));
     if (method != "molecule") throw std::logic_error("broken test case");
     auto geom = std::make_shared<Geometry>(mol);
 

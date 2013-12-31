@@ -76,7 +76,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
                      *sden +=*eden->get_submatrix(nbasis, nbasis, nbasis, nbasis);
 
   // nden, kden, sden (minus sign is taken care of inside)
-  vector<GradTask> task = contract_grad1e(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
+  vector<shared_ptr<GradTask>> task = contract_grad1e(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
 
   // small NAI part..
   map<int, shared_ptr<Sigma>> sigma;
@@ -112,16 +112,22 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   array<shared_ptr<const Matrix>,6> rmat;
   auto riter = rmat.begin();
   for (auto& i : mat) *riter++ = i.second->get_real_part();
+
   // *** adding task here ****
   {
-    vector<GradTask> tmp = contract_gradsmall1e(rmat);
+    vector<shared_ptr<GradTask>> tmp = contract_gradsmall1e(rmat);
+    task.insert(task.end(), tmp.begin(), tmp.end());
+  }
+
+  if (geom_->has_finite_nucleus()) {
+    vector<shared_ptr<GradTask>> tmp = contract_grad1e_fnai(rmat);
     task.insert(task.end(), tmp.begin(), tmp.end());
   }
 #ifdef LOCAL_TIMING
   mpi__->barrier();
   ptime.tick_print("Onebody part");
 #endif
- 
+
 
   // two-electron contributions.
   {
@@ -197,8 +203,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
 
     // (6) two-index gamma
-    shared_ptr<Matrix> cdr = cd->get_real_part(); 
-    assert(cd->get_imag_part()->norm() < 1.0e-10); // by symmetry the imaginary part is zero
+    shared_ptr<Matrix> cdr = cd->get_real_part();
+    assert(cd->get_imag_part()->rms() < 1.0e-10); // by symmetry the imaginary part is zero
     auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
 
 #ifdef LOCAL_TIMING
@@ -208,12 +214,12 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
     // *** adding task here ****
     {
-      vector<GradTask> task2 = contract_grad2e_2index(gamma2); 
+      vector<shared_ptr<GradTask>> task2 = contract_grad2e_2index(gamma2);
       task.insert(task.end(), task2.begin(), task2.end());
     }
 
     // (7) first back transformation (gamma|is^Y)
-    list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff); 
+    list<shared_ptr<RelDFHalfB>> dfhalfb = dffull.front()->back_transform(rocoeff, iocoeff);
 
 #ifdef LOCAL_TIMING
     mpi__->barrier();
@@ -221,7 +227,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
 
     // (8) second back transformation (gamma|r^Xs^Y) and immediately rearrange to (gamma|r^w s^Y)
-    map<pair<int,int>,shared_ptr<DFDist>> gamma3; 
+    map<pair<int,int>,shared_ptr<DFDist>> gamma3;
     for (auto& half : dfhalfb) {
       const int cbasis = half->basis();
       if (cbasis == Basis::LP || cbasis == Basis::LM) {
@@ -273,7 +279,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     map<pair<int,int>,shared_ptr<const Matrix>> wden;
     for (auto& r : mat)
       wden.insert(make_pair(r.first, r.second->get_real_part()));
-    wden.insert(make_pair(make_pair(Comp::L,Comp::L), nden->get_real_part())); // large-large case 
+    wden.insert(make_pair(make_pair(Comp::L,Comp::L), nden->get_real_part())); // large-large case
     for (auto& w : wden) {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());
@@ -296,7 +302,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       assert(iter != gamma3.end());
       // transform to the shell-boundary format
       iter->second->shell_boundary_3index();
-      vector<GradTask> task3 = contract_grad2e(iter->second); 
+      vector<shared_ptr<GradTask>> task3 = contract_grad2e(iter->second);
       task.insert(task.end(), task3.begin(), task3.end());
     }
     { // small-small
@@ -309,15 +315,15 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
             assert(iter != gamma3.end());
             // transform to the shell-boundary format
             iter->second->shell_boundary_3index();
-            gs[icnt++] = iter->second; 
+            gs[icnt++] = iter->second;
           }
-      vector<GradTask> task3 = contract_grad2e(gs);
+      vector<shared_ptr<GradTask>> task3 = contract_grad2e(gs);
       task.insert(task.end(), task3.begin(), task3.end());
     }
   }
 
   // compute
-  TaskQueue<GradTask> tq(move(task));
+  TaskQueue<shared_ptr<GradTask>> tq(move(task));
   tq.compute();
 
   // allreduce

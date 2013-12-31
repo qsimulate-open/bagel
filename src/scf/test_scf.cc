@@ -43,8 +43,7 @@ double scf_energy(std::string filename, std::string extension = ".json") {
   std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
-    std::string method = itree->get<std::string>("title", "");
-    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
@@ -81,6 +80,7 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("oh_svp_uhf"),         -75.28410147));
     BOOST_CHECK(compare(scf_energy("hc_svp_rohf"),        -38.16810629));
     BOOST_CHECK(compare(scf_energy("hf_new_dfhf"),        -99.97989929));
+    BOOST_CHECK(compare(scf_energy("hcl_svp_dfhf"),      -459.93784632));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

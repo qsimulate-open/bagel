@@ -178,7 +178,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   unique_ptr<double[]> source(new double[la*lb]);
 
   // (astart:aend, b)
-  mytranspose_(cc->local(), lb, la, source.get());
+  blas::transpose(cc->local(), lb, la, source.get());
   fill_n(target.get(), la*lb, 0.0);
 
   // preparing Hamiltonian
@@ -227,7 +227,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
 
   tasks.compute();
 
-  mytranspose_(target.get(), la, lb, source.get());
+  blas::transpose(target.get(), la, lb, source.get());
   for (size_t i = 0; i != la; ++i) {
     lock_guard<mutex> lock(sigma->cimutex(i));
     daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);

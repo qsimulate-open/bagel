@@ -71,11 +71,7 @@ class Task : public std::enable_shared_from_this<Task<T>> {
 
     bool done() const { return done_; }
 
-    bool ready() const {
-      bool out = true;
-      for (auto i = depend_.begin(); i != depend_.end(); ++i) out &= (*i)->done();
-      return out && !done_;
-    }
+    bool ready() const { return !done_ && std::all_of(depend_.begin(), depend_.end(), [](std::shared_ptr<Task<T>> o) { return o->done(); }); }
 
     virtual double energy() const { return 0.0; }
     virtual double dedci() const { return 0.0; }

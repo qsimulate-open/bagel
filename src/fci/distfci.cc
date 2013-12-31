@@ -27,6 +27,7 @@
 
 #include <src/util/combination.hpp>
 #include <src/math/comb.h>
+#include <src/fci/modelci.h>
 #include <src/fci/dist_form_sigma.h>
 #include <src/fci/distfci.h>
 #include <src/math/davidson.h>
@@ -61,6 +62,7 @@ void DistFCI::common_init() {
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
+  nguess_ = idata_->get<int>("nguess", nstate_);
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
@@ -102,11 +104,109 @@ void DistFCI::common_init() {
   det_ = space_->basedet();
 }
 
+void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
+  multimap<double, pair<size_t, size_t>> ordered_elements;
+  const double* d = denom_->local();
+  for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia) {
+    for (size_t ib = 0; ib < det_->lenb(); ++ib) {
+      ordered_elements.emplace(*d++, make_pair(ia, ib));
+    }
+  }
+
+  vector<double> energies;
+  vector<size_t> aarray, barray;
+  double last_value = 0.0;
+  for (auto& p : ordered_elements) {
+    double val = p.first;
+    if (energies.size() >= nguess_ && val != last_value)
+      break;
+    else {
+      energies.push_back(val);
+      aarray.push_back(p.second.first);
+      barray.push_back(p.second.second);
+    }
+  }
+
+  vector<size_t> nelements(mpi__->size(), 0);
+  const size_t nn = energies.size();
+  mpi__->allgather(&nn, 1, nelements.data(), 1);
+
+  const size_t chunk = *max_element(nelements.begin(), nelements.end());
+  energies.resize(chunk, 0);
+  aarray.resize(chunk, 0);
+  barray.resize(chunk, 0);
+
+  vector<double> allenergies(chunk * mpi__->size(), 0.0);
+  mpi__->allgather(energies.data(), chunk, allenergies.data(), chunk);
+  vector<size_t> allalpha(chunk * mpi__->size());
+  mpi__->allgather(aarray.data(), chunk, allalpha.data(), chunk);
+  vector<size_t> allbeta(chunk * mpi__->size());
+  mpi__->allgather(barray.data(), chunk, allbeta.data(), chunk);
+
+  ordered_elements.clear();
+  for (size_t i = 0; i < chunk * mpi__->size(); ++i) {
+    if (allenergies[i] != 0.0) ordered_elements.emplace(allenergies[i], make_pair(allalpha[i], allbeta[i]));
+  }
+
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> basis;
+  last_value = 0.0;
+  for (auto& p : ordered_elements) {
+    double val = p.first;
+    if (basis.size() >= nguess_ && val != last_value)
+      break;
+    else
+      basis.emplace_back(det_->stringa(p.second.first), det_->stringb(p.second.second));
+  }
+  const int nguess = basis.size();
+
+  shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
+  vector<double> eigs(nguess, 0.0);
+  spin->diagonalize(eigs.data());
+
+  int start, end;
+  const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
+  for (start = 0; start < nguess; ++start)
+    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+  for (end = start; end < nguess; ++end)
+    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+
+  if ((end-start) >= nstate_) {
+    shared_ptr<Matrix> coeffs = spin->slice(start, end);
+
+    shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
+    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
+    hamiltonian->diagonalize(eigs.data());
+
+#if 0
+    const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+    for (int i = 0; i < end-start; ++i)
+      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+#endif
+
+    coeffs = (*coeffs * *hamiltonian).slice(0, nstate_);
+    mpi__->broadcast(coeffs->data(), coeffs->ndim() * coeffs->mdim(), 0);
+    const size_t lenb = det_->lenb();
+    for (int i = 0; i < nguess; ++i) {
+      size_t ia = det_->lexical<0>(basis[i].first);
+      if ( ia >= denom_->astart() && ia < denom_->aend() ) {
+        ia -= denom_->astart();
+        const size_t ib = det_->lexical<1>(basis[i].second);
+        for (int j = 0; j < nstate_; ++j)
+          out[j]->local(ib + ia*lenb) = coeffs->element(i, j);
+      }
+    }
+  }
+  else {
+    nguess_ *= 2;
+    model_guess(out);
+  }
+}
+
 // generate initial vectors
 //   - bits: bit patterns of low-energy determinants
 //   - nspin: #alpha - #beta
 //   - out:
-void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec>> out) {
+void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_ptr<DistCivec>>& out) {
   int ndet = nstate_*10;
   start_over:
   vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet);
@@ -275,7 +375,10 @@ void DistFCI::compute() {
     i = make_shared<DistCivec>(det_);
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc);
+  if (nguess_ <= nstate_)
+    generate_guess(nelea_-neleb_, nstate_, cc);
+  else
+    model_guess(cc);
   pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry

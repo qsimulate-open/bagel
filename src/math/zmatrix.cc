@@ -362,14 +362,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose(data(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_conjg_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose_conjg(data(), ndim_, mdim_, out->data());
   return out;
 }
 
@@ -397,10 +397,10 @@ void ZMatrix::purify_unitary() {
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> a = zdotc_(ndim_, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
-      zaxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const complex<double> a = blas::dot_product(element_ptr(0,j), ndim_, element_ptr(0,i));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
-    const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }

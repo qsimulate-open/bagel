@@ -71,6 +71,13 @@ class CSymMatrix {
       }
       return out;
     }
+
+    std::shared_ptr<CSymMatrix> clone() const { return std::make_shared<CSymMatrix>(nocc_, localized_); }
+    std::shared_ptr<CSymMatrix> copy() const {
+      auto out = clone();
+      std::copy_n(data(), size_, out->data());
+      return out;
+    }
 };
 
 }

@@ -328,7 +328,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor);
+  blas::transpose(data(), ndim_, mdim_, out->data(), factor);
   return out;
 }
 
@@ -345,10 +345,10 @@ void Matrix::purify_unitary() {
   assert(ndim_ == mdim_);
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
-      daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const double a = blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,j));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
-    const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });
   }
 }

@@ -24,7 +24,7 @@
 //
 
 #include <fstream>
-
+#include <string>
 #include <src/input/input.h>
 #include <src/input/parse.h>
 #include <boost/property_tree/json_parser.hpp>
@@ -96,7 +96,7 @@ void PTree::print() const {
 
 
 shared_ptr<const PTree> PTree::read_basis(string name) {
-  transform(name.begin(), name.end(), name.begin(),(int (*)(int))tolower);
+  name = to_lower(name);
   shared_ptr<const PTree> out;
   // first try the absolute path (or current directory)
   try {

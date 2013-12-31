@@ -33,16 +33,18 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   Timer mehtime;
   std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << std::endl;
 
-  std::map<std::pair<int,int>, double> spinmap;
-  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
-    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-      gamma_couple_blocks(*iAB, *jAB);
-      spin_couple_blocks(*iAB, *jAB, spinmap);
+  {
+    std::map<std::pair<int,int>, double> spinmap;
+    for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+      for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+        gamma_couple_blocks(*iAB, *jAB);
+        spin_couple_blocks(*iAB, *jAB, spinmap);
+      }
+      gamma_couple_blocks(*iAB, *iAB);
+      compute_diagonal_spin_block(*iAB, spinmap);
     }
-    gamma_couple_blocks(*iAB, *iAB);
-    compute_diagonal_spin_block(*iAB, spinmap);
+    spin_ = std::make_shared<MEHSpin>(dimerstates_, spinmap, max_spin_);
   }
-  spin_ = std::make_shared<MEHSpin>(dimerstates_, spinmap, max_spin_);
 
   std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;
   std::cout << "    - spin elements: " << spin_->size() << std::endl;
@@ -201,7 +203,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   if ( dipoles_ ) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
-    DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, coeff_);
+    DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, ref_->coeff());
     std::array<std::string,3> mu_labels = {{"x", "y", "z"}};
     for (int i = 0; i < 3; ++i) {
       std::string label("mu_");

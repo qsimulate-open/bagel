@@ -26,13 +26,17 @@
 #include <src/math/algo.h>
 #include <bagel_config.h>
 #ifdef HAVE_MKL_H
+#define MKL_Complex16 std::complex<double>
 #include <mkl.h>
 #endif
 
 using namespace std;
 
 namespace bagel {
-void mytranspose_(const double* h, const int m, const int n, double* vec, const double fac) {
+namespace blas {
+
+template<>
+void transpose(const double* h, const int m, const int n, double* vec, const double fac) {
 #ifdef HAVE_MKL_H
   mkl_domatcopy('c', 't', m, n, fac, h, m, vec, n);
 #else
@@ -175,4 +179,5 @@ void mytranspose_(const double* h, const int m, const int n, double* vec, const 
   }
 #endif
 }
-}
+
+}}

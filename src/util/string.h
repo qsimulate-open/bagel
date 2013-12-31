@@ -1,10 +1,10 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: muffle.h
-// Copyright (C) 2013 Shane Parker
+// Filename: string.h
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
@@ -23,36 +23,23 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_UTIL_MUFFLE_H
-#define __SRC_UTIL_MUFFLE_H
+// Degraded version of lexical_cast.
 
-#include <iostream>
-#include <fstream>
+#ifndef __SRC_UTIL_STRING_H
+#define __SRC_UTIL_STRING_H
+
+#include <sstream>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace bagel {
+namespace {
 
-// Hides cout and restores it when the object is destroyed
-class Muffle {
-  private:
-    std::shared_ptr<std::ostream> redirect_;
-    std::streambuf* saved_;
+template<typename T, typename U> T lexical_cast(U in) { return boost::lexical_cast<T>(in); }
 
-  public:
-    Muffle(std::string filename = "") {
-      saved_ = std::cout.rdbuf();
-      if (filename != "")
-        redirect_ = std::make_shared<std::ofstream>(filename);
-      else
-        redirect_ = std::make_shared<std::ostringstream>();
+std::string to_lower(const std::string& in) { std::string tmp(in); boost::algorithm::to_lower(tmp); return tmp; }
+std::string to_upper(const std::string& in) { std::string tmp(in); boost::algorithm::to_upper(tmp); return tmp; }
 
-      std::cout.rdbuf(redirect_->rdbuf());
-    }
-
-    ~Muffle() {
-      std::cout.rdbuf(saved_);
-    }
-};
-
-}
+}}
 
 #endif

@@ -70,8 +70,7 @@ int main(int argc, char** argv) {
 
     for (auto& itree : *keys) {
 
-      string title = itree->get<string>("title", "");
-      transform(title.begin(), title.end(), title.begin(), ::tolower);
+      const string title = to_lower(itree->get<string>("title", ""));
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {

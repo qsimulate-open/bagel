@@ -37,22 +37,22 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
                                                       const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
 
-  vector<GradTask> task  = contract_grad2e(o);
-  vector<GradTask> task2 = contract_grad1e(d, w);
-  vector<GradTask> task3 = contract_grad2e_2index(o2);
+  vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
+  vector<shared_ptr<GradTask>> task2 = contract_grad1e(d, w);
+  vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);
   task.insert(task.end(), task2.begin(), task2.end());
   task.insert(task.end(), task3.begin(), task3.end());
 
   if (g2 && g2o) {
-    vector<GradTask> task0 = contract_grad2e(g2o, g2);
+    vector<shared_ptr<GradTask>> task0 = contract_grad2e(g2o, g2);
     task.insert(task.end(), task0.begin(), task0.end());
   }
   if (g2 && g2o2) {
-    vector<GradTask> task0 = contract_grad2e_2index(g2o2, g2);
+    vector<shared_ptr<GradTask>> task0 = contract_grad2e_2index(g2o2, g2);
     task.insert(task.end(), task0.begin(), task0.end());
   }
 
-  TaskQueue<GradTask> tq(move(task));
+  TaskQueue<shared_ptr<GradTask>> tq(move(task));
   tq.compute();
 
   grad_->allreduce();
@@ -62,13 +62,13 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 }
 
 
-vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
   return contract_grad1e(d, d, w);
 }
 
 
-vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
-  vector<GradTask> out;
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
+  vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
@@ -94,19 +94,25 @@ vector<GradTask> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> n
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset_ = {*o0, *o1};
 
-          GradTask task(input, atom, offset_, nmat, kmat, omat, this);
-          out.push_back(task);
+          out.push_back(make_shared<GradTask1>(input, atom, offset_, nmat, kmat, omat, this));
         }
       }
     }
   }
+
+  // if finite nucleus are used, we need to insert additional tasks that are omitted from the 1e part
+  if (geom_->has_finite_nucleus()) {
+    vector<shared_ptr<GradTask>> task0 = contract_grad1e_fnai(nmat);
+    out.insert(out.end(), task0.begin(), task0.end());
+  }
+
   return out;
 }
 
 
 // TODO make a generic code to merge with grad1e (variadic templete? vector?)
-vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matrix>,6> rmat) {
-  vector<GradTask> out;
+vector<shared_ptr<GradTask>> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matrix>,6> rmat) {
+  vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
@@ -132,8 +138,7 @@ vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matr
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset_ = {*o0, *o1};
 
-          GradTask task(input, atom, offset_, rmat, this);
-          out.push_back(task);
+          out.push_back(make_shared<GradTask1r>(input, atom, offset_, rmat, this));
         }
       }
     }
@@ -142,9 +147,9 @@ vector<GradTask> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matr
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFDist>,6> o, const shared_ptr<const Geometry> geom) {
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const array<shared_ptr<const DFDist>,6> o, const shared_ptr<const Geometry> geom) {
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
-  vector<GradTask> out;
+  vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
@@ -177,8 +182,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
               vector<int> atoms = {iatom0, iatom1, iatom2};
               vector<int> offs = {*o0, *o1, *o2};
 
-              GradTask task(input, atoms, offs, o, this);
-              out.push_back(task);
+              out.push_back(make_shared<GradTask3r>(input, atoms, offs, o, this));
             }
           }
         }
@@ -190,9 +194,58 @@ vector<GradTask> GradEval_base::contract_grad2e(const array<shared_ptr<const DFD
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o, const shared_ptr<const Geometry> geom) {
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const array<shared_ptr<const Matrix>,6> o, const shared_ptr<const Geometry> geom) {
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
-  vector<GradTask> out;
+  vector<shared_ptr<GradTask>> out;
+  const size_t nshell = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  const size_t nfatom = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
+  out.reserve(nshell*nshell*nfatom);
+
+  // loop over atoms
+  int iatomf = -1;
+  int cnt = 0;
+  for (auto& af : cgeom->atoms()) {
+    ++iatomf;
+    if (!af->finite_nucleus()) continue;
+    // construct nuclear shell
+    const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
+    auto b2 = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+
+    // dummy shell
+    auto b3 = make_shared<Shell>(af->spherical());
+
+    int iatom0 = 0;
+    auto oa0 = cgeom->offsets().begin();
+    for (auto a0 = cgeom->atoms().begin(); a0 != cgeom->atoms().end(); ++a0, ++oa0, ++iatom0) {
+      int iatom1 = 0;
+      auto oa1 = cgeom->offsets().begin();
+      for (auto a1 = cgeom->atoms().begin(); a1 != cgeom->atoms().end(); ++a1, ++oa1, ++iatom1) {
+        auto o0 = oa0->begin();
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+          auto o1 = oa1->begin();
+          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+            // static distribution since this is cheap
+            if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+            array<shared_ptr<const Shell>,4> input = {{b3, b2, *b1, *b0}};
+            vector<int> atoms = {iatom0, iatom1, iatomf};
+            vector<int> offs = {*o0, *o1, 0};
+
+            out.push_back(make_shared<GradTask1rf>(input, atoms, offs, o, this));
+          }
+
+        }
+      }
+    }
+  }
+  return out;
+}
+
+
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o, const shared_ptr<const Geometry> geom) {
+  shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
+  vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
@@ -226,8 +279,7 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
               vector<int> atoms = {iatom0, iatom1, iatom2};
               vector<int> offs = {*o0, *o1, *o2};
 
-              GradTask task(input, atoms, offs, o, this);
-              out.push_back(task);
+              out.push_back(make_shared<GradTask3>(input, atoms, offs, o, this));
             }
           }
         }
@@ -239,9 +291,9 @@ vector<GradTask> GradEval_base::contract_grad2e(const shared_ptr<const DFDist> o
 }
 
 
-vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den, const shared_ptr<const Geometry> geom) {
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e_2index(const shared_ptr<const Matrix> den, const shared_ptr<const Geometry> geom) {
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
-  vector<GradTask> out;
+  vector<shared_ptr<GradTask>> out;
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
                                           [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell2*(nshell2+1)/2);
@@ -270,11 +322,62 @@ vector<GradTask> GradEval_base::contract_grad2e_2index(const shared_ptr<const Ma
           vector<int> atoms = {iatom0, iatom1};
           vector<int> offs = {*o0, *o1};
 
-          GradTask task(input, atoms, offs, den, this);
-          out.push_back(task);
+          out.push_back(make_shared<GradTask2>(input, atoms, offs, den, this));
         }
       }
     }
   }
   return out;
 }
+
+
+vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_ptr<const Matrix> nmat) {
+  vector<shared_ptr<GradTask>> out;
+  const size_t nshell = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  const size_t nfatom = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
+  out.reserve(nshell*nshell*nfatom);
+
+  int cnt = 0;
+
+  // loop over finite nucleus
+  int iatomf = -1;
+  for (auto& af : geom_->atoms()) {
+    ++iatomf;
+    // skip if this atom is not finite nucleus
+    if (!af->finite_nucleus()) continue;
+
+    // construct nuclear shell
+    const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
+    auto nshell = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+
+    // construct dummy shell
+    auto dummy = make_shared<const Shell>(af->spherical());
+
+    int iatom0 = 0;
+    auto oa0 = geom_->offsets().begin();
+    for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+      int iatom1 = 0;
+      auto oa1 = geom_->offsets().begin();
+      for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+
+        auto o0 = oa0->begin();
+        for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+          auto o1 = oa1->begin();
+          for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+            // static distribution since this is cheap
+            if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+            array<shared_ptr<const Shell>,4> input = {{dummy, nshell, *b1, *b0}};
+            vector<int> atom = {iatom0, iatom1, iatomf};
+            vector<int> offset_ = {*o0, *o1, 0};
+
+            out.push_back(make_shared<GradTask1f>(input, atom, offset_, nmat, this));
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+

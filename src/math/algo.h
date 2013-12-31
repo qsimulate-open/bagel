@@ -30,12 +30,12 @@
 #include <complex>
 #include <type_traits>
 #include <stdexcept>
+#include <algorithm>
+#include <cassert>
+#include <src/util/f77.h>
 
 namespace bagel {
 
-extern void mytranspose_(const double* a, const int b, const int c, double* d, const double fac = 1.0);
-extern void mytranspose_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
-extern void mytranspose_conjg_(const std::complex<double>* a, const int b, const int c, std::complex<double>* d);
 
 extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
                                  const int* acols, const int* arind, const double* b, const int ldb, const double beta,
@@ -79,7 +79,70 @@ namespace {
     static_assert(N > 0, "illegal call of taylor_expansion");
     return taylor<N, N>()(x, a);
   }
+
 } }
+
+namespace blas {
+
+// Transpose
+template<typename T,
+         class = typename std::enable_if< std::is_same<double,T>::value || std::is_same<std::complex<double>,T>::value >::type
+        >
+void transpose(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose(const double* a, const int b, const int c, double* d, const double fac);
+template<>
+void transpose(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+
+template<typename T,
+         class = typename std::enable_if< std::is_same<std::complex<double>,T>::value >::type
+        >
+void transpose_conjg(const T* a, const int b, const int c, T* d, const T fac = 1.0) { assert(false); }
+template<>
+void transpose_conjg(const std::complex<double>* a, const int b, const int c, std::complex<double>* d, const std::complex<double> fac);
+
+
+namespace {
+  // AXPY
+  template<class T, class U, typename Type,
+           // T and U have to be either raw pointers or random access iterators
+           class = typename std::enable_if< (std::is_pointer<T>::value) &&
+                                            (std::is_pointer<U>::value) >::type >
+  void ax_plus_y_n(const Type& a, const T p, const size_t n, U q) {
+    std::transform(p, p+n, q, q, [&a](decltype(*p) i, decltype(*q) j) { return j+a*i; });
+  }
+  template<>
+  void ax_plus_y_n(const double& a, const double* p, const size_t n, double* q) {
+    daxpy_(n, a, p, 1, q, 1);
+  }
+  template<>
+  void ax_plus_y_n(const std::complex<double>& a, const std::complex<double>* p, const size_t n, std::complex<double>* q) {
+    zaxpy_(n, a, p, 1, q, 1);
+  }
+  template<>
+  void ax_plus_y_n(const double& a, const std::complex<double>* p, const size_t n, std::complex<double>* q) {
+    zaxpy_(n, static_cast<std::complex<double>>(a), p, 1, q, 1);
+  }
+
+  // DOT
+  template<class T, class U,
+           // T and U have to be either raw pointers or random access iterators
+           class = typename std::enable_if< (std::is_pointer<T>::value) &&
+                                            (std::is_pointer<U>::value) >::type >
+  auto dot_product(const T p, const size_t n, const U q) -> decltype(*p * *q) {
+    using ResultType = decltype(*p * *q);
+    return std::inner_product(p, p+n, q, static_cast<ResultType>(0.0), std::plus<ResultType>(), [](decltype(*p) i, decltype(*q) j) { return detail::conj(i)*j; });
+  }
+  template<>
+  double dot_product(const double* p, const size_t n, const double* q) {
+    return ddot_(n, p, 1, q, 1);
+  }
+  template<>
+  std::complex<double> dot_product(const std::complex<double>* p, const size_t n, const std::complex<double>* q) {
+    return zdotc_(n, p, 1, q, 1);
+  }
+
+}}
 
 }
 

@@ -33,7 +33,11 @@
 using namespace std;
 
 namespace bagel {
-void mytranspose_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
+namespace blas {
+
+template<>
+void transpose(const complex<double>* h, const int m, const int n, complex<double>* vec, const complex<double> fac) {
+  assert(fac == complex<double>(1.0));
 #ifdef HAVE_MKL_H
   mkl_zomatcopy('c', 't', m, n, 1.0, h, m, vec, n);
 #else
@@ -178,7 +182,8 @@ void mytranspose_(const complex<double>* h, const int m, const int n, complex<do
 }
 
 
-void mytranspose_conjg_(const complex<double>* h, const int m, const int n, complex<double>* vec) {
+template<>
+void transpose_conjg(const complex<double>* h, const int m, const int n, complex<double>* vec, const std::complex<double> fac) {
 #ifdef HAVE_MKL_H
   mkl_zomatcopy('c', 'c', m, n, 1.0, h, m, vec, n);
 #else
@@ -321,4 +326,5 @@ void mytranspose_conjg_(const complex<double>* h, const int m, const int n, comp
   }
 #endif
 }
-}
+
+}}

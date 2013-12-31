@@ -61,7 +61,7 @@ class HZTaskAA {
 
           const DataType hc = h1_[i+ j*norb] * static_cast<double>(det->sign(sourcestring, i, j));
           const DataType* const source = cc_->element_ptr(0, det->lexical<0>(sourcestring));
-          std::transform(source, source+lb, target_, target_, [&hc](DataType p, DataType q){ return hc*p+q; });
+          blas::ax_plus_y_n(hc, source, lb, target_);
         }
       }
 

@@ -48,6 +48,11 @@ class Matrix1eArray {
     Matrix1eArray(const std::shared_ptr<const Molecule>, const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
 
+    void ax_plus_y(const double a, const Matrix1eArray<N>& o) {
+      std::transform(o.matrices_.begin(), o.matrices_.end(), matrices_.begin(), matrices_.begin(),
+                     [&a](std::shared_ptr<Matrix> p, std::shared_ptr<Matrix> q) { q->ax_plus_y(a, p); return q; });
+    }
+
     const std::shared_ptr<const Molecule> mol() const { return mol_; }
 
     std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
@@ -110,7 +115,7 @@ void Matrix1eArray<N>::init() {
   // only lower half will be stored
   // TODO rewrite. thread. parallel. distribute
 
-  size_t oa0 = 0; 
+  size_t oa0 = 0;
   int u = 0;
   for (auto a0 = mol_->atoms().begin(); a0 != mol_->atoms().end(); ++a0) {
     // iatom1 = iatom1;

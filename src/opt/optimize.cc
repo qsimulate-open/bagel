@@ -38,8 +38,7 @@ Optimize::Optimize(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
 void Optimize::compute() {
   auto lastmethod = *idata_->get_child("method")->rbegin();
-  string method = lastmethod->get<string>("title", "");
-  transform(method.begin(), method.end(), method.begin(), ::tolower);
+  const string method = to_lower(lastmethod->get<string>("title", ""));
   if (method.empty())
     throw runtime_error("title is missing in one of the input blocks (opt)");
 

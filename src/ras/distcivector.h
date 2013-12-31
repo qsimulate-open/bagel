@@ -377,7 +377,7 @@ class DistRASCivector {
         const size_t asize = (*i)->asize();
         const size_t lb = (*i)->lenb();
         if ( asize * lb == 0 ) continue;
-        mytranspose_((*i)->local(), asize, lb, (*j)->local());
+        blas::transpose((*i)->local(), asize, lb, (*j)->local());
         std::copy_n((*j)->local(), asize * lb, (*i)->local());
       }
       buf_.reset();
@@ -392,7 +392,7 @@ class DistRASCivector {
         std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
         if (!jblock) continue;
 
-        out += std::inner_product(iblock->local(), iblock->local() + iblock->size(), jblock->local(), 0.0);
+        out += blas::dot_product(iblock->local(), iblock->size(), jblock->local());
       }
 
       mpi__->allreduce(&out, 1);

@@ -36,13 +36,11 @@ static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
-  name_ = inp->get<string>("atom");
-  transform(name_.begin(), name_.end(), name_.begin(), ::tolower);
+  name_ = to_lower(inp->get<string>("atom"));
 
   if (elem)
     for (auto& i : *elem) {
-      string key = i->key();
-      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
   atom_number_ = atommap_.atom_number(name_);
@@ -61,20 +59,20 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     na[0] = toupper(na[0]);
     basis_init(basisset->get_child(na));
   }
+  atom_exponent_ = inp->get<double>("exponent", 0.0);
 }
 
 
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
- : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), basis_(bas) {
+ : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
   } else {
     if (elem)
       for (auto& i : *elem) {
-        string key = i->key();
-        transform(key.begin(), key.end(), key.begin(), ::tolower);
+        const string key = to_lower(i->key());
         if (name_ == key) basis_ = i->data();
       }
     string na = name_;
@@ -115,7 +113,9 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
 
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
+: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()),
+  nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
+
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
   position_ = array<double,3>{{displacement[0]+opos[0], displacement[1]+opos[1], displacement[2]+opos[2]}};
@@ -132,6 +132,7 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
   position_ = shells_.front()->position();
 
   common_init();
+  atom_exponent_ = 0.0;
 }
 
 
@@ -140,8 +141,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
   if (elem)
     for (auto& i : *elem) {
-      string key = i->key();
-      transform(key.begin(), key.end(), key.begin(), ::tolower);
+      const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
   string na = name_;
@@ -149,6 +149,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
   basis_init(basisset->get_child(na));
 
+  atom_exponent_ = 0.0;
 }
 
 
@@ -165,11 +166,13 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
   construct_shells(basis_info);
   common_init();
+  atom_exponent_ = 0.0;
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
 : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
+  atom_exponent_ = 0.0;
 }
 
 
@@ -312,7 +315,7 @@ void Atom::print_basis() const {
 
 void Atom::print() const {
   string tmp = name_;
-  tmp[0] = ::toupper(tmp[0]);
+  tmp[0] = toupper(tmp[0]);
   cout << "  { \"atom\" : \"" << tmp << "\", \"xyz\" : [" << fixed << setprecision(6) <<
       setw(14) << position_[0] << "," <<
       setw(14) << position_[1] << "," <<

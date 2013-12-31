@@ -47,6 +47,7 @@ class DistFCI : public Method {
     // Options
     int max_iter_;
     int davidsonceiling_;
+    int nguess_;
     double thresh_;
     double print_thresh_;
 
@@ -72,7 +73,8 @@ class DistFCI : public Method {
     void const_denom();
 
     // denominator
-    void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec>> out);
+    void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec>>& out);
+    void model_guess(std::vector<std::shared_ptr<DistCivec>>& out);
 
     // Determinant seeds in parallel
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);

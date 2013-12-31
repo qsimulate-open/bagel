@@ -109,12 +109,12 @@ void MixedERIBatch::eri_compute(double* eri) const {
     if (shells_[1]->spherical()) {
       // TODO this could be improved
       double* tmp2 = stack_->get(s0size*a1size_inc*s2size);
-      mytranspose_(eric->data(), s0size*a1size_inc, s2cart, tmp);
+      blas::transpose(eric->data(), s0size*a1size_inc, s2cart, tmp);
 
       const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
       carsphlist.carsphfunc_call(carsphindex, s0size*a1size_inc*cart2->num_contracted(), tmp, tmp2);
 
-      mytranspose_(tmp2, s2size, s0size*a1size_inc, tmp);
+      blas::transpose(tmp2, s2size, s0size*a1size_inc, tmp);
       stack_->release(s0size*a1size_inc*s2size, tmp2);
     } else {
       copy_n(eric->data(), s0size*a1size_inc*s2cart, tmp);
@@ -140,12 +140,12 @@ void MixedERIBatch::eri_compute(double* eri) const {
     if (shells_[1]->spherical()) {
       // TODO this could be improved
       double* tmp2 = stack_->get(s0size*a1size_dec*s2size);
-      mytranspose_(eric->data(), s0size*a1size_dec, s2cart, tmp);
+      blas::transpose(eric->data(), s0size*a1size_dec, s2cart, tmp);
 
       const int carsphindex = shells_[2]->angular_number() * ANG_HRR_END;
       carsphlist.carsphfunc_call(carsphindex, s0size*a1size_dec*cart2->num_contracted(), tmp, tmp2);
 
-      mytranspose_(tmp2, s2size, s0size*a1size_dec, tmp);
+      blas::transpose(tmp2, s2size, s0size*a1size_dec, tmp);
       stack_->release(s0size*a1size_dec*s2size, tmp2);
     } else {
       copy_n(eric->data(), s0size*a1size_dec*s2cart, tmp);
