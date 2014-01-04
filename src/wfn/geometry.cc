@@ -32,7 +32,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <src/integral/rys/eribatch.h>
-#include <src/integral/comprys/complexeribatch.h> // needed for testing ComplexERIBatch
 #include <src/integral/rys/smalleribatch.h>
 #include <src/integral/rys/mixederibatch.h>
 #include <src/integral/libint/libint.h>
@@ -586,12 +585,6 @@ vector<double> Geometry::schwarz() const {
 #ifdef LIBINT_INTERFACE
       Libint eribatch(input);
 #else
-      {
-        // Include the next line to run (i.e., test) ComplexERIBatch; comment it out to run normally.
-        ComplexERIBatch complexeribatch(input,0.0); //for testing
-        complexeribatch.compute();
-        const std::complex<double>* complexeridata = complexeribatch.data();
-      }
       ERIBatch eribatch(input, 1.0);
 #endif
       eribatch.compute();

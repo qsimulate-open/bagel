@@ -28,8 +28,6 @@
 #include <src/df/dfdistt.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/libint/libint.h>
-#include <src/integral/comprys/complexeribatch.h>  // needed only for testing ComplexERIBatch
-#include <complex>                                 // needed only for testing ComplexERIBatch
 
 using namespace std;
 using namespace bagel;
@@ -220,15 +218,6 @@ shared_ptr<const StaticDist> DFDist::make_table(const size_t astart) {
 }
 
 
-///*   Use this function only for testing ComplexERIBatch
-pair<const std::complex<double>*, shared_ptr<RysIntegral<std::complex<double>>>> DFDist::compute_batch_complex(array<shared_ptr<const Shell>,4>& input) {
-  shared_ptr<RysIntegral<std::complex<double>>> complexeribatch = make_shared<ComplexERIBatch>(input, 2.0);
-  complexeribatch->compute();
-  return make_pair(complexeribatch->data(), complexeribatch);
-}
-//*/
-
-///*    This is the standard version of the function.
 pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
 #ifdef LIBINT_INTERFACE
   shared_ptr<RysInt> eribatch = make_shared<Libint>(input);
@@ -238,7 +227,6 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
 }
-//*/
 
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) const {
