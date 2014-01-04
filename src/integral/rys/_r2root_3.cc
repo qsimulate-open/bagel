@@ -381,13 +381,13 @@ void R2RootList::r2root3(const double* ta, double* rr, double* ww, const int n) 
       fill_n(rr+offset, 3, 0.5);
       fill_n(ww+offset, 3, 0.0);
     } else {
-      int it; 
-      if (t >= 64.0) { 
-        t =    1.000000000000000 / (t * t) ; 
+      int it;
+      if (t >= 64.0) {
+        t =    1.000000000000000 / (t * t) ;
         it = static_cast<int>(64*   0.500000000000000 +    1.000000000000000);
-      } else { 
+      } else {
         it = static_cast<int>(t*   0.500000000000000);
-      } 
+      }
       t = (t-it*2.000000000000000-   1.000000000000000) *   1.000000000000000;
       const double t2 = t * 2.0;
       for (int j=1; j <=3; ++j) {
