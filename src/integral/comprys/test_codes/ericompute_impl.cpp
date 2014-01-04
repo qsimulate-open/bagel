@@ -13,7 +13,7 @@ This file is being used to remove the body of some functions from ericompute.cc,
 #include <utility>
 #include "polynomial.h"
 #include "ericompute.h"
-#include "/Users/reynolds/develop/BAGEL/src/integral/comprys/comperirootlist.h"
+#include "../comperirootlist.h"
 
 using namespace std;
 const static bagel::ComplexERIRootList mapT;
