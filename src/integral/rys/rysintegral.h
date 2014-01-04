@@ -34,7 +34,6 @@
 #include <src/util/constants.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>
-#include <src/integral/rys/inline.h>
 
 namespace bagel {
 

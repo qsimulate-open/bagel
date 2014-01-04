@@ -1,7 +1,30 @@
-/*
-This header will define templates allowing us to add and multiply polynomials.
-It will be used to allow my ERI-testing file to compute data for nonzero angular momentum.
-*/
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: polynomial.h
+// Copyright (C) 2009 Toru Shiozaki
+//
+// Author: Ryan Reynolds <rreynoldschem@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+// This header will define templates allowing us to add and multiply polynomials.
+// It enables the ERI-testing file to compute data for orbitals with nonzero angular momentum.
 
 #ifndef __POLYNOMIAL_H
 #define __POLYNOMIAL_H
