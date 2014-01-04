@@ -31,6 +31,9 @@
 #include <src/integral/libint/libint.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/comprys/complexeribatch.h> // for testing ComplexERIBatch
+#include <utility> // for testing ComplexERIBatch
+#include <cassert> // for testing ComplexERIBatch
+#include <src/integral/comprys/test_codes/ericompute.h> // for testing ComplexERIBatch... obviously
 #include <src/scf/fock_base.h>
 
 namespace bagel {
@@ -173,17 +176,48 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 #ifdef LIBINT_INTERFACE
             Libint eribatch(input);
 #else
-            {
-              // Include the next line to run (i.e., test) ComplexERIBatch; comment it out to run normally.
-              ComplexERIBatch complexeribatch(input,0.0); //for testing - you won't want max_density to be 0.0 in the long run
-              complexeribatch.compute();
-              const std::complex<double>* complexeridata = complexeribatch.data();
+////////////////////////////////////////////////////////////////////
+#if 1
+          {
+            std::cout << "running complexeribatch" << std::endl;
+            bool correct = true;
+
+            ComplexERIBatch complexeribatch(input,mulfactor); //for testing - you won't want max_density to be 0.0 in the long run
+            complexeribatch.compute();
+            const std::complex<double>* complexeridata = complexeribatch.data();
+            std::cout << "final size = " << complexeribatch.data_size() << std::endl;
+            for (int i=0; i!=complexeribatch.data_size(); i++) {
+              std::cout << i << " ";
+              if (i<100) std::cout << " ";
+              if (i<10) std::cout << " ";
+              std::cout << complexeridata[i] << std::endl;
             }
+
+            std::vector<std::pair<std::vector<int>,std::complex<double>>> reference = ryan::get_comparison_ERI (input);
+            std::cout << std::endl << "REFERNCE DATA FROM EXTERNAL CODE: " << std::endl;
+            std::cout << "final size = " << reference.size() << std::endl;
+            for (int i=0; i!=reference.size(); i++) {
+              std::cout << i << "   ";
+              if (i<100) std::cout << " ";
+              if (i<10) std::cout << " ";
+              for (int j=0; j!=8; j++) std::cout << reference[i].first[j] << " ";
+              std::cout << "-- " << reference[i].second << std::endl;
+              std::complex<double> difference = reference[i].second - complexeridata[i];
+              if (std::abs(difference) > 1e-13) correct = false;
+            }
+            assert(correct);
+            assert(complexeribatch.data_size() == reference.size());
+          }
+////////////////////////////////////////////////////////////////////
+#endif
             ERIBatch eribatch(input, mulfactor);
 #endif
             eribatch.compute();
             const double* eridata = eribatch.data();
-
+#if 0 /////////
+              std::cout << "final size = " << eribatch.data_size() << std::endl;                   // FOR TESTING ONLY
+              for (int i=0; i!=eribatch.data_size(); i++) std::cout << eridata[i] << std::endl;    // FOR TESTING ONLY
+#endif ////////
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
               const int j0n = j0 * ndim_;
 
