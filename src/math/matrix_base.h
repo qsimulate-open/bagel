@@ -113,11 +113,11 @@ class Matrix_base {
 
     template<class T>
     void ax_plus_y_impl(const DataType& a, const T& o) {
-      std::transform(o.data(), o.data()+size(), data(), data(), [&a](DataType p, DataType q){ return a*p+q; }); 
+      blas::ax_plus_y_n(a, o.data(), size(), data());
     }
     template<class T>
     DataType dot_product_impl(const T& o) const {
-      return std::inner_product(data(), data()+size(), o.data(), DataType(0.0), std::plus<DataType>(), [](DataType p, DataType q){ return detail::conj(p)*q; });
+      return blas::dot_product(data(), size(), o.data());
     }
     template<class T>
     double orthog_impl(const std::list<std::shared_ptr<const T>> o) { 
@@ -215,8 +215,7 @@ class Matrix_base {
 
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-        std::transform(o+j*nsize, o+(j+1)*nsize, data_.get()+nstart+i*ndim_, data_.get()+nstart+i*ndim_,
-                       [&a](DataType p, DataType q){ return q + a*p; });
+        blas::ax_plus_y_n(a, o+j*nsize, nsize, element_ptr(nstart, i));
     }
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
       assert(nsize == o->ndim() && msize == o->mdim());
@@ -229,8 +228,7 @@ class Matrix_base {
     void add_strided_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize,
                             const int ld, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
-        std::transform(o + j*ld, o + (j+1)*ld, data_.get() + nstart + i*ndim_, data_.get() + nstart + i*ndim_,
-                        [&a] (const DataType& p, const DataType& q) { return q + a*p; });
+        blas::ax_plus_y_n(a, o+j*ld, nsize, element_ptr(nstart, i));
     }
 
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {

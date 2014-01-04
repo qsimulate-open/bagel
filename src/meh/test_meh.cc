@@ -45,8 +45,7 @@ double meh_energy(std::string inp) {
   std::map<std::string, std::shared_ptr<const void>> saved;
 
   for (auto& itree : *keys) {
-    std::string method = itree->get<std::string>("title", "");
-    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(itree);
@@ -106,12 +105,12 @@ double meh_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
 BOOST_AUTO_TEST_CASE(CAS) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.31936592, 1.0e-6));
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.28037410, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.40037129, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.35640265, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_CASE(RAS) {
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh-ras_stack"), -459.31881204, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh-ras_stack"), -459.39081958, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

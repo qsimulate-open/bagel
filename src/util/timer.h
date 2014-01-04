@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#include <src/util/string.h>
 #include <bagel_config.h>
 
 namespace bagel {
@@ -57,7 +58,7 @@ class Timer {
         // top level printout
         std::cout << "       - " << std::left << std::setw(36) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
       } else if (level_ == -1) {
-        std::transform(title.begin(), title.end(), title.begin(), ::toupper);
+        title = to_upper(title);
         std::cout << "    * " << std::left << std::setw(39) << title << std::right << std::setw(10) << std::setprecision(2) << tick() << std::endl;
 #ifdef HAVE_MPI_H
 //    } else if (level_ >= 1 && level_ <= resources__->proc()->print_level()) {

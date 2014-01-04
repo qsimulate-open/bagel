@@ -150,15 +150,15 @@ void SlaterBatch::compute() {
     int offset = 0;
     if (swapped) {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
-        mytranspose_(&data_[offset], m, n, &bkup_[offset]);
+        blas::transpose(&data_[offset], m, n, &bkup_[offset]);
         if (yukawa_)
-          mytranspose_(&data2_[offset], m, n, &bkup2_[offset]);
+          blas::transpose(&data2_[offset], m, n, &bkup2_[offset]);
       }
     } else {
       for (int i = 0; i != nloop; ++i, offset += m * n) {
-        mytranspose_(&bkup_[offset], m, n, &data_[offset]);
+        blas::transpose(&bkup_[offset], m, n, &data_[offset]);
         if (yukawa_)
-          mytranspose_(&bkup2_[offset], m, n, &data2_[offset]);
+          blas::transpose(&bkup2_[offset], m, n, &data2_[offset]);
       }
     }
   }
@@ -221,9 +221,9 @@ void SlaterBatch::compute() {
   {
     const int m = c * d * cont2size_ * cont3size_;
     const int n = a * b * cont0size_ * cont1size_;
-    mytranspose_(data_now, m, n, bkup_now);
+    blas::transpose(data_now, m, n, bkup_now);
     if (yukawa_)
-      mytranspose_(data_now_2, m, n, bkup_now_2);
+      blas::transpose(data_now_2, m, n, bkup_now_2);
   }
 
   // Sort cont01 and xyzab

@@ -274,13 +274,18 @@ void ZMatrix::diagonalize(double* eig) {
 }
 
 
-void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
-  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
-  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+tuple<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> ZMatrix::svd(double* sing) {
+  auto U = make_shared<ZMatrix>(ndim_, ndim_);
+  auto V = make_shared<ZMatrix>(mdim_, mdim_);
   const int lwork = 10*max(ndim_, mdim_);
   unique_ptr<double[]> rwork(new double[5*max(ndim_, mdim_)]);
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-  unique_ptr<double[]> S(new double[min(ndim_, mdim_)]);
+
+  unique_ptr<double[]> S;
+  if (!sing) {
+    S = unique_ptr<double[]>(new double[min(ndim_, mdim_)]);
+    sing = S.get();
+  }
 /*
   SUBROUTINE ZGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
  $                   WORK, LWORK, RWORK, INFO )
@@ -289,8 +294,10 @@ void ZMatrix::svd(shared_ptr<ZMatrix> U, shared_ptr<ZMatrix> V) {
   complex<double>* ublock = U->data();
   complex<double>* vblock = V->data();
   int info = 0;
-  zgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, rwork.get(), info);
+  zgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, sing, ublock, ndim_, vblock, mdim_, work.get(), lwork, rwork.get(), info);
   if (info != 0) throw runtime_error("zgesvd failed in ZMatrix::svd");
+
+  return make_tuple(U, V);
 }
 
 
@@ -355,14 +362,14 @@ unique_ptr<complex<double>[]> ZMatrix::diag() const {
 
 shared_ptr<ZMatrix> ZMatrix::transpose() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose(data(), ndim_, mdim_, out->data());
   return out;
 }
 
 
 shared_ptr<ZMatrix> ZMatrix::transpose_conjg() const {
   auto out = make_shared<ZMatrix>(mdim_, ndim_, localized_);
-  mytranspose_conjg_(data_.get(), ndim_, mdim_, out->data());
+  blas::transpose_conjg(data(), ndim_, mdim_, out->data());
   return out;
 }
 
@@ -390,10 +397,10 @@ void ZMatrix::purify_unitary() {
   // Schmidt orthogonalization
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const complex<double> a = zdotc_(ndim_, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
-      zaxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const complex<double> a = blas::dot_product(element_ptr(0,j), ndim_, element_ptr(0,i));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
-    const complex<double> b = 1.0/sqrt(zdotc_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const complex<double> b = 1.0/sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
 }
@@ -445,7 +452,7 @@ void ZMatrix::inverse() {
 
 
 // compute S^{-1/2}
-void ZMatrix::inverse_half(const double thresh) {
+bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
@@ -463,6 +470,27 @@ void ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
+  return std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+}
+
+shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
+  shared_ptr<ZMatrix> out = this->copy();
+  bool nolindep = out->inverse_half(thresh);
+  if (!nolindep) {
+    // use canonical orthogonalization. Start over
+    out = this->copy();
+    unique_ptr<double[]> eig(new double[ndim_]);
+    out->diagonalize(eig.get());
+    int m = 0;
+    for (int i = 0; i != mdim_; ++i) {
+      if (eig[i] > thresh) {
+        const double e = 1.0/std::sqrt(eig[i]);
+        transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](complex<double> a) { return a*e; });
+      }
+    }
+    out = out->slice(0,m);
+  }
+  return out;
 }
 
 

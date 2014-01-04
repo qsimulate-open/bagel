@@ -50,25 +50,3 @@ void Overlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const 
 
   copy_block(offsetb1, offsetb0, dimb1, dimb0, overlap.data());
 }
-
-
-shared_ptr<Matrix> Overlap::tildex(const double thresh) const {
-  shared_ptr<Matrix> out = this->copy();
-  bool nolindep = out->inverse_half(thresh);
-  if (!nolindep) {
-    // use canonical orthogonalization. Start over
-    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
-    out = this->copy();
-    unique_ptr<double[]> eig(new double[ndim_]);
-    out->diagonalize(eig.get());
-    int m = 0;
-    for (int i = 0; i != mdim_; ++i) {
-      if (eig[i] > thresh) {
-        const double e = 1.0/std::sqrt(eig[i]);
-        transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
-      }
-    }
-    out = out->slice(0,m);
-  }
-  return out;
-}

@@ -264,12 +264,19 @@ void Matrix::diagonalize(double* eig) {
 }
 
 
-void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
-  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
-  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd(double* sing) {
+  auto U = make_shared<Matrix>(ndim_, ndim_);
+  auto V = make_shared<Matrix>(mdim_, mdim_);
+
   const int lwork = 10*max(ndim_, mdim_);
   unique_ptr<double[]> work(new double[lwork]);
-  unique_ptr<double[]> S(new double[min(ndim_, mdim_)]);
+
+  // If singular values are not requested
+  unique_ptr<double[]> S;
+  if (!sing) {
+    S = unique_ptr<double[]>(new double[min(ndim_, mdim_)]);
+    sing = S.get();
+  }
 /*
   SUBROUTINE DGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT,
  $                   WORK, LWORK, INFO )
@@ -278,8 +285,10 @@ void Matrix::svd(shared_ptr<Matrix> U, shared_ptr<Matrix> V) {
   double* ublock = U->data();
   double* vblock = V->data();
   int info = 0;
-  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, S.get(), ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
+  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, sing, ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
+
+  return make_tuple(U,V);
 }
 
 
@@ -319,7 +328,7 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
   auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
-  mytranspose_(data_.get(), ndim_, mdim_, out->data(), factor);
+  blas::transpose(data(), ndim_, mdim_, out->data(), factor);
   return out;
 }
 
@@ -336,10 +345,10 @@ void Matrix::purify_unitary() {
   assert(ndim_ == mdim_);
   for (int i = 0; i != ndim_; ++i) {
     for (int j = 0; j != i; ++j) {
-      const double a = ddot_(ndim_, &data_[i*ndim_], 1, &data_[j*ndim_], 1);
-      daxpy_(ndim_, -a, &data_[j*ndim_], 1, &data_[i*ndim_], 1);
+      const double a = blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,j));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
     }
-    const double b = 1.0/std::sqrt(ddot_(ndim_, &data_[i*ndim_], 1, &data_[i*ndim_], 1));
+    const double b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });
   }
 }
@@ -393,7 +402,7 @@ void Matrix::inverse() {
 // this is a vector B, and solve AC = B, returns C
 shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const {
   Matrix As = *A;
-  auto out = this->copy(); 
+  auto out = this->copy();
   assert(n <= out->ndim() && n <= A->ndim() && n <= A->mdim());
 
   unique_ptr<int[]> ipiv(new int[n]);
@@ -465,6 +474,27 @@ bool Matrix::inverse_half(const double thresh) {
             "    min eigenvalue: " << setw(14) << scientific << setprecision(4) << *min_element(rm.begin(), rm.end()) <<
             "    max eigenvalue: " << setw(14) << scientific << setprecision(4) << *max_element(rm.begin(), rm.end()) << fixed << endl;
   return rm.empty();
+}
+
+shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
+  shared_ptr<Matrix> out = this->copy();
+  bool nolindep = out->inverse_half(thresh);
+  if (!nolindep) {
+    // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
+    out = this->copy();
+    unique_ptr<double[]> eig(new double[ndim_]);
+    out->diagonalize(eig.get());
+    int m = 0;
+    for (int i = 0; i != mdim_; ++i) {
+      if (eig[i] > thresh) {
+        const double e = 1.0/std::sqrt(eig[i]);
+        transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
+      }
+    }
+    out = out->slice(0,m);
+  }
+  return out;
 }
 
 // compute Hermitian square root, S^{1/2}

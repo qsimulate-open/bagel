@@ -44,6 +44,11 @@
 
 namespace bagel {
 
+namespace {
+  template<typename T> void call_compute(T& task) { task.compute(); }
+  template<typename T> void call_compute(std::shared_ptr<T>& task) { task->compute(); }
+}
+
 template<typename T>
 class TaskQueue {
   protected:
@@ -77,7 +82,7 @@ class TaskQueue {
       const size_t n = task_.size();
       #pragma omp parallel for schedule(dynamic,chunck_)
       for (size_t i = 0; i < n; ++i)
-        task_[i].compute();
+        call_compute(task_[i]);
 #endif
 #ifdef HAVE_MKL_H
       mkl_set_num_threads(mkl_num);
@@ -88,9 +93,9 @@ class TaskQueue {
       int j = 0;
       for (auto i = flag_.begin(); i != flag_.end(); ++i, j += chunck_)
         if (!(*i)->test_and_set()) {
-          task_[j].compute();
+          call_compute(task_[j]);
           for (int k = 1; k < chunck_; ++k)
-            if (j+k < task_.size()) task_[j+k].compute();
+            if (j+k < task_.size()) call_compute(task_[j+k]);
         }
     }
 };

@@ -124,13 +124,13 @@ tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const
 }
 
 
-shared_ptr<const Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
+shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<Matrix> snew = make_shared<Overlap>(geomin);
   snew->inverse_symmetric();
   MixedBasis<OverlapBatch> mixed(geom_, geomin);
   auto c = make_shared<Coeff>(*snew * mixed * *coeff_);
 
-  auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, geomin->nbasis()-nclosed_-nact_, energy_);
+  auto out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
   if (coeffA_) {
     assert(coeffB_);
     out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);

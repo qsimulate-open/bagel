@@ -210,8 +210,7 @@ class DistCivector {
     // utility functions
     DataType dot_product(const DistCivector<DataType>& o) const {
       assert(size() == o.size());
-      DataType sum = size() ? inner_product(local(), local()+size(), o.local(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; })
-                            : 0.0;
+      DataType sum = size() ? blas::dot_product(local(), size(), o.local()) : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
     }
@@ -316,7 +315,7 @@ class DistCivector {
         mpi__->wait(i);
       buf_ = std::shared_ptr<DistCivector<DataType>>();
       buf_ = clone();
-      mytranspose_(local(), asize(), lenb_, buf_->local());
+      blas::transpose(local(), asize(), lenb_, buf_->local());
       std::copy_n(buf_->local(), asize()*lenb_, local());
       buf_ = std::shared_ptr<DistCivector<DataType>>();
     }
@@ -470,7 +469,7 @@ class Civector {
     std::shared_ptr<Civector<DataType>> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
-      mytranspose_(cc(), lenb_, lena_, ct->data());
+      blas::transpose(cc(), lenb_, lena_, ct->data());
 
       if (det_->nelea()*det_->neleb() & 1)
         ct->scale(-1.0);
@@ -489,7 +488,7 @@ class Civector {
 
     DataType dot_product(const Civector<DataType>& other) const {
       assert((lena_ == other.lena_) && (lenb_ == other.lenb_));
-      return std::inner_product(cc(), cc()+size(), other.data(), DataType(0.0), std::plus<DataType>(), [](const DataType& p, const DataType& q){ return detail::conj(p)*q; });
+      return blas::dot_product(cc(), size(), other.data());
     }
     DataType dot_product(std::shared_ptr<const Civector> other) const { return dot_product(*other); }
 

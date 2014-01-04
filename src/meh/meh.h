@@ -95,7 +95,6 @@ class MultiExcitonHamiltonian {
    protected:
       std::shared_ptr<const Dimer> dimer_;
       std::shared_ptr<const Reference> ref_;
-      std::shared_ptr<const Coeff> coeff_;
 
       std::shared_ptr<DimerJop> jop_;
 
@@ -128,6 +127,7 @@ class MultiExcitonHamiltonian {
       int nstates_;
       int nspin_;
       int max_iter_;
+      int davidsonceiling_;
       bool store_matrix_;
       bool dipoles_;
 

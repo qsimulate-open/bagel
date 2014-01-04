@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/fci/modelci.h>
 #include <src/ras/rasci.h>
 #include <src/ras/form_sigma.h>
 #include <src/util/combination.hpp>
@@ -42,11 +43,13 @@ void RASCI::common_init() {
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
+  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   sparse_ = idata_->get<bool>("sparse", true);
 
   nstate_ = idata_->get<int>("nstate", 1);
+  nguess_ = idata_->get<int>("nguess", nstate_);
 
   // No defaults for RAS, must set "active"
   const shared_ptr<const PTree> iactive = idata_->get_child("active");
@@ -92,6 +95,68 @@ void RASCI::common_init() {
 
   // construct a determinant space in which this RASCI will be performed.
   det_ = make_shared<const RASDeterminants>(ras_, nelea_, neleb_, max_holes_, max_particles_);
+}
+
+void RASCI::model_guess(shared_ptr<RASDvec>& out) {
+  multimap<double, pair<bitset<nbit__>, bitset<nbit__>>> ordered_elements;
+  for (auto& b : denom_->blocks()) {
+    if (!b) continue;
+    const double* d = b->data();
+    for (auto& abit : *b->stringa()) {
+      for (auto& bbit : *b->stringb()) {
+        ordered_elements.emplace(*d++, make_pair(abit, bbit));
+      }
+    }
+  }
+
+  vector<pair<bitset<nbit__>, bitset<nbit__>>> basis;
+  double last_value = 0.0;
+  for (auto& p : ordered_elements) {
+    double val = p.first;
+    if (basis.size() >= nguess_ && val != last_value)
+      break;
+    else
+      basis.push_back(p.second);
+  }
+  const int nguess = basis.size();
+
+  shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
+  vector<double> eigs(nguess, 0.0);
+  spin->diagonalize(eigs.data());
+
+  int start, end;
+  const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
+  for (start = 0; start < nguess; ++start)
+    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+  for (end = start; end < nguess; ++end)
+    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+
+  if ((end-start) >= nstate_) {
+    shared_ptr<Matrix> coeffs = spin->slice(start, end);
+
+    shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
+    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
+    hamiltonian->diagonalize(eigs.data());
+
+#if 0
+    const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
+    for (int i = 0; i < end-start; ++i)
+      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+#endif
+
+    coeffs = make_shared<Matrix>(*coeffs * *hamiltonian);
+    for (int i = 0; i < nguess; ++i) {
+      const bitset<nbit__> ia = basis[i].first;
+      const bitset<nbit__> ib = basis[i].second;
+
+      for (int j = 0; j < nstate_; ++j)
+        out->data(j)->element(ib, ia) = coeffs->element(i, j);
+    }
+  }
+  else {
+    nguess_ *= 2;
+    model_guess(out);
+  }
 }
 
 // generate initial vectors
@@ -184,14 +249,17 @@ void RASCI::compute() {
   cc_ = make_shared<RASDvec>(det_, nstate_);
 
   // find determinants that have small diagonal energies
-  generate_guess(nelea_-neleb_, nstate_, cc_);
+  if (nguess_ <= nstate_)
+    generate_guess(nelea_-neleb_, nstate_, cc_);
+  else
+    model_guess(cc_);
   pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<RASCivec> davidson(nstate_, max_iter_);
+  DavidsonDiag<RASCivec> davidson(nstate_, davidsonceiling_);
 
   // Object in charge of forming sigma vector
   FormSigmaRAS form_sigma(sparse_);
@@ -230,6 +298,10 @@ void RASCI::compute() {
     }
     pdebug.tick_print("error");
 
+#ifdef HAVE_MPI_H
+    vector<int> requests;
+#endif
+
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
@@ -245,8 +317,16 @@ void RASCI::compute() {
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
         cc_->data(ist)->spin_decontaminate();
+#ifdef HAVE_MPI_H
+        requests.push_back(mpi__->ibroadcast(cc_->data(ist)->data(), cc_->data(ist)->size(), 0));
+#endif
       }
     }
+#ifdef HAVE_MPI_H
+    for (auto& r : requests)
+      mpi__->wait(r);
+#endif
+
     pdebug.tick_print("denominator");
 
     // printing out

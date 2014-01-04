@@ -322,9 +322,10 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
 }
 
 
-void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
-  assert(U->ndim() == ndim_ && U->mdim() == ndim_);
-  assert(V->ndim() == mdim_ && V->mdim() == mdim_);
+tuple<shared_ptr<PMatrix1e>, shared_ptr<PMatrix1e>> PMatrix1e::svd() {
+  auto U = make_shared<PMatrix1e>(geom_, ndim_, ndim_);
+  auto V = make_shared<PMatrix1e>(geom_, mdim_, mdim_);
+
   const int lwork = 5 * min(ndim_, mdim_)*min(ndim_, mdim_) + 5*max(ndim_, mdim_);
   complex<double>* work = new complex<double>[lwork];
   double* rwork = new double[lwork];
@@ -355,6 +356,8 @@ void PMatrix1e::svd(shared_ptr<PMatrix1e> U, shared_ptr<PMatrix1e> V) {
   delete[] work;
   delete[] rwork;
   delete[] iwork;
+
+  return make_tuple(U,V);
 }
 
 

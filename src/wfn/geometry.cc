@@ -57,8 +57,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
   // symmetry
-  symmetry_ = geominfo->get<string>("symmetry", "c1");
-  transform(symmetry_.begin(), symmetry_.end(), symmetry_.begin(), ::tolower);
+  symmetry_ = to_lower(geominfo->get<string>("symmetry", "c1"));
 
   // cartesian or not.
   const bool cart = geominfo->get<bool>("cartesian", false);
@@ -69,8 +68,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   const bool angstrom = geominfo->get<bool>("angstrom", false);
 
   /* Set up atoms_ */
-  basisfile_ = geominfo->get<string>("basis", "");
-  transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
+  basisfile_ = to_lower(geominfo->get<string>("basis", ""));
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -97,8 +95,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-  auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
-  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
+  auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
     // read the default aux basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
@@ -338,16 +335,14 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
-  symmetry_ = geominfo->get<string>("symmetry", symmetry_);
-  transform(symmetry_.begin(), symmetry_.end(), symmetry_.begin(), ::tolower);
+  symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
 
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
-  basisfile_ = geominfo->get<string>("basis", basisfile_);
-  transform(basisfile_.begin(), basisfile_.end(), basisfile_.begin(), ::tolower);
+  basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms) {
     atoms_.clear();
@@ -363,8 +358,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     }
   }
   const string prevaux = auxfile_;
-  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
-  transform(auxfile_.begin(), auxfile_.end(), auxfile_.begin(), ::tolower);
+  auxfile_ = to_lower(geominfo->get<string>("df_basis", auxfile_));
   if (prevaux != auxfile_ || atoms) {
     aux_atoms_.clear();
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);

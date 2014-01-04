@@ -59,9 +59,7 @@ class DistMatrix_base {
     template<class T>
     DataType dot_product_impl(const T& o) const {
       assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-      DataType sum = size() ? inner_product(local_.get(), local_.get()+size(), o.local_.get(), DataType(0.0), std::plus<DataType>(),
-                                            [](DataType p, DataType q){ return detail::conj(p)*q; })
-                            : 0.0;
+      DataType sum = size() ? blas::dot_product(local_.get(), size(), o.local_.get()) : 0.0;
       mpi__->allreduce(&sum, 1);
       return sum;
     }

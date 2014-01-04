@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <regex>
 #include <cmath>
-#include <src/util/lexical_cast.h>
+#include <src/util/string.h>
 
 using namespace std;
 using namespace bagel;

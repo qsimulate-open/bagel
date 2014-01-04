@@ -1,9 +1,9 @@
-//
+
 // BAGEL - Parallel electron correlation program.
-// Filename: lexical_cast.h
+// Filename: modelci.h
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,21 +23,37 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-// Degraded version of lexical_cast.
+#ifndef __BAGEL_FCI_MODELCI_H
+#define __BAGEL_FCI_MODELCI_H
 
-#ifndef __SRC_UTIL_LEXICAL_CAST
-#define __SRC_UTIL_LEXICAL_CAST
-
-#include <sstream>
+#include <src/math/matrix.h>
+#include <src/fci/mofile.h>
 
 namespace bagel {
-template<typename T, typename U> T lexical_cast(U in) {
-  std::stringstream ss;
-  ss << in;
-  T out;
-  ss >> out;
-  return out;
-}
+
+class CIHamiltonian : public Matrix {
+  private:
+    using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+
+  protected:
+    std::vector<SD> basis_;
+    std::shared_ptr<const MOFile> jop_;
+
+  public:
+    CIHamiltonian(std::vector<SD> b, std::shared_ptr<const MOFile> jop);
+};
+
+class CISpin : public Matrix {
+  private:
+    using SD = std::pair<std::bitset<nbit__>, std::bitset<nbit__>>;
+
+  protected:
+    std::vector<SD> basis_;
+
+  public:
+    CISpin(std::vector<SD>& b, const int norb);
+};
+
 }
 
 #endif

@@ -29,7 +29,7 @@
 #include <array>
 
 #include <src/fci/dvec.h>
-#include <src/fci/civec.h>
+#include <src/ras/civector.h>
 #include <src/math/matrix.h>
 #include <src/util/taskqueue.h>
 
@@ -118,8 +118,6 @@ class GammaTree {
     static const int Beta = 1;
     static const int Create = 0;
     static const int Annihilate = 1;
-
-    std::unique_ptr<double[]> dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets) const;
 };
 
 template <typename VecType>
@@ -143,38 +141,28 @@ class GammaTask {
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
 
       std::shared_ptr<const VecType> avec = tree_->ket()->apply(a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
-      for (auto& ibra : first->bras()) {
-        const int nstates = avec->ij() * ibra.second->ij();
-        std::unique_ptr<double[]> tmp = dot_product(ibra.second, avec);
-        double* target = first->gammas().find(ibra.first)->second->element_ptr(0,a_);
-        std::copy_n(tmp.get(), nstates, target);
-      }
+      for (auto& ibra : first->bras())
+        dot_product(ibra.second, avec, first->gammas().find(ibra.first)->second->element_ptr(0,a_));
 
       for (int j = 0; j < nops; ++j) {
         auto second = first->branch(j);
         if (!second->active()) continue;
 
         for (int b = 0; b < norb; ++b) {
+          if (b==a_ && j==static_cast<int>(operation_)) continue;
           std::shared_ptr<const VecType> bvec = avec->apply(b, action(j), spin(j));
-          for (auto& jbra : second->bras()) {
-            const int nstates = bvec->ij() * jbra.second->ij();
-            std::unique_ptr<double[]> tmp = dot_product(jbra.second, bvec);
-            double* target = second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b);
-            std::copy_n(tmp.get(), nstates, target);
-          }
+          for (auto& jbra : second->bras())
+            dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_ + norb*b));
 
           for (int k = 0; k < nops; ++k) {
             std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
             if (!third->active()) continue;
 
             for (int c = 0; c < norb; ++c) {
+              if (b==c && k==j) continue;
               std::shared_ptr<const VecType> cvec = bvec->apply(c, action(k), spin(k));
-              for (auto& kbra : third->bras()) {
-                const int nstates = cvec->ij() * kbra.second->ij();
-                std::unique_ptr<double[]> tmp = dot_product(kbra.second, cvec);
-                double* target = third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c);
-                std::copy_n(tmp.get(), nstates, target);
-              }
+              for (auto& kbra : third->bras())
+                dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_ + norb * b + norb * norb * c));
             }
           }
         }
@@ -182,20 +170,15 @@ class GammaTask {
     }
 
     private:
-      std::unique_ptr<double[]> dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets) const {
+      void dot_product(std::shared_ptr<const VecType> bras, std::shared_ptr<const VecType> kets, double* target) const {
         const int nbras = bras->ij();
         const int nkets = kets->ij();
 
-        std::unique_ptr<double[]> out(new double[nbras*nkets]);
-        double* odata = out.get();
-
         for (int iket = 0; iket < nkets; ++iket) {
-          for (int jbra = 0; jbra < nbras; ++jbra, ++odata) {
-            *odata = bras->data(jbra)->dot_product(*kets->data(iket));
+          for (int jbra = 0; jbra < nbras; ++jbra, ++target) {
+            *target = bras->data(jbra)->dot_product(*kets->data(iket));
           }
         }
-
-        return out;
       }
 };
 
@@ -298,6 +281,141 @@ class GammaForest {
 
 template <>
 void GammaForest<DistDvec, 2>::compute();
+
+template <>
+class GammaTask<RASDvec> {
+  protected:
+    const int a_;                            // Orbital
+    const GammaSQ  operation_;               // Which operation
+    const std::shared_ptr<GammaTree<RASDvec>> tree_;  // destination
+
+    // to avoid rebuilding the stringspaces repeatedly
+    std::map<std::tuple<int, int, int, int, int, int>, std::shared_ptr<const StringSpace>> stringspaces_;
+
+  public:
+    GammaTask(const std::shared_ptr<GammaTree<RASDvec>> tree, const GammaSQ operation, const int a) : a_(a), operation_(operation), tree_(tree) {}
+
+    void compute() {
+      const int nops = 4;
+      const int norb = tree_->ket()->det()->norb();
+
+      auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
+      auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
+
+      const bool base_action = action(static_cast<int>(operation_));
+      const bool base_spin = spin(static_cast<int>(operation_));
+
+      std::shared_ptr<GammaBranch<RASDvec>> first = tree_->base()->branch(operation_);
+      assert(first->active()); // This should have been checked before sending it to the TaskQueue
+
+      std::shared_ptr<const RASDeterminants> base_det = tree_->ket()->det();
+
+      const int nkets = tree_->ket()->ij();
+      for (int iket = 0; iket < nkets; ++iket) {
+        std::shared_ptr<const RASCivec> ketvec = tree_->ket()->data(iket);
+        for (auto& ketblock : ketvec->blocks()) {
+          if (!ketblock) continue;
+          std::shared_ptr<const RASBlock<double>> ablock
+            = next_block(ketblock, a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
+          if (!ablock) continue;
+
+          for (auto& ibra : first->bras())
+            dot_product(ibra.second, ablock, first->gammas().find(ibra.first)->second->element_ptr(iket*ibra.second->ij(), a_));
+
+          for (int j = 0; j < nops; ++j) {
+            auto second = first->branch(j);
+            if (!second->active()) continue;
+
+            for (int b = 0; b < norb; ++b) {
+              if (b==a_ && j==static_cast<int>(operation_)) continue;
+              std::shared_ptr<const RASBlock<double>> bblock = next_block(ablock, b, action(j), spin(j));
+              if (!bblock) continue;
+
+              for (auto& jbra : second->bras())
+                dot_product(jbra.second, bblock, second->gammas().find(jbra.first)->second->element_ptr(iket*jbra.second->ij(), a_ + norb*b));
+
+              for (int k = 0; k < nops; ++k) {
+                std::shared_ptr<GammaBranch<RASDvec>> third = second->branch(k);
+                if (!third->active()) continue;
+
+                for (int c = 0; c < norb; ++c) {
+                  if (b==c && k==j) continue;
+                  std::shared_ptr<const RASBlock<double>> cblock = next_block(bblock, c, action(k), spin(k));
+                  if (!cblock) continue;
+                  for (auto& kbra : third->bras())
+                    dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_+norb*b+norb*norb*c));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    private:
+      void dot_product(std::shared_ptr<const RASDvec> bras, std::shared_ptr<const RASBlock<double>> ketblock, double* target) const {
+        const int nbras = bras->ij();
+
+        if (bras->det()->allowed(ketblock->stringb(), ketblock->stringa())) {
+          for (int jbra = 0; jbra < nbras; ++jbra, ++target) {
+            std::shared_ptr<const RASBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
+            if (brablock)
+              *target += blas::dot_product(brablock->data(), brablock->size(), ketblock->data());
+          }
+        }
+      }
+
+      std::shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) {
+        auto iter = stringspaces_.find(std::make_tuple(a,b,c,d,e,f));
+        if (iter != stringspaces_.end()) {
+          return iter->second;
+        }
+        else {
+          stringspaces_.emplace(std::make_tuple(a,b,c,d,e,f), std::make_shared<StringSpace>(a,b,c,d,e,f));
+          return stringspaces_[std::make_tuple(a,b,c,d,e,f)];
+        }
+      }
+
+      std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<const RASBlock<double>> base_block, const int& orbital, const bool& action, const bool& spin) {
+        std::shared_ptr<const StringSpace> sa = base_block->stringa();
+        std::shared_ptr<const StringSpace> sb = base_block->stringb();
+
+        std::array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
+
+        const int ras_space = ( orbital >= ras[0] ) + ( orbital >= (ras[0]+ras[1]) );
+        std::array<int, 6> info{{ras[0] - sa->nholes(), ras[0] - sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()}};
+
+        const int mod = action ? +1 : -1;
+        info[2*ras_space]   += spin ? mod : 0;
+        info[2*ras_space+1] += spin ? 0 : mod;
+
+        // make sure it is a valid result
+        for (int i = 0; i < 6; ++i)
+          if (info[i] < 0 || info[i] > ras[i/2]) return std::shared_ptr<RASBlock<double>>();
+
+        std::shared_ptr<const StringSpace> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
+        std::shared_ptr<const StringSpace> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
+
+        auto out = std::make_shared<RASBlock<double>>(ta,tb);
+
+        std::shared_ptr<RAS::apply_block_base<double>> apply_block;
+        switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {
+          case 0:
+            apply_block = std::make_shared<RAS::apply_block_impl<double, false, false>>(orbital); break;
+          case 1:
+            apply_block = std::make_shared<RAS::apply_block_impl<double, false, true>>(orbital);  break;
+          case 2:
+            apply_block = std::make_shared<RAS::apply_block_impl<double, true, false>>(orbital);  break;
+          case 3:
+            apply_block = std::make_shared<RAS::apply_block_impl<double, true, true>>(orbital);   break;
+          default:
+            assert(false);
+        }
+        (*apply_block)(base_block, out);
+
+        return out;
+      }
+};
 
 }
 

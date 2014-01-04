@@ -39,6 +39,8 @@ class FCI : public Method {
   protected:
     // max #iteration
     int max_iter_;
+    int davidsonceiling_;
+    int nguess_;
     // threshold for variants
     double thresh_;
     double print_thresh_;
@@ -81,6 +83,7 @@ class FCI : public Method {
     void create_Jiiii();
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
+    void model_guess(std::shared_ptr<Dvec>);
     // generate spin-adapted guess configurations
     virtual std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet);
 

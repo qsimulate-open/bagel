@@ -74,8 +74,9 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
     void print(const std::string name = "") const override {
       Matrix1eArray<4*Batch::Nblocks()>::print(name.empty() ? "Small1e" : name);
     }
-
 };
+
+template<> void Small1e<ERIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
 
 }
 

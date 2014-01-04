@@ -36,11 +36,11 @@ static const Comb comb;
 
 void GradBatch::perform_VRR() {
 #ifndef LIBINT_INTERFACE
-  const int acsize = size_block_ / primsize_;
   const int a = basisinfo_[0]->angular_number();
   const int b = basisinfo_[1]->angular_number();
   const int c = basisinfo_[2]->angular_number();
   const int d = basisinfo_[3]->angular_number();
+  const int acsize = (a+1)*(a+2)*(b+1)*(b+2)*(c+1)*(c+2)*(d+1)*(d+2)/16;
 
   const int isize = (amax_ + 1) * (cmax_ + 1);
   double* const workx = stack_->get(isize*rank_*3);

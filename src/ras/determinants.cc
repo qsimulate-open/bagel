@@ -38,6 +38,8 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   ras_{{norb1, norb2, norb3}}, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
     lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
 {
+  if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
+
   // check that large__ is big enough
   if (max_particles_ >= large__) throw logic_error("Inappropriate value for \"large__\". Must be greater than max_particles");
 

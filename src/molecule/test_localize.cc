@@ -41,8 +41,7 @@ double localization(std::string filename) {
   std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
-    std::string method = itree->get<std::string>("title", "");
-    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(itree);

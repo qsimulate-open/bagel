@@ -42,48 +42,64 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
   shared_ptr<const RASDeterminants> det = ccvec->det();
 
   const int norb = det->norb();
-  unique_ptr<double[]> g(new double[norb*norb]);
+  Matrix g(norb, norb);
   for (int k = 0, kl = 0; k < norb; ++k) {
     for (int l = 0; l < k; ++l, ++kl) {
       { // g_kl
         double val = jop->mo1e(kl) - jop->mo2e_hz(k, k, k, l);
         for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,l);
-        g[l + k * norb] = val;
+        g(l,k) = val;
       }
 
       { // g_lk
         double val = jop->mo1e(kl);
         for (int j = 0; j < l; ++j) val -= jop->mo2e_hz(l,j,j,k);
-        g[k + l * norb] = val;
+        g(k,l) = val;
       }
     }
     // g_kk
     double val = jop->mo1e(kl) - 0.5*jop->mo2e_hz(k,k,k,k);
     for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,k);
-    g[k + k * norb] = val;
+    g(k,k) = val;
     ++kl;
   }
 
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
+#ifdef HAVE_MPI_H
+  vector<int> requests;
+#endif
+
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
     if (conv[istate]) continue;
-    shared_ptr<const RASCivec> cc = ccvec->data(istate);
-    shared_ptr<RASCivec> sigma = sigmavec->data(istate);
+#ifdef HAVE_MPI_H
+    if ( istate % mpi__->size() == mpi__->rank() ) {
+#endif
+      Timer pdebug(2);
+      shared_ptr<const RASCivec> cc = ccvec->data(istate);
+      shared_ptr<RASCivec> sigma = sigmavec->data(istate);
 
-    // (taskaa)
-    sigma_aa(cc, sigma, g.get(), jop->mo2e_ptr());
-    pdebug.tick_print("taskaa");
+      // (taskaa)
+      sigma_aa(cc, sigma, g.data(), jop->mo2e_ptr());
+      pdebug.tick_print("taskaa");
 
-    // (taskbb)
-    sigma_bb(cc, sigma, g.get(), jop->mo2e_ptr());
-    pdebug.tick_print("taskbb");
+      // (taskbb)
+      sigma_bb(cc, sigma, g.data(), jop->mo2e_ptr());
+      pdebug.tick_print("taskbb");
 
-    // (taskab) alpha-beta contributions
-    sigma_ab(cc, sigma, jop->mo2e_ptr());
-    pdebug.tick_print("taskab");
+      // (taskab) alpha-beta contributions
+      sigma_ab(cc, sigma, jop->mo2e_ptr());
+      pdebug.tick_print("taskab");
+#ifdef HAVE_MPI_H
+    }
+    requests.push_back(mpi__->ibroadcast(sigmavec->data(istate)->data(), sigmavec->data(istate)->size(), istate % mpi__->size()));
+#endif
   }
+
+#ifdef HAVE_MPI_H
+  for (auto& r : requests)
+    mpi__->wait(r);
+#endif
 
   return sigmavec;
 }
@@ -670,10 +686,8 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
           for (size_t r1 = 0; r1 < nr1; ++r1) {
             for (size_t r2 = 0; r2 < nr2; ++r2, ++col) {
               double* targ = VI_out->element_ptr(0, col);
-              transform(targ, targ + phisize, VI[0]->element_ptr(0, r1 + nr1*r2 + nr1*nr2*r3), targ,
-                  [] (const double& p, const double& q) { return p + q; });
-              transform(targ, targ + phisize, VI[2]->element_ptr(0, r3 + nr3*r2 + nr3*nr2*r1), targ,
-                  [] (const double& p, const double& q) { return p + q; });
+              blas::ax_plus_y_n(1.0, VI[0]->element_ptr(0, r1 + nr1*r2 + nr1*nr2*r3), phisize, targ);
+              blas::ax_plus_y_n(1.0, VI[2]->element_ptr(0, r3 + nr3*r2 + nr3*nr2*r1), phisize, targ);
             }
           }
         }

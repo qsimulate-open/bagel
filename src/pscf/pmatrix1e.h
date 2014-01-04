@@ -103,7 +103,7 @@ class PMatrix1e {
     const std::shared_ptr<PGeometry> geom() const { return geom_; };
     void diagonalize(double*);
     std::shared_ptr<PMatrix1e> inverse() const;
-    void svd(std::shared_ptr<PMatrix1e> U, std::shared_ptr<PMatrix1e> V);
+    std::tuple<std::shared_ptr<PMatrix1e>, std::shared_ptr<PMatrix1e>> svd();
 
     void print() const;
     void rprint(const int precision=6) const;

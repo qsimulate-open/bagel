@@ -46,6 +46,6 @@ shared_ptr<GradFile> GNAIBatch::compute_gradient(shared_ptr<const Matrix> d, con
   auto out = make_shared<GradFile>(natom);
   for (int l = 0; l != natom; ++l)
     for (int k = 0; k != 3; ++k)
-      out->element(k, l) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3*l), 1);
+      out->element(k, l) += inner_product(d->data(), d->data()+d->size(), data_+size_block_*(k+3*l), 0.0);
   return out;
 }

@@ -326,9 +326,8 @@ void MoldenIn::read() {
       throw runtime_error("It appears an atom was missing in the GTO section. Check your file");
     }
 
-    transform(iname->begin(), iname->end(), iname->begin(), ::tolower);
     /* For each atom, I need to make an atom object and stick it into a vector */
-    all_atoms.push_back(make_shared<const Atom>(is_spherical_, *iname, *piter, binfo));
+    all_atoms.push_back(make_shared<const Atom>(is_spherical_, to_lower(*iname), *piter, binfo));
   }
 
   atoms_ = all_atoms;

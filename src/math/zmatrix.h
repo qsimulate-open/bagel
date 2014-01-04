@@ -62,11 +62,12 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 
-    void svd(std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>);
+    std::tuple<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> svd(double* sing = nullptr);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
-    void inverse_half(const double thresh = 1.0e-8);
+    bool inverse_half(const double thresh = 1.0e-8);
+    std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;
     using Matrix_base<std::complex<double>>::get_block;

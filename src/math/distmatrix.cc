@@ -133,6 +133,17 @@ void DistMatrix::diagonalize(double* eig) {
   *this = tmp;
 }
 
+struct RotateTask {
+  shared_ptr<const Matrix> buf;
+  const int srq;
+  const int rrq;
+  double* const target;
+  pair<double, double> factors;
+
+  RotateTask(shared_ptr<const Matrix> b, const int s, const int r, double* const t, pair<double,double> f):
+    buf(b), srq(s), rrq(r), target(t), factors(f) {}
+};
+
 // Caution: assumes no repetition of rotation indices (each orbital is involved in at most one rotation)
 void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
   const int localrow = get<0>(localsize_);
@@ -142,17 +153,16 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
   const int myprow = mpi__->myprow();
 
   vector<tuple<int, int, double>> local_rotations;
+  vector<RotateTask> rot_tasks;
 
-  vector<mutex> mt(localcol);
-
-  auto sender = make_shared<SendRequest>();
-  auto accumer = make_shared<AccRequest>(local_.get(), &mt);
+  // Better way to do this?
+  const int rotate_tag = 1 << 8;
 
   for (auto& irot : rotations) {
-    int ipcol, ioffset;
+    int i = get<0>(irot);
+    int j = get<1>(irot);
+    int ipcol, jpcol, ioffset, joffset;
     tie(ipcol, ioffset) = locate_column(get<0>(irot));
-
-    int jpcol, joffset;
     tie(jpcol, joffset) = locate_column(get<1>(irot));
 
     const double gamma = get<2>(irot);
@@ -166,24 +176,21 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
       const int remoteoffset = ( iloc ? joffset : ioffset ) * localrow;
       const int remoterank = mpi__->pnum( myprow, ( iloc ? jpcol : ipcol ) );
 
-      unique_ptr<double[]> sbuf(new double[localrow]);
-      const double sendfactor = ( iloc ? -sin(gamma) : sin(gamma) ); // double check
-      transform(localdata, localdata + localrow, sbuf.get(), [&sendfactor](const double a) { return sendfactor * a; });
+      auto sbuf = make_shared<Matrix>(localrow, 2);
+      copy_n(localdata, localrow, sbuf->element_ptr(0, (iloc?0:1)));
 
-      sender->request_send(move(sbuf), localrow, remoterank, remoteoffset);
-
-      const double localfactor = cos(gamma);
-      for_each(localdata, localdata + localrow, [&localfactor](double& a) { a *= localfactor; });
+      // send/receive
+      const int sendtag = rotate_tag + ( iloc ? i + j*ndim() : j + i*ndim() );
+      const int recvtag = rotate_tag + ( iloc ? j + i*ndim() : i + j*ndim() );
+      const int srq = mpi__->request_send(sbuf->element_ptr(0,(iloc?0:1)), localrow, remoterank, sendtag);
+      const int rrq = mpi__->request_recv(sbuf->element_ptr(0,(iloc?1:0)), localrow, remoterank, recvtag);
+      pair<double, double> fac = iloc ? make_pair(cos(gamma), sin(gamma)) : make_pair(-sin(gamma), cos(gamma));
+      rot_tasks.emplace_back(sbuf, srq, rrq, localdata, fac);
     }
     else if ( (ipcol == mypcol) && (jpcol == mypcol) ) {
       local_rotations.emplace_back(ioffset, joffset, gamma);
     }
   }
-
-#ifndef USE_SERVER_THREAD
-  accumer->flush();
-  sender->flush();
-#endif
 
   //rotate locally
   for (auto& irot : local_rotations) {
@@ -195,28 +202,16 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
     double* const jdata = local_.get() + joffset * localrow;
 
     drot_(localrow, idata, 1, jdata, 1, cos(gamma), sin(gamma));
-
-#ifndef USE_SERVER_THREAD
-    accumer->flush();
-    sender->flush();
-#endif
   }
 
-  // terminate accumulate
-  bool done;
-  do {
-    done = sender->test();
-    done &= accumer->test();
-#ifndef USE_SERVER_THREAD
-    // in case no thread is running behind, we need to cycle this to flush
-    size_t d = done ? 0 : 1;
-    mpi__->soft_allreduce(&d, 1);
-    done = d == 0;
-    if (!done) sender->flush();
-    if (!done) accumer->flush();
-#endif
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
+  for (auto& r : rot_tasks) {
+    mpi__->wait(r.rrq);
+    const double a = r.factors.first;
+    const double b = r.factors.second;
+    transform(r.buf->element_ptr(0,0), r.buf->element_ptr(0,1), r.buf->element_ptr(0,1), r.target,
+      [&a, &b] (const double& p, const double& q) { return a*p + b*q; });
+    mpi__->wait(r.srq);
+  }
 }
 
 

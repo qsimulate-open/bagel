@@ -106,7 +106,7 @@ class K2ext {
               // move in place
               if (hashkey23 != hashkey01) {
                 std::unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
-                mytranspose_(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
+                blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
 
                 data_->put_block(target2, i2, i3, i0, i1);
               }

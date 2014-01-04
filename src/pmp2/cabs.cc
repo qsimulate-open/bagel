@@ -62,9 +62,8 @@ pair<RefCoeff, RefCoeff> PMP2::generate_CABS() {
   const int tmdim = tmp->mdim();
   const int tndim = tmp->ndim();
 
-  RefMatrix U(new PMatrix1e(geom_, tndim, tndim));
-  RefMatrix V(new PMatrix1e(geom_, tmdim, tmdim));
-  tmp->svd(U, V);
+  shared_ptr<PMatrix1e> U, V;
+  tie(U, V) = tmp->svd();
 
   RefMatrix Ured(new PMatrix1e(U, make_pair(tmdim, tndim)));
   RefCoeff coeff_cabs(new PCoeff(*ri_coeff * *Ured));
