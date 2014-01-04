@@ -36,8 +36,8 @@ class R1Batch: public RnBatch {
 
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
-    const double scale_root(double root, const double p, const double zeta) override {return (p * root + zeta)/(p + zeta); }
-    const double scale_weight(const double weight, const double coef) override { return weight * coef; }
+    double scale_root(const double root, const double p, const double zeta) override {return (p * root + zeta)/(p + zeta); }
+    double scale_weight(const double weight, const double coef) override { return weight * coef; }
 
   public:
     R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,

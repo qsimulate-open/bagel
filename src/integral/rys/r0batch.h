@@ -34,8 +34,8 @@ namespace bagel {
 class R0Batch: public RnBatch {
   protected:
     void compute_ssss(const double) override;
-    const double scale_root(double root, const double p, const double zeta) override { return -zeta / (p - zeta); } //zeta = -zeta for testing
-    const double scale_weight(const double weight, const double coef) override { return coef; }
+    double scale_root(const double root, const double p, const double zeta) override { return -zeta / (p - zeta); } //zeta = -zeta for testing
+    double scale_weight(const double weight, const double coef) override { return coef; }
 
   public:
     R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
