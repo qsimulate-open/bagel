@@ -45,8 +45,8 @@
   "title" : "meh-cas",
   "store_matrix" : false,
   "space" : [
-    { "charge" : 0, "spin" : 0, "nstate" : 2},
-    { "charge" : 0, "spin" : 2, "nstate" : 2},
+    { "charge" : 0, "spin" : 0, "nstate" : 3},
+    { "charge" : 0, "spin" : 2, "nstate" : 3},
     { "charge" : 1, "spin" : 1, "nstate" : 2},
     { "charge" :-1, "spin" : 1, "nstate" : 2}
   ],
