@@ -34,12 +34,11 @@
 #include <src/util/constants.h>
 #include <src/parallel/resources.h>
 #include <src/integral/integral.h>
-#include <src/integral/rys/inline.h>
 
 namespace bagel {
 
 template <typename DataType>
-class RysIntegral : public Integral {
+class RysIntegral : public Integral_base<DataType> {
   protected:
     // some basic info for integral evaluations
     bool swap01_, swap23_;
@@ -47,8 +46,9 @@ class RysIntegral : public Integral {
     std::array<double,3> AB_, CD_;
     int amapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
     int cmapping_[ANG_VRR_END * ANG_VRR_END * ANG_VRR_END];
-    DataType *p_, *q_;
-    DataType *xp_, *xq_, *coeff_, *coeffy_;
+    DataType *P_, *Q_;
+    double *xp_, *xq_;
+    DataType *coeff_, *coeffy_;
     DataType *T_, *U_;
     unsigned int contsize_, primsize_;
     size_t size_block_, size_alloc_;
@@ -56,7 +56,7 @@ class RysIntegral : public Integral {
     int cont0size_, cont1size_, cont2size_, cont3size_;
     int asize_, csize_, amax_, amin_, cmax_, cmin_, amax1_, cmax1_;
     DataType *buff_;
-    double *bkup_;
+    DataType *bkup_;
 
     std::array<std::shared_ptr<const Shell>,4> basisinfo_;
     bool spherical1_;
@@ -69,7 +69,7 @@ class RysIntegral : public Integral {
     int tenno_;
     int breit_;
 
-    double *data_;
+    DataType *data_;
     double *data2_;
     unsigned int size_final_;
 
@@ -91,7 +91,7 @@ class RysIntegral : public Integral {
     // virtual init functions. The default is for ERI, NAI and their derivatives.
     // should be overloaded in Slater-type integrals
     virtual void root_weight(const int ps) = 0;
-    virtual void compute_ssss(const DataType thr) = 0;
+    virtual void compute_ssss(const double thr) = 0;
     virtual void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) = 0;
 
     void allocate_arrays(const size_t ps);
@@ -99,21 +99,21 @@ class RysIntegral : public Integral {
     size_t size_allocated_;
 
     // for deallocation
-    double* stack_save_;
+    DataType* stack_save_;
     double* stack_save2_;
 
 
     // contraction
-    void perform_contraction_new_outer(const int nsize, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction_new_outer(const int nsize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1);
 
-    void perform_contraction_new_inner(const int nsize, const int ac, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction_new_inner(const int nsize, const int ac, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1);
 
     // contraction for 1-e integrals
-    void perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
+    void perform_contraction(const int asize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                                const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
                                const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1);
 
@@ -154,8 +154,8 @@ class RysIntegral : public Integral {
     virtual void compute() = 0;
 
     /// retrieve a batch of integrals
-    virtual double* data(const int i) override { assert(i == 0); return data_; }
-    const double* data() const { return data_; }
+    virtual DataType* data(const int i) override { assert(i == 0); return data_; }
+    const DataType* data() const { return data_; }
     const double* data2() const { return data2_; }
     bool data2_exists() const { return data2_ != nullptr; }
     size_t data_size() const { return size_final_; }

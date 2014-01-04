@@ -134,7 +134,7 @@ void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const
 
   auto d = dd.begin();
   for (auto& c : cd) {
-    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1); 
+    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1);
     block_[0]->add_direct_product(aslice, *d++, a);
   }
   assert(d == dd.end());
@@ -232,7 +232,6 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) const {
   return compute_Jop(shared_from_this(), den);
 }
-
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE

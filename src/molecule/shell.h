@@ -38,6 +38,7 @@ class Shell {
     const bool spherical_;
 
     std::array<double,3> position_;
+    std::array<double,3> vector_potential_;
     const int angular_number_;
     const std::vector<double> exponents_;     // length of primitive basis function
     const std::vector<std::vector<double>> contractions_;  // length of contracted basis function
@@ -72,6 +73,7 @@ class Shell {
 
     double position(const int i) const { return position_[i]; };
     const std::array<double,3>& position() const { return position_; };
+    double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };

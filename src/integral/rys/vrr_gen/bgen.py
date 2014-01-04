@@ -74,7 +74,7 @@ for a in range(0,7):
       int ii = screening_[j];\n\
       bvrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ">(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
                      basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
-                     p_+ii*3, q_+ii*3, xp_[ii], xq_[ii], size_block_, amapping_, cmapping_, asize_, workx, worky, workz, worktx, workty, worktz, worksx, worksy, worksz);\n\
+                     P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], size_block_, amapping_, cmapping_, asize_, workx, worky, workz, worktx, workty, worktz, worksx, worksy, worksz);\n\
     } break;\n"
 ss += "\
   }\n\

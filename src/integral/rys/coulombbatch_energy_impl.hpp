@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ncompute.cc
+// Filename: coulombbatch_energy_impl.hpp
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,19 +23,21 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/sortlist.h>
-#include <src/integral/carsphlist.h>
-#include <src/integral/hrrlist.h>
-#include <src/integral/rys/naibatch.h>
 
-using namespace std;
-using namespace bagel;
+#ifdef COULOMBBATCH_ENERGY_HEADERS
+
+#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
+#define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
+
+
+namespace bagel {
 
 constexpr static double PITWOHALF = 17.493418327624862;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-void NAIBatch::compute() {
+template <typename DataType>
+void CoulombBatch_Energy<DataType>::compute() {
   const double zero = 0.0;
   const int zeroint = 0;
   const int unit = 1;
@@ -49,9 +51,9 @@ void NAIBatch::compute() {
   double* const worky = stack_->get(worksize);
   double* const workz = stack_->get(worksize);
 
-  const double ax = basisinfo_[0]->position(0);
-  const double ay = basisinfo_[0]->position(1);
-  const double az = basisinfo_[0]->position(2);
+  const double Ax = basisinfo_[0]->position(0);
+  const double Ay = basisinfo_[0]->position(1);
+  const double Az = basisinfo_[0]->position(2);
 
   double r1x[20];
   double r1y[20];
@@ -59,7 +61,7 @@ void NAIBatch::compute() {
   double r2[20];
 
   const int alc = size_alloc_;
-  fill_n(data_, alc, zero);
+  std::fill_n(data_, alc, zero);
 
   const SortList sort(spherical1_);
 
@@ -78,15 +80,17 @@ void NAIBatch::compute() {
     const int offset_iprim = iprim * asize_;
     double* current_data = &data_[offset_iprim];
 
-    const double* croots = &roots_[i * rank_];
-    const double* cweights = &weights_[i * rank_];
+    const double* croots = roots_ + i * rank_;
+    const double* cweights = weights_ + i * rank_;
     for (int r = 0; r != rank_; ++r) {
-      r1x[r] = p_[i * 3    ] - ax - (p_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
-      r1y[r] = p_[i * 3 + 1] - ay - (p_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
-      r1z[r] = p_[i * 3 + 2] - az - (p_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
-      r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
+      const double sroot = scale_root(croots[r], xp_[i], mol_->atoms(iatom)->ecp(0));
+      const double sweight = scale_weight(cweights[r], mol_->atoms(iatom)->ecp(1));
+      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * sroot;
+      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * sroot;
+      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * sroot;
+      r2[r] = (1.0 - sroot) * 0.5 / xp_[i];
 
-      workx[r] = cweights[r] * coeff_[i];
+      workx[r] = sweight * coeff_[i];
       worky[r] = 1.0;
       workz[r] = 1.0;
     }
@@ -109,7 +113,7 @@ void NAIBatch::compute() {
     // assembly step
     for (int iz = 0; iz <= amax_; ++iz) {
       for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
+        for (int ix = std::max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
           const int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
           for (int r = 0; r != rank_; ++r)
           current_data[pos] += workz[iz * rank_ + r] * worky[iy * rank_ + r] * workx[ix * rank_ + r];
@@ -122,7 +126,7 @@ void NAIBatch::compute() {
   // data will be stored in bkup_: cont01{ xyz{ } }
   {
     const int m = asize_;
-    perform_contraction(m, data_, prim0size_, prim1size_, bkup_,
+    this->perform_contraction(m, data_, prim0size_, prim1size_, bkup_,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0size_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1size_);
   }
@@ -134,7 +138,7 @@ void NAIBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      copy(bkup_, bkup_+size_alloc_, data_);
+      std::copy(bkup_, bkup_+size_alloc_, data_);
     }
   }
 
@@ -154,7 +158,7 @@ void NAIBatch::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    copy(bkup_, bkup_+size_final_, data_);
+    std::copy(bkup_, bkup_+size_final_, data_);
   }
 
   stack_->release(worksize, workz);
@@ -163,4 +167,7 @@ void NAIBatch::compute() {
   stack_->release(size_alloc_, stack_save);
 }
 
+}
 
+#endif
+#endif

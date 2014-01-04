@@ -70,7 +70,7 @@ class ParallelList {
     bool empty() const {
       std::lock_guard<std::mutex> lock(head_.m);
       return (!head_.next);
-    }    
+    }
 
     template <typename... Args>
     void emplace_front(Args&&... args) {

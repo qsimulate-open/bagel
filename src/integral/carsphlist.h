@@ -27,6 +27,7 @@
 #ifndef __SRC_RYSINT_CARSPHLIST_H
 #define __SRC_RYSINT_CARSPHLIST_H
 
+#include <complex>
 #include <functional>
 #include <src/util/constants.h>
 
@@ -69,6 +70,46 @@ struct CarSphList {
   }
 
   std::function<void (const int, const double*, double*)> carsphfunc[ANG_HRR_END * ANG_HRR_END];
+};
+
+
+struct CCarSphList {
+  CCarSphList();
+
+  static void carsph_00(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_10(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_20(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_30(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_40(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_50(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_60(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_11(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_21(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_31(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_41(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_51(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_61(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_22(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_32(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_42(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_52(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_62(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_33(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_43(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_53(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_63(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_44(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_54(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_64(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_55(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_65(const int, const std::complex<double>*, std::complex<double>*);
+  static void carsph_66(const int, const std::complex<double>*, std::complex<double>*);
+
+  void carsphfunc_call(const unsigned int i, const int a0, const std::complex<double>* a1, std::complex<double>* a2) const {
+    return (carsphfunc[i])(a0, a1, a2);
+  }
+
+  std::function<void (const int, const std::complex<double>*, std::complex<double>*)> carsphfunc[ANG_HRR_END * ANG_HRR_END];
 };
 
 }

@@ -25,6 +25,7 @@
 
 #include <src/scf/rohf.h>
 #include <src/ks/ks.h>
+#include <src/scf/soscf.h>
 #include <src/fci/distfci.h>
 #include <src/fci/harrison.h>
 #include <src/fci/knowles.h>
@@ -53,6 +54,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
   else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
   else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
+  else if (title == "soscf")  out = make_shared<SOSCF>(itree, geom, ref);
   else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
   else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
   else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);

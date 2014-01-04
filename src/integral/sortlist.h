@@ -31,6 +31,7 @@
 #ifndef __SRC_RYSINT_SORTLIST_H
 #define __SRC_RYSINT_SORTLIST_H
 
+#include <complex>
 #include <functional>
 #include <src/util/constants.h>
 
@@ -102,6 +103,75 @@ struct SortList {
   }
 
   std::function<void (double*, const double*, const int, const int, const int, const bool)> sortfunc[ANG_HRR_END * ANG_HRR_END];
+};
+
+
+struct CSortList {
+  CSortList(const bool);
+
+  static void sort_indices_00(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_01(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_02(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_03(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_04(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_05(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_06(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_11(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_12(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_13(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_14(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_15(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_16(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_22(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_23(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_24(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_25(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_26(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_33(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_34(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_35(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_36(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_44(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_45(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_46(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_55(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_56(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_66(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+
+  static void sort_indices_00_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_01_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_02_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_03_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_04_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_05_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_06_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_11_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_12_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_13_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_14_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_15_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_16_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_22_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_23_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_24_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_25_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_26_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_33_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_34_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_35_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_36_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_44_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_45_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_46_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_55_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_56_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+  static void sort_indices_66_sph(std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool);
+
+  void sortfunc_call(const unsigned int i, std::complex<double>* a1, const std::complex<double>* a2, const int a3, const int a4, const int a5, const bool a6) const {
+    return (sortfunc[i])(a1, a2, a3, a4, a5, a6);
+  }
+
+  std::function<void (std::complex<double>*, const std::complex<double>*, const int, const int, const int, const bool)> sortfunc[ANG_HRR_END * ANG_HRR_END];
 };
 
 }

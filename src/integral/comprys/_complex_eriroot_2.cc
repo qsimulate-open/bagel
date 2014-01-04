@@ -25,8 +25,6 @@
 
 #include <algorithm>
 #include <complex>
-#include <iostream>
-#include <iomanip>
 #include "comperirootlist.h"
 
 using namespace std;
@@ -2809,42 +2807,15 @@ void ComplexERIRootList::complex_eriroot2(const complex<double>* ta, complex<dou
     complex<double> t = ta[i-1];
     offset += 2;
     if (t.real() < -2) {
-      try {
-        for (int r = 0; r != 2; ++r) {
-          rr[offset+r].real(0.5);
-          rr[offset+r].imag(0.0);
-          ww[offset+r].real(0.0);
-          ww[offset+r].imag(0.0);
-        }
-      throw t;
-      }
-      catch (complex<double> tt) {
-        cout << "ERROR!  Invalid T value!  Real part is too small.  T = " << tt << ", asked for 2 roots." << endl;
-        cout << "Consider regenerating interpolation files with a larger domain." << endl;
-        exit(1);
-      }
+      throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength");
     } else if (t.real() >= 42) {
-      cout << "T = " << t << ", need 2 roots:  Used high-T approximation" << endl;
       t = 1.0/sqrt(t);
       for (int r = 0; r != 2; ++r) {
         rr[offset+r] = ax[r]*t*t;
         ww[offset+r] = aw[r]*t;
       }
     } else if ( fabs(t.imag()) > 5.000000000000000e-01){
-      try {
-        for (int r = 0; r != 2; ++r) {
-          rr[offset+r].real(0.5);
-          rr[offset+r].imag(0.0);
-          ww[offset+r].real(0.0);
-          ww[offset+r].imag(0.0);
-        }
-        throw t;
-      }
-      catch (complex<double> tt) {
-        cout << "ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  T = " << tt << ", asked for 2 roots." << endl;
-        cout << "Consider regenerating interpolation files with a larger domain." << endl;
-        exit(1);
-      }
+      throw runtime_error ("ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.");
     } else {
       const complex<double> torig = t;
       if (torig.imag() < 0) t = conj(torig);
@@ -2855,7 +2826,6 @@ void ComplexERIRootList::complex_eriroot2(const complex<double>* ta, complex<dou
       const double tr2 = tr * 2.0;
       const double ti2 = ti * 2.0;
       if (itr < 11) {
-        cout << "T = " << torig << ", need 2 roots: Used complex interpolation, with 14 by 10 gridpoints." << endl;
         for (int j=1; j <=2; ++j) {
           vector<double> xrval(10);
           vector<double> xival(10);
@@ -2992,7 +2962,6 @@ void ComplexERIRootList::complex_eriroot2(const complex<double>* ta, complex<dou
           }
         }
       } else {
-        cout << "T = " << torig << ", need 2 roots: Used complex interpolation, with 10 by 8 gridpoints." << endl;
         for (int j=1; j <=2; ++j) {
           vector<double> xrval(8);
           vector<double> xival(8);

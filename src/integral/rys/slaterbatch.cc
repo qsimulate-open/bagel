@@ -35,7 +35,7 @@
 #include <src/integral/rys/sinline.h>
 #include <src/integral/rys/slaterbatch.h>
 #include <src/integral/rys/eribatch_base.h>
-#include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/coulombbatch_base.h>
 
 #ifdef HAVE_LIBSLATER
 #include <srootlist.h>
@@ -329,12 +329,12 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
           const double T = rho * pq_sq;
           coeff_[index] = coeffy_[index] * twogamma * U;
           const int index3 = index * 3;
-          p_[index3] = px;
-          p_[index3 + 1] = py;
-          p_[index3 + 2] = pz;
-          q_[index3] =     qx_save[index23];
-          q_[index3 + 1] = qy_save[index23];
-          q_[index3 + 2] = qz_save[index23];
+          P_[index3] = px;
+          P_[index3 + 1] = py;
+          P_[index3 + 2] = pz;
+          Q_[index3] =     qx_save[index23];
+          Q_[index3 + 1] = qy_save[index23];
+          Q_[index3 + 2] = qz_save[index23];
           T_[index] = T;
           U_[index] = U;
           screening_[screening_size_] = index;

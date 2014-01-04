@@ -34,3 +34,7 @@ void CarSphList::carsph_10(const int nloop, const double* source, double* target
   copy_n(source, nloop*3, target);
 }
 
+void CCarSphList::carsph_10(const int nloop, const complex<double>* source, complex<double>* target) {
+  copy_n(source, nloop*3, target);
+}
+

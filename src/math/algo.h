@@ -28,6 +28,7 @@
 
 #include <array>
 #include <complex>
+#include <type_traits>
 #include <stdexcept>
 #include <algorithm>
 #include <cassert>
@@ -51,6 +52,18 @@ namespace {
   template<typename T> double real(const T& a) { throw std::logic_error("detail::real"); }
   template<> double real(const double& a) { return a; }
   template<> double real(const std::complex<double>& a) { return a.real(); }
+
+  // real function
+  template<bool S, typename T, typename U>
+  struct make_complex_impl { };
+  template<typename T, typename U>
+  struct make_complex_impl<true,T,U> { U operator()(const T& a, const T& b, U& out) { return out = U{a, b}; } };
+  template<typename T, typename U>
+  struct make_complex_impl<false,T,U> { U operator()(const T& a, const T& b, U& out) { throw std::logic_error("make_complex_impl"); return U(); } };
+  template<typename T, typename U>
+  static void make_complex(const T& a, const T& b, U& out) {
+    make_complex_impl<std::is_same<U, std::complex<T>>::value,T,U>()(a, b, out);
+  }
 
   // taylor expansion
   template<int M, int N>

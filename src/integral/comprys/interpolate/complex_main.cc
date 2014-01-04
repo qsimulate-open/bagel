@@ -11,7 +11,7 @@
 //#define TESTING 20              // Define this to skip code generation and instead run the functions in the generated files.  The number you give defines the number of tests to be run.  
 
 constexpr double IMULT = 0.01;          // Used for the "-h" option, this defines the starting value of T.imag as a multiple of T.real
-constexpr double MAXABS_ERROR = 2e-14;
+constexpr double MAXABS_ERROR = 1e-14;
 constexpr double MAXREL_ERROR = 2e-14;
 
 constexpr int RGRID1 = 14;         // Number of gridpoints to use for bins close to zero
@@ -571,8 +571,6 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
 \n\
 #include <algorithm>\n\
 #include <complex>\n\
-#include <iostream>\n\
-#include <iomanip>\n\
 #include \"comperirootlist.h\"\n\
 \n\
 using namespace std;\n\
@@ -687,42 +685,17 @@ ofs << "\n\
     complex<double> t = ta[i-1];\n\
     offset += " << nroot << ";\n\
     if (t.real() < " << MINTR << ") {\n\
-      try {\n\
-        for (int r = 0; r != " << nroot << "; ++r) {\n\
-          rr[offset+r].real(0.5);\n\
-          rr[offset+r].imag(0.0);\n\
-          ww[offset+r].real(0.0);\n\
-          ww[offset+r].imag(0.0);\n\
-        }\n\
-      throw t;\n\
-      }\n\
-      catch (complex<double> tt) {\n\
-        cout << \"ERROR!  Invalid T value!  Real part is too small.  T = \" << tt << \", asked for " << nroot << " roots.\" << endl;\n\
-        cout << \"Consider regenerating interpolation files with a larger domain.\" << endl;\n\
-        exit(1);\n\
-      }\n\
-    } else if (t.real() >= " << MAXTR << ") {\n\
-      cout << \"T = \" << t << \", need " << nroot << " roots:  Used high-T approximation\" << endl;\n\
+      throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength\");\n\
+    } else if (t.real() >= " << MAXTR << ") {\n";
+//      cout << \"T = \" << t << \", need " << nroot << " roots:  Used high-T approximation\" << endl;\n
+      ofs << "\
       t = 1.0/sqrt(t);\n\
       for (int r = 0; r != " << nroot << "; ++r) {\n\
         rr[offset+r] = ax[r]*t*t;\n\
         ww[offset+r] = aw[r]*t;\n\
       }\n\
     } else if ( fabs(t.imag()) > " << MAXTI << "){\n\
-      try {\n\
-        for (int r = 0; r != " << nroot << "; ++r) {\n\
-          rr[offset+r].real(0.5);\n\
-          rr[offset+r].imag(0.0);\n\
-          ww[offset+r].real(0.0);\n\
-          ww[offset+r].imag(0.0);\n\
-        }\n\
-        throw t;\n\
-      }\n\
-      catch (complex<double> tt) {\n\
-        cout << \"ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  T = \" << tt << \", asked for " << nroot << " roots.\" << endl;\n\
-        cout << \"Consider regenerating interpolation files with a larger domain.\" << endl;\n\
-        exit(1);\n\
-      }\n\
+      throw runtime_error (\"ERROR!  Invalid T value!  Magnitude of imaginary part is too large.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.\");\n\
     } else {\n\
       const complex<double> torig = t;\n\
       if (torig.imag() < 0) t = conj(torig);\n\
@@ -745,8 +718,8 @@ ofs << "\n\
           ofs << "\
       } else {\n";
         }
+//        cout << \"T = \" << torig << \", need " << nroot << " roots: Used complex interpolation, with " << RGRID << " by " << IGRID << " gridpoints.\" << endl;
         ofs << "\
-        cout << \"T = \" << torig << \", need " << nroot << " roots: Used complex interpolation, with " << RGRID << " by " << IGRID << " gridpoints.\" << endl;\n\
         for (int j=1; j <=" << nroot << "; ++j) {\n\
           vector<double> xrval(" << IGRID << ");\n\
           vector<double> xival(" << IGRID << ");\n\

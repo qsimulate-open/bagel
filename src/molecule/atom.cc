@@ -46,6 +46,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   atom_number_ = atommap_.atom_number(name_);
 
   position_ = inp->get_array<double,3>("xyz");
+
   for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
 
   if (name_ == "q") {
@@ -108,8 +109,14 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
   }
   construct_shells(basis_info);
   common_init();
-}
 
+  // ECP initialization
+  // FIXME - for mulitple zeta's
+  // zeta
+  ecp_[0] = -0.05;
+  // weight
+  ecp_[1] = 1.0;
+}
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 : spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()),

@@ -31,14 +31,12 @@
 
 namespace bagel {
 
-class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
+class ComplexERIBatch : public ERIBatch_Base<std::complex<double>,Int_t::London> {
 
   protected:
     void perform_VRR();
-    void perform_VRR1();
-    void perform_VRR2();
-    void perform_VRR3();
     void root_weight(const int ps) override;
+    std::complex<double> get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) override;
 
   public:
 
@@ -48,7 +46,6 @@ class ComplexERIBatch : public ERIBatch_Base<std::complex<double>> {
 
     /// compute a batch of integrals
     void compute() override;
-    void compute_ssss(const std::complex<double> integral_thresh) override;
 
     constexpr static int Nblocks() { return 1; }
 

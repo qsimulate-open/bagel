@@ -32,7 +32,7 @@ namespace bagel {
 
 template <int a_, int c_, int rank_, typename DataType>
 void int2d(const DataType& P, const DataType& Q, const DataType& A, const DataType& B, const DataType& C, const DataType& D,
-           const DataType& xp, const DataType& xq, const DataType& one_2p, const DataType& one_2q, const DataType& one_pq, const DataType* roots, DataType* const data) {
+           const double& xp, const double& xq, const double& one_2p, const double& one_2q, const double& one_pq, const DataType* roots, DataType* const data) {
   /// for recursion
   alignas(32) DataType C00_[rank_];
   alignas(32) DataType D00_[rank_];
@@ -40,16 +40,16 @@ void int2d(const DataType& P, const DataType& Q, const DataType& A, const DataTy
   alignas(32) DataType B10_[rank_];
   alignas(32) DataType B01_[rank_];
 
-  const DataType xqopq = xq * one_pq;
-  const DataType xpopq = xp * one_pq;
+  const double xqopq = xq * one_pq;
+  const double xpopq = xp * one_pq;
 
   const DataType c00i0 = P - A;
   const DataType c00i1 = (P - Q) * xqopq;
   const DataType d00i0 = Q - C;
   const DataType d00i1 = (P - Q) * xpopq;
-  const DataType b00i0 = 0.5 * one_pq;
-  const DataType b10i0 = xqopq * one_2p;
-  const DataType b01i0 = xpopq * one_2q;
+  const double b00i0 = 0.5 * one_pq;
+  const double b10i0 = xqopq * one_2p;
+  const double b01i0 = xpopq * one_2q;
 
   for (int i = 0; i != rank_; ++i) {
     const DataType tsq = roots[i];

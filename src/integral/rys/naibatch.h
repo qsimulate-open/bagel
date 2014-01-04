@@ -26,27 +26,32 @@
 #ifndef __SRC_INTEGRAL_RYS_NAIBATCH_H
 #define __SRC_INTEGRAL_RYS_NAIBATCH_H
 
-#include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/coulombbatch_energy.h>
 
 namespace bagel {
 
-class NAIBatch : public NAIBatch_base {
+class NAIBatch : public CoulombBatch_energy {
 
   protected:
 
   public:
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  NAIBatch_base(_info, mol, 0, stack, 0, 0.0) {};
+    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) 
+      : CoulombBatch_energy(_info, mol, stack) {
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
+    }
 
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  NAIBatch_base(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
-     ~NAIBatch() {};
+    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0) 
+      : CoulombBatch_energy (_info, mol, L, A) {
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
+    }
 
-    /// compute a batch of integrals
-    void compute() override;
+    ~NAIBatch() {};
 
-    constexpr static int Nblocks() { return 1; }
 };
 
 }

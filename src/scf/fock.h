@@ -176,7 +176,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 #endif
             eribatch.compute();
             const double* eridata = eribatch.data();
-
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
               const int j0n = j0 * ndim_;
 

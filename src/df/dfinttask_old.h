@@ -44,6 +44,7 @@ class DFIntTask_OLD {
      : shell_(a), offset_(b), rank_(offset_.size()), df_(df) { }
 
     void compute() {
+
       std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);
       const double* ppt = p.first;
 

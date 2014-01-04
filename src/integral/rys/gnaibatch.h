@@ -29,11 +29,11 @@
 #include <memory>
 #include <tuple>
 #include <src/math/xyzfile.h>
-#include <src/integral/rys/naibatch_base.h>
+#include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class GNAIBatch : public NAIBatch_base {
+class GNAIBatch : public CoulombBatch_base {
 
   protected:
     void set_exponents();
@@ -45,11 +45,14 @@ class GNAIBatch : public NAIBatch_base {
 
     GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
               std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  NAIBatch_base(_info, mol, 1, stack), iatom_(i) {
+      :  CoulombBatch_base(_info, mol, 1, stack), iatom_(i) {
       if (swap01_) {
         std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
       }
       set_exponents();
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
     }
 
     /// compute a batch of integrals
