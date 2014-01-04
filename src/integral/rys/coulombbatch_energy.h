@@ -39,6 +39,9 @@ class CoulombBatch_Energy : public CoulombBatch_Base<DataType> {
 
   protected:
 
+    virtual double scale_root(const double root, const double p, const double zeta) { return root; }
+    virtual double scale_weight(const double weight, const double coef) { return weight; }
+
   public:
 
     CoulombBatch_Energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())

@@ -26,7 +26,7 @@
 
 #include <src/integral/rys/r2batch.h>
 #include <src/util/constants.h>
-#include <src/integral/rys/erirootlist.h>
+#include <src/integral/rys/r2rootlist.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,9 +47,10 @@ void R2Batch::compute_ssss(const double integral_thresh) {
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
+        double zeta = (*aiter)->ecp(0);
         double Z = (*aiter)->atom_charge();
         const double cxp = *expi0 + *expi1;
-        const double socxp = cxp + zeta_;
+        const double socxp = cxp + zeta;
         xp_[index] = cxp;
         const double ab = *expi0 * *expi1;
         const double cxp_inv = 1.0 / cxp;
@@ -58,11 +59,11 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp) * Eab;
         const double PCx = P_[index * 3    ] - (*aiter)->position(0);
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
+        coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp * (PCx * PCx + PCy * PCy + PCz * PCz) + T) * Eab;
         const double sqrtt = sqrt(T);
         const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
         if (ss > integral_thresh) {
@@ -87,18 +88,11 @@ void R2Batch::root_weight(const int ps) {
       } else {
         const double sqrtt = sqrt(T_[i]);
         const double dawsonsqt = inline_dawson(sqrtt);
-        weights_[i] = dawsonsqt * sqrt(pi__) * 0.5 / sqrtt;
+        weights_[i] = dawsonsqt / sqrtt;
       }
     }
   } else {
-    eriroot__.root(rank_, T_, roots_, weights_, ps); // TODO: roots
-    for (int xj = 0; xj != screening_size_; ++xj) {
-      const int i = screening_[xj];
-      double* croots = roots_ + i * rank_;
-      for (int r = 0; r != rank_; ++r) {
-        croots[r] = 1.0 - (xp_[i] * croots[r]) /(xp_[i] + zeta_);
-      }
-    }
+    r2root__.root(rank_, T_, roots_, weights_, ps);
   }
 }
 

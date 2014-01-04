@@ -49,6 +49,9 @@ class Atom {
     // basis set
     std::string basis_;
 
+    // effective core potential (0 = zeta, 1 = coef)
+    std::array<double,2> ecp_;
+
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
@@ -96,6 +99,10 @@ class Atom {
     void print() const;
 
     bool operator==(const Atom&) const;
+
+    // effective core potential
+    bool ecp() const { return ecp(0) != 0.0 || ecp(1) != 0.0; }
+    double ecp(const int i) const { return ecp_[i]; }
 
     // distance between this and other
     double distance(const std::array<double,3>& o) const;

@@ -14,6 +14,7 @@
 #include "gmp_macros.h"
 #include <algorithm>
 #include <vector>
+#include <gsl/gsl_sf_dawson.h>
 
 using namespace std;
 using namespace mpfr;
@@ -47,6 +48,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       // target Fm(T)
       const mpreal pi = GMPPI;
       const mpreal halfpT = half / T;
+#ifndef DAWSON
       fm[0] = sqrt(pi) / sqrtt * half * erf(sqrtt);
       for (int i = 1; i != 40; ++i) {
         fm[i] = halfpT * ((2*i-1) * fm[i - 1] - exp(-T));
@@ -60,6 +62,22 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       // in case of Spin-Spin, we shift by two
       for (int i = 0; i != 38; ++i)
         fm[i] = fm[i+2];
+#endif
+#else
+      const mpreal one = "1.0";
+      double dawson_double = gsl_sf_dawson(sqrtt.toDouble());
+      // based on taylor expansion
+      for (int i = 0; i != 40; ++i) {
+        fm[i] = 0;
+        mpreal current = one/(2*i+1) * exp(-T);
+        int j = 0;
+        do {
+          fm[i] += current;
+          ++j;
+          current *= mpreal(2*i+2*j-1)/mpreal(2*i+2*j+1) * T / j;
+        } while (abs(current) > machine_epsilon(fm[i]));
+      }
+      assert(abs(gsl_sf_dawson(sqrtt.toDouble())/sqrtt.toDouble() - fm[0].toDouble()) < 1.0e-12);
 #endif
       mone = fm[0];
     }

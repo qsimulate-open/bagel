@@ -81,14 +81,16 @@ void CoulombBatch_Energy<DataType>::compute() {
     double* current_data = &data_[offset_iprim];
 
     const double* croots = roots_ + i * rank_;
-    const double* cweights = &weights_[i * rank_];
+    const double* cweights = weights_ + i * rank_;
     for (int r = 0; r != rank_; ++r) {
-      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
-      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
-      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
-      r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
+      const double sroot = scale_root(croots[r], xp_[i], mol_->atoms(iatom)->ecp(0));
+      const double sweight = scale_weight(cweights[r], mol_->atoms(iatom)->ecp(1));
+      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * sroot;
+      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * sroot;
+      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * sroot;
+      r2[r] = (1.0 - sroot) * 0.5 / xp_[i];
 
-      workx[r] = cweights[r] * coeff_[i];
+      workx[r] = sweight * coeff_[i];
       worky[r] = 1.0;
       workz[r] = 1.0;
     }
