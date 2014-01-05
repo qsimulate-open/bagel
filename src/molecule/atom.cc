@@ -110,12 +110,16 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
   construct_shells(basis_info);
   common_init();
 
+#if 0
   // ECP initialization
   // FIXME - for mulitple zeta's
   // zeta
   ecp_[0] = -0.05;
   // weight
   ecp_[1] = 1.0;
+#else
+  fill(ecp_.begin(), ecp_.end(), 0.0);
+#endif
 }
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
