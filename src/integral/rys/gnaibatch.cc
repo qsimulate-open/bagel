@@ -29,6 +29,19 @@
 using namespace std;
 using namespace bagel;
 
+
+GNAIBatch::GNAIBatch(const array<shared_ptr<const Shell>,2>& _info, const shared_ptr<const Molecule> mol, const tuple<int,int> i, shared_ptr<StackMem> stack)
+  :  CoulombBatch_base(_info, mol, 1, stack), iatom_(i) {
+  if (swap01_) {
+    swap(get<0>(iatom_), get<1>(iatom_));
+  }
+  set_exponents();
+  const double integral_thresh = PRIM_SCREEN_THRESH;
+  compute_ssss(integral_thresh);
+  root_weight(primsize_*natom_);
+}
+
+
 void GNAIBatch::set_exponents() {
   exponents_ = unique_ptr<double[]>(new double[primsize_*2]);
   assert(primsize_ == basisinfo_[0]->exponents().size() * basisinfo_[1]->exponents().size());
