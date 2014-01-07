@@ -139,7 +139,7 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
           const double tsqrt = std::sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                               * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-          if (std::abs(ssss) > integral_thresh) {
+          if (ssss > integral_thresh) {
             tuple_field[tuple_length*2  ] = *expi2;
             tuple_field[tuple_length*2+1] = *expi3;
             tuple_index[tuple_length] = index23;
@@ -186,7 +186,7 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
         const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
                           * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-        if (std::abs(ssss) < std::abs(integral_thresh)) continue;
+        if (ssss < integral_thresh) continue;
       }
 
       const int index_base = prim2size_ * prim3size_ * index01;
