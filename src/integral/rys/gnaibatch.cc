@@ -49,3 +49,21 @@ shared_ptr<GradFile> GNAIBatch::compute_gradient(shared_ptr<const Matrix> d, con
       out->element(k, l) += inner_product(d->data(), d->data()+d->size(), data_+size_block_*(k+3*l), 0.0);
   return out;
 }
+
+
+void GNAIBatch::root_weight(const int ps) {
+  if (amax_ + cmax_ == 0) {
+    for (int j = 0; j != screening_size_; ++j) {
+      int i = screening_[j];
+      if (std::abs(T_[i]) < T_thresh__) {
+        weights_[i] = 1.0;
+      } else {
+        const double sqrtt = std::sqrt(T_[i]);
+        const double erfsqt = inline_erf(sqrtt);
+        weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
+      }
+    }
+  } else {
+    eriroot__.root(rank_, T_, roots_, weights_, ps);
+  }
+}

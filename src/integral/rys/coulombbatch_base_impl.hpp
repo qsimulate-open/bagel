@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: coulombbatch_base.cc
+// Filename: coulombbatch_base_impl.hpp
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -84,13 +84,14 @@ void CoulombBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
         P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
         P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        coeff_[index] = - 2 * Z * pi__ * cxp_inv * Eab;
-        const double PCx = P_[index * 3    ] - (*aiter)->position(0);
-        const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
-        const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
-        const double T = cxp * (PCx * PCx + PCy * PCy + PCz * PCz);
-        const double sqrtt = sqrt(T);
-        const double ss = - coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? sqrtpi * erf(sqrtt) / sqrtt * 0.5 : 1.0);
+        const double coeff_real = - 2 * Z * pi__ * cxp_inv * Eab;
+        coeff_[index] = coeff_real;
+        const DataType PCx = P_[index * 3    ] - (*aiter)->position(0);
+        const DataType PCy = P_[index * 3 + 1] - (*aiter)->position(1);
+        const DataType PCz = P_[index * 3 + 2] - (*aiter)->position(2);
+        const DataType T = cxp * (PCx * PCx + PCy * PCy + PCz * PCz);
+        const double sqrtt = sqrt(std::abs(T));
+        const double ss = - coeff_real * pow(4.0 * ab * onepi2, 0.75) * (std::abs(T) > 1.0e-15 ? sqrtpi * erf(sqrtt) / sqrtt * 0.5 : 1.0);
         if (ss > integral_thresh && !(*aiter)->finite_nucleus()) { // TODO reorganize loops
           T_[index] = T;
           screening_[screening_size_] = index;
@@ -118,7 +119,7 @@ void CoulombBatch_Base<DataType>::allocate_data(const int asize_final, const int
     if (breit_)
       size_alloc_ = 6 * size_block_;
 
-    stack_save_ = stack_->get(size_alloc_);
+    stack_save_ = stack_->template get<DataType>(size_alloc_);
     stack_save2_ = nullptr;
 
     // if Slater/Yukawa integrals
@@ -136,29 +137,11 @@ void CoulombBatch_Base<DataType>::allocate_data(const int asize_final, const int
     } else {
       throw std::logic_error("something is strange in CoulombBatch_base::allocate_data");
     }
-    stack_save_ = stack_->get(size_alloc_);
+    stack_save_ = stack_->template get<DataType>(size_alloc_);
     stack_save2_ = nullptr;
   }
   data_ = stack_save_;
   data2_ = stack_save2_;
-}
-
-template <typename DataType>
-void CoulombBatch_Base<DataType>::root_weight(const int ps) {
-  if (amax_ + cmax_ == 0) {
-    for (int j = 0; j != screening_size_; ++j) {
-      int i = screening_[j];
-      if (T_[i] < T_thresh__) {
-        weights_[i] = 1.0;
-      } else {
-        const double sqrtt = std::sqrt(T_[i]);
-        const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
-      }
-    }
-  } else {
-    eriroot__.root(rank_, T_, roots_, weights_, ps);
-  }
 }
 
 }

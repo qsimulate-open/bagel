@@ -29,15 +29,17 @@
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
-#include <src/integral/rys/coulombbatch_energy.h>
 #include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
+// TODO Un-template this class; it's better to just have a separate copy of the compute function.
 template <typename DataType>
 class CoulombBatch_Energy : public CoulombBatch_Base<DataType> {
 
   protected:
+
+    void root_weight(const int ps) override;
 
   public:
 
@@ -59,6 +61,9 @@ class CoulombBatch_Energy : public CoulombBatch_Base<DataType> {
     using CoulombBatch_Base<DataType>::L_;
     using CoulombBatch_Base<DataType>::A_;
     using CoulombBatch_Base<DataType>::mol_;
+    using CoulombBatch_Base<DataType>::T_;
+    using CoulombBatch_Base<DataType>::amax_;
+    using CoulombBatch_Base<DataType>::cmax_;
 
     using RysIntegral<DataType>::bkup_;
     using RysIntegral<DataType>::spherical1_;
@@ -83,7 +88,6 @@ class CoulombBatch_Energy : public CoulombBatch_Base<DataType> {
     using RysIntegral<DataType>::weights_;
     using RysIntegral<DataType>::asize_;
     using RysIntegral<DataType>::amapping_;
-    using RysIntegral<DataType>::amax_;
     using RysIntegral<DataType>::amin_;
     using RysIntegral<DataType>::amax1_;
     using RysIntegral<DataType>::data_;

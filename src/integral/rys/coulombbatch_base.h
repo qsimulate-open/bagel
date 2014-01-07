@@ -28,7 +28,6 @@
 #define __SRC_RYSINT_COULOMBBATCH_BASE_H
 
 #include <src/integral/rys/rysintegral.h>
-#include <src/integral/rys/coulombbatch_base.h>
 #include <src/molecule/molecule.h>
 #include <src/util/constants.h>
 #include <src/integral/rys/inline.h>
@@ -49,7 +48,6 @@ class CoulombBatch_Base : public RysIntegral<DataType> {
     const int L_;
     const double A_;
 
-    void root_weight(const int ps) override;
     void compute_ssss(const double) override;
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 

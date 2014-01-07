@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: gnaibatch.h
+// Filename: complexnaibatch.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,48 +23,41 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_GRAD_GNAIBATCH_H
-#define __SRC_GRAD_GNAIBATCH_H
+#ifndef __SRC_INTEGRAL_RYS_NAIBATCH_H
+#define __SRC_INTEGRAL_RYS_NAIBATCH_H
 
-#include <memory>
-#include <tuple>
-#include <src/math/xyzfile.h>
+#include <src/integral/sortlist.h>
+#include <src/integral/carsphlist.h>
+#include <src/integral/hrrlist.h>
 #include <src/integral/rys/coulombbatch_base.h>
 
 namespace bagel {
 
-class GNAIBatch : public CoulombBatch_base {
+class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>> {
 
   protected:
-    void set_exponents();
-    std::unique_ptr<double[]> exponents_;
-
-    std::tuple<int,int> iatom_;
 
     void root_weight(const int ps) override;
+    void compute() override;
 
   public:
 
-    GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
-              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  CoulombBatch_base(_info, mol, 1, stack), iatom_(i) {
-      if (swap01_) {
-        std::swap(std::get<0>(iatom_), std::get<1>(iatom_));
-      }
-      set_exponents();
+    ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+      :  CoulombBatch_Base<std::complex<double>>(_info, mol, 0, stack, 0, 0.0) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
 
-    /// compute a batch of integrals
-    void compute();
+    ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
+      :  CoulombBatch_Base<std::complex<double>>(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {
+      const double integral_thresh = PRIM_SCREEN_THRESH;
+      compute_ssss(integral_thresh);
+      root_weight(primsize_*natom_);
+    }
 
-    std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> cden, const int iatom0, const int iatom1, const int natom) const;
+    ~ComplexNAIBatch() {};
 
-    int nblocks() const { return mol_->natom()*3; }
-
-    double* data(const int i) override { return data_ + i*size_block_; }
 };
 
 }
