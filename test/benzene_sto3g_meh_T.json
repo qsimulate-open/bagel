@@ -81,8 +81,9 @@
     { "charge" :-1, "spin" : 1, "nstate" : 2}
   ],
   "fci" : {
-    "thresh" : 1.0e-12,
-    "algorithm" : "kh"
+    "thresh" : 1.0e-14,
+    "algorithm" : "hz",
+    "nguess" : 50
   },
   "nstates" : 2
 }

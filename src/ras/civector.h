@@ -433,6 +433,12 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
         std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
+
+    void synchronize() {
+#ifdef HAVE_MPI_H
+      mpi__->broadcast(data(), size(), 0);
+#endif /* HAVE_MPI_H */
+    }
 };
 
 template<> double RASCivector<double>::spin_expectation() const; // returns < S^2 >

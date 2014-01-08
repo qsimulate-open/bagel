@@ -56,7 +56,8 @@
     "max_particles" : 2
   } ],
   "ras" : {
-    "thresh" : 1.0e-12
+    "thresh" : 1.0e-12,
+    "nguess" : 50
   },
   "nstates" : 1
 }
