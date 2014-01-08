@@ -172,14 +172,14 @@ void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const
     const int end0   = upper0[i];
     std::fill_n(work, worksize, DataType(0.0));
     for (int j = begin0; j != end0; ++j)
-      std::transform(prim + j*worksize, prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
+      blas::ax_plus_y_n(coeff0[i][j], prim+j*worksize, worksize, work);
 
     for (int k = 0; k != cdim1; ++k, current_cont += nsize) {
       const int begin1 = lower1[k];
       const int end1   = upper1[k];
       std::fill_n(current_cont, nsize, DataType(0.0));
       for (int j = begin1; j != end1; ++j)
-        std::transform(work + j*nsize, work + (j+1)*nsize, current_cont, current_cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
+        blas::ax_plus_y_n(coeff1[k][j], work+j*nsize, nsize, current_cont);
     }
   }
 
@@ -204,15 +204,14 @@ void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const
       const int end0   = upper0[i];
       std::fill_n(work, worksize,  DataType(0.0));
       for (int j = begin0; j != end0; ++j)
-        std::transform(current_prim + j*worksize, current_prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
+        blas::ax_plus_y_n(coeff0[i][j], current_prim+j*worksize, worksize, work);
 
       for (int k = 0; k != cdim1; ++k, current_cont += ac) {
         const int begin1 = lower1[k];
         const int end1   = upper1[k];
         std::fill_n(current_cont, ac, DataType(0.0));
-        for (int j = begin1; j != end1; ++j) {
-          std::transform(work + j*ac, work + (j+1)*ac, current_cont, current_cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
-        }
+        for (int j = begin1; j != end1; ++j)
+          blas::ax_plus_y_n(coeff1[k][j], work+j*ac, ac, current_cont);
       }
     }
   }
@@ -233,15 +232,14 @@ void RysIntegral<DataType>::perform_contraction(const int asize, const DataType*
     const int end0   = ranges0[i].second;
     std::fill_n(work, worksize, DataType(0.0));
     for (int j = begin0; j != end0; ++j)
-      std::transform(prim + j*worksize, prim + (j+1)*worksize, work, work, [&](const DataType& a, DataType& b) { return b+a*coeff0[i][j]; });
+      blas::ax_plus_y_n(coeff0[i][j], prim+j*worksize, worksize, work);
 
     for (int k = 0; k != cdim1; ++k, cont += asize) {
       const int begin1 = ranges1[k].first;
       const int end1   = ranges1[k].second;
       std::fill_n(cont, asize, DataType(0.0));
-      for (int j = begin1; j != end1; ++j) {
-        std::transform(work + j*asize, work + (j+1)*asize, cont, cont, [&](const DataType& a, DataType& b) { return b+a*coeff1[k][j]; });
-      }
+      for (int j = begin1; j != end1; ++j)
+        blas::ax_plus_y_n(coeff1[k][j], work+j*asize, asize, cont);
     }
   }
   stack_->release(worksize, work);

@@ -33,27 +33,28 @@ namespace bagel {
 
 class R0Batch: public RnBatch {
   protected:
-    void root_weight(const int ps) override;
     void compute_ssss(const double) override;
+    double scale_root(const double root, const double p, const double zeta) override { return -zeta / (p - zeta); } //zeta = -zeta for testing
+    double scale_weight(const double weight, const double coef) override { return coef; }
 
   public:
-    R0Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      : RnBatch (zeta, _info, mol, stack) { 
+      : RnBatch (_info, mol, stack) {
+      rank_ = 1;
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
     }
 
 
-    R0Batch(const double zeta, const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
+    R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
             const int L, const double A = 0.0)
-      : RnBatch (zeta, _info, mol, L, A) {
+      : RnBatch (_info, mol, L, A) {
+      rank_ = 1;
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
     }
-      
+
 
     ~R0Batch() {}
 

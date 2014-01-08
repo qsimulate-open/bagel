@@ -31,22 +31,23 @@
 
 namespace bagel {
 
-template<typename T>
+// variadic template
+template<typename T, typename... Value>
 class MixedBasis : public Matrix {
   protected:
 
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, Value... tail) {
       // input = [b1, b0]
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      T batch(input);
+      T batch(input, tail...);
       batch.compute();
 
       copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data());
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Geometry> g1)
+    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Geometry> g1, Value... tail)
      : Matrix(g1->nbasis(), g0->nbasis()) {
       size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {
@@ -54,7 +55,7 @@ class MixedBasis : public Matrix {
           size_t off1 = 0;
           for (auto& catom1 : g1->atoms())
             for (auto& b1 : catom1->shells()) {
-              computebatch(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, off0, off1);
+              computebatch(std::array<std::shared_ptr<const Shell>,2>{{b1, b0}}, off0, off1, tail...);
               off1 += b1->nbasis();
             }
           off0 += b0->nbasis();

@@ -19,17 +19,19 @@
 #include "gmp_macros.h"
 #include <boost/lexical_cast.hpp>
 
+#include "../r2rootlist.h"
+
 extern "C" {
   void dsyev_(const char*, const char*, const int*, double*, const int*, double*, double*, const int*, int*);
 }
 
 using namespace boost;
 using namespace std;
-
+using namespace mpfr;
+using namespace bagel;
 
 void rysroot_gmp(const vector<mpfr::mpreal>& ta, vector<mpfr::mpreal>& dx, vector<mpfr::mpreal>& dw, const int nrank, const int nbatch) ;
 
-using namespace mpfr;
 vector<mpreal> chebft(int n) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   vector<mpreal> out(n);
@@ -41,12 +43,13 @@ vector<mpreal> chebft(int n) {
   return out;
 }
 
-vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) {
+vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, const bool asymp) {
   mpfr::mpreal::set_default_prec(GMPPREC);
   const int n = NGRID;
 
   const mpreal zero = "0.0";
   const mpreal half = "0.5";
+  const mpreal one = "1.0";
   vector<mpreal> cheb = chebft(n);
 
   const mpreal Tmin = tbase;
@@ -56,6 +59,11 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
   vector<mpreal> Tpoints(n);
   for (int i = 0; i != n; ++i) {
     Tpoints[i] = stride*half*cheb[i] + Tp;
+  }
+  if (asymp) {
+    for (int i = 0; i != n; ++i) {
+      Tpoints[i] = one / (Tpoints[i] * Tpoints[i]);
+    }
   }
 
   vector<map<mpreal, mpreal>> table_reserve(n);
@@ -99,7 +107,8 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
     if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
       cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << Tmin.toDouble() << " " << Tmax.toDouble() << endl;
       for (int i = 0; i != n; ++i) {
-        cout << setw(20) << Tpoints[i].toDouble() << setw(20) << cdx[i].toDouble() << setw(20) << cdw[i].toDouble() << endl;
+        //cout << setw(20) << Tpoints[i].toDouble() << setw(20) << cdx[i].toDouble() << setw(20) << cdw[i].toDouble() << endl;
+        cout << setw(20) << Tpoints[i].toDouble() << setw(20) << tc[n-1] << setw(20) << tc2[n-1] << endl;
       }
     }
     c.push_back(tc);
@@ -107,80 +116,6 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank) 
   }
   return c;
 }
-
-
-#ifdef BUILD_TEST
-extern "C" {
-  void breitroot1_(double*, double*, double*, const int*);
-  void breitroot2_(double*, double*, double*, const int*);
-  void breitroot3_(double*, double*, double*, const int*);
-  void breitroot4_(double*, double*, double*, const int*);
-  void breitroot5_(double*, double*, double*, const int*);
-  void breitroot6_(double*, double*, double*, const int*);
-  void breitroot7_(double*, double*, double*, const int*);
-  void breitroot8_(double*, double*, double*, const int*);
-  void breitroot9_(double*, double*, double*, const int*);
-  void breitroot10_(double*, double*, double*, const int*);
-  void breitroot11_(double*, double*, double*, const int*);
-  void breitroot12_(double*, double*, double*, const int*);
-  void breitroot13_(double*, double*, double*, const int*);
-}
-
-struct B {
-  void (*breitroot[14])(double*, double*, double*, const int*);
-  B() {
-    breitroot[1] = breitroot1_;
-    breitroot[2] = breitroot2_;
-    breitroot[3] = breitroot3_;
-    breitroot[4] = breitroot4_;
-    breitroot[5] = breitroot5_;
-    breitroot[6] = breitroot6_;
-    breitroot[7] = breitroot7_;
-    breitroot[8] = breitroot8_;
-    breitroot[9] = breitroot9_;
-    breitroot[10] = breitroot10_;
-    breitroot[11] = breitroot11_;
-    breitroot[12] = breitroot12_;
-    breitroot[13] = breitroot13_;
-  }
-  void root(const int rank, double* a, double* b, double* c, const int* d) { breitroot[rank](a,b,c,d); }
-} breit;
-
-extern "C" {
-  void spin2root1_(double*, double*, double*, const int*);
-  void spin2root2_(double*, double*, double*, const int*);
-  void spin2root3_(double*, double*, double*, const int*);
-  void spin2root4_(double*, double*, double*, const int*);
-  void spin2root5_(double*, double*, double*, const int*);
-  void spin2root6_(double*, double*, double*, const int*);
-  void spin2root7_(double*, double*, double*, const int*);
-  void spin2root8_(double*, double*, double*, const int*);
-  void spin2root9_(double*, double*, double*, const int*);
-  void spin2root10_(double*, double*, double*, const int*);
-  void spin2root11_(double*, double*, double*, const int*);
-  void spin2root12_(double*, double*, double*, const int*);
-  void spin2root13_(double*, double*, double*, const int*);
-}
-
-struct S {
-  void (*spin2root[14])(double*, double*, double*, const int*);
-  S() {
-    spin2root[1] = spin2root1_;
-    spin2root[2] = spin2root2_;
-    spin2root[3] = spin2root3_;
-    spin2root[4] = spin2root4_;
-    spin2root[5] = spin2root5_;
-    spin2root[6] = spin2root6_;
-    spin2root[7] = spin2root7_;
-    spin2root[8] = spin2root8_;
-    spin2root[9] = spin2root9_;
-    spin2root[10] = spin2root10_;
-    spin2root[11] = spin2root11_;
-    spin2root[12] = spin2root12_;
-    spin2root[13] = spin2root13_;
-  }
-  void root(const int rank, double* a, double* b, double* c, const int* d) { spin2root[rank](a,b,c,d); }
-} spin2;
 
 
 bool test(const int nrank, const double tin) {
@@ -194,34 +129,26 @@ bool test(const int nrank, const double tin) {
   for (int i = 0; i != nsize*nrank; ++i)
     gmp.insert(make_pair(rr[i], ww[i]));
 
-  double dt[nsize] = {(double)(tt[0])};
+  double dt[nsize] = {tt[0].toDouble()};
   double dr[nsize*nrank];
   double dw[nsize*nrank];
-#ifndef SPIN2
-#ifdef BREIT
-  breit.root(nrank, dt, dr, dw, &nsize);
-#else
-  assert(false);
-#endif
-#else
-  spin2.root(nrank, dt, dr, dw, &nsize);
-#endif
+
+  r2root__.root(nrank, dt, dr, dw, nsize);
 
   cout << setprecision(10) << scientific << endl;
   auto iter = gmp.begin();
   for (int i = 0; i != nrank*nsize; ++i, ++iter) {
-    cout << setw(20) << dr[i] << setw(20) << iter->first  << setw(20) << fabs(dr[i] - (double)(iter->first)) << endl;
-    cout << setw(20) << dw[i] << setw(20) << iter->second << setw(20) << fabs(dw[i] - (double)(iter->second)) << endl;
+    cout << setw(20) << dr[i] << setw(20) << iter->first  << setw(20) << fabs(dr[i] - (iter->first).toDouble()) << endl;
+    cout << setw(20) << dw[i] << setw(20) << iter->second << setw(20) << fabs(dw[i] - (iter->second).toDouble()) << endl;
   }
   iter = gmp.begin();
   for (int i = 0; i != nrank; ++i, ++iter) {
-    if (!(fabs(dr[i] - (double)(iter->first)))) cout << dt[0] << endl;
-    assert(fabs(dr[i] - (double)(iter->first)) < 1.0e-14);
-    assert(fabs(dw[i] - (double)(iter->second)) < 1.0e-14);
+    if (!(fabs(dr[i] - (iter->first).toDouble()))) cout << dt[0] << endl;
+    assert(fabs(dr[i] - (iter->first).toDouble()) < 1.0e-13);
+    assert(fabs(dw[i] - (iter->second).toDouble()) < 1.0e-13);
   }
   cout << "test passed: rank" << setw(3) << nrank << endl;
 }
-#endif
 
 #include <boost/lexical_cast.hpp>
 
@@ -230,9 +157,9 @@ int main(int argc, char** argv) {
   mpfr::mpreal pi = GMPPI;
 
   if (argc > 1) {
+    cout << "--- TEST---" << endl;
     const string toggle = argv[1];
-    if (toggle == "-t") {
-#ifdef BUILD_TEST
+    if (toggle == "t") {
 #if 0
       if (argc <= 3) assert(false);
       const string low = argv[2];
@@ -246,8 +173,9 @@ int main(int argc, char** argv) {
       test(3,1.12233333333333);
       test(3,1.13233333333333);
       test(3,1.14333333333333);
+      test(3,1.14333333333333e1);
       test(3,1.14333333333333e3);
-#endif
+      test(3,1.14333333333333e4);
 #endif
       return 0;
     }
@@ -268,6 +196,7 @@ int main(int argc, char** argv) {
     }
     vector<double> aroot;
     vector<double> aweight;
+#ifndef DAWSON
 #ifndef SPIN2
 #ifndef BREIT
     // first obtain asymptotics
@@ -280,8 +209,8 @@ int main(int argc, char** argv) {
       a[i+i*n] = 0.0;
       if (i > 0) {
         const double ia = static_cast<double>(i);
-        a[(i-1)+i*n] = ::sqrt(ia*0.5);
-        a[i+(i-1)*n] = ::sqrt(ia*0.5);
+        a[(i-1)+i*n] = std::sqrt(ia*0.5);
+        a[i+(i-1)*n] = std::sqrt(ia*0.5);
       }
     }
     int nn = n*5;
@@ -319,16 +248,25 @@ int main(int argc, char** argv) {
       aweight.push_back((dw[j]*t*t*sqrt(t)).toDouble());
     }
 #endif
+#endif
 
     const int ndeg = NGRID;
     const int nbox = nbox_[nroot];
+#ifndef DAWSON
     const int jend = nbox;
+#else
+    const int jend = nbox + 1;
+#endif
     const double stride = static_cast<double>(MAXT)/nbox;
     const mpreal mstride = static_cast<mpreal>(MAXT)/nbox;
     ofstream ofs;
 #ifndef SPIN2
 #ifndef BREIT
+#ifndef DAWSON
     const string func = "eriroot";
+#else
+    const string func = "r2root";
+#endif
 #else
     const string func = "breitroot";
 #endif
@@ -373,12 +311,21 @@ using namespace bagel;\n\
 \n\
 void BreitRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #else
+#ifndef DAWSON
 ofs << "#include <src/integral/rys/erirootlist.h>\n\
 \n\
 using namespace std;\n\
 using namespace bagel;\n\
 \n\
 void ERIRootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
+#else
+ofs << "#include <src/integral/rys/r2rootlist.h>\n\
+\n\
+using namespace std;\n\
+using namespace bagel;\n\
+\n\
+void R2RootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
+#endif
 #endif
 #else
 ofs << "#include <src/integral/rys/spin2rootlist.h>\n\
@@ -388,7 +335,8 @@ using namespace bagel;\n\
 \n\
 void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #endif
-   ofs << "\
+#ifndef DAWSON
+  ofs << "\
   constexpr double ax["<<nroot<<"] = {";
     for (int j=0; j!= nroot; ++j) {
       ofs << scientific << setprecision(15) << setw(20) << aroot[j];
@@ -404,6 +352,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
       if (j%7 == 4) ofs << endl << "    ";
     }
     ofs << "};" << endl;
+#endif
 
 ////////////////////////////////////////
 // now creates data
@@ -415,8 +364,19 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
     double tiny = 1.0e-100;
     int xcnt = 0;
     int wcnt = 0;
-    for (int j=0; j!= jend; ++j) {
-      vector<vector<double>> c_all = get_C(j*mstride,mstride,nroot);
+    for (int j=0; j != jend; ++j) {
+#ifndef DAWSON
+      vector<vector<double>> c_all = get_C(j*mstride, mstride, nroot, false);
+#else
+      vector<vector<double>> c_all;
+      if (j != jend-1) {
+        c_all = get_C(j*mstride, mstride, nroot, false);
+      } else {
+        const mpreal zero = "0.0";
+        const mpreal one = "1.0";
+        c_all = get_C(zero, one / sqrt(MAXT), nroot, true);
+      }
+#endif
 
       for (int i = 0; i != nroot; ++i, ++index) {
         const int ii = 2 * i;
@@ -446,13 +406,19 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
 #else
     string tafactor = "t*t*t*t*t";
 #endif
-    ofs << "\
-  constexpr double x[" << nroot*nbox*ndeg<<"] = {";
-    ofs << listx.str() << "\
+
+#ifndef DAWSON
+    const int nbox1 = nbox;
+#else
+    const int nbox1 = nbox + 1;
+#endif
+  ofs << "\
+  constexpr double x[" << nroot*nbox1*ndeg<<"] = {";
+  ofs << listx.str() << "\
   };" << endl;
-    ofs << "\
-  constexpr double w[" << nroot*nbox*ndeg<<"] = {";
-    ofs << listw.str() << "\
+  ofs << "\
+  constexpr double w[" << nroot*nbox1*ndeg<<"] = {";
+  ofs << listw.str() << "\
   };" << endl;
 
   ofs << "\
@@ -462,51 +428,67 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
     offset += " << nroot << ";\n\
     if (t < 0.0) {\n\
       fill_n(rr+offset, " << nroot << ", 0.5);\n\
-      fill_n(ww+offset, " << nroot << ", 0.0);\n\
+      fill_n(ww+offset, " << nroot << ", 0.0);\n";
+#ifndef DAWSON
+      ofs << "\
     } else if (t >= " << MAXT << ".0) {\n\
       t = 1.0/sqrt(t);\n\
       for (int r = 0; r != " << nroot << "; ++r) {\n\
         rr[offset+r] = ax[r]*t*t;\n\
         ww[offset+r] = aw[r]*" + tafactor + ";\n\
-      }\n\
-    } else {\n\
-      int it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n\
+      }\n";
+#endif
+      ofs << "\
+    } else {\n";
+#ifndef DAWSON
+      ofs << "\
+      int it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n";
+#else
+      ofs << "\
+      int it; \n\
+      if (t >= " << MAXT << ".0) { \n\
+        t = " << setw(20) << setprecision(15) << fixed << 1.0 << " / (t * t) ; \n\
+        it = static_cast<int>(" << MAXT << "*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< " + " << setw(20) << setprecision(15) << fixed << stride/2.0 << ");\n\
+      } else { \n\
+        it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n\
+      } \n";
+#endif
+      ofs << "\
       t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/stride << ";\n\
       const double t2 = t * 2.0;\n\
       for (int j=1; j <=" << nroot << "; ++j) {\n\
         const int boxof = it*" << ndeg*nroot << "+" << ndeg << "*(j-1);\n";
-     assert((ndeg/2)*2 == ndeg);
-     for (int i=ndeg; i!=0; --i) {
-       if (i==ndeg) {
-         ofs << "\
-        double d = x[boxof+" << i-1 << "];\n\
-        double e = w[boxof+" << i-1 << "];\n";
-       } else if (i==ndeg-1) {
-         ofs << "\
-        double f = t2*d + x[boxof+" << i-1 << "];\n\
-        double g = t2*e + w[boxof+" << i-1 << "];\n";
-       } else if (i != 1 && ((i/2)*2 == i)) { // odd
-         ofs << "\
-        d = t2*f - d + x[boxof+" << i-1 << "];\n\
-        e = t2*g - e + w[boxof+" << i-1 << "];\n";
-       } else if (i != 1) { // even
-         ofs << "\
-        f = t2*d - f + x[boxof+" << i-1 << "];\n\
-        g = t2*e - g + w[boxof+" << i-1 << "];\n";
-       } else {
-         ofs << "\
-        rr[offset+j-1] = t*d - f + x[boxof+" << i-1 << "]*0.5;\n\
-        ww[offset+j-1] = t*e - g + w[boxof+" << i-1 << "]*0.5;\n";
-       }
-     }
-
-     ofs << "\
+        assert((ndeg/2)*2 == ndeg);
+        for (int i=ndeg; i!=0; --i) {
+          if (i==ndeg) {
+            ofs << "\
+            double d = x[boxof+" << i-1 << "];\n\
+            double e = w[boxof+" << i-1 << "];\n";
+          } else if (i==ndeg-1) {
+            ofs << "\
+            double f = t2*d + x[boxof+" << i-1 << "];\n\
+            double g = t2*e + w[boxof+" << i-1 << "];\n";
+          } else if (i != 1 && ((i/2)*2 == i)) { // odd
+            ofs << "\
+            d = t2*f - d + x[boxof+" << i-1 << "];\n\
+            e = t2*g - e + w[boxof+" << i-1 << "];\n";
+          } else if (i != 1) { // even
+            ofs << "\
+            f = t2*d - f + x[boxof+" << i-1 << "];\n\
+            g = t2*e - g + w[boxof+" << i-1 << "];\n";
+          } else {
+            ofs << "\
+            rr[offset+j-1] = t*d - f + x[boxof+" << i-1 << "]*0.5;\n\
+            ww[offset+j-1] = t*e - g + w[boxof+" << i-1 << "]*0.5;\n";
+          }
+        }
+      ofs << "\
       }\n\
     }\n\
   }\n\
 }";
 
-    ofs.close();
+  ofs.close();
   }
 
 
