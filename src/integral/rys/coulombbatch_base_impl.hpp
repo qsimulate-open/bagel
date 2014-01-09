@@ -75,18 +75,37 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
   const double sqrtpi = std::sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
+      const double cxp = *expi0 + *expi1;
+      const double ab = *expi0 * *expi1;
+      const double cxp_inv = 1.0 / cxp;
+      const DataType px = get_PQ(basisinfo_[0]->position(0), basisinfo_[1]->position(0), *expi0, *expi1, cxp_inv, 0, 0, swap01_);
+      const DataType py = get_PQ(basisinfo_[0]->position(1), basisinfo_[1]->position(1), *expi0, *expi1, cxp_inv, 0, 1, swap01_);
+      const DataType pz = get_PQ(basisinfo_[0]->position(2), basisinfo_[1]->position(2), *expi0, *expi1, cxp_inv, 0, 2, swap01_);
+      // For London orbitals, calculate the correction needed for the pre-integral coefficient
+      DataType factor_ab;
+      if (IntType == Int_t::London) {
+        std::complex<double> factor_ab;
+        const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
+        const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
+        const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
+        const double BA_BA_innerproduct = A_BA_x * A_BA_x + A_BA_y * A_BA_y + A_BA_z * A_BA_z;
+        const double P_BA_innerproduct = std::real(px) * A_BA_x + std::real(py) * A_BA_y + std::real(pz) * A_BA_z;
+        if (swap01_) detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , P_BA_innerproduct, factor_ab);
+        else detail::make_complex(-0.25*cxp_inv*BA_BA_innerproduct , -1*P_BA_innerproduct, factor_ab);
+      }
+      // Now loop over all nuclei
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
         double Z = (*aiter)->atom_charge();
-        const double cxp = *expi0 + *expi1;
         xp_[index] = cxp;
-        const double ab = *expi0 * *expi1;
-        const double cxp_inv = 1.0 / cxp;
-        P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-        P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-        P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+        P_[index * 3    ] = px;
+        P_[index * 3 + 1] = py;
+        P_[index * 3 + 2] = pz;
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
         const double coeff_real = - 2 * Z * pi__ * cxp_inv * Eab;
         coeff_[index] = coeff_real;
+        if (IntType == Int_t::London) {
+          coeff_[index] *= std::exp(factor_ab);
+        }
         const DataType PCx = P_[index * 3    ] - (*aiter)->position(0);
         const DataType PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const DataType PCz = P_[index * 3 + 2] - (*aiter)->position(2);

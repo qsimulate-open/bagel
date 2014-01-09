@@ -50,6 +50,9 @@ class CoulombBatch_Base : public RysIntegral<DataType> {
 
     void compute_ssss(const double) override;
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
+    virtual DataType get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) {
+      return (coord1*exp1 + coord2*exp2) * one12;
+    }
 
   public:
     CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
@@ -88,6 +91,7 @@ class CoulombBatch_Base : public RysIntegral<DataType> {
     using RysIntegral<DataType>::cmax_;
     using RysIntegral<DataType>::data_;
     using RysIntegral<DataType>::data2_;
+    using RysIntegral<DataType>::swap01_;
 
 };
 
