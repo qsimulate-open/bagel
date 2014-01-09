@@ -33,7 +33,6 @@
 #include <vector>
 #include <cmath>
 #include <complex>
-#include "../../../molecule/shell.h"
 #include "polynomial.h"
 
 namespace ryan {
@@ -51,8 +50,8 @@ class atomic_orbital {
 
   atomic_orbital () {
     prefactor = 0.0;
-
   }
+
   void set_data (const double* pos, const double exp, const int* ang_mom, bool norm, const std::vector<double> field);
 };
 
@@ -99,8 +98,6 @@ std::complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, b
     std::vector<double> positions, std::vector<int> angular, std::vector<double> exponents, std::vector<double> contraction_coefficients, std::vector<int> nprimitive,
     std::vector<std::complex<double>> orbital1, std::vector<std::complex<double>> orbital2,
     std::vector<std::complex<double>> orbital3, std::vector<std::complex<double>> orbital4);
-
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI (const std::array<std::shared_ptr<const bagel::Shell>,4>& basisinfo);
 
 }
 

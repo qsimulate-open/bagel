@@ -33,6 +33,7 @@
 #include <vector>
 #include <utility>
 #include "ericompute.h"
+#include "bagel_interface.h"
 #include "src/molecule/shell.h"
 
 using namespace std;

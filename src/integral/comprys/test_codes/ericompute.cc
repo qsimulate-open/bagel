@@ -596,6 +596,9 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
   for (int i = 0; i!=nbasis; i++) {
     basis[i].set_data(&positions[3*i],exponents[i],&angular[3*i],normalize_basis,field);
   }
+  if (normalize_basis) {
+    if (nbasis != nbasis_contracted) throw runtime_error ("Normalization code hasn't been updated to work with contracted orbitals.  Use one exponenet for each basis orbital.");
+  }
 
   // Define a basis set of molecular orbitals, taking into account contraction coefficients
   vector<molecular_orbital> basis_MO;
@@ -707,7 +710,7 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
       }
     }
   }
-#if 0
+#if 1
   cout << "Full ERI = " << Full_ERI << endl;
   cout << "Magnitude = " << abs(Full_ERI) << endl;
   cout << "Phase = " << arg(Full_ERI) << endl;
@@ -737,7 +740,7 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
     else cout << endl;
   }
 #endif
-#if 0
+#if 1
 // to check overlap integrals
   cout << endl << "Overlap integrals:" << endl;
   cout << "<a|a> = " << overlap_MO(field,MO_A,MO_A,basis) << endl;
@@ -745,7 +748,7 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
   cout << "<c|c> = " << overlap_MO(field,MO_C,MO_C,basis) << endl;
   cout << "<d|d> = " << overlap_MO(field,MO_D,MO_D,basis) << endl;
 #endif
-#if 0
+#if 1
   cout << "<a|b> = " << overlap_MO(field,MO_A,MO_B,basis) << endl;
   cout << "<b|a> = " << overlap_MO(field,MO_B,MO_A,basis) << endl;
   cout << "<a|c> = " << overlap_MO(field,MO_A,MO_C,basis) << endl;
