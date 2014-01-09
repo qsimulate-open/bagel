@@ -165,7 +165,7 @@ std::complex<double> overlap (const std::vector<double> field, atomic_orbital A_
   return out;
 }
 
-void atomic_orbital::set_data (const double* pos, const double exp, const int* ang_mom, bool norm, const std::vector<double> field) {
+void atomic_orbital::set_data (const double* pos, const double exp, const int* ang_mom, const std::vector<double> field) {
   for (int i = 0; i!=3; i++) {
     position[i] = pos[i];
     angular_momentum[i] = ang_mom[i];
@@ -175,11 +175,6 @@ void atomic_orbital::set_data (const double* pos, const double exp, const int* a
   vector_potential[2] = 0.5*(field[0]*pos[1] - field[1]*pos[0]);
   exponent = exp;
   prefactor = 1.0;
-  if (norm) {
-    std::complex<double> mag = 1.0 / overlap ( field, *this , *this );
-    assert (std::abs(mag.real()) > (std::abs(mag.imag())*1e15));
-    prefactor = std::sqrt(mag.real());
-  }
 }
 
 // Run the VRR and HRR to account for angular momentum in one particular dimension
@@ -594,13 +589,35 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
   vector<atomic_orbital> basis;
   basis.resize(nbasis);
   for (int i = 0; i!=nbasis; i++) {
-    basis[i].set_data(&positions[3*i],exponents[i],&angular[3*i],normalize_basis,field);
+    basis[i].set_data(&positions[3*i],exponents[i],&angular[3*i],field);
   }
+
+  // Normalize, if desired
   if (normalize_basis) {
-    if (nbasis != nbasis_contracted) throw runtime_error ("Normalization code hasn't been updated to work with contracted orbitals.  Use one exponenet for each basis orbital.");
+    int offset = 0;
+    for (int i=0; i!=nbasis_contracted; i++) {
+      vector<complex<double>> contractedAO = {};
+      int start = offset;
+      int end = offset + nprimitive[i];
+      for (int j=0; j!= nbasis; j++) {
+        if (j < start) contractedAO.push_back(0.0);
+        else if (j < end) contractedAO.push_back(contraction_coefficients[j]);
+        else contractedAO.push_back(0.0);
+      }
+      const molecular_orbital contracted_AO (contractedAO);
+      const complex<double> mag = overlap_MO (field, contracted_AO, contracted_AO, basis);
+      assert (std::abs(mag.real()) > (std::abs(mag.imag())*1e15));
+      const double factor = 1.0 / sqrt(mag.real());
+      for (int k=0; k!=nprimitive[i]; k++) {
+        cout << "k = " << k << endl;
+        basis[offset+k].prefactor *= factor;
+      }
+      offset += nprimitive[i];
+    }
   }
 
   // Define a basis set of molecular orbitals, taking into account contraction coefficients
+  // Technically, each primitive orbital in the basis gets its own MO - this is probably not the best way to do it
   vector<molecular_orbital> basis_MO;
   for(int i=0; i!=nbasis; i++) {
     vector<complex<double>> identity;
@@ -625,7 +642,6 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
     }
     for (int i=0; i!=nbasis; i++) basis_MO[i] = new_basis[i];
   }
-
 
   // Scale MO coefficients so their squares add up to one
   if (scale_input) {

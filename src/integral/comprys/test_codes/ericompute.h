@@ -52,7 +52,7 @@ class atomic_orbital {
     prefactor = 0.0;
   }
 
-  void set_data (const double* pos, const double exp, const int* ang_mom, bool norm, const std::vector<double> field);
+  void set_data (const double* pos, const double exp, const int* ang_mom, const std::vector<double> field);
 };
 
 
