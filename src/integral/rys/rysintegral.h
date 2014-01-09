@@ -37,6 +37,10 @@
 
 namespace bagel {
 
+namespace {
+  enum class Int_t { Standard, London };
+}
+
 template <typename DataType>
 class RysIntegral : public Integral_base<DataType> {
   protected:

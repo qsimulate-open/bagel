@@ -30,6 +30,7 @@
 using namespace std;
 using namespace bagel;
 
+
 ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
                    shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, 0, 0, stack) {
 
@@ -65,7 +66,6 @@ std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double c
   if (swap) imag = 0.5*(Bimag - Aimag);
   else imag = 0.5*(Aimag - Bimag);
   const std::complex<double> num (Areal + Breal, imag);
-  return num * one12;
   return num * one12;
 }
 

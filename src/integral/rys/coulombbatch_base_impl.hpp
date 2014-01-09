@@ -34,8 +34,8 @@ namespace bagel {
 
 static constexpr double T_thresh__ = 1.0e-8;
 
-template <typename DataType>
-CoulombBatch_Base<DataType>::CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
+template <typename DataType, Int_t IntType>
+CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              std::shared_ptr<StackMem> stack, const int L, const double A)
  : RysIntegral<DataType>(_info, stack), mol_(mol), L_(L), A_(A) {
 
@@ -60,8 +60,9 @@ CoulombBatch_Base<DataType>::CoulombBatch_Base(const std::array<std::shared_ptr<
 
 }
 
-template <typename DataType>
-void CoulombBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
+template <typename DataType, Int_t IntType>
+void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh) {
+  static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
   screening_size_ = 0;
 
   const std::vector<double> exp0 = basisinfo_[0]->exponents();
@@ -105,8 +106,8 @@ void CoulombBatch_Base<DataType>::compute_ssss(const double integral_thresh) {
   }
 }
 
-template <typename DataType>
-void CoulombBatch_Base<DataType>::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
+template <typename DataType, Int_t IntType>
+void CoulombBatch_Base<DataType, IntType>::allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) {
   size_final_ = asize_final_sph * csize_final_sph * contsize_;
   if (deriv_rank_ == 0) {
     const unsigned int size_start = asize_ * csize_ * primsize_;

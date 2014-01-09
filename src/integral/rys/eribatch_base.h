@@ -34,10 +34,6 @@
 
 namespace bagel {
 
-namespace {
-  enum class Int_t { Standard, London };
-}
-
 template <typename DataType, Int_t IntType = Int_t::Standard>
 class ERIBatch_Base : public RysIntegral<DataType> {
 

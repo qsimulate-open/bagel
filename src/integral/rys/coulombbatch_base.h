@@ -36,7 +36,7 @@
 
 namespace bagel {
 
-template <typename DataType>
+template <typename DataType, Int_t IntType = Int_t::Standard>
 class CoulombBatch_Base : public RysIntegral<DataType> {
 
   protected:
