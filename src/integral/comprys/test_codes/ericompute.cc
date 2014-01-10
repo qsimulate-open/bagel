@@ -308,7 +308,7 @@ ryan::polynomial<std::complex<double>> get_Ix (const int dimension, const std::v
   return Iabcd[a][b][c][d];
 }
 
-std::pair<std::complex<double>,std::complex<double>> compute_ssss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+std::pair<std::complex<double>,std::complex<double>> compute_ssss (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
 
   const double* A = A_.position;
   const double* B = B_.position;
@@ -527,7 +527,7 @@ vector<molecular_orbital> orthogonalize_basis (vector<double> field, vector<mole
   return new_basis;
 }
 
-complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool scale_input, bool orthogonalize, vector<double> field,
+pair<vector<atomic_orbital>,vector<molecular_orbital>> prepare_orbitals (int nbasis_contracted, bool normalize_basis, bool scale_input, bool orthogonalize, vector<double> field,
     vector<double> positions, vector<int> angular, vector<double> exponents, vector<double> contraction_coefficients, vector<int> nprimitive,
     vector<complex<double>> orbital1, vector<complex<double>> orbital2, vector<complex<double>> orbital3, vector<complex<double>> orbital4) {
 
@@ -609,7 +609,6 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
       assert (std::abs(mag.real()) > (std::abs(mag.imag())*1e15));
       const double factor = 1.0 / sqrt(mag.real());
       for (int k=0; k!=nprimitive[i]; k++) {
-        cout << "k = " << k << endl;
         basis[offset+k].prefactor *= factor;
       }
       offset += nprimitive[i];
@@ -699,8 +698,15 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
   molecular_orbital MO_C (MO3);
   molecular_orbital MO_D (MO4);
 
+  vector<molecular_orbital> MOs = {MO_A, MO_B, MO_C, MO_D};
+  pair<vector<atomic_orbital>,vector<molecular_orbital>> out (basis, MOs);
+  return out;
+}
+
+complex<double> compute_eri (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field) {
 
   // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
   complex<double> Full_ERI = 0.0;
   complex<double> current_term;
   complex<double> coeff_prod;
@@ -709,12 +715,12 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
     for (int j = 0; j!=nbasis; j++) {
       for (int k = 0; k!=nbasis; k++) {
         for (int l = 0; l!=nbasis; l++) {
-          coeff_prod = conj(MO_A.coefficient[i]) * MO_B.coefficient[j] * conj(MO_C.coefficient[k]) * MO_D.coefficient[l];
+          coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j] * conj(input[2].coefficient[k]) * input[3].coefficient[l];
           if (abs(coeff_prod)) {
             current_term = get_matrix_element (field, basis[i], basis[j], basis[k], basis[l]);
             Full_ERI += (coeff_prod * current_term);
 #if 0
-            cout << "   orbital coeffs = " << MO_A.coefficient[i] << ", " << MO_B.coefficient[j] << ", " << MO_C.coefficient[k] << ", " << MO_D.coefficient[l] << endl;
+            cout << "   orbital coeffs = " << input[0].coefficient[i] << ", " << input[1].coefficient[j] << ", " << input[2].coefficient[k] << ", " << input[3].coefficient[l] << endl;
             cout << "   coefficient for this term = " << coeff_prod << endl;
             cout << "indices = " << i << j << k << l << endl;
             cout << "Scaled matrix element = " << coeff_prod * current_term << endl;
@@ -726,61 +732,276 @@ complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool s
       }
     }
   }
-#if 1
+#if 0
   cout << "Full ERI = " << Full_ERI << endl;
   cout << "Magnitude = " << abs(Full_ERI) << endl;
   cout << "Phase = " << arg(Full_ERI) << endl;
 
   cout << "Molecular Orbital A coeffs: ";
   for (int i=0; i!=nbasis; i++) {
-    cout << MO_A.coefficient[i];
+    cout << input[0].coefficient[i];
     if (i!=nbasis-1) cout << ", ";
     else cout << endl;
   }
   cout << "Molecular Orbital B coeffs: ";
   for (int i=0; i!=nbasis; i++) {
-    cout << MO_B.coefficient[i];
+    cout << input[1].coefficient[i];
     if (i!=nbasis-1) cout << ", ";
     else cout << endl;
   }
   cout << "Molecular Orbital C coeffs: ";
   for (int i=0; i!=nbasis; i++) {
-    cout << MO_C.coefficient[i];
+    cout << input[2].coefficient[i];
     if (i!=nbasis-1) cout << ", ";
     else cout << endl;
   }
   cout << "Molecular Orbital D coeffs: ";
   for (int i=0; i!=nbasis; i++) {
-    cout << MO_D.coefficient[i];
+    cout << input[3].coefficient[i];
     if (i!=nbasis-1) cout << ", ";
     else cout << endl;
   }
 #endif
-#if 1
+#if 0
 // to check overlap integrals
   cout << endl << "Overlap integrals:" << endl;
-  cout << "<a|a> = " << overlap_MO(field,MO_A,MO_A,basis) << endl;
-  cout << "<b|b> = " << overlap_MO(field,MO_B,MO_B,basis) << endl;
-  cout << "<c|c> = " << overlap_MO(field,MO_C,MO_C,basis) << endl;
-  cout << "<d|d> = " << overlap_MO(field,MO_D,MO_D,basis) << endl;
+  cout << "<a|a> = " << overlap_MO(field,input[0],input[0],basis) << endl;
+  cout << "<b|b> = " << overlap_MO(field,input[1],input[1],basis) << endl;
+  cout << "<c|c> = " << overlap_MO(field,input[2],input[2],basis) << endl;
+  cout << "<d|d> = " << overlap_MO(field,input[3],input[3],basis) << endl;
 #endif
-#if 1
-  cout << "<a|b> = " << overlap_MO(field,MO_A,MO_B,basis) << endl;
-  cout << "<b|a> = " << overlap_MO(field,MO_B,MO_A,basis) << endl;
-  cout << "<a|c> = " << overlap_MO(field,MO_A,MO_C,basis) << endl;
-  cout << "<c|a> = " << overlap_MO(field,MO_C,MO_A,basis) << endl;
-  cout << "<a|d> = " << overlap_MO(field,MO_A,MO_D,basis) << endl;
-  cout << "<d|a> = " << overlap_MO(field,MO_D,MO_A,basis) << endl;
-  cout << "<b|c> = " << overlap_MO(field,MO_B,MO_C,basis) << endl;
-  cout << "<c|b> = " << overlap_MO(field,MO_C,MO_B,basis) << endl;
-  cout << "<b|d> = " << overlap_MO(field,MO_B,MO_D,basis) << endl;
-  cout << "<d|b> = " << overlap_MO(field,MO_D,MO_B,basis) << endl;
-  cout << "<c|d> = " << overlap_MO(field,MO_C,MO_D,basis) << endl;
-  cout << "<d|c> = " << overlap_MO(field,MO_D,MO_C,basis) << endl;
+#if 0
+  cout << "<a|b> = " << overlap_MO(field,input[0],input[1],basis) << endl;
+  cout << "<b|a> = " << overlap_MO(field,input[1],input[0],basis) << endl;
+  cout << "<a|c> = " << overlap_MO(field,input[0],input[2],basis) << endl;
+  cout << "<c|a> = " << overlap_MO(field,input[2],input[0],basis) << endl;
+  cout << "<a|d> = " << overlap_MO(field,input[0],input[3],basis) << endl;
+  cout << "<d|a> = " << overlap_MO(field,input[3],input[0],basis) << endl;
+  cout << "<b|c> = " << overlap_MO(field,input[1],input[2],basis) << endl;
+  cout << "<c|b> = " << overlap_MO(field,input[2],input[1],basis) << endl;
+  cout << "<b|d> = " << overlap_MO(field,input[1],input[3],basis) << endl;
+  cout << "<d|b> = " << overlap_MO(field,input[3],input[1],basis) << endl;
+  cout << "<c|d> = " << overlap_MO(field,input[2],input[3],basis) << endl;
+  cout << "<d|c> = " << overlap_MO(field,input[3],input[2],basis) << endl;
 #endif
 
   return Full_ERI;
 
+}
+
+pair<complex<double>,complex<double>> compute_ss (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+  const double* A = A_.position;
+  const double* B = B_.position;
+  const double* C = C_.position;
+  const int Z = C_.charge;
+
+  const double alpha = A_.exponent;
+  const double beta  = B_.exponent;
+  const double p = alpha + beta;
+  const double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
+  const double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
+
+  complex<double> Abar[3];
+  complex<double> Bbar[3];
+  complex<double> Pbar[3];
+  for (int i=0; i!=3; i++) {
+    Abar[i].real(A[i]);
+    Abar[i].imag(-0.5*A_A[i]/alpha);
+    Bbar[i].real(B[i]);
+    Bbar[i].imag(-0.5*A_B[i]/beta);
+    Pbar[i] = (alpha*conj(Abar[i]) + beta*Bbar[i])/p;
+  }
+
+  const complex<double> X_A = std::polar ( std::exp( -1.0/(4.0*alpha)*(A_A[0]*A_A[0] + A_A[1]*A_A[1] + A_A[2]*A_A[2]) ) , (-1.0*( A[0]*A_A[0] + A[1]*A_A[1] + A[2]*A_A[2] ) ) );
+  const complex<double> X_B = std::polar ( std::exp( -1.0/(4.0*beta )*(A_B[0]*A_B[0] + A_B[1]*A_B[1] + A_B[2]*A_B[2]) ) , (-1.0*( B[0]*A_B[0] + B[1]*A_B[1] + B[2]*A_B[2] ) ) );
+
+  assert (std::abs( X_A.imag()) < 3e-16 );
+  assert (std::abs( X_B.imag()) < 3e-16 );
+  const double X_Areal = X_A.real();
+  const double X_Breal = X_B.real();
+
+  const std::complex<double> ABbar[3] = { std::conj(Abar[0]) - Bbar[0], std::conj(Abar[1]) - Bbar[1], std::conj(Abar[2]) - Bbar[2] };
+  const std::complex<double> ABbarsq = ABbar[0]*ABbar[0] + ABbar[1]*ABbar[1] + ABbar[2]*ABbar[2];
+  const std::complex<double> PC[3] = { Pbar[0] - C[0], Pbar[1] - C[1], Pbar[2] - C[2] };
+  const std::complex<double> PCsq = PC[0]*PC[0] + PC[1]*PC[1] + PC[2]*PC[2];
+
+  const std::complex<double> e_ABbar = std::exp( -1.0*alpha*beta /p*ABbarsq );
+  const std::complex<double> E_ABbar = std::conj(X_A)*X_B*e_ABbar;
+
+  const std::complex<double> Tbar = p * PCsq;
+  const std::complex<double> coeff = -2.0*Z*(pi/p)*E_ABbar*A_.prefactor*B_.prefactor;
+
+  const std::pair<std::complex<double>,std::complex<double>> out = std::make_pair (Tbar,coeff);
+  return out;
+}
+
+// Run the VRR and HRR to account for angular momentum in one particular dimension
+ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+
+  const int a = A_.angular_momentum[dimension];
+  const int b = B_.angular_momentum[dimension];
+  const int ab = a + b;
+
+  std::vector<std::complex<double>> R1pv = {0.0,0.0};
+  std::vector<std::complex<double>> R1v  = {0.0,0.0};
+  std::vector<std::complex<double>> R2v  = {0.0,0.0};
+
+  const std::complex<double> BA = B_.position[dimension] - A_.position[dimension];
+
+  {
+    const double alpha = A_.exponent;
+    const double beta  = B_.exponent;
+    const double p = alpha + beta;
+    std::complex<double> Abar;
+    std::complex<double> Bbar;
+    {
+      Abar.real(A_.position[dimension]);
+      Bbar.real(B_.position[dimension]);
+      Abar.imag(-0.5*A_.vector_potential[dimension]/alpha);
+      Bbar.imag(-0.5*B_.vector_potential[dimension]/beta);
+    }
+    const std::complex<double> Pbar = (alpha*conj(Abar) + beta*Bbar)/p;
+    R1pv[0] = ( Pbar - A_.position[dimension] );
+    R1v[0] = ( Pbar - B_.position[dimension] );
+    R2v[0] = ( 0.5/p );
+    R1pv[1] = (-1.0*( Pbar - C_.position[dimension] ) );
+    R1v[1] = ( -1.0*( Pbar - C_.position[dimension] ) );
+    R2v[1] = ( -0.5/p );
+  }
+
+  const ryan::polynomial<std::complex<double>> R1p (R1pv);
+  const ryan::polynomial<std::complex<double>> R1 (R1v);
+  const ryan::polynomial<std::complex<double>> R2 (R2v);
+
+#if 0
+  std::cout << "R1p = "; R1p.show();
+  std::cout << "R1 = "; R1.show();
+  std::cout << "R2 = "; R2.show();
+  std::cout << "angular momentum indices: " << a << ", " << b << std::endl;
+#endif
+
+  std::vector<std::vector<ryan::polynomial<std::complex<double>>>> Iab;
+  std::vector<std::complex<double>> one = {1.0};
+  std::vector<std::complex<double>> zero = {0.0};
+  ryan::polynomial<std::complex<double>> ss (one);
+
+  // set vector size and instantiate each polynomial as 1
+  Iab.resize(ab+1);
+  for (int i=0; i<=ab; i++) {
+    Iab[i].resize(ab+1,ss);
+  }
+
+  // vertical recurrence relations (VRR)
+  const std::complex<double> uno = 1.0;
+  for (int n=0; n!=ab; n++) {
+    const std::complex<double> aa = n;
+    polynomial<std::complex<double>> term1 (zero);
+    polynomial<std::complex<double>> term2 (zero);
+    term1 = scalar_polynomial ( multiply_polynomials ( R1, Iab[n][0] ), uno);
+    if (n)   term2 = scalar_polynomial ( multiply_polynomials ( R2, Iab[n-1][0] ), aa );
+    Iab[n+1][0] = add_polynomials ( term1 , term2 );
+  }
+
+  // horizontal recurrence relations (HRR)
+  for (int n=0; n!=b; n++) {
+    for (int i=0; i!=b-n; i++) {
+      polynomial<std::complex<double>> term1 = Iab[a+i+1][n];
+      polynomial<std::complex<double>> term2 = scalar_polynomial ( Iab[a+i][n], BA );
+      Iab[a+i][n+1] = add_polynomials ( term1, term2 );
+    }
+  }
+
+  return Iab[a][b];
+}
+
+ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+  const ryan::polynomial<std::complex<double>> Ix = get_NAI_Ix (0, field, A_, B_, C_);
+  const ryan::polynomial<std::complex<double>> Iy = get_NAI_Ix (1, field, A_, B_, C_);
+  const ryan::polynomial<std::complex<double>> Iz = get_NAI_Ix (2, field, A_, B_, C_);
+  const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
+  const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
+  return IxIyIz;
+}
+
+complex<double> get_nai_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+
+  polynomial<complex<double>> III = get_NAI_III (field, A_, B_, C_);
+  const int nroot = ( III.rank/2 + 1 );
+
+  pair<complex<double>,complex<double>> ss =  compute_ss(field, A_, B_, C_);
+
+  // Here we assign the values of each T we will evaluate
+  complex<double> Ts[1] = {ss.first};
+
+  // Evaluate each one first using the mapping in the generated files
+  complex<double> mapt[nroot];
+  complex<double> mapw[nroot];
+  assert (nroot < 14);
+  mapT.root(nroot, Ts, mapt, mapw, 1);
+
+  // Evaluate the integral by Gaussian quadrature
+  complex<double> quad_term;
+  complex<double> quad_integral (0,0);
+  for(int j = 0; j!=nroot; j++){                 // For each root and weight pair...
+    quad_term = mapw[j] * III.evaluate(mapt[j]);
+    quad_integral += quad_term;
+  }
+  complex<double> NAI = quad_integral * ss.second;
+
+#if 0
+  cout << "This matrix element = " << NAI << endl;
+  cout << "Magnitude = " << abs(NAI) << endl;
+  cout << "Phase = "     << arg(NAI) << endl;
+  cout << "   ss coeff = " << ss.second << endl;
+  cout << "   T = " << ss.first << endl;
+  cout << "   # roots needed = " << nroot << endl;
+  cout << "   Quadrature (sum of w_i P(t_i) terms) = " << quad_integral << endl;
+  cout << "   III(t) = ";
+  III.show();
+  cout << "   The roots are:   ";
+  for(int i=0; i!=nroot; i++) cout << mapt[i] << " ";
+  cout << endl << "   The weights are: ";
+  for(int i=0; i!=nroot; i++) cout << mapw[i] << " ";
+  cout << endl;
+#endif
+  return NAI;
+}
+
+complex<double> compute_nai (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, vector<nucleus> nuclei) {
+  // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
+  const int natom = nuclei.size();
+  complex<double> Full_NAI = 0.0;
+  complex<double> current_term;
+  complex<double> coeff_prod;
+
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      for (int k = 0; k!=natom; k++) {
+        coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j];
+        if (abs(coeff_prod)) {
+          current_term = get_nai_matrix_element (field, basis[i], basis[j], nuclei[k]);
+          Full_NAI += (coeff_prod * current_term);
+#if 0
+          cout << "   orbital coeffs = " << input[0].coefficient[i] << ", " << input[1].coefficient[j] << endl;
+          cout << "   coefficient for this term = " << coeff_prod << endl;
+          cout << "indices = " << i << j << k << endl;
+          cout << "current_term = " << current_term << endl;
+          cout << "Scaled matrix element = " << coeff_prod * current_term << endl;
+          cout << "Magnitude = " << abs(coeff_prod * current_term) << endl;
+          cout << "Phase = " << arg(coeff_prod * current_term) << endl << endl;
+#endif
+        }
+      }
+    }
+  }
+#if 0
+  cout << "Full NAI = " << Full_NAI << endl;
+  cout << "Magnitude = " << abs(Full_NAI) << endl;
+  cout << "Phase = " << arg(Full_NAI) << endl;
+#endif
+
+  return Full_NAI;
 }
 
 }

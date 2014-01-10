@@ -51,12 +51,11 @@ int main (int argc, char*argv[]) {
   vector<double> exponents = {};
   vector<double> contraction_coefficients = {};
   vector<int> nprimitive = {};
-  vector<double> nuclear_positions = {};
-  vector<int> nuclear_charge = {};
   vector<complex<double>> orbital1 = {};
   vector<complex<double>> orbital2 = {};
   vector<complex<double>> orbital3 = {};
   vector<complex<double>> orbital4 = {};
+  vector<nucleus> nuclei = {};
 
   while(ss) {
     if (first) {
@@ -65,6 +64,10 @@ int main (int argc, char*argv[]) {
       ss >> calculation;
       getline( ss, stuff, ':');
       ss >> nbasis_contracted;
+      if (calculation == 'N') {
+        getline( ss, stuff, ':');
+        ss >> natom;
+      }
       getline( ss, stuff, ':');
       ss >> normalize_basis;
       getline( ss, stuff, ':');
@@ -102,15 +105,17 @@ int main (int argc, char*argv[]) {
         }
       }
       if (calculation == 'N') {
-        nuclear_charge.resize(natom);
-        nuclear_positions.resize(3*natom);
         for (int i=0; i!=natom; i++) {
+          int nuclear_charge = 0;
+          vector<double> nuclear_positions = {0.0, 0.0, 0.0};
           getline( ss, stuff, ':');
-          ss >> nuclear_charge[i];
+          ss >> nuclear_charge;
           for (int j=0; j!=3; j++) {
             getline( ss, stuff, ':');
-            ss >> nuclear_positions[3*i+j];
+            ss >> nuclear_positions[+j];
           }
+          nucleus current (nuclear_charge, nuclear_positions);
+          nuclei.push_back(current);
         }
       }
       for (int i=0; i!=nbasis_contracted; i++) {
@@ -204,12 +209,15 @@ int main (int argc, char*argv[]) {
 #endif
 cout << endl;
 
+  pair<vector<atomic_orbital>,vector<molecular_orbital>> input = prepare_orbitals (nbasis_contracted, normalize_basis, scale_input, orthogonalize, field,
+                             positions, angular, exponents, contraction_coefficients, nprimitive, orbital1, orbital2, orbital3, orbital4);
+
   if (calculation == 'E') {
-    complex<double> FULL_ERI = compute_eri (nbasis_contracted, normalize_basis, scale_input, orthogonalize, field,
-                               positions, angular, exponents, contraction_coefficients, nprimitive, orbital1, orbital2, orbital3, orbital4);
+    complex<double> FULL_ERI = compute_eri (input.first, input.second, field);
     cout << "Final result = " << FULL_ERI << endl;
   } else if (calculation == 'N') {
-    cout << "NAI not coded yet." << endl;
+    complex<double> FULL_NAI = compute_nai (input.first, input.second, field, nuclei);
+    cout << "Final result = " << FULL_NAI << endl;
   }
 
   return 0;

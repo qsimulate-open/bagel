@@ -72,6 +72,20 @@ class molecular_orbital {
 };
 
 
+class nucleus {
+
+  public:
+  int charge;
+  double position[3];
+
+  //constructor
+  nucleus (int Z, std::vector<double> coords) {
+    if (Z<1) throw std::runtime_error ("Nucleus should have a positive charge.  Check that inputs are being read properly.");
+    charge = Z;
+    for (int i=0; i!=3; i++) position[i] = coords[i];
+  }
+};
+
 // Overlap integral for atomic London orbitals
 std::complex<double> overlap_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
 std::complex<double> overlap (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
@@ -91,13 +105,25 @@ ryan::polynomial<std::complex<double>> get_Ix (const int dimension, const std::v
 ryan::polynomial<std::complex<double>> get_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
 
 
+// Setting up MOs, etc. before computing integrals
+std::pair<std::vector<atomic_orbital>,std::vector<molecular_orbital>> prepare_orbitals (int nbasis_contracted, bool normalize_basis, bool scale_input, bool orthogonalize,
+    std::vector<double> field, std::vector<double> positions, std::vector<int> angular, std::vector<double> exponents,
+    std::vector<double> contraction_coefficients, std::vector<int> nprimitive, std::vector<std::complex<double>> orbital1,
+    std::vector<std::complex<double>> orbital2, std::vector<std::complex<double>> orbital3, std::vector<std::complex<double>> orbital4);
+
+
 // Used in computation of ERI
 std::pair<std::complex<double>,std::complex<double>> compute_ssss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
 std::complex<double> get_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
-std::complex<double> compute_eri (int nbasis_contracted, bool normalize_basis, bool scale_input, bool orthogonalize, std::vector<double> field,
-    std::vector<double> positions, std::vector<int> angular, std::vector<double> exponents, std::vector<double> contraction_coefficients, std::vector<int> nprimitive,
-    std::vector<std::complex<double>> orbital1, std::vector<std::complex<double>> orbital2,
-    std::vector<std::complex<double>> orbital3, std::vector<std::complex<double>> orbital4);
+std::complex<double> compute_eri (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field);
+
+// Used in computation of NAI
+std::pair<std::complex<double>,std::complex<double>> compute_ss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+std::complex<double> get_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+std::complex<double> compute_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
+
+ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
 }
 
