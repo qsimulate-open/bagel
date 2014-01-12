@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_INTEGRAL_RYS_NAIBATCH_H
-#define __SRC_INTEGRAL_RYS_NAIBATCH_H
+#ifndef __SRC_INTEGRAL_COMPRYS_COMPLEXNAIBATCH_H
+#define __SRC_INTEGRAL_COMPRYS_COMPLEXNAIBATCH_H
 
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
@@ -38,10 +38,11 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>> {
   protected:
 
     void root_weight(const int ps) override;
-    void compute() override;
     std::complex<double> get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int center1, const int dim, const bool swap) override;
 
   public:
+
+    void compute() override;
 
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
       :  CoulombBatch_Base<std::complex<double>>(_info, mol, 0, stack, 0, 0.0) {
