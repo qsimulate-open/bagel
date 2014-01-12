@@ -239,7 +239,9 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         ++screening_size_;
 #if 0
         if (true); // use to only print the ones you want
-          if (IntType == Int_t::London && ax != bx && bx != cx && cx != dx && ax != cx && ax != dx && bx != dx && *expi0 != *expi1 && *expi1 != exp2value && exp2value != exp3value && *expi0 != exp2value && *expi0 != exp3value && *expi1 != exp3value) {
+          if (IntType == Int_t::London) {
+            if (this->swap01_) std::cout << "Swap indices A and B" << std::endl;
+            if (this->swap23_) std::cout << "Swap indices C and D" << std::endl;
             std::cout << std::setprecision(14) << "A = " << ax << ", " << ay << ", " << az << std::endl;
             std::cout << "B = " << bx << ", " << by << ", " << bz << std::endl;
             std::cout << "C = " << cx << ", " << cy << ", " << cz << std::endl;

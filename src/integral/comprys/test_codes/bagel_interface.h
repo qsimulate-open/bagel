@@ -30,10 +30,13 @@
 
 #include <vector>
 #include <complex>
+#include "src/molecule/shell.h"
+#include "src/molecule/molecule.h"
 
 namespace ryan {
 
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI (const std::array<std::shared_ptr<const bagel::Shell>,4>& basisinfo);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_NAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol);
 
 }
 
