@@ -861,11 +861,11 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
       Bbar.imag(-0.5*B_.vector_potential[dimension]/beta);
     }
     const std::complex<double> Pbar = (alpha*conj(Abar) + beta*Bbar)/p;
-    R1pv[0] = ( Pbar - A_.position[dimension] );
-    R1v[0] = ( Pbar - B_.position[dimension] );
+    R1v[0] = ( Pbar - A_.position[dimension] );
+    R1pv[0] = ( Pbar - B_.position[dimension] );
     R2v[0] = ( 0.5/p );
-    R1pv[1] = (-1.0*( Pbar - C_.position[dimension] ) );
     R1v[1] = ( -1.0*( Pbar - C_.position[dimension] ) );
+    R1pv[1] = (-1.0*( Pbar - C_.position[dimension] ) );
     R2v[1] = ( -0.5/p );
   }
 
