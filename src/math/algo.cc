@@ -93,28 +93,40 @@ void zquatev_(const int n2, complex<double>* const D, double* eig) {
       for (int i = 0; i != len; ++i) choutf[i] = conj(hout[i]);
 
       // -conj(beta) conj(v) * (D^T v)^T = - conj(beta) conj(v) * (v^T D)
-      zgemv_("T", len, n2, 1.0, D+k+1, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len, n2, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+1, n2);
+      zgemv_("T", len, len+1, 1.0, D+k+1+(k)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+1+(k)*n2, n2);
+      zgemv_("T", len, len+1, 1.0, D+k+1+(k+n)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+1+(k+n)*n2, n2);
 
       // -beta v ^ (D^\dag v) = - beta v * (v^\dagger D)
-      zgemv_("C", len, n2, 1.0, D+k+n+1, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(len, n2, -tau, hout.get(), 1, buf.get(), 1, D+k+n+1, n2);
+      zgemv_("C", len, len+1, 1.0, D+k+n+1+(k)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len, len+1, -tau, hout.get(), 1, buf.get(), 1, D+k+n+1+(k)*n2, n2);
+      zgemv_("C", len, len+1, 1.0, D+k+n+1+(k+n)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len, len+1, -tau, hout.get(), 1, buf.get(), 1, D+k+n+1+(k+n)*n2, n2);
 
       // D conj(v) * v^T
-      zgemv_("N", n2, len, 1.0, D+(k+1)*n2, n2, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(n2, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+1)*n2+(k), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+1)*n2+(k+n), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+1)*n2+(k+n), n2);
 
       // D v * v^dagger
-      zgemv_("N", n2, len, 1.0, D+(k+n+1)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(n2, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+n+1)*n2+(k), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+n+1)*n2+(k+n), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2+(k+n), n2);
 
       // Q conj(v) * v^T
-      zgemv_("N", n2, len, 1.0, Q+(k+1)*n2, n2, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(n2, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+1)*n2+(k), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+1)*n2+(k+n), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+1)*n2+(k+n), n2);
 
       // Q v * v^dagger
-      zgemv_("N", n2, len, 1.0, Q+(k+n+1)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(n2, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+n+1)*n2+(k), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+n+1)*n2+(k+n), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2+(k+n), n2);
     }
 
     // symplectic Givens rotation to clear out D(k+n, k)
@@ -133,28 +145,40 @@ void zquatev_(const int n2, complex<double>* const D, double* eig) {
       for (int i = 0; i != len; ++i) choutf[i] = conj(hout[i]);
 
       // conj(v) * ((-conj(beta) D^T v)^T = - conj(beta) conj(v) * (v^T D)
-      zgemv_("T", len, n2, 1.0, D+k+n+1, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len, n2, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+n+1, n2);
+      zgemv_("T", len, len+1, 1.0, D+k+n+1+(k)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+n+1+(k)*n2, n2);
+      zgemv_("T", len, len+1, 1.0, D+k+n+1+(k+n)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len, len+1, -conj(tau), choutf.get(), 1, buf.get(), 1, D+k+n+1+(k+n)*n2, n2);
 
       // v ^ ((-conj(beta) D^\dag v) = - beta v * (v^\dagger D)
-      zgemv_("C", len, n2, 1.0, D+k+1, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(len, n2, -tau, hout.get(), 1, buf.get(), 1, D+k+1, n2);
+      zgemv_("C", len, len+1, 1.0, D+k+1+(k)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len, len+1, -tau, hout.get(), 1, buf.get(), 1, D+k+1+(k)*n2, n2);
+      zgemv_("C", len, len+1, 1.0, D+k+1+(k+n)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len, len+1, -tau, hout.get(), 1, buf.get(), 1, D+k+1+(k+n)*n2, n2);
 
       // D conj(v) * v^T
-      zgemv_("N", n2, len, 1.0, D+(k+n+1)*n2, n2, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(n2, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+n+1)*n2+(k), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+n+1)*n2+(k+n), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D+(k+n+1)*n2+(k+n), n2);
 
       // D v * v^dagger
-      zgemv_("N", n2, len, 1.0, D+(k+1)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(n2, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+1)*n2+(k), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, D+(k+1)*n2+(k+n), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, D+(k+1)*n2+(k+n), n2);
 
       // Q conj(v) * v^T
-      zgemv_("N", n2, len, 1.0, Q+(k+n+1)*n2, n2, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(n2, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+n+1)*n2+(k), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+n+1)*n2+(k+n), n2, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q+(k+n+1)*n2+(k+n), n2);
 
       // Q v * v^dagger
-      zgemv_("N", n2, len, 1.0, Q+(k+1)*n2, n2, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(n2, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+1)*n2, n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+1)*n2+(k), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+1)*n2+(k), n2);
+      zgemv_("N", len+1, len, 1.0, Q+(k+1)*n2+(k+n), n2, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q+(k+1)*n2+(k+n), n2);
     }
 
   }
