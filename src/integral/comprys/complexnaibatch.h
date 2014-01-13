@@ -33,7 +33,7 @@
 
 namespace bagel {
 
-class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>> {
+class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>,Int_t::London> {
 
   protected:
 
@@ -45,14 +45,14 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>> {
     void compute() override;
 
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-      :  CoulombBatch_Base<std::complex<double>>(_info, mol, 0, stack, 0, 0.0) {
+      :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, stack, 0, 0.0) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
 
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  CoulombBatch_Base<std::complex<double>>(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {
+      :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);

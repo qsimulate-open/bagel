@@ -84,7 +84,6 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
       // For London orbitals, calculate the correction needed for the pre-integral coefficient
       DataType factor_ab;
       if (IntType == Int_t::London) {
-        std::complex<double> factor_ab;
         const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
         const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
         const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
