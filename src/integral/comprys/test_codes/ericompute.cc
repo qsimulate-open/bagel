@@ -846,7 +846,7 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   std::vector<std::complex<double>> R1v  = {0.0,0.0};
   std::vector<std::complex<double>> R2v  = {0.0,0.0};
 
-  const std::complex<double> BA = B_.position[dimension] - A_.position[dimension];
+  const std::complex<double> AB = A_.position[dimension] - B_.position[dimension];
 
   {
     const double alpha = A_.exponent;
@@ -906,7 +906,7 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   for (int n=0; n!=b; n++) {
     for (int i=0; i!=b-n; i++) {
       polynomial<std::complex<double>> term1 = Iab[a+i+1][n];
-      polynomial<std::complex<double>> term2 = scalar_polynomial ( Iab[a+i][n], BA );
+      polynomial<std::complex<double>> term2 = scalar_polynomial ( Iab[a+i][n], AB );
       Iab[a+i][n+1] = add_polynomials ( term1, term2 );
     }
   }
