@@ -298,10 +298,6 @@ void RASCI::compute() {
     }
     pdebug.tick_print("error");
 
-#ifdef HAVE_MPI_H
-    vector<int> requests;
-#endif
-
     if (!*min_element(conv.begin(), conv.end())) {
       // denominator scaling
       for (int ist = 0; ist != nstate_; ++ist) {
@@ -317,15 +313,9 @@ void RASCI::compute() {
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
         cc_->data(ist)->spin_decontaminate();
-#ifdef HAVE_MPI_H
-        requests.push_back(mpi__->ibroadcast(cc_->data(ist)->data(), cc_->data(ist)->size(), 0));
-#endif
+        cc_->data(ist)->synchronize();
       }
     }
-#ifdef HAVE_MPI_H
-    for (auto& r : requests)
-      mpi__->wait(r);
-#endif
 
     pdebug.tick_print("denominator");
 

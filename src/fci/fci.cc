@@ -301,6 +301,7 @@ void FCI::compute() {
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
         cc_->data(ist)->spin_decontaminate();
+        cc_->data(ist)->synchronize();
       }
     }
     pdebug.tick_print("denominator");

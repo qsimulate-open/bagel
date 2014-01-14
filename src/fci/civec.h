@@ -730,6 +730,12 @@ class Civector {
       std::copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
       return dist;
     }
+
+    void synchronize() {
+#ifdef HAVE_MPI_H
+      mpi__->broadcast(cc_ptr_, size(), 0);
+#endif
+    }
 };
 
 template<> void Civector<double>::spin_decontaminate(const double thresh);
