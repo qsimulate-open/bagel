@@ -96,12 +96,12 @@ std::complex<double> overlap_Ix (const int dimension, const std::vector<double> 
   return Iab[a][b];
 }
 
-complex<double> get_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+complex<double> get_eri_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
 
-  polynomial<complex<double>> III = get_III (field, A_, B_, C_, D_);
+  polynomial<complex<double>> III = get_ERI_III (field, A_, B_, C_, D_);
   const int nroot = ( III.rank/2 + 1 );
 
-  pair<complex<double>,complex<double>> ssss =  compute_ssss(field, A_, B_, C_, D_);
+  pair<complex<double>,complex<double>> ssss =  compute_eri_ssss(field, A_, B_, C_, D_);
 
   // Here we assign the values of each T we will evaluate
   complex<double> Ts[1] = {ssss.first};
@@ -178,7 +178,7 @@ void atomic_orbital::set_data (const double* pos, const double exp, const int* a
 }
 
 // Run the VRR and HRR to account for angular momentum in one particular dimension
-ryan::polynomial<std::complex<double>> get_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
 
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
@@ -308,7 +308,7 @@ ryan::polynomial<std::complex<double>> get_Ix (const int dimension, const std::v
   return Iabcd[a][b][c][d];
 }
 
-std::pair<std::complex<double>,std::complex<double>> compute_ssss (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
 
   const double* A = A_.position;
   const double* B = B_.position;
@@ -465,10 +465,10 @@ std::pair<std::complex<double>,std::complex<double>> compute_ssss (const std::ve
   return out;
 }
 
-ryan::polynomial<std::complex<double>> get_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
-  const ryan::polynomial<std::complex<double>> Ix = get_Ix (0, field, A_, B_, C_, D_);
-  const ryan::polynomial<std::complex<double>> Iy = get_Ix (1, field, A_, B_, C_, D_);
-  const ryan::polynomial<std::complex<double>> Iz = get_Ix (2, field, A_, B_, C_, D_);
+ryan::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_) {
+  const ryan::polynomial<std::complex<double>> Ix = get_ERI_Ix (0, field, A_, B_, C_, D_);
+  const ryan::polynomial<std::complex<double>> Iy = get_ERI_Ix (1, field, A_, B_, C_, D_);
+  const ryan::polynomial<std::complex<double>> Iz = get_ERI_Ix (2, field, A_, B_, C_, D_);
   const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
   const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
   return IxIyIz;
@@ -717,7 +717,7 @@ complex<double> compute_eri (vector<atomic_orbital> basis, vector<molecular_orbi
         for (int l = 0; l!=nbasis; l++) {
           coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j] * conj(input[2].coefficient[k]) * input[3].coefficient[l];
           if (abs(coeff_prod)) {
-            current_term = get_matrix_element (field, basis[i], basis[j], basis[k], basis[l]);
+            current_term = get_eri_matrix_element (field, basis[i], basis[j], basis[k], basis[l]);
             Full_ERI += (coeff_prod * current_term);
 #if 0
             cout << "   orbital coeffs = " << input[0].coefficient[i] << ", " << input[1].coefficient[j] << ", " << input[2].coefficient[k] << ", " << input[3].coefficient[l] << endl;
@@ -873,11 +873,21 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   const ryan::polynomial<std::complex<double>> R1 (R1v);
   const ryan::polynomial<std::complex<double>> R2 (R2v);
 
+  char dim;
+  if (dimension==0) dim = 'x';
+  if (dimension==1) dim = 'y';
+  if (dimension==2) dim = 'z';
 #if 0
-  std::cout << "R1p = "; R1p.show();
-  std::cout << "R1 = "; R1.show();
-  std::cout << "R2 = "; R2.show();
-  std::cout << "angular momentum indices: " << a << ", " << b << std::endl;
+  cout << "Running recurrence relations!";
+  cout << "computing I_" << dim << ":" << endl;
+  std::cout << "A_" << dim << " = " << A_.position[dimension] << std::endl;
+  std::cout << "B_" << dim << " = " << B_.position[dimension] << std::endl;
+  std::cout << "C_" << dim << " = " << C_.position[dimension] << std::endl;
+  std::cout << "a = " << a << std::endl;
+  std::cout << "b = " << b << std::endl;
+  //std::cout << "R1p = "; R1p.show();
+  std::cout << "R1_" << dim << " = "; R1.show();
+  std::cout << "R2_" << dim << " = "; R2.show();
 #endif
 
   std::vector<std::vector<ryan::polynomial<std::complex<double>>>> Iab;
@@ -900,6 +910,11 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
     term1 = scalar_polynomial ( multiply_polynomials ( R1, Iab[n][0] ), uno);
     if (n)   term2 = scalar_polynomial ( multiply_polynomials ( R2, Iab[n-1][0] ), aa );
     Iab[n+1][0] = add_polynomials ( term1 , term2 );
+    if(R1.coeff[1]!=0.0 && R2.coeff[1]!=0.0) {
+      if (n>1) assert (Iab[n-1][0].rank > 0);
+      if (n>0) assert (Iab[n][0].rank > 0);
+      assert (Iab[n+1][0].rank > 0);
+    }
   }
 
   // horizontal recurrence relations (HRR)
@@ -908,6 +923,11 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
       polynomial<std::complex<double>> term1 = Iab[a+i+1][n];
       polynomial<std::complex<double>> term2 = scalar_polynomial ( Iab[a+i][n], AB );
       Iab[a+i][n+1] = add_polynomials ( term1, term2 );
+      if(R1.coeff[1]!=0.0 && R2.coeff[1]!=0.0) {
+        assert (Iab[a+i+1][n].rank > 0);
+        if(a>0||i>0||n>0)assert (Iab[a+i][n].rank > 0);
+        assert (Iab[a+i][n+1].rank > 0);
+      }
     }
   }
 
@@ -915,9 +935,19 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
 }
 
 ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
-  const ryan::polynomial<std::complex<double>> Ix = get_NAI_Ix (0, field, A_, B_, C_);
-  const ryan::polynomial<std::complex<double>> Iy = get_NAI_Ix (1, field, A_, B_, C_);
-  const ryan::polynomial<std::complex<double>> Iz = get_NAI_Ix (2, field, A_, B_, C_);
+
+  const std::vector<std::complex<double>> one = {1.0};
+  ryan::polynomial<std::complex<double>> Ix (one);
+  ryan::polynomial<std::complex<double>> Iy (one);
+  ryan::polynomial<std::complex<double>> Iz (one);
+
+  int total_angular[3];
+  for (int i=0; i!=3; i++) total_angular[i] = A_.angular_momentum[i] + B_.angular_momentum[i];
+  // cout << "total_angular = " << total_angular[0] << "  " << total_angular[1] << "  " << total_angular[2] << endl;
+  if (total_angular[0]) Ix = get_NAI_Ix (0, field, A_, B_, C_);
+  if (total_angular[1]) Iy = get_NAI_Ix (1, field, A_, B_, C_);
+  if (total_angular[2]) Iz = get_NAI_Ix (2, field, A_, B_, C_);
+
   const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
   const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
   return IxIyIz;
@@ -975,9 +1005,17 @@ complex<double> compute_nai (vector<atomic_orbital> basis, vector<molecular_orbi
   complex<double> current_term;
   complex<double> coeff_prod;
 
+#if 0
+  cout << "MO 1 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[0].coefficient[i] << endl;
+  cout << "MO 2 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[1].coefficient[i] << endl;
+#endif
+
   for (int i = 0; i!=nbasis; i++) {
     for (int j = 0; j!=nbasis; j++) {
       for (int k = 0; k!=natom; k++) {
+
         coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j];
         if (abs(coeff_prod)) {
           current_term = get_nai_matrix_element (field, basis[i], basis[j], nuclei[k]);

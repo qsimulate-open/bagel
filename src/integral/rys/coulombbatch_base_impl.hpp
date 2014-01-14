@@ -63,6 +63,7 @@ CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const std::array<std::sh
 template <typename DataType, Int_t IntType>
 void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh) {
   static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
+  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
   screening_size_ = 0;
 
   const std::vector<double> exp0 = basisinfo_[0]->exponents();

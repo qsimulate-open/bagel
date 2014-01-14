@@ -35,6 +35,7 @@ namespace bagel {
 template <typename DataType, Int_t IntType>
 void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh) {
   static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
+  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
 
   // set atomic coordinates
   const double ax = basisinfo_[0]->position(0);

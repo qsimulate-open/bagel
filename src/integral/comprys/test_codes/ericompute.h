@@ -101,8 +101,8 @@ std::vector<molecular_orbital> orthogonalize_basis (std::vector<double> field, s
 
 
 // ERI Recurrence Relations
-ryan::polynomial<std::complex<double>> get_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
-ryan::polynomial<std::complex<double>> get_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+ryan::polynomial<std::complex<double>> get_ERI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
 
 
 // Setting up MOs, etc. before computing integrals
@@ -113,8 +113,8 @@ std::pair<std::vector<atomic_orbital>,std::vector<molecular_orbital>> prepare_or
 
 
 // Used in computation of ERI
-std::pair<std::complex<double>,std::complex<double>> compute_ssss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
-std::complex<double> get_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
+std::complex<double> get_eri_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_);
 std::complex<double> compute_eri (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field);
 
 // Used in computation of NAI
