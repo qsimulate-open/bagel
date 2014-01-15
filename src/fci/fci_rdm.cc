@@ -32,38 +32,6 @@
 using namespace std;
 using namespace bagel;
 
-void FCI::displacements_alpha(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
-  assert(d->det() == cc->det());
-  const int lb = cc->lenb();
-  const int ij = d->ij();
-  const double* const source_base = cc->data();
-  for (int ip = 0; ip != ij; ++ip) {
-    double* const target_base = d->data(ip)->data();
-    for (auto& iter : cc->det()->phia(ip)) {
-      const double sign = static_cast<double>(iter.sign);
-      double* const target_array = target_base + iter.source*lb;
-      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1); 
-    }   
-  }
-}
-
-void FCI::displacements_beta(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
-  assert(d->det() == cc->det());
-  const int la = cc->lena();
-  const int lb = cc->lenb();
-  const int ij = d->ij();
-  for (int i = 0; i < la; ++i) {
-    const double* const source_array0 = cc->element_ptr(0, i); 
-    for (int ip = 0; ip != ij; ++ip) {
-      double* const target_array0 = d->data(ip)->element_ptr(0,i);
-      for (auto& iter : cc->det()->phib(ip)) {
-        const double sign = static_cast<double>(iter.sign);
-        target_array0[iter.source] += sign * source_array0[iter.target];
-      }   
-    }   
-  }
-}
-
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0].
@@ -135,8 +103,8 @@ shared_ptr<Dvec> FCI::rdm1deriv() const {
 
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   return dbra;
 }
@@ -151,8 +119,8 @@ shared_ptr<Dvec> FCI::rdm2deriv() const {
   // make  <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
   auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
@@ -163,8 +131,8 @@ shared_ptr<Dvec> FCI::rdm2deriv() const {
     const int j = ij/norb_;
     const int i = ij-j*norb_;
     tmp->zero();
-    displacements_alpha(*iter, tmp);
-    displacements_beta(*iter, tmp);
+    sigma_2a1(*iter, tmp);
+    sigma_2a2(*iter, tmp);
     int kl = 0;
     for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
       *ebra->data(ijkl) = **t;
@@ -185,8 +153,8 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
   // first make <I|i+j|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
   auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
@@ -198,8 +166,8 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
       const int j = ij/norb_;
       const int i = ij-j*norb_;
       tmp->zero();
-      displacements_alpha(*iter, tmp);
-      displacements_beta(*iter, tmp);
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
       int kl = 0;
       for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
         *ebra->data(ijkl) = **t;
@@ -222,8 +190,8 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
       const int l = ijkl/norb_-i*norb_-j*norb_*norb_;
       const int k = ijkl-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
       tmp->zero();
-      displacements_alpha(*iter, tmp);
-      displacements_beta(*iter, tmp);
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
       int mn = 0;
       for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmn, ++mn) {
         const int n = mn/norb_;
@@ -247,8 +215,8 @@ shared_ptr<Dvec> FCI::rdm4deriv() const {
   // first make <I|i+j|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
   auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
@@ -260,8 +228,8 @@ shared_ptr<Dvec> FCI::rdm4deriv() const {
       const int j = ij/norb_;
       const int i = ij-j*norb_;
       tmp->zero();
-      displacements_alpha(*iter, tmp);
-      displacements_beta(*iter, tmp);
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
       int kl = 0;
       for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
         *ebra->data(ijkl) = **t;
@@ -284,8 +252,8 @@ shared_ptr<Dvec> FCI::rdm4deriv() const {
       const int l = ijkl/norb_-i*norb_-j*norb_*norb_;
       const int k = ijkl-l*norb_-i*norb_*norb_-j*norb_*norb_*norb_;
       tmp->zero();
-      displacements_alpha(*iter, tmp);
-      displacements_beta(*iter, tmp);
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
       int mn = 0;
       for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmn, ++mn) {
         const int n = mn/norb_;
@@ -311,8 +279,8 @@ shared_ptr<Dvec> FCI::rdm4deriv() const {
       const int n = ijklmn/norb_-k*norb_-l*norb_*norb_-i*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_;
       const int m = ijklmn-n*norb_-k*norb_*norb_-l*norb_*norb_*norb_-i*norb_*norb_*norb_*norb_-j*norb_*norb_*norb_*norb_*norb_;
       tmp->zero();
-      displacements_alpha(*iter, tmp);
-      displacements_beta(*iter, tmp);
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
       int op = 0;
       for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijklmnop, ++op) {
         const int p = op/norb_;
@@ -335,16 +303,16 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   // since we consider here number conserving operators...
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   shared_ptr<Dvec> dket;
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
   if (cbra != cket) {
     dket = make_shared<Dvec>(cket->det(), norb_*norb_);
     dket->zero();
-    displacements_alpha(cket, dket);
-    displacements_beta(cket, dket);
+    sigma_2a1(cket, dket);
+    sigma_2a2(cket, dket);
   } else {
     dket = dbra;
   }
@@ -418,8 +386,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
   // first make <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   dbra->zero();
-  displacements_alpha(cbra, dbra);
-  displacements_beta(cbra, dbra);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
   auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
@@ -430,8 +398,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
     const int j = ij/norb_;
     const int i = ij-j*norb_;
     tmp->zero();
-    displacements_alpha(*iter, tmp);
-    displacements_beta(*iter, tmp);
+    sigma_2a1(*iter, tmp);
+    sigma_2a2(*iter, tmp);
     int kl = 0;
     for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
       *ebra->data(ijkl) = **t;
