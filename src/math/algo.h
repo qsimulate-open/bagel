@@ -36,10 +36,10 @@
 
 namespace bagel {
 
-
 extern void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
-                                 const int* acols, const int* arind, const double* b, const int ldb, const double beta,
-                                 double* c, const int ldc);
+                    const int* acols, const int* arind, const double* b, const int ldb, const double beta,
+                    double* c, const int ldc);
+extern void zquatev_(const int n, std::complex<double>* mat, double* eig);
 
 namespace detail {
 namespace {
