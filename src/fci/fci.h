@@ -173,8 +173,8 @@ class FCI : public Method {
     std::shared_ptr<Dvec> civectors() const { return cc_; }
 
     // These are needed for the RDM stuff, apparently
-    void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
-    void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void displacements_alpha(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
+    void displacements_beta(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }

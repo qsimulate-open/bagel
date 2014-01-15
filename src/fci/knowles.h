@@ -46,9 +46,11 @@ class KnowlesHandy : public FCI {
     // run-time functions
     void sigma_1(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_3(std::shared_ptr<const Civec> cc, std::shared_ptr<Civec> sigma, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2b (std::shared_ptr<Dvec> d, std::shared_ptr<Dvec> e, std::shared_ptr<const MOFile> jop) const;
-    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
-    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
+    void sigma_2b (std::shared_ptr<Matrix> d, std::shared_ptr<Matrix> e, std::shared_ptr<const MOFile> jop) const;
+    void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Matrix> d) const;
+    void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Matrix> d) const;
+    void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<const Matrix> e) const;
+    void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<const Matrix> e) const;
 
   public:
     // this constructor is ugly... to be fixed some day...
