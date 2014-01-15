@@ -445,7 +445,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
           }
         } else {
           assert(NBOXL == 0);
-          assert(MAXT == 64.0);
           const int ibox = j - NBOX;
           const mpreal mstart = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
           const mpreal mstrideL = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
