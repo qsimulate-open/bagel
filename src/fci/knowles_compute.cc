@@ -90,7 +90,7 @@ shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_p
 }
 
 void KnowlesHandy::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Matrix> d) const {
-  assert(d->ndim() == cc->size());
+  assert(d->det() == cc->det());
   const int lb = cc->lenb();
   const int ij = nij();
   const double* const source_base = cc->data();
@@ -105,7 +105,7 @@ void KnowlesHandy::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Matrix> d) c
 }
 
 void KnowlesHandy::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Matrix> d) const {
-  assert(d->ndim() == cc->size());
+  assert(d->det() == cc->det());
   const int la = cc->lena();
   const int lb = cc->lenb();
   const int ij = nij();
