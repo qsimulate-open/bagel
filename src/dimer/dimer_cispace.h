@@ -113,7 +113,7 @@ class DimerCISpace_base {
       return (iter != dets.end() ? iter->second : nullptr);
     }
 
-    template<int unit> void insert(std::shared_ptr<const VecType> civec, const int spin = -1) {
+    template<int unit, class T> void insert(std::shared_ptr<const T> civec, const int spin = -1) {
       auto new_civec = std::make_shared<VecType>(civec);
 
       const int nelea = civec->det()->nelea();
@@ -196,7 +196,7 @@ class DimerCISpace_base {
                 if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
                 ref_state->data(istate)->scale(1.0/norm);
               }
-              insert<0>(ref_state, S);
+              insert<0>(std::shared_ptr<const VecType>(ref_state), S);
             }
           }
         }
@@ -229,7 +229,7 @@ class DimerCISpace_base {
                 if ( norm < numerical_zero__ ) throw std::runtime_error("Spin lowering operator yielded no state.");
                 ref_state->data(istate)->scale(1.0/norm);
               }
-              insert<1>(ref_state, S);
+              insert<1>(std::shared_ptr<const VecType>(ref_state), S);
             }
           }
         }
@@ -275,6 +275,7 @@ class DimerCISpace_base {
 using DimerCAS = DimerCISpace_base<Dvec>;
 using DimerDistCAS = DimerCISpace_base<DistDvec>;
 using DimerRAS = DimerCISpace_base<RASDvec>;
+using DimerDistRAS = DimerCISpace_base<DistRASDvec>;
 
 }
 

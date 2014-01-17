@@ -111,6 +111,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
       std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
+      std::shared_ptr<DimerDistRAS> compute_distrcispace(std::shared_ptr<const PTree> idata);
 
    private:
       void construct_geometry();

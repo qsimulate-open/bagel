@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_ras.h
-// Copyright (C) 2013 Shane Parker
+// Filename: meh_distras.h
+// Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: NU theory
@@ -23,21 +23,21 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __MEH_MEH_RAS_H
-#define __MEH_MEH_RAS_H
+#ifndef __MEH_MEH_DISTRAS_H
+#define __MEH_MEH_DISTRAS_H
 
 #include <src/meh/meh.h>
 #include <src/ras/civector.h>
 
 namespace bagel {
 
-class MEH_RAS : public MultiExcitonHamiltonian<RASDvec> {
+class MEH_DistRAS : public MultiExcitonHamiltonian<DistRASDvec> {
    public:
-      MEH_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
+      MEH_DistRAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistRAS> cispace);
 
    private:
-      std::shared_ptr<RASDvec> form_sigma(std::shared_ptr<const RASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
-      std::shared_ptr<RASDvec> form_sigma_1e(std::shared_ptr<const RASDvec> ccvec, const double* modata) const override;
+      std::shared_ptr<DistRASDvec> form_sigma(std::shared_ptr<const DistRASDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;
+      std::shared_ptr<DistRASDvec> form_sigma_1e(std::shared_ptr<const DistRASDvec> ccvec, const double* modata) const override;
 
       void sigma_aa(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
       void sigma_bb(std::shared_ptr<const RASCivec> cc, std::shared_ptr<RASCivec> sigma, const double* h1, const double* h2) const;
