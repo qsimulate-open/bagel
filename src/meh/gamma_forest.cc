@@ -233,11 +233,11 @@ void GammaForest<DistRASDvec, 2>::compute() {
         }
       }
 
-      tasks.compute(1);
-      for_each_branch([] (shared_ptr<DistBranch> b) {
-        for (auto& g : b->gammas())
-          g.second->allreduce();
-      });
+      tasks.compute();
     }
   }
+  for_each_branch([] (shared_ptr<DistBranch> b) {
+    for (auto& g : b->gammas())
+      g.second->allreduce();
+  });
 }
