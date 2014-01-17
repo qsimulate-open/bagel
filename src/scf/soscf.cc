@@ -76,6 +76,12 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   nai.print("< r | NAI | s >", 100);
   ((mixedR0 * S ^ mixedR1) - nai).print(" R0*R1 - NAI ", 100);
 
+  MixedBasis<NAIBatch, const shared_ptr<const Geometry>> mixedNAI(auxmol, refgeom, refgeom);
+  (mixedNAI * S ^ mixedR1).print(" < r | NAI | a > S < a | R1 | s > ", 100);
+
+  MixedBasis<R2Batch, const shared_ptr<const Geometry>> r2(refgeom, refgeom, refgeom);
+  r2.print("< r | R2 | s >", 100);
+  ((mixedNAI * S ^ mixedR1) - r2).print(" NAI*R1 - R2 ", 100);
 }
 
 void SOSCF::initial_guess() {

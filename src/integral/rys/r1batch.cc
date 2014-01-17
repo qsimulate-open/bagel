@@ -63,8 +63,7 @@ void R1Batch::compute_ssss(const double integral_thresh) {
         const double PCx = P_[index * 3    ] - (*aiter)->position(0);
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
-        // -Z needs to be removed
-        coeff_[index] = - 2 * Z * pi__ * socxp_inv * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
+        coeff_[index] = - 2 * pi__ * socxp_inv * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = sqrt(T);
         const double ss = - coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? sqrtpi * ::erf(sqrtt) / sqrtt * 0.5 : 1.0);
