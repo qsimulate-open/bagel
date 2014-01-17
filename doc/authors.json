@@ -6,4 +6,5 @@
   { "name" : "Michael", "surname" : "Caldwell",    "start" : "2013",  "end" : "2013", "email" : "caldwell@u.northwestern.edu",          "affiliation" : "Northwestern University" },
   { "name" : "Ryan",    "surname" : "Reynolds",    "start" : "2013",  "end" : "",     "email" : "ryanreynolds2018@u.northwestern.edu",  "affiliation" : "Northwestern University" },
   { "name" : "Hai-Anh", "surname" : "Le",          "start" : "2013",  "end" : "",     "email" : "anh@u.northwestern.edu",               "affiliation" : "Northwestern University" }
+  { "name" : "Jefferson","surname" : "Bates",      "start" : "2014",  "end" : "",     "email" : "jefferson.bates@northwestern.edu",     "affiliation" : "Northwestern University" }
 ]

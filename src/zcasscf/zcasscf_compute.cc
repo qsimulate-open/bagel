@@ -338,7 +338,7 @@ void ZCASSCF::block_trsym(shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int
   // nq1, nq2             nclosed_, nact_, nvirt_
   // ioff, joff           column and row offsets, respectively
   assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim() );
-  assert( tfac == 1 | -1);
+  assert( tfac == 1 || tfac == -1);
   const double t = tfac == 1 ? 1.0 : -1.0;
   for (int i = 0; i != nq2; ++i) {
     for (int j = 0; j != nq1; ++j) {
