@@ -61,13 +61,17 @@ class Dvector_base {
     }
 
     Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
-      dvec_.clear();
-      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(*ivec) );
+      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
     }
-    Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
+    //Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
 
     Dvector_base(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(*ivec) );
+      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(ivec) );
+    }
+
+    template <class T>
+    Dvector_base(std::shared_ptr<const Dvector_base<T>> o) : det_(o->det()), ij_(o->ij()) {
+      for (int i = 0; i < ij_; ++i) dvec_.push_back(std::make_shared<CiType>(o->data(i)));
     }
 
     std::shared_ptr<const DetType> det() const { return det_; }

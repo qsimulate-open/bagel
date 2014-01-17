@@ -79,6 +79,8 @@ class ZCASSCF : public Method {
     std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
     void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
+    void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
+    void block_trsym(std::shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff) const;
 
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,

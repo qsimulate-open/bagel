@@ -90,7 +90,7 @@ class GammaTree {
   public:
     GammaTree(std::shared_ptr<const VecType> ket) : ket_(ket) {
       base_ = std::make_shared<GammaBranch<VecType>>();
-      const int nops = 4;
+      constexpr int nops = 4;
 
       for (int i = 0; i < nops; ++i) {
         base_->branch(i) = std::make_shared<GammaBranch<VecType>>();
@@ -112,12 +112,6 @@ class GammaTree {
     std::shared_ptr<const Matrix> search(const int offset, GSQs... address) const { return base_->search(offset, address...); }
 
     std::shared_ptr<const VecType> ket() const { return ket_; }
-
-  private:
-    static const int Alpha = 0;
-    static const int Beta = 1;
-    static const int Create = 0;
-    static const int Annihilate = 1;
 };
 
 template <typename VecType>
@@ -131,7 +125,7 @@ class GammaTask {
     GammaTask(const std::shared_ptr<GammaTree<VecType>> tree, const GammaSQ operation, const int a) : a_(a), operation_(operation), tree_(tree) {}
 
     void compute() {
-      const int nops = 4;
+      constexpr int nops = 4;
       const int norb = tree_->ket()->det()->norb();
 
       auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
@@ -203,8 +197,34 @@ class GammaForest {
       return itree->second->search(joffset, ops...);
     }
 
-    void compute() {
-      const int nops = 4;
+    template<class Func>
+    void for_each_branch(Func func) {
+      constexpr int nops = 4;
+      for (auto& iforest : forests_) {
+        for (auto& itreemap : iforest) {
+          std::shared_ptr<GammaTree<VecType>> itree = itreemap.second;
+
+          // Allocation sweep
+          for (int i = 0; i < nops; ++i) {
+            std::shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
+            if (first->active()) func(first);
+
+            for (int j = 0; j < nops; ++j) {
+              std::shared_ptr<GammaBranch<VecType>> second = first->branch(j);
+              if (second->active()) func(second);
+
+              for (int k = 0; k < nops; ++k) {
+                std::shared_ptr<GammaBranch<VecType>> third = second->branch(k);
+                if (third->active()) func(third);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    int allocate_and_count() {
+      constexpr int nops = 4;
 
       int ntasks = 0;
       // Allocate memory while counting tasks
@@ -248,6 +268,13 @@ class GammaForest {
         }
       }
 
+      return ntasks;
+    }
+
+    void compute() {
+      constexpr int nops = 4;
+
+      const int ntasks = allocate_and_count();
       TaskQueue<GammaTask<VecType>> tasks(ntasks);
 
       // Add tasks
@@ -283,10 +310,13 @@ template <>
 void GammaForest<DistDvec, 2>::compute();
 
 template <>
+void GammaForest<DistRASDvec, 2>::compute();
+
+template <>
 class GammaTask<RASDvec> {
   protected:
-    const int a_;                            // Orbital
-    const GammaSQ  operation_;               // Which operation
+    const int a_;                                     // Orbital
+    const GammaSQ  operation_;                        // Which operation
     const std::shared_ptr<GammaTree<RASDvec>> tree_;  // destination
 
     // to avoid rebuilding the stringspaces repeatedly
@@ -296,7 +326,7 @@ class GammaTask<RASDvec> {
     GammaTask(const std::shared_ptr<GammaTree<RASDvec>> tree, const GammaSQ operation, const int a) : a_(a), operation_(operation), tree_(tree) {}
 
     void compute() {
-      const int nops = 4;
+      constexpr int nops = 4;
       const int norb = tree_->ket()->det()->norb();
 
       auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
