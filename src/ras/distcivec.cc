@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/distcivector.cc
+// Filename: ras/distcivec.cc
 // Copyright (C) 2013 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -26,7 +26,7 @@
 
 #include <iomanip>
 #include <unordered_map>
-#include <src/ras/distcivector.h>
+#include <src/ras/civector.h>
 #include <src/parallel/distqueue.h>
 
 using namespace std;
@@ -176,7 +176,11 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
 // S_- = \sum_i i^dagger_beta i_alpha
 template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
-#if 0
+#if 1
+  shared_ptr<RASCivector<double>> local = civec();
+  shared_ptr<RASCivector<double>> lowered = local->spin_lower(tdet);
+  return lowered->distcivec();
+#else
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
   assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
@@ -235,14 +239,16 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   }
 
   return out;
-#else
-  return shared_ptr<DistRASCivector<double>>();
 #endif
 }
 
 // S_+ = \sum_i i^dagger_alpha i_beta
 template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
-#if 0
+#if 1
+  shared_ptr<RASCivector<double>> local = civec();
+  shared_ptr<RASCivector<double>> raised = local->spin_raise(tdet);
+  return raised->distcivec();
+#else
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()+1, sdet->neleb()-1);
   assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
@@ -301,8 +307,6 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   }
 
   return out;
-#else
-  return shared_ptr<DistRASCivector<double>>();
 #endif
 }
 

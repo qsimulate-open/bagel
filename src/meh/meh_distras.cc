@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_ras_sigma.cc
+// Filename: meh_distras.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,23 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/meh/meh_ras.h>
+#include <src/meh/meh_distras.h>
 #include <src/ras/form_sigma.h>
 
 using namespace std;
 using namespace bagel;
 
-MEH_RAS::MEH_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace) :
-  MultiExcitonHamiltonian<RASDvec>(input, dimer, cispace) { }
+MEH_DistRAS::MEH_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace) :
+  MultiExcitonHamiltonian<DistRASDvec>(input, dimer, cispace) {}
 
 
-shared_ptr<RASDvec> MEH_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {
+shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma(shared_ptr<const DistRASDvec> ccvec, shared_ptr<const MOFile> jop) const {
+  vector<shared_ptr<RASCivec>> tmpvec;
+  for (auto& i : ccvec->dvec()) tmpvec.push_back(make_shared<RASCivec>(i));
+  auto dvec = make_shared<RASDvec>(tmpvec);
+
   FormSigmaRAS form;
   vector<int> conv(ccvec->ij(), static_cast<int>(false));
-  return form(ccvec, jop, conv);
+  shared_ptr<const RASDvec> sigmavec = form(dvec, jop, conv);
+
+  return make_shared<DistRASDvec>(sigmavec);
 }
 
-shared_ptr<RASDvec> MEH_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, const double* modata) const {
-  FormSigmaRAS form;
-  return form(ccvec, modata);
+// TODO function not yet written
+shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec> ccvec, const double* modata) const {
+  return shared_ptr<DistRASDvec>();
 }

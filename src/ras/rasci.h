@@ -59,9 +59,6 @@ class RASCI : public Method {
     // number of states
     int nstate_;
 
-    // options
-    bool sparse_;
-
     // properties to be calculated
     //std::vector<std::shared_ptr<CIProperties>> properties_;
 

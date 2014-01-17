@@ -94,6 +94,7 @@ class DistCivector {
       std::copy_n(o.local_.get(), alloc_, local_.get());
       mutex_ = std::vector<std::mutex>(asize());
     }
+    DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
     DistCivector<DataType>& operator=(const DistCivector<DataType>& o) {
       assert(o.size() == size());

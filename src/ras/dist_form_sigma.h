@@ -26,7 +26,7 @@
 #ifndef __BAGEL_RAS_DIST_FORM_SIGMA_RAS_H
 #define __BAGEL_RAS_DIST_FORM_SIGMA_RAS_H
 
-#include <src/ras/distcivector.h>
+#include <src/ras/civector.h>
 #include <src/fci/mofile.h>
 
 namespace bagel {
