@@ -47,41 +47,6 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 
-  /**** Test Rn Integrals ****/
-
-  auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
-  vector<shared_ptr<const Atom>> auxatom;
-  auxatom.push_back(mol->atoms(0));
-  auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
-  //auxmol->print_atoms();
-
-  vector<shared_ptr<const Atom>> refatom;
-  refatom.push_back(geom_->atoms(0));
-  auto refgeom = make_shared<const Geometry>(refatom, make_shared<const PTree>());
-  refgeom->print_atoms();
-
-  cout << " ----------- < r | A | a > ----------- " << endl;
-  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0(auxmol, refgeom, refgeom);
-  mixedR0.print("mixedR0", 100);
-
-  MixedBasis<R1Batch, const shared_ptr<const Geometry>> mixedR1(auxmol, refgeom, refgeom);
-  mixedR1.print("mixedR1", 100);
-
-  auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
-  MixedBasis<OverlapBatch> S(auxgeom, auxgeom);
-  S.inverse();
-  (mixedR0 * S ^ mixedR1).print(" < r | R0 | a > S < a | R1 | s > ", 100);
-
-  MixedBasis<NAIBatch, const shared_ptr<const Geometry>> nai(refgeom, refgeom, refgeom);
-  nai.print("< r | NAI | s >", 100);
-  ((mixedR0 * S ^ mixedR1) - nai).print(" R0*R1 - NAI ", 100);
-
-  MixedBasis<NAIBatch, const shared_ptr<const Geometry>> mixedNAI(auxmol, refgeom, refgeom);
-  (mixedNAI * S ^ mixedR1).print(" < r | NAI | a > S < a | R1 | s > ", 100);
-
-  MixedBasis<R2Batch, const shared_ptr<const Geometry>> r2(refgeom, refgeom, refgeom);
-  r2.print("< r | R2 | s >", 100);
-  ((mixedNAI * S ^ mixedR1) - r2).print(" NAI*R1 - R2 ", 100);
 }
 
 void SOSCF::initial_guess() {

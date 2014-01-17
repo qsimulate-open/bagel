@@ -63,8 +63,7 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
         const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
-        // Z needs to be removed
-        coeff_[index] = 2 * Z * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
+        coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
         const double sqrtt = sqrt(T);
         const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
         if (ss > integral_thresh) {
