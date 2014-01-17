@@ -35,7 +35,8 @@
 
 namespace bagel {
 
-class OSInt : public Integral {
+template <typename DataType, Int_t IntType = Int_t::Standard>
+class OSIntegral : public Integral {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
@@ -75,8 +76,8 @@ class OSInt : public Integral {
 
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
-    ~OSInt();
+    OSIntegral(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
+    ~OSIntegral();
 
     double* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
     const double* data() const { return data_; }
@@ -89,7 +90,14 @@ class OSInt : public Integral {
     virtual std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const;
 };
 
+using OSInt = OSIntegral<double,Int_t::Standard>;
+
 }
+
+#define OSINTEGRAL_HEADERS
+#include <src/integral/os/osintegral_impl.hpp>
+#include <src/integral/os/oscontraction_impl.hpp>
+#undef OSINTEGRAL_HEADERS
 
 #endif
 

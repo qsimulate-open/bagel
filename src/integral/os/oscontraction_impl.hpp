@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: oscontraction.cc
+// Filename: oscontraction_impl.hpp
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,23 +24,26 @@
 //
 
 
-#include <src/integral/os/osint.h>
+#ifdef OSINTEGRAL_HEADERS
 
-using namespace std;
-using namespace bagel;
+#ifndef __SRC_INTEGRAL_OS_OSCONTRACTION_IMPL_HPP
+#define __SRC_INTEGRAL_OS_OSCONTRACTION_IMPL_HPP
 
-void OSInt::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
-                                const vector<vector<double>>& coeff0, const vector<pair<int, int>>& ranges0, const int cdim0,
-                                const vector<vector<double>>& coeff1, const vector<pair<int, int>>& ranges1, const int cdim1) {
+namespace bagel {
+
+template <typename DataType, Int_t IntType>
+void OSIntegral<DataType,IntType>::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
+                                const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
+                                const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1) {
   // transformation of index1
   const int worksize = pdim1 * asize;
   double* const work = stack_->get(worksize);
-  fill_n(cont, asize*cdim0*cdim1, 0.0);
+  std::fill_n(cont, asize*cdim0*cdim1, 0.0);
 
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    fill_n(work, worksize, 0.0);
+    std::fill_n(work, worksize, 0.0);
     for (int j = begin0; j != end0; ++j)
       daxpy_(worksize, coeff0[i][j], prim+j*worksize, 1, work, 1);
 
@@ -55,4 +58,7 @@ void OSInt::perform_contraction(const int asize, const double* prim, const int p
   stack_->release(worksize, work);
 }
 
+}
 
+#endif
+#endif

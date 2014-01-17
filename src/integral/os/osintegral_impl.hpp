@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: osint.cc
+// Filename: osintegral_impl.hpp
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,14 +24,17 @@
 //
 
 
-#include <src/integral/os/osint.h>
+#ifdef OSINTEGRAL_HEADERS
 
-using namespace std;
-using namespace bagel;
+#ifndef __SRC_INTEGRAL_OS_OSINTEGRAL_IMPL_HPP
+#define __SRC_INTEGRAL_OS_OSINTEGRAL_IMPL_HPP
+
+namespace bagel {
 
 static const double pisqrt__ = ::sqrt(pi__);
 
-OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack)
+template <typename DataType, Int_t IntType>
+OSIntegral<DataType, IntType>::OSIntegral(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack)
  : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
 
   if (stack == nullptr) {
@@ -43,7 +46,10 @@ OSInt::OSInt(const std::array<std::shared_ptr<const Shell>,2>& basis, std::share
   }
 }
 
-void OSInt::common_init() {
+template <typename DataType, Int_t IntType>
+void OSIntegral<DataType, IntType>::common_init() {
+  static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
+  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
 
   assert(basisinfo_.size() == 2);
 
@@ -51,8 +57,8 @@ void OSInt::common_init() {
   ang1_ = basisinfo_[1]->angular_number();
 
   if (ang0_ < ang1_) {
-    swap(basisinfo_[0], basisinfo_[1]);
-    swap(ang0_, ang1_);
+    std::swap(basisinfo_[0], basisinfo_[1]);
+    std::swap(ang0_, ang1_);
     swap01_ = true;
   } else {
     swap01_ = false;
@@ -60,16 +66,16 @@ void OSInt::common_init() {
 
   prim0_ = basisinfo_[0]->num_primitive();
   cont0_ = basisinfo_[0]->num_contracted();
-  const vector<double> exponents0 = basisinfo_[0]->exponents();
+  const std::vector<double> exponents0 = basisinfo_[0]->exponents();
   prim1_ = basisinfo_[1]->num_primitive();
   cont1_ = basisinfo_[1]->num_contracted();
-  const vector<double> exponents1 = basisinfo_[1]->exponents();
+  const std::vector<double> exponents1 = basisinfo_[1]->exponents();
 
   AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
 
-  vector<double>::const_iterator expi0, expi1;
+  std::vector<double>::const_iterator expi0, expi1;
   p_.reserve(3 * prim0_ * prim1_);
   xa_.reserve(prim0_ * prim1_);
   xb_.reserve(prim0_ * prim1_);
@@ -123,8 +129,8 @@ void OSInt::common_init() {
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  // note: this is larger than what is needed. just to make the code simpler.. 
-  size_block_ = prim0_ * prim1_ * max(asize_intermediate_, asize_);
+  // note: this is larger than what is needed. just to make the code simpler..
+  size_block_ = prim0_ * prim1_ * std::max(asize_intermediate_, asize_);
   size_alloc_ = size_block_ * nblocks();
 
   stack_save_ = stack_->get(size_alloc_);
@@ -143,20 +149,28 @@ void OSInt::common_init() {
   }
 }
 
-OSInt::~OSInt() {
+template <typename DataType, Int_t IntType>
+OSIntegral<DataType, IntType>::~OSIntegral() {
   stack_->release(size_alloc_, stack_save_);
   if (allocated_here_) resources__->release(stack_);
 }
 
 
-shared_ptr<GradFile> OSInt::compute_gradient(shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const {
-  if (nblocks() != 6) throw logic_error("OSInt::contract_density called unexpectedly");
-  auto out = make_shared<GradFile>(natom);
+template <typename DataType, Int_t IntType>
+std::shared_ptr<GradFile> OSIntegral<DataType, IntType>::compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const {
+  if (nblocks() != 6) throw std::logic_error("OSIntegral::contract_density called unexpectedly");
+  auto out = std::make_shared<GradFile>(natom);
   const int jatom0 = swap01() ? iatom1 : iatom0;
   const int jatom1 = swap01() ? iatom0 : iatom1;
   for (int k = 0; k != 3; ++k) {
-    out->element(k, jatom1) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1); 
-    out->element(k, jatom0) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3), 1); 
+    out->element(k, jatom1) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1);
+    out->element(k, jatom0) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3), 1);
   }
   return out;
 }
+
+}
+
+#endif
+#endif
+
