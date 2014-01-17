@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: coulombbatch_energy_impl.hpp
+// Filename: coulombbatch_energy.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,42 +23,41 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/integral/sortlist.h>
+#include <src/integral/carsphlist.h>
+#include <src/integral/hrrlist.h>
 
-#ifdef COULOMBBATCH_ENERGY_HEADERS
+#include <src/integral/rys/coulombbatch_energy.h>
 
-#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
-#define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
-
-
-namespace bagel {
+using namespace std;
+using namespace bagel;
 
 constexpr static double PITWOHALF = 17.493418327624862;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
-template <typename DataType>
-void CoulombBatch_Energy<DataType>::compute() {
+void CoulombBatch_energy::compute() {
   const double zero = 0.0;
   const int zeroint = 0;
   const int unit = 1;
 
-  DataType* const stack_save = stack_->template get<DataType>(size_alloc_);
+  double* const stack_save = stack_->template get<double>(size_alloc_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
 
-  DataType* const workx = stack_->template get<DataType>(worksize);
-  DataType* const worky = stack_->template get<DataType>(worksize);
-  DataType* const workz = stack_->template get<DataType>(worksize);
+  double* const workx = stack_->template get<double>(worksize);
+  double* const worky = stack_->template get<double>(worksize);
+  double* const workz = stack_->template get<double>(worksize);
 
   const double Ax = basisinfo_[0]->position(0);
   const double Ay = basisinfo_[0]->position(1);
   const double Az = basisinfo_[0]->position(2);
 
-  DataType r1x[20];
-  DataType r1y[20];
-  DataType r1z[20];
-  DataType r2[20];
+  double r1x[20];
+  double r1y[20];
+  double r1z[20];
+  double r2[20];
 
   const int alc = size_alloc_;
   std::fill_n(data_, alc, zero);
@@ -78,7 +77,7 @@ void CoulombBatch_Energy<DataType>::compute() {
     disp[0] = disp[1] = 0.0;
     disp[2] = A_ * cell;
     const int offset_iprim = iprim * asize_;
-    DataType* current_data = &data_[offset_iprim];
+    double* current_data = &data_[offset_iprim];
 
     const double* croots = roots_ + i * rank_;
     const double* cweights = weights_ + i * rank_;
@@ -167,8 +166,7 @@ void CoulombBatch_Energy<DataType>::compute() {
   stack_->release(size_alloc_, stack_save);
 }
 
-template <typename DataType>
-void CoulombBatch_Energy<DataType>::root_weight(const int ps) {
+void CoulombBatch_energy::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
@@ -185,7 +183,4 @@ void CoulombBatch_Energy<DataType>::root_weight(const int ps) {
   }
 }
 
-}
 
-#endif
-#endif
