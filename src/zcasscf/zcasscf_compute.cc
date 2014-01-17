@@ -53,8 +53,8 @@ void ZCASSCF::compute() {
     array<shared_ptr<const ZMatrix>,2> tmp = RelMOFile::kramers(coeff_, overlap, hcore);
     auto ctmp = coeff_->clone();
     int i = 0;
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_; 
+    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_; 
     ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
     ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
     ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
@@ -62,12 +62,16 @@ void ZCASSCF::compute() {
     coeff_ = ctmp;
   }
 
+  cout << " See casscf.log file for further information on FCI output " << endl; 
   for (int iter = 0; iter != max_iter_; ++iter) {
+//  for (int iter = 0; iter != 1; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       mute_stdcout();
       if (iter) fci_->update(coeff_);
+      cout << " Executing FCI calculation " << endl;
       fci_->compute();
+      cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       resume_stdcout();
     }
@@ -78,6 +82,7 @@ void ZCASSCF::compute() {
     // closed Fock operator
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
+    // cfock->print("cfock", 7);
 
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
@@ -137,9 +142,10 @@ void ZCASSCF::compute() {
       complex<double> ex = exp(complex<double>(0.0, teig[i]));
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
-    auto expa = make_shared<const ZMatrix>(*amat ^ *amat_sav);
+    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+    kramers_adapt(expa);
 
-    coeff_ = make_shared<const ZMatrix>(*coeff_**expa);
+    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
     // for next BFGS extrapolation
     *x *= *expa;
 
@@ -164,7 +170,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   auto coeff_tot = fci_->coeff()->get_conjg();
 
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
-  // TODO compute RelOverlap only once (this is comptued also in qzvec)
+  // TODO compute RelOverlap only once (this is comptued also in zqvec)
   auto overlap = make_shared<const RelOverlap>(geom_);
   shared_ptr<const ZMatrix> ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2)->get_conjg();
   const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
@@ -174,6 +180,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
   // form natural orbitals
+  // JEB :  cout << "presently forming natural orbitals via diagonalization" << endl; 
   unique_ptr<double[]> eig(new double[nact_*2]);
   auto tmp = make_shared<ZMatrix>(*rdm1);
   tmp->diagonalize(eig.get());
@@ -308,6 +315,40 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o) const {
 
       o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
       o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
+    }
+  }
+}
+
+void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o) const {
+  // function to enforce time-reversal symmetry 
+  //    for a complex matrix o, that is SYMMETRIC under time reversal
+  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim());
+  const array<int,3> a0 = {nclosed_, nact_, nvirt_};
+  const array<int,3> a1 = {0, 2*nclosed_, 2*nocc_};
+  for (int ii = 0; ii !=3; ++ii) {
+    for (int jj = 0; jj !=3; ++jj) {
+      block_trsym(o,1,a0[jj],a0[ii],a1[jj],a1[ii]);
+    }
+  }
+}
+
+void ZCASSCF::block_trsym(shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff) const {
+  // function to enforce time-reversal symmetry for a given block of a complex matrix o. 
+  // tfac                 symmetry factor under time-reversal (symmetric : t=1, antisymm : t=-1)
+  // nq1, nq2             nclosed_, nact_, nvirt_
+  // ioff, joff           column and row offsets, respectively
+  assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim() );
+  assert( tfac == 1 | -1);
+  const double t = tfac == 1 ? 1.0 : -1.0;
+  for (int i = 0; i != nq2; ++i) {
+    for (int j = 0; j != nq1; ++j) {
+      // Diagonal contributions : "A" matrices in notation of T. Suae thesis
+      o->element(joff+j, ioff+i) = ( o->element(joff+j, ioff+i) + conj(o->element(joff+j+nq1, ioff+i+nq2)) ) * 0.5;
+      o->element(joff+j+nq1,ioff+i+nq2) = t * conj(o->element(joff+j,ioff+i));
+
+      // Diagonal contributions : "B" matrices in notation of T. Suae thesis
+      o->element(joff+nq1+j, ioff+i) = ( o->element(joff+nq1+j, ioff+i) - conj(o->element(joff+j, ioff+nq2+i)) ) * 0.5;
+      o->element(joff+j, ioff+nq2+i) = -t * conj(o->element(joff+nq1+j,ioff+i));
     }
   }
 }
