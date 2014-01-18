@@ -1113,7 +1113,6 @@ void R2RootList::r2root7(const double* ta, double* rr, double* ww, const int n) 
         bigT = t;
         it = static_cast<int>(log(bigT) / log(2.0) + 32 - ibox0);
         t = (t - 1.5 * pow(2.0, it + ibox0 - 32))* 2/pow(2.0, it + ibox0 - 32);
-        cout << " new t = " << t << endl;
       } else {
         it = static_cast<int>(t*   0.500000000000000);
         t = (t - it *2.000000000000000-   1.000000000000000) *   1.000000000000000;
