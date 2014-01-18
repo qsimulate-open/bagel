@@ -564,7 +564,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
     }
       ofs << "\
       int it; \n\
-      double bigT; \n";
+      double bigT = 0.0; \n";
       if (NBOXL != 0) {
       ofs << "\
       if (" << MAXT << ".0 <= t && t < " << T_ASYM << ".0) { \n\
