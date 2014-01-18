@@ -2014,7 +2014,7 @@ void R2RootList::r2root13(const double* ta, double* rr, double* ww, const int n)
       }
     } else {
       int it;
-      double bigT;
+      double bigT = 0.0;
       if (t >= 64.0 && t < 131072.0) {
         bigT = t;
         it = static_cast<int>(log(bigT) / log(2.0) + 32 - ibox0);
