@@ -43,9 +43,13 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   store_matrix_ = input->get<bool>("store_matrix", false);
   nspin_ = 0; // TODO hardcoded to singlets for now
 
+  Timer timer;
+
   jop_ = std::make_shared<DimerJop>(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, ref_->coeff());
+  std::cout << "  o computing integrals: " << timer.tick() << std::endl;
 
   cispace_->complete();
+  std::cout << "  o completing CI space: " << timer.tick() << std::endl;
 
   dimerstates_ = 0;
 
@@ -80,7 +84,7 @@ const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& 
   std::pair<int,int> AT = std::make_pair(neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second);
   std::pair<int,int> BT = std::make_pair(nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second);
 
-  const int stride = 8; // Should be sufficient
+  constexpr int stride = 8; // Should be sufficient
   auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };
 
   /************************************************************

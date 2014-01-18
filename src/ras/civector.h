@@ -108,6 +108,8 @@ template <typename DataType>
 class DistRASCivector {
   public: using DetType = RASDeterminants;
   public: using RBlock = DistRASBlock<DataType>;
+  public: using LocalizedType = std::false_type;
+
   protected:
     std::vector<std::shared_ptr<RBlock>> blocks_;
 
@@ -639,9 +641,11 @@ class apply_block_impl : public apply_block_base<DataType> {
 }
 
 template <typename DataType>
-class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
+class RASCivector {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
+  public: using LocalizedType = std::true_type;
+
   protected:
     std::unique_ptr<DataType[]> data_;
     std::vector<std::shared_ptr<RBlock>> blocks_;
@@ -675,7 +679,7 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
     }
 
     RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
-      std::copy_n(o.data(), size_, data_.get());
+      std::copy_n(o.data(), size_, data());
     }
     RASCivector(std::shared_ptr<const RASCivector<DataType>> o) : RASCivector(*o) {}
 
@@ -934,9 +938,9 @@ class RASCivector : public std::enable_shared_from_this<RASCivector<DataType>> {
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 
-    void synchronize() {
+    void synchronize(const int root = 0) {
 #ifdef HAVE_MPI_H
-      mpi__->broadcast(data(), size(), 0);
+      mpi__->broadcast(data(), size(), root);
 #endif /* HAVE_MPI_H */
     }
 };

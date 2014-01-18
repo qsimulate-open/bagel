@@ -44,6 +44,7 @@ template<typename DataType> class Civector;
 template<typename DataType>
 class DistCivector {
   public: using DetType = Determinants;
+  public: using LocalizedType = std::false_type;
 
   protected:
     mutable std::shared_ptr<const Determinants> det_;
@@ -391,6 +392,7 @@ using DistDvec = Dvector_base<DistCivec>;
 template<typename DataType>
 class Civector {
   public: using DetType = Determinants; // used to automatically determine type for Determinants object in templates
+  public: using LocalizedType = std::true_type;
 
   protected:
     // The determinant space in which this Civec object is defined
