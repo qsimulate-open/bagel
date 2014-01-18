@@ -155,16 +155,20 @@ OSIntegral<DataType, IntType>::~OSIntegral() {
   if (allocated_here_) resources__->release(stack_);
 }
 
-
 template <typename DataType, Int_t IntType>
 std::shared_ptr<GradFile> OSIntegral<DataType, IntType>::compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const {
   if (nblocks() != 6) throw std::logic_error("OSIntegral::contract_density called unexpectedly");
   auto out = std::make_shared<GradFile>(natom);
   const int jatom0 = swap01() ? iatom1 : iatom0;
   const int jatom1 = swap01() ? iatom0 : iatom1;
+
+  // to avoid compiler errors in ComplexOverlapBatch
+  const double* data = reinterpret_cast<double*> (data_);
+  if (IntType == Int_t::London) throw std::runtime_error("Gradient computation has not been set up for London orbitals");
+
   for (int k = 0; k != 3; ++k) {
-    out->element(k, jatom1) += ddot_(d->size(), d->data(), 1, data_+size_block_*k, 1);
-    out->element(k, jatom0) += ddot_(d->size(), d->data(), 1, data_+size_block_*(k+3), 1);
+    out->element(k, jatom1) += ddot_(d->size(), d->data(), 1, data+size_block_*k, 1);
+    out->element(k, jatom0) += ddot_(d->size(), d->data(), 1, data+size_block_*(k+3), 1);
   }
   return out;
 }
