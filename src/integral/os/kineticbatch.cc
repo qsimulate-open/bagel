@@ -35,6 +35,8 @@ const static CarSphList carsphlist;
 
 void KineticBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 

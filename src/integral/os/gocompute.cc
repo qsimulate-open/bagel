@@ -36,6 +36,8 @@ const static CarSphList carsphlist;
 
 void GOverlapBatch::compute() {
 
+  const SortList sort_(spherical_);
+
   fill_n(data_, size_alloc_, 0.0);
 
   const int a = basisinfo_[0]->angular_number();

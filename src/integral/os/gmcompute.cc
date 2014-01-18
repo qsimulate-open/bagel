@@ -36,6 +36,8 @@ const static CarSphList carsphlist;
 // Reused most of the KineticBatch functions
 void GMomentBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(6*size_block_);
   perform_VRR(intermediate_p);
 

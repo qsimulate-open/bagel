@@ -35,7 +35,7 @@ static const double pisqrt__ = ::sqrt(pi__);
 
 template <typename DataType, Int_t IntType>
 OSIntegral<DataType, IntType>::OSIntegral(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack)
- : basisinfo_(basis), spherical_(basis.front()->spherical()), sort_(basis.front()->spherical()) {
+ : basisinfo_(basis), spherical_(basis.front()->spherical()) {
 
   if (stack == nullptr) {
     stack_ = resources__->get();
@@ -133,7 +133,7 @@ void OSIntegral<DataType, IntType>::common_init() {
   size_block_ = prim0_ * prim1_ * std::max(asize_intermediate_, asize_);
   size_alloc_ = size_block_ * nblocks();
 
-  stack_save_ = stack_->get(size_alloc_);
+  stack_save_ = stack_->template get<DataType>(size_alloc_);
   data_ = stack_save_;
 
   amapping_.resize(amax1_ * amax1_ * amax1_);

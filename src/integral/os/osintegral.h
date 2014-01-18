@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: osint.h
+// Filename: osintegral.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_OS_OSINT_H
-#define __SRC_INTEGRAL_OS_OSINT_H
+#ifndef __SRC_INTEGRAL_OS_OSINTEGRAL_H
+#define __SRC_INTEGRAL_OS_OSINTEGRAL_H
 
 #include <src/molecule/shell.h>
 #include <src/integral/sortlist.h>
@@ -36,13 +36,13 @@
 namespace bagel {
 
 template <typename DataType, Int_t IntType = Int_t::Standard>
-class OSIntegral : public Integral {
+class OSIntegral : public Integral_base<DataType> {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     bool spherical_;
 
-    double* data_;
+    DataType* data_;
     std::vector<double> xp_, xa_, xb_, rho_, p_;
     std::vector<double> coeffsx_, coeffsy_, coeffsz_;
     std::vector<double> coefftx_, coeffty_, coefftz_;
@@ -55,15 +55,13 @@ class OSIntegral : public Integral {
 
     bool swap01_;
 
-    const SortList sort_;
-
     size_t size_alloc_;
     size_t size_block_;
 
-    double* stack_save_;
+    DataType* stack_save_;
 
-    virtual void perform_VRR(double*) { throw std::logic_error("OSInt::perform_VRR should not be called"); }
-    void perform_contraction(const int, const double*, const int, const int, double*,
+    virtual void perform_VRR(DataType*) { throw std::logic_error("OSInt::perform_VRR should not be called"); }
+    void perform_contraction(const int, const DataType*, const int, const int, DataType*,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
 
@@ -79,8 +77,8 @@ class OSIntegral : public Integral {
     OSIntegral(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
     ~OSIntegral();
 
-    double* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
-    const double* data() const { return data_; }
+    DataType* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
+    const DataType* data() const { return data_; }
 
     // since this is convenient for gradient evaluation....
     bool swap01() const { return swap01_; }

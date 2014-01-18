@@ -35,6 +35,8 @@ const static CarSphList carsphlist;
 
 void MomentumBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(size_block_*3);
   perform_VRR(intermediate_p);
 

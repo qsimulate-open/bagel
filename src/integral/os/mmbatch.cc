@@ -35,6 +35,8 @@ const static CarSphList carsphlist;
 
 void MMBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*nblocks());
   perform_VRR(intermediate_p);
 

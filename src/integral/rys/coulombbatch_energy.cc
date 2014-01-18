@@ -26,7 +26,6 @@
 #include <src/integral/sortlist.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/hrrlist.h>
-
 #include <src/integral/rys/coulombbatch_energy.h>
 
 using namespace std;
