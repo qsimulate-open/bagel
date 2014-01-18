@@ -43,9 +43,10 @@ class OSIntegral : public Integral_base<DataType> {
     bool spherical_;
 
     DataType* data_;
-    std::vector<double> xp_, xa_, xb_, rho_, p_;
-    std::vector<double> coeffsx_, coeffsy_, coeffsz_;
-    std::vector<double> coefftx_, coeffty_, coefftz_;
+    std::vector<double> xp_, xa_, xb_, rho_;
+    std::vector<DataType> P_;
+    std::vector<DataType> coeffsx_, coeffsy_, coeffsz_;
+    std::vector<DataType> coefftx_, coeffty_, coefftz_;
     std::array<double,3> AB_;
 
     int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
@@ -64,6 +65,9 @@ class OSIntegral : public Integral_base<DataType> {
     void perform_contraction(const int, const DataType*, const int, const int, DataType*,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
+    virtual DataType get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int dim, const bool swap) {
+      return (coord1*exp1 + coord2*exp2) * one12;
+    }
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;

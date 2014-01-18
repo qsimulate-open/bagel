@@ -77,3 +77,18 @@ void ComplexOverlapBatch::compute() {
 
 }
 
+// TODO For efficiency's sake, it's probably best to find a way to avoid repeatedly running basisinfo_[i]->vector_potential(j) each time we want to get a P or Q value
+std::complex<double> ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+                                                const int dim, const bool swap) {
+  const double Areal = coord1*exp1;
+  const double Breal = coord2*exp2;
+  const double Aimag = basisinfo_[0]->vector_potential(dim);
+  const double Bimag = basisinfo_[1]->vector_potential(dim);
+  double imag;
+  if (swap) imag = 0.5*(Bimag - Aimag);
+  else imag = 0.5*(Aimag - Bimag);
+  const std::complex<double> num (Areal + Breal, imag);
+  return num * one12;
+}
+
+

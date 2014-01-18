@@ -76,7 +76,7 @@ void OSIntegral<DataType, IntType>::common_init() {
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
 
   std::vector<double>::const_iterator expi0, expi1;
-  p_.reserve(3 * prim0_ * prim1_);
+  P_.reserve(3 * prim0_ * prim1_);
   xa_.reserve(prim0_ * prim1_);
   xb_.reserve(prim0_ * prim1_);
   xp_.reserve(prim0_ * prim1_);
@@ -92,27 +92,59 @@ void OSIntegral<DataType, IntType>::common_init() {
       xb_.push_back(*expi1);
       const double cxp = *expi0 + *expi1;
       const double cxp_inv = 1.0 / cxp;
-      const double px = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-      const double py = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-      const double pz = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+
+      const DataType px = get_P(basisinfo_[0]->position(0), basisinfo_[1]->position(0), *expi0, *expi1, cxp_inv, 0, swap01_);
+      const DataType py = get_P(basisinfo_[0]->position(1), basisinfo_[1]->position(1), *expi0, *expi1, cxp_inv, 0, swap01_);
+      const DataType pz = get_P(basisinfo_[0]->position(2), basisinfo_[1]->position(2), *expi0, *expi1, cxp_inv, 0, swap01_);
+
       xp_.push_back(cxp);
-      p_.push_back(px);
-      p_.push_back(py);
-      p_.push_back(pz);
+      P_.push_back(px);
+      P_.push_back(py);
+      P_.push_back(pz);
       const double tmp = pisqrt__ * ::sqrt(cxp_inv);
-      coeffsx_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0])));
-      coeffsy_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1])));
-      coeffsz_.push_back(tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2])));
-      const double xpa = px - basisinfo_[0]->position(0);
-      const double ypa = py - basisinfo_[0]->position(1);
-      const double zpa = pz - basisinfo_[0]->position(2);
+      DataType coeffsx = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0]));
+      DataType coeffsy = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1]));
+      DataType coeffsz = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2]));
+      if (IntType == Int_t::London) {
+        DataType factor_x;
+        DataType factor_y;
+        DataType factor_z;
+        const double A_BA_x = (basisinfo_[1]->vector_potential(0) - basisinfo_[0]->vector_potential(0));
+        const double A_BA_y = (basisinfo_[1]->vector_potential(1) - basisinfo_[0]->vector_potential(1));
+        const double A_BA_z = (basisinfo_[1]->vector_potential(2) - basisinfo_[0]->vector_potential(2));
+        const double BA_xsq = A_BA_x * A_BA_x;
+        const double BA_ysq = A_BA_y * A_BA_y;
+        const double BA_zsq = A_BA_z * A_BA_z;
+        const double P_BA_x = std::real(px) * A_BA_x;
+        const double P_BA_y = std::real(py) * A_BA_y;
+        const double P_BA_z = std::real(pz) * A_BA_z;
+        if (swap01_) {
+          detail::make_complex(-0.25*cxp_inv*BA_xsq , P_BA_x, factor_x);
+          detail::make_complex(-0.25*cxp_inv*BA_ysq , P_BA_y, factor_y);
+          detail::make_complex(-0.25*cxp_inv*BA_zsq , P_BA_z, factor_z);
+        } else {
+          detail::make_complex(-0.25*cxp_inv*BA_xsq , -1*P_BA_x, factor_x);
+          detail::make_complex(-0.25*cxp_inv*BA_ysq , -1*P_BA_y, factor_y);
+          detail::make_complex(-0.25*cxp_inv*BA_zsq , -1*P_BA_z, factor_z);
+        }
+        coeffsx *= std::exp(factor_x);
+        coeffsy *= std::exp(factor_y);
+        coeffsz *= std::exp(factor_z);
+      }
+      coeffsx_.push_back(coeffsx);
+      coeffsy_.push_back(coeffsy);
+      coeffsz_.push_back(coeffsz);
+
+      const DataType xpa = px - basisinfo_[0]->position(0);
+      const DataType ypa = py - basisinfo_[0]->position(1);
+      const DataType zpa = pz - basisinfo_[0]->position(2);
       coefftx_.push_back(coeffsx_.back() * (*expi0 - 2 * *expi0 * *expi0 * (xpa * xpa + 0.5 * cxp_inv)));
       coeffty_.push_back(coeffsy_.back() * (*expi0 - 2 * *expi0 * *expi0 * (ypa * ypa + 0.5 * cxp_inv)));
       coefftz_.push_back(coeffsz_.back() * (*expi0 - 2 * *expi0 * *expi0 * (zpa * zpa + 0.5 * cxp_inv)));
     }
   }
 
-  assert(p_.size() == 3 * prim0_ * prim1_);
+  assert(P_.size() == 3 * prim0_ * prim1_);
   assert(xp_.size() == prim0_ * prim1_);
   assert(coeffsx_.size() == prim0_ * prim1_);
   assert(coefftx_.size() == prim0_ * prim1_);
