@@ -117,7 +117,6 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
     if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
       cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << Tmin.toDouble() << " " << Tmax.toDouble() << endl;
       for (int i = 0; i != n; ++i) {
-        //cout << setw(20) << Tpoints[i].toDouble() << setw(20) << cdx[i].toDouble() << setw(20) << cdw[i].toDouble() << endl;
         cout << setw(20) << Tpoints[i].toDouble() << setw(20) << tc[i] << setw(20) << tc2[i] << endl;
       }
     }
@@ -129,7 +128,6 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
 
 
 bool test(const int nrank, const double tin) {
-  cout << " t = " << tin << endl;
   mpfr::mpreal::set_default_prec(GMPPREC);
 
   const static int nsize = 1;
@@ -428,7 +426,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
 #else
       vector<vector<double>> c_all;
       if (j < NBOX) {
-        //cout << " j = " << j << " mstart = " << (j*mstride).toDouble() << " mstride = " << mstride.toDouble() << endl;
         c_all = get_C(j*mstride, mstride, nroot, false);
       } else {
         if (MAXT < T_INFTY) {
@@ -436,12 +433,10 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
             const int ibox = j - NBOX;
             const mpreal mstart = static_cast<mpreal> (MAXT + ibox*(ibox + 1.0)*(2.0*ibox + 1.0)/6.0);
             const mpreal mstrideL = static_cast<mpreal> (ibox + 1.0)*(ibox + 1.0);
-            //cout << " j = " << j << " mstart = " << mstart.toDouble() << " mstrideL = " << mstrideL.toDouble() << endl;
             c_all = get_C(mstart, mstrideL, nroot, false);
           } else {
               const mpreal mstart = static_cast<mpreal> (T_ASYM);
               const mpreal mstrideL = static_cast<mpreal> (infty - T_ASYM);
-              //cout << " j = " << j << " mstart = " << mstart.toDouble() << " mstrideL = " << mstrideL.toDouble() << endl;
               c_all = get_C(mstart, mstrideL, nroot, true);
           }
         } else {
@@ -449,7 +444,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
           const int ibox = j - NBOX;
           const mpreal mstart = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
           const mpreal mstrideL = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
-          // cout << " j = " << j << " mstart = " << mstart.toDouble() << " mstrideL = " << mstrideL.toDouble() << endl;
           c_all = get_C(mstart, mstrideL, nroot, true);
         }
       }
@@ -481,7 +475,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         vector<mpreal> dx_infty(nroot);
         vector<mpreal> dw_infty(nroot);
         rysroot_gmp(tt_infty, dx_infty, dw_infty, nroot, 1);
-        //cout << "root[i] = " << dx_infty[i] << "weight[i] = " << dw_infty[i] << endl;
         for (auto iter = dx_infty.begin(); iter != dx_infty.end(); ++iter) {
           listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
@@ -581,7 +574,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         it = " << NBOX << " + ka; \n\
         double a = " << MAXT << ".0 + ka * (ka + 1) * (2*ka + 1)/6.0; \n\
         double b = " << MAXT << ".0 + (ka + 1) * (ka + 2) * (2*ka + 3)/6.0; \n\
-        cout << \" t = \" << t << \" ka = \" << ka << \" kb = \" << kb << \" it = \" << it << \" a = \" << a << \" b = \" << b << endl; \n\
         t = (t - (a+b)/2) * 2/(a-b);\n\
       } else if (t >= " << T_ASYM << ".0 && t < " << infty << ".0) { \n";
       } else {
@@ -593,8 +585,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         if (MAXT < T_INFTY) {
         ofs << "\
         it = static_cast<int>(" << NBOX + NBOXL << ");\n\
-        t = (t - (" << T_ASYM << ".0 + " << infty << ".0)/2) * 2/(" << infty << ".0 - " << T_ASYM << ".0);\n\
-        cout << \" new t = \" << t << endl; \n";
+        t = (t - (" << T_ASYM << ".0 + " << infty << ".0)/2) * 2/(" << infty << ".0 - " << T_ASYM << ".0);\n";
         } else {
         ofs << "\
         it = static_cast<int>(log(bigT) / log(2.0) + " << NBOX << " - ibox0);\n\
@@ -636,8 +627,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
 #ifdef DAWSON
             if (MAXT < T_INFTY) {
         ofs << "\
-        // cout << \" ww[offset+j-1] = \" << ww[offset+j-1] << \" " << nroot << " - j = \" << " << nroot << "-j << \" ww_infty[" << nroot << "-j] = \" << ww_infty[" << nroot << "-j] << endl;\n\
-        // cout << \" rr[offset+j-1] = \" << rr[offset+j-1] << \" " << nroot << " - j = \" << " << nroot << "-j << \" rr_infty[" << nroot << "-j] = \" << rr_infty[" << nroot << "-j] <<  endl;\n\
         if (" << T_ASYM << ".0 <= bigT && bigT < " << infty << ".0) { \n\
           ww[offset+j-1] = ww[offset+j-1] * ww_infty[" << nroot << "-j] * " << infty << ".0 / bigT;\n\
           rr[offset+j-1] = 1.0 + rr[offset+j-1] * (1.0 - rr_infty[" << nroot << "-j]) * " << infty << ".0 /bigT; \n\
