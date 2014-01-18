@@ -25,7 +25,7 @@
 
 #include <algorithm>
 #include <iostream>
-#include <assert.h>
+#include <cassert>
 #include <src/integral/rys/r2rootlist.h>
 
 using namespace std;

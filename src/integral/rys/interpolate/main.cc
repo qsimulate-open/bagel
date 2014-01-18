@@ -357,7 +357,7 @@ int main(int argc, char** argv) {
 \n\
 #include <algorithm> \n\
 #include <iostream> \n\
-#include <assert.h>" << endl;
+#include <cassert>" << endl;
 #ifndef SPIN2
 #ifdef BREIT
 ofs << "#include <src/integral/rys/breitrootlist.h>\n\
