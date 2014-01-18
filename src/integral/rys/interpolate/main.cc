@@ -70,6 +70,7 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
   if (asymp) rysroot_gmp(tt_infty, dx_infty, dw_infty, rank, 1);
 #endif
   vector<map<mpreal, mpreal>> table_reserve(n);
+  #pragma omp parallel for
   for (int i = 0; i < n; ++i) {
     vector<mpreal> ttt(1); ttt[0] = Tpoints[i];
     vector<mpreal> dx(rank);
