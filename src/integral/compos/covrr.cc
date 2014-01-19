@@ -47,10 +47,6 @@ void ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) {
     worky[0] = coeffsy_[ii];
     workz[0] = coeffsz_[ii];
     if (ang0_ + ang1_ > 0) {
-      cout << "BAGEL:  " << endl;
-      cout << "P_x = " << P_[ii*3] << endl;
-      cout << "P_y = " << P_[ii*3+1] << endl;
-      cout << "P_x = " << P_[ii*3+2] << endl;
       workx[1] = (P_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
       worky[1] = (P_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
       workz[1] = (P_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];

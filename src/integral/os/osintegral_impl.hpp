@@ -194,7 +194,7 @@ std::shared_ptr<GradFile> OSIntegral<DataType, IntType>::compute_gradient(std::s
   const int jatom0 = swap01() ? iatom1 : iatom0;
   const int jatom1 = swap01() ? iatom0 : iatom1;
 
-  // to avoid compiler errors in ComplexOverlapBatch
+  // TODO This is used to avoid compiler errors in ComplexOverlapBatch.  Probably better to define compute_gradient in derived classes.
   const double* data = reinterpret_cast<double*> (data_);
   if (IntType == Int_t::London) throw std::runtime_error("Gradient computation has not been set up for London orbitals");
 
