@@ -45,6 +45,10 @@ namespace ryan {
 
 std::complex<double> overlap_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_) {
 
+  char dim;
+  if (dimension==0) dim = 'x';
+  if (dimension==1) dim = 'y';
+  if (dimension==2) dim = 'z';
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
   const int ab = a + b;
@@ -93,6 +97,24 @@ std::complex<double> overlap_Ix (const int dimension, const std::vector<double> 
     term2 = PB*Iab[0][n];
     Iab[0][n+1] = term1 + term2;
   }
+#if 0
+  cout << endl;
+  cout << "a = " << a << endl;
+  cout << "b = " << b << endl;
+  cout << "alpha = " << alpha << endl;
+  cout << "beta = " << beta << endl;
+  cout << "A = " << A << endl;
+  cout << "B = " << B << endl;
+  cout << "A_BA = " << A_BA << endl;
+  cout << "Pbar = " << Pprime << endl;
+  cout << "A_BAsq = " << A_BAsq << endl;
+  cout << "PdotA_BA = " << PdotA_BA << endl;
+  cout << "X_P = " << X_P << endl;
+  cout << "X_Pmag = " << abs(X_P) << endl;
+  cout << "X_Pmag = " << std::exp( -1.0/(4.0*p)*A_BAsq) << endl;
+  cout << "ss_" << dim << " = " << ss << endl;
+  cout << "I_" << dim << " = " << Iab[a][b]/ss << std::endl;
+#endif
   return Iab[a][b];
 }
 
@@ -606,7 +628,7 @@ pair<vector<atomic_orbital>,vector<molecular_orbital>> prepare_orbitals (int nba
       }
       const molecular_orbital contracted_AO (contractedAO);
       const complex<double> mag = overlap_MO (field, contracted_AO, contracted_AO, basis);
-      assert (std::abs(mag.real()) > (std::abs(mag.imag())*1e15));
+      assert (std::abs(mag.real()) > (std::abs(mag.imag())*1e14));
       const double factor = 1.0 / sqrt(mag.real());
       for (int k=0; k!=nprimitive[i]; k++) {
         basis[offset+k].prefactor *= factor;
@@ -935,7 +957,10 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
 }
 
 ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
-
+  const ryan::polynomial<std::complex<double>> Ix = get_NAI_Ix (0, field, A_, B_, C_);
+  const ryan::polynomial<std::complex<double>> Iy = get_NAI_Ix (1, field, A_, B_, C_);
+  const ryan::polynomial<std::complex<double>> Iz = get_NAI_Ix (2, field, A_, B_, C_);
+/*
   const std::vector<std::complex<double>> one = {1.0};
   ryan::polynomial<std::complex<double>> Ix (one);
   ryan::polynomial<std::complex<double>> Iy (one);
@@ -947,7 +972,7 @@ ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> fi
   if (total_angular[0]) Ix = get_NAI_Ix (0, field, A_, B_, C_);
   if (total_angular[1]) Iy = get_NAI_Ix (1, field, A_, B_, C_);
   if (total_angular[2]) Iz = get_NAI_Ix (2, field, A_, B_, C_);
-
+*/
   const ryan::polynomial<std::complex<double>> IxIy = ryan::multiply_polynomials (Ix, Iy);
   const ryan::polynomial<std::complex<double>> IxIyIz = ryan::multiply_polynomials (IxIy, Iz);
   return IxIyIz;
