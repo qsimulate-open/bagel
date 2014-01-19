@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: algo.cc
+// Filename: meh_distras.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,35 +23,29 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <cstring>
-#include <src/math/algo.h>
-#include <bagel_config.h>
-#ifdef HAVE_MKL_H
-#include <src/util/mkl_sparse.h>
-#endif
+#include <src/meh/meh_distras.h>
+#include <src/ras/form_sigma.h>
 
 using namespace std;
+using namespace bagel;
 
-namespace bagel {
+MEH_DistRAS::MEH_DistRAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerDistRAS> cispace) :
+  MultiExcitonHamiltonian<DistRASDvec>(input, dimer, cispace) {}
 
-void dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* adata,
-             const int* acols, const int* arind, const double* b, const int ldb, const double beta,
-             double* c, const int ldc) {
-#ifdef HAVE_MKL_H
-  mkl_dcsrmm_(transa, m, n, k, alpha, adata, acols, arind, b, ldb, beta, c, ldc);
-#else
-  if (strcmp(transa, "N") != 0) throw logic_error("Only \"N\" case implemented for dcsrmm_");
-  for (int j = 0; j < n; ++j) {
-    double* target = c + j*ldc;
-    const double* source = b + j*ldb;
 
-    for (int i = 0; i < m; ++i) {
-      for (int rowdata = arind[i] - 1; rowdata < arind[i+1] - 1; ++rowdata) {
-        target[i] += adata[rowdata] * source[acols[rowdata] - 1];
-      }
-    }
-  }
-#endif
+shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma(shared_ptr<const DistRASDvec> ccvec, shared_ptr<const MOFile> jop) const {
+  vector<shared_ptr<RASCivec>> tmpvec;
+  for (auto& i : ccvec->dvec()) tmpvec.push_back(make_shared<RASCivec>(i));
+  auto dvec = make_shared<RASDvec>(tmpvec);
+
+  FormSigmaRAS form;
+  vector<int> conv(ccvec->ij(), static_cast<int>(false));
+  shared_ptr<const RASDvec> sigmavec = form(dvec, jop, conv);
+
+  return make_shared<DistRASDvec>(sigmavec);
 }
 
+// TODO function not yet written
+shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec> ccvec, const double* modata) const {
+  return shared_ptr<DistRASDvec>();
 }

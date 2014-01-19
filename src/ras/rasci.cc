@@ -46,7 +46,6 @@ void RASCI::common_init() {
   davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
-  sparse_ = idata_->get<bool>("sparse", true);
 
   nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -262,7 +261,7 @@ void RASCI::compute() {
   DavidsonDiag<RASCivec> davidson(nstate_, davidsonceiling_);
 
   // Object in charge of forming sigma vector
-  FormSigmaRAS form_sigma(sparse_);
+  FormSigmaRAS form_sigma;
 
   // main iteration starts here
   cout << "  === RAS-CI iteration ===" << endl << endl;

@@ -6,6 +6,8 @@
 #define NGRID 12
 #define MAXT 64
 #define NBOX 32
+#define NBOXL 0
+#define T_INFTY 11
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -60,21 +62,29 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
   for (int i = 0; i != n; ++i) {
     Tpoints[i] = stride*half*cheb[i] + Tp;
   }
-  if (asymp) {
-    for (int i = 0; i != n; ++i) {
-      Tpoints[i] = one / (Tpoints[i] * Tpoints[i]);
-    }
-  }
 
+#ifdef DAWSON
+  vector<mpreal> tt_infty(1); tt_infty[0] = Tmax;
+  vector<mpreal> dx_infty(rank);
+  vector<mpreal> dw_infty(rank);
+  if (asymp) rysroot_gmp(tt_infty, dx_infty, dw_infty, rank, 1);
+#endif
   vector<map<mpreal, mpreal>> table_reserve(n);
+  #pragma omp parallel for
   for (int i = 0; i < n; ++i) {
     vector<mpreal> ttt(1); ttt[0] = Tpoints[i];
     vector<mpreal> dx(rank);
     vector<mpreal> dw(rank);
     rysroot_gmp(ttt, dx, dw, rank, 1);
     // sort dx and dw using dx
-    for (int j = 0; j != rank; ++j)
-      table_reserve[i].insert(make_pair(dx[j], dw[j]));
+    if (asymp) {
+      for (int j = 0; j != rank; ++j) {
+        table_reserve[i].insert(make_pair(-(1.0 - dx[j])*ttt[0]/((1.0 - dx_infty[j])*tt_infty[0]), dw[j]*ttt[0]/(dw_infty[j]*tt_infty[0])));
+      }
+    } else {
+      for (int j = 0; j != rank; ++j)
+        table_reserve[i].insert(make_pair(dx[j], dw[j]));
+    }
   }
 
   vector<vector<double>> c;
@@ -107,8 +117,7 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
     if (tc[n-1] > 1.0e-10 || tc2[n-1] > 1.0e-10) {
       cout << " caution: cheb not converged " << ii << " " << setprecision(10) << fixed << Tmin.toDouble() << " " << Tmax.toDouble() << endl;
       for (int i = 0; i != n; ++i) {
-        //cout << setw(20) << Tpoints[i].toDouble() << setw(20) << cdx[i].toDouble() << setw(20) << cdw[i].toDouble() << endl;
-        cout << setw(20) << Tpoints[i].toDouble() << setw(20) << tc[n-1] << setw(20) << tc2[n-1] << endl;
+        cout << setw(20) << Tpoints[i].toDouble() << setw(20) << tc[i] << setw(20) << tc2[i] << endl;
       }
     }
     c.push_back(tc);
@@ -120,11 +129,13 @@ vector<vector<double>> get_C(const mpreal tbase, const mpreal stride, int rank, 
 
 bool test(const int nrank, const double tin) {
   mpfr::mpreal::set_default_prec(GMPPREC);
+
   const static int nsize = 1;
   vector<mpreal> tt(nsize, tin);
   vector<mpreal> rr(nsize*nrank);
   vector<mpreal> ww(nsize*nrank);
   rysroot_gmp(tt, rr, ww, nrank, nsize);
+
   map<mpreal,mpreal> gmp;
   for (int i = 0; i != nsize*nrank; ++i)
     gmp.insert(make_pair(rr[i], ww[i]));
@@ -144,15 +155,19 @@ bool test(const int nrank, const double tin) {
   iter = gmp.begin();
   for (int i = 0; i != nrank; ++i, ++iter) {
     if (!(fabs(dr[i] - (iter->first).toDouble()))) cout << dt[0] << endl;
-    assert(fabs(dr[i] - (iter->first).toDouble()) < 1.0e-13);
-    assert(fabs(dw[i] - (iter->second).toDouble()) < 1.0e-13);
+    //assert(fabs(dr[i] - (iter->first).toDouble()) < 1.0e-13);
+    //assert(fabs(dw[i] - (iter->second).toDouble()) < 1.0e-13);
   }
   cout << "test passed: rank" << setw(3) << nrank << endl;
+  cout << "----------" << endl;
 }
 
 #include <boost/lexical_cast.hpp>
 
 int main(int argc, char** argv) {
+
+  const mpreal T_ASYM = static_cast<mpreal>(MAXT + (NBOXL)*(NBOXL + 1.0)*(2.0*NBOXL + 1.0)/6.0);
+
   mpfr::mpreal::set_default_prec(GMPPREC);
   mpfr::mpreal pi = GMPPI;
 
@@ -168,14 +183,29 @@ int main(int argc, char** argv) {
         for (int n = lexical_cast<int>(low); n <= lexical_cast<int>(high); ++n) test(n, i*0.1+1.0e-10);
       }
 #else
-      test(3,1.10033333333333);
-      test(3,1.11133333333333);
-      test(3,1.12233333333333);
-      test(3,1.13233333333333);
-      test(3,1.14333333333333);
-      test(3,1.14333333333333e1);
-      test(3,1.14333333333333e3);
-      test(3,1.14333333333333e4);
+      test(6,1.10033333333333);
+      test(6,1.11133333333333);
+      test(6,1.12233333333333);
+      test(6,1.13233333333333);
+      test(6,1.14333333333333);
+      test(6,1.14333333333333e1);
+      test(6,0.645e2);
+      test(6,0.675e2);
+      test(6,0.805e2);
+      test(6,0.912e2);
+      test(6,1.14333333333333e2);
+      test(6,1.285e2);
+      test(6,128.000000000000);
+      test(6,1.31e2);
+      test(6,1.38e2);
+      test(6,2.43e2);
+      test(6,256.000000000000);
+      test(6,1.14333333333333e3);
+      test(6,8e3);
+      test(6,8192.000000000000);
+      test(6,1.14333333333333e4);
+      test(6,1.14333333333333e5);
+      test(6,1.14333333333333e6);
 #endif
       return 0;
     }
@@ -248,6 +278,24 @@ int main(int argc, char** argv) {
       aweight.push_back((dw[j]*t*t*sqrt(t)).toDouble());
     }
 #endif
+#else
+    mpreal infty;
+    if (T_INFTY < MAXT) {
+      assert (NBOXL == 0);
+      const int nbox0 = static_cast<int>(log(MAXT)/log(2.0));
+      infty = pow(2, nbox0 + T_INFTY);
+    } else {
+      infty = static_cast<mpreal>(T_INFTY);
+    }
+    vector<mpreal> tt_infty(1); tt_infty[0] = infty;
+    vector<mpreal> dx_infty(nroot);
+    vector<mpreal> dw_infty(nroot);
+    rysroot_gmp(tt_infty, dx_infty, dw_infty, nroot, 1);
+
+    for (int j = 0; j != nroot; ++j) {
+      aroot.push_back(((1.0 - dx_infty[j])*tt_infty[0]).toDouble());
+      aweight.push_back((dw_infty[j]*tt_infty[0]).toDouble());
+    }
 #endif
 
     const int ndeg = NGRID;
@@ -255,7 +303,12 @@ int main(int argc, char** argv) {
 #ifndef DAWSON
     const int jend = nbox;
 #else
-    const int jend = nbox + 1;
+    int jend;
+    if (MAXT < T_INFTY) {
+      jend = NBOX + NBOXL + 1;
+    } else {
+      jend = NBOX + T_INFTY;
+    }
 #endif
     const double stride = static_cast<double>(MAXT)/nbox;
     const mpreal mstride = static_cast<mpreal>(MAXT)/nbox;
@@ -301,7 +354,9 @@ int main(int argc, char** argv) {
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#include <algorithm>" << endl;
+#include <algorithm> \n\
+#include <iostream> \n\
+#include <cassert>" << endl;
 #ifndef SPIN2
 #ifdef BREIT
 ofs << "#include <src/integral/rys/breitrootlist.h>\n\
@@ -335,7 +390,6 @@ using namespace bagel;\n\
 \n\
 void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double* ww, const int n) {\n" << endl;
 #endif
-#ifndef DAWSON
   ofs << "\
   constexpr double ax["<<nroot<<"] = {";
     for (int j=0; j!= nroot; ++j) {
@@ -352,7 +406,6 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
       if (j%7 == 4) ofs << endl << "    ";
     }
     ofs << "};" << endl;
-#endif
 
 ////////////////////////////////////////
 // now creates data
@@ -364,17 +417,35 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
     double tiny = 1.0e-100;
     int xcnt = 0;
     int wcnt = 0;
+#ifdef DAWSON
+    const int ibox0 = static_cast<int>(log(MAXT)/log(2.0));
+#endif
     for (int j=0; j != jend; ++j) {
 #ifndef DAWSON
       vector<vector<double>> c_all = get_C(j*mstride, mstride, nroot, false);
 #else
       vector<vector<double>> c_all;
-      if (j != jend-1) {
+      if (j < NBOX) {
         c_all = get_C(j*mstride, mstride, nroot, false);
       } else {
-        const mpreal zero = "0.0";
-        const mpreal one = "1.0";
-        c_all = get_C(zero, one / sqrt(MAXT), nroot, true);
+        if (MAXT < T_INFTY) {
+          if (j >= NBOX && j < jend-1) { // NBOXL between MAXT and T_ASYM
+            const int ibox = j - NBOX;
+            const mpreal mstart = static_cast<mpreal> (MAXT + ibox*(ibox + 1.0)*(2.0*ibox + 1.0)/6.0);
+            const mpreal mstrideL = static_cast<mpreal> (ibox + 1.0)*(ibox + 1.0);
+            c_all = get_C(mstart, mstrideL, nroot, false);
+          } else {
+              const mpreal mstart = static_cast<mpreal> (T_ASYM);
+              const mpreal mstrideL = static_cast<mpreal> (infty - T_ASYM);
+              c_all = get_C(mstart, mstrideL, nroot, true);
+          }
+        } else {
+          assert(NBOXL == 0);
+          const int ibox = j - NBOX;
+          const mpreal mstart = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
+          const mpreal mstrideL = static_cast<mpreal>(pow(2.0, ibox0 + ibox));
+          c_all = get_C(mstart, mstrideL, nroot, true);
+        }
       }
 #endif
 
@@ -386,17 +457,39 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
         for (auto iter = x.begin(); iter != x.end(); ++iter) {
           listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
-          if (iter + 1 != x.end() || j+1 != jend || i+1 != nroot) listx << ",";
+          if (iter + 1 != x.end() || j+1 != jend || i+1 != nroot || MAXT >= T_INFTY) listx << ",";
           if (xcnt++ % 7 == 4) listx << "\n";
         }
         for (auto iter = w.begin(); iter != w.end(); ++iter) {
           listw << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
                  (fabs(*iter) < tiny ? 0.0 : *iter);
-          if (iter + 1 != w.end() || j+1 != jend || i+1 != nroot) listw << ",";
+          if (iter + 1 != w.end() || j+1 != jend || i+1 != nroot || MAXT >= T_INFTY) listw << ",";
           if (wcnt++ % 7 == 4) listw << "\n";
         }
       }
     }
+#ifdef DAWSON
+    if (MAXT >= T_INFTY) {
+      for (int ibox = 0; ibox != T_INFTY; ++ibox) {
+        vector<mpreal> tt_infty(1); tt_infty[0] = static_cast<mpreal>(pow(2.0, ibox + ibox0 + 1));
+        vector<mpreal> dx_infty(nroot);
+        vector<mpreal> dw_infty(nroot);
+        rysroot_gmp(tt_infty, dx_infty, dw_infty, nroot, 1);
+        for (auto iter = dx_infty.begin(); iter != dx_infty.end(); ++iter) {
+          listx << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
+                 (fabs(*iter) < tiny ? 0.0 : *iter);
+          if (iter + 1 != dx_infty.end() || ibox + 1 != T_INFTY) listx << ",";
+          if (xcnt++ % 7 == 4) listx << "\n";
+        }
+        for (auto iter = dw_infty.begin(); iter != dw_infty.end(); ++iter) {
+          listw << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
+                 (fabs(*iter) < tiny ? 0.0 : *iter);
+          if (iter + 1 != dw_infty.end() || ibox + 1 != T_INFTY) listw << ",";
+          if (wcnt++ % 7 == 4) listw << "\n";
+        }
+      }
+    }
+#endif
 #ifndef SPIN2
 #ifndef BREIT
     string tafactor = "t";
@@ -407,22 +500,34 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
     string tafactor = "t*t*t*t*t";
 #endif
 
+    int nbox2 = 0;
 #ifndef DAWSON
     const int nbox1 = nbox;
 #else
-    const int nbox1 = nbox + 1;
+    int nbox1;
+    if (MAXT < T_INFTY) {
+      nbox1 = nbox + NBOXL + 1;
+    } else {
+      nbox1 = nbox + T_INFTY;
+      nbox2 = T_INFTY;
+    }
 #endif
   ofs << "\
-  constexpr double x[" << nroot*nbox1*ndeg<<"] = {";
+  constexpr double x[" << nroot*nbox1*ndeg + nroot*nbox2 <<"] = {";
   ofs << listx.str() << "\
   };" << endl;
   ofs << "\
-  constexpr double w[" << nroot*nbox1*ndeg<<"] = {";
+  constexpr double w[" << nroot*nbox1*ndeg + nroot*nbox2 <<"] = {";
   ofs << listw.str() << "\
   };" << endl;
 
   ofs << "\
-  int offset = -" << nroot << ";\n\
+  int offset = -" << nroot << ";\n";
+#ifdef DAWSON
+  ofs << "\
+  const int ibox0 = static_cast<int>(log(" << MAXT << ".0) / log(2.0)); \n";
+#endif
+  ofs << "\
   for (int i = 1; i <= n; ++i) {\n\
     double t = ta[i-1];\n\
     offset += " << nroot << ";\n\
@@ -436,50 +541,108 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
       for (int r = 0; r != " << nroot << "; ++r) {\n\
         rr[offset+r] = ax[r]*t*t;\n\
         ww[offset+r] = aw[r]*" + tafactor + ";\n\
-      }\n";
-#endif
-      ofs << "\
-    } else {\n";
-#ifndef DAWSON
-      ofs << "\
+      }\n\
+    } else {\n\
       int it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n";
 #else
       ofs << "\
+    } else if (t >= " << infty << ".0) {\n\
+      for (int r = 0; r != " << nroot << "; ++r) {\n\
+        ww[offset+r] = aw[" << nroot << "-r-1] / t;\n\
+        rr[offset+r] = 1.0 - ax[" << nroot << "-r-1] / t;\n\
+      }\n\
+    } else {\n";
+    if (MAXT < T_INFTY) {
+      ofs << "\
+      vector<double> rr_infty(" << nroot << "); \n\
+      vector<double> ww_infty(" << nroot << "); \n";
+      for (int j = 0; j != nroot; ++j) {
+      ofs << "\
+      ww_infty[" << j << "] = " << setw(20) << setprecision(15) << fixed << dw_infty[j] << "; \n\
+      rr_infty[" << j << "] = " << setw(20) << setprecision(15) << fixed << dx_infty[j] << "; \n";
+      }
+    }
+      ofs << "\
       int it; \n\
-      if (t >= " << MAXT << ".0) { \n\
-        t = " << setw(20) << setprecision(15) << fixed << 1.0 << " / (t * t) ; \n\
-        it = static_cast<int>(" << MAXT << "*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< " + " << setw(20) << setprecision(15) << fixed << stride/2.0 << ");\n\
+      double bigT = 0.0; \n";
+      if (NBOXL != 0) {
+      ofs << "\
+      if (" << MAXT << ".0 <= t && t < " << T_ASYM << ".0) { \n\
+        int ka = static_cast<int>((pow((t - " << MAXT << ".0)*6.0, 1.0/3.0) - pow(0.25, 1.0/3.0))/pow(2.0, 1.0/3.0)); \n\
+        int kb = static_cast<int>((pow((t - " << MAXT << ".0)*6.0, 1.0/3.0) - pow(6.0, 1.0/3.0))/pow(2.0, 1.0/3.0)); \n\
+        assert(kb + 1 == ka || kb == ka); \n\
+        it = " << NBOX << " + ka; \n\
+        double a = " << MAXT << ".0 + ka * (ka + 1) * (2*ka + 1)/6.0; \n\
+        double b = " << MAXT << ".0 + (ka + 1) * (ka + 2) * (2*ka + 3)/6.0; \n\
+        t = (t - (a+b)/2) * 2/(a-b);\n\
+      } else if (t >= " << T_ASYM << ".0 && t < " << infty << ".0) { \n";
+      } else {
+      ofs << "\
+      if (t >= " << T_ASYM << ".0 && t < " << infty << ".0) { \n";
+      }
+        ofs << "\
+        bigT = t; \n";
+        if (MAXT < T_INFTY) {
+        ofs << "\
+        it = static_cast<int>(" << NBOX + NBOXL << ");\n\
+        t = (t - (" << T_ASYM << ".0 + " << infty << ".0)/2) * 2/(" << infty << ".0 - " << T_ASYM << ".0);\n";
+        } else {
+        ofs << "\
+        it = static_cast<int>(log(bigT) / log(2.0) + " << NBOX << " - ibox0);\n\
+        t = (t - 1.5 * pow(2.0, it + ibox0 - " << NBOX << "))* 2/pow(2.0, it + ibox0 - " << NBOX << ");\n\
+        cout << \" new t = \" << t << endl; \n";
+        }
+      ofs << "\
       } else { \n\
         it = static_cast<int>(t*" << setw(20) << setprecision(15) << fixed << 1.0/stride<< ");\n\
+        t = (t - it *" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/stride << ";\n\
       } \n";
 #endif
       ofs << "\
-      t = (t-it*" << stride << "-" << setw(20) << setprecision(15) << fixed << stride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/stride << ";\n\
       const double t2 = t * 2.0;\n\
       for (int j=1; j <=" << nroot << "; ++j) {\n\
         const int boxof = it*" << ndeg*nroot << "+" << ndeg << "*(j-1);\n";
         assert((ndeg/2)*2 == ndeg);
         for (int i=ndeg; i!=0; --i) {
           if (i==ndeg) {
-            ofs << "\
-            double d = x[boxof+" << i-1 << "];\n\
-            double e = w[boxof+" << i-1 << "];\n";
+        ofs << "\
+        double d = x[boxof+" << i-1 << "];\n\
+        double e = w[boxof+" << i-1 << "];\n";
           } else if (i==ndeg-1) {
-            ofs << "\
-            double f = t2*d + x[boxof+" << i-1 << "];\n\
-            double g = t2*e + w[boxof+" << i-1 << "];\n";
+        ofs << "\
+        double f = t2*d + x[boxof+" << i-1 << "];\n\
+        double g = t2*e + w[boxof+" << i-1 << "];\n";
           } else if (i != 1 && ((i/2)*2 == i)) { // odd
-            ofs << "\
-            d = t2*f - d + x[boxof+" << i-1 << "];\n\
-            e = t2*g - e + w[boxof+" << i-1 << "];\n";
+        ofs << "\
+        d = t2*f - d + x[boxof+" << i-1 << "];\n\
+        e = t2*g - e + w[boxof+" << i-1 << "];\n";
           } else if (i != 1) { // even
-            ofs << "\
-            f = t2*d - f + x[boxof+" << i-1 << "];\n\
-            g = t2*e - g + w[boxof+" << i-1 << "];\n";
+        ofs << "\
+        f = t2*d - f + x[boxof+" << i-1 << "];\n\
+        g = t2*e - g + w[boxof+" << i-1 << "];\n";
           } else {
-            ofs << "\
-            rr[offset+j-1] = t*d - f + x[boxof+" << i-1 << "]*0.5;\n\
-            ww[offset+j-1] = t*e - g + w[boxof+" << i-1 << "]*0.5;\n";
+        ofs << "\
+        rr[offset+j-1] = t*d - f + x[boxof+" << i-1 << "]*0.5;\n\
+        ww[offset+j-1] = t*e - g + w[boxof+" << i-1 << "]*0.5;\n";
+#ifdef DAWSON
+            if (MAXT < T_INFTY) {
+        ofs << "\
+        if (" << T_ASYM << ".0 <= bigT && bigT < " << infty << ".0) { \n\
+          ww[offset+j-1] = ww[offset+j-1] * ww_infty[" << nroot << "-j] * " << infty << ".0 / bigT;\n\
+          rr[offset+j-1] = 1.0 + rr[offset+j-1] * (1.0 - rr_infty[" << nroot << "-j]) * " << infty << ".0 /bigT; \n\
+        }\n";
+            } else {
+          ofs << "\
+        if (" << MAXT << ".0 <= bigT && bigT < " << infty << ".0) {\n\
+          const int iref = " << (NBOX + T_INFTY) * nroot * NGRID << " + (it - " << NBOX << ") * " << nroot << " + " << nroot << " - j;\n\
+          double rr_infty = x[iref];\n\
+          double ww_infty = w[iref];\n\
+          double Tref = pow(2.0, it + ibox0 + 1 - " << NBOX << ");\n\
+          ww[offset+j-1] = ww[offset+j-1] * ww_infty * Tref / bigT;\n\
+          rr[offset+j-1] = 1.0 + rr[offset+j-1] * (1.0 - rr_infty) * Tref /bigT;\n\
+        }\n";
+            }
+#endif
           }
         }
       ofs << "\
@@ -488,7 +651,7 @@ void Spin2RootList::" << func << nroot << "(const double* ta, double* rr, double
   }\n\
 }";
 
-  ofs.close();
+ofs.close();
   }
 
 

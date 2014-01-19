@@ -61,13 +61,17 @@ class Dvector_base {
     }
 
     Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
-      dvec_.clear();
-      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(*ivec) );
+      for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
     }
-    Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
+    //Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
 
     Dvector_base(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(*ivec) );
+      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(ivec) );
+    }
+
+    template <class T>
+    Dvector_base(std::shared_ptr<const Dvector_base<T>> o) : det_(o->det()), ij_(o->ij()) {
+      for (int i = 0; i < ij_; ++i) dvec_.push_back(std::make_shared<CiType>(o->data(i)));
     }
 
     std::shared_ptr<const DetType> det() const { return det_; }
@@ -91,38 +95,29 @@ class Dvector_base {
 
     // for MEH
     std::shared_ptr<Dvector_base<CiType>> apply(const int orbital, const bool action, const bool spin) const {
-      std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
+      std::vector<std::shared_ptr<CiType>> out;
+      for (auto& i : dvec_) out.push_back( i->apply(orbital, action, spin) );
       return std::make_shared<Dvector_base<CiType>>(out);
     }
 
-
     // will fail for non-double DataTypes
     std::shared_ptr<Dvector_base<CiType>> spin() const {
-      std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->spin() );
-      return std::make_shared<Dvector_base<CiType>>(out);
+      return form_from_each([] (std::shared_ptr<const CiType> cc) { return cc->spin(); }, det(), typename CiType::LocalizedType());
     }
 
     std::shared_ptr<Dvector_base<CiType>> transpose(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->transpose();
-      std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->transpose(det) );
-      return std::make_shared<Dvector_base<CiType>>(out);
+      return transpose_impl(det, typename CiType::LocalizedType());
     }
 
     std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
-      std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->spin_lower(det) );
-      return std::make_shared<Dvector_base<CiType>>(out);
+      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(); }, det, typename CiType::LocalizedType());
     }
 
     std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
-      std::vector<CiPtr> out;
-      for (auto& i : dvec_) out.push_back( i->spin_raise(det) );
-      return std::make_shared<Dvector_base<CiType>>(out);
+      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(); }, det, typename CiType::LocalizedType());
     }
 
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {
@@ -146,6 +141,61 @@ class Dvector_base {
         iter->print(thresh);
       }
     }
+
+  private:
+    // applies given function to each civec and returns a Dvector built from the function's return values
+    // supplied determinant is used to construct blank Civecs
+    // function must be of type
+    //   std::shared_ptr<CiType> function(std::shared_ptr<const CiType>);
+    // local version
+    template <class Func>
+    std::shared_ptr<Dvector_base<CiType>> form_from_each(Func func, std::shared_ptr<const DetType> d, /*local*/ std::true_type) const {
+      std::vector<CiPtr> out;
+      for (int i = 0; i < ij_; ++i) {
+#ifdef HAVE_MPI_H
+        if ( (i % mpi__->size()) == mpi__->rank() ) {
+          out.push_back( func(data(i)) );
+        }
+        else {
+          out.push_back( std::make_shared<CiType>(d) );
+        }
+#else
+        out.push_back( func(data(i)) );
+#endif
+      }
+#ifdef HAVE_MPI_H
+      for (int i = 0; i < ij_; ++i) {
+        out[i]->synchronize(i % mpi__->size());
+      }
+#endif
+      return std::make_shared<Dvector_base<CiType>>(out);
+    }
+
+    // dist version
+    template <class Func>
+    std::shared_ptr<Dvector_base<CiType>> form_from_each(Func func, std::shared_ptr<const DetType> d, /*local*/ std::false_type) const {
+      std::vector<CiPtr> out;
+      for (int i = 0; i < ij_; ++i)
+        out.push_back( func(data(i)) );
+      return std::make_shared<Dvector_base<CiType>>(out);
+    }
+
+    // local transpose
+    std::shared_ptr<Dvector_base<CiType>> transpose_impl(std::shared_ptr<const DetType> det, std::true_type) const {
+      return form_from_each( [&det] (std::shared_ptr<const CiType> c) { return c->transpose(det); }, det, std::true_type() );
+    }
+
+    // dist transpose
+    std::shared_ptr<Dvector_base<CiType>> transpose_impl(std::shared_ptr<const DetType> det, std::false_type) const {
+      std::vector<CiPtr> out;
+      for (auto& c : dvec_) {
+        CiPtr tmp = c->transpose(det);
+        tmp->transpose_wait();
+        out.push_back(tmp);
+      }
+      return std::make_shared<CiType>(out);
+    }
+
 };
 
 }
