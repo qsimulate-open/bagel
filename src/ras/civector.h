@@ -41,6 +41,104 @@
 
 namespace bagel {
 
+// Base class contains logic for block structure of RASCivecs
+template <class BlockType>
+class RASCivector_base {
+  protected:
+    std::vector<std::shared_ptr<BlockType>> blocks_;
+    std::shared_ptr<const RASDeterminants> det_;
+
+    const int hpaddress(const int na, const int nb) const {
+      const int N = na + nb;
+      return ( (N*(N+1))/2 + nb );
+    }
+
+    template <class Func>
+    void for_each_block(Func func) { for (auto& i: blocks_) if (i) func(i); }
+
+    template <class Func>
+    void for_each_block(Func func) const { for (auto& i: blocks_) if (i) func(i); }
+
+    RASCivector_base(std::shared_ptr<const RASDeterminants> d) : det_(d) {}
+
+  public:
+    std::shared_ptr<const RASDeterminants> det() const { return det_; }
+    void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
+
+    // Access to vectors of blocks
+    const std::vector<std::shared_ptr<BlockType>>& blocks() const { return blocks_; }
+    std::vector<std::shared_ptr<BlockType>>& blocks() { return blocks_; }
+
+    // Access to individual blocks
+    std::shared_ptr<BlockType> block(const int nha, const int nhb, const int npa, const int npb) {
+      if ( det_->allowed(nha, nhb, npa, npb) ) {
+        const int lp = det_->lenparts();
+        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      }
+      else return std::shared_ptr<BlockType>();
+    }
+    std::shared_ptr<BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
+      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
+    }
+    std::shared_ptr<BlockType> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) {
+      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
+    }
+
+    std::shared_ptr<const BlockType> block(const int nha, const int nhb, const int npa, const int npb) const {
+      if ( det_->allowed(nha, nhb, npa, npb) ) {
+        const int lp = det_->lenparts();
+        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
+      }
+      else return std::shared_ptr<const BlockType>();
+    }
+    std::shared_ptr<const BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
+      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
+    }
+    std::shared_ptr<const BlockType> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) const {
+      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
+    }
+
+    // Return set of allowed blocks given an input string or block
+    template <int spin>
+    const std::vector<std::shared_ptr<BlockType>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
+
+    template <int spin>
+    const std::vector<std::shared_ptr<BlockType>> allowed_blocks(const int nh, const int np) {
+      std::vector<std::shared_ptr<BlockType>> out;
+      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
+        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
+          std::shared_ptr<BlockType> blk;
+          if (spin == 0) blk = block(nh, ih, np, jp);
+          else           blk = block(ih, nh, jp, np);
+
+          if (blk) out.push_back(blk);
+        }
+      }
+      return out;
+    }
+
+    template <int spin>
+    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
+    template <int spin>
+    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::shared_ptr<const StringSpace> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
+
+    template <int spin>
+    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const int nh, const int np) const {
+      std::vector<std::shared_ptr<const BlockType>> out;
+      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
+        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
+          std::shared_ptr<const BlockType> blk;
+          if (spin == 0) blk = block(nh, ih, np, jp);
+          else           blk = block(ih, nh, jp, np);
+
+          if (blk) out.push_back(blk);
+        }
+      }
+      return out;
+    }
+
+};
+
 template <typename DataType> class RASCivector;
 
 // Contains and owns all the data and information for a sub block of the CI coefficient matrix
@@ -70,17 +168,6 @@ class DistRASBlock {
       std::fill_n(local_.get(), size(), 0.0);
       mutex_ = std::vector<std::mutex>(asize());
     }
-
-    DistRASBlock(const DistRASBlock<DataType>& o) : DistRASBlock<DataType>(o.stringa(), o.stringb(), o.block_offset_) {
-      std::copy_n(o.local(), size(), local_.get());
-    }
-
-    DistRASBlock(DistRASBlock<DataType>&& o) : astrings_(o.astrings_), bstrings_(o.bstrings_), dist_(astrings_->size(), mpi__->size()), block_offset_(o.block_offset_) {
-      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
-      local_ = std::move(o.local_);
-      mutex_ = std::vector<std::mutex>(asize());
-    }
-
     // mutex for write accesses to local_
     mutable std::vector<std::mutex> mutex_;
 
@@ -105,25 +192,19 @@ class DistRASBlock {
 };
 
 template <typename DataType>
-class DistRASCivector {
+class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = DistRASBlock<DataType>;
   public: using LocalizedType = std::false_type;
 
   protected:
-    std::vector<std::shared_ptr<RBlock>> blocks_;
-
-    std::shared_ptr<const RASDeterminants> det_;
+    using RASCivector_base<DistRASBlock<DataType>>::blocks_;
+    using RASCivector_base<DistRASBlock<DataType>>::det_;
 
     mutable std::shared_ptr<RecvRequest> recv_;
     mutable std::shared_ptr<BufferPutRequest> put_;
 
     const size_t global_size_;
-
-    const int hpaddress(const int na, const int nb) const {
-      const int N = na + nb;
-      return ( (N*(N+1))/2 + nb );
-    }
 
     // for transpose, buffer can be appended
     mutable std::shared_ptr<DistRASCivector<DataType>> buf_;
@@ -132,7 +213,7 @@ class DistRASCivector {
     mutable std::mutex mutex_;
 
   public:
-    DistRASCivector(std::shared_ptr<const RASDeterminants> det) : det_(det), global_size_(det->size()) {
+    DistRASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<DistRASBlock<DataType>>(det), global_size_(det->size()) {
       size_t block_offset = 0;
       for (auto& ipair : det->stringpairs()) {
         if (ipair.first && ipair.second)
@@ -143,12 +224,9 @@ class DistRASCivector {
       }
     }
 
-    DistRASCivector(const DistRASCivector<DataType>& o) : det_(o.det_), global_size_(det_->size()) {
-      for (auto& iblock : o.blocks()) {
-        if (iblock)
-          blocks_.push_back(std::make_shared<RBlock>(*iblock));
-        else
-          blocks_.push_back(std::shared_ptr<RBlock>());
+    DistRASCivector(const DistRASCivector<DataType>& o) : DistRASCivector(o.det_) {
+      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i, ++j) {
+        if (*i) std::copy_n((*j)->local(), (*i)->size(), (*i)->local());
       }
     }
     DistRASCivector(std::shared_ptr<const DistRASCivector<DataType>> o) : DistRASCivector(*o) {}
@@ -164,10 +242,10 @@ class DistRASCivector {
 
     DistRASCivector(std::shared_ptr<const RASCivector<DataType>> o) : DistRASCivector(*o) {}
 
-    DistRASCivector(DistRASCivector<DataType>&& o) : det_(o.det_), global_size_(det_->size()) {
+    DistRASCivector(DistRASCivector<DataType>&& o) : RASCivector_base<DistRASBlock<DataType>>(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         if (iblock)
-          blocks_.push_back(std::make_shared<RBlock>(std::move(*iblock)));
+          blocks_.push_back(iblock);
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
       }
@@ -184,83 +262,11 @@ class DistRASCivector {
     // Move assignment
     DistRASCivector<DataType>& operator=(DistRASCivector<DataType>&& o) {
       assert(*det_ == *o.det_);
-      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i) {
-        if (*i) {
-          *i = *j;
-        }
-      }
+      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i) { *i = *j; }
       return *this;
     }
 
-    // Access to individual blocks
-    const std::vector<std::shared_ptr<RBlock>>& blocks() const { return blocks_; }
-    std::vector<std::shared_ptr<RBlock>>& blocks() { return blocks_; }
-
-    std::shared_ptr<RBlock> block(const int nha, const int nhb, const int npa, const int npb) {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = det_->lenparts();
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<RBlock>();
-    }
-    std::shared_ptr<RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    std::shared_ptr<const RBlock> block(const int nha, const int nhb, const int npa, const int npb) const {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = det_->lenparts();
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<const RBlock>();
-    }
-    std::shared_ptr<const RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<const RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) const {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const int nh, const int np) {
-      std::vector<std::shared_ptr<RBlock>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<RBlock> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::shared_ptr<const StringSpace> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const int nh, const int np) const {
-      std::vector<std::shared_ptr<const RBlock>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<const RBlock> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
+    using RASCivector_base<DistRASBlock<DataType>>::block;
 
     // MPI routines
     // Never call concurrently
@@ -301,11 +307,11 @@ class DistRASCivector {
         std::unique_ptr<double[]> buf(new double[det_->lenb()]);
         std::fill_n(buf.get(), det_->lenb(), 0.0);
         // locate astring
-        std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(astring));
+        std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(astring));
         size_t rank, off;
         std::tie(rank, off) = aspace->dist().locate(astring - aspace->offset());
         assert(rank == mpi__->rank());
-        for (auto b : allowed_blocks<0>(aspace))
+        for (auto b : this->template allowed_blocks<0>(aspace))
           std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
         put_->request_send(std::move(buf), det_->lenb(), dest, tag);
       }
@@ -317,14 +323,14 @@ class DistRASCivector {
     int get_bstring_buf(double* buf, const size_t a) const {
       assert(put_ && recv_);
       const size_t mpirank = mpi__->rank();
-      std::shared_ptr<const StringSpace> aspace = det_->space<0>(det_->stringa(a));
+      std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(a));
       size_t rank, off;
       std::tie(rank, off) = aspace->dist().locate(a - aspace->offset());
 
       int out = -1;
       if (mpirank == rank) {
         std::fill_n(buf, det_->lenb(), 0.0);
-        for (auto b : allowed_blocks<0>(aspace))
+        for (auto b : this->template allowed_blocks<0>(aspace))
           std::copy_n(b->local()+off*b->lenb(), b->lenb(), buf + b->stringb()->offset());
       } else {
         out = recv_->request_recv(buf, det_->lenb(), rank, a);
@@ -334,7 +340,6 @@ class DistRASCivector {
 
     void zero() { for (auto& i : blocks_) if (i) std::fill_n(i->local(), i->size(), 0.0); }
 
-    std::shared_ptr<const RASDeterminants> det() const { return det_; }
     std::shared_ptr<DistRASCivector<DataType>> clone() const { return std::make_shared<DistRASCivector<DataType>>(det_); }
     std::shared_ptr<DistRASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
       if (!det) det = det_->transpose();
@@ -412,18 +417,15 @@ class DistRASCivector {
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / global_size_; }
 
-    void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) {
-      for (auto& i : blocks_)
-        if (i) std::for_each( i->local(), i->local() + i->size(), [&a] (DataType& p) { p *= a; } );
+      this->for_each_block( [&a] (std::shared_ptr<RBlock> b) { std::for_each(b->local(), b->local()+b->size(), [&a] (DataType& p) { p*= a; }); });
     }
     void ax_plus_y(const DataType a, const DistRASCivector<DataType>& o) {
-      for (auto& iblock : this->blocks()) {
-        if (iblock) {
-          std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
-          if (jblock) blas::ax_plus_y_n(a, jblock->local(), iblock->size(), iblock->local());
-        }
-      }
+      this->for_each_block( [&a, &o] (std::shared_ptr<RBlock> iblock) {
+        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
+        assert(jblock);
+        blas::ax_plus_y_n(a, jblock->local(), iblock->size(), iblock->local());
+      } );
     }
     void ax_plus_y(const DataType a, std::shared_ptr<const DistRASCivector<DataType>> o) { ax_plus_y(a, *o); }
 
@@ -543,10 +545,6 @@ class RASBlock {
       astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o) { }
     RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings) :
       astrings_(astrings), bstrings_(bstrings), data_(new double[size()]), data_ptr_(data_.get()), offset_(0) { std::fill_n(data(), size(), 0.0); }
-    // copy constructor
-    RASBlock(RASBlock& o) : astrings_(o.astrings_), bstrings_(o.bstrings_), data_(new double[o.size()]), data_ptr_(data_.get()), offset_(0) {
-      std::copy_n(o.data(), size(), data());
-    }
 
     const size_t size() const { return lena() * lenb(); }
     const size_t lena() const { return astrings_->size(); }
@@ -560,8 +558,6 @@ class RASBlock {
 
     const size_t index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
       { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb(); }
-    const size_t gindex(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const // global index
-      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb() + offset_; }
 
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
     const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
@@ -641,36 +637,29 @@ class apply_block_impl : public apply_block_base<DataType> {
 }
 
 template <typename DataType>
-class RASCivector {
+class RASCivector : public RASCivector_base<RASBlock<DataType>> {
   public: using DetType = RASDeterminants;
   public: using RBlock = RASBlock<DataType>;
   public: using LocalizedType = std::true_type;
 
   protected:
-    std::unique_ptr<DataType[]> data_;
-    std::vector<std::shared_ptr<RBlock>> blocks_;
+    using RASCivector_base<RASBlock<DataType>>::blocks_;
+    using RASCivector_base<RASBlock<DataType>>::det_;
 
-    std::shared_ptr<const RASDeterminants> det_;
+    std::unique_ptr<DataType[]> data_;
 
     const size_t size_;
 
-    const int hpaddress(const int na, const int nb) const {
-      const int N = na + nb;
-      return ( (N*(N+1))/2 + nb );
-    }
-
   public:
-    RASCivector(std::shared_ptr<const RASDeterminants> det) : det_(det), size_(det->size()) {
+    RASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<RASBlock<DataType>>(det), size_(det->size()) {
       data_ = std::unique_ptr<DataType[]>(new DataType[size_]);
       std::fill_n(data_.get(), size_, 0.0);
 
-      DataType* cc_ptr = data_.get();
       size_t sz = 0;
       for (auto& ipair : det->stringpairs()) {
         if ( ipair.first && ipair.second ) {
-           blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, cc_ptr, sz));
-           cc_ptr += blocks_.back()->size();
-           sz += blocks_.back()->size();
+          blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, data_.get()+sz, sz));
+          sz += blocks_.back()->size();
         }
         else {
           blocks_.push_back(std::shared_ptr<RBlock>());
@@ -678,21 +667,17 @@ class RASCivector {
       }
     }
 
-    RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) {
-      std::copy_n(o.data(), size_, data());
-    }
+    RASCivector(const RASCivector<DataType>& o) : RASCivector(o.det_) { std::copy_n(o.data(), size_, data_.get()); }
     RASCivector(std::shared_ptr<const RASCivector<DataType>> o) : RASCivector(*o) {}
 
-    RASCivector(RASCivector<DataType>&& o) : det_(o.det_), size_(o.size_), data_(std::move(o.data_)),
-      blocks_(std::move(o.blocks_)) { }
+    RASCivector(RASCivector<DataType>&& o) : RASCivector_base<RASBlock<DataType>>(o.det_), size_(o.size_)
+      { blocks_ = std::move(o.blocks_); }
 
     RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
-      for (auto& block : blocks_) {
-        if (block) {
-          std::shared_ptr<const DistRASBlock<DataType>> distblock = o.block(block->stringb(), block->stringa());
-          std::copy_n(distblock->local(), distblock->size(), block->data() + distblock->astart()*distblock->lenb());
-        }
-      }
+      this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
+        std::shared_ptr<const DistRASBlock<DataType>> distblock = o.block(b->stringb(), b->stringa());
+        std::copy_n(distblock->local(), distblock->size(), b->data(), distblock->astart()*distblock->lenb());
+      } );
       mpi__->allreduce(data(), size());
     }
     RASCivector(std::shared_ptr<const DistRASCivector<DataType>> o) : RASCivector(*o) {}
@@ -723,112 +708,37 @@ class RASCivector {
       return block(bstring, astring)->element(bstring, astring);
     }
 
-    // Access to individual blocks
-    const std::vector<std::shared_ptr<RBlock>>& blocks() const { return blocks_; }
-    std::vector<std::shared_ptr<RBlock>>& blocks() { return blocks_; }
-
-    std::shared_ptr<RBlock> block(const int nha, const int nhb, const int npa, const int npb) {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = det_->lenparts();
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<RBlock>();
-    }
-    std::shared_ptr<RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    std::shared_ptr<const RBlock> block(const int nha, const int nhb, const int npa, const int npb) const {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = det_->lenparts();
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<const RBlock>();
-    }
-    std::shared_ptr<const RBlock> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<const RBlock> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) const {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<RBlock>> allowed_blocks(const int nh, const int np) {
-      std::vector<std::shared_ptr<RBlock>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<RBlock> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const std::shared_ptr<const StringSpace> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const RBlock>> allowed_blocks(const int nh, const int np) const {
-      std::vector<std::shared_ptr<const RBlock>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<const RBlock> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
+    using RASCivector_base<RASBlock<DataType>>::block;
 
     const size_t size() const { return size_; }
     void zero() { std::fill_n(data_.get(), size_, 0.0); }
 
-    std::shared_ptr<const RASDeterminants> det() const { return det_; }
     std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
     std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<RASCivector<DataType>>(det);
-      for (auto& iblock : blocks_) {
-        if (iblock)
-          blas::transpose(iblock->data(), iblock->lenb(), iblock->lena(), out->block(iblock->stringa(), iblock->stringb())->data(), 1.0);
-      }
+      this->for_each_block( [&out]
+        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringa(), b->stringb())->data(), 1.0); }
+      );
       return out;
     }
 
-    std::shared_ptr<DistRASCivector<DataType>> distcivec() const {
-      return std::make_shared<DistRASCivector<DataType>>(*this);
-    }
+    std::shared_ptr<DistRASCivector<DataType>> distcivec() const { return std::make_shared<DistRASCivector<DataType>>(*this); }
 
     // Safe for any structure of blocks.
     DataType dot_product(const RASCivector<DataType>& o) const {
       assert( det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb() );
       DataType out(0.0);
-      for (auto& iblock : this->blocks()) {
-        if (iblock) {
-          std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
-          if (jblock) out += blas::dot_product(iblock->data(), iblock->lena()*iblock->lenb(), jblock->data());
-        }
-      }
+      this->for_each_block( [&out, &o] (std::shared_ptr<const RBlock> b) {
+        std::shared_ptr<const RBlock> j = o.block(b->stringb(), b->stringa());
+        if (j) out += blas::dot_product(b->data(), b->lena()*b->lenb(), j->data());
+      } );
       return out;
     }
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / size_; }
 
-    void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
     void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }
     void ax_plus_y(const DataType a, std::shared_ptr<const RASCivector<DataType>> o) { ax_plus_y(a, *o); }
