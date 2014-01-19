@@ -94,8 +94,8 @@ void OSIntegral<DataType, IntType>::common_init() {
       const double cxp_inv = 1.0 / cxp;
 
       const DataType px = get_P(basisinfo_[0]->position(0), basisinfo_[1]->position(0), *expi0, *expi1, cxp_inv, 0, swap01_);
-      const DataType py = get_P(basisinfo_[0]->position(1), basisinfo_[1]->position(1), *expi0, *expi1, cxp_inv, 0, swap01_);
-      const DataType pz = get_P(basisinfo_[0]->position(2), basisinfo_[1]->position(2), *expi0, *expi1, cxp_inv, 0, swap01_);
+      const DataType py = get_P(basisinfo_[0]->position(1), basisinfo_[1]->position(1), *expi0, *expi1, cxp_inv, 1, swap01_);
+      const DataType pz = get_P(basisinfo_[0]->position(2), basisinfo_[1]->position(2), *expi0, *expi1, cxp_inv, 2, swap01_);
 
       xp_.push_back(cxp);
       P_.push_back(px);
