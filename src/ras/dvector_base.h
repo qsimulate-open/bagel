@@ -112,12 +112,12 @@ class Dvector_base {
 
     std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
-      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(); }, det, typename CiType::LocalizedType());
+      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(det); }, det, typename CiType::LocalizedType());
     }
 
     std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
-      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(); }, det, typename CiType::LocalizedType());
+      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
     }
 
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {

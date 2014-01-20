@@ -676,7 +676,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
     RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
       this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
         std::shared_ptr<const DistRASBlock<DataType>> distblock = o.block(b->stringb(), b->stringa());
-        std::copy_n(distblock->local(), distblock->size(), b->data(), distblock->astart()*distblock->lenb());
+        std::copy_n(distblock->local(), distblock->size(), b->data() + distblock->astart()*distblock->lenb());
       } );
       mpi__->allreduce(data(), size());
     }
