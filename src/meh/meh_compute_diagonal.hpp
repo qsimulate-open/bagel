@@ -29,12 +29,42 @@
 #define BAGEL_MEH_COMPUTE_DIAGONAL_H
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
-  std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
-  std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
-  std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->monomer_jop<0>());
-  std::shared_ptr<const VecType> sigmavecB = form_sigma(ccvecB, jop->monomer_jop<1>());
+void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::shared_ptr<const DimerJop> jop) {
+  {
+    std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
+    std::shared_ptr<const VecType> sigmavecA = form_sigma(ccvecA, jop->monomer_jop<0>());
 
+    const int nstatesA = AB.template nstates<0>();
+
+    auto Asigma = std::make_shared<CSymMatrix>(nstatesA, true);
+    for (int i = 0; i < nstatesA; ++i) {
+      for (int j = 0; j < i; ++j) {
+        Asigma->element(j,i) = ccvecA->data(i)->dot_product(*sigmavecA->data(j));
+      }
+      Asigma->element(i,i) = ccvecA->data(i)->dot_product(*sigmavecA->data(i));
+    }
+    AB.template set_sigma<0>(Asigma);
+  }
+
+  {
+    std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();
+    std::shared_ptr<const VecType> sigmavecB = form_sigma(ccvecB, jop->monomer_jop<1>());
+
+    const int nstatesB = AB.template nstates<1>();
+
+    auto Bsigma = std::make_shared<CSymMatrix>(nstatesB, true);
+    for (int i = 0; i < nstatesB; ++i) {
+      for (int j = 0; j < i; ++j) {
+        Bsigma->element(j,i) = ccvecB->data(i)->dot_product(*sigmavecB->data(j));
+      }
+        Bsigma->element(i,i) = ccvecB->data(i)->dot_product(*sigmavecB->data(i));
+    }
+    AB.template set_sigma<1>(Bsigma);
+  }
+}
+
+template <class VecType>
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
   const int nstatesA = AB.template nstates<0>();
   const int nstatesB = AB.template nstates<1>();
   const int dimerstates = AB.dimerstates();
@@ -43,41 +73,37 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DS
 
   // first H^{AA}_{AA}
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
-    std::shared_ptr<const CiType> isigma = sigmavecA->data(stateA);
     for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-      std::shared_ptr<const CiType> icc = ccvecA->data(stateAp);
-      const double dotproduct = isigma->dot_product(*icc);
+      const double value = AB.template sigma<0>()->element(stateAp, stateA);
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
         const int stateAB = AB.dimerindex(stateA, stateB);
-        out->element(stateAB, stateApB) += dotproduct;
-        out->element(stateApB, stateAB) += dotproduct;
+        out->element(stateAB, stateApB) += value;
+        out->element(stateApB, stateAB) += value;
       }
     }
-    const double dotproduct = ccvecA->data(stateA)->dot_product(*isigma);
+    const double value = AB.template sigma<0>()->element(stateA, stateA);
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      out->element(stateAB,stateAB) += dotproduct;
+      out->element(stateAB,stateAB) += value;
     }
   }
 
   // H^{BB}_{BB}
   for(int stateB = 0; stateB < nstatesB; ++stateB) {
-    std::shared_ptr<const CiType> isigma = sigmavecB->data(stateB);
     for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-      std::shared_ptr<const CiType> icc = ccvecB->data(stateBp);
-      const double dotproduct = isigma->dot_product(*icc);
+      const double value = AB.template sigma<1>()->element(stateBp, stateB);
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
         const int stateABp = AB.dimerindex(stateA, stateBp);
-        out->element(stateAB, stateABp) += dotproduct;
-        out->element(stateABp, stateAB) += dotproduct;
+        out->element(stateAB, stateABp) += value;
+        out->element(stateABp, stateAB) += value;
       }
     }
-    const double dotproduct = ccvecB->data(stateB)->dot_product(*isigma);
+    const double value = AB.template sigma<1>()->element(stateB, stateB);
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      out->element(stateAB,stateAB) += dotproduct;
+      out->element(stateAB,stateAB) += value;
     }
   }
 
