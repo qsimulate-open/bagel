@@ -225,7 +225,8 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
     }
 
     DistRASCivector(const DistRASCivector<DataType>& o) : DistRASCivector(o.det_) {
-      for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i, ++j) {
+      auto j = o.blocks_.begin();
+      for (auto i = blocks_.begin(); i != blocks_.end(); ++i, ++j) {
         if (*i) std::copy_n((*j)->local(), (*i)->size(), (*i)->local());
       }
     }
