@@ -130,9 +130,6 @@ class DavidsonDiag {
         ++current;
       }
 
-      expandedH->print("H", expandedH->ndim());
-      expandedS->print("S", expandedS->ndim());
-
       // solve generalized eigenvalue problem
       std::shared_ptr<MatType> Sinvhalf = expandedS->tildex();
 
