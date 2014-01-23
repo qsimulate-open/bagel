@@ -151,6 +151,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
         sigman.push_back(sigma->slice(i,i+1));
         ccn.push_back(cc->slice(i,i+1));
       }
+      else {
+        sigman.push_back(std::shared_ptr<const Matrix>());
+        ccn.push_back(std::shared_ptr<const Matrix>());
+      }
     }
     const std::vector<double> energies = davidson.compute(ccn, sigman);
 

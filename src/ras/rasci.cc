@@ -43,7 +43,7 @@ void RASCI::common_init() {
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
@@ -258,7 +258,7 @@ void RASCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<RASCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<RASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
   FormSigmaRAS form_sigma;
@@ -281,6 +281,10 @@ void RASCI::compute() {
       if (!conv[i]) {
         ccn.push_back(make_shared<const RASCivec>(*cc_->data(i)));
         sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
+      }
+      else {
+        ccn.push_back(shared_ptr<const RASCivec>());
+        sigman.push_back(shared_ptr<const RASCivec>());
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);

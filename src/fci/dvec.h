@@ -118,15 +118,19 @@ class Dvector {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_)
+      for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
+        else out.push_back(std::shared_ptr<Civector<DataType>>());
+      }
       return out;
     }
     std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
       std::vector<std::shared_ptr<const Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_)
+      for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
+        else out.push_back(std::shared_ptr<const Civector<DataType>>());
+      }
       return out;
     }
 
