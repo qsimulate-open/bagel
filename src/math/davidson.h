@@ -232,17 +232,6 @@ class DavidsonDiag {
       return out;
     }
 
-    // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T>& cc) {
-#if 0
-      // make a list of them .. will be deleted
-      std::list<std::shared_ptr<const T>> tmp;
-      for (auto& i : basis_) tmp.push_back(i->cc);
-      return cc->orthog(tmp);
-#else
-      return 1.0;
-#endif
-    }
 };
 
 }

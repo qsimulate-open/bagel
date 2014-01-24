@@ -154,7 +154,6 @@ void SuperCI::compute() {
 
       // update cc_
       residual = mbfgs->extrapolate(residual, davidson.civec().front());
-      const double a = davidson.orthog(residual);
       cc_ = residual;
     }
     // ---------------------------------------

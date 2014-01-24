@@ -177,10 +177,8 @@ void MultiExcitonHamiltonian<VecType>::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / std::min(en - denom_[i], -0.1);
         }
-        davidson.orthog(tmp_cc);
         std::list<std::shared_ptr<const Matrix>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc->slice(jst, jst+1));
-        tmp_cc->orthog(tmp);
         spin_->filter(*tmp_cc, nspin_);
         double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);

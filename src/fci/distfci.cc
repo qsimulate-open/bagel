@@ -438,7 +438,6 @@ void DistFCI::compute() {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
           c->spin_decontaminate();
-          davidson.orthog(c);
           list<shared_ptr<const DistCivec>> tmp;
           for (int jst = 0; jst != ist; ++jst)
             if (!conv[jst]) tmp.push_back(cc.at(jst));

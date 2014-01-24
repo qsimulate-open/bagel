@@ -295,7 +295,6 @@ void DistRASCI::compute() {
               [&en] (const double& cc, const double& den) { return cc / min(en - den, -0.1); });
           }
         }
-        davidson.orthog(cc_->data(ist));
         list<shared_ptr<const DistRASCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);

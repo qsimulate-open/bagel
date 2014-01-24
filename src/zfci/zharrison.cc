@@ -247,7 +247,6 @@ void ZHarrison::compute() {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
         }
-        davidson.orthog(ctmp);
         // TODO very inefficient code
         if (ist > 0) {
           vector<shared_ptr<const RelZDvec>> cctmpb = cc_->split(0, ist);

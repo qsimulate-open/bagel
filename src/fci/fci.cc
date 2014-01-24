@@ -296,7 +296,6 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        davidson.orthog(cc_->data(ist));
         list<shared_ptr<const Civec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);

@@ -311,7 +311,6 @@ void RASCI::compute() {
         double* denom_array = denom_->data();
         const double en = energies.at(ist);
         transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
-        davidson.orthog(cc_->data(ist));
         list<shared_ptr<const RASCivec>> tmp;
         for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
         cc_->data(ist)->orthog(tmp);
