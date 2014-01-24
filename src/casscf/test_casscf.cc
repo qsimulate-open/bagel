@@ -59,6 +59,7 @@ double cas_energy(std::string filename) {
   return 0.0;
 }
 
+#if 0
 BOOST_AUTO_TEST_SUITE(TEST_CASSCF)
 
 BOOST_AUTO_TEST_CASE(DF_CASSCF) {
@@ -66,3 +67,4 @@ BOOST_AUTO_TEST_CASE(DF_CASSCF) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+#endif

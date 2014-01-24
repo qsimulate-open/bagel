@@ -142,8 +142,10 @@ BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_opt"),        reference_mp2_opt(),      1.0e-4));
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_aux_opt"),    reference_mp2_aux_opt(),  1.0e-4));
 }
+#if 0
 BOOST_AUTO_TEST_CASE(CASSCF_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_act_opt"),    reference_cas_act_opt(),      1.0e-4));
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
