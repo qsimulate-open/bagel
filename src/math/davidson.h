@@ -150,15 +150,9 @@ class DavidsonDiag {
           if (converged_[i]) continue;
           // a vector with largest weight will be removed.
           int n = 0;
-#if 0
-          double abs = 0.0;
-          for (int j = nstate_; j < soff; ++j) {
-            if (std::abs(trans->element(j, i)) > abs) {
-#else
           double abs = 1.0e10;
           for (int j = nstate_; j < soff; ++j) {
             if (std::abs(trans->element(j, i)) < abs) {
-#endif
               if (remove.find(j) != remove.end()) continue;
               abs = std::abs(trans->element(j, i));
               n = j;
