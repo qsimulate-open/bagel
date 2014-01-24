@@ -259,14 +259,18 @@ class DistCivector {
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const DistCivector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const DistCivector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
     }
 
     // mutex
@@ -700,14 +704,18 @@ class Civector {
     double orthog(std::list<std::shared_ptr<const Civector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(scal);
-      return 1.0/scal;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const Civector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const Civector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(scal);
+      return 1.0/scal;
     }
 
     void project_out(std::shared_ptr<const Civector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }

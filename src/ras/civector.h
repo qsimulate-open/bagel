@@ -454,14 +454,18 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
     double orthog(std::list<std::shared_ptr<const DistRASCivector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const DistRASCivector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const DistRASCivector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
     }
 
     void print(const double thr = 0.05) const {
@@ -819,14 +823,18 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
     double orthog(std::list<std::shared_ptr<const RASCivector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const RASCivector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const RASCivector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
     }
 
     void print(const double thr = 0.05) const {

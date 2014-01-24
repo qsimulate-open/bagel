@@ -296,9 +296,7 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        list<shared_ptr<const Civec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
+        cc_->data(ist)->normalize();
         cc_->data(ist)->spin_decontaminate();
         cc_->data(ist)->synchronize();
       }
