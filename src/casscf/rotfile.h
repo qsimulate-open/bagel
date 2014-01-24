@@ -108,6 +108,10 @@ class RotationMatrix {
     double orthog(std::list<std::shared_ptr<const RotationMatrix<DataType>>> c) {
       for (auto iter = c.begin(); iter != c.end(); ++iter)
         this->ax_plus_y(- this->dot_product(**iter), **iter);
+      return normalize();
+    }
+
+    double normalize() {
       const double scal = 1.0/this->norm();
       scale(scal);
       return 1.0/scal;

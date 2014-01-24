@@ -154,6 +154,8 @@ void SuperCI::compute() {
 
       // update cc_
       residual = mbfgs->extrapolate(residual, davidson.civec().front());
+      residual->ele_ref() = 0.0;
+      residual->normalize();
       cc_ = residual;
     }
     // ---------------------------------------
