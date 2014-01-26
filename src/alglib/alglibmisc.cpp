@@ -2720,7 +2720,6 @@ static void nearestneighbor_kdtreegeneratetreerec(kdtree* kdt,
 {
     ae_int_t n;
     ae_int_t nx;
-    ae_int_t ny;
     ae_int_t i;
     ae_int_t j;
     ae_int_t oldoffs;
@@ -2755,7 +2754,6 @@ static void nearestneighbor_kdtreegeneratetreerec(kdtree* kdt,
      * Load values for easier access
      */
     nx = kdt->nx;
-    ny = kdt->ny;
     
     /*
      * select dimension to split:

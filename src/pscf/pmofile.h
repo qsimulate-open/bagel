@@ -175,7 +175,6 @@ void PMOFile<T>::sort_inside_blocks() {
   const int jsize = jfence_ - jstart_;
   const int asize = afence_ - astart_;
   const int bsize = bfence_ - bstart_;
-  const size_t absize = asize * bsize;
 
   for (std::map<size_t, size_t>::const_iterator iter = offset_.begin(); iter != offset_.end(); ++iter) {
     this->get_block(iter->second, blocksize_, buffer1);
@@ -359,7 +358,6 @@ std::shared_ptr<PMOFile<T>> PMOFile<T>::contract(std::shared_ptr<PMOFile<T>> oth
 
   const int k2 = std::max(k+k, 1);
 
-  size_t current = 0lu;
   for (int kj = -k; kj < std::max(k, 1); ++kj) {
     for (int ki = -k; ki < std::max(k, 1); ++ki) {
       for (int kn = -k; kn < std::max(k, 1); ++kn) {

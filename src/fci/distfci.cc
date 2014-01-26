@@ -56,7 +56,7 @@ void DistFCI::common_init() {
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
@@ -385,7 +385,7 @@ void DistFCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<DistCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<DistCivec> davidson(nstate_, davidson_subspace_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
@@ -401,10 +401,13 @@ void DistFCI::compute() {
     vector<shared_ptr<DistCivec>> sigma = form_sigma(cc, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    // Davidson
     vector<shared_ptr<const DistCivec>> ccn, sigman;
-    for (auto& i : cc) if (i) ccn.push_back(i);
-    for (auto& i : sigma) if (i) sigman.push_back(i);
+    for (int i = 0; i < nstate_; ++i) {
+      ccn.push_back(cc[i]);
+      sigman.push_back(sigma[i]);
+    }
+
+    // Davidson
     const vector<double> energies = davidson.compute(ccn, sigman);
 
     // get residual and new vectors
@@ -435,11 +438,7 @@ void DistFCI::compute() {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
           c->spin_decontaminate();
-          davidson.orthog(c);
-          list<shared_ptr<const DistCivec>> tmp;
-          for (int jst = 0; jst != ist; ++jst)
-            if (!conv[jst]) tmp.push_back(cc.at(jst));
-          c->orthog(tmp);
+          c->normalize();
           cc.push_back(c);
         } else {
           cc.push_back(shared_ptr<DistCivec>());

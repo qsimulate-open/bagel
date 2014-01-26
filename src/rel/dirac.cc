@@ -76,7 +76,6 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
 void Dirac::compute() {
   Timer scftime;
   string indent = "  ";
-  const int n = geom_->nbasis();
 
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
   shared_ptr<const DistZMatrix> distovl = overlap_->distmatrix();

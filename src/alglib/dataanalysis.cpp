@@ -9854,7 +9854,6 @@ void dsoptimalsplitk(/* Real    */ ae_vector* a,
     ae_int_t j;
     ae_int_t s;
     ae_int_t jl;
-    ae_int_t jr;
     double v2;
     ae_vector ties;
     ae_int_t tiecount;
@@ -10067,11 +10066,9 @@ void dsoptimalsplitk(/* Real    */ ae_vector* a,
         *ni = koptimal+1;
         *cve = cv.ptr.pp_double[koptimal][tiecount-1];
         jl = splits.ptr.pp_int[koptimal][tiecount-1];
-        jr = tiecount-1;
         for(k=koptimal; k>=1; k--)
         {
             thresholds->ptr.p_double[k-1] = 0.5*(a->ptr.p_double[ties.ptr.p_int[jl-1]]+a->ptr.p_double[ties.ptr.p_int[jl]]);
-            jr = jl-1;
             jl = splits.ptr.pp_int[k-1][jl-1];
         }
     }
@@ -17069,7 +17066,6 @@ void mlpserializeold(multilayerperceptron* network,
 {
     ae_int_t i;
     ae_int_t ssize;
-    ae_int_t ntotal;
     ae_int_t nin;
     ae_int_t nout;
     ae_int_t wcount;
@@ -17086,7 +17082,6 @@ void mlpserializeold(multilayerperceptron* network,
     ssize = network->structinfo.ptr.p_int[0];
     nin = network->structinfo.ptr.p_int[1];
     nout = network->structinfo.ptr.p_int[2];
-    ntotal = network->structinfo.ptr.p_int[3];
     wcount = network->structinfo.ptr.p_int[4];
     if( mlpissoftmax(network, _state) )
     {
@@ -20617,7 +20612,6 @@ void mlpinternalprocessvector(/* Integer */ ae_vector* structinfo,
 {
     ae_int_t i;
     ae_int_t n1;
-    ae_int_t n2;
     ae_int_t w1;
     ae_int_t w2;
     ae_int_t ntotal;
@@ -20681,7 +20675,6 @@ void mlpinternalprocessvector(/* Integer */ ae_vector* structinfo,
              * Adaptive summator
              */
             n1 = structinfo->ptr.p_int[offs+2];
-            n2 = n1+structinfo->ptr.p_int[offs+1]-1;
             w1 = structinfo->ptr.p_int[offs+3];
             w2 = w1+structinfo->ptr.p_int[offs+1]-1;
             net = ae_v_dotproduct(&weights->ptr.p_double[w1], 1, &neurons->ptr.p_double[n1], 1, ae_v_len(w1,w2));
@@ -21026,7 +21019,6 @@ void mlpallerrorssubset(multilayerperceptron* network,
     ae_frame _frame_block;
     ae_vector buf;
     ae_vector dy;
-    ae_int_t rowsize;
     ae_int_t nin;
     ae_int_t nout;
     ae_int_t wcount;
@@ -21048,14 +21040,12 @@ void mlpallerrorssubset(multilayerperceptron* network,
     rvectorsetlengthatleast(&network->x, nin, _state);
     if( iscls )
     {
-        rowsize = nin+1;
         rvectorsetlengthatleast(&network->y, 1, _state);
         ae_vector_set_length(&dy, 1, _state);
         dserrallocate(nout, &buf, _state);
     }
     else
     {
-        rowsize = nin+nout;
         rvectorsetlengthatleast(&network->y, nout, _state);
         ae_vector_set_length(&dy, nout, _state);
         dserrallocate(-nout, &buf, _state);
@@ -21136,7 +21126,6 @@ void mlpallerrorssparsesubset(multilayerperceptron* network,
     ae_frame _frame_block;
     ae_vector buf;
     ae_vector dy;
-    ae_int_t rowsize;
     ae_int_t nin;
     ae_int_t nout;
     ae_int_t wcount;
@@ -21158,14 +21147,12 @@ void mlpallerrorssparsesubset(multilayerperceptron* network,
     rvectorsetlengthatleast(&network->x, nin, _state);
     if( iscls )
     {
-        rowsize = nin+1;
         rvectorsetlengthatleast(&network->y, 1, _state);
         ae_vector_set_length(&dy, 1, _state);
         dserrallocate(nout, &buf, _state);
     }
     else
     {
-        rowsize = nin+nout;
         rvectorsetlengthatleast(&network->y, nout, _state);
         ae_vector_set_length(&dy, nout, _state);
         dserrallocate(-nout, &buf, _state);
@@ -22708,7 +22695,6 @@ static void mlpbase_mlpchunkedgradient(multilayerperceptron* network,
     ae_int_t w1;
     ae_int_t w2;
     ae_int_t c1;
-    ae_int_t c2;
     ae_int_t ntotal;
     ae_int_t nin;
     ae_int_t nout;
@@ -22721,11 +22707,9 @@ static void mlpbase_mlpchunkedgradient(multilayerperceptron* network,
     double fown;
     double deown;
     double net;
-    double lnnet;
     double mx;
     ae_bool bflag;
     ae_int_t istart;
-    ae_int_t ineurons;
     ae_int_t idfdnet;
     ae_int_t iderror;
     ae_int_t izeros;
@@ -22740,8 +22724,6 @@ static void mlpbase_mlpchunkedgradient(multilayerperceptron* network,
     ntotal = network->structinfo.ptr.p_int[3];
     istart = network->structinfo.ptr.p_int[5];
     c1 = cstart;
-    c2 = cstart+csize-1;
-    ineurons = 0;
     idfdnet = ntotal;
     iderror = 2*ntotal;
     izeros = 3*ntotal;
@@ -22896,7 +22878,6 @@ static void mlpbase_mlpchunkedgradient(multilayerperceptron* network,
                  *
                  */
                 s = 1;
-                lnnet = ae_log(net, _state);
                 kl = ae_round(xy->ptr.pp_double[cstart+k][nin], _state);
                 for(i=0; i<=nout-1; i++)
                 {
@@ -23299,11 +23280,7 @@ void mnltrainh(/* Real    */ ae_matrix* xy,
     ae_int_t ssize;
     ae_bool allsame;
     ae_int_t offs;
-    double threshold;
-    double wminstep;
     double decay;
-    ae_int_t wdim;
-    ae_int_t expoffs;
     double v;
     double s;
     multilayerperceptron network;
@@ -23342,8 +23319,6 @@ void mnltrainh(/* Real    */ ae_matrix* xy,
     _logitmcstate_init(&mcstate, _state, ae_true);
     _densesolverreport_init(&solverrep, _state, ae_true);
 
-    threshold = 1000*ae_machineepsilon;
-    wminstep = 0.001;
     decay = 0.001;
     
     /*
@@ -23375,9 +23350,7 @@ void mnltrainh(/* Real    */ ae_matrix* xy,
     /*
      * Allocate array
      */
-    wdim = (nvars+1)*(nclasses-1);
     offs = 5;
-    expoffs = offs+wdim;
     ssize = 5+(nvars+1)*(nclasses-1)+nclasses;
     ae_vector_set_length(&lm->w, ssize-1+1, _state);
     lm->w.ptr.p_double[0] = ssize;
@@ -23726,12 +23699,10 @@ void mnlpack(/* Real    */ ae_matrix* a,
 {
     ae_int_t offs;
     ae_int_t i;
-    ae_int_t wdim;
     ae_int_t ssize;
 
     _logitmodel_clear(lm);
 
-    wdim = (nvars+1)*(nclasses-1);
     offs = 5;
     ssize = 5+(nvars+1)*(nclasses-1)+nclasses;
     ae_vector_set_length(&lm->w, ssize-1+1, _state);
@@ -27408,7 +27379,6 @@ void mlptrainlm(multilayerperceptron* network,
     ae_int_t nin;
     ae_int_t nout;
     ae_int_t wcount;
-    double lmftol;
     double lmsteptol;
     ae_int_t i;
     ae_int_t k;
@@ -27466,7 +27436,6 @@ void mlptrainlm(multilayerperceptron* network,
     mlpproperties(network, &nin, &nout, &wcount, _state);
     lambdaup = 10;
     lambdadown = 0.3;
-    lmftol = 0.001;
     lmsteptol = 0.001;
     
     /*

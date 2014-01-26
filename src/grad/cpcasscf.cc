@@ -53,9 +53,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   const size_t nmobasis = ref_->coeff()->mdim();
   const size_t naobasis = geom_->nbasis();
-  const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
-  const size_t nvirt = nmobasis - nocca;
 
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();

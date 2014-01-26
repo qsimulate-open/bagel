@@ -120,7 +120,8 @@ Petite::Petite(const vector<shared_ptr<const Atom>>& atoms, const string sym) : 
             break;
           }
         }
-        assert(found);
+        if (!found)
+          throw logic_error("Petite constrcutor error");
       }
       sym_atommap_.push_back(tmp);
 

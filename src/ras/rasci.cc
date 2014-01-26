@@ -41,9 +41,9 @@ RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_
 void RASCI::common_init() {
   print_header();
 
-  const bool frozen = idata_->get<bool>("frozen", false);
+//const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
@@ -258,7 +258,7 @@ void RASCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<RASCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<RASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
   FormSigmaRAS form_sigma;
@@ -281,6 +281,10 @@ void RASCI::compute() {
       if (!conv[i]) {
         ccn.push_back(make_shared<const RASCivec>(*cc_->data(i)));
         sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
+      }
+      else {
+        ccn.push_back(shared_ptr<const RASCivec>());
+        sigman.push_back(shared_ptr<const RASCivec>());
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -307,10 +311,7 @@ void RASCI::compute() {
         double* denom_array = denom_->data();
         const double en = energies.at(ist);
         transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const RASCivec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
+        cc_->data(ist)->normalize();
         cc_->data(ist)->spin_decontaminate();
         cc_->data(ist)->synchronize();
       }

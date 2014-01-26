@@ -55,7 +55,6 @@ class DistABTask {
       // first receive all the data (nele_a * lenb)
       const int norb_ = base_det->norb();
       const size_t lbs = base_det->lenb();
-      const size_t lbt = int_det->lenb();
 
       buf = std::unique_ptr<double[]>(new double[lbs*(norb_-astring.count())]);
 

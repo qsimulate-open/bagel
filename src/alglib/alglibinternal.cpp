@@ -4088,12 +4088,10 @@ ae_int_t vectoridxabsmax(/* Real    */ ae_vector* x,
      ae_state *_state)
 {
     ae_int_t i;
-    double a;
     ae_int_t result;
 
 
     result = i1;
-    a = ae_fabs(x->ptr.p_double[result], _state);
     for(i=i1+1; i<=i2; i++)
     {
         if( ae_fp_greater(ae_fabs(x->ptr.p_double[i], _state),ae_fabs(x->ptr.p_double[result], _state)) )
@@ -4112,12 +4110,10 @@ ae_int_t columnidxabsmax(/* Real    */ ae_matrix* x,
      ae_state *_state)
 {
     ae_int_t i;
-    double a;
     ae_int_t result;
 
 
     result = i1;
-    a = ae_fabs(x->ptr.pp_double[result][j], _state);
     for(i=i1+1; i<=i2; i++)
     {
         if( ae_fp_greater(ae_fabs(x->ptr.pp_double[i][j], _state),ae_fabs(x->ptr.pp_double[result][j], _state)) )
@@ -4136,12 +4132,10 @@ ae_int_t rowidxabsmax(/* Real    */ ae_matrix* x,
      ae_state *_state)
 {
     ae_int_t j;
-    double a;
     ae_int_t result;
 
 
     result = j1;
-    a = ae_fabs(x->ptr.pp_double[i][result], _state);
     for(j=j1+1; j<=j2; j++)
     {
         if( ae_fp_greater(ae_fabs(x->ptr.pp_double[i][j], _state),ae_fabs(x->ptr.pp_double[i][result], _state)) )
@@ -4429,7 +4423,6 @@ void matrixmatrixmultiply(/* Real    */ ae_matrix* a,
     ae_int_t brows;
     ae_int_t bcols;
     ae_int_t crows;
-    ae_int_t ccols;
     ae_int_t i;
     ae_int_t j;
     ae_int_t k;
@@ -4468,7 +4461,6 @@ void matrixmatrixmultiply(/* Real    */ ae_matrix* a,
         return;
     }
     crows = arows;
-    ccols = bcols;
     
     /*
      * Test WORK
@@ -4619,7 +4611,6 @@ void hermitianmatrixvectormultiply(/* Complex */ ae_matrix* a,
 {
     ae_int_t i;
     ae_int_t ba1;
-    ae_int_t ba2;
     ae_int_t by1;
     ae_int_t by2;
     ae_int_t bx1;
@@ -4664,7 +4655,6 @@ void hermitianmatrixvectormultiply(/* Complex */ ae_matrix* a,
             by1 = i-i1+2;
             by2 = n;
             ba1 = i+1;
-            ba2 = i2;
             ae_v_caddc(&y->ptr.p_complex[by1], 1, &a->ptr.pp_complex[i][ba1], 1, "Conj", ae_v_len(by1,by2), v);
             
             /*
@@ -4673,7 +4663,6 @@ void hermitianmatrixvectormultiply(/* Complex */ ae_matrix* a,
             bx1 = i-i1+2;
             bx2 = n;
             ba1 = i+1;
-            ba2 = i2;
             v = ae_v_cdotproduct(&x->ptr.p_complex[bx1], 1, "N", &a->ptr.pp_complex[i][ba1], 1, "N", ae_v_len(bx1,bx2));
             y->ptr.p_complex[i-i1+1] = ae_c_add(y->ptr.p_complex[i-i1+1],v);
         }
@@ -4689,7 +4678,6 @@ void hermitianmatrixvectormultiply(/* Complex */ ae_matrix* a,
             bx1 = 1;
             bx2 = i-i1;
             ba1 = i1;
-            ba2 = i-1;
             v = ae_v_cdotproduct(&x->ptr.p_complex[bx1], 1, "N", &a->ptr.pp_complex[i][ba1], 1, "N", ae_v_len(bx1,bx2));
             y->ptr.p_complex[i-i1+1] = ae_c_add(y->ptr.p_complex[i-i1+1],v);
             
@@ -4700,7 +4688,6 @@ void hermitianmatrixvectormultiply(/* Complex */ ae_matrix* a,
             by1 = 1;
             by2 = i-i1;
             ba1 = i1;
-            ba2 = i-1;
             ae_v_caddc(&y->ptr.p_complex[by1], 1, &a->ptr.pp_complex[i][ba1], 1, "Conj", ae_v_len(by1,by2), v);
         }
     }
@@ -4930,7 +4917,6 @@ void applyreflectionfromtheleft(/* Real    */ ae_matrix* c,
 {
     double t;
     ae_int_t i;
-    ae_int_t vm;
 
 
     if( (ae_fp_eq(tau,0)||n1>n2)||m1>m2 )
@@ -4941,7 +4927,6 @@ void applyreflectionfromtheleft(/* Real    */ ae_matrix* c,
     /*
      * w := C' * v
      */
-    vm = m2-m1+1;
     for(i=n1; i<=n2; i++)
     {
         work->ptr.p_double[i] = 0;
@@ -5003,14 +4988,12 @@ void applyreflectionfromtheright(/* Real    */ ae_matrix* c,
 {
     double t;
     ae_int_t i;
-    ae_int_t vm;
 
 
     if( (ae_fp_eq(tau,0)||n1>n2)||m1>m2 )
     {
         return;
     }
-    vm = n2-n1+1;
     for(i=m1; i<=m2; i++)
     {
         t = ae_v_dotproduct(&c->ptr.pp_double[i][n1], 1, &v->ptr.p_double[1], 1, ae_v_len(n1,n2));
@@ -5203,7 +5186,6 @@ void complexapplyreflectionfromtheleft(/* Complex */ ae_matrix* c,
 {
     ae_complex t;
     ae_int_t i;
-    ae_int_t vm;
 
 
     if( (ae_c_eq_d(tau,0)||n1>n2)||m1>m2 )
@@ -5214,7 +5196,6 @@ void complexapplyreflectionfromtheleft(/* Complex */ ae_matrix* c,
     /*
      * w := C^T * conj(v)
      */
-    vm = m2-m1+1;
     for(i=n1; i<=n2; i++)
     {
         work->ptr.p_complex[i] = ae_complex_from_d(0);
@@ -5320,7 +5301,6 @@ void symmetricmatrixvectormultiply(/* Real    */ ae_matrix* a,
 {
     ae_int_t i;
     ae_int_t ba1;
-    ae_int_t ba2;
     ae_int_t by1;
     ae_int_t by2;
     ae_int_t bx1;
@@ -5365,7 +5345,6 @@ void symmetricmatrixvectormultiply(/* Real    */ ae_matrix* a,
             by1 = i-i1+2;
             by2 = n;
             ba1 = i+1;
-            ba2 = i2;
             ae_v_addd(&y->ptr.p_double[by1], 1, &a->ptr.pp_double[i][ba1], 1, ae_v_len(by1,by2), v);
             
             /*
@@ -5374,7 +5353,6 @@ void symmetricmatrixvectormultiply(/* Real    */ ae_matrix* a,
             bx1 = i-i1+2;
             bx2 = n;
             ba1 = i+1;
-            ba2 = i2;
             v = ae_v_dotproduct(&x->ptr.p_double[bx1], 1, &a->ptr.pp_double[i][ba1], 1, ae_v_len(bx1,bx2));
             y->ptr.p_double[i-i1+1] = y->ptr.p_double[i-i1+1]+v;
         }
@@ -5390,7 +5368,6 @@ void symmetricmatrixvectormultiply(/* Real    */ ae_matrix* a,
             bx1 = 1;
             bx2 = i-i1;
             ba1 = i1;
-            ba2 = i-1;
             v = ae_v_dotproduct(&x->ptr.p_double[bx1], 1, &a->ptr.pp_double[i][ba1], 1, ae_v_len(bx1,bx2));
             y->ptr.p_double[i-i1+1] = y->ptr.p_double[i-i1+1]+v;
             
@@ -5401,7 +5378,6 @@ void symmetricmatrixvectormultiply(/* Real    */ ae_matrix* a,
             by1 = 1;
             by2 = i-i1;
             ba1 = i1;
-            ba2 = i-1;
             ae_v_addd(&y->ptr.p_double[by1], 1, &a->ptr.pp_double[i][ba1], 1, ae_v_len(by1,by2), v);
         }
     }
@@ -5887,7 +5863,6 @@ void internalschurdecomposition(/* Real    */ ae_matrix* h,
     ae_int_t ns;
     ae_int_t nv;
     double absw;
-    double ovfl;
     double smlnum;
     double tau;
     double temp;
@@ -5908,7 +5883,6 @@ void internalschurdecomposition(/* Real    */ ae_matrix* h,
     double cnst;
     ae_bool failflag;
     ae_int_t p1;
-    ae_int_t p2;
     double vt;
 
     ae_frame_make(_state, &_frame_block);
@@ -6054,7 +6028,6 @@ void internalschurdecomposition(/* Real    */ ae_matrix* h,
         return;
     }
     unfl = ae_minrealnumber;
-    ovfl = 1/unfl;
     ulp = 2*ae_machineepsilon;
     smlnum = unfl*(n/ulp);
     
@@ -6300,7 +6273,6 @@ void internalschurdecomposition(/* Real    */ ae_matrix* h,
                 if( k>l )
                 {
                     p1 = k-1;
-                    p2 = k+nr-1;
                     ae_v_move(&v.ptr.p_double[1], 1, &h->ptr.pp_double[k][p1], h->stride, ae_v_len(1,nr));
                 }
                 generatereflection(&v, nr, &tau, _state);
@@ -6412,7 +6384,6 @@ static void hsschur_internalauxschur(ae_bool wantt,
     double h43h34;
     double h44;
     double h44s;
-    double ovfl;
     double s;
     double smlnum;
     double sn;
@@ -6467,7 +6438,6 @@ static void hsschur_internalauxschur(ae_bool wantt,
      * If norm(H) <= sqrt(OVFL), overflow should not occur.
      */
     unfl = ae_minrealnumber;
-    ovfl = 1/unfl;
     smlnum = unfl*(nh/ulp);
     
     /*

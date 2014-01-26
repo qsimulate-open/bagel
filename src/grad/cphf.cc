@@ -42,7 +42,6 @@ CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const
 shared_ptr<Matrix> CPHF::solve() const {
 
   const size_t nmobasis = ref_->coeff()->mdim();
-  const size_t naux = geom_->naux();
   const size_t nocca = ref_->nocc();
   const size_t nvirt = nmobasis - nocca;
 

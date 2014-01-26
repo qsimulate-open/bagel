@@ -60,7 +60,6 @@ class K2ext {
       assert(blocks_.size() == 4);
       std::map<size_t, std::shared_ptr<DFFullDist>> dflist;
       // AO dimension
-      const size_t nbasis = df->nbasis0();
       assert(df->nbasis0() == df->nbasis1());
 
       // occ loop

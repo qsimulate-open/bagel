@@ -180,9 +180,6 @@ PCompCABSFile<T>::PCompCABSFile(std::shared_ptr<PGeometry> pg, const double gam,
 template<class T>
 void PCompCABSFile<T>::init_schwarz_jb() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<const Atom> RefAtom;
-
-  const int size = this->basis_.size(); // the number of shells per unit cell
 
   schwarz_jb_.resize(size_b_ * size_j_ * (2 * this->K_ + 1));
 
@@ -214,7 +211,6 @@ void PCompCABSFile<T>::init_schwarz_jb() {
 template<class T>
 void PCompCABSFile<T>::init_schwarz_ia() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<const Atom> RefAtom;
 
   schwarz_ia_.resize(size_a_ * size_i_ * (2 * this->K_ + 1));
 
@@ -246,38 +242,28 @@ void PCompCABSFile<T>::init_schwarz_ia() {
 template<class T>
 void PCompCABSFile<T>::calculate_num_int_each() {
 
-  typedef std::shared_ptr<const Shell> RefShell;
-
   const int s = this->S_;
   const int l = this->L_;
   const int k = this->K_;
-  const double a = this->A_;
   unsigned long data_written = 0ul;
   this->num_int_each_.resize((s+s+1) * (s+s+1) * (l+l+1));
 
 //#pragma omp parallel for reduction (+:data_written)
   for (int m1 = - s; m1 <= s; ++m1) {
-    const double m1disp[3] = {0.0, 0.0, m1*a};
     size_t offset = (m1+s) * (l*2+1) * (s*2+1);
     for (int m2 = - l; m2 <= l; ++m2) { // NO bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2*a};
       for (int m3 = m2 - s; m3 <= m2 + s; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3*a};
         size_t thisblock = 0ul;
         for (int i0 = 0; i0 != size_i_; ++i0) {
-          const int b0offset = offset_i_[i0];
           const int b0size = basis_i_[i0]->nbasis();
 
           for (int i1 = 0; i1 != size_a_; ++i1) {
-            const int b1offset = offset_a_[i1];
             const int b1size = basis_a_[i1]->nbasis();
 
             for (int i2 = 0; i2 != size_j_; ++i2) {
-              const int b2offset = offset_j_[i2];
               const int b2size = basis_j_[i2]->nbasis();
 
               for (int i3 = 0; i3 != size_b_; ++i3) {
-                const int b3offset = offset_b_[i3];
                 const int b3size = basis_b_[i3]->nbasis();
 
                 const double integral_bound = schwarz_ia_[((m1 + k) * size_i_ + i0) * size_a_ + i1]
@@ -325,7 +311,6 @@ void PCompCABSFile<T>::store_integrals() {
 
   const int s = this->S_;
   const int l = this->L_;
-  const int k = this->K_;
 
   double* dcache = new double[cachesize];
 
@@ -357,8 +342,6 @@ void PCompCABSFile<T>::eval_new_block(double* out, int m1, int m2, int m3) {
 
   typedef std::shared_ptr<const Shell> RefShell;
 
-  const int s = this->S_;
-  const int l = this->L_;
   const int k = this->K_;
   const double a = this->A_;
 
@@ -458,8 +441,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
   const std::complex<double> czero(0.0, 0.0);
   const std::complex<double> cone(1.0, 0.0);
 
-  const int unit = 1;
-
   const size_t filesize = noovv * std::max(KK, 1) * std::max(KK, 1) * std::max(KK, 1);
   std::cout << "  Creating " << jobname << "  of size ";
   const size_t filesize_byte = filesize * sizeof(std::complex<double>);
@@ -498,8 +479,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
   const size_t num_loops = sizem1 * sizem1 * sizem2;
   size_t loop_counter = 0lu;
   size_t loop_mod10 = 0lu;
-
-  size_t allocsize = *std::max_element(this->num_int_each_.begin(), this->num_int_each_.end());
 
   PFile<std::complex<double>> intermediate_mmK(std::max(KK*nv, nv), k, false);
   std::complex<double>* intermediate_novv = new std::complex<double>[novv];
@@ -618,8 +597,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
           const double img = k != 0 ? ((m3 * nkb * pi) / k) : 0.0;
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);
-          size_t offset1 = 0;
-          size_t offset2 = 0;
           const int cn2 = nbasis_i_ * nbasis_a_;
           std::fill(datas, datas+nv, czero);
 //        #pragma omp parallel for
@@ -671,7 +648,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
         blas::transpose(datas, m, n, data);
 
         for (int nka = -k; nka < maxK1; ++nka, ++nbja) {
-          const int nkac = nka + k;
           const double img = k != 0 ? ((m1 * nka * pi)/ k) : 0.0;
           const std::complex<double> exponent(0.0, img);
           const std::complex<double> prefac = exp(exponent);

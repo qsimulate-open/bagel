@@ -124,7 +124,6 @@ void MoldenIn::read() {
   ************************************************************/
   bool found_atoms = false;
   bool found_gto = false;
-  bool found_mo = false;
 
   /************************************************************
   * Extra variables                                           *
@@ -298,7 +297,6 @@ void MoldenIn::read() {
 
         mo_coefficients_.push_back(movec);
       }
-      found_mo = true;
     } else {
       getline(ifs, line);
     }

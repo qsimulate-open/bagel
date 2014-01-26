@@ -91,7 +91,6 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
   const bool noaa =  base_det->nelea() <= 1 || base_det->neleb()+1 > norb_;
 
   const bool output1 = base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_;
-  const bool output2 = base_det->nelea()-2 >= 0 && base_det->neleb()+2 <= norb_;
 
   if (!noab && (diag || output1)) {
     shared_ptr<const Determinants> int_det = int_space_->finddet(nelea-1, neleb-1);
@@ -247,7 +246,6 @@ void ZHarrison::sigma_2e_annih_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
-  const int lbt = tdet->lenb();
   const int lbs = bdet->lenb();
   const complex<double>* source_base = cc->data();
 

@@ -33,9 +33,6 @@ using namespace std;
 using namespace bagel;
 
 vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_ptr<DistCivec>>& ccvec, shared_ptr<const MOFile> jop, const vector<int>& conv) const {
-  const int norb = jop->nocc();
-  const int ij = norb*norb;
-
   const int nstate = ccvec.size();
 
   vector<shared_ptr<DistCivec>> sigmavec;
@@ -89,12 +86,6 @@ shared_ptr<DistDvec> FormSigmaDistFCI::operator()(shared_ptr<const DistDvec> ccv
 void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop) const {
   shared_ptr<const Determinants> base_det = cc->det();
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
-
-  const int norb = base_det->norb();
-
-  const size_t lbt = int_det->lenb();
-  const size_t lbs = base_det->lenb();
-  const int ij = norb*norb;
 
   const int rank = mpi__->rank();
   const int size = mpi__->size();
@@ -200,7 +191,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   sigma->flush();
 #endif
 
-  const size_t nelea = base_det->nelea();
   const size_t neleb = base_det->neleb();
 
   const static Comb comb;

@@ -45,8 +45,6 @@ void PFock::pfock_two_electron_part() {
 
   assert(!direct());
 
-  const int shift = sizeof(int) * 4;
-
   vector<size_t> tmp = file_->num_int_each();
   size_t allocsize = *max_element(tmp.begin(), tmp.end());
   double* diskdata = new double[allocsize];

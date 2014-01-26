@@ -206,9 +206,6 @@ void Dimer::construct_coeff() {
     coeffs_ = make_pair(refA->coeff(), refB->coeff());
   }
 
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
-
   if(refs_.first) {
     ncore_ = make_pair(refs_.first->nclosed(), refs_.second->nclosed());
     nact_ = make_pair(refs_.first->nact(), refs_.second->nact());
@@ -220,9 +217,6 @@ void Dimer::construct_coeff() {
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
-
-  const size_t Amos = coeffs_.first->mdim();
-  const size_t Bmos = coeffs_.second->mdim();
 
   {
     shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
@@ -241,8 +235,10 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
-  assert(Amos == ncloA + nactA + nvirtA);
-  assert(Bmos == ncloB + nactB + nvirtB);
+  assert(coeffs_.first->mdim()  == ncloA + nactA + nvirtA);
+  assert(coeffs_.second->mdim() == ncloB + nactB + nvirtB);
+
+  const size_t Amos = coeffs_.first->mdim();
 
   // form "projected" coefficients
   const int dimerbasis = dimerbasis_;
@@ -269,10 +265,6 @@ void Dimer::construct_coeff() {
 }
 
 void Dimer::embed_refs() {
-  const int noccA = nele_.first/2;
-  const int noccB = nele_.second/2;
-  const int nocc  = noccA + noccB;
-
   const int nclosed = nclosed_;
 
   // filled_active is the number of orbitals in the active space that should be filled
@@ -281,10 +273,6 @@ void Dimer::embed_refs() {
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
-  const int nact = nactA + nactB;
-
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
 
   { // Move occupied orbitals of unit B to form the core orbitals
     auto Amatrix = make_shared<Matrix>(dimerbasis_, nclosed + filled_activeB + nactA);

@@ -125,7 +125,6 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
-  const int lbt = tdet->lenb();
   const int lbs = bdet->lenb();
   const double* source_base = cc->data();
 

@@ -139,7 +139,6 @@ void MEH_CAS::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const 
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
 
   const int norb = base_det->norb();
-  const int lbt = int_det->lenb();
   const int lbs = base_det->lenb();
   const double* source_base = cc->data();
 

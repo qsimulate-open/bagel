@@ -81,6 +81,7 @@ class SparseMatrix {
 
     // diagnostics
     void print_block_structure(const size_t nsize, const size_t msize) const;
+    void print_table() const;
 };
 
 }

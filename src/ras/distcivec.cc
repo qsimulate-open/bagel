@@ -50,7 +50,6 @@ namespace bagel {
         abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
       {
         const size_t lb = det_->lenb();
-        const int norb = det_->norb();
 
         const size_t alexical = det_->lexical<0>(abit_);
         buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);

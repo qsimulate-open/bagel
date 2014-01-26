@@ -146,9 +146,12 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
 
 
 shared_ptr<ZMatrix> RelDFFull::form_4index_1fixed(shared_ptr<const RelDFFull> a, const double fac, const int i) const {
+#ifndef NDEBUG
   const size_t size = dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[0]->nocc1();
-  assert(size == dffull_[1]->nocc1() * dffull_[1]->nocc2() * a->dffull_[1]->nocc1());
-  assert(size == dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[1]->nocc1());
+  if (size != dffull_[1]->nocc1() * dffull_[1]->nocc2() * a->dffull_[1]->nocc1() ||
+      size != dffull_[0]->nocc1() * dffull_[0]->nocc2() * a->dffull_[1]->nocc1())
+    throw logic_error("illegal call of RelDFFull::form_4index_1fixed");
+#endif
 
   shared_ptr<Matrix> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
   *real += *dffull_[1]->form_4index_1fixed(a->dffull_[1], -fac, i);

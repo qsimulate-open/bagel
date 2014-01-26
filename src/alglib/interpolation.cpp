@@ -10073,7 +10073,6 @@ double idwcalc(idwinterpolant* z,
      /* Real    */ ae_vector* x,
      ae_state *_state)
 {
-    ae_int_t nx;
     ae_int_t i;
     ae_int_t k;
     double r;
@@ -10102,7 +10101,6 @@ double idwcalc(idwinterpolant* z,
         /*
          * NQ/NW-based model
          */
-        nx = z->nx;
         k = kdtreequeryknn(&z->tree, x, z->nw, ae_true, _state);
         kdtreequeryresultsdistances(&z->tree, &z->rbuf, _state);
         kdtreequeryresultstags(&z->tree, &z->tbuf, _state);
@@ -10113,7 +10111,6 @@ double idwcalc(idwinterpolant* z,
         /*
          * R-based model
          */
-        nx = z->nx;
         k = kdtreequeryrnn(&z->tree, x, z->r, ae_true, _state);
         kdtreequeryresultsdistances(&z->tree, &z->rbuf, _state);
         kdtreequeryresultstags(&z->tree, &z->tbuf, _state);
@@ -13932,8 +13929,6 @@ void spline1dgriddiff2cubic(/* Real    */ ae_vector* x,
     double delta;
     double delta2;
     double delta3;
-    double s0;
-    double s1;
     double s2;
     double s3;
 
@@ -14015,8 +14010,6 @@ void spline1dgriddiff2cubic(/* Real    */ ae_vector* x,
         delta = x->ptr.p_double[i+1]-x->ptr.p_double[i];
         delta2 = ae_sqr(delta, _state);
         delta3 = delta*delta2;
-        s0 = y->ptr.p_double[i];
-        s1 = d1->ptr.p_double[i];
         s2 = (3*(y->ptr.p_double[i+1]-y->ptr.p_double[i])-2*d1->ptr.p_double[i]*delta-d1->ptr.p_double[i+1]*delta)/delta2;
         s3 = (2*(y->ptr.p_double[i]-y->ptr.p_double[i+1])+d1->ptr.p_double[i]*delta+d1->ptr.p_double[i+1]*delta)/delta3;
         d2->ptr.p_double[i] = 2*s2;

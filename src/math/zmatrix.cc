@@ -239,7 +239,7 @@ void ZMatrix::diagonalize(double* eig) {
   const int n = ndim_;
   int info;
 #ifdef HAVE_SCALAPACK
-  if (localized_) {
+  if (localized_  || n <= blocksize__) {
 #endif
     unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
     unique_ptr<double[]> rwork(new double[3*ndim_]);
