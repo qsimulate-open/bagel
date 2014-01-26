@@ -48,7 +48,8 @@ void PutRequest::init() {
   {
     lock_guard<mutex> lock(block_);
     auto m = calls_.insert(make_pair(rq, call));
-    assert(m.second);
+    if (!m.second)
+      throw logic_error("PutRequest::init error");
   }
 }
 
@@ -102,7 +103,8 @@ void BufferPutRequest::init() {
   {
     lock_guard<mutex> lock(block_);
     auto m = calls_.emplace(rq, call);
-    assert(m.second);
+    if (!m.second)
+      throw logic_error("BufferPutRequest::init error");
   }
 }
 
@@ -179,7 +181,8 @@ int RecvRequest::request_recv(double* buf, const size_t size, const int dest, co
   probe_.push_back(srq);
   const int rrq = mpi__->request_recv(p->buf, p->size[0], dest, p->tag);
   auto m = request_.emplace(rrq, p);
-  assert(m.second);
+  if (!m.second)
+    throw logic_error("RecvRequest::request_recv error");
   return rrq;
 }
 

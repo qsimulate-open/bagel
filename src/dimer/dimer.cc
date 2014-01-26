@@ -218,9 +218,6 @@ void Dimer::construct_coeff() {
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
 
-  const size_t Amos = coeffs_.first->mdim();
-  const size_t Bmos = coeffs_.second->mdim();
-
   {
     shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
     shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
@@ -238,8 +235,10 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
-  assert(Amos == ncloA + nactA + nvirtA);
-  assert(Bmos == ncloB + nactB + nvirtB);
+  assert(coeffs_.first->mdim()  == ncloA + nactA + nvirtA);
+  assert(coeffs_.second->mdim() == ncloB + nactB + nvirtB);
+
+  const size_t Amos = coeffs_.first->mdim();
 
   // form "projected" coefficients
   const int dimerbasis = dimerbasis_;

@@ -60,7 +60,9 @@ bool BagelParser::check() const {
 
   // Parse
   bool result = qi::phrase_parse(iter, end, checker, skipper);
-  assert(result);
+
+  if (!result)
+    throw runtime_error("qi::phrase_parse failed in BagelParser::check()");
 
   return (iter == end);
 }
