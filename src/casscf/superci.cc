@@ -136,8 +136,10 @@ void SuperCI::compute() {
       }
 
       // enters davidson iteration
-      auto ccp = make_shared<const RotFile>(*cc_);
-      auto sigmap = make_shared<const RotFile>(*sigma_);
+      auto ccp = make_shared<RotFile>(*cc_);
+      auto sigmap = make_shared<RotFile>(*sigma_);
+      ccp->synchronize();
+      sigmap->synchronize();
       const double mic_energy = davidson.compute(ccp, sigmap);
 
       // residual vector and error

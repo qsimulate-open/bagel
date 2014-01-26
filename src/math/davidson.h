@@ -95,8 +95,8 @@ class DavidsonDiag {
       // adding new matrix elements
       {
         const int n = newbasis.size();
-        mat_ = mat_ ? mat_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n, true);
-        overlap_ = overlap_ ? overlap_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n, true);
+        mat_ = mat_ ? mat_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n);
+        overlap_ = overlap_ ? overlap_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n);
       }
 
       basis_.insert(basis_.end(), newbasis.begin(), newbasis.end());

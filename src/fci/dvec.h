@@ -203,6 +203,11 @@ class Dvector {
       for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
     }
 
+    void synchronize() {
+      for (auto& i : dvec_)
+        i->synchronize(); 
+    }
+
     void print(const double thresh = 0.05) const {
       int j = 0;
       for (auto& iter : dvec_) {

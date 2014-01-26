@@ -117,6 +117,12 @@ class RotationMatrix {
       return 1.0/scal;
     }
 
+    void synchronize() {
+#ifdef HAVE_MPI_H
+      mpi__->broadcast(data(), size(), 0);
+#endif
+    }
+
     // return data_
     DataType* data() { return data_.get(); }
     const DataType* data() const { return data_.get(); }
