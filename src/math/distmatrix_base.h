@@ -155,9 +155,7 @@ class DistMatrix_base {
 
       const int nblock = localrow/blocksize__;
       const int mblock = localcol/blocksize__;
-      const size_t nstride = blocksize__*mpi__->nprow();
       const size_t mstride = blocksize__*mpi__->npcol();
-      const int myprow = mpi__->myprow()*blocksize__;
       const int mypcol = mpi__->mypcol()*blocksize__;
       for (int i = 0; i != mblock; ++i)
         for (int j = 0; j != nblock; ++j)
