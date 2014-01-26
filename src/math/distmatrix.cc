@@ -147,7 +147,6 @@ struct RotateTask {
 // Caution: assumes no repetition of rotation indices (each orbital is involved in at most one rotation)
 void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
   const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
 
   const int mypcol = mpi__->mypcol();
   const int myprow = mpi__->myprow();
@@ -173,7 +172,6 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
       const int localoffset = iloc ? ioffset : joffset;
       double* const localdata = local_.get() + localoffset * localrow;
 
-      const int remoteoffset = ( iloc ? joffset : ioffset ) * localrow;
       const int remoterank = mpi__->pnum( myprow, ( iloc ? jpcol : ipcol ) );
 
       auto sbuf = make_shared<Matrix>(localrow, 2);
