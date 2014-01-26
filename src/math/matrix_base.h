@@ -34,21 +34,24 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
+#include <cereal/access.hpp>
+#include <cereal/types/memory.hpp>
+
 namespace bagel {
 
 template<typename DataType>
 class Matrix_base {
   protected:
+    size_t ndim_;
+    size_t mdim_;
     std::unique_ptr<DataType[]> data_;
-    const size_t ndim_;
-    const size_t mdim_;
 
     // if this matrix is used within node
     bool localized_;
 
     // for Scalapack BLAS3 operation
 #ifdef HAVE_SCALAPACK
-    std::unique_ptr<int[]> desc_;
+    std::vector<int> desc_;
     std::tuple<int, int> localsize_;
 
     void setlocal_(const std::unique_ptr<DataType[]>& local) {
@@ -120,7 +123,7 @@ class Matrix_base {
       return blas::dot_product(data(), size(), o.data());
     }
     template<class T>
-    double orthog_impl(const std::list<std::shared_ptr<const T>> o) { 
+    double orthog_impl(const std::list<std::shared_ptr<const T>> o) {
       for (auto& it : o) {
         const DataType m = detail::conj(this->dot_product(it));
         ax_plus_y(-m, it);
@@ -145,9 +148,30 @@ class Matrix_base {
       return out;
     }
 
+  private:
+    // serialization
+    friend class cereal::access;
+    template <class Archive>
+    void save(Archive & ar) const {
+      ar(ndim_, mdim_);
+      for (size_t i = 0; i != size(); ++i) ar(*(data()+i));
+      ar(localized_);
+#ifdef HAVE_SCALAPACK
+      ar(desc_, localsize_);
+#endif
+    }
+    template <class Archive>
+    void load(Archive & ar) {
+      ar(ndim_, mdim_);
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      for (size_t i = 0; i != size(); ++i) ar(*(data()+i));
+#ifdef HAVE_SCALAPACK
+      ar(desc_, localsize_);
+#endif
+    }
 
   public:
-    Matrix_base(const size_t n, const size_t m, const bool local = false) : data_(new DataType[n*m]), ndim_(n), mdim_(m), localized_(local) {
+    Matrix_base(const size_t n, const size_t m, const bool local = false) : ndim_(n), mdim_(m), data_(new DataType[n*m]), localized_(local) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
@@ -157,7 +181,7 @@ class Matrix_base {
       zero();
     }
 
-    Matrix_base(const Matrix_base& o) : data_(new DataType[o.ndim_*o.mdim_]), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
+    Matrix_base(const Matrix_base& o) : ndim_(o.ndim_), mdim_(o.mdim_), data_(new DataType[o.ndim_*o.mdim_]), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
@@ -167,7 +191,7 @@ class Matrix_base {
       std::copy_n(o.data_.get(), size(), data_.get());
     }
 
-    Matrix_base(Matrix_base&& o) : data_(std::move(o.data_)), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
+    Matrix_base(Matrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), data_(std::move(o.data_)), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
@@ -175,6 +199,8 @@ class Matrix_base {
       }
 #endif
     }
+
+    Matrix_base() : ndim_(0), mdim_(0), localized_(false) { }
 
     size_t size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
@@ -206,7 +232,7 @@ class Matrix_base {
         std::copy_n(o + j*nsize, nsize, data_.get() + nstart + i*ndim_);
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
-      assert(nsize == o->ndim() && msize == o->mdim()); 
+      assert(nsize == o->ndim() && msize == o->mdim());
       copy_block(nstart, mstart, nsize, msize, o->data());
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
@@ -254,7 +280,7 @@ class Matrix_base {
     const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
     const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim_; }
 
-    void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); } 
+    void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); }
     DataType dot_product(const std::shared_ptr<const Matrix_base<DataType>> o) const { return dot_product_impl(*o); }
 
     double norm() const { return std::sqrt(detail::real(dot_product_impl(*this))); }
