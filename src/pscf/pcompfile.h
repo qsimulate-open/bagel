@@ -263,35 +263,26 @@ void PCompFile<T>::reopen_with_inout() {
 template<class T>
 void PCompFile<T>::calculate_num_int_each() {
 
-  typedef std::shared_ptr<const Shell> RefShell;
-
   unsigned long data_written = 0ul;
   num_int_each_.resize((S_ + S_ + 1) * (S_ + S_ + 1) * (L_ + 1));
   const int size = basis_.size(); // number of shells
 
 //#pragma omp parallel for reduction (+:data_written)
   for (int m1 = - S_; m1 <= S_; ++m1) {
-    const double m1disp[3] = {0.0, 0.0, m1 * A_};
     size_t offset = (m1 + S_) * (L_ + 1) * (S_ * 2 + 1);
     for (int m2 = 0; m2 <= L_; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * A_};
       for (int m3 = m2 - S_; m3 <= m2 + S_; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3 * A_};
         size_t thisblock = 0ul;
         for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = offset_[i0];
           const int b0size = basis_[i0]->nbasis();
 
           for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = offset_[i1];
             const int b1size = basis_[i1]->nbasis();
 
             for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = offset_[i2];
               const int b2size = basis_[i2]->nbasis();
 
               for (int i3 = 0; i3 != size; ++i3) {
-                const int b3offset = offset_[i3];
                 const int b3size = basis_[i3]->nbasis();
 
                 const double integral_bound = schwarz_[(m1 + K_) * size * size + i0 * size + i1]
@@ -416,7 +407,6 @@ void PCompFile<T>::store_integrals() {
 template<class T>
 void PCompFile<T>::init_schwarz() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<const Atom> RefAtom;
 
   const int size = basis_.size(); // the number of shells per unit cell
   schwarz_.resize(size * size * (2 * K_ + 1));
@@ -474,8 +464,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
   const std::complex<double> czero(0.0, 0.0);
   const std::complex<double> cone(1.0, 0.0);
 
-  const int unit = 1;
-
   const int nbasis1 = geom_->nbasis();
   const int nbasis2 = nbasis1 * nbasis1;
   const int nbasis3 = nbasis2 * nbasis1;
@@ -522,8 +510,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
   size_t loop_counter = 0lu;
   size_t loop_mod10 = 0lu;
 
-  size_t allocsize = *std::max_element(num_int_each_.begin(), num_int_each_.end());
-
   PFile<std::complex<double>> intermediate_mmK(nv * std::max(KK, 1), K_, false);
   std::complex<double>* intermediate_novv = new std::complex<double>[novv];
   PFile<std::complex<double>> intermediate_mKK(std::max(nov * KK * KK, nov), K_, false);
@@ -559,8 +545,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
           loop_mod10++;
           std::cout << "  Loop " << loop_mod10 * 10lu << " percent done" << std::endl;
         }
-
-        size_t local_counter = 0lu;
 
         blocks[0] = 0;
         int iall = 0;
@@ -647,8 +631,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
           const int nkbc = nkb + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m3 * nkb * pi) / K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
-          int offset1 = 0;
-          int offset2 = 0;
           std::fill(datas, datas+nv, 0.0);
 //        #pragma omp parallel for
           for (int ii = 0; ii < nbasis1; ++ii) {
@@ -696,7 +678,6 @@ std::shared_ptr<PMOFile<std::complex<double>>>
         blas::transpose(datas, m, n, data);
 
         for (int nka = -K_; nka < maxK1; ++nka, ++nbja) {
-          const int nkac = nka + K_;
           const std::complex<double> exponent(0.0, K_ != 0 ? (m1 * nka * pi)/ K_ : 0.0);
           const std::complex<double> prefac = exp(exponent);
           const int nsize = jsize * bsize;

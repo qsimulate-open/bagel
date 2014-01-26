@@ -41,7 +41,7 @@ RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_
 void RASCI::common_init() {
   print_header();
 
-  const bool frozen = idata_->get<bool>("frozen", false);
+//const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);

@@ -43,20 +43,15 @@ void F12Ref::compute() {
     // TODO this 2 is bad
     const size_t ncore = ncore_;
     const size_t nval = geom_->nele()/2 - ncore;
-    const size_t nocc = nval + ncore;
-    const size_t nmobasis = ref_->coeff()->mdim();
     const size_t naobasis = geom_->nbasis();
-    const size_t nvirt = nmobasis - nocc;
     const double* const coeff = ref_->coeff()->data();
     const double* const ocoeff = coeff + ncore*naobasis;
-    const double* const vcoeff = ocoeff + nval*naobasis;
 
     start_up_slater_();
 
     shared_ptr<Matrix> caom, cxxm, callm;
     int ncabs;
     tie(caom, cxxm, callm, ncabs) = generate_cabs();
-    double *cao, *cxx, *call;
 
     // first compute half-transformed integrals
     shared_ptr<File2> eri, slater, yukawa, slater2;

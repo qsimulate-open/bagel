@@ -6513,7 +6513,6 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
     ae_int_t itswithintolerance;
     ae_int_t maxitswithintolerance;
     ae_int_t gparuns;
-    ae_int_t maxgparuns;
     ae_int_t maxarmijoruns;
     ae_bool result;
 
@@ -6541,7 +6540,6 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
     ae_matrix_init(&vt, 0, 0, DT_REAL, _state, ae_true);
 
     maxitswithintolerance = 3;
-    maxgparuns = 3;
     maxarmijoruns = 5;
     *qpits = 0;
     *gpaits = 0;
@@ -9351,7 +9349,6 @@ void snnlssolve(snnlssolver* s,
     double stplen;
     double d2;
     double d1;
-    double d0;
     ae_bool wasactivation;
     ae_int_t rfsits;
     double lambdav;
@@ -9522,7 +9519,6 @@ void snnlssolve(snnlssolver* s,
             }
             v = ae_v_dotproduct(&s->d.ptr.p_double[0], 1, &s->g.ptr.p_double[0], 1, ae_v_len(0,ns+nd-1));
             d1 = v;
-            d0 = fprev;
             if( ae_fp_less_eq(d2,0)||ae_fp_greater_eq(d1,0) )
             {
                 terminationneeded = ae_true;

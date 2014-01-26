@@ -231,7 +231,6 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
       for (int sp = 0; sp < nspaces; ++sp) rind[sp].push_back(data[sp].size() + 1);
 
-      auto ibound = bounds.begin();
       for (auto& irow : row_positions) {
         for (int isp = 0; isp < nspaces; ++isp) {
           if ( irow.first >= bounds[isp].first && irow.first < bounds[isp].second) {
@@ -329,7 +328,6 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         // Add up contributions from each node
         const size_t astart = get<0>(bounds_map[ispace->offset()]);
         const size_t aend = get<1>(bounds_map[ispace->offset()]);
-        const size_t asize = aend - astart;
 
         shared_ptr<Matrix> V = Vt->transpose();
 

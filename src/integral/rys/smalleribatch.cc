@@ -94,7 +94,6 @@ void SmallERIBatch::eri_compute(double* eri) const {
   const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
   const size_t a2size_dec = shells_[2]->nbasis_aux_decrement();
   const size_t a1 = a1size_inc + a1size_dec;
-  const size_t a2 = a2size_inc + a2size_dec;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
   auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); }; 

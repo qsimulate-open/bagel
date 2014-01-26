@@ -46,8 +46,6 @@ void GradBatch::compute() {
   const int ang3 = basisinfo_[3]->angular_number();
   const int absize_cart = (ang0+1) * (ang0+2) * (ang1+1) * (ang1+2) / 4;
   const int cdsize_cart = (ang2+1) * (ang2+2) * (ang3+1) * (ang3+2) / 4;
-  const int absize_sph = spherical1_ ? (2*ang0+1)*(2*ang1+1) : absize_cart;
-  const int cdsize_sph = spherical2_ ? (2*ang2+1)*(2*ang3+1) : cdsize_cart;
 
   // perform VRR
   // data_ will contain the intermediates: prim01{ prim23{ xyz{ } } }

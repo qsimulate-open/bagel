@@ -332,9 +332,6 @@ class GammaTask<RASDvec> {
       auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
       auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
 
-      const bool base_action = action(static_cast<int>(operation_));
-      const bool base_spin = spin(static_cast<int>(operation_));
-
       std::shared_ptr<GammaBranch<RASDvec>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
 

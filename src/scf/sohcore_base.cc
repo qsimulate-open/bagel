@@ -46,7 +46,9 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
+#if 0
   const double zeta = 0.0;
+#endif
 
   {
     KineticBatch kinetic(input);

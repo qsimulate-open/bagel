@@ -53,7 +53,6 @@ double molden_out_energy(std::string inp1, std::string inp2) {
         ref = scf->conv_to_ref();
       }
       else if (method == "print") {
-        bool orbitals = itree->get<bool>("orbitals", false);
         std::string out_file = itree->get<std::string>("file", inp1 + ".molden");
 
         MoldenOut mfs(out_file);

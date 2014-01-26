@@ -206,9 +206,6 @@ void Dimer::construct_coeff() {
     coeffs_ = make_pair(refA->coeff(), refB->coeff());
   }
 
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
-
   if(refs_.first) {
     ncore_ = make_pair(refs_.first->nclosed(), refs_.second->nclosed());
     nact_ = make_pair(refs_.first->nact(), refs_.second->nact());
@@ -269,10 +266,6 @@ void Dimer::construct_coeff() {
 }
 
 void Dimer::embed_refs() {
-  const int noccA = nele_.first/2;
-  const int noccB = nele_.second/2;
-  const int nocc  = noccA + noccB;
-
   const int nclosed = nclosed_;
 
   // filled_active is the number of orbitals in the active space that should be filled
@@ -281,10 +274,6 @@ void Dimer::embed_refs() {
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
-  const int nact = nactA + nactB;
-
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
 
   { // Move occupied orbitals of unit B to form the core orbitals
     auto Amatrix = make_shared<Matrix>(dimerbasis_, nclosed + filled_activeB + nactA);

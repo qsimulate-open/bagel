@@ -70,7 +70,6 @@ void SlaterBatch::compute() {
   // data will be stored in bkup_: cont01{ prim23{ xyz{ } } }
   {
     const int m = prim2size_ * prim3size_ * asize_ * csize_;
-    const int bkupsize = m * cont0size_ * cont1size_;
     perform_contraction_new_outer(m, data_, prim0size_, prim1size_, bkup_,
             basisinfo_[0]->contractions(), basisinfo_[0]->contraction_upper(), basisinfo_[0]->contraction_lower(), cont0size_,
             basisinfo_[1]->contractions(), basisinfo_[1]->contraction_upper(), basisinfo_[1]->contraction_lower(), cont1size_);

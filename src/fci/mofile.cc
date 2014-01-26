@@ -93,7 +93,6 @@ void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const M
     int ij = 0;
     for (int i = 0; i != nocc; ++i) {
       for (int j = 0; j <= i; ++j, ++ij) {
-        const int ijo = (j + i*nocc)*nocc*nocc;
         int kl = 0;
         for (int k = 0; k != nocc; ++k)
           for (int l = 0; l <= k; ++l, ++kl)

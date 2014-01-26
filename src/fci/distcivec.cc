@@ -103,7 +103,6 @@ namespace bagel { namespace DFCI {
 
 template <>
 shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
-  const size_t la = det_->lena();
   const size_t lb = det_->lenb();
   auto out = this->clone();
 
@@ -348,9 +347,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
   // action: true -> create; false -> annihilate
   // spin:   true -> alpha;  false -> beta
   shared_ptr<const Determinants> sdet = this->det();
-  const int norb = sdet->norb();
 
-  const size_t las = sdet->lena();
   const size_t lbs = sdet->lenb();
 
   shared_ptr<DistCivector<double>> out;

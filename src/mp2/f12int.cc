@@ -102,8 +102,6 @@ F12Int::F12Int(const multimap<string, string> id, const shared_ptr<const Geometr
 
   // coefficient sets
   const size_t nocc = geom->nele()/2 - ncore;
-  const size_t nbasis = geom->nbasis();
-  const size_t nvirt = nbasis - nocc - ncore;
   shared_ptr<const Matrix> oc = ref_->coeff()->slice(ncore, ncore+nocc);
 
   const shared_ptr<const DFDist> df = geom_->df();

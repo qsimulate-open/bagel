@@ -87,8 +87,6 @@ class SmallInts1e {
     template<typename Value>
     void compute(const Value&) {
       static_assert(std::is_same<Value, void*>::value, "SmallInts1e::compute called illegally");
-      const int s0size = shells_[0]->nbasis();
-      const int s1size = shells_[1]->nbasis();
       const int a0size_inc = shells_[0]->aux_increment()->nbasis();
       const int a1size_inc = shells_[1]->aux_increment()->nbasis();
       const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
@@ -146,8 +144,6 @@ void SmallInts1e<Libint>::compute(const Value& nshells) {
 #else
 void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 #endif
-  const int s0size = shells_[0]->nbasis();
-  const int s1size = shells_[1]->nbasis();
   const int a0size_inc = shells_[0]->aux_increment()->nbasis();
   const int a1size_inc = shells_[1]->aux_increment()->nbasis();
   const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;

@@ -35,7 +35,6 @@ shared_ptr<Matrix> MEHSpin::apply(const Matrix& o) const {
 void MEHSpin::filter(Matrix& o, const int desired_spin) const {
   const int n = o.ndim();
   assert( n == this->mdim() );
-  const int m = o.mdim();
 
   for (int ispin = 0; ispin != max_spin_; ++ispin) {
     if (ispin == desired_spin) continue;

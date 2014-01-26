@@ -120,7 +120,6 @@ void GradTask2::compute() {
   GradBatch gradbatch(shell_, 0.0);
 #endif
   gradbatch.compute();
-  const size_t block = gradbatch.size_block();
 
   // unfortunately the convention is different...
   int jatom[4] = {atomindex_[1], -1, atomindex_[0], -1};

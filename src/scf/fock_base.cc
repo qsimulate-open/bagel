@@ -46,9 +46,6 @@ void Fock_base::fock_one_electron_part() {
   assert(ndim_ == mdim_);
 
   const int nirrep = geom_->nirrep();
-  const int unit = 1;
-  const double one = 1.0;
-  const int size = nbasis * nbasis;
   if (nirrep != 1) {
     Matrix intermediate(nbasis, nbasis);
     for (int i = 1; i != nirrep; ++i) {

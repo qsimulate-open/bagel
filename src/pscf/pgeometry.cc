@@ -43,7 +43,6 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
 
   smatch what;
   regex reg("Periodic");
-  int out = 0;
   bool found = false;
   while(!ifs.eof()) {
     string sline;

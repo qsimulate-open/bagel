@@ -43,7 +43,7 @@ Storage_Incore::Storage_Incore(const map<size_t, size_t>& size, bool init) : Sto
     }
   } else {
     // if not init, we make a dummy tensor with size 1
-    for (auto& i : size) {
+    for (int i = 0; i != size.size(); ++i) {
       unique_ptr<double[]> tmp(new double[1]);
       data_.push_back(move(tmp));
     }

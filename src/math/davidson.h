@@ -102,7 +102,6 @@ class DavidsonDiag {
       basis_.insert(basis_.end(), newbasis.begin(), newbasis.end());
       for (auto& ib : newbasis) {
         ++size_;
-        auto cciter = basis_.begin();
         int i = 0;
         for (auto& b : basis_) {
           if (i > size_-1) break;

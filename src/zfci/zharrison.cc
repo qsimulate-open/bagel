@@ -158,9 +158,6 @@ void ZHarrison::compute() {
 
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
-  // some constants
-  const int ij = nij();
-
   // Creating an initial CI vector
   cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 

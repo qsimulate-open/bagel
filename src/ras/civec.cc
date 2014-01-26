@@ -122,7 +122,6 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
   auto out = make_shared<RASCivec>(tdet);
 
-  const int norb = sdet->norb();
   const int ras1 = sdet->ras(0);
   const int ras2 = sdet->ras(1);
   const int ras3 = sdet->ras(2);
@@ -184,7 +183,6 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
   auto out = make_shared<RASCivec>(tdet);
 
-  const int norb = sdet->norb();
   const int ras1 = sdet->ras(0);
   const int ras2 = sdet->ras(1);
   const int ras3 = sdet->ras(2);

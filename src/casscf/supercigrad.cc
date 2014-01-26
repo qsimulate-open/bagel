@@ -50,7 +50,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  const int nstate = ref_->nstate();
   const int nvirt = ref_->nvirt();
 
   // related to denominators

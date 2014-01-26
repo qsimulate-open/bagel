@@ -112,7 +112,6 @@ void MoldenOut::write_mos() {
   if (is_spherical) ofs_ << "[5D]" << endl;
   ofs_ << "[MO]" << endl;
 
-  const int nbasis = ref_->coeff()->ndim();
   const int num_mos = ref_->coeff()->mdim();
   int nocc = ref_->nclosed();
 
@@ -121,7 +120,6 @@ void MoldenOut::write_mos() {
   vector<double> eigvec = ref_->eig();
   if (eigvec.empty()) eigvec = vector<double>(num_mos,0.0);
 
-  int i = 0;
   auto ieig = eigvec.begin();
 
   for (int i = 0; i < num_mos; ++ieig, ++i) {
