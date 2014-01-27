@@ -34,8 +34,9 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
-#include <cereal/access.hpp>
-#include <cereal/types/memory.hpp>
+#include <src/util/serialization.h>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace bagel {
 
@@ -150,24 +151,31 @@ class Matrix_base {
 
   private:
     // serialization
-    friend class cereal::access;
+    friend class boost::serialization::access;
+
     template <class Archive>
-    void save(Archive & ar) const {
-      ar(ndim_, mdim_);
-      for (size_t i = 0; i != size(); ++i) ar(*(data()+i));
-      ar(localized_);
+    void save(Archive & ar, const unsigned int) const {
+      ar << ndim_ << mdim_;
+      for (size_t i = 0; i != size(); ++i) ar << *(data()+i);
+      ar << localized_;
 #ifdef HAVE_SCALAPACK
-      ar(desc_, localsize_);
+      ar << desc_ << localsize_;
 #endif
     }
+
     template <class Archive>
-    void load(Archive & ar) {
-      ar(ndim_, mdim_);
+    void load(Archive & ar, const unsigned int) {
+      ar >> ndim_ >> mdim_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      for (size_t i = 0; i != size(); ++i) ar(*(data()+i));
+      for (size_t i = 0; i != size(); ++i) ar >> *(data()+i);
 #ifdef HAVE_SCALAPACK
-      ar(desc_, localsize_);
+      ar >> desc_ >> localsize_;
 #endif
+    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
     }
 
   public:
