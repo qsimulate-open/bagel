@@ -27,6 +27,7 @@
 #define __meh_gamma_forest_h
 
 #include <array>
+#include <set>
 
 #include <src/fci/dvec.h>
 #include <src/ras/civector.h>
@@ -79,6 +80,22 @@ class GammaBranch {
 
     const std::map<int, std::shared_ptr<const VecType>>& bras() const { return bras_; }
     std::map<int, std::shared_ptr<Matrix>>& gammas() { return gammas_; }
+
+    bool if_contributes(std::set<int> needed) {
+      bool contributes = false;
+      for (const int& b : needed) {
+        if (branch(b)) contributes |= branch(b)->active();
+      }
+      if (!contributes) {
+        for (int i = 0; i < 4; ++i) {
+          if (branch(i)) {
+            if (branch(i)->active()) contributes |= branch(i)->if_contributes(needed);
+          }
+        }
+      }
+      return contributes;
+    }
+
 };
 
 template <typename VecType>
@@ -312,8 +329,107 @@ void GammaForest<DistDvec, 2>::compute();
 template <>
 void GammaForest<DistRASDvec, 2>::compute();
 
+template <class Branch>
+class RASTask {
+  protected:
+    const int holes_;
+    const int particles_;
+
+  public:
+    RASTask(const int h, const int p) : holes_(h), particles_(p) {}
+    virtual std::shared_ptr<const StringSpace> stringspace(const int, const int, const int, const int , const int, const int) = 0;
+    std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<Branch> branch, std::shared_ptr<const RASBlock<double>> base_block,
+                                                 const int& orbital, const bool& action, const bool& spin) {
+      std::shared_ptr<const StringSpace> sa = base_block->stringa();
+      std::shared_ptr<const StringSpace> sb = base_block->stringb();
+
+      std::array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
+
+      const int ras_space = ( orbital >= ras[0] ) + ( orbital >= (ras[0]+ras[1]) );
+      std::array<int, 6> info{{ras[0] - sa->nholes(), ras[0] - sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()}};
+
+      const int mod = action ? +1 : -1;
+      info[2*ras_space]   += spin ? mod : 0;
+      info[2*ras_space+1] += spin ? 0 : mod;
+
+      // make sure it is a valid result
+      for (int i = 0; i < 6; ++i)
+        if (info[i] < 0 || info[i] > ras[i/2]) return std::shared_ptr<RASBlock<double>>();
+
+      // is it out of space?
+      const int nholes = 2*ras[0] - (info[0] + info[1]);
+      const int nparts = info[4] + info[5];
+      if (nholes > holes_ || nparts > particles_) {
+        // peek ahead along the branch to see whether it will come back into the space
+
+        // set of operations that would bring state back
+        std::set<int> needed;
+        if (nholes == (holes_+1)) {
+          if (info[0] == ras[0]) {
+            // no alpha holes, only beta holes
+            needed.insert(static_cast<int>(GammaSQ::CreateBeta));
+          }
+          else if (info[1] == ras[0]) {
+            // no beta holes, only alpha holes
+            needed.insert(static_cast<int>(GammaSQ::CreateAlpha));
+          }
+          else {
+            // both types of holes present
+            needed.insert(static_cast<int>(GammaSQ::CreateAlpha));
+            needed.insert(static_cast<int>(GammaSQ::CreateBeta));
+          }
+        }
+        else if (nparts == (particles_+1)) {
+          if (info[4] == 0) {
+            // no alpha particles, only beta particles
+            needed.insert(static_cast<int>(GammaSQ::AnnihilateBeta));
+          }
+          else if (info[5] == 0) {
+            // no beta particles, only alpha particles
+            needed.insert(static_cast<int>(GammaSQ::AnnihilateAlpha));
+          }
+          else {
+            // both present
+            needed.insert(static_cast<int>(GammaSQ::AnnihilateBeta));
+            needed.insert(static_cast<int>(GammaSQ::AnnihilateAlpha));
+          }
+        }
+        else {
+          // impossible to contribute
+          return std::shared_ptr<RASBlock<double>>();
+        }
+
+        // search down branch for active branches with needed operations
+        if (!branch->if_contributes(needed))
+          return std::shared_ptr<RASBlock<double>>();
+      }
+
+      std::shared_ptr<const StringSpace> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
+      std::shared_ptr<const StringSpace> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
+
+      auto out = std::make_shared<RASBlock<double>>(ta,tb);
+
+      std::shared_ptr<RAS::apply_block_base<double>> apply_block;
+      switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {
+        case 0:
+          apply_block = std::make_shared<RAS::apply_block_impl<double, false, false>>(orbital); break;
+        case 1:
+          apply_block = std::make_shared<RAS::apply_block_impl<double, false, true>>(orbital);  break;
+        case 2:
+          apply_block = std::make_shared<RAS::apply_block_impl<double, true, false>>(orbital);  break;
+        case 3:
+          apply_block = std::make_shared<RAS::apply_block_impl<double, true, true>>(orbital);   break;
+        default:
+          assert(false);
+      }
+      (*apply_block)(base_block, out);
+
+      return out;
+    }
+};
+
 template <>
-class GammaTask<RASDvec> {
+class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
   protected:
     const int a_;                                     // Orbital
     const GammaSQ  operation_;                        // Which operation
@@ -323,7 +439,9 @@ class GammaTask<RASDvec> {
     std::map<std::tuple<int, int, int, int, int, int>, std::shared_ptr<const StringSpace>> stringspaces_;
 
   public:
-    GammaTask(const std::shared_ptr<GammaTree<RASDvec>> tree, const GammaSQ operation, const int a) : a_(a), operation_(operation), tree_(tree) {}
+    GammaTask(const std::shared_ptr<GammaTree<RASDvec>> tree, const GammaSQ operation, const int a)
+              : RASTask<GammaBranch<RASDvec>>(tree->ket()->det()->max_holes(), tree->ket()->det()->max_particles()),
+                a_(a), operation_(operation), tree_(tree) {}
 
     void compute() {
       constexpr int nops = 4;
@@ -343,7 +461,7 @@ class GammaTask<RASDvec> {
         for (auto& ketblock : ketvec->blocks()) {
           if (!ketblock) continue;
           std::shared_ptr<const RASBlock<double>> ablock
-            = next_block(ketblock, a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
+            = next_block(first, ketblock, a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_)));
           if (!ablock) continue;
 
           for (auto& ibra : first->bras())
@@ -355,7 +473,7 @@ class GammaTask<RASDvec> {
 
             for (int b = 0; b < norb; ++b) {
               if (b==a_ && j==static_cast<int>(operation_)) continue;
-              std::shared_ptr<const RASBlock<double>> bblock = next_block(ablock, b, action(j), spin(j));
+              std::shared_ptr<const RASBlock<double>> bblock = next_block(second, ablock, b, action(j), spin(j));
               if (!bblock) continue;
 
               for (auto& jbra : second->bras())
@@ -367,7 +485,7 @@ class GammaTask<RASDvec> {
 
                 for (int c = 0; c < norb; ++c) {
                   if (b==c && k==j) continue;
-                  std::shared_ptr<const RASBlock<double>> cblock = next_block(bblock, c, action(k), spin(k));
+                  std::shared_ptr<const RASBlock<double>> cblock = next_block(third, bblock, c, action(k), spin(k));
                   if (!cblock) continue;
                   for (auto& kbra : third->bras())
                     dot_product(kbra.second, cblock, third->gammas().find(kbra.first)->second->element_ptr(iket*kbra.second->ij(), a_+norb*b+norb*norb*c));
@@ -392,7 +510,7 @@ class GammaTask<RASDvec> {
         }
       }
 
-      std::shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) {
+      std::shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
         auto iter = stringspaces_.find(std::make_tuple(a,b,c,d,e,f));
         if (iter != stringspaces_.end()) {
           return iter->second;
@@ -401,46 +519,6 @@ class GammaTask<RASDvec> {
           stringspaces_.emplace(std::make_tuple(a,b,c,d,e,f), std::make_shared<StringSpace>(a,b,c,d,e,f));
           return stringspaces_[std::make_tuple(a,b,c,d,e,f)];
         }
-      }
-
-      std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<const RASBlock<double>> base_block, const int& orbital, const bool& action, const bool& spin) {
-        std::shared_ptr<const StringSpace> sa = base_block->stringa();
-        std::shared_ptr<const StringSpace> sb = base_block->stringb();
-
-        std::array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
-
-        const int ras_space = ( orbital >= ras[0] ) + ( orbital >= (ras[0]+ras[1]) );
-        std::array<int, 6> info{{ras[0] - sa->nholes(), ras[0] - sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()}};
-
-        const int mod = action ? +1 : -1;
-        info[2*ras_space]   += spin ? mod : 0;
-        info[2*ras_space+1] += spin ? 0 : mod;
-
-        // make sure it is a valid result
-        for (int i = 0; i < 6; ++i)
-          if (info[i] < 0 || info[i] > ras[i/2]) return std::shared_ptr<RASBlock<double>>();
-
-        std::shared_ptr<const StringSpace> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
-        std::shared_ptr<const StringSpace> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
-
-        auto out = std::make_shared<RASBlock<double>>(ta,tb);
-
-        std::shared_ptr<RAS::apply_block_base<double>> apply_block;
-        switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {
-          case 0:
-            apply_block = std::make_shared<RAS::apply_block_impl<double, false, false>>(orbital); break;
-          case 1:
-            apply_block = std::make_shared<RAS::apply_block_impl<double, false, true>>(orbital);  break;
-          case 2:
-            apply_block = std::make_shared<RAS::apply_block_impl<double, true, false>>(orbital);  break;
-          case 3:
-            apply_block = std::make_shared<RAS::apply_block_impl<double, true, true>>(orbital);   break;
-          default:
-            assert(false);
-        }
-        (*apply_block)(base_block, out);
-
-        return out;
       }
 };
 
