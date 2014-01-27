@@ -168,6 +168,7 @@ class Matrix_base {
       ar >> ndim_ >> mdim_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       for (size_t i = 0; i != size(); ++i) ar >> *(data()+i);
+      ar >> localized_;
 #ifdef HAVE_SCALAPACK
       ar >> desc_ >> localsize_;
 #endif

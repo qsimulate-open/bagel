@@ -33,6 +33,7 @@
 #include <boost/archive/shared_ptr_helper.hpp>
 #include <memory>
 #include <tuple>
+#include <unordered_map>
 
 namespace boost {
   namespace serialization {
@@ -55,7 +56,14 @@ namespace boost {
       BOOST_STATIC_ASSERT((tracking_level<T>::value != track_never));
       T* ptr;
       ar >> ptr;
-      t.reset(ptr);
+
+      static std::unordered_map<void*, std::weak_ptr<T>> hash;
+      if (hash[ptr].expired()) {
+        t = std::shared_ptr<T>(ptr);
+        hash[ptr] = t;
+      } else {
+        t = hash[ptr].lock();
+      }
     }
 
     // serialization of tuple
