@@ -17,7 +17,7 @@ using namespace std;
 using namespace mpfr;
 using namespace boost;
 
-constexpr int JMAX = 3;
+constexpr int JMAX = 6;
 constexpr int LARGE = 32;
 
 struct Data {
@@ -134,8 +134,8 @@ int main() {
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
 //\n\
 \n\
-#ifndef __SRC_INTEGRAL_WIGNER3J_H \n\
-#define __SRC_INTEGRAL_WIGNER3J_H \n\
+#ifndef __SRC_INTEGRAL_ECP_WIGNER3J_GEN_WIGNER3J_H\n\
+#define __SRC_INTEGRAL_ECP_WIGNER3J_GEN_WIGNER3J_H\n\
 \n\
 #include <algorithm>\n\
 #include <cassert>\n\
@@ -143,39 +143,52 @@ int main() {
 using namespace std;\n\
 using namespace bagel;\n\
 \n\
-void wigner3j(const int j1, const int m1, const int j2, const int m2, const int j3, const int m3, const double w3j); \n\
-\n";
-
-  ofs << "\
-  constexpr double jj[" << n3j <<"] = {";
-
-  const double tiny = 1.0e-100;
-  stringstream listj;
-  string indent(" ");
-  int cnt = 0;
-  for (auto iter = w3j.begin(); iter != w3j.end(); ++iter) {
-     listj << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
-           (fabs(*iter) < tiny ? 0.0 : *iter);
-     if (iter + 1 != w3j.end()) listj << ",";
-     if (cnt++ % 7 == 4) listj << "\n";
-  }
-
-  ofs << listj.str() << "\
-  };" << endl;
-
-  ofs << "\
-  \n\
-  assert (j1 <= " << JMAX << " && j2 <= " << JMAX << " && j3 <= " << JMAX << "); \n\
-  if (m3 = -m1 - m2) {\n\
-    w3j = 0.0;\n\
-  } else {\n\
-    const int j = j1*" << JMAX+1 << " + j2*" << JMAX +1 << " + j3*" << 2*JMAX + 1 << " + (m1+" << JMAX << ")*" << 2*JMAX + 1 << " + m2+" << JMAX << ";\n\
-    w3j = jj[j];\n\
-  }\n";
-
-ofs << "\
+namespace bagel {\n\
 \n\
-} \n";
+struct Wigner3j {\n\
+  \n\
+  public:\n\
+  Wigner3j() {}\n\
+\n\
+  const double lookup_wigner3j(const int j1, const int m1, const int j2, const int m2, const int j3, const int m3) {\n\
+  \n";
+
+    ofs << "\
+    constexpr double w3j[" << n3j <<"] = {";
+
+    const double tiny = 1.0e-100;
+    stringstream listj;
+    string indent("   ");
+    int cnt = 0;
+    for (auto iter = w3j.begin(); iter != w3j.end(); ++iter) {
+      listj << indent << scientific << setprecision(15) << ((*iter > 0.0 || fabs(*iter) < tiny) ? " " : "")  << setw(20) <<
+             (fabs(*iter) < tiny ? 0.0 : *iter);
+      if (iter + 1 != w3j.end()) listj << ",";
+      if (cnt++ % 7 == 4) listj << "\n";
+    }
+
+    ofs << listj.str() << "\
+    };" << endl;
+
+    ofs << "\
+    \n\
+    assert (j1 <= " << JMAX << " && j2 <= " << JMAX << " && j3 <= " << JMAX << "); \n\
+    const int m = m1 + m2 + m3; \n\
+    if (m != 0) {\n\
+      return 0.0;\n\
+    } else {\n\
+      const int j = j1*" << (JMAX+1)*(JMAX+1)*(2*JMAX+1)*(2*JMAX+1) << " + j2*" << (JMAX +1)*(2*JMAX+1)*(2*JMAX+1) << " + j3*" << (2*JMAX+1)*(2*JMAX+1) << " + (m1+" << JMAX << ")*" << 2*JMAX + 1 << " + m2+" << JMAX << ";\n\
+      return w3j[j];\n\
+    }\n";
+
+    ofs << "\
+    \n\
+  }\n\
+  \n\
+};\n\
+}\n\
+\n\
+#endif\n";
 
   ofs.close();
 
