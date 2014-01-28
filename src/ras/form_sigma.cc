@@ -191,7 +191,7 @@ namespace bagel {
 
     public:
       Cprime(shared_ptr<const StringSpace> space, shared_ptr<const RASDeterminants> det,
-          vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>&& data) : source_space_(space), det_(det), blocks_(data) { }
+          vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>&& data) : source_space_(space), det_(det), blocks_(move(data)) { }
 
       shared_ptr<Matrix> get_matrix(shared_ptr<const StringSpace> target_space) const {
         const size_t stringsize = source_space_->size();
