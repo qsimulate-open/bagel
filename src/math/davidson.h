@@ -186,12 +186,12 @@ class DavidsonDiag {
         auto tmp = basis_.front()->cc->clone();
         int k = 0;
         for (auto& iv : basis_) {
-          if ( std::fabs(eig_->element(k++,i)) > 1.0e-16 )
+          if ( std::abs(eig_->element(k++,i)) > 1.0e-16 )
             tmp->ax_plus_y(-vec_[i]*eig_->element(k-1,i), iv->cc);
         }
         k = 0;
         for (auto& iv : basis_) {
-          if (std::fabs(eig_->element(k++,i)) > 1.0e-16 )
+          if (std::abs(eig_->element(k++,i)) > 1.0e-16 )
             tmp->ax_plus_y(eig_->element(k-1,i), iv->sigma);
         }
         out.push_back(tmp);
