@@ -259,7 +259,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_ERI (const array<shared
                   vector<int> indices = {i,j,k,l,m,n,o,p};
                   vector<int> ordered_indices = {p,l,o,k,n,j,m,i};
                   vector<int> ordered_indices2 = {l,k,j,i,p,o,n,m};
-                  const int nbasis = nprimitive[0][m] + nprimitive[1][n] + nprimitive[2][o] + nprimitive[3][p];
+                  //const int nbasis = nprimitive[0][m] + nprimitive[1][n] + nprimitive[2][o] + nprimitive[3][p];
                   vector<double> positions_now = {};
                   vector<int> angular_now = {};
                   vector<double> exponents_now = {};
@@ -441,7 +441,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared
           vector<int> ordered_indices2 = {j,i,n,m};
           complex<double> full_nai = 0.0;
           for (int k=0; k!=natom; k++) {
-            const int nbasis = nprimitive[0][m] + nprimitive[1][n];
+            //const int nbasis = nprimitive[0][m] + nprimitive[1][n];
             vector<double> positions_now = {};
             vector<int> angular_now = {};
             vector<double> exponents_now = {};
@@ -609,7 +609,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_overlap (const array<sh
           vector<int> indices = {i,j,m,n};
           vector<int> ordered_indices = {n,j,m,i};
           vector<int> ordered_indices2 = {j,i,n,m};
-          const int nbasis = nprimitive[0][m] + nprimitive[1][n];
+          //const int nbasis = nprimitive[0][m] + nprimitive[1][n];
           vector<double> positions_now = {};
           vector<int> angular_now = {};
           vector<double> exponents_now = {};
