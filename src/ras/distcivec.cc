@@ -116,6 +116,11 @@ namespace bagel {
 // S^2 = S_z^2 + S_z + S_-S_+ with S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_beta
 template<>
 shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
+#if 1
+  auto local = civec();
+  auto spun = local->spin();
+  return spun->distcivec();
+#else
   auto out = make_shared<DistRASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
@@ -171,6 +176,7 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   this->terminate_mpi_recv();
 
   return out;
+#endif
 }
 
 // S_- = \sum_i i^dagger_beta i_alpha

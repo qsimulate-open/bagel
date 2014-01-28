@@ -100,11 +100,11 @@ void MultiExcitonHamiltonian<VecType>::compute() {
         for (int mult = 0; mult != multiple; ++mult) {
           for (int i = 0; i != nstatesA; ++i) {
             const int dindex = iAB.dimerindex(i,mult) + ioff;
-            seeds.insert(std::make_pair(denom_[dindex], dindex));
+            seeds.emplace(denom_[dindex], dindex);
           }
           for (int i = mult + 1; i != nstatesB; ++i) {
             const int dindex = iAB.dimerindex(mult,i) + ioff;
-            seeds.insert(std::make_pair(denom_[dindex], dindex));
+            seeds.emplace(denom_[dindex], dindex);
           }
         }
       }
@@ -112,14 +112,15 @@ void MultiExcitonHamiltonian<VecType>::compute() {
     }
 
     auto iseed = seeds.begin();
-    auto initial = std::make_shared<Matrix>(dimerstates_,trialsize);
+    auto initial = std::make_shared<Matrix>(dimerstates_, trialsize);
     for (int istate = 0; istate != trialsize; ++istate, ++iseed)
       initial->element(iseed->second, istate) = 1.0;
     spin_->filter(*initial, nspin_);
 
+    initial->broadcast();
     // Symmetric orthogonalization to get rid of linear dependencies
     Matrix overlap = *initial % *initial;
-    overlap.inverse_half();
+    overlap.tildex();
     *initial = *initial * overlap;
 
     // Average diagonal elements to pick the best options
@@ -178,13 +179,13 @@ void MultiExcitonHamiltonian<VecType>::compute() {
           target_array[i] = source_array[i] / std::min(en - denom_[i], -0.1);
         }
         std::list<std::shared_ptr<const Matrix>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc->slice(jst, jst+1));
         spin_->filter(*tmp_cc, nspin_);
         double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
         tmp_cc->scale(scal);
         std::copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
       }
+      cc->broadcast();
     }
 
     if (nstates_ != 1 && iter) std::cout << std::endl;

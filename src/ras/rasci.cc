@@ -312,9 +312,9 @@ void RASCI::compute() {
         const double en = energies.at(ist);
         transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
         cc_->data(ist)->normalize();
-        cc_->data(ist)->spin_decontaminate();
         cc_->data(ist)->synchronize();
       }
+        cc_->spin_decontaminate();
     }
 
     pdebug.tick_print("denominator");
