@@ -764,7 +764,6 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       const int ras1 = sdet->ras(0);
       const int ras2 = sdet->ras(1);
       const int ras3 = sdet->ras(2);
-      const int norb = sdet->norb();
 
       // 0 -> RASI, 1 -> RASII, 2 -> RASIII
       const int ras_space = ( orbital >= ras1 ) + (orbital >= ras1 + ras2);

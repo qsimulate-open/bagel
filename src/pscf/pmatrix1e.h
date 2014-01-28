@@ -53,7 +53,7 @@ class PMatrix1e {
     const int totalsize_;
 
     virtual void init();
-    virtual void computebatch(const std::vector<std::shared_ptr<const Shell>>&,
+    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&,
         const int, const int, const int, const int) { assert(false); };
 
     std::shared_ptr<PData> data_;
