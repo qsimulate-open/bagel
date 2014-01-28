@@ -277,8 +277,6 @@ double PMLocalization::calc_P(shared_ptr<const DistMatrix> coeff, const int nsta
   dgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->data(), nbasis, coeff->element_ptr(0, nstart), nbasis, 0.0, mos->data(), nbasis);
 #endif
 
-  const int natom = atom_bounds_.size();
-
   auto P_A = make_shared<DistMatrix>(norb, norb);
 
   for (auto& ibounds : atom_bounds_) {

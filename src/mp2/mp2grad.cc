@@ -53,7 +53,6 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const size_t nmobasis = ref_->coeff()->mdim();
 
   // since this is only for closed shell
-  const size_t naux = geom_->naux();
   const size_t nocc = ref_->nocc() - ncore;
   const size_t nocca = ref_->nocc();
   if (nocc < 1) throw runtime_error("no correlated electrons");

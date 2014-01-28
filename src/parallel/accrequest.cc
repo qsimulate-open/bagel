@@ -49,7 +49,8 @@ void SendRequest::request_send(unique_ptr<double[]> buf, const size_t size, cons
   mpi__->request_send(p->size,    4, dest, probe_key__);
   const int rrq = mpi__->request_recv(&p->target, 1, dest, p->tag);
   auto m = inactive_.insert(make_pair(rrq, p));
-  assert(m.second);
+  if (!m.second)
+    throw logic_error("SendRequest::request_send error");
 }
 
 
@@ -63,7 +64,8 @@ void SendRequest::flush_() {
       assert(round(p->target) == p->tag);
       const int srq = mpi__->request_send(p->buf.get(), p->size[0], p->targetrank, p->tag);
       auto m = requests_.insert(make_pair(srq, p));
-      assert(m.second);
+      if (!m.second)
+        throw logic_error("SendRequest::flush_ error");
       i = inactive_.erase(i);
     } else {
       ++i;
@@ -110,7 +112,8 @@ void AccRequest::init() {
   {
     lock_guard<mutex> lock(mutex_);
     auto m = calls_.insert(make_pair(rq, call));
-    assert(m.second);
+    if (!m.second)
+      throw logic_error("AccRequest::init() error");
   }
 }
 
@@ -133,7 +136,8 @@ void AccRequest::flush_() {
         mpi__->request_send(buffer.get(), 1, rank, tag);
         const int rq = mpi__->request_recv(buffer.get(), size, rank, tag);
         auto m = requests_.insert(make_pair(rq, make_shared<Prep>(size, off, move(buffer))));
-        assert(m.second);
+        if (!m.second)
+          throw logic_error("AccRequest::flush_ error");
         i = calls_.erase(i);
         ++cnt;
       } else {

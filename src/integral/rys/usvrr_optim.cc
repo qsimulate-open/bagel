@@ -49,15 +49,9 @@ void SlaterBatch::perform_USVRR2() {
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
   const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
   const double cx = basisinfo_[2]->position(0);
   const double cy = basisinfo_[2]->position(1);
   const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
 
   const unsigned int ang0 = basisinfo_[0]->angular_number();
   const unsigned int ang1 = basisinfo_[1]->angular_number();
@@ -312,7 +306,6 @@ void SlaterBatch::perform_USVRR2() {
       const int offset = ii * rank_;
       const int data_offset_ii = ii * acsize;
 
-      double* current_data = &data_[data_offset_ii];
       const int ii3 = 3 * ii;
       {
         const double oxp2 = 0.5 / xp_[ii];
@@ -471,7 +464,6 @@ void SlaterBatch::perform_USVRR2() {
 
       const int ii3 = 3 * ii;
       {
-        const double oxp2 = 0.5 / xp_[ii];
         const double opq = 1.0 / (xp_[ii] + xq_[ii]);
         const double xqopq = xq_[ii] * opq;
         const double c00i0x = P_[ii3]     - ax;
@@ -481,7 +473,6 @@ void SlaterBatch::perform_USVRR2() {
         const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
         const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
 
-        const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] * opq;
         const double d00i0x = Q_[ii3] - cx;
         const double d00i0y = Q_[ii3 + 1] - cy;

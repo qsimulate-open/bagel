@@ -46,7 +46,7 @@ class DistFCI : public Method {
 
     // Options
     int max_iter_;
-    int davidsonceiling_;
+    int davidson_subspace_;
     int nguess_;
     double thresh_;
     double print_thresh_;

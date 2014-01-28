@@ -247,12 +247,15 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   vector<double> qy_save(prim2size_ * prim3size_);
   vector<double> qz_save(prim2size_ * prim3size_);
 
+// TODO no primitive screening yet
+#if 0
   const double minexp0 = *min_element(exp0.begin(), exp0.end());
   const double minexp1 = *min_element(exp1.begin(), exp1.end());
   const double minexp2 = *min_element(exp2.begin(), exp2.end());
   const double minexp3 = *min_element(exp3.begin(), exp3.end());
   const double min_ab = minexp0 * minexp1;
   const double min_cd = minexp2 * minexp3;
+#endif
 
   indexpair23_.reserve(prim2size_ * prim3size_);
 
@@ -260,9 +263,11 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
   const double r23_sq = CD_[0] * CD_[0] + CD_[1] * CD_[1] + CD_[2] * CD_[2];
 
   {
+#if 0
     const double cxp_min = minexp0 + minexp1;
     const double cxp_inv_min = 1.0 / cxp_min;
     const double min_Eab = ::exp(-r01_sq * min_ab * cxp_inv_min);
+#endif
     int index23 = 0;
     for (auto expi2 = exp2.begin(); expi2 != exp2.end(); ++expi2) {
       for (auto expi3 = exp3.begin(); expi3 != exp3.end(); ++expi3, ++index23) {
@@ -281,7 +286,6 @@ void SlaterBatch::compute_ssss(const double integral_thresh) {
     }
   }
 
-  int index = 0;
   int index01 = 0;
   fill_n(coeff_,  primsize_, 0.0);
   fill_n(coeffy_, primsize_, 0.0);

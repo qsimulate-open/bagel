@@ -66,10 +66,6 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
 
   auto sigmavec = make_shared<RASDvec>(det, nstate);
 
-#ifdef HAVE_MPI_H
-  vector<int> requests;
-#endif
-
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
 #ifdef HAVE_MPI_H
@@ -92,13 +88,14 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
       pdebug.tick_print("taskab");
 #ifdef HAVE_MPI_H
     }
-    requests.push_back(mpi__->ibroadcast(sigmavec->data(istate)->data(), sigmavec->data(istate)->size(), istate % mpi__->size()));
 #endif
   }
 
 #ifdef HAVE_MPI_H
-  for (auto& r : requests)
-    mpi__->wait(r);
+  for (int istate = 0; istate != nstate; ++istate) {
+    if (!conv[istate])
+      mpi__->broadcast(sigmavec->data(istate)->data(), sigmavec->data(istate)->size(), istate % mpi__->size());
+  }
 #endif
 
   return sigmavec;

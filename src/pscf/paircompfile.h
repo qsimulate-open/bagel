@@ -83,7 +83,6 @@ PairCompFile<T>::~PairCompFile() {
 template<class T>
 void PairCompFile<T>::init_schwarz() {
   typedef std::shared_ptr<const Shell> RefShell;
-  typedef std::shared_ptr<Atom> RefAtom;
 
   const int size = files_.first->basissize(); // the number of shells per unit cell
   const int K = files_.first->K();
@@ -131,8 +130,6 @@ void PairCompFile<T>::init_schwarz() {
 template<class T>
 void PairCompFile<T>::calculate_num_int_each() {
 
-  typedef std::shared_ptr<const Shell> RefShell;
-
   const int K = files_.first->K();
   const int S = files_.first->S();
   const int L = files_.first->L();
@@ -149,29 +146,21 @@ void PairCompFile<T>::calculate_num_int_each() {
 
 //#pragma omp parallel for reduction (+:data_written1, data_written2)
   for (int m1 = - S; m1 <= S; ++m1) {
-    const double A = first->A();
-    const double m1disp[3] = {0.0, 0.0, m1 * A};
     size_t offset = (m1 + S) * (L + 1) * (S * 2 + 1);
     for (int m2 = 0; m2 <= L; ++m2) { // use bra-ket symmetry!!!
-      const double m2disp[3] = {0.0, 0.0, m2 * A};
       for (int m3 = m2 - S; m3 <= m2 + S; ++m3, ++offset) {
-        const double m3disp[3] = {0.0, 0.0, m3 * A};
         size_t thisblock1 = 0ul;
         size_t thisblock2 = 0ul;
         for (int i0 = 0; i0 != size; ++i0) {
-          const int b0offset = first->offset(i0);
           const int b0size = first->basis(i0)->nbasis();
 
           for (int i1 = 0; i1 != size; ++i1) {
-            const int b1offset = first->offset(i1);
             const int b1size = first->basis(i1)->nbasis();
 
             for (int i2 = 0; i2 != size; ++i2) {
-              const int b2offset = first->offset(i2);
               const int b2size = first->basis(i2)->nbasis();
 
               for (int i3 = 0; i3 != size; ++i3) {
-                const int b3offset = first->offset(i3);
                 const int b3size = first->basis(i3)->nbasis();
 
                 {
@@ -276,23 +265,19 @@ void PairCompFile<T>::eval_new_block(double* out1, double* out2, int m1, int m2,
 //#pragma omp parallel for
   for (int i0 = 0; i0 < size; ++i0) {
     const RefShell b0 = first->basis(i0); // b0 is the center cell
-    const int b0offset_ = first->offset(i0);
     const int b0size = b0->nbasis();
     int offset = i0 * size * size * size;
 
     for (int i1 = 0; i1 != size; ++i1) {
       const RefShell b1 = first->basis(i1)->move_atom(m1disp);
-      const int b1offset_ = first->offset(i1);
       const int b1size = b1->nbasis();
 
       for (int i2 = 0; i2 != size; ++i2) {
         const RefShell b2 = first->basis(i2)->move_atom(m2disp);
-        const int b2offset_ = first->offset(i2);
         const int b2size = b2->nbasis();
 
         for (int i3 = 0; i3 != size; ++i3, ++offset) {
           const RefShell b3 = first->basis(i3)->move_atom(m3disp);
-          const int b3offset_ = first->offset(i3);
           const int b3size = b3->nbasis();
 
           const bool skip_schwarz1 = blocks1[offset] == blocks1[offset + 1];

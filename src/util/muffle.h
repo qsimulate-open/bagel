@@ -40,7 +40,7 @@ class Muffle {
   public:
     Muffle(std::string filename = "") {
       saved_ = std::cout.rdbuf();
-      if (filename != "")
+      if ( (mpi__->rank() == 0) && filename != "")
         redirect_ = std::make_shared<std::ofstream>(filename);
       else
         redirect_ = std::make_shared<std::ostringstream>();

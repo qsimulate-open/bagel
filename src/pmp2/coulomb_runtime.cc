@@ -148,7 +148,6 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
     const size_t allocsize_cs = eri_cabs_->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
 
-    long file_position = 0l;
     size_t mcnt = 0lu;
     for (int m1 = -s; m1 <= s; ++m1) {
       for (int m2 = -l; m2 <= l; ++m2) { // *NOT* using bra-ket symmetry!!!
@@ -163,11 +162,9 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
           // for density.
           const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
 
           {
             const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
             eri_cabs_->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
@@ -228,7 +225,6 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
     const size_t allocsize_cs = eri_cabs_d->max_num_int();
     double* diskdata_cs = new double[allocsize_cs];
 
-    long file_position = 0l;
     size_t mcnt = 0lu;
     for (int m1 = -s; m1 <= s; ++m1) {
       for (int m2 = -l; m2 <= l; ++m2) { // *NOT* using bra-ket symmetry!!!
@@ -243,11 +239,9 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
           // for density.
           const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
 
           {
             const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
             eri_cabs_d->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
@@ -321,11 +315,9 @@ RefMatrix PMP2::coulomb_runtime(const bool do_two_cabs) const {
 
           // for density.
           const int m2___m3___k____b = (m2 - m3 + k) * b;
-          const int _____m1___k____b = (   - m1 + k) * b;
 
           {
             const int m1________k____qb = (m1      + k) * qb;
-            const int m3___m2___k____qb = (m3 - m2 + k) * qb;
 
             eri_cabs_t->eval_new_block(diskdata_cs, m1, m2, m3);
             const double* cdata = diskdata_cs;
@@ -414,13 +406,9 @@ RefMatrix PMP2::coulomb_runtime_OBS() const {
         const int n = geom_->nbasis();
 
         const int m1________k____b = (m1      + k) * b;
-        const int m1___m2___k____b = (m1 - m2 + k) * b;
-        const int m2___m1___k____b = (m2 - m1 + k) * b;
         const int m2___m3___k____b = (m2 - m3 + k) * b;
         const int m3___m2___k____b = (m3 - m2 + k) * b;
-        const int m3________k____b = (m3      + k) * b;
         const int _____m1___k____b = (   - m1 + k) * b;
-        const int _____m3___k____b = (   - m3 + k) * b;
 
         {
           eri_obs_->get_block(file_position, eri_obs_->num_int_each(mcnt), diskdata);

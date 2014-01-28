@@ -119,7 +119,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
   if (DF == 0) {
     //////////////// ONLY FOR REFERENCES. //////////////////
     std::shared_ptr<Petite> plist = geom_->plist();;
-    const bool c1 = plist->nirrep() == 1;
 
     for (int i0 = 0; i0 != size; ++i0) {
       if (!plist->in_p1(i0)) continue;
@@ -242,7 +241,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
-    const int naux = df->naux();
     assert(ndim_ == df->nbasis0());
 
     Timer pdebug(3);

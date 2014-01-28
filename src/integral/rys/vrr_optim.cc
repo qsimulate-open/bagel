@@ -35,23 +35,13 @@ void ERIBatch::perform_VRR3() {
 // (3, 0, 1, 0) and (1, 0, 3, 0) hasn't been rewritten yet
 // (2, 1, 1, 0) and (1, 0, 2, 1) hasn't been rewritten yet
 
-  const int isize = (amax_ + 1) * (cmax_ + 1);
-  const int worksize = 3 * isize;
-  const int vrr_index = amax_ * ANG_VRR_END + cmax_;
-
   const int acsize = asize_ * csize_;
   const double ax = basisinfo_[0]->position(0);
   const double ay = basisinfo_[0]->position(1);
   const double az = basisinfo_[0]->position(2);
-  const double bx = basisinfo_[1]->position(0);
-  const double by = basisinfo_[1]->position(1);
-  const double bz = basisinfo_[1]->position(2);
   const double cx = basisinfo_[2]->position(0);
   const double cy = basisinfo_[2]->position(1);
   const double cz = basisinfo_[2]->position(2);
-  const double dx = basisinfo_[3]->position(0);
-  const double dy = basisinfo_[3]->position(1);
-  const double dz = basisinfo_[3]->position(2);
 
   const unsigned int ang0 = basisinfo_[0]->angular_number();
   const unsigned int ang1 = basisinfo_[1]->angular_number();
@@ -1211,9 +1201,7 @@ void ERIBatch::perform_VRR3() {
 
       const int ii3 = 3 * ii;
 
-      const double oxp2 = 0.5 / xp_[ii];
       const double opq = 1.0 / (xp_[ii] + xq_[ii]);
-      const double xqopq = xq_[ii] * opq;
       const double oxq2 = 0.5 / xq_[ii];
       const double xpopq = xp_[ii] * opq;
       const double d00i0x = Q_[ii3] - cx;
@@ -1337,9 +1325,7 @@ void ERIBatch::perform_VRR3() {
 
       const int ii3 = 3 * ii;
 
-      const double oxp2 = 0.5 / xp_[ii];
       const double opq = 1.0 / (xp_[ii] + xq_[ii]);
-      const double xqopq = xq_[ii] * opq;
       const double oxq2 = 0.5 / xq_[ii];
       const double xpopq = xp_[ii] * opq;
       const double d00i0x = Q_[ii3] - cx;
@@ -1601,7 +1587,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
 
       const int ii3 = 3 * ii;
       {
-        const double oxp2 = 0.5 / xp_[ii];
         const double opq = 1.0 / (xp_[ii] + xq_[ii]);
         const double xqopq = xq_[ii] * opq;
         const double c00i0x = P_[ii3]     - ax;
@@ -1611,7 +1596,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
         const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
         const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
 
-        const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] * opq;
         const double d00i0x = Q_[ii3] - cx;
         const double d00i0y = Q_[ii3 + 1] - cy;
@@ -1796,7 +1780,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
         const double b10i0 = xqopq * oxp2;
         const double b10_0 = oxp2 - b10i0 * roots_[offset];
         const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
-        const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] * opq;
         const double d00i0x = Q_[ii3] - cx;
         const double d00i0y = Q_[ii3 + 1] - cy;
@@ -1908,7 +1891,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
         const double b10i0 = xqopq * oxp2;
         const double b10_0 = oxp2 - b10i0 * roots_[offset];
         const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
-        const double oxq2 = 0.5 / xq_[ii];
         const double xpopq = xp_[ii] * opq;
         const double d00i0x = Q_[ii3] - cx;
         const double d00i0y = Q_[ii3 + 1] - cy;
@@ -2018,7 +2000,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
 
       const int ii3 = 3 * ii;
 
-      const double oxp2 = 0.5 / xp_[ii];
       const double opq = 1.0 / (xp_[ii] + xq_[ii]);
       const double xqopq = xq_[ii] * opq;
       const double c00i0x = P_[ii3]     - ax;
@@ -2027,9 +2008,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
       const double c00i1x = (P_[ii3]     - Q_[ii3])     * xqopq;
       const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
       const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
-      const double b10i0 = xqopq * oxp2;
-      const double b10_0 = oxp2 - b10i0 * roots_[offset];
-      const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
       const double oxq2 = 0.5 / xq_[ii];
       const double xpopq = xp_[ii] * opq;
       const double d00i0x = Q_[ii3] - cx;
@@ -2140,7 +2118,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
 
       const int ii3 = 3 * ii;
 
-      const double oxp2 = 0.5 / xp_[ii];
       const double opq = 1.0 / (xp_[ii] + xq_[ii]);
       const double xqopq = xq_[ii] * opq;
       const double c00i0x = P_[ii3]     - ax;
@@ -2149,9 +2126,6 @@ void ERIBatch::perform_VRR2() { // fully hand-written
       const double c00i1x = (P_[ii3]     - Q_[ii3])     * xqopq;
       const double c00i1y = (P_[ii3 + 1] - Q_[ii3 + 1]) * xqopq;
       const double c00i1z = (P_[ii3 + 2] - Q_[ii3 + 2]) * xqopq;
-      const double b10i0 = xqopq * oxp2;
-      const double b10_0 = oxp2 - b10i0 * roots_[offset];
-      const double b10_1 = oxp2 - b10i0 * roots_[offset + 1];
       const double oxq2 = 0.5 / xq_[ii];
       const double xpopq = xp_[ii] * opq;
       const double d00i0x = Q_[ii3] - cx;

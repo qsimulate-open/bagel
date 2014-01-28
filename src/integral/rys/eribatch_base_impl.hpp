@@ -157,7 +157,6 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
   }
 
   // compute P values
-  int index = 0;
   int index01 = 0;
   std::fill_n(T_, primsize_, -1.0);
   screening_size_ = 0;

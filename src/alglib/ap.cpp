@@ -93,9 +93,11 @@ static ae_int_t _debug_rng_s1 = 13;
  * you can remove them, if you want - they are not used anywhere.
  *
  */
+#if 0
 static char _ae_int32_t_must_be_32_bits_wide[1-2*((int)(sizeof(ae_int32_t))-4)*((int)(sizeof(ae_int32_t))-4)];
 static char _ae_int64_t_must_be_64_bits_wide[1-2*((int)(sizeof(ae_int64_t))-8)*((int)(sizeof(ae_int64_t))-8)];
 static char _ae_int_t_must_be_pointer_sized [1-2*((int)(sizeof(ae_int_t))-(int)sizeof(void*))*((int)(sizeof(ae_int_t))-(int)(sizeof(void*)))];  
+#endif
 
 ae_int_t ae_misalignment(const void *ptr, size_t alignment)
 {
@@ -6685,14 +6687,14 @@ alglib::ae_int_t alglib::my_stricmp(const char *s1, const char *s2)
 
 char* alglib::filter_spaces(const char *s)
 {
-    size_t i, j, n;
+    size_t i, n;
     char *r;
     char *r0;
     n = strlen(s);
     r = (char*)alglib_impl::ae_malloc(n+1, NULL);
     if( r==NULL )
         throw ap_error("malloc error");
-    for(i=0,j=0,r0=r; i<=n; i++,s++)
+    for(i=0,r0=r; i<=n; i++,s++)
         if( !isspace(*s) )
         {
             *r0 = *s;

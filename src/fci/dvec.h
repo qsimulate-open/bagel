@@ -118,15 +118,19 @@ class Dvector {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
       std::vector<std::shared_ptr<Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_)
+      for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
+        else out.push_back(std::shared_ptr<Civector<DataType>>());
+      }
       return out;
     }
     std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
       std::vector<std::shared_ptr<const Civector<DataType>>> out;
       auto c = conv.begin();
-      for (auto& iter : dvec_)
+      for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
+        else out.push_back(std::shared_ptr<const Civector<DataType>>());
+      }
       return out;
     }
 
@@ -197,6 +201,11 @@ class Dvector {
       auto j = o->dvec().begin();
       // simply project out each CI vector
       for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
+    }
+
+    void synchronize() {
+      for (auto& i : dvec_)
+        i->synchronize();
     }
 
     void print(const double thresh = 0.05) const {

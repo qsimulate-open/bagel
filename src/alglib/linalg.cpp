@@ -12350,11 +12350,9 @@ void rmatrixlqbasecase(/* Real    */ ae_matrix* a,
 {
     ae_int_t i;
     ae_int_t k;
-    ae_int_t minmn;
     double tmp;
 
 
-    minmn = ae_minint(m, n, _state);
     k = ae_minint(m, n, _state);
     for(i=0; i<=k-1; i++)
     {
@@ -12446,7 +12444,6 @@ void rmatrixbd(/* Real    */ ae_matrix* a,
     ae_frame _frame_block;
     ae_vector work;
     ae_vector t;
-    ae_int_t minmn;
     ae_int_t maxmn;
     ae_int_t i;
     double ltau;
@@ -12466,7 +12463,6 @@ void rmatrixbd(/* Real    */ ae_matrix* a,
         ae_frame_leave(_state);
         return;
     }
-    minmn = ae_minint(m, n, _state);
     maxmn = ae_maxint(m, n, _state);
     ae_vector_set_length(&work, maxmn+1, _state);
     ae_vector_set_length(&t, maxmn+1, _state);
@@ -14516,7 +14512,6 @@ static ae_bool bdsvd_bidiagonalsvddecompositioninternal(/* Real    */ ae_vector*
     double smax;
     double smin;
     double sminl;
-    double sminlo;
     double sminoa;
     double sn;
     double thresh;
@@ -14534,7 +14529,6 @@ static ae_bool bdsvd_bidiagonalsvddecompositioninternal(/* Real    */ ae_vector*
     ae_vector vttemp;
     ae_vector ctemp;
     ae_vector etemp;
-    ae_bool rightside;
     ae_bool fwddir;
     double tmp;
     ae_int_t mm1;
@@ -14598,7 +14592,6 @@ static ae_bool bdsvd_bidiagonalsvddecompositioninternal(/* Real    */ ae_vector*
     ae_vector_set_length(&vttemp, vend+1, _state);
     ae_vector_set_length(&ctemp, cend+1, _state);
     maxitr = 12;
-    rightside = ae_true;
     fwddir = ae_true;
     
     /*
@@ -14912,7 +14905,6 @@ static ae_bool bdsvd_bidiagonalsvddecompositioninternal(/* Real    */ ae_vector*
                         iterflag = ae_true;
                         break;
                     }
-                    sminlo = sminl;
                     mu = ae_fabs(d->ptr.p_double[lll+1], _state)*(mu/(mu+ae_fabs(e->ptr.p_double[lll], _state)));
                     sminl = ae_minreal(sminl, mu, _state);
                 }
@@ -14952,7 +14944,6 @@ static ae_bool bdsvd_bidiagonalsvddecompositioninternal(/* Real    */ ae_vector*
                         iterflag = ae_true;
                         break;
                     }
-                    sminlo = sminl;
                     mu = ae_fabs(d->ptr.p_double[lll], _state)*(mu/(mu+ae_fabs(e->ptr.p_double[lll], _state)));
                     sminl = ae_minreal(sminl, mu, _state);
                 }
@@ -17518,7 +17509,6 @@ static ae_bool evd_tridiagonalevd(/* Real    */ ae_vector* d,
     ae_int_t lm1;
     ae_int_t lsv;
     ae_int_t m;
-    ae_int_t mm;
     ae_int_t mm1;
     ae_int_t nm1;
     ae_int_t nmaxit;
@@ -18054,7 +18044,6 @@ static ae_bool evd_tridiagonalevd(/* Real    */ ae_vector* d,
                      */
                     if( zneeded>0 )
                     {
-                        mm = l-m+1;
                         for(i=m; i<=l-1; i++)
                         {
                             workc.ptr.p_double[i-m+1] = work1.ptr.p_double[i];
@@ -19391,7 +19380,6 @@ static void evd_internaldstein(ae_int_t n,
     ae_bool tmpcriterion;
     ae_int_t ti;
     ae_int_t i1;
-    ae_int_t i2;
     double v;
 
     ae_frame_make(_state, &_frame_block);
@@ -19652,7 +19640,6 @@ static void evd_internaldstein(ae_int_t n,
                             for(i=gpind; i<=j-1; i++)
                             {
                                 i1 = b1;
-                                i2 = b1+blksiz-1;
                                 ztr = ae_v_dotproduct(&work1.ptr.p_double[1], 1, &z->ptr.pp_double[i1][i], z->stride, ae_v_len(1,blksiz));
                                 ae_v_subd(&work1.ptr.p_double[1], 1, &z->ptr.pp_double[i1][i], z->stride, ae_v_len(1,blksiz), ztr);
                             }
@@ -20307,7 +20294,6 @@ static void evd_internaltrevc(/* Real    */ ae_matrix* t,
     double beta;
     double bignum;
     double emax;
-    double ovfl;
     double rec;
     double remax;
     double scl;
@@ -20481,7 +20467,6 @@ static void evd_internaltrevc(/* Real    */ ae_matrix* t,
      * Set the constants to control overflow.
      */
     unfl = ae_minrealnumber;
-    ovfl = 1/unfl;
     ulp = ae_machineepsilon;
     smlnum = unfl*(n/ulp);
     bignum = (1-ulp)/smlnum;
@@ -25799,9 +25784,6 @@ static void rcond_rmatrixrcondtrinternal(/* Real    */ ae_matrix* a,
     double ainvnm;
     double maxgrowth;
     double s;
-    ae_bool mupper;
-    ae_bool mtrans;
-    ae_bool munit;
 
     ae_frame_make(_state, &_frame_block);
     *rc = 0;
@@ -25827,9 +25809,6 @@ static void rcond_rmatrixrcondtrinternal(/* Real    */ ae_matrix* a,
     {
         kase1 = 2;
     }
-    mupper = ae_true;
-    mtrans = ae_true;
-    munit = ae_true;
     ae_vector_set_length(&iwork, n+1, _state);
     ae_vector_set_length(&tmp, n, _state);
     
@@ -26680,7 +26659,6 @@ static void rcond_rmatrixrcondluinternal(/* Real    */ ae_matrix* lua,
     double su;
     double sl;
     ae_bool mupper;
-    ae_bool mtrans;
     ae_bool munit;
 
     ae_frame_make(_state, &_frame_block);
@@ -26708,7 +26686,6 @@ static void rcond_rmatrixrcondluinternal(/* Real    */ ae_matrix* lua,
         kase1 = 2;
     }
     mupper = ae_true;
-    mtrans = ae_true;
     munit = ae_true;
     ae_vector_set_length(&iwork, n+1, _state);
     ae_vector_set_length(&tmp, n, _state);

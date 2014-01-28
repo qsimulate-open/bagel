@@ -42,6 +42,7 @@ class Dvector_base {
   // used for template magicking
   public: using DetType = typename CiType::DetType;
   public: using Ci = CiType;
+
   // only for use in lambdas
   using CiPtr = std::shared_ptr<CiType>;
 
@@ -63,10 +64,9 @@ class Dvector_base {
     Dvector_base(const Dvector_base<CiType>& o) : det_(o.det_), ij_(o.ij_) {
       for ( auto& ivec : o.dvec() ) dvec_.push_back( std::make_shared<CiType>(ivec) );
     }
-    //Dvector_base(std::shared_ptr<const Dvector_base<CiType>> o) : Dvector_base<CiType>(*o) {}
 
     Dvector_base(std::vector<CiPtr> o) : det_(o.front()->det()), ij_(o.size()) {
-      for (auto& ivec : o) dvec_.push_back( std::make_shared<CiType>(ivec) );
+      for (auto& ivec : o) dvec_.push_back( ivec->copy() );
     }
 
     template <class T>
@@ -112,12 +112,28 @@ class Dvector_base {
 
     std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
-      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(); }, det, typename CiType::LocalizedType());
+      return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(det); }, det, typename CiType::LocalizedType());
     }
 
     std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
-      return form_from_each([&det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(); }, det, typename CiType::LocalizedType());
+      return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
+    }
+
+    void spin_decontaminate() {
+      for (int i = 0; i < ij_; ++i) {
+#ifdef HAVE_MPI_H
+        if (i % mpi__->size() == mpi__->rank())
+          data(i)->spin_decontaminate();
+#else
+        data(i)->spin_decontaminate();
+#endif
+      }
+
+#ifdef HAVE_MPI_H
+      for (int i = 0; i < ij_; ++i)
+        data(i)->synchronize(i%mpi__->size());
+#endif
     }
 
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {

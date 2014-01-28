@@ -56,7 +56,6 @@ static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T
   const T factor = static_cast<T>(fn) /static_cast<T>(fd);
   {
     int id[1];
-    int jd[1] = {a};
     long iall=0;
     for(int j0=0;j0<(int)a;++j0,++iall){
       id[0]=j0;

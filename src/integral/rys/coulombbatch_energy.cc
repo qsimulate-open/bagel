@@ -37,8 +37,6 @@ const static CarSphList carsphlist;
 
 void CoulombBatch_energy::compute() {
   const double zero = 0.0;
-  const int zeroint = 0;
-  const int unit = 1;
 
   double* const stack_save = stack_->template get<double>(size_alloc_);
   bkup_ = stack_save;

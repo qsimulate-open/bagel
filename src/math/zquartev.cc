@@ -92,20 +92,19 @@ void zquatev(const int n2, complex<double>* const D, double* const eig) {
 
       // 10-1
       zgemv_("T", len, len+1, -1.0, D1+k+1+(k)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
-      conjarray(buf, len+1);
-      zgerc_(len, len+1, tau, hout.get(), 1, buf.get(), 1, D1+k+1+(k)*n, n);
+      zgeru_(len, len+1, tau, hout.get(), 1, buf.get(), 1, D1+k+1+(k)*n, n);
 
       // 10-2
       zgemv_("N", len+1, len, 1.0, D1+k+(k+1)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
       zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, D1+(k+1)*n+(k), n);
 
       // 00-2
-      zgemv_("N", len+1, len, 1.0, Q0+(k+1)*n+(k), n, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q0+(k+1)*n+(k), n);
+      zgemv_("N", n, len, 1.0, Q0+(k+1)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(n, len, -tau, buf.get(), 1, hout.get(), 1, Q0+(k+1)*n, n);
 
       // 10-2
-      zgemv_("N", len+1, len, 1.0, Q1+k+(k+1)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
-      zgeru_(len+1, len, -tau, buf.get(), 1, hout.get(), 1, Q1+(k+1)*n+(k), n);
+      zgemv_("N", n, len, 1.0, Q1+(k+1)*n, n, choutf.get(), 1, 0.0, buf.get(), 1);
+      zgeru_(n, len, -tau, buf.get(), 1, hout.get(), 1, Q1+(k+1)*n, n);
 
     }
 
@@ -120,11 +119,11 @@ void zquatev(const int n2, complex<double>* const D, double* const eig) {
     for (int i = 0; i != len+1; ++i)
       D1[(k+1)*n+k+i] = -conj(D1[(k+1)*n+k+i]);
 
-    for (int i = 0; i != len+1; ++i)
-      Q1[(k+1)*n+k+i] = -conj(Q1[(k+1)*n+k+i]);
-    zrot_(len+1, Q0+(k+1)*n+k, 1, Q1+(k+1)*n+k, 1, gr.first, conj(gr.second));
-    for (int i = 0; i != len+1; ++i)
-      Q1[(k+1)*n+k+i] = -conj(Q1[(k+1)*n+k+i]);
+    for (int i = 0; i != n; ++i)
+      Q1[(k+1)*n+i] = -conj(Q1[(k+1)*n+i]);
+    zrot_(n, Q0+(k+1)*n, 1, Q1+(k+1)*n, 1, gr.first, conj(gr.second));
+    for (int i = 0; i != n; ++i)
+      Q1[(k+1)*n+i] = -conj(Q1[(k+1)*n+i]);
 
     // Householder to fix top half in column k
     if (len > 1) {
@@ -150,12 +149,12 @@ void zquatev(const int n2, complex<double>* const D, double* const eig) {
       zgerc_(len+1, len, conj(tau), buf.get(), 1, hout.get(), 1, D1+(k+1)*n+(k), n);
 
       // 00-2
-      zgemv_("N", len+1, len, 1.0, Q0+(k+1)*n+(k), n, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(len+1, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q0+(k+1)*n+(k), n);
+      zgemv_("N", n, len, 1.0, Q0+(k+1)*n, n, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(n, len, -conj(tau), buf.get(), 1, hout.get(), 1, Q0+(k+1)*n, n);
 
       // 01-2
-      zgemv_("N", len+1, len, -1.0, Q1+(k+1)*n+(k), n, hout.get(), 1, 0.0, buf.get(), 1);
-      zgerc_(len+1, len, conj(tau), buf.get(), 1, hout.get(), 1, Q1+(k+1)*n+(k), n);
+      zgemv_("N", n, len, -1.0, Q1+(k+1)*n, n, hout.get(), 1, 0.0, buf.get(), 1);
+      zgerc_(n, len, conj(tau), buf.get(), 1, hout.get(), 1, Q1+(k+1)*n, n);
 
     }
 

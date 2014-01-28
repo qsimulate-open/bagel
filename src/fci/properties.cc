@@ -71,7 +71,6 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
   shared_ptr<const Dvec> cc_trans = ccvec->spinflip(det_trans);
   auto sg_trans = make_shared<Dvec>(det, nstates);
 
-  const int sizeij = sizeij_;
   const int la = ccvec->lena();
   const int lb = ccvec->lenb();
 

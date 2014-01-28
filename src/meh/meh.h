@@ -67,6 +67,7 @@ class DimerSubspace_base { // until I come up with a better name
     const std::string stringB_;
 
     std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> ci_;
+    std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
 
   public:
     DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
@@ -83,6 +84,9 @@ class DimerSubspace_base { // until I come up with a better name
 
     template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
     template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
+    template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
+
+    template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 
 };
 
@@ -159,6 +163,7 @@ class MultiExcitonHamiltonian {
       std::shared_ptr<Matrix> compute_diagonal_1e(const DSubSpace& subspace, const double* hAA, const double* hBB, const double diag) const;
 
       // Diagonal block stuff
+      void compute_pure_terms(DSubSpace& subspace, std::shared_ptr<const DimerJop> jop);
       std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
       std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 

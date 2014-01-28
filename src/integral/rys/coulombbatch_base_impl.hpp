@@ -40,7 +40,6 @@ CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const std::array<std::sh
  : RysIntegral<DataType>(_info, stack), mol_(mol), L_(L), A_(A) {
 
   deriv_rank_ = deriv;
-  const double integral_thresh = PRIM_SCREEN_THRESH;
 
   if (_info.size() != 2) throw std::logic_error("CoulombBatch_base should be called with shell pairs");
 

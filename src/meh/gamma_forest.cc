@@ -56,7 +56,7 @@ void GammaForest<DistDvec, 2>::compute() {
   }
 }
 
-class GammaDistRASTask {
+class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
   protected:
     shared_ptr<GammaTree<DistRASDvec>> tree_;
     shared_ptr<RASBlock<double>> starting_block_;
@@ -70,6 +70,7 @@ class GammaDistRASTask {
   public:
     GammaDistRASTask(shared_ptr<GammaTree<DistRASDvec>> t, shared_ptr<RASBlock<double>> b, const int ist, const GammaSQ op, const int a,
       mutex* m, map<tuple<int,int,int,int,int,int>, shared_ptr<const StringSpace>>* ss, mutex* ssmutex) :
+        RASTask<GammaBranch<DistRASDvec>>(t->ket()->det()->max_holes(), t->ket()->det()->max_particles()),
         tree_(t), starting_block_(b), istate_(ist), operation_(static_cast<int>(op)), a_(a), mutex_(m), stringspaces_(ss), ssmutex_(ssmutex) {}
 
     void compute() {
@@ -85,7 +86,7 @@ class GammaDistRASTask {
       shared_ptr<GammaBranch<DistRASDvec>> first = tree_->base()->branch(operation_);
       assert(first->active()); // This should have been checked before sending it to the TaskQueue
 
-      shared_ptr<const RASBlock<double>> ablock = next_block(starting_block_, a_, base_action, base_spin);
+      shared_ptr<const RASBlock<double>> ablock = next_block(first, starting_block_, a_, base_action, base_spin);
 
       if (ablock) {
         for (auto& ibra : first->bras())
@@ -97,7 +98,7 @@ class GammaDistRASTask {
 
           for (int b = 0; b < norb; ++b) {
             if (b==a_ && j==operation_) continue;
-            shared_ptr<const RASBlock<double>> bblock = next_block(ablock, b, action(j), spin(j));
+            shared_ptr<const RASBlock<double>> bblock = next_block(second, ablock, b, action(j), spin(j));
             if (!bblock) continue;
 
             for (auto& jbra : second->bras())
@@ -109,7 +110,7 @@ class GammaDistRASTask {
 
               for (int c = 0; c < norb; ++c) {
                 if (b==c && k==j) continue;
-                shared_ptr<const RASBlock<double>> cblock = next_block(bblock, c, action(k), spin(k));
+                shared_ptr<const RASBlock<double>> cblock = next_block(third, bblock, c, action(k), spin(k));
                 if (!cblock) continue;
                 for (auto& kbra : third->bras())
                   dot_product(kbra.second, cblock, third->gammas()[kbra.first]->element_ptr(istate_*kbra.second->ij(), a_+norb*b+norb*norb*c));
@@ -134,13 +135,13 @@ class GammaDistRASTask {
           }
         }
 
-        lock_guard<mutex> lk(*mutex_); 
+        lock_guard<mutex> lk(*mutex_);
         for (int j = 0; j < nbras; ++j)
           target[j] += values[j];
       }
     }
 
-    shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) {
+    shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
       lock_guard<mutex> lk(*ssmutex_);
       auto iter = stringspaces_->find(make_tuple(a,b,c,d,e,f));
       if (iter != stringspaces_->end()) {
@@ -151,46 +152,6 @@ class GammaDistRASTask {
         stringspaces_->emplace(make_tuple(a,b,c,d,e,f), out);
         return out;
       }
-    }
-
-    shared_ptr<RASBlock<double>> next_block(shared_ptr<const RASBlock<double>> base_block, const int& orbital, const bool& action, const bool& spin) { 
-      shared_ptr<const StringSpace> sa = base_block->stringa();
-      shared_ptr<const StringSpace> sb = base_block->stringb();
-
-      array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
-
-      const int ras_space = ( orbital >= ras[0] ) + ( orbital >= (ras[0]+ras[1]) );
-      array<int, 6> info{{ras[0] - sa->nholes(), ras[0] - sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()}};
-
-      const int mod = action ? +1 : -1; 
-      info[2*ras_space]   += spin ? mod : 0;
-      info[2*ras_space+1] += spin ? 0 : mod;
-
-      // make sure it is a valid result
-      for (int i = 0; i < 6; ++i)
-        if (info[i] < 0 || info[i] > ras[i/2]) return shared_ptr<RASBlock<double>>();
-
-      shared_ptr<const StringSpace> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa; 
-      shared_ptr<const StringSpace> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
-
-      auto out = make_shared<RASBlock<double>>(ta,tb);
-
-      shared_ptr<RAS::apply_block_base<double>> apply_block;
-      switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) { 
-        case 0:
-          apply_block = make_shared<RAS::apply_block_impl<double, false, false>>(orbital); break;
-        case 1:
-          apply_block = make_shared<RAS::apply_block_impl<double, false, true>>(orbital);  break;
-        case 2:
-          apply_block = make_shared<RAS::apply_block_impl<double, true, false>>(orbital);  break;
-        case 3:
-          apply_block = make_shared<RAS::apply_block_impl<double, true, true>>(orbital);   break;
-        default:
-          assert(false);
-      }
-      (*apply_block)(base_block, out);
-
-      return out;
     }
 };
 

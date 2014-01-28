@@ -143,14 +143,18 @@ class RelDvector {
     double orthog(std::list<std::shared_ptr<const RelDvector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const RelDvector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const RelDvector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
     }
 
     void print(double thresh) const {
@@ -158,12 +162,12 @@ class RelDvector {
         i.second->print(thresh);
     }
 
+    void synchronize() {
 #ifdef HAVE_MPI_H
-    void sync() {
       for (auto& i : dvecs_)
-        mpi__->broadcast(i.second->data(), i.second->size(), 0);
-    }
+        i.second->synchronize();
 #endif
+    }
 
 };
 

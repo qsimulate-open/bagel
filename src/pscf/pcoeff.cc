@@ -34,10 +34,7 @@ typedef complex<double> Complex;
 
 PCoeff::PCoeff(const PMatrix1e& inp) : PMatrix1e(inp.geom(), inp.ndim(), inp.mdim()) {
 
-  const int unit = 1;
-  const int ndim_ = inp.ndim();
-  const int mdim_ = inp.mdim();
-  zcopy_(&totalsize_, inp.data()->front(), &unit, data()->front(), &unit);
+  copy_n(inp.data()->front(), totalsize_, data()->front());
 
 }
 
