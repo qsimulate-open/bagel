@@ -33,9 +33,10 @@ namespace bagel {
 
 class Hcore : public Matrix1e {
   protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   public:
+    Hcore() { }
     Hcore(const std::shared_ptr<const Molecule>);
 
 };

@@ -66,6 +66,13 @@ fi
 
 AX_BOOST_BASE([1.53], [], [AC_MSG_ERROR("BOOST version >= 1.53.0 required.")])
 
+AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_serialization-mt, main, , [
+        AC_CHECK_LIB(boost_serialization, main, , [
+            AC_MSG_ERROR("Linking against boost::serialization library failed.")
+        ])
+    ])
+])
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [

@@ -72,8 +72,37 @@ class Geometry : public Molecule {
     void common_init1();
     void common_init2(const bool print, const double thresh, const bool nodf = false);
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Molecule>(*this);
+      ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
+         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
+      const bool nodf = !df_;
+      ar << nodf;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<Molecule>(*this);
+      ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
+         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_;
+      bool nodf;
+      ar >> nodf;
+      common_init2(true, overlap_thresh_, nodf);
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
+
   public:
-    Geometry(const std::string) {}
+    Geometry() { }
     Geometry(const std::shared_ptr<const PTree>);
     Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
     Geometry(const Geometry& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);

@@ -34,13 +34,13 @@ using namespace bagel;
 
 SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
-  init();
+  init(mol);
   fill_upper();
 
 }
 
 
-void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
 
   // input = [b1, b0]
   assert(input.size() == 2);
@@ -57,14 +57,14 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    NAIBatch nai(input, mol_);
+    NAIBatch nai(input, mol);
     nai.compute();
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
-  if (mol_->external()) {
-    DipoleBatch dipole(input, mol_);
+  if (mol->external()) {
+    DipoleBatch dipole(input, mol);
     dipole.compute();
     const size_t block = dipole.size_block();
     const double* dip = dipole.data();
@@ -72,9 +72,9 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] += dip[cnt        ]*mol_->external(0);
-        data_[i*ndim_ + j] += dip[cnt+block  ]*mol_->external(1);
-        data_[i*ndim_ + j] += dip[cnt+block*2]*mol_->external(2);
+        data_[i*ndim_ + j] += dip[cnt        ]*mol->external(0);
+        data_[i*ndim_ + j] += dip[cnt+block  ]*mol->external(1);
+        data_[i*ndim_ + j] += dip[cnt+block*2]*mol->external(2);
       }
     }
   }

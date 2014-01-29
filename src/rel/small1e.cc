@@ -28,18 +28,18 @@
 using namespace std;
 using namespace bagel;
 
-template<> void Small1e<ERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+template<> void Small1e<ERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 #ifdef LIBINT_INTERFACE
-  SmallInts1e<Libint> batch(input, this->mol_);
+  SmallInts1e<Libint> batch(input, mol);
 #else
-  SmallInts1e<ERIBatch> batch(input, this->mol_);
+  SmallInts1e<ERIBatch> batch(input, mol);
 #endif
 
   vector<shared_ptr<const Shell>> nshells;
-  for (auto& i : this->mol_->atoms()) {
+  for (auto& i : mol->atoms()) {
     if (i->finite_nucleus()) {
       const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
       nshells.push_back(make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()},

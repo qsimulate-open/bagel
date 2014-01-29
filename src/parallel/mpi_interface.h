@@ -118,7 +118,7 @@ class MPI_Interface {
 
     int pnum(const int prow, const int pcol) const;
     std::pair<int,int> numroc(const int, const int) const;
-    std::unique_ptr<int[]> descinit(const int, const int) const;
+    std::vector<int> descinit(const int, const int) const;
 };
 
 extern MPI_Interface* mpi__;

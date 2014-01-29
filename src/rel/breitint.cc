@@ -31,9 +31,9 @@
 using namespace std;
 using namespace bagel;
 
-BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->naux(), mol->naux()) {
+BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol->naux(), mol->naux()) {
 
-  init();
+  init(mol);
 
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
   for (auto& i : xyz) {
@@ -48,7 +48,7 @@ BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol,
 
 
 
-void BreitInt::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void BreitInt::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
 
   auto dum0 = make_shared<const Shell>(input[0]->spherical());
   auto dum1 = make_shared<const Shell>(input[1]->spherical());
@@ -66,10 +66,10 @@ void BreitInt::computebatch(const array<shared_ptr<const Shell>,2>& input, const
 }
 
 
-void BreitInt::init() {
+void BreitInt::init(shared_ptr<const Molecule> mol) {
 
   list<shared_ptr<const Shell>> shells;
-  for (auto& i : mol_->aux_atoms())
+  for (auto& i : mol->aux_atoms())
     shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
   // TODO thread, parallel
@@ -78,7 +78,7 @@ void BreitInt::init() {
     int o1 = 0;
     for (auto& a1 : shells) {
       array<shared_ptr<const Shell>,2> input = {{a1, a0}};
-      computebatch(input, o0, o1);
+      computebatch(input, o0, o1, nullptr);
       o1 += a1->nbasis();
     }
     o0 += a0->nbasis();

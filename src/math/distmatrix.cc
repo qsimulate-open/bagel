@@ -57,7 +57,7 @@ DistMatrix DistMatrix::operator*(const DistMatrix& o) const {
   const int n = o.mdim_;
 
   DistMatrix out(l, n);
-  pdgemm_("N", "N", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pdgemm_("N", "N", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -91,7 +91,7 @@ DistMatrix DistMatrix::operator%(const DistMatrix& o) const {
   const int n = o.mdim_;
 
   DistMatrix out(l, n);
-  pdgemm_("T", "N", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pdgemm_("T", "N", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -103,7 +103,7 @@ DistMatrix DistMatrix::operator^(const DistMatrix& o) const {
   const int n = o.ndim_;
 
   DistMatrix out(l, n);
-  pdgemm_("N", "T", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pdgemm_("N", "T", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -118,13 +118,13 @@ void DistMatrix::diagonalize(double* eig) {
   double wsize;
   int liwork = 1;
   int info;
-  pdsyevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), &wsize, -1, &liwork, 1, info);
+  pdsyevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), &wsize, -1, &liwork, 1, info);
   unique_ptr<int[]> iwork(new int[liwork]);
   wsize =  max(131072.0, wsize*2.0);
 
   const int lwork = round(wsize);
   unique_ptr<double[]> work(new double[lwork]);
-  pdsyevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
+  pdsyevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
   if (info) throw runtime_error("pdsyevd failed in DistMatrix");
 
   // seems MKL does not broadcast for tiny matrices..
@@ -227,7 +227,7 @@ shared_ptr<const DistMatrix> DistMatrix::form_density_rhf(const int nocc, const 
   const int l = ndim_;
   const int n = ndim_;
   auto out = make_shared<DistMatrix>(l, n);
-  pdgemm_("N", "T", l, n, nocc, 2.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
+  pdgemm_("N", "T", l, n, nocc, 2.0, local_.get(), 1, 1+off, desc_.data(), local_.get(), 1, 1+off, desc_.data(), 0.0, out->local_.get(), 1, 1, out->desc_.data());
   return out;
 }
 

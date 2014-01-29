@@ -30,21 +30,26 @@
 #include <array>
 #include <src/math/matrix.h>
 
+#include <src/util/serialization.h>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/utility.hpp>
+
 namespace bagel {
 
 class Shell {
 
   protected:
-    const bool spherical_;
+    bool spherical_;
 
     std::array<double,3> position_;
     std::array<double,3> vector_potential_;
-    const int angular_number_;
-    const std::vector<double> exponents_;     // length of primitive basis function
-    const std::vector<std::vector<double>> contractions_;  // length of contracted basis function
-    const std::vector<std::pair<int, int>> contraction_ranges_;
+    int angular_number_;
+    std::vector<double> exponents_;     // length of primitive basis function
+    std::vector<std::vector<double>> contractions_;  // length of contracted basis function
+    std::vector<std::pair<int, int>> contraction_ranges_;
 
-    const bool dummy_;
+    bool dummy_;
     std::vector<int> contraction_upper_;
     std::vector<int> contraction_lower_;
 
@@ -60,7 +65,31 @@ class Shell {
     std::shared_ptr<const Matrix> overlap_compute_() const;
     std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << spherical_ << position_ << vector_potential_ << angular_number_ << exponents_ << contractions_ << contraction_ranges_
+         << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> spherical_ >> position_ >> vector_potential_ >> angular_number_ >> exponents_ >> contractions_ >> contraction_ranges_
+         >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_;
+      if (relativistic_)
+        init_relativistic();
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
   public:
+    Shell() { }
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
           const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
     // default constructor for adding null basis
