@@ -120,7 +120,7 @@ ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
     unique_ptr<complex<double>[]> locala = getlocal();
     unique_ptr<complex<double>[]> localb = o.getlocal();
     unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pzgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -178,7 +178,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
     unique_ptr<complex<double>[]> locala = getlocal();
     unique_ptr<complex<double>[]> localb = o.getlocal();
     unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("C", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pzgemm_("C", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -204,7 +204,7 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
     unique_ptr<complex<double>[]> locala = getlocal();
     unique_ptr<complex<double>[]> localb = o.getlocal();
     unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "C", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pzgemm_("N", "C", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -260,11 +260,11 @@ void ZMatrix::diagonalize(double* eig) {
     unique_ptr<double[]> rwork(new double[lrwork]);
     unique_ptr<int[]> iwork(new int[liwork]);
 
-    pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
 
     const int lwork = round(max(131072.0, wsize.real()*2.0));
     unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-    pzheevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
     if(info) throw runtime_error("diagonalize failed");
 
     setlocal_(coeff);
