@@ -105,6 +105,7 @@ class FCI : public Method {
     // this constructor is ugly... to be fixed some day...
     FCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
+    virtual ~FCI() { }
 
     virtual void compute() override;
 

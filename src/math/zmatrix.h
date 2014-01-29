@@ -51,6 +51,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(const Matrix& real, const Matrix& imag);
     ZMatrix(const Matrix& real, const std::complex<double> factor);
     ZMatrix() : Matrix_base<std::complex<double>>() { }
+    virtual ~ZMatrix() { }
 
     void antisymmetrize();
     void hermite();

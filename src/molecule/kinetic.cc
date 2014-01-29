@@ -33,13 +33,13 @@ using namespace bagel;
 
 Kinetic::Kinetic(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
-  init();
+  init(mol);
   fill_upper();
 
 }
 
 
-void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void Kinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>) {
 
   // input = [b1, b0]
   assert(input.size() == 2);

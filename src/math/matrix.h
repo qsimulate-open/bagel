@@ -52,6 +52,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix(const Matrix&);
     Matrix(Matrix&&);
     Matrix() : Matrix_base<double>() { }
+    virtual ~Matrix() { }
 
     std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
     std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }

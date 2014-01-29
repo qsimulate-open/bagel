@@ -39,7 +39,17 @@ class Coeff : public Matrix {
   private:
     int num_basis(std::vector<std::shared_ptr<const Coeff>> coeff_vec) const;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix_base<double>>(*this) & geom_;
+    }
+
   public:
+    Coeff() { }
     Coeff(const Matrix&);
     Coeff(std::vector<std::shared_ptr<const Coeff>> coeff_vec);
     Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {}

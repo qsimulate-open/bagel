@@ -211,6 +211,8 @@ class Matrix_base {
 
     Matrix_base() : ndim_(0), mdim_(0), localized_(false) { }
 
+    virtual ~Matrix_base() { }
+
     size_t size() const { return ndim_*mdim_; }
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }

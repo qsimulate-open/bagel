@@ -34,13 +34,13 @@ namespace bagel {
 
 class BreitInt : public Matrix1eArray<6> {
   protected:
-    void init() override;
     std::vector<std::pair<const int, const int>> index_;
+
+    void init(std::shared_ptr<const Molecule>) override;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   public:
     BreitInt(const std::shared_ptr<const Molecule>);
-
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
 
     void print(const std::string name) const override { Matrix1eArray<6>::print(name.empty() ? "Breit" : name); }
 
