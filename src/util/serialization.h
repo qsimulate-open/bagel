@@ -31,6 +31,7 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/archive/shared_ptr_helper.hpp>
+#include <array>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
@@ -57,7 +58,7 @@ namespace boost {
       T* ptr;
       ar >> ptr;
 
-      static std::unordered_map<void*, std::weak_ptr<T>> hash;
+      static std::unordered_map<T*, std::weak_ptr<T>> hash;
       if (hash[ptr].expired()) {
         t = std::shared_ptr<T>(ptr);
         hash[ptr] = t;
@@ -70,7 +71,7 @@ namespace boost {
     template <size_t N>
     struct Serialize {
       template<class Archive, typename... Args>
-      static void serialize(Archive & ar, std::tuple<Args...> & t, const unsigned int version) {
+      static void serialize(Archive& ar, std::tuple<Args...>& t, const unsigned int version) {
         ar & std::get<N-1>(t);
         Serialize<N-1>::serialize(ar, t, version);
       }
@@ -79,12 +80,19 @@ namespace boost {
     template<>
     struct Serialize<0LLU> {
       template<class Archive, typename... Args>
-      static void serialize(Archive &, std::tuple<Args...> &, const unsigned int) { }
+      static void serialize(Archive&, std::tuple<Args...>&, const unsigned int) { }
     };
 
     template<class Archive, typename... Args>
-    void serialize(Archive & ar, std::tuple<Args...> & t, const unsigned int version) {
+    void serialize(Archive& ar, std::tuple<Args...>& t, const unsigned int version) {
       Serialize<sizeof...(Args)>::serialize(ar, t, version);
+    }
+
+    // serizlization of std::array
+    template<class Archive, typename T, size_t N>
+    void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
+      for (size_t i = 0; i != N; ++i)
+        ar & t[i];
     }
   }
 }

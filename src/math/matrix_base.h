@@ -154,7 +154,7 @@ class Matrix_base {
     friend class boost::serialization::access;
 
     template <class Archive>
-    void save(Archive & ar, const unsigned int) const {
+    void save(Archive& ar, const unsigned int) const {
       ar << ndim_ << mdim_;
       for (size_t i = 0; i != size(); ++i) ar << *(data()+i);
       ar << localized_;
@@ -164,7 +164,7 @@ class Matrix_base {
     }
 
     template <class Archive>
-    void load(Archive & ar, const unsigned int) {
+    void load(Archive& ar, const unsigned int) {
       ar >> ndim_ >> mdim_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       for (size_t i = 0; i != size(); ++i) ar >> *(data()+i);
@@ -175,7 +175,7 @@ class Matrix_base {
     }
 
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int file_version) {
+    void serialize(Archive& ar, const unsigned int file_version) {
       boost::serialization::split_member(ar, *this, file_version);
     }
 

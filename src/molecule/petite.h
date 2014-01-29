@@ -30,6 +30,10 @@
 #include <tuple>
 #include <src/molecule/atom.h>
 
+#include <src/util/serialization.h>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
+
 namespace bagel {
 
 class Petite {
@@ -38,7 +42,7 @@ class Petite {
     int nshell_;
     int nirrep_;
     int nsymop_;
-    const std::string sym_;
+    std::string sym_;
 
     std::vector<std::vector<double>> symop_;
 
@@ -47,8 +51,18 @@ class Petite {
     std::vector<int> p1_;
     std::vector<int> lambda_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & natom_ & nshell_ & nirrep_ & nsymop_ & sym_ & symop_
+         & sym_atommap_ & sym_shellmap_ & p1_ & lambda_;
+    }
 
   public:
+    Petite() { }
     Petite(const std::vector<std::shared_ptr<const Atom>>&, const std::string);
     ~Petite();
 

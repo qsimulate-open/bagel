@@ -53,9 +53,19 @@ class Molecule {
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & external_;
+    }
+
   public:
     Molecule() : symmetry_("c1"), nirrep_(1) {}
     Molecule(const std::vector<std::shared_ptr<const Atom>> a, const std::vector<std::shared_ptr<const Atom>> b) : atoms_(a), aux_atoms_(b), symmetry_("c1"), nirrep_(1) { }
+    virtual ~Molecule() { }
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
     const std::vector<std::shared_ptr<const Atom>>& atoms() const { return atoms_; }
