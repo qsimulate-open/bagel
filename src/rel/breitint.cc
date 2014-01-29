@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol, mol->naux(), mol->naux()) {
+BreitInt::BreitInt(const shared_ptr<const Molecule> mol) : Matrix1eArray<6>(mol->naux(), mol->naux()) {
 
   init(mol);
 

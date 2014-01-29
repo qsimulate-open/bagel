@@ -37,13 +37,14 @@ class Matrix1eArray {
   protected:
     std::array<std::shared_ptr<Matrix>, N> matrices_;
 
+    virtual void init(std::shared_ptr<const Molecule>);
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
 
     bool localized_;
 
   public:
     Matrix1eArray(const std::shared_ptr<const Molecule>, const bool loc = false);
-    Matrix1eArray(const std::shared_ptr<const Molecule>, const int n, const int m, const bool loc = false);
+    Matrix1eArray(const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
     virtual ~Matrix1eArray() { }
 
@@ -61,7 +62,6 @@ class Matrix1eArray {
     void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
 
     virtual void print(const std::string name = "") const;
-    virtual void init(std::shared_ptr<const Molecule>);
 
     void localize() {
       localized_ = true;
@@ -74,9 +74,19 @@ template <int N>
 Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis());
+    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis(), loc);
   }
 }
+
+
+template <int N>
+Matrix1eArray<N>::Matrix1eArray(const int n, const int m, const bool loc) : localized_(loc) {
+  static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
+  for(int i = 0; i < N; ++i) {
+    matrices_[i] = std::make_shared<Matrix>(n, m, loc);
+  }
+}
+
 
 template <int N>
 Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : localized_(o.localized_) {
