@@ -100,7 +100,6 @@ class Geometry : public Molecule {
       boost::serialization::split_member(ar, *this, file_version);
     }
 
-
   public:
     Geometry() { }
     Geometry(const std::shared_ptr<const PTree>);

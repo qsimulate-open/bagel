@@ -41,6 +41,8 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
+  // enable restart capability
+  restart_ = idata_->get<bool>("restart", false);
 
   Timer scfb;
   overlap_ = make_shared<const Overlap>(geom);
@@ -48,7 +50,7 @@ SCF_base::SCF_base(const shared_ptr<const PTree> idat, const shared_ptr<const Ge
   hcore_ = make_shared<const Hcore>(geom);
   scfb.tick_print("Hcore matrix");
 
-  eig_= unique_ptr<double[]>(new double[geom_->nbasis()]);
+  eig_.resize(geom_->nbasis());
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);

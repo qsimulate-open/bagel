@@ -39,7 +39,17 @@ class Method {
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & idata_ & geom_ & ref_;
+    }
+
   public:
+    Method() { }
     Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r)
      : idata_(p), geom_(g), ref_(r) { }
     virtual ~Method() { }

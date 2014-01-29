@@ -180,7 +180,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   out->set_nocc(nocc_, noccB_);
 
   // compute an energy weighted 1RDM and store
-  vector<double> ea(eig_.get(), eig_.get()+nocc_);
+  vector<double> ea(eig_.data(), eig_.data()+nocc_);
   vector<double> eb(eigB_.get(), eigB_.get()+nocc_);
   shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
   *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
@@ -188,8 +188,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   out->set_erdm1(erdm);
 
   // this is just dummy...
-  vector<double> e(eig_.get(), eig_.get()+coeff_->mdim());
-  out->set_eig(e);
+  out->set_eig(eig_);
   return out;
 }
 

@@ -39,10 +39,10 @@ SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
 
   // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
   // In the future, this should probably be moved to SCF_base and designed to work properly there
-  double lshift = idata->get<double>("levelshift", 0.0);
-  if (lshift != 0.0) {
-    cout << "  level shift : " << setprecision(3) << lshift << endl << endl;
-    levelshift_ = make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift);
+  lshift_ = idata->get<double>("levelshift", 0.0);
+  if (lshift_ != 0.0) {
+    cout << "  level shift : " << setprecision(3) << lshift_ << endl << endl;
+    levelshift_ = make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift_);
   }
 }
 
@@ -170,7 +170,6 @@ void SCF::compute() {
 
 shared_ptr<const Reference> SCF::conv_to_ref() const {
   auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
-  vector<double> e(eig_.get(), eig_.get()+coeff_->mdim());
-  out->set_eig(e);
+  out->set_eig(eig_);
   return out;
 }
