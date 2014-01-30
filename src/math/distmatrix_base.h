@@ -40,15 +40,15 @@ template<typename DataType>
 class DistMatrix_base {
   protected:
     // global dimension
-    const int ndim_;
-    const int mdim_;
+    int ndim_;
+    int mdim_;
 
     // distributed data
     std::unique_ptr<DataType[]> local_;
 
     // Scalapack specific
     std::vector<int> desc_;
-    const std::tuple<int, int> localsize_;
+    std::tuple<int, int> localsize_;
 
     template<class T>
     void ax_plus_y_impl(const DataType a, const T& o) {
@@ -107,6 +107,8 @@ class DistMatrix_base {
     }
 
   public:
+    DistMatrix_base() { }
+
     DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       zero();
@@ -119,6 +121,8 @@ class DistMatrix_base {
 
     DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(std::move(o.local_)), desc_(std::move(o.desc_)), localsize_(o.localsize_) {
     }
+
+    virtual ~DistMatrix_base() { }
 
     const std::unique_ptr<DataType[]>& local() const { return local_; }
     const std::vector<int>& desc() const { return desc_; }

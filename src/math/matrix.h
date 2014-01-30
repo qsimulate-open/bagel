@@ -59,7 +59,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 #endif
     Matrix(const Matrix&);
     Matrix(Matrix&&);
-    Matrix() : Matrix_base<double>() { }
+    Matrix() { }
     virtual ~Matrix() { }
 
     std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
@@ -168,6 +168,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistMatrix : public DistMatrix_base<double> {
   public:
+    DistMatrix() { }
     DistMatrix(const int n, const int m);
     DistMatrix(const DistMatrix&);
     DistMatrix(DistMatrix&&);
