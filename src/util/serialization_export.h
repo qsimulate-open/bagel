@@ -43,35 +43,35 @@
 #include <src/math/diis.h>
 
 // SCF
-BOOST_CLASS_EXPORT(bagel::SCF);
-BOOST_CLASS_EXPORT(bagel::UHF);
-BOOST_CLASS_EXPORT(bagel::ROHF);
-BOOST_CLASS_EXPORT(bagel::Fock<0>);
-BOOST_CLASS_EXPORT(bagel::Fock<1>);
-BOOST_CLASS_EXPORT(bagel::Fock_base);
+BOOST_CLASS_EXPORT(bagel::SCF)
+BOOST_CLASS_EXPORT(bagel::UHF)
+BOOST_CLASS_EXPORT(bagel::ROHF)
+BOOST_CLASS_EXPORT(bagel::Fock<0>)
+BOOST_CLASS_EXPORT(bagel::Fock<1>)
+BOOST_CLASS_EXPORT(bagel::Fock_base)
 
 // Molecule
-BOOST_CLASS_EXPORT(bagel::Matrix1e);
-BOOST_CLASS_EXPORT(bagel::Overlap);
-BOOST_CLASS_EXPORT(bagel::Hcore);
-BOOST_CLASS_EXPORT(bagel::Coeff);
-BOOST_CLASS_EXPORT(bagel::Kinetic);
+BOOST_CLASS_EXPORT(bagel::Matrix1e)
+BOOST_CLASS_EXPORT(bagel::Overlap)
+BOOST_CLASS_EXPORT(bagel::Hcore)
+BOOST_CLASS_EXPORT(bagel::Coeff)
+BOOST_CLASS_EXPORT(bagel::Kinetic)
 
 // Math
-BOOST_CLASS_EXPORT(bagel::Matrix_base<double>);
-BOOST_CLASS_EXPORT(bagel::Matrix_base<std::complex<double>>);
-BOOST_CLASS_EXPORT(bagel::Matrix);
-BOOST_CLASS_EXPORT(bagel::ZMatrix);
-BOOST_CLASS_EXPORT(bagel::DIIS<bagel::Matrix>);
-BOOST_CLASS_EXPORT(bagel::DIIS<bagel::ZMatrix>);
+BOOST_CLASS_EXPORT(bagel::Matrix_base<double>)
+BOOST_CLASS_EXPORT(bagel::Matrix_base<std::complex<double>>)
+BOOST_CLASS_EXPORT(bagel::Matrix)
+BOOST_CLASS_EXPORT(bagel::ZMatrix)
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::Matrix>)
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::ZMatrix>)
 
 #ifdef HAVE_SCALAPACK
-BOOST_CLASS_EXPORT(bagel::DistMatrix_base<double>);
-BOOST_CLASS_EXPORT(bagel::DistMatrix_base<std::complex<double>>);
-BOOST_CLASS_EXPORT(bagel::DistMatrix);
-BOOST_CLASS_EXPORT(bagel::DistZMatrix);
-BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistMatrix>);
-BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistZMatrix>);
+BOOST_CLASS_EXPORT(bagel::DistMatrix_base<double>)
+BOOST_CLASS_EXPORT(bagel::DistMatrix_base<std::complex<double>>)
+BOOST_CLASS_EXPORT(bagel::DistMatrix)
+BOOST_CLASS_EXPORT(bagel::DistZMatrix)
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistMatrix>)
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistZMatrix>)
 #endif
 
 #endif
