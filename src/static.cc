@@ -32,6 +32,10 @@
 #include <src/parallel/mpi_interface.h>
 #include <src/parallel/resources.h>
 
+#define SERIALIZATION_EXPORT_IN_MAIN
+#include <src/util/serialization_export.h>
+#undef SERIALIZATION_EXPORT_IN_MAIN
+
 // They are used from other files
 namespace bagel{
   Resources* resources__;

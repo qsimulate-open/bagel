@@ -35,10 +35,6 @@
 #include <src/util/serialization.h>
 #include <src/util/archive.h>
 
-#define SERIALIZATION_EXPORT_IN_MAIN
-#include <src/util/serialization_export.h>
-#undef SERIALIZATION_EXPORT_IN_MAIN
-
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
 extern void test_mp2f12();

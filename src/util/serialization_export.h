@@ -52,6 +52,7 @@ BOOST_CLASS_EXPORT(bagel::Fock<1>);
 // Molecule
 BOOST_CLASS_EXPORT(bagel::Overlap);
 BOOST_CLASS_EXPORT(bagel::Hcore);
+BOOST_CLASS_EXPORT(bagel::Matrix1e);
 BOOST_CLASS_EXPORT(bagel::Coeff);
 BOOST_CLASS_EXPORT(bagel::Kinetic);
 
