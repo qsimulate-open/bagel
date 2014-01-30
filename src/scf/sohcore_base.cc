@@ -32,6 +32,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore_base)
+
 SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init(mol);

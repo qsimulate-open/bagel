@@ -36,6 +36,7 @@
 #include <vector>
 #include <src/math/algo.h>
 #include <src/util/f77.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -43,13 +44,20 @@ template <typename T, class MatType = Matrix>
 class DavidsonDiag {
   protected:
     struct BasisPair {
-      std::shared_ptr<const T> cc;
-      std::shared_ptr<const T> sigma;
-      BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+      public:
+        std::shared_ptr<const T> cc;
+        std::shared_ptr<const T> sigma;
+        BasisPair() { }
+        BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+      private:
+        // serialization
+        friend class boost::serialization::access;
+        template<class Archive>
+        void serialize(Archive& ar, const unsigned int) { ar & cc & sigma; }
     };
 
-    const int nstate_;
-    const int max_;
+    int nstate_;
+    int max_;
     int size_;
 
     std::vector<std::shared_ptr<BasisPair>> basis_;
@@ -57,7 +65,7 @@ class DavidsonDiag {
     // Hamiltonian
     std::shared_ptr<MatType> mat_;
     // eivenvalues
-    std::unique_ptr<double[]> vec_;
+    std::vector<double> vec_;
     // an eigenvector
     std::shared_ptr<MatType> eig_;
     // overlap matrix
@@ -65,9 +73,18 @@ class DavidsonDiag {
 
     std::vector<bool> converged_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & nstate_ & max_ & size_ & vec_ & eig_ & overlap_ & converged_;
+    }
+
   public:
     // Davidson with periodic collapse of the subspace
-    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(new double[max_]), converged_(n,false) {
+    DavidsonDiag() { }
+    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_), converged_(n,false) {
       if (max < 2) throw std::runtime_error("Davidson diagonalization requires at least two trial vectors per root.");
     }
 
@@ -119,7 +136,7 @@ class DavidsonDiag {
 
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
-      eig_->diagonalize(vec_.get());
+      eig_->diagonalize(vec_.data());
       eig_ = std::make_shared<MatType>(*ovlp_scr * *eig_);
       eig_ = eig_->slice(0,nstate_);
 
@@ -176,7 +193,7 @@ class DavidsonDiag {
         overlap_ = overlap_->get_submatrix(0, 0, size_, size_);
       }
 
-      return std::vector<double>(vec_.get(), vec_.get()+nstate_);
+      return std::vector<double>(vec_.data(), vec_.data()+nstate_);
     }
 
     // perhaps can be cleaner.

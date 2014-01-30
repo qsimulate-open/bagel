@@ -63,4 +63,7 @@ class Coeff : public Matrix {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Coeff)
+
 #endif

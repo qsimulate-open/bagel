@@ -40,6 +40,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(SOSCF)
+
 SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re) {
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
