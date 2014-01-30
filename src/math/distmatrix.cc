@@ -35,6 +35,7 @@ using namespace bagel;
 
 
 #ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_IMPLEMENT(DistMatrix)
 
 DistMatrix::DistMatrix(const int n, const int m) : DistMatrix_base<double>(n,m) {}
 

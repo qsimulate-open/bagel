@@ -32,10 +32,7 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZMatrix)
-#ifdef HAVE_SCALAPACK
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::DistZMatrix)
-#endif
+BOOST_CLASS_EXPORT_IMPLEMENT(ZMatrix)
 
 ZMatrix::ZMatrix(const int n, const int m, const bool loc) : Matrix_base<complex<double>>(n, m, loc) {
 }
