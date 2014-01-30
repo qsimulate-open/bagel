@@ -65,4 +65,13 @@ BOOST_CLASS_EXPORT(bagel::ZMatrix);
 BOOST_CLASS_EXPORT(bagel::DIIS<bagel::Matrix>);
 BOOST_CLASS_EXPORT(bagel::DIIS<bagel::ZMatrix>);
 
+#ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT(bagel::DistMatrix_base<double>);
+BOOST_CLASS_EXPORT(bagel::DistMatrix_base<std::complex<double>>);
+BOOST_CLASS_EXPORT(bagel::DistMatrix);
+BOOST_CLASS_EXPORT(bagel::DistZMatrix);
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistMatrix>);
+BOOST_CLASS_EXPORT(bagel::DIIS<bagel::DistZMatrix>);
+#endif
+
 #endif
