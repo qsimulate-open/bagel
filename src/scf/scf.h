@@ -39,6 +39,7 @@ class SCF : public SCF_base {
     std::shared_ptr<LevelShift<DistMatrix>> levelshift_;
 
     bool dodf_;
+    bool restarted_;
 
     std::shared_ptr<DIIS<DistMatrix>> diis_;
 
@@ -58,6 +59,7 @@ class SCF : public SCF_base {
       ar >> lshift_ >> dodf_ >> diis_;
       if (lshift_ != 0.0)
         levelshift_ = std::make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift_);
+      restarted_ = true;
     }
 
     template<class Archive>

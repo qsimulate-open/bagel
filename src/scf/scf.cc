@@ -33,7 +33,7 @@ using namespace std;
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF)
 
 SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)) {
+ : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
@@ -60,29 +60,42 @@ void SCF::compute() {
   shared_ptr<const DistMatrix> coeff;
   shared_ptr<const DistMatrix> aodensity;
 
-  if (coeff_ == nullptr) {
-    shared_ptr<const DistMatrix> fock = hcore;
-    if (dodf_ && geom_->spherical()) {
-      auto aden = make_shared<const AtomicDensities>(geom_);
-      auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
-      fock = focka->distmatrix();
-    }
-    DistMatrix intermediate = *tildex % *fock * *tildex;
-    intermediate.diagonalize(eig());
-    coeff = make_shared<const DistMatrix>(*tildex * intermediate);
-  } else {
-    shared_ptr<const Matrix> focka;
-    if (!dodf_) {
-      aodensity_ = coeff_->form_density_rhf(nocc_);
-      focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+  if (!restarted_) {
+    if (coeff_ == nullptr) {
+      shared_ptr<const DistMatrix> fock = hcore;
+      if (dodf_ && geom_->spherical()) {
+        auto aden = make_shared<const AtomicDensities>(geom_);
+        auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        fock = focka->distmatrix();
+      }
+      DistMatrix intermediate = *tildex % *fock * *tildex;
+      intermediate.diagonalize(eig());
+      coeff = make_shared<const DistMatrix>(*tildex * intermediate);
     } else {
-      focka = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      shared_ptr<const Matrix> focka;
+      if (!dodf_) {
+        aodensity_ = coeff_->form_density_rhf(nocc_);
+        focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+      } else {
+        focka = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      }
+      DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
+      intermediate.diagonalize(eig());
+      coeff = make_shared<const DistMatrix>(*tildex * intermediate);
     }
-    DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
-    intermediate.diagonalize(eig());
-    coeff = make_shared<const DistMatrix>(*tildex * intermediate);
+    coeff_ = make_shared<const Coeff>(*coeff->matrix());
+
+    cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
+    cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
+    cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
+    scftime.tick_print("SCF startup");
+    cout << endl;
+    cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
+
+    diis_ = make_shared<DIIS<DistMatrix>>(diis_size_);
+  } else {
+    coeff = coeff_->distmatrix();
   }
-  coeff_ = make_shared<const Coeff>(*coeff->matrix());
 
   if (!dodf_) {
     aodensity_ = coeff_->form_density_rhf(nocc_);
@@ -91,16 +104,7 @@ void SCF::compute() {
     aodensity = coeff->form_density_rhf(nocc_);
   }
 
-  cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
-  cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
-  scftime.tick_print("SCF startup");
-  cout << endl;
-  cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
-
   // starting SCF iteration
-
-  diis_ = make_shared<DIIS<DistMatrix>>(diis_size_);
   shared_ptr<const Matrix> densitychange = aodensity_;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -109,7 +113,7 @@ void SCF::compute() {
     if (restart_) {
       stringstream ss; ss << "scf_" << iter;
       OArchive archive(ss.str());
-      archive << this;
+      archive << static_cast<Method*>(this);
     }
 
     if (!dodf_) {
@@ -139,7 +143,7 @@ void SCF::compute() {
       break;
     }
 
-    if (iter >= diis_start_) {
+    if (diis_ || iter >= diis_start_) {
       fock = diis_->extrapolate(make_pair(fock, error_vector));
       pdebug.tick_print("DIIS");
     }
