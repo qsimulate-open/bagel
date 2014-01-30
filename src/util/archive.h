@@ -31,9 +31,7 @@
 #include <fstream>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-#define SERIALIZATION_EXPORT_GUARD
-#include <src/util/serialization_export.h>
-#undef SERIALIZATION_EXPORT_GUARD
+#include <boost/serialization/export.hpp>
 
 namespace bagel {
 
@@ -85,6 +83,5 @@ class IArchive {
 };
 
 }
-
 
 #endif

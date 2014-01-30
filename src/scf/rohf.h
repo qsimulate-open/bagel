@@ -47,4 +47,7 @@ class ROHF : public UHF {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ROHF)
+
 #endif

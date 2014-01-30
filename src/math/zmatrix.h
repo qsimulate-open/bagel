@@ -208,4 +208,10 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ZMatrix)
+#ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_KEY(bagel::DistZMatrix)
+#endif
+
 #endif

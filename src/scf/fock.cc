@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: overlap.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Filename: fock.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,31 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/scf/fock.h>
 
-#include <src/molecule/overlap.h>
-#include <src/integral/os/overlapbatch.h>
-
-using namespace std;
-using namespace bagel;
-
-BOOST_CLASS_EXPORT_IMPLEMENT(Overlap)
-
-Overlap::Overlap(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
-
-  init(mol);
-  fill_upper();
-
-}
-
-
-void Overlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>) {
-
-  // input = [b1, b0]
-  assert(input.size() == 2);
-  const int dimb1 = input[0]->nbasis();
-  const int dimb0 = input[1]->nbasis();
-  OverlapBatch overlap(input);
-  overlap.compute();
-
-  copy_block(offsetb1, offsetb0, dimb1, dimb0, overlap.data());
-}
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock<0>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock<1>)

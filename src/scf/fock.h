@@ -322,5 +322,8 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<0>)
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<1>)
 
 #endif

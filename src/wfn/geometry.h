@@ -173,4 +173,7 @@ class Geometry : public Molecule {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Geometry)
+
 #endif

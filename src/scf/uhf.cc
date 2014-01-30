@@ -31,6 +31,7 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(UHF)
 
 void UHF::initial_guess() {
   if (coeff_ == nullptr || coeffB_ == nullptr) {

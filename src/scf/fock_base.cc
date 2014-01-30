@@ -30,6 +30,7 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base)
 
 Fock_base::Fock_base(const shared_ptr<const Geometry> geom, const shared_ptr<const Matrix> previous, const std::shared_ptr<const Matrix> den, const vector<double>& schwarz)
  : Matrix1e(geom), geom_(geom), previous_(previous), density_(den), schwarz_(schwarz) {

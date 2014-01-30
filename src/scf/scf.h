@@ -81,4 +81,7 @@ class SCF : public SCF_base {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SCF)
+
 #endif

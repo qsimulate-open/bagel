@@ -34,6 +34,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
+
 Hcore::Hcore(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
 
   init(mol);

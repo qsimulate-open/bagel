@@ -207,4 +207,10 @@ class DistMatrix : public DistMatrix_base<double> {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Matrix)
+#ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_KEY(bagel::DistMatrix)
+#endif
+
 #endif

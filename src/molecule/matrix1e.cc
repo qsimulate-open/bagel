@@ -38,6 +38,7 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)
 
 Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
   zero();

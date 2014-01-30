@@ -39,6 +39,10 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Matrix)
+#ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_IMPLEMENT(DistMatrix)
+#endif
 
 Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) {
 }

@@ -26,10 +26,11 @@
 #include <src/scf/scf.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
-#include <src/util/archive.h>
 
 using namespace bagel;
 using namespace std;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(SCF)
 
 SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)) {

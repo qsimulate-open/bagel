@@ -50,6 +50,9 @@ using geometry_details::adf_rho;
 
 const static AtomMap atommap_;
 
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
+
 Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   : spherical_(true), lmax_(0) {
 

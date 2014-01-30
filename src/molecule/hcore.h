@@ -51,5 +51,8 @@ class Hcore : public Matrix1e {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Hcore)
+
 #endif
 
