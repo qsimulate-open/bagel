@@ -24,9 +24,9 @@
 //
 
 #include <src/scf/scf.h>
-#include <src/math/diis.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
+#include <src/util/archive.h>
 
 using namespace bagel;
 using namespace std;
@@ -99,11 +99,22 @@ void SCF::compute() {
 
   // starting SCF iteration
 
-  DIIS<DistMatrix> diis(diis_size_);
+  diis_ = make_shared<DIIS<DistMatrix>>(diis_size_);
   shared_ptr<const Matrix> densitychange = aodensity_;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer pdebug(1);
+
+try {
+    if (restart_) {
+      stringstream ss; ss << "scf_" << iter;
+      OArchive archive(ss.str());
+      archive << this;
+    }
+} catch (...) {
+assert(false);
+throw;
+}
 
     if (!dodf_) {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
@@ -133,7 +144,7 @@ void SCF::compute() {
     }
 
     if (iter >= diis_start_) {
-      fock = diis.extrapolate(make_pair(fock, error_vector));
+      fock = diis_->extrapolate(make_pair(fock, error_vector));
       pdebug.tick_print("DIIS");
     }
 

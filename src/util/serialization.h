@@ -27,14 +27,20 @@
 #ifndef __SRC_UTIL_SERIALIZATION_H
 #define __SRC_UTIL_SERIALIZATION_H
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/shared_ptr.hpp>
-#include <boost/archive/shared_ptr_helper.hpp>
 #include <array>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/utility.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/complex.hpp>
+#include <boost/archive/shared_ptr_helper.hpp>
+#include <boost/property_tree/ptree_serialization.hpp>
 
 namespace boost {
   namespace serialization {
@@ -94,6 +100,7 @@ namespace boost {
       for (size_t i = 0; i != N; ++i)
         ar & t[i];
     }
+
   }
 }
 

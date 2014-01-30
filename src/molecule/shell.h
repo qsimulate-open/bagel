@@ -29,11 +29,7 @@
 
 #include <array>
 #include <src/math/matrix.h>
-
 #include <src/util/serialization.h>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/utility.hpp>
 
 namespace bagel {
 

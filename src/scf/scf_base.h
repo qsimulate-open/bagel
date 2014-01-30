@@ -41,8 +41,10 @@ class SCF_base : public Method {
     std::shared_ptr<const Coeff> coeff_;
 
     int max_iter_;
+
     int diis_start_;
     int diis_size_;
+
     double thresh_overlap_;
     double thresh_scf_;
     int multipole_print_;
@@ -71,7 +73,7 @@ class SCF_base : public Method {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Method>(*this);
+      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Method);
       ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & schwarz_ & eig_ & energy_
          & nocc_ & noccB_ & do_grad_ & restart_;

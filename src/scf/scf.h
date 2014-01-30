@@ -27,6 +27,7 @@
 #ifndef __BAGEL_SRC_SCF_SCF_H
 #define __BAGEL_SRC_SCF_SCF_H
 
+#include <src/math/diis.h>
 #include <src/scf/scf_base.h>
 #include <src/scf/levelshift.h>
 
@@ -39,20 +40,22 @@ class SCF : public SCF_base {
 
     bool dodf_;
 
+    std::shared_ptr<DIIS<DistMatrix>> diis_;
+
   private:
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
-    void save(Archive& ar, const unsigned int) {
-      ar << boost::serialization::base_object<SCF_base>(*this);
-      ar << lshift_ << dodf_;
+    void save(Archive& ar, const unsigned int) const {
+      ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base);
+      ar << lshift_ << dodf_ << diis_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<SCF_base>(*this);
-      ar >> lshift_ >> dodf_;
+      ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base);
+      ar >> lshift_ >> dodf_ >> diis_;
       if (lshift_ != 0.0)
         levelshift_ = std::make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift_);
     }
@@ -63,6 +66,7 @@ class SCF : public SCF_base {
     }
 
   public:
+    SCF() { }
     SCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
     virtual ~SCF() { }

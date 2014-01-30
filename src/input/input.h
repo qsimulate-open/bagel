@@ -33,9 +33,6 @@
 #include <src/util/string.h>
 #include <src/util/serialization.h>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ptree_serialization.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/string.hpp>
 
 namespace bagel {
 

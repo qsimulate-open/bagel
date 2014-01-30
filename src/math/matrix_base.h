@@ -33,10 +33,7 @@
 #include <src/math/algo.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
-
 #include <src/util/serialization.h>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
 
 namespace bagel {
 

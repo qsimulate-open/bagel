@@ -49,6 +49,7 @@ class UHF : public SCF_base {
     void initial_guess();
 
   public:
+    UHF() { }
     UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
       : SCF_base(idata, geom, re) {
@@ -60,6 +61,7 @@ class UHF : public SCF_base {
         coeffB_ = re->coeffB();
       }
     }
+    virtual ~UHF() { }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> form_density_uhf() const;
 

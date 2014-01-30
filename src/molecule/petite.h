@@ -29,10 +29,7 @@
 
 #include <tuple>
 #include <src/molecule/atom.h>
-
 #include <src/util/serialization.h>
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
 
 namespace bagel {
 

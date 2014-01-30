@@ -44,7 +44,16 @@ class Fock : public Fock_base {
     bool store_half_;
     std::shared_ptr<DFHalfDist> half_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Fock_base>(*this) & store_half_;
+    }
+
   public:
+    Fock() { }
     // Fock operator for DF cases
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
          const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)

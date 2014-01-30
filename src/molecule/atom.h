@@ -30,8 +30,6 @@
 #include <src/molecule/shell.h>
 #include <src/input/input.h>
 
-#include <boost/serialization/string.hpp>
-
 namespace bagel {
 
 class Atom {
