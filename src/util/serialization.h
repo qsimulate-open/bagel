@@ -31,6 +31,7 @@
 #include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <type_traits>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
@@ -46,7 +47,8 @@
 namespace bagel {
   template <class T, typename = void>
   struct base_of {
-    typedef T type;
+    // always return non-const type
+    typedef typename std::remove_cv<T>::type type;
   };
 }
 
@@ -66,20 +68,58 @@ namespace boost {
       ar << ptr;
     }
 
+    // base, non-const classes
+    template<class Archive, class T, typename = void>
+    struct load_impl {
+      static void load(Archive& ar, std::shared_ptr<T>& t) {
+        BOOST_STATIC_ASSERT((tracking_level<T>::value != track_never));
+        T* ptr;
+        ar >> ptr;
+
+        static std::unordered_map<T*, std::weak_ptr<T>> hash;
+        if (hash[ptr].expired()) {
+          t = std::shared_ptr<T>(ptr);
+          hash[ptr] = t;
+        } else {
+          t = hash[ptr].lock();
+        }
+      }
+    };
+
+    // non-base non-const classes
+    template<class Archive, class T>
+    struct load_impl<Archive, T,
+                     typename std::enable_if<not std::is_same<T, typename bagel::base_of<T>::type>::value
+                                         and not std::is_const<T>::value
+                                            >::type
+                    > {
+      static void load(Archive& ar, std::shared_ptr<T>& t) {
+        typedef typename bagel::base_of<T>::type base;
+        std::shared_ptr<base> u;
+        load_impl<Archive, base>::load(ar, u);
+        t = dynamic_pointer_cast<T>(u);
+      }
+    };
+
+    // const classes
+    template<class Archive, class T>
+    struct load_impl<Archive, T,
+                     typename std::enable_if<std::is_const<T>::value>::type
+                    > {
+      static void load(Archive& ar, std::shared_ptr<T>& t) {
+        typedef typename std::remove_cv<T>::type non_const;
+        std::shared_ptr<non_const> u;
+        load_impl<Archive, non_const>::load(ar, u);
+        t = u;
+      }
+    };
+
+
     template<class Archive, class T>
     inline void load(Archive& ar, std::shared_ptr<T>& t, const unsigned int) {
-      BOOST_STATIC_ASSERT((tracking_level<T>::value != track_never));
-      T* ptr;
-      ar >> ptr;
-
-      static std::unordered_map<T*, std::weak_ptr<T>> hash;
-      if (hash[ptr].expired()) {
-        t = std::shared_ptr<T>(ptr);
-        hash[ptr] = t;
-      } else {
-        t = hash[ptr].lock();
-      }
+      load_impl<Archive, T>::load(ar, t);
     }
+
 
     // serialization of tuple
     template <size_t N>
