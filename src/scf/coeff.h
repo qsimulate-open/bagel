@@ -45,7 +45,7 @@ class Coeff : public Matrix {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix_base<double>>(*this) & geom_;
+      ar & boost::serialization::base_object<Matrix>(*this) & geom_;
     }
 
   public:

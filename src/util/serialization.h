@@ -61,12 +61,49 @@ namespace boost {
       split_free(ar, t, version);
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // base, non-const classes
+    template<class Archive, class T, typename = void>
+    struct save_impl {
+      static void save(Archive& ar, T*& t) {
+        ar << t;
+      }
+    };
+
+    // non-base non-const classes
+    template<class Archive, class T>
+    struct save_impl<Archive, T,
+                     typename std::enable_if<not std::is_same<T, typename bagel::base_of<T>::type>::value
+                                         and not std::is_const<T>::value
+                                            >::type
+                    > {
+      static void save(Archive& ar, T*& t) {
+        typedef typename bagel::base_of<T>::type base;
+        base* u = static_cast<base*>(t);
+        save_impl<Archive, base>::save(ar, u);
+      }
+    };
+
+    // const classes
+    template<class Archive, class T>
+    struct save_impl<Archive, T,
+                     typename std::enable_if<std::is_const<T>::value>::type
+                    > {
+      static void save(Archive& ar, T*& t) {
+        typedef typename std::remove_cv<T>::type non_const;
+        non_const* u = const_cast<non_const*>(t);
+        save_impl<Archive, non_const>::save(ar, u);
+      }
+    };
+
     template<class Archive, class T>
     inline void save(Archive& ar, const std::shared_ptr<T>& t, const unsigned int) {
-      BOOST_STATIC_ASSERT((tracking_level<T>::value != track_never));
-      T* ptr = t.get();
-      ar << ptr;
+      T* u = t.get();
+      save_impl<Archive, T>::save(ar, u);
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // base, non-const classes
     template<class Archive, class T, typename = void>
@@ -114,12 +151,13 @@ namespace boost {
       }
     };
 
-
     template<class Archive, class T>
     inline void load(Archive& ar, std::shared_ptr<T>& t, const unsigned int) {
       load_impl<Archive, T>::load(ar, t);
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // serialization of tuple
     template <size_t N>
