@@ -370,6 +370,9 @@ class Matrix_base {
 #endif
 };
 
+extern template class Matrix_base<double>;
+extern template class Matrix_base<std::complex<double>>;
+
 }
 
 #include <src/util/archive.h>
