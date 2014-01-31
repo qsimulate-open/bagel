@@ -24,6 +24,7 @@
 //
 
 
+#include <complex>
 #include <src/integral/carsphlist.h>
 #include <src/integral/compos/complexkineticbatch.h>
 
@@ -37,16 +38,16 @@ void ComplexKineticBatch::compute() {
 
   const CSortList sort_ (spherical_);
 
-  double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_intermediate_);
+  complex<double>* const intermediate_p = stack_->get<complex<double>>(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 
-  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_intermediate_);
+  complex<double>* const intermediate_c = stack_->get<complex<double>>(cont0_ * cont1_ * asize_intermediate_);
   perform_contraction(asize_intermediate_, intermediate_p, prim0_, prim1_, intermediate_c,
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
   if (spherical_) {
-    double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
+    complex<double>* const intermediate_i = stack_->get<complex<double>>(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
@@ -64,11 +65,11 @@ void ComplexKineticBatch::compute() {
 }
 
 
-void ComplexKineticBatch::perform_VRR(double* intermediate) {
+void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   const int worksize = amax1_;
-  double* worksx = stack_->get(worksize * worksize);
-  double* worksy = stack_->get(worksize * worksize);
-  double* worksz = stack_->get(worksize * worksize);
+  complex<double>* worksx = stack_->get<complex<double>>(worksize * worksize);
+  complex<double>* worksy = stack_->get<complex<double>>(worksize * worksize);
+  complex<double>* worksz = stack_->get<complex<double>>(worksize * worksize);
 //  double* worktx = stack_->get(worksize * worksize);
 //  double* workty = stack_->get(worksize * worksize);
 //  double* worktz = stack_->get(worksize * worksize);
@@ -77,13 +78,13 @@ void ComplexKineticBatch::perform_VRR(double* intermediate) {
     // Perform VRR
     int offset_ii = ii * asize_intermediate_;
     const double cop = 1.0 / xp_[ii];
-    const double ca = xa_[ii];
-    const double cb = xb_[ii];
-    const double tabop = 2.0 * ca * cb * cop;
-    const double cxpa = P_[ii * 3    ] - basisinfo_[0]->position(0);
-    const double cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
-    const double czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
-    double* current_data = &intermediate[offset_ii];
+//    const double ca = xa_[ii];
+//    const double cb = xb_[ii];
+//    const double tabop = 2.0 * ca * cb * cop;
+    const complex<double> cxpa = P_[ii * 3    ] - basisinfo_[0]->position(0);
+    const complex<double> cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
+    const complex<double> czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
+    complex<double>* current_data = &intermediate[offset_ii];
     worksx[0] = coeffsx_[ii];
     worksy[0] = coeffsy_[ii];
     worksz[0] = coeffsz_[ii];
@@ -179,6 +180,7 @@ void ComplexKineticBatch::perform_VRR(double* intermediate) {
             for (int jy = 0; jy <= ang1_ - jz; ++jy) {
               const int jx = ang1_ - jy - jz;
               if (jx >= 0) {
+                  current_data[cnt] = 0.0;
 //                current_data[cnt] =  worktx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worksz[iz + amax1_ * jz];
 //                current_data[cnt] += worksx[ix + amax1_ * jx] * workty[iy + amax1_ * jy] * worksz[iz + amax1_ * jz];
 //                current_data[cnt] += worksx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worktz[iz + amax1_ * jz];
