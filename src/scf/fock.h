@@ -320,6 +320,9 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
 
 }
 
+extern template class Fock<0>;
+extern template class Fock<1>;
+
 }
 
 #include <src/util/archive.h>
