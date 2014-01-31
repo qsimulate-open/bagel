@@ -371,4 +371,9 @@ class Matrix_base {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Matrix_base<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::Matrix_base<std::complex<double>>)
+
 #endif
