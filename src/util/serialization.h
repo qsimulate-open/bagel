@@ -42,6 +42,14 @@
 #include <boost/archive/shared_ptr_helper.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
 
+// default implementation
+namespace bagel {
+  template <class T, typename = void>
+  struct base_of {
+    typedef T type;
+  };
+}
+
 namespace boost {
   namespace serialization {
 

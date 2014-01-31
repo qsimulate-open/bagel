@@ -213,4 +213,11 @@ BOOST_CLASS_EXPORT_KEY(bagel::Matrix)
 BOOST_CLASS_EXPORT_KEY(bagel::DistMatrix)
 #endif
 
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Matrix, T>::value>::type> {
+    typedef Matrix type;
+  };
+}
+
 #endif

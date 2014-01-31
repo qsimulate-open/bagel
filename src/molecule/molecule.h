@@ -98,6 +98,12 @@ class Molecule {
 
 };
 
+
+template <class T>
+struct base_of<T, typename std::enable_if<std::is_base_of<Molecule, T>::value>::type> {
+  typedef Molecule type;
+};
+
 }
 
 #endif
