@@ -73,18 +73,18 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   complex<double>* worksz = stack_->get<complex<double>>(worksize * worksize);
 
   const complex<double> imag (0.0, 1.0);
-  const double Bx = basisinfo[1]->position(0);
-  const double By = basisinfo[1]->position(1);
-  const double Bz = basisinfo[1]->position(2);
-  const double A_Bx = basisinfo[1]->vector_potential(0);
-  const double A_By = basisinfo[1]->vector_potential(1);
-  const double A_Bz = basisinfo[1]->vector_potential(2);
-  const double field_x = basisinfo[0]->magnetic_field(0);
-  const double field_y = basisinfo[0]->magnetic_field(1);
-  const double field_z = basisinfo[0]->magnetic_field(2);
-  assert (basisinfo[1]->magnetic_field(0)==Bx);
-  assert (basisinfo[1]->magnetic_field(1)==By);
-  assert (basisinfo[1]->magnetic_field(2)==Bz);
+  const double Bx = basisinfo_[1]->position(0);
+  const double By = basisinfo_[1]->position(1);
+  const double Bz = basisinfo_[1]->position(2);
+  const double A_Bx = basisinfo_[1]->vector_potential(0);
+  const double A_By = basisinfo_[1]->vector_potential(1);
+  const double A_Bz = basisinfo_[1]->vector_potential(2);
+  const double field_x = basisinfo_[0]->magnetic_field(0);
+  const double field_y = basisinfo_[0]->magnetic_field(1);
+  const double field_z = basisinfo_[0]->magnetic_field(2);
+  assert (basisinfo_[1]->magnetic_field(0)==Bx);
+  assert (basisinfo_[1]->magnetic_field(1)==By);
+  assert (basisinfo_[1]->magnetic_field(2)==Bz);
 //  double* worktx = stack_->get(worksize * worksize);
 //  double* workty = stack_->get(worksize * worksize);
 //  double* worktz = stack_->get(worksize * worksize);
@@ -202,18 +202,21 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
               const int jx = ang1_ - jy - jz;
               if (jx >= 0) {
 
+                  const double jxd = jx;
+                  const double jyd = jy;
+                  const double jzd = jz;
                   complex<double> minus1x = 0.0;
                   complex<double> minus1y = 0.0;
                   complex<double> minus1z = 0.0;
                   complex<double> minus2x = 0.0;
                   complex<double> minus2y = 0.0;
                   complex<double> minus2z = 0.0;
-                  if (jx > 0) minus1x = jx * worksx[ix + amax3 * (jx-1)];
-                  if (jy > 0) minus1y = jy * worksy[iy + amax3 * (jy-1)];
-                  if (jz > 0) minus1z = jz * worksz[iz + amax3 * (jz-1)];
-                  if (jx > 1) minus2x = jx * (jx-1) * worksx[ix + amax3 * (jx-2)];
-                  if (jy > 1) minus2y = jy * (jy-1) * worksy[iy + amax3 * (jy-2)];
-                  if (jz > 1) minus2z = jz * (jz-1) * worksz[iz + amax3 * (jz-2)];
+                  if (jx > 0) minus1x = jxd * worksx[ix + amax3 * (jx-1)];
+                  if (jy > 0) minus1y = jyd * worksy[iy + amax3 * (jy-1)];
+                  if (jz > 0) minus1z = jzd * worksz[iz + amax3 * (jz-1)];
+                  if (jx > 1) minus2x = jxd * (jxd-1.0) * worksx[ix + amax3 * (jx-2)];
+                  if (jy > 1) minus2y = jyd * (jyd-1.0) * worksy[iy + amax3 * (jy-2)];
+                  if (jz > 1) minus2z = jzd * (jzd-1.0) * worksz[iz + amax3 * (jz-2)];
 
                   Sx = worksx[ix + amax3 * jx];
                   Sy = worksy[iy + amax3 * jy];
@@ -227,21 +230,32 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                   ty = worksy[iy + amax3 * (jy+2)] + 2.0 * By * worksy[iy + amax3 * (jy+1)] + By * By * worksy[iy + amax3 * jy];
                   tz = worksz[iz + amax3 * (jz+2)] + 2.0 * Bz * worksz[iz + amax3 * (jz+1)] + Bz * Bz * worksz[iz + amax3 * jz];
 
-                  dx = minus1x - 2 * cb * worksx[ix+amax3 * (jx+1)] - imag * A_Bx * worksx[ix + amax3 * jx];
-                  dy = minus1y - 2 * cb * worksy[iy+amax3 * (jy+1)] - imag * A_By * worksy[iy + amax3 * jy];
-                  dz = minus1z - 2 * cb * worksz[iz+amax3 * (jz+1)] - imag * A_Bz * worksz[iz + amax3 * jz];
+                  dx = minus1x - 2.0 * cb * worksx[ix+amax3 * (jx+1)] - imag * A_Bx * worksx[ix + amax3 * jx];
+                  dy = minus1y - 2.0 * cb * worksy[iy+amax3 * (jy+1)] - imag * A_By * worksy[iy + amax3 * jy];
+                  dz = minus1z - 2.0 * cb * worksz[iz+amax3 * (jz+1)] - imag * A_Bz * worksz[iz + amax3 * jz];
 
-                  Tx = minus2x - imag * 2.0 * A_Bx * minus1x - (2*cb*(2*jx+1)-A_Bx*A_Bx) worksx[ix+amax3 * jx]
-                       + imag * 4 * cb * A_Bx * workx[ix + amax3 * jx] + 4 * cb * cb * workx[ix + amax3 * (jx + 2)];
-                  Ty = minus2y - imag * 2.0 * A_By * minus1y - (2*cb*(2*jy+1)-A_By*A_By) worksy[iy+amax3 * jy]
-                       + imag * 4 * cb * A_By * worky[iy + amax3 * jy] + 4 * cb * cb * worky[iy + amax3 * (jy + 2)];
-                  Tz = minus2z - imag * 2.0 * A_Bz * minus1z - (2*cb*(2*jz+1)-A_Bz*A_Bz) worksz[iz+amax3 * jz]
-                       + imag * 4 * cb * A_Bz * workz[iz + amax3 * jz] + 4 * cb * cb * workz[iz + amax3 * (jz + 2)];
+                  Tx = minus2x - imag * 2.0 * A_Bx * minus1x - (2*cb*(2*jx+1) - A_Bx*A_Bx) * worksx[ix+amax3 * jx]
+                       + imag * 4.0 * cb * A_Bx * worksx[ix + amax3 * jx] + 4 * cb * cb * worksx[ix + amax3 * (jx + 2)];
+                  Ty = minus2y - imag * 2.0 * A_By * minus1y - (2*cb*(2*jy+1) - A_By*A_By) * worksy[iy+amax3 * jy]
+                       + imag * 4.0 * cb * A_By * worksy[iy + amax3 * jy] + 4 * cb * cb * worksy[iy + amax3 * (jy + 2)];
+                  Tz = minus2z - imag * 2.0 * A_Bz * minus1z - (2*cb*(2*jz+1) - A_Bz*A_Bz) * worksz[iz+amax3 * jz]
+                       + imag * 4.0 * cb * A_Bz * worksz[iz + amax3 * jz] + 4 * cb * cb * worksz[iz + amax3 * (jz + 2)];
 
-                  current_data[cnt] = 0.0;
-//                current_data[cnt] =  worktx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worksz[iz + amax1_ * jz];
-//                current_data[cnt] += worksx[ix + amax1_ * jx] * workty[iy + amax1_ * jy] * worksz[iz + amax1_ * jz];
-//                current_data[cnt] += worksx[ix + amax1_ * jx] * worksy[iy + amax1_ * jy] * worktz[iz + amax1_ * jz];
+                  current_data[cnt] = -Tx * Sy * Sz;
+                  current_data[cnt] -= Sx * Ty * Sz;
+                  current_data[cnt] -= Sx * Sy * Tz;
+                  current_data[cnt] += 0.25 * (field_y * field_y + field_z * field_z) * tx * Sy * Sz;
+                  current_data[cnt] += 0.25 * (field_z * field_z + field_x * field_x) * Sx * ty * Sz;
+                  current_data[cnt] += 0.25 * (field_x * field_x + field_y * field_y) * Sx * Sy * tz;
+                  current_data[cnt] -= 0.5 * field_x * field_y * ox * oy * Sz;
+                  current_data[cnt] -= 0.5 * field_y * field_z * Sx * oy * oz;
+                  current_data[cnt] -= 0.5 * field_z * field_x * ox * Sy * oz;
+                  current_data[cnt] += imag * field_z * dx * oy * Sz;
+                  current_data[cnt] -= imag * field_y * dx * Sy * oz;
+                  current_data[cnt] += imag * field_x * Sx * dy * oz;
+                  current_data[cnt] -= imag * field_z * ox * dy * Sz;
+                  current_data[cnt] += imag * field_y * ox * Sy * dz;
+                  current_data[cnt] -= imag * field_x * Sx * oy * dz;
                 ++cnt;
               }
             }
