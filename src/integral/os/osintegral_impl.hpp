@@ -131,6 +131,7 @@ void OSIntegral<DataType, IntType>::common_init() {
         coeffsy *= std::exp(factor_y);
         coeffsz *= std::exp(factor_z);
       }
+      //ss overlap integral
       coeffsx_.push_back(coeffsx);
       coeffsy_.push_back(coeffsy);
       coeffsz_.push_back(coeffsz);
@@ -138,6 +139,8 @@ void OSIntegral<DataType, IntType>::common_init() {
       const DataType xpa = px - basisinfo_[0]->position(0);
       const DataType ypa = py - basisinfo_[0]->position(1);
       const DataType zpa = pz - basisinfo_[0]->position(2);
+
+      // ss kinetic energy integral (not used for London orbitals)
       coefftx_.push_back(coeffsx_.back() * (*expi0 - 2 * *expi0 * *expi0 * (xpa * xpa + 0.5 * cxp_inv)));
       coeffty_.push_back(coeffsy_.back() * (*expi0 - 2 * *expi0 * *expi0 * (ypa * ypa + 0.5 * cxp_inv)));
       coefftz_.push_back(coeffsz_.back() * (*expi0 - 2 * *expi0 * *expi0 * (zpa * zpa + 0.5 * cxp_inv)));
