@@ -25,10 +25,8 @@
 
 #include <src/math/matrix_base.h>
 
-using namespace bagel;
+template class bagel::Matrix_base<double>;
+template class bagel::Matrix_base<std::complex<double>>;
 
-template class Matrix_base<double>;
-template class Matrix_base<std::complex<double>>;
-
-BOOST_CLASS_EXPORT_IMPLEMENT(Matrix_base<double>)
-BOOST_CLASS_EXPORT_IMPLEMENT(Matrix_base<std::complex<double>>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Matrix_base<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Matrix_base<std::complex<double>>)

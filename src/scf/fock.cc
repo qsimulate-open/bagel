@@ -25,10 +25,8 @@
 
 #include <src/scf/fock.h>
 
-using namespace bagel;
+template class bagel::Fock<0>;
+template class bagel::Fock<1>;
 
-template class Fock<0>;
-template class Fock<1>;
-
-BOOST_CLASS_EXPORT_IMPLEMENT(Fock<0>)
-BOOST_CLASS_EXPORT_IMPLEMENT(Fock<1>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock<0>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Fock<1>)
