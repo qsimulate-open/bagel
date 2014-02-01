@@ -34,6 +34,8 @@ namespace bagel {
 class ComplexKineticBatch : public OSIntegral<std::complex<double>,Int_t::London> {
   protected:
     void perform_VRR(std::complex<double>*) override;
+    virtual std::complex<double> get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+                                                const int dim, const bool swap) override;
 
     int nblocks() const override { return 1; }
     int nrank() const override { return 0; }

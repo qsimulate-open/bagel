@@ -1151,20 +1151,24 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   }
   if (az > 0) {
     A.change_angular(ax+1,ay  ,az-1);
-    out += imag * 0.5 * azd * By * overlap(field,A,B);
+    cout << "<+1,0,-1|0,0,0>= " << overlap(field,A,B) << endl;
+    out += imag * 1.0 * azd * By * overlap(field,A,B);
   }
 
   if (ax > 0) {
     A.change_angular(ax-1,ay  ,az+1);
-    out -= imag * 0.5 * axd * By * overlap(field,A,B);
+    cout << "<-1,0,+1|0,0,0>= " << overlap(field,A,B) << endl;
+    out -= imag * 1.0 * axd * By * overlap(field,A,B);
   }
   if (ay > 0) {
     A.change_angular(ax+1,ay-1,az  );
-    out -= imag * 0.5 * ayd * Bz * overlap(field,A,B);
+    cout << "<+1,-1,0|0,0,0>= " << overlap(field,A,B) << endl;
+    out -= imag * 1.0 * ayd * Bz * overlap(field,A,B);
   }
   if (az > 0) {
     A.change_angular(ax  ,ay+1,az-1);
-    out -= imag * 0.5 * azd * Bx * overlap(field,A,B);
+    cout << "<0,+1,-1|0,0,0>= " << overlap(field,A,B) << endl;
+    out -= imag * 1.0 * azd * Bx * overlap(field,A,B);
   }
 
   A.change_angular(ax+2,ay  ,az  );
@@ -1180,16 +1184,18 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   out -= 0.5 * Bx * By * overlap(field,A,B);
   A.change_angular(ax  ,ay+1,az+1);
   out -= 0.5 * By * Bz * overlap(field,A,B);
-
+/*
   A.change_angular(ax+1,ay  ,az  );
-  out -= ( 0.25 * Bx * BdotA - 0.25 * Ax * Bsq + imag * 2.0 * alpha * Ax ) * overlap(field,A,B);
+  out += ( 0.25 * Bx * BdotA - 0.25 * Ax * Bsq - imag * 2.0 * alpha * Ax ) * overlap(field,A,B);
   A.change_angular(ax  ,ay+1,az  );
-  out -= ( 0.25 * By * BdotA - 0.25 * Ay * Bsq + imag * 2.0 * alpha * Ay ) * overlap(field,A,B);
+  out += ( 0.25 * By * BdotA - 0.25 * Ay * Bsq - imag * 2.0 * alpha * Ay ) * overlap(field,A,B);
   A.change_angular(ax  ,ay  ,az+1);
-  out -= ( 0.25 * Bz * BdotA - 0.25 * Az * Bsq + imag * 2.0 * alpha * Az ) * overlap(field,A,B);
+  out += ( 0.25 * Bz * BdotA - 0.25 * Az * Bsq - imag * 2.0 * alpha * Az ) * overlap(field,A,B);
+*/
+  A.change_angular(ax  ,ay  ,az  );
+  out += ( 4.0 * alpha * ( axd + ayd + azd + 1.5 ) ) * overlap(field,A,B);
 
   A.change_angular(ax  ,ay  ,az  );
-  out += ( Asq + 4.0 * alpha * ( axd + ayd + azd + 1.5 ) ) * overlap(field,A,B);
 
   return 0.5 * out;
 }
