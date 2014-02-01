@@ -82,9 +82,9 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   const double field_x = basisinfo_[0]->magnetic_field(0);
   const double field_y = basisinfo_[0]->magnetic_field(1);
   const double field_z = basisinfo_[0]->magnetic_field(2);
-  assert (basisinfo_[1]->magnetic_field(0)==Bx);
-  assert (basisinfo_[1]->magnetic_field(1)==By);
-  assert (basisinfo_[1]->magnetic_field(2)==Bz);
+  assert (basisinfo_[1]->magnetic_field(0)==field_x);
+  assert (basisinfo_[1]->magnetic_field(1)==field_y);
+  assert (basisinfo_[1]->magnetic_field(2)==field_z);
 
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     // Perform VRR
@@ -95,11 +95,11 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
     const complex<double> cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
     const complex<double> czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
     complex<double>* current_data = &intermediate[offset_ii];
-    worksx[0] = coeffsx_[ii];
+    worksx[0] = 0.5 * coeffsx_[ii];
     worksy[0] = coeffsy_[ii];
     worksz[0] = coeffsz_[ii];
 
-    if (ang0_ + ang1_ > 0) {
+    if (ang0_ + ang1_ + 2 > 0) {
       worksx[1] = cxpa * worksx[0];
       worksy[1] = cypa * worksy[0];
       worksz[1] = czpa * worksz[0];
@@ -112,7 +112,7 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
     }
 
     // peform HRR to obtain S(1, j)
-    if (ang1_ > 0) {
+    if (ang1_ + 2 > 0) {
       // obtain S(0, 1) and T(0, 1)
       {
         const int j = 1;
@@ -126,7 +126,7 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
           worksz[j * amax3 + i] = AB_[2] * worksz[(j-1) * amax3 + i] + worksz[(j-1) * amax3 + i + 1];
         }
       }
-      for (int j = 2; j <= ang1_; ++j) {
+      for (int j = 2; j <= ang1_ + 2; ++j) {
         worksx[j * amax3] = AB_[0] * worksx[(j-1) * amax3] + worksx[(j-1) * amax3 + 1];
         worksy[j * amax3] = AB_[1] * worksy[(j-1) * amax3] + worksy[(j-1) * amax3 + 1];
         worksz[j * amax3] = AB_[2] * worksz[(j-1) * amax3] + worksz[(j-1) * amax3 + 1];
