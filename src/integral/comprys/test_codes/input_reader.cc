@@ -155,6 +155,7 @@ int main (int argc, char*argv[]) {
   const int nbasis = exponents.size();
   if (calculation == 'E') cout << "Full ERI summation over four molecular orbitals specified below,";
   else if (calculation == 'N') cout << "Full NAI summation over two molecular orbitals and " << natom << " nuclei specified below,";
+  else if (calculation == 'T') cout << "Full kinetic energy summation over two molecular orbitals specified below,";
   else throw runtime_error ("Desired calculation not recognized.  Enter 'E' for ERI or 'N' for NAI.");
   if (scale_input) cout << "with coefficients scaled to one, ";
   else cout << "with coefficients taken as-is, ";
@@ -218,6 +219,9 @@ cout << endl;
   } else if (calculation == 'N') {
     complex<double> FULL_NAI = compute_nai (input.first, input.second, field, nuclei);
     cout << "Final result = " << FULL_NAI << endl;
+  } else if (calculation == 'T') {
+    complex<double> FULL_KINETIC = kinetic_MO (field, input.second[0], input.second[1], input.first);
+    cout << "Final result = " << FULL_KINETIC << endl;
   }
 
   return 0;

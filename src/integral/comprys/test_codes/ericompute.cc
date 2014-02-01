@@ -45,10 +45,6 @@ namespace ryan {
 
 std::complex<double> overlap_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_) {
 
-  char dim;
-  if (dimension==0) dim = 'x';
-  if (dimension==1) dim = 'y';
-  if (dimension==2) dim = 'z';
   const int a = A_.angular_momentum[dimension];
   const int b = B_.angular_momentum[dimension];
   const int ab = a + b;
@@ -98,6 +94,10 @@ std::complex<double> overlap_Ix (const int dimension, const std::vector<double> 
     Iab[0][n+1] = term1 + term2;
   }
 #if 0
+  char dim;
+  if (dimension==0) dim = 'x';
+  if (dimension==1) dim = 'y';
+  if (dimension==2) dim = 'z';
   cout << endl;
   cout << "a = " << a << endl;
   cout << "b = " << b << endl;
@@ -197,6 +197,12 @@ void atomic_orbital::set_data (const double* pos, const double exp, const int* a
   vector_potential[2] = 0.5*(field[0]*pos[1] - field[1]*pos[0]);
   exponent = exp;
   prefactor = 1.0;
+}
+
+void atomic_orbital::change_angular (const int ax, const int ay, const int az) {
+  angular_momentum[0] = ax;
+  angular_momentum[1] = ay;
+  angular_momentum[2] = az;
 }
 
 // Run the VRR and HRR to account for angular momentum in one particular dimension
@@ -377,10 +383,10 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   assert (std::abs( X_B.imag()) < 3e-16 );
   assert (std::abs( X_C.imag()) < 3e-16 );
   assert (std::abs( X_D.imag()) < 3e-16 );
-  const double X_Areal = X_A.real();
-  const double X_Breal = X_B.real();
-  const double X_Creal = X_C.real();
-  const double X_Dreal = X_D.real();
+//  const double X_Areal = X_A.real();
+//  const double X_Breal = X_B.real();
+//  const double X_Creal = X_C.real();
+//  const double X_Dreal = X_D.real();
 
   const std::complex<double> ABbar[3] = { std::conj(Abar[0]) - Bbar[0], std::conj(Abar[1]) - Bbar[1], std::conj(Abar[2]) - Bbar[2] };
   const std::complex<double> CDbar[3] = { std::conj(Cbar[0]) - Dbar[0], std::conj(Cbar[1]) - Dbar[1], std::conj(Cbar[2]) - Dbar[2] };
@@ -839,8 +845,8 @@ pair<complex<double>,complex<double>> compute_ss (const vector<double> field, at
 
   assert (std::abs( X_A.imag()) < 3e-16 );
   assert (std::abs( X_B.imag()) < 3e-16 );
-  const double X_Areal = X_A.real();
-  const double X_Breal = X_B.real();
+//  const double X_Areal = X_A.real();
+//  const double X_Breal = X_B.real();
 
   const std::complex<double> ABbar[3] = { std::conj(Abar[0]) - Bbar[0], std::conj(Abar[1]) - Bbar[1], std::conj(Abar[2]) - Bbar[2] };
   const std::complex<double> ABbarsq = ABbar[0]*ABbar[0] + ABbar[1]*ABbar[1] + ABbar[2]*ABbar[2];
@@ -895,11 +901,11 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
   const ryan::polynomial<std::complex<double>> R1 (R1v);
   const ryan::polynomial<std::complex<double>> R2 (R2v);
 
+#if 0
   char dim;
   if (dimension==0) dim = 'x';
   if (dimension==1) dim = 'y';
   if (dimension==2) dim = 'z';
-#if 0
   cout << "Running recurrence relations!";
   cout << "computing I_" << dim << ":" << endl;
   std::cout << "A_" << dim << " = " << A_.position[dimension] << std::endl;
@@ -1065,6 +1071,127 @@ complex<double> compute_nai (vector<atomic_orbital> basis, vector<molecular_orbi
 #endif
 
   return Full_NAI;
+}
+
+complex<double> kinetic_MO (vector<double> field, molecular_orbital A_, molecular_orbital B_, vector<atomic_orbital> basis) {
+  const int nbasis = basis.size();
+  complex<double> coeff_prod;
+  complex<double> current_term;
+  complex<double> Full_kinetic = 0.0;
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      coeff_prod = conj(A_.coefficient[i]) * B_.coefficient[j];
+      if (abs(coeff_prod)) {
+        current_term = kinetic(field, basis[i], basis[j]);
+        Full_kinetic += (coeff_prod * current_term);
+      }
+    }
+  }
+  return Full_kinetic;
+}
+
+// Using Equation 227 from notebook page RDR-007-30, with pi^2 applied to the bra
+// Defining "imag" as -i is a cheap trick to get the hermitian conjugate of the pi^2 operator
+std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_) {
+  const complex<double> imag (0.0, -1.0);
+  atomic_orbital A = A_;
+  atomic_orbital B = B_;
+  const double alpha = A.exponent;
+  const int ax = A_.angular_momentum[0];
+  const int ay = A_.angular_momentum[1];
+  const int az = A_.angular_momentum[2];
+  const double axd = ax;
+  const double ayd = ay;
+  const double azd = az;
+  const double Bx = field[0];
+  const double By = field[1];
+  const double Bz = field[2];
+  const double Ax = A_.vector_potential[0];
+  const double Ay = A_.vector_potential[1];
+  const double Az = A_.vector_potential[2];
+  const double BdotA = Bx * A_.position[0] + By * A_.position[1] + Bz * A_.position[2];
+  const double Bsq = Bx*Bx + By*By + Bz*Bz;
+  const double Asq = Ax*Ax + Ay*Ay + Az*Az;
+
+  complex<double> out = 0.0;
+
+  if (ax > 1) {
+    A.change_angular(ax-2,ay  ,az  );
+    out -= axd * (axd-1) * overlap(field,A,B);
+  }
+  if (ay > 1) {
+    A.change_angular(ax  ,ay-2,az  );
+    out -= ayd * (ayd-1) * overlap(field,A,B);
+  }
+  if (az > 1) {
+    A.change_angular(ax  ,ay  ,az-2);
+    out -= azd * (azd-1) * overlap(field,A,B);
+  }
+
+  if (ax > 0) {
+    A.change_angular(ax-1,ay  ,az  );
+    out += imag * axd * Ax * overlap(field,A,B);
+  }
+  if (ay > 0) {
+    A.change_angular(ax  ,ay-1,az  );
+    out += imag * ayd * Ay * overlap(field,A,B);
+  }
+  if (az > 0) {
+    A.change_angular(ax  ,ay  ,az-1);
+    out += imag * azd * Az * overlap(field,A,B);
+  }
+
+  if (ax > 0) {
+    A.change_angular(ax-1,ay+1,az  );
+    out += imag * 0.5 * axd * Bz * overlap(field,A,B);
+  }
+  if (ay > 0) {
+    A.change_angular(ax  ,ay-1,az+1);
+    out += imag * 0.5 * ayd * Bx * overlap(field,A,B);
+  }
+  if (az > 0) {
+    A.change_angular(ax+1,ay  ,az-1);
+    out += imag * 0.5 * azd * By * overlap(field,A,B);
+  }
+
+  if (ax > 0) {
+    A.change_angular(ax-1,ay  ,az+1);
+    out -= imag * 0.5 * axd * By * overlap(field,A,B);
+  }
+  if (ay > 0) {
+    A.change_angular(ax+1,ay-1,az  );
+    out -= imag * 0.5 * ayd * Bz * overlap(field,A,B);
+  }
+  if (az > 0) {
+    A.change_angular(ax  ,ay+1,az-1);
+    out -= imag * 0.5 * azd * Bx * overlap(field,A,B);
+  }
+
+  A.change_angular(ax+2,ay  ,az  );
+  out += ( 0.25 * (By*By + Bz*Bz) - 4.0 * alpha * alpha ) * overlap(field,A,B);
+  A.change_angular(ax  ,ay+2,az  );
+  out += ( 0.25 * (Bz*Bz + Bx*Bx) - 4.0 * alpha * alpha ) * overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az+2);
+  out += ( 0.25 * (Bx*Bx + By*By) - 4.0 * alpha * alpha ) * overlap(field,A,B);
+
+  A.change_angular(ax+1,ay  ,az+1);
+  out -= 0.5 * Bz * Bx * overlap(field,A,B);
+  A.change_angular(ax+1,ay+1,az  );
+  out -= 0.5 * Bx * By * overlap(field,A,B);
+  A.change_angular(ax  ,ay+1,az+1);
+  out -= 0.5 * By * Bz * overlap(field,A,B);
+
+  A.change_angular(ax+1,ay  ,az  );
+  out -= ( 0.25 * Bx * BdotA - 0.25 * Ax * Bsq + imag * 2.0 * alpha * Ax ) * overlap(field,A,B);
+  A.change_angular(ax  ,ay+1,az  );
+  out -= ( 0.25 * By * BdotA - 0.25 * Ay * Bsq + imag * 2.0 * alpha * Ay ) * overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az+1);
+  out -= ( 0.25 * Bz * BdotA - 0.25 * Az * Bsq + imag * 2.0 * alpha * Az ) * overlap(field,A,B);
+
+  A.change_angular(ax  ,ay  ,az  );
+  out += ( Asq + 4.0 * alpha * ( axd + ayd + azd + 1.5 ) ) * overlap(field,A,B);
+
+  return 0.5 * out;
 }
 
 }
