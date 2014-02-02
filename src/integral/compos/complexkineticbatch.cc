@@ -72,7 +72,8 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   complex<double>* worksy = stack_->get<complex<double>>(worksize * worksize);
   complex<double>* worksz = stack_->get<complex<double>>(worksize * worksize);
 
-  const complex<double> imag (0.0, 1.0);
+  complex<double> imag (0.0, 1.0);
+  if (swap01_) imag *= -1.0;
   const double Bx = basisinfo_[1]->position(0);
   const double By = basisinfo_[1]->position(1);
   const double Bz = basisinfo_[1]->position(2);
