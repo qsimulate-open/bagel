@@ -48,17 +48,14 @@ class RDM_base {
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << norb_ << dim_ << rank_;
-      for (size_t i = 0; i != size(); ++i)
-        ar << data_[i];
+      ar << norb_ << dim_ << rank_ << boost::serialization::make_array(data(), size());
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> norb_ >> dim_ >> rank_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      for (size_t i = 0; i != size(); ++i)
-        ar >> data_[i];
+      ar >> boost::serialization::make_array(data(), size());
     }
 
     template<class Archive>
