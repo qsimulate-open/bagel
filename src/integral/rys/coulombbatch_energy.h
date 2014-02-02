@@ -101,4 +101,7 @@ using CoulombBatch_energy = CoulombBatch_Energy<double>;
 #include <src/integral/rys/coulombbatch_energy_impl.hpp>
 #undef COULOMBBATCH_ENERGY_HEADERS
 
+extern template class bagel::CoulombBatch_Energy<double>;
+//extern template class bagel::CoulombBatch_Energy<std::complex<double>>;
+
 #endif

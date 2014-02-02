@@ -370,10 +370,10 @@ class Matrix_base {
 #endif
 };
 
-extern template class Matrix_base<double>;
-extern template class Matrix_base<std::complex<double>>;
-
 }
+
+extern template class bagel::Matrix_base<double>;
+extern template class bagel::Matrix_base<std::complex<double>>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Matrix_base<double>)

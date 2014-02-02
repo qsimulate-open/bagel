@@ -26,9 +26,11 @@
 #include <stdexcept>
 #include <src/fci/dvec.h>
 
+template class bagel::Dvector<double>;
+template class bagel::Dvector<std::complex<double>>;
+
 using namespace std;
 using namespace bagel;
-
 
 template<>
 shared_ptr<Dvector<double>> Dvector<double>::spin() const {

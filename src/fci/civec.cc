@@ -27,9 +27,11 @@
 #include <src/fci/civec.h>
 #include <src/math/algo.h>
 
+template class bagel::Civector<double>;
+template class bagel::Civector<std::complex<double>>;
+
 using namespace std;
 using namespace bagel;
-
 
 template<>
 void Civector<double>::spin_decontaminate(const double thresh) {

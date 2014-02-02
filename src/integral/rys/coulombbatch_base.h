@@ -101,4 +101,7 @@ using CoulombBatch_base = CoulombBatch_Base<double>;
 #include <src/integral/rys/coulombbatch_base_impl.hpp>
 #undef COULOMBBATCH_BASE_HEADERS
 
+extern template class bagel::CoulombBatch_Base<double>;
+//extern template class bagel::CoulombBatch_Base<std::complex<double>>;
+
 #endif

@@ -39,18 +39,12 @@ class MOFile {
   protected:
     int nocc_;
 
-    bool do_df_;
     bool hz_; // If true, do hz stuff. This may be revisited if more algorithms are implemented
     double core_energy_;
 
-    const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Reference> ref_;
     size_t sizeij_;
-    long filesize_;
-    std::string filename_;
-    std::vector<std::shared_ptr<Shell>> basis_;
-    std::vector<int> offset_;
-
 
     // core fock operator
     std::shared_ptr<const Matrix> core_fock_;
@@ -60,7 +54,8 @@ class MOFile {
     std::shared_ptr<Matrix> mo2e_;
 
     std::shared_ptr<DFHalfDist> mo2e_1ext_;
-    size_t mo2e_1ext_size_;
+
+    std::shared_ptr<const Coeff> coeff_;
 
     int address_(int i, int j) const { assert(i <= j); return i+((j*(j+1))>>1); }
 
@@ -74,7 +69,6 @@ class MOFile {
 
     void compress_and_set(std::shared_ptr<const Matrix> buf1e, std::shared_ptr<const Matrix> buf2e);
 
-    std::shared_ptr<const Coeff> coeff_;
 
   public:
     MOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));

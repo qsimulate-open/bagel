@@ -28,6 +28,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Molecule)
+
 double Molecule::compute_nuclear_repulsion() {
   double out = 0.0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {

@@ -30,6 +30,7 @@
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
 #include <src/math/xyzfile.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -98,12 +99,16 @@ class Molecule {
 
 };
 
+}
 
-template <class T>
-struct base_of<T, typename std::enable_if<std::is_base_of<Molecule, T>::value>::type> {
-  typedef Molecule type;
-};
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Molecule)
 
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Molecule, T>::value>::type> {
+    typedef Molecule type;
+  };
 }
 
 #endif

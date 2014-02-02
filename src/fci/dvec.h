@@ -229,4 +229,7 @@ using ZDvec = Dvector<std::complex<double>>;
 
 }
 
+extern template class bagel::Dvector<double>;
+extern template class bagel::Dvector<std::complex<double>>;
+
 #endif

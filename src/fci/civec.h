@@ -752,4 +752,7 @@ using ZCivec = Civector<std::complex<double>>;
 
 }
 
+extern template class bagel::Civector<double>;
+extern template class bagel::Civector<std::complex<double>>;
+
 #endif
