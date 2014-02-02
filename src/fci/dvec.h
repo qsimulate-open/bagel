@@ -180,7 +180,7 @@ class Dvector {
     std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
 
     // for double versions
-    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
     std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
     std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
     std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
