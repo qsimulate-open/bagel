@@ -136,8 +136,7 @@ shared_ptr<const Matrix> Jop::compute_mo1e(const int nstart, const int nfence) {
 
 shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
 
-  const int nocc = nfence - nstart;
-  assert(nocc > 0);
+  assert(nfence-nstart > 0);
   shared_ptr<const Matrix> cdata = coeff_->slice(nstart, nfence);
 
   // first half transformation
