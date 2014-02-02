@@ -87,97 +87,59 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   assert (basisinfo_[1]->magnetic_field(1)==field_y);
   assert (basisinfo_[1]->magnetic_field(2)==field_z);
 
-  cout << "Bx = " << Bx << endl;
-  cout << "By = " << By << endl;
-  cout << "Bz = " << Bz << endl;
-  cout << "A_Bx = " << A_Bx << endl;
-  cout << "A_By = " << A_By << endl;
-  cout << "A_Bz = " << A_Bz << endl;
-  cout << "field_x = " << field_x << endl;
-  cout << "field_y = " << field_y << endl;
-  cout << "field_z = " << field_z << endl;
-  cout << endl;
-
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     // Perform VRR
     int offset_ii = ii * asize_intermediate_;
     const double cop = 1.0 / xp_[ii];
-    cout << "alpha = " << xa_[ii] << endl;
-    cout << " beta = " << xb_[ii] << endl;
     const double cb = xb_[ii];
     const complex<double> cxpa = P_[ii * 3    ] - basisinfo_[0]->position(0);
     const complex<double> cypa = P_[ii * 3 + 1] - basisinfo_[0]->position(1);
     const complex<double> czpa = P_[ii * 3 + 2] - basisinfo_[0]->position(2);
     complex<double>* current_data = &intermediate[offset_ii];
-    cout << "Px = " << cxpa << endl;
-    cout << "Py = " << cypa << endl;
-    cout << "Pz = " << czpa << endl;
+
+    // obtain S(0, 0)
     worksx[0] = coeffsx_[ii];
     worksy[0] = coeffsy_[ii];
     worksz[0] = coeffsz_[ii];
 
-    cout << "x <0|0> = " << worksx[0] << endl;
-    cout << "y <0|0> = " << worksy[0] << endl;
-    cout << "z <0|0> = " << worksz[0] << endl;
+    // obtain S(1, 0)
+    worksx[1] = cxpa * worksx[0];
+    worksy[1] = cypa * worksy[0];
+    worksz[1] = czpa * worksz[0];
 
-    if (ang0_ + ang1_ + 2 > 0) {
-      worksx[1] = cxpa * worksx[0];
-      worksy[1] = cypa * worksy[0];
-      worksz[1] = czpa * worksz[0];
-
-      cout << "x <1|0> = " << worksx[1] << endl;
-      cout << "y <1|0> = " << worksy[1] << endl;
-      cout << "z <1|0> = " << worksz[1] << endl;
-
-      for (int i = 2; i != amax3; ++i) {
-        worksx[i] = cxpa * worksx[i-1] + 0.5 * (i-1) * cop * worksx[i-2];
-        worksy[i] = cypa * worksy[i-1] + 0.5 * (i-1) * cop * worksy[i-2];
-        worksz[i] = czpa * worksz[i-1] + 0.5 * (i-1) * cop * worksz[i-2];
-        cout << "x <" << i << "|0> = " << worksx[i] << endl;
-        cout << "y <" << i << "|0> = " << worksy[i] << endl;
-        cout << "z <" << i << "|0> = " << worksz[i] << endl;
-      }
+    for (int i = 2; i != amax3; ++i) {
+      // obtain S(i, 0)
+      worksx[i] = cxpa * worksx[i-1] + 0.5 * (i-1) * cop * worksx[i-2];
+      worksy[i] = cypa * worksy[i-1] + 0.5 * (i-1) * cop * worksy[i-2];
+      worksz[i] = czpa * worksz[i-1] + 0.5 * (i-1) * cop * worksz[i-2];
     }
 
-    // peform HRR to obtain S(1, j)
-    if (ang1_ + 2 > 0) {
-      // obtain S(0, 1) and T(0, 1)
-      {
-        const int j = 1;
-        worksx[j * amax3] = AB_[0] * worksx[(j-1) * amax3] + worksx[(j-1) * amax3 + 1];
-        worksy[j * amax3] = AB_[1] * worksy[(j-1) * amax3] + worksy[(j-1) * amax3 + 1];
-        worksz[j * amax3] = AB_[2] * worksz[(j-1) * amax3] + worksz[(j-1) * amax3 + 1];
+    // peform HRR
+    {
+      const int j = 1;
+      // obtain S(0, 1)
+      worksx[j * amax3] = AB_[0] * worksx[(j-1) * amax3] + worksx[(j-1) * amax3 + 1];
+      worksy[j * amax3] = AB_[1] * worksy[(j-1) * amax3] + worksy[(j-1) * amax3 + 1];
+      worksz[j * amax3] = AB_[2] * worksz[(j-1) * amax3] + worksz[(j-1) * amax3 + 1];
 
-        cout << "x <" << 0 << "|" << j << "> = " << worksx[j*amax3] << endl;
-        cout << "y <" << 0 << "|" << j << "> = " << worksy[j*amax3] << endl;
-        cout << "z <" << 0 << "|" << j << "> = " << worksz[j*amax3] << endl;
-
-        for (int i = 1; i != amax3 - j; ++i) {
-          worksx[j * amax3 + i] = AB_[0] * worksx[(j-1) * amax3 + i] + worksx[(j-1) * amax3 + i + 1];
-          worksy[j * amax3 + i] = AB_[1] * worksy[(j-1) * amax3 + i] + worksy[(j-1) * amax3 + i + 1];
-          worksz[j * amax3 + i] = AB_[2] * worksz[(j-1) * amax3 + i] + worksz[(j-1) * amax3 + i + 1];
-          cout << "x <" << i << "|" << j << "> = " << worksx[j*amax3+i] << endl;
-          cout << "y <" << i << "|" << j << "> = " << worksy[j*amax3+i] << endl;
-          cout << "z <" << i << "|" << j << "> = " << worksz[j*amax3+i] << endl;
-        }
+      for (int i = 1; i != amax3 - j; ++i) {
+        // obtain S(i, 1)
+        worksx[j * amax3 + i] = AB_[0] * worksx[(j-1) * amax3 + i] + worksx[(j-1) * amax3 + i + 1];
+        worksy[j * amax3 + i] = AB_[1] * worksy[(j-1) * amax3 + i] + worksy[(j-1) * amax3 + i + 1];
+        worksz[j * amax3 + i] = AB_[2] * worksz[(j-1) * amax3 + i] + worksz[(j-1) * amax3 + i + 1];
       }
-      for (int j = 2; j <= ang1_ + 2; ++j) {
-        worksx[j * amax3] = AB_[0] * worksx[(j-1) * amax3] + worksx[(j-1) * amax3 + 1];
-        worksy[j * amax3] = AB_[1] * worksy[(j-1) * amax3] + worksy[(j-1) * amax3 + 1];
-        worksz[j * amax3] = AB_[2] * worksz[(j-1) * amax3] + worksz[(j-1) * amax3 + 1];
+    }
+    for (int j = 2; j <= ang1_ + 2; ++j) {
+      // obtain S(0, j)
+      worksx[j * amax3] = AB_[0] * worksx[(j-1) * amax3] + worksx[(j-1) * amax3 + 1];
+      worksy[j * amax3] = AB_[1] * worksy[(j-1) * amax3] + worksy[(j-1) * amax3 + 1];
+      worksz[j * amax3] = AB_[2] * worksz[(j-1) * amax3] + worksz[(j-1) * amax3 + 1];
 
-        cout << "x <" << 0 << "|" << j << "> = " << worksx[j*amax3+0] << endl;
-        cout << "y <" << 0 << "|" << j << "> = " << worksy[j*amax3+0] << endl;
-        cout << "z <" << 0 << "|" << j << "> = " << worksz[j*amax3+0] << endl;
-
-        for (int i = 1; i != amax3 - j; ++i) {
-          worksx[j * amax3 + i] = AB_[0] * worksx[(j-1) * amax3 + i] + worksx[(j-1) * amax3 + i + 1];
-          worksy[j * amax3 + i] = AB_[1] * worksy[(j-1) * amax3 + i] + worksy[(j-1) * amax3 + i + 1];
-          worksz[j * amax3 + i] = AB_[2] * worksz[(j-1) * amax3 + i] + worksz[(j-1) * amax3 + i + 1];
-          cout << "x <" << i << "|" << j << "> = " << worksx[j*amax3+i] << endl;
-          cout << "y <" << i << "|" << j << "> = " << worksy[j*amax3+i] << endl;
-          cout << "z <" << i << "|" << j << "> = " << worksz[j*amax3+i] << endl;
-        }
+      for (int i = 1; i != amax3 - j; ++i) {
+        // obtain S(i, j)
+        worksx[j * amax3 + i] = AB_[0] * worksx[(j-1) * amax3 + i] + worksx[(j-1) * amax3 + i + 1];
+        worksy[j * amax3 + i] = AB_[1] * worksy[(j-1) * amax3 + i] + worksy[(j-1) * amax3 + i + 1];
+        worksz[j * amax3 + i] = AB_[2] * worksz[(j-1) * amax3 + i] + worksz[(j-1) * amax3 + i + 1];
       }
     }
 
@@ -214,42 +176,21 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                 if (jy > 1) minus2y = jyd * (jyd-1.0) * worksy[iy + amax3 * (jy-2)];
                 if (jz > 1) minus2z = jzd * (jzd-1.0) * worksz[iz + amax3 * (jz-2)];
 
-                cout << endl;
-                cout << "Bagel: <0,0,0|0,0,0> = " << worksx[ix + 0 + amax3 * (jx + 0)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << "Bagel: <1,0,0|0,0,0> = " << worksx[ix + 1 + amax3 * (jx + 0)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << "Bagel: <2,0,0|0,0,0> = " << worksx[ix + 2 + amax3 * (jx + 0)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << "Bagel: <0,0,0|1,0,0> = " << worksx[ix + 0 + amax3 * (jx + 1)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << "Bagel: <1,0,0|1,0,0> = " << worksx[ix + 1 + amax3 * (jx + 1)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << "Bagel: <0,0,0|2,0,0> = " << worksx[ix + 0 + amax3 * (jx + 2)] * worksy[iy + 0 + amax3 * (jy + 0)] * worksz[iz + 0 + amax3 * (jz + 0)] << endl;
-                cout << endl;
-
                 Sx = worksx[ix + amax3 * jx];
                 Sy = worksy[iy + amax3 * jy];
                 Sz = worksz[iz + amax3 * jz];
-                cout << "Sx = " << Sx << endl;
-                cout << "Sy = " << Sy << endl;
-                cout << "Sz = " << Sz << endl;
 
                 ox = worksx[ix + amax3 * (jx+1)] + Bx * worksx[ix + amax3 * jx];
                 oy = worksy[iy + amax3 * (jy+1)] + By * worksy[iy + amax3 * jy];
                 oz = worksz[iz + amax3 * (jz+1)] + Bz * worksz[iz + amax3 * jz];
-                cout << "ox = " << ox << endl;
-                cout << "oy = " << oy << endl;
-                cout << "oz = " << oz << endl;
 
                 tx = worksx[ix + amax3 * (jx+2)] + 2.0 * Bx * worksx[ix + amax3 * (jx+1)] + Bx * Bx * worksx[ix + amax3 * jx];
                 ty = worksy[iy + amax3 * (jy+2)] + 2.0 * By * worksy[iy + amax3 * (jy+1)] + By * By * worksy[iy + amax3 * jy];
                 tz = worksz[iz + amax3 * (jz+2)] + 2.0 * Bz * worksz[iz + amax3 * (jz+1)] + Bz * Bz * worksz[iz + amax3 * jz];
-                cout << "tx = " << tx << endl;
-                cout << "ty = " << ty << endl;
-                cout << "tz = " << tz << endl;
 
                 dx = minus1x - 2.0 * cb * worksx[ix+amax3 * (jx+1)] - imag * A_Bx * worksx[ix + amax3 * jx];
                 dy = minus1y - 2.0 * cb * worksy[iy+amax3 * (jy+1)] - imag * A_By * worksy[iy + amax3 * jy];
                 dz = minus1z - 2.0 * cb * worksz[iz+amax3 * (jz+1)] - imag * A_Bz * worksz[iz + amax3 * jz];
-                cout << "dx = " << dx << endl;
-                cout << "dy = " << dy << endl;
-                cout << "dz = " << dz << endl;
 
                 Tx = minus2x - imag * 2.0 * A_Bx * minus1x - (2*cb*(2*jx+1) + A_Bx*A_Bx) * worksx[ix+amax3 * jx]
                      + imag * 4.0 * cb * A_Bx * worksx[ix + amax3 * (jx+1)] + 4 * cb * cb * worksx[ix + amax3 * (jx + 2)];
@@ -257,24 +198,6 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                      + imag * 4.0 * cb * A_By * worksy[iy + amax3 * (jy+1)] + 4 * cb * cb * worksy[iy + amax3 * (jy + 2)];
                 Tz = minus2z - imag * 2.0 * A_Bz * minus1z - (2*cb*(2*jz+1) + A_Bz*A_Bz) * worksz[iz+amax3 * jz]
                      + imag * 4.0 * cb * A_Bz * worksz[iz + amax3 * (jz+1)] + 4 * cb * cb * worksz[iz + amax3 * (jz + 2)];
-                cout << endl;
-                cout << "minus2x = " << minus2x << ", minus1x = " << minus1x << ", X|X = " << worksx[ix+amax3*jx] << endl;
-                cout << "X|1 = " << worksx[ix+amax3*(jx+1)] << ", X|2 = " << worksx[ix+amax3*(jx+2)] << endl;
-                cout << "Tx = " << Tx << endl;
-                cout << "Ty = " << Ty << endl;
-                cout << "Tz = " << Tz << endl;
-
-                cout << "Laplacian_x = " << (Tx * Sy * Sz) << endl;
-                cout << "By2Bz2x2 = " << (0.25 * (field_y * field_y + field_z * field_z) * tx * Sy * Sz) << endl;
-                cout << "BxByxy = " << (-0.5 * field_x * field_y * ox * oy * Sz) << endl;
-                cout << "iBzddxy = " << (imag * field_z * dx * oy * Sz) << endl;
-                cout << endl;
-                cout << "Realbagel: S_xS_yS_z = " << (Sx * Sy * Sz) << endl;
-                cout << "Realbagel: o_xS_yS_z = " << (ox * Sy * Sz) << endl;
-                cout << "Realbagel: t_xS_yS_z = " << (tx * Sy * Sz) << endl;
-                cout << "Realbagel: d_xS_yS_z = " << (dx * Sy * Sz) << endl;
-                cout << "Realbagel: T_xS_yS_z = " << (Tx * Sy * Sz) << endl;
-                cout << endl;
 
                 current_data[cnt] = -Tx * Sy * Sz;
                 current_data[cnt] -= Sx * Ty * Sz;
@@ -292,7 +215,6 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                 current_data[cnt] += imag * field_y * ox * Sy * dz;
                 current_data[cnt] -= imag * field_x * Sx * oy * dz;
                 current_data[cnt] *= 0.5;
-                cout << "Full kinetic = " << current_data[cnt];
                 ++cnt;
               }
             }

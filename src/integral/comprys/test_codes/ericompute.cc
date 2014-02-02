@@ -1106,12 +1106,6 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   const double Bx = field[0];
   const double By = field[1];
   const double Bz = field[2];
-  const double Ax = A_.vector_potential[0];
-  const double Ay = A_.vector_potential[1];
-  const double Az = A_.vector_potential[2];
-  const double BdotA = Bx * A_.position[0] + By * A_.position[1] + Bz * A_.position[2];
-  const double Bsq = Bx*Bx + By*By + Bz*Bz;
-  const double Asq = Ax*Ax + Ay*Ay + Az*Az;
 
   complex<double> out = 0.0;
 
@@ -1127,47 +1121,29 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
     A.change_angular(ax  ,ay  ,az-2);
     out -= azd * (azd-1) * overlap(field,A,B);
   }
-
-  if (ax > 0) {
-    A.change_angular(ax-1,ay  ,az  );
-    out += imag * axd * Ax * overlap(field,A,B);
-  }
-  if (ay > 0) {
-    A.change_angular(ax  ,ay-1,az  );
-    out += imag * ayd * Ay * overlap(field,A,B);
-  }
-  if (az > 0) {
-    A.change_angular(ax  ,ay  ,az-1);
-    out += imag * azd * Az * overlap(field,A,B);
-  }
-
   if (ax > 0) {
     A.change_angular(ax-1,ay+1,az  );
-    out += imag * 0.5 * axd * Bz * overlap(field,A,B);
+    out += imag * 1.0 * axd * Bz * overlap(field,A,B);
   }
   if (ay > 0) {
     A.change_angular(ax  ,ay-1,az+1);
-    out += imag * 0.5 * ayd * Bx * overlap(field,A,B);
+    out += imag * 1.0 * ayd * Bx * overlap(field,A,B);
   }
   if (az > 0) {
     A.change_angular(ax+1,ay  ,az-1);
-    cout << "<+1,0,-1|0,0,0>= " << overlap(field,A,B) << endl;
     out += imag * 1.0 * azd * By * overlap(field,A,B);
   }
 
   if (ax > 0) {
     A.change_angular(ax-1,ay  ,az+1);
-    cout << "<-1,0,+1|0,0,0>= " << overlap(field,A,B) << endl;
     out -= imag * 1.0 * axd * By * overlap(field,A,B);
   }
   if (ay > 0) {
     A.change_angular(ax+1,ay-1,az  );
-    cout << "<+1,-1,0|0,0,0>= " << overlap(field,A,B) << endl;
     out -= imag * 1.0 * ayd * Bz * overlap(field,A,B);
   }
   if (az > 0) {
     A.change_angular(ax  ,ay+1,az-1);
-    cout << "<0,+1,-1|0,0,0>= " << overlap(field,A,B) << endl;
     out -= imag * 1.0 * azd * Bx * overlap(field,A,B);
   }
 
@@ -1184,18 +1160,55 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   out -= 0.5 * Bx * By * overlap(field,A,B);
   A.change_angular(ax  ,ay+1,az+1);
   out -= 0.5 * By * Bz * overlap(field,A,B);
-/*
-  A.change_angular(ax+1,ay  ,az  );
-  out += ( 0.25 * Bx * BdotA - 0.25 * Ax * Bsq - imag * 2.0 * alpha * Ax ) * overlap(field,A,B);
-  A.change_angular(ax  ,ay+1,az  );
-  out += ( 0.25 * By * BdotA - 0.25 * Ay * Bsq - imag * 2.0 * alpha * Ay ) * overlap(field,A,B);
-  A.change_angular(ax  ,ay  ,az+1);
-  out += ( 0.25 * Bz * BdotA - 0.25 * Az * Bsq - imag * 2.0 * alpha * Az ) * overlap(field,A,B);
-*/
+
   A.change_angular(ax  ,ay  ,az  );
   out += ( 4.0 * alpha * ( axd + ayd + azd + 1.5 ) ) * overlap(field,A,B);
 
+  /*
   A.change_angular(ax  ,ay  ,az  );
+  complex<double> SSS = overlap(field,A,B);
+  SSS += 0.0;
+
+  A.change_angular(ax+1,ay  ,az  );
+  complex<double> oSS = overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az  );
+  oSS += A.position[0] * overlap(field,A,B);
+
+  complex<double> tSS = 0.0;
+  A.change_angular(ax+2,ay  ,az  );
+  tSS += overlap(field,A,B);
+  A.change_angular(ax+1,ay  ,az  );
+  tSS += 2.0 * A.position[0] * overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az  );
+  tSS += A.position[0] * A.position[0] * overlap(field,A,B);
+
+  complex<double> dSS = 0.0;
+  A.change_angular(ax-1,ay  ,az  );
+  if(ax > 0) dSS += axd * overlap(field,A,B);
+  A.change_angular(ax+1,ay  ,az  );
+  dSS -= 2.0 * alpha * overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az  );
+  dSS -= imag * Ax * overlap(field,A,B);
+
+  complex<double> TSS = 0.0;
+  A.change_angular(ax-2,ay  ,az  );
+  if(ax>1) TSS += axd * (axd - 1.0) * overlap(field,A,B);
+  A.change_angular(ax-1,ay  ,az  );
+  if(ax>0) TSS -= axd * 2.0 * imag * Ax * overlap(field,A,B);
+  A.change_angular(ax  ,ay  ,az  );
+  TSS -= 2.0 * alpha * (2.0 * axd + 1.0) * overlap(field,A,B);
+  TSS -= Ax * Ax * overlap(field,A,B);
+  A.change_angular(ax+1,ay  ,az  );
+  TSS += imag * 4.0 * alpha * Ax * overlap(field,A,B);
+  A.change_angular(ax+2,ay  ,az  );
+  TSS += 4.0 * alpha * alpha * overlap(field,A,B);
+
+  //cout << "Fakebagel:  S_xS_yS_z = " << SSS << endl;
+  //cout << "Fakebagel:  o_xS_yS_z = " << oSS << endl;
+  //cout << "Fakebagel:  t_xS_yS_z = " << tSS << endl;
+  //cout << "Fakebagel:  d_xS_yS_z = " << dSS << endl;
+  //cout << "Fakebagel:  T_xS_yS_z = " << TSS << endl;
+  */
 
   return 0.5 * out;
 }
