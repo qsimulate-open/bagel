@@ -179,4 +179,7 @@ template<typename T, int N> std::array<T,N> PTree::get_array(const std::string k
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PTree)
+
 #endif
