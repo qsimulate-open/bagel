@@ -33,6 +33,7 @@
 #include <unordered_map>
 #include <type_traits>
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/bitset.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/list.hpp>
@@ -160,6 +161,29 @@ namespace boost {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // serialization of weak_ptr
+    template<class Archive, class T>
+    void serialize(Archive& ar, std::weak_ptr<T>& t, const unsigned int version) {
+      BOOST_STATIC_ASSERT(tracking_level<T>::value != track_never);
+      split_free(ar, t, version);
+    }
+
+    template<class Archive, class T>
+    void save(Archive& ar, const std::weak_ptr<T>& t, const unsigned int version) {
+      std::shared_ptr<T> u = t.lock();
+      ar << u;
+    }
+
+    template<class Archive, class T>
+    void load(Archive& ar, std::weak_ptr<T>& t, const unsigned int version) {
+      std::shared_ptr<T> u;
+      ar >> u;
+      t = std::weak_ptr<T>(u);
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
     // serialization of tuple
     template <size_t N>
     struct Serialize {
@@ -181,11 +205,10 @@ namespace boost {
       Serialize<sizeof...(Args)>::serialize(ar, t, version);
     }
 
-    // serizlization of std::array
+    // serialization of std::array
     template<class Archive, typename T, size_t N>
     void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
-      for (size_t i = 0; i != N; ++i)
-        ar & t[i];
+      ar & boost::serialization::make_array(t.data(), N);
     }
 
   }

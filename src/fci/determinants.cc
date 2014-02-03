@@ -29,7 +29,7 @@
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 
-#include <bitset>
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 
 using namespace std;
 using namespace bagel;

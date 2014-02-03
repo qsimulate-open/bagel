@@ -37,8 +37,8 @@
 #include <bitset>
 #include <algorithm>
 #include <cassert>
-
 #include <src/util/constants.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -46,19 +46,23 @@ struct DetMap {
   unsigned int target;
   unsigned int source;
   int sign;
-  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {};
+  DetMap() { }
+  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {}
+
+  template<class Archive>
+  void serialize(Archive& ar, const unsigned int) { ar & target & source & sign; }
 };
 
 // implements a determinant space
 class Determinants : public std::enable_shared_from_this<Determinants> {
   protected:
     // assuming that the number of active orbitals are the same in alpha and beta.
-    const int norb_;
+    int norb_;
 
-    const int nelea_;
-    const int neleb_;
+    int nelea_;
+    int neleb_;
 
-    const bool compress_;
+    bool compress_;
 
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
     std::weak_ptr<Determinants> detaddalpha_;
@@ -114,7 +118,17 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::vector<std::vector<DetMap>> phidowna_;
     std::vector<std::vector<DetMap>> phidownb_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & norb_ & nelea_ & neleb_ & compress_ & detaddalpha_ & detaddbeta_ & detremalpha_ & detrembeta_
+         & zkl_ & stringa_ & stringb_ & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_
+         & phiupa_ & phiupb_ & phidowna_ & phidownb_;
+    }
+
   public:
+    Determinants() { }
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
@@ -354,5 +368,8 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
 }
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Determinants)
 
 #endif
