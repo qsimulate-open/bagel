@@ -13,9 +13,16 @@ int main() {
 
   cout << " Expansion of a Gaussian about a different centre " << endl;
   BesselI besselI;
-  const int l = 10;
+  const int l = 3;
   const double x =0.1;
-  cout << "I_n(x) where n = " << l << " and x = " << x << " is   " << besselI.compute(l, x) << endl;
+  cout << "I_n(x) where n = " << l << " and x = " << x << " is   " << besselI.besseln(l, x) << endl;
+
+  SH sh;
+  const int m = 3;
+  cout << "(l m x) = (" << l << "  " << m << "  " << x << ")   P_lm(x) =  " << sh.alegendre(l, fabs(m), x) << endl;
+  const double phi = 1.3;
+  const double theta = 3.1;
+  cout << "th = " << theta << "  ph = " << phi << "  Y_lm(x) = " << sh.ylm(l, m, theta, phi).real() << "    " << sh.ylm(l, m, theta, phi).imag() << endl;
 
   return 0;
 

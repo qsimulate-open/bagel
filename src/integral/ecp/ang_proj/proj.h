@@ -14,18 +14,11 @@
 #include <boost/lexical_cast.hpp>
 #include <cassert>
 #include "mpreal.h"
+#include "src/math/comb.h"
+#include <complex>
 
 using namespace mpfr;
 using namespace boost;
-
-constexpr int LARGE = 32;
-
-class Proj {
-  protected:
-
-  public:
-
-};
 
 class Factorial {
   protected:
@@ -54,6 +47,83 @@ class CartGauss {
     double exp_;
 
   public:
+
+};
+
+class SH {
+  protected:
+  const mpreal pi_ = "3.1415926535897932384626433";
+
+  public:
+
+  SH() {}
+  ~SH() {}
+
+  const double alegendre(const int l, const int m, const double x) {
+    if (m < 0 || m > l || fabs(x) > 1.0) throw std::runtime_error("SH: m must be in [0, l] and x in [-1, 1]");
+    double pmm = 1.0;
+    if (m > 0) {
+      double somx2 = std::sqrt((1.0 - x)*(1.0 + x));
+      double fact = 1.0;
+      for (int i = 0; i != m; ++i) {
+        pmm *= -fact * somx2;
+        fact += 2.0;
+      }
+    }
+    if (l == m) {
+      return pmm;
+    } else {
+      double pmmp1 = x * (2.0 * m + 1) * pmm;
+      if (l == (m+1)) {
+        return pmmp1;
+      } else {
+        double plm = 0.0;
+        for (int i = m + 2; i != l; ++i) {
+          plm = (x * (2 * i -1) * pmmp1 - (i + m - 1) * pmm) / (i - m);
+          pmm = pmmp1;
+          pmmp1 = plm;
+        }
+        return plm;
+      }
+    }
+  }
+
+  const std::complex<double> ylm(const int l, const int m, const double theta, const double phi) {
+    Factorial fact;
+    const double cth = cos(theta);
+    if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
+
+    const int am = fabs(m);
+    const double plm = alegendre(l, am, cth);
+    mpreal f = fact.compute(l-am)/fact.compute(l+am);
+    const double coef = std::sqrt((2*l+1)*f.toDouble()*0.25/pi_.toDouble());
+    double real = coef*plm*cos(am*phi);
+    double imag = coef*plm*sin(am*phi);
+    if (m < 0) {
+      real *= std::pow(-1, m);
+      imag *= std::pow(-1, m+1);
+    }
+    std::complex<double> y (real, imag);
+    return y;
+  }
+
+  const double realSH(const int l, const int m, const double theta, const double phi) {
+    Factorial fact;
+    const double cth = cos(theta);
+    if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
+
+    const int am = fabs(m);
+    const double plm = alegendre(l, am, cth);
+    mpreal f = fact.compute(l-am)/fact.compute(l+am);
+    const double coef = std::sqrt((2*l+1)*f.toDouble()*0.25/pi_.toDouble());
+    if (m == 0) {
+      return coef*plm;
+    } else if (m > 0) {
+      return std::pow(-1, m)*std::sqrt(2.0)*coef*plm*cos(am*phi);
+    } else {
+      return std::pow(-1, m)*std::sqrt(2.0)*coef*plm*sin(am*phi);
+    }
+  }
 
 };
 
@@ -112,12 +182,12 @@ class BesselI {
       return x < 0.0 ? -bessi : bessi;
     }
 
-    const double compute(const int l, const double x) {
+    const double besseln(const int l, const double x) {
+      const mpreal pi = "3.1415926535897932384626433";
       mpreal mbessi = "0.0";
       Factorial fact;
       const mpreal mfact = fact.compute(l);
       const mpreal half = "0.5";
-      const mpreal pi = "3.1415926535897932384626433";
       if (l == 0) {
         return bessel0(x);
       } else if (l == 1) {
@@ -125,11 +195,9 @@ class BesselI {
       } else {
         if (fabs(x) < l * 1e-3) {
           mbessi = static_cast<mpreal>(pow(x * half, l)) / mfact;
-          std::cout << mfact.toDouble() << " bessi = " << mbessi.toDouble() << std::endl;
           return mbessi.toDouble();
         } else if (x > l * 1e2) {
           mbessi = static_cast<mpreal>(exp(x) / sqrt(2.0 * x * pi));
-          std::cout << mfact.toDouble() << " bessi = " << mbessi.toDouble() << std::endl;
           return mbessi.toDouble();
         } else {
           if (x == 0) {
@@ -152,7 +220,6 @@ class BesselI {
               if (i == l) mbessi = bip;
             }
             mbessi *= static_cast<mpreal>(bessel0(x))/bi;
-            std::cout << "I_0(x) =  " << bessel0(x) << std::endl;
             const double bessi = mbessi.toDouble();
             return x < 0.0 && (l & 1) ? -bessi : bessi;
           }
@@ -163,6 +230,20 @@ class BesselI {
 };
 
 class grid {
+
+};
+
+class Proj {
+  protected:
+
+    std::shared_ptr<const CartGauss> gauss_;
+    std::shared_ptr<const RealSH> sh_;
+
+  public:
+
+    Proj(std::shared_ptr<const CartGauss> gauss, std::shared_ptr<const RealSH> sh) : gauss_(gauss), sh_(sh) {}
+    ~Proj() {}
+    void compute() {}
 
 };
 
