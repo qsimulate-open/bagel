@@ -104,14 +104,14 @@ namespace bagel {
 
   public:
     Resources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
+#ifdef LIBINT_INTERFACE
+      LIBINT2_PREFIXED_NAME(libint2_static_init)();
+#endif
+
       for (int i = 0; i != max_num_threads_; ++i) {
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
         stackmem_.push_back(std::make_shared<StackMem>());
       }
-
-    #ifdef LIBINT_INTERFACE
-      LIBINT2_PREFIXED_NAME(libint2_static_init)();
-    #endif
     }
 
     std::shared_ptr<StackMem> get() {
