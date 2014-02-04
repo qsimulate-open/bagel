@@ -57,7 +57,7 @@ class CSymMatrix {
 
   public:
     CSymMatrix() { }
-    CSymMatrix(int n, bool l) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
+    CSymMatrix(int n, bool l = true) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
 
     CSymMatrix(std::shared_ptr<const Matrix> in) : nocc_(in->ndim()), size_(nocc_*(nocc_+1)/2), data_(new double[size_]) {
       assert(in->ndim() == in->mdim() && (*in - *in->transpose()).rms() < 1.0e-8);

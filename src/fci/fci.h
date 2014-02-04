@@ -83,6 +83,10 @@ class FCI : public Method {
     // denominator
     std::shared_ptr<Civec> denom_;
 
+    // restart
+    bool restart_;
+    bool restarted_;
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -94,20 +98,19 @@ class FCI : public Method {
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
       ar << max_iter_ << davidson_subspace_ << nguess_ << thresh_ << print_thresh_
-         << nelea_ << neleb_ << ncore_ << norb_ << nstate_
-      // TODO properties_ to be implemented
-      // << properties_
-         << energy_ << cc_ << det_ << davidson_;
+         << nelea_ << neleb_ << ncore_ << norb_ << nstate_ << properties_
+         << energy_ << cc_ << rdm1_ << rdm2_ << weight_ << rdm1_av_ << rdm2_av_
+         << det_ << davidson_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       // jop_ and denom_ will be constructed in derived classes
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
-         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_
-      // TODO properties_ to be implemented
-      // >> properties_
-         >> energy_ >> cc_ >> det_ >> davidson_;
+         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> properties_
+         >> energy_ >> cc_ >> rdm1_ >> rdm2_ >> weight_ >> rdm1_av_ >> rdm2_av_
+         >> det_ >> davidson_;
+      restarted_ = true;
     }
 
   protected:

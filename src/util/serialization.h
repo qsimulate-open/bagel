@@ -179,7 +179,7 @@ namespace boost {
     void load(Archive& ar, std::weak_ptr<T>& t, const unsigned int version) {
       std::shared_ptr<T> u;
       ar >> u;
-      t = std::weak_ptr<T>(u);
+      t = u;
     }
 
 

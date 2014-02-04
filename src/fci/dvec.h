@@ -74,7 +74,7 @@ class Dvector {
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int version) {
-      ar >> det_ >> lena_ >> lenb_ >> ij_ >> dvec_;
+      ar >> det_ >> lena_ >> lenb_ >> ij_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       ar >> boost::serialization::make_array(data(), size());
       // make an alias and set to dvec_

@@ -31,6 +31,10 @@
 #include <src/molecule/dipolematrix.h>
 #include <src/fci/prop1etask.h>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIProperties)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Prop1e)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIDipole)
+
 using namespace std;
 using namespace bagel;
 
@@ -50,15 +54,9 @@ void CIDipole::init(const int nstart, const int nfence) {
   }
 
   sizeij_ = norb_ * norb_;
-  for(int i = 0; i < 3; ++i) compressed_dipoles_[i] = unique_ptr<double[]>(new double[sizeij_]);
 
-  for (int imu = 0; imu < 3; ++imu) {
-    for (int i = 0, ij = 0; i < norb_; ++i) {
-      for (int j = 0; j < norb_; ++j, ++ij) {
-        compressed_dipoles_[imu][ij] = dipole_mo_[imu]->element(i + nocc_, j + nocc_);
-      }
-    }
-  }
+  for (int imu = 0; imu < 3; ++imu)
+    compressed_dipoles_[imu] = dipole_mo_[imu]->get_submatrix(nocc_, nocc_, norb_, norb_);
 }
 
 void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
@@ -83,11 +81,11 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
     for (int istate = 0; istate < nstates; ++istate) {
       double *target = sigma->data(istate)->data();
       for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu].get());
+        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu]->data());
 
       target = sg_trans->data(istate)->data();
       for (auto aiter = det_trans->stringa().begin(); aiter != det_trans->stringa().end(); ++aiter, target+=la)
-        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu].get());
+        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu]->data());
     }
 
     tasks.compute();

@@ -48,11 +48,20 @@ class CIProperties {
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<const Coeff> coeff_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & nocc_ & norb_ & nbasis_ & sizeij_ & core_prop_ & prop_ & geom_ & ref_ & coeff_;
+    }
+
   public:
+    CIProperties() { }
     CIProperties(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence)
       : nocc_(nstart), norb_(nfence-nstart), nbasis_(ref->geom()->nbasis()), geom_(ref->geom()), ref_(ref), coeff_(ref->coeff()) { }
     CIProperties(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence, const std::shared_ptr<const Coeff> coeff)
       : nocc_(nstart), norb_(nfence-nstart), nbasis_(ref->geom()->nbasis()), geom_(ref->geom()), ref_(ref), coeff_(coeff) { }
+    virtual ~CIProperties() { }
 
     virtual void compute(std::shared_ptr<const Dvec>) = 0;
 
@@ -69,10 +78,18 @@ class CIProperties {
 // 1e properties of a CI wavefunction : This is kind of useless right now, but I envision it being less useless when there are more properties to calculate
 // It just so happens that the only property I'm calculating at the moment is a special case (with 3 components)
 class Prop1e : public CIProperties {
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<CIProperties>(*this);
+    }
   public:
+    Prop1e() { }
     Prop1e(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence) : CIProperties(ref, nstart, nfence) {}
     Prop1e(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence, const std::shared_ptr<const Coeff> coeff)
       : CIProperties(ref,nstart,nfence, coeff) {}
+    virtual ~Prop1e() { }
 };
 
 // Dipole operator of a CI wavefunction
@@ -81,9 +98,17 @@ class CIDipole : public Prop1e {
     std::array<std::shared_ptr<const Matrix>, 3> dipole_mo_;
     std::array<std::shared_ptr<Matrix>, 3> dipole_matrices_;
     std::array<double,3> core_dipole_;
-    std::array<std::unique_ptr<double[]>,3> compressed_dipoles_;
+    std::array<std::shared_ptr<Matrix>, 3> compressed_dipoles_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Prop1e>(*this) & dipole_mo_ & dipole_matrices_ & core_dipole_ & compressed_dipoles_;
+    }
 
   public:
+    CIDipole() { }
     CIDipole(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence) : Prop1e(ref, nstart, nfence)
       { init(nstart,nfence); }
     CIDipole(const std::shared_ptr<const Reference> ref, const int nstart, const int nfence, const std::shared_ptr<const Coeff> coeff)
@@ -100,6 +125,17 @@ class CIDipole : public Prop1e {
     virtual void print() const override;
 };
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::CIProperties)
+BOOST_CLASS_EXPORT_KEY(bagel::Prop1e)
+BOOST_CLASS_EXPORT_KEY(bagel::CIDipole)
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<CIProperties, T>::value>::type> {
+    typedef CIProperties type;
+  };
 }
 
 #endif

@@ -34,7 +34,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(FCI)
 
 FCI::FCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   common_init();
 }
 
@@ -49,6 +49,7 @@ void FCI::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+  restart_ = idata_->get<bool>("restart", false);
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -237,32 +238,31 @@ shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
 void FCI::compute() {
   Timer pdebug(2);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
+  if (!restarted_) {
+    // at the moment I only care about C1 symmetry, with dynamics in mind
+    if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
 
-  // some constants
-  //const int ij = nij();
+    // Creating an initial CI vector
+    cc_ = make_shared<Dvec>(det_, nstate_); // B runs first
 
-  // Creating an initial CI vector
-  cc_ = make_shared<Dvec>(det_, nstate_); // B runs first
+    // find determinants that have small diagonal energies
+    if (nguess_ <= nstate_)
+      generate_guess(nelea_-neleb_, nstate_, cc_);
+    else
+      model_guess(cc_);
+    pdebug.tick_print("guess generation");
 
-  // find determinants that have small diagonal energies
-  if (nguess_ <= nstate_)
-    generate_guess(nelea_-neleb_, nstate_, cc_);
-  else
-    model_guess(cc_);
-  pdebug.tick_print("guess generation");
+    // Davidson utility
+    davidson_ = make_shared<DavidsonDiag<Civec>>(nstate_, davidson_subspace_);
+  }
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
-  // Davidson utility
-  davidson_ = make_shared<DavidsonDiag<Civec>>(nstate_, davidson_subspace_);
-
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
   // 0 means not converged
-  vector<int> conv(nstate_,0);
+  vector<int> conv(nstate_, 0);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
@@ -270,6 +270,12 @@ void FCI::compute() {
     // form a sigma vector given cc
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
+
+    if (restart_) {
+      stringstream ss; ss << "fci_" << iter;
+      OArchive ar(ss.str());
+      ar << static_cast<Method*>(this);
+    }
 
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);
