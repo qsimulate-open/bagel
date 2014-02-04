@@ -32,6 +32,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(FCI)
+
 FCI::FCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
@@ -66,7 +68,8 @@ void FCI::common_init() {
   }
 
   // Configure properties to be calculated on the final wavefunctions
-  if (idata_->get<bool>("dipoles", false)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
+  if (idata_->get<bool>("dipoles", false))
+    properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
 
   // additional charge
   const int charge = idata_->get<int>("charge", 0);

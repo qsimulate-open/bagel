@@ -103,6 +103,8 @@ class MOFile {
     const double* mo1e_ptr() const { return mo1e_->data(); }
     const double* mo2e_ptr() const { return mo2e_->data(); }
 
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+
     bool hz() const { return hz_; }
     const int nocc() const { return nocc_; }
 

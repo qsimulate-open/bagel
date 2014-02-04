@@ -417,7 +417,29 @@ class Civector {
     DataType* cc() { return cc_ptr_; }
     const DataType* cc() const { return cc_ptr_; }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      if (!cc_.get())
+        throw std::logic_error("illegal call of Civector<T>::save");
+      ar << det_ << lena_ << lenb_ << boost::serialization::make_array(cc(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> det_ >> lena_ >> lenb_;
+      cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      cc_ptr_ = cc_.get();
+      ar >> boost::serialization::make_array(cc(), size());
+    }
+
   public:
+    Civector() { }
+
     Civector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_]);
       cc_ptr_ = cc_.get();
@@ -427,7 +449,6 @@ class Civector {
     // constructor that is called by Dvec.
     Civector(std::shared_ptr<const Determinants> det, DataType* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ptr_ = din_;
-      std::fill_n(cc(), lena_*lenb_, 0.0);
     }
 
     // copy constructor

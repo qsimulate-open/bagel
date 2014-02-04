@@ -61,7 +61,31 @@ class Dvector {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec_;
     std::unique_ptr<DataType[]> data_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int version) const {
+      // dvec_ is just an alias and therefore not serialized
+      ar << det_ << lena_ << lenb_ << ij_ << boost::serialization::make_array(data(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int version) {
+      ar >> det_ >> lena_ >> lenb_ >> ij_ >> dvec_;
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      ar >> boost::serialization::make_array(data(), size());
+      // make an alias and set to dvec_
+      DataType* ptr = data();
+      for (int i = 0; i != ij_; ++i, ptr += lena_*lenb_)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, ptr));
+    }
+
   public:
+    Dvector() { }
+
     Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
       // data should be in a contiguous area to call dgemm.
       data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
@@ -205,7 +229,7 @@ class Dvector {
 
     void synchronize() {
       for (auto& i : dvec_)
-        i->synchronize(); 
+        i->synchronize();
     }
 
     void print(const double thresh = 0.05) const {

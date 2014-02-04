@@ -60,8 +60,9 @@ class FCI : public Method {
     // total energy
     std::vector<double> energy_;
 
-    // CI vector at convergence
+    // CI vector
     std::shared_ptr<Dvec> cc_;
+
     // RDMs; should be resized in constructors
     std::vector<std::shared_ptr<RDM<1>>> rdm1_;
     std::vector<std::shared_ptr<RDM<2>>> rdm2_;
@@ -69,6 +70,7 @@ class FCI : public Method {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
+
     // MO integrals
     std::shared_ptr<MOFile> jop_;
 
@@ -78,6 +80,34 @@ class FCI : public Method {
     // denominator
     std::shared_ptr<Civec> denom_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Method>(*this);
+      ar << max_iter_ << davidson_subspace_ << nguess_ << thresh_ << print_thresh_
+         << nelea_ << neleb_ << ncore_ << norb_ << nstate_
+      // TODO properties_ to be implemented
+      // << properties_
+         << energy_ << cc_ << det_;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      // jop_ and denom_ will be constructed in derived classes
+      ar >> boost::serialization::base_object<Method>(*this);
+      ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
+         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_
+      // TODO properties_ to be implemented
+      // >> properties_
+         >> energy_ >> cc_ >> det_;
+    }
+
+  protected:
     // some init functions
     void common_init(); // may end up unnecessary
     void create_Jiiii();
@@ -102,6 +132,8 @@ class FCI : public Method {
     void print_header() const;
 
   public:
+    FCI() { }
+
     // this constructor is ugly... to be fixed some day...
     FCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
@@ -181,6 +213,16 @@ class FCI : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 };
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::FCI)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<FCI, T>::value>::type> {
+    typedef FCI type;
+  };
 }
 
 #endif
