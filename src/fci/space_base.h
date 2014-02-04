@@ -37,12 +37,12 @@ namespace bagel {
 class Space_base {
   protected:
     // assuming that the number of active orbitals are the same in alpha and beta.
-    const int norb_;
+    int norb_;
 
-    const int nelea_; // reference number of alpha electrons
-    const int neleb_; // reference number of beta electrons
+    int nelea_; // reference number of alpha electrons
+    int neleb_; // reference number of beta electrons
 
-    const bool mute_;
+    bool mute_;
 
     int key_(const int a, const int b) const { return a*large__ + b; }
 
@@ -50,11 +50,21 @@ class Space_base {
 
     virtual void common_init() = 0;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & norb_ & nelea_ & mute_ & detmap_;
+    }
+
   public:
+    Space_base() { }
     Space_base(std::shared_ptr<const Determinants> det_, const bool mute = true) :
       norb_(det_->norb()), nelea_(det_->nelea()), neleb_(det_->neleb()), mute_(mute) { }
     Space_base(const int norb, const int nelea, const int neleb, const bool mute = true) :
       norb_(norb), nelea_(nelea), neleb_(neleb), mute_(mute) { }
+
+    virtual ~Space_base() { }
 
     // static constants
     static const int Alpha = 0;
@@ -69,6 +79,16 @@ class Space_base {
     const std::map<int, std::shared_ptr<Determinants>>& detmap() const { return detmap_; }
 };
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Space_base)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Space_base, T>::value>::type> {
+    typedef Space_base type;
+  };
 }
 
 #endif

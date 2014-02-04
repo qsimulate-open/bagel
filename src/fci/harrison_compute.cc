@@ -29,11 +29,14 @@
 #include <src/fci/hztasks.h>
 #include <src/smith/prim_op.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::HarrisonZarrabian)
 
 using namespace std;
 using namespace bagel;
+
+// toggle for timing print out.
+static const bool tprint = false;
+
 
 /* Implementing the method as described by Harrison and Zarrabian */
 shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,

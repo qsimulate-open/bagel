@@ -29,6 +29,8 @@
 #include <src/math/comb.h>
 #include <src/util/combination.hpp>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Space)
+
 using namespace std;
 using namespace bagel;
 

@@ -27,7 +27,6 @@
 #include <src/fci/space.h>
 #include <src/fci/modelci.h>
 #include <src/util/combination.hpp>
-#include <src/math/davidson.h>
 
 using namespace std;
 using namespace bagel;
@@ -38,6 +37,7 @@ FCI::FCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 }
+
 
 void FCI::common_init() {
   print_header();
@@ -92,6 +92,7 @@ void FCI::common_init() {
   // construct a determinant space in which this FCI will be performed.
   det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 }
+
 
 void FCI::model_guess(shared_ptr<Dvec> out) {
   multimap<double, pair<bitset<nbit__>, bitset<nbit__>>> ordered_elements;
@@ -256,7 +257,7 @@ void FCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<Civec> davidson(nstate_, davidson_subspace_);
+  davidson_ = make_shared<DavidsonDiag<Civec>>(nstate_, davidson_subspace_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
@@ -273,10 +274,10 @@ void FCI::compute() {
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);
     auto sigman = make_shared<const Dvec>(sigma);
-    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
-    vector<shared_ptr<Civec>> errvec = davidson.residual();
+    vector<shared_ptr<Civec>> errvec = davidson_->residual();
     pdebug.tick_print("davidson");
 
     // compute errors
@@ -319,7 +320,7 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<Dvec>(davidson.civec());
+  auto s = make_shared<Dvec>(davidson_->civec());
   s->print(print_thresh_);
   cc_ = make_shared<Dvec>(s);
 

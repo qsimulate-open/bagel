@@ -31,6 +31,7 @@
 #include <src/fci/properties.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/method.h>
+#include <src/math/davidson.h>
 
 namespace bagel {
 
@@ -77,6 +78,8 @@ class FCI : public Method {
     // Determinant space
     std::shared_ptr<const Determinants> det_;
 
+    // davidson
+    std::shared_ptr<DavidsonDiag<Civec>> davidson_;
     // denominator
     std::shared_ptr<Civec> denom_;
 
@@ -94,7 +97,7 @@ class FCI : public Method {
          << nelea_ << neleb_ << ncore_ << norb_ << nstate_
       // TODO properties_ to be implemented
       // << properties_
-         << energy_ << cc_ << det_;
+         << energy_ << cc_ << det_ << davidson_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
@@ -104,7 +107,7 @@ class FCI : public Method {
          >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_
       // TODO properties_ to be implemented
       // >> properties_
-         >> energy_ >> cc_ >> det_;
+         >> energy_ >> cc_ >> det_ >> davidson_;
     }
 
   protected:

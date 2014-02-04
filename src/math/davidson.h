@@ -71,20 +71,18 @@ class DavidsonDiag {
     // overlap matrix
     std::shared_ptr<MatType> overlap_;
 
-    std::vector<bool> converged_;
-
   private:
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & nstate_ & max_ & size_ & vec_ & eig_ & overlap_ & converged_;
+      ar & nstate_ & max_ & size_ & basis_ & mat_ & vec_ & eig_ & overlap_;
     }
 
   public:
     // Davidson with periodic collapse of the subspace
     DavidsonDiag() { }
-    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_), converged_(n,false) {
+    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_) {
       if (max < 2) throw std::runtime_error("Davidson diagonalization requires at least two trial vectors per root.");
     }
 
@@ -96,7 +94,7 @@ class DavidsonDiag {
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
       // reset the convergence flags
-      std::fill(converged_.begin(), converged_.end(), false);
+      std::vector<bool> converged(nstate_, false);
 
       // new pairs
       std::vector<std::shared_ptr<BasisPair>> newbasis;
@@ -106,7 +104,7 @@ class DavidsonDiag {
         if (cc[ic] && cs[ic])
           newbasis.push_back(std::make_shared<BasisPair>(cc[ic], cs[ic]));
         else
-          converged_[ic] = true;
+          converged[ic] = true;
       }
 
       // adding new matrix elements
@@ -163,7 +161,7 @@ class DavidsonDiag {
         std::map<int, int> remove;
         const int soff = size_ - newbasis.size();
         for (int i = 0; i != nstate_; ++i) {
-          if (converged_[i]) continue;
+          if (converged[i]) continue;
           // a vector with largest weight will be removed.
           int n = 0;
           double abs = 1.0e10;

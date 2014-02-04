@@ -35,11 +35,20 @@ namespace bagel {
 // implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
 class Space : public Space_base {
   protected:
-    const int M_; // number of electrons added or removed from a reference
-    const bool compress_;
+    int M_; // number of electrons added or removed from a reference
+    bool compress_;
+
     void common_init() override;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Space_base>(*this) & M_ & compress_;
+    }
+
   public:
+    Space() { }
     Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = false);
     Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = false, const bool mute = false);
 
@@ -47,5 +56,8 @@ class Space : public Space_base {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Space)
 
 #endif
