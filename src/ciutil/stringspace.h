@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/stringspace.h
+// Filename: ciutil/stringspace.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef BAGEL_RAS_STRINGSPACE_H
-#define BAGEL_RAS_STRINGSPACE_H
+#ifndef BAGEL_CIUTIL_STRINGSPACE_H
+#define BAGEL_CIUTIL_STRINGSPACE_H
 
 #include <vector>
 #include <array>
@@ -42,17 +42,17 @@ namespace bagel {
 
 // Contains all the strings and information for lexical ordering for one particular graph (set of strings)
 //   comprised of three subgraphs (one each for RASI, RASII, RASIII)
-class RASGraph {
+class CIGraph {
   protected:
     const size_t nele_;
     const size_t norb_;
 
     size_t size_;
 
-    std::unique_ptr<size_t[]> weights_;
+    std::vector<size_t> weights_;
 
   public:
-    RASGraph(const size_t nele, const size_t norb);
+    CIGraph(const size_t nele, const size_t norb);
 
     size_t& weight(const size_t i, const size_t j) { assert(nele_*norb_ > 0); return weights_[i + j*norb_]; }
     const size_t& weight(const size_t i, const size_t j) const { assert(nele_*norb_ > 0); return weights_[i + j*norb_]; }
@@ -69,13 +69,14 @@ class RASGraph {
     }
 };
 
+
 class StringSpace {
   protected:
     std::array<const std::pair<const int, const int>, 3> ras_;
 
     std::vector<std::bitset<nbit__>> strings_;
 
-    std::array<std::shared_ptr<RASGraph>, 3> graphs_;
+    std::array<std::shared_ptr<CIGraph>, 3> graphs_;
 
     StaticDist dist_;
 

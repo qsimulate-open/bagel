@@ -568,8 +568,8 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
             const int annihilate = ( d1 == -1 ? 0 : (d2 == -1 ? 1 : 2) );
             const int other = 3 - (create + annihilate);
 
-            shared_ptr<RASGraph>& left_create_graph = ispace->graph(create);
-            shared_ptr<RASGraph>& right_create_graph = source_space->graph(create);
+            shared_ptr<CIGraph>& left_create_graph = ispace->graph(create);
+            shared_ptr<CIGraph>& right_create_graph = source_space->graph(create);
 
             // info corresponding to creation operator
             vector<tuple<size_t, size_t, int, bitset<nbit__>>> create_data;
@@ -588,8 +588,8 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
               assert(!create_data.empty());
             }
 
-            shared_ptr<RASGraph>& left_ann_graph = ispace->graph(annihilate);
-            shared_ptr<RASGraph>& right_ann_graph = source_space->graph(annihilate);
+            shared_ptr<CIGraph>& left_ann_graph = ispace->graph(annihilate);
+            shared_ptr<CIGraph>& right_ann_graph = source_space->graph(annihilate);
 
             // annihilation operator
             vector<tuple<size_t, size_t, int, bitset<nbit__>>> annihilate_data;
@@ -639,7 +639,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
           else if (d1*d1 + d2*d2 + d3*d3 == 0) {
             //build three dense matrices
             for(int iras = 0; iras < 3; ++iras) {
-              shared_ptr<RASGraph>& subgraph = ispace->graph(iras);
+              shared_ptr<CIGraph>& subgraph = ispace->graph(iras);
               // TODO should consider holding onto these blocks somehow
               shared_ptr<Matrix> dense_block(subgraph->size(), subgraph->size());
               // TODO figure out orbstart/fence

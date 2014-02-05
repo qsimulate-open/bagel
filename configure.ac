@@ -129,6 +129,7 @@ AC_CONFIG_FILES([Makefile
                  src/util/Makefile
                  src/parallel/Makefile
                  src/math/Makefile
+                 src/ciutil/Makefile
                  src/dimer/Makefile
                  src/meh/Makefile
                  src/wfn/Makefile

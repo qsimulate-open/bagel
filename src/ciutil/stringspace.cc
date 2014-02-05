@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/stringspace.cc
+// Filename: ciutil/stringspace.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,17 +24,15 @@
 //
 
 #include <cassert>
-
-#include <src/ras/stringspace.h>
+#include <src/ciutil/stringspace.h>
 #include <src/util/combination.hpp>
 
 using namespace std;
 using namespace bagel;
 
-RASGraph::RASGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
-  if ( nele*norb != 0 ) {
-    weights_ = unique_ptr<size_t[]>(new size_t[nele * norb]);
-    fill_n(weights_.get(), nele * norb, 0ull);
+CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
+  if (nele*norb != 0) {
+    weights_ = vector<size_t>(nele * norb, 0ull);
 
     Comb comb;
 
@@ -50,9 +48,10 @@ RASGraph::RASGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(no
   }
 }
 
+
 StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
   ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}},
-    graphs_{{ make_shared<RASGraph>(nele1, norb1), make_shared<RASGraph>(nele2, norb2), make_shared<RASGraph>(nele3, norb3) }},
+    graphs_{{ make_shared<CIGraph>(nele1, norb1), make_shared<CIGraph>(nele2, norb2), make_shared<CIGraph>(nele3, norb3) }},
     dist_(graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size(), mpi__->size()),
     norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
 {

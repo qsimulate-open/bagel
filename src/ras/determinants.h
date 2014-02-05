@@ -31,7 +31,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include <src/ras/stringspace.h>
+#include <src/ciutil/stringspace.h>
 
 namespace bagel {
   namespace RAS {
