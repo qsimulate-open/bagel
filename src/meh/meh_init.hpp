@@ -36,10 +36,11 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 {
   nstates_ = input->get<int>("nstates", 10);
   max_iter_ = input->get<int>("max_iter", 50);
-  davidsonceiling_ = input->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = input->get<int>("davidson_subspace", 10);
+  nguess_ = input->get<int>("nguess", 10*nstates_);
   dipoles_ = input->get<bool>("dipoles", false);
-  thresh_ = input->get<double>("thresh", 1.0e-12);
-  print_thresh_ = input->get<double>("print_thresh", 0.05);
+  thresh_ = input->get<double>("thresh", 1.0e-14);
+  print_thresh_ = input->get<double>("print_thresh", 0.01);
   store_matrix_ = input->get<bool>("store_matrix", false);
   nspin_ = 0; // TODO hardcoded to singlets for now
 
@@ -49,7 +50,7 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   std::cout << "  o computing integrals: " << timer.tick() << std::endl;
 
   cispace_->complete();
-  std::cout << "  o completing CI space: " << timer.tick() << std::endl;
+  std::cout << "  o completing CI spin space: " << timer.tick() << std::endl;
 
   dimerstates_ = 0;
 
@@ -116,9 +117,9 @@ const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& 
 }
 
 template <class VecType>
-std::shared_ptr<const Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(const Matrix& o) {
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(const Matrix& o) {
   if (store_matrix_) {
-    return std::make_shared<const Matrix>(*hamiltonian_ * o);
+    return std::make_shared<Matrix>(*hamiltonian_ * o);
   }
   else {
     auto out = std::make_shared<Matrix>(o.ndim(), o.mdim());
