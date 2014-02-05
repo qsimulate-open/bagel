@@ -131,7 +131,9 @@ class MultiExcitonHamiltonian {
       int nstates_;
       int nspin_;
       int max_iter_;
-      int davidsonceiling_;
+      int nguess_;
+      int davidson_subspace_;
+
       bool store_matrix_;
       bool dipoles_;
 
@@ -156,7 +158,8 @@ class MultiExcitonHamiltonian {
    private:
       void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
 
-      std::shared_ptr<const Matrix> apply_hamiltonian(const Matrix& o);
+      void generate_initial_guess(std::shared_ptr<Matrix> cc);
+      std::shared_ptr<Matrix> apply_hamiltonian(const Matrix& o);
 
       std::shared_ptr<Matrix> compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       std::shared_ptr<Matrix> compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const;
