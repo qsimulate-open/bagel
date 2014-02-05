@@ -39,6 +39,7 @@
 #include <cassert>
 #include <src/util/constants.h>
 #include <src/util/serialization.h>
+#include <src/ciutil/stringspace.h>
 
 namespace bagel {
 
@@ -70,16 +71,10 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::weak_ptr<Determinants> detremalpha_;
     std::weak_ptr<Determinants> detrembeta_;
 
-    // Knowles & Handy lexical mapping
-    std::vector<unsigned int> zkl_; // contains zkl (Two dimenional array. See the public function).
     // string lists
-    std::vector<std::bitset<nbit__>> stringa_;
-    std::vector<std::bitset<nbit__>> stringb_;
+    std::shared_ptr<FCIString> astring_;
+    std::shared_ptr<FCIString> bstring_;
 
-    // lexical maps (Zkl)
-    void const_lexical_mapping_();
-    // alpha and beta string lists
-    void const_string_lists_();
     // single displacement vectors Phi's
     template <int>
     void const_phis_(const std::vector<std::bitset<nbit__>>& string,
@@ -98,9 +93,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return out;
     }
 
-    // some utility functions
-    unsigned int& zkl(int i, int j, int spin) { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
-    const unsigned int& zkl(int i, int j, int spin) const { return zkl_[i*norb_+j+spin*nelea_*norb_]; }
 
     // configuration list i^dagger j compressed
     std::vector<std::vector<DetMap>> phia_;
@@ -122,9 +114,11 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
+#if 0
       ar & norb_ & nelea_ & neleb_ & compress_ & detaddalpha_ & detaddbeta_ & detremalpha_ & detrembeta_
          & zkl_ & stringa_ & stringb_ & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_
          & phiupa_ & phiupb_ & phidowna_ & phidownb_;
+#endif
     }
 
   public:
@@ -144,10 +138,10 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       { return (norb_ == o.norb_ && nelea_ == o.nelea_ && neleb_ == o.neleb_ && compress_ == o.compress_); }
 
     // string size
-    std::tuple<size_t, size_t> len_string() const { return std::make_tuple(stringa_.size(), stringb_.size()); }
+    std::tuple<size_t, size_t> len_string() const { return std::make_tuple(lena(), lenb()); }
 
-    size_t lena() const { return stringa_.size(); }
-    size_t lenb() const { return stringb_.size(); }
+    size_t lena() const { return astring_->size(); }
+    size_t lenb() const { return bstring_->size(); }
 
     size_t ncsfs() const;
 
@@ -188,17 +182,13 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
 
     // maps bit to lexical numbers.
     template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
-      unsigned int out = 0;
-      int k = 0;
-      for (int i = 0; i != norb_; ++i)
-        if (bit[i]) { out += zkl(k,i, spin); ++k; }
-      return out;
+      return spin == 0 ? astring_->lexical(bit) : bstring_->lexical(bit);
     }
 
-    const std::bitset<nbit__>& stringa(int i) const { return stringa_[i]; }
-    const std::bitset<nbit__>& stringb(int i) const { return stringb_[i]; }
-    const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
-    const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
+    const std::bitset<nbit__>& stringa(int i) const { return astring_->strings(i); }
+    const std::bitset<nbit__>& stringb(int i) const { return bstring_->strings(i); }
+    const std::vector<std::bitset<nbit__>>& stringa() const { return astring_->strings(); }
+    const std::vector<std::bitset<nbit__>>& stringb() const { return bstring_->strings(); }
 
     std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 

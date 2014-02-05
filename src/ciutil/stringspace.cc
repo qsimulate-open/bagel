@@ -58,7 +58,6 @@ StringSpace::StringSpace(const size_t nele1, const size_t norb1, const size_t ne
 
 void StringSpace::compute_strings() {
   const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
-  assert(std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); }) == size);
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
 
@@ -90,4 +89,27 @@ void StringSpace::compute_strings() {
     } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
   } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
   assert(cnt == size);
+}
+
+
+FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset)
+ : StringSpace_base<1>{nele1, norb1, offset} {
+
+  init();
+}
+
+
+void FCIString::compute_strings() {
+  vector<int> data(norb_);
+  iota(data.begin(), data.end(), 0);
+  // Lexical ordering done, now fill in all the strings
+  strings_ = vector<bitset<nbit__>>(graphs_[0]->size(), bitset<nbit__>(0ul));
+  size_t cnt = 0;
+  do {
+    bitset<nbit__> bit(0lu);
+    for (int i=0; i!=nele_; ++i) bit.set(data[i]);
+    strings_[lexical_zero(bit)] = bit;
+    ++cnt;
+  } while (boost::next_combination(data.begin(), data.begin()+nele_, data.end()));
+  assert(cnt == graphs_[0]->size());
 }

@@ -122,7 +122,7 @@ class StringSpace_base {
     size_t size(const int& i) const { return graphs_[i]->size(); }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
-    const std::bitset<nbit__> strings(const size_t i) const { return strings_[i]; }
+    const std::bitset<nbit__>& strings(const size_t i) const { return strings_[i]; }
 
     std::vector<std::bitset<nbit__>>::iterator begin() { return strings_.begin(); }
     std::vector<std::bitset<nbit__>>::iterator end() { return strings_.end(); }
@@ -166,6 +166,22 @@ class StringSpace : public StringSpace_base<3> {
 
       return out;
     }
+};
+
+
+class FCIString : public StringSpace_base<1> {
+  protected:
+    void compute_strings() override;
+
+  public:
+    FCIString(const size_t nele1, const size_t norb1, const size_t offset = 0);
+
+    size_t lexical(const std::bitset<nbit__>& bit) const {
+      return graphs_[0]->lexical(0, norb_, bit);
+    }
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const override { return lexical(bit)+offset_; }
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const override { return lexical(bit); }
+
 };
 
 
