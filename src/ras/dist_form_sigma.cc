@@ -172,7 +172,7 @@ void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
       if (!det->allowed(ispace, iblock->stringa())) continue;
-      shared_ptr<DistRASBlock<double>> tblock = sigma->block(ispace, iblock->stringa());
+      shared_ptr<DistCIBlock<double>> tblock = sigma->block(ispace, iblock->stringa());
 
       dgemm_("T", "N", ispace->size(), tblock->asize(), iblock->lenb(), 1.0,
         F->element_ptr(iblock->stringb()->offset(), 0), F->ndim(), iblock->local(), iblock->lenb(), 1.0, tblock->local(), tblock->lenb());
@@ -271,7 +271,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
       // gathering
       for ( auto& iphiblock : det->phib_ij(ij) ) {
-        vector<shared_ptr<const DistRASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
+        vector<shared_ptr<const DistCIBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
         for (auto& iblock : blks) {
           auto tmp = make_shared<Matrix>(iblock->asize(), iphiblock.size());
           double* targetdata = tmp->data();
@@ -363,7 +363,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
               shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
               if (det->allowed(ispace, betaspace)) {
 
-                shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+                shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);
                 double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
 
                 const size_t lb = sgblock->lenb();
@@ -406,7 +406,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
             shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
 
-              shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);
+              shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);
               double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
 
               const size_t lb = sgblock->lenb();

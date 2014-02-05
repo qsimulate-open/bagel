@@ -63,9 +63,9 @@ class CIGraph {
     size_t& weight(const size_t i, const size_t j) { assert(nele_*norb_ > 0); return weights_[i + j*norb_]; }
     const size_t& weight(const size_t i, const size_t j) const { assert(nele_*norb_ > 0); return weights_[i + j*norb_]; }
 
-    const size_t size() const { return size_; }
+    size_t size() const { return size_; }
 
-    const size_t lexical(const int& start, const int& fence, const std::bitset<nbit__>& abit) const {
+    size_t lexical(const int& start, const int& fence, const std::bitset<nbit__>& abit) const {
       size_t out = 0;
 
       int k = 0;
@@ -76,34 +76,28 @@ class CIGraph {
 };
 
 
-// dummy base class for serialization
-namespace detail {
-class BaseClass {
+class CIString_base {
   private:
     friend class boost::serialization::access;
     template <class Archive>
-    void serialize(Archive&, const unsigned int) { }
+    void serialize(Archive& ar, const unsigned int) { }
   public:
-    BaseClass() { }
-    virtual ~BaseClass() { }
+    CIString_base() { }
+    virtual ~CIString_base() { }
 };
-}
+
 
 template<int N>
-class CIString_base : public detail::BaseClass {
+class CIString_base_impl : public CIString_base {
   protected:
-    std::array<std::pair<int, int>, N> subspace_;
-
-    std::vector<std::bitset<nbit__>> strings_;
-
-    std::array<std::shared_ptr<CIGraph>, N> graphs_;
-
-    std::shared_ptr<const StaticDist> dist_;
-
     int norb_;
     int nele_;
-
     size_t offset_;
+    std::vector<std::bitset<nbit__>> strings_;
+
+    std::array<std::pair<int, int>, N> subspace_;
+    std::array<std::shared_ptr<CIGraph>, N> graphs_;
+    std::shared_ptr<const StaticDist> dist_;
 
     void init() {
       compute_strings();
@@ -118,18 +112,18 @@ class CIString_base : public detail::BaseClass {
     }
     template <class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<detail::BaseClass>(*this) << subspace_ << strings_ << graphs_;
+      ar << boost::serialization::base_object<CIString_base>(*this) << norb_ << nele_ << offset_ << strings_ << subspace_ << graphs_;
     }
     template <class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<detail::BaseClass>(*this) >> subspace_ >> strings_ >> graphs_;
+      ar >> boost::serialization::base_object<CIString_base>(*this) >> norb_ >> nele_ >> offset_ >> strings_ >> subspace_ >> graphs_;
       const size_t size = std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); });
       dist_ = std::make_shared<StaticDist>(size, mpi__->size());
     }
 
   public:
-    CIString_base() { }
-    CIString_base(std::initializer_list<size_t> args) {
+    CIString_base_impl() { }
+    CIString_base_impl(std::initializer_list<size_t> args) {
       assert(args.size() == 2*N+1);
       auto iter = args.begin();
       for (int i = 0; i != N; ++i) {
@@ -138,26 +132,22 @@ class CIString_base : public detail::BaseClass {
         subspace_[i] = std::make_pair(a, b);
         graphs_[i] = std::make_shared<CIGraph>(a, b);
       }
+      // setting to CIString_base
       offset_ = *iter++;
+      norb_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.second; });
+      nele_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.first; });
       assert(iter == args.end());
 
       const size_t size = std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); });
       dist_ = std::make_shared<StaticDist>(size, mpi__->size());
-      norb_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.second; });
-      nele_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.first; });
     }
 
-    virtual ~CIString_base() { }
+    virtual ~CIString_base_impl() { }
 
     int nele() const { return nele_; }
     int norb() const { return norb_; }
-
-    template <int subspace> const std::pair<const int, const int> ras() const { return std::get<subspace>(subspace_); }
-
     size_t size() const { return strings_.size(); }
     size_t offset() const { return offset_; }
-
-    size_t size(const int& i) const { return graphs_[i]->size(); }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__>& strings(const size_t i) const { return strings_[i]; }
@@ -167,6 +157,8 @@ class CIString_base : public detail::BaseClass {
     std::vector<std::bitset<nbit__>>::const_iterator begin() const { return strings_.cbegin(); }
     std::vector<std::bitset<nbit__>>::const_iterator end() const { return strings_.cend(); }
 
+    size_t size(const int& i) const { return graphs_[i]->size(); }
+
     std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
     virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
@@ -174,7 +166,7 @@ class CIString_base : public detail::BaseClass {
 };
 
 
-class RASString : public CIString_base<3> {
+class RASString : public CIString_base_impl<3> {
   protected:
     void compute_strings() override;
 
@@ -182,7 +174,7 @@ class RASString : public CIString_base<3> {
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<CIString_base>(*this);
+      ar & boost::serialization::base_object<CIString_base_impl<3>>(*this);
     }
 
   public:
@@ -212,10 +204,15 @@ class RASString : public CIString_base<3> {
 
       return out;
     }
+
+    template <int S> const std::pair<const int, const int> ras() const {
+      static_assert(S == 0 || S == 1 || S == 2, "illegal call of RAString::ras");
+      return std::get<S>(subspace_);
+    }
 };
 
 
-class FCIString : public CIString_base<1> {
+class FCIString : public CIString_base_impl<1> {
   protected:
     void compute_strings() override;
 
@@ -223,7 +220,7 @@ class FCIString : public CIString_base<1> {
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<CIString_base>(*this);
+      ar & boost::serialization::base_object<CIString_base_impl<1>>(*this);
     }
 
   public:
@@ -240,21 +237,21 @@ class FCIString : public CIString_base<1> {
 
 }
 
-extern template class bagel::CIString_base<1>;
-extern template class bagel::CIString_base<3>;
+extern template class bagel::CIString_base_impl<1>;
+extern template class bagel::CIString_base_impl<3>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::CIGraph)
-BOOST_CLASS_EXPORT_KEY(bagel::detail::BaseClass)
-BOOST_CLASS_EXPORT_KEY(bagel::CIString_base<1>)
-BOOST_CLASS_EXPORT_KEY(bagel::CIString_base<3>)
+BOOST_CLASS_EXPORT_KEY(bagel::CIString_base)
+BOOST_CLASS_EXPORT_KEY(bagel::CIString_base_impl<1>)
+BOOST_CLASS_EXPORT_KEY(bagel::CIString_base_impl<3>)
 BOOST_CLASS_EXPORT_KEY(bagel::RASString)
 BOOST_CLASS_EXPORT_KEY(bagel::FCIString)
 
 namespace bagel {
   template <class T>
-  struct base_of<T, typename std::enable_if<std::is_base_of<detail::BaseClass, T>::value>::type> {
-    typedef detail::BaseClass type;
+  struct base_of<T, typename std::enable_if<std::is_base_of<CIString_base, T>::value>::type> {
+    typedef CIString_base type;
   };
 }
 

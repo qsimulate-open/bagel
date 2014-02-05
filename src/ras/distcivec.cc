@@ -83,7 +83,7 @@ namespace bagel {
         const int norb = det_->norb();
         const size_t lex_a = det_->lexical_zero<0>(abit_);
 
-        vector<shared_ptr<DistRASBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
+        vector<shared_ptr<DistCIBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
 
         int k = 0;
         for (auto& iter : det_->phia(det_->lexical_offset<0>(abit_))) {

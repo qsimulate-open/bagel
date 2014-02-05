@@ -38,6 +38,7 @@
 #include <src/ras/dvector_base.h>
 #include <src/ras/determinants.h>
 #include <src/math/algo.h>
+#include <src/ciutil/ciblock.h>
 
 namespace bagel {
 
@@ -143,7 +144,7 @@ template <typename DataType> class RASCivector;
 
 // Contains and owns all the data and information for a sub block of the CI coefficient matrix
 template <typename DataType>
-class DistRASBlock {
+class DistCIBlock {
   protected:
     std::shared_ptr<const RASString> astrings_;
     std::shared_ptr<const RASString> bstrings_;
@@ -160,7 +161,7 @@ class DistRASBlock {
     const size_t block_offset_;
 
   public:
-    DistRASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings, const size_t o) :
+    DistCIBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings, const size_t o) :
       astrings_(astrings), bstrings_(bstrings), dist_(astrings->size(), mpi__->size()), block_offset_(o)
     {
       std::tie(astart_, aend_) = dist_.range(mpi__->rank());
@@ -192,14 +193,14 @@ class DistRASBlock {
 };
 
 template <typename DataType>
-class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
+class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
   public: using DetType = RASDeterminants;
-  public: using RBlock = DistRASBlock<DataType>;
+  public: using RBlock = DistCIBlock<DataType>;
   public: using LocalizedType = std::false_type;
 
   protected:
-    using RASCivector_base<DistRASBlock<DataType>>::blocks_;
-    using RASCivector_base<DistRASBlock<DataType>>::det_;
+    using RASCivector_base<DistCIBlock<DataType>>::blocks_;
+    using RASCivector_base<DistCIBlock<DataType>>::det_;
 
     mutable std::shared_ptr<RecvRequest> recv_;
     mutable std::shared_ptr<BufferPutRequest> put_;
@@ -213,7 +214,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
     mutable std::mutex mutex_;
 
   public:
-    DistRASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<DistRASBlock<DataType>>(det), global_size_(det->size()) {
+    DistRASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<DistCIBlock<DataType>>(det), global_size_(det->size()) {
       size_t block_offset = 0;
       for (auto& ipair : det->stringpairs()) {
         if (ipair.first && ipair.second)
@@ -243,7 +244,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
 
     DistRASCivector(std::shared_ptr<const RASCivector<DataType>> o) : DistRASCivector(*o) {}
 
-    DistRASCivector(DistRASCivector<DataType>&& o) : RASCivector_base<DistRASBlock<DataType>>(o.det_), global_size_(det_->size()) {
+    DistRASCivector(DistRASCivector<DataType>&& o) : RASCivector_base<DistCIBlock<DataType>>(o.det_), global_size_(det_->size()) {
       for (auto& iblock : o.blocks()) {
         blocks_.push_back(iblock);
       }
@@ -264,7 +265,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
       return *this;
     }
 
-    using RASCivector_base<DistRASBlock<DataType>>::block;
+    using RASCivector_base<DistCIBlock<DataType>>::block;
 
     // MPI routines
     // Never call concurrently
@@ -530,44 +531,11 @@ using DistRASDvec = Dvector_base<DistRASCivec>;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Contains all the information for a sub block of the CI coefficient matrix
-// but does NOT own the data
-template <typename DataType>
-class RASBlock {
-  protected:
-    std::shared_ptr<const RASString> astrings_;
-    std::shared_ptr<const RASString> bstrings_;
-
-    std::unique_ptr<double[]> data_; // can be empty if Block belongs to a Civector
-    DataType* const data_ptr_;
-
-    const size_t offset_;
-
-  public:
-    RASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings, DataType* const data_ptr, const size_t o) :
-      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o) { }
-    RASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings) :
-      astrings_(astrings), bstrings_(bstrings), data_(new double[size()]), data_ptr_(data_.get()), offset_(0) { std::fill_n(data(), size(), 0.0); }
-
-    const size_t size() const { return lena() * lenb(); }
-    const size_t lena() const { return astrings_->size(); }
-    const size_t lenb() const { return bstrings_->size(); }
-
-    DataType* data() { return data_ptr_; }
-    const DataType* data() const { return data_ptr_; }
-
-    DataType& element(const size_t i) { return data_ptr_[i]; }
-    const DataType& element(const size_t i) const { return data_ptr_[i]; }
-
-    const size_t index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
-      { return bstrings_->lexical_zero(bbit) + astrings_->lexical_zero(abit) * lenb(); }
-
-    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
-    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
-
-    std::shared_ptr<const RASString> stringa() const { return astrings_; }
-    std::shared_ptr<const RASString> stringb() const { return bstrings_; }
-};
+// partial specialization of CIBlock (ciutil/ciblock.h)
+template<typename DataType>
+using RASBlock = CIBlock<DataType, RASString>;
+template<typename DataType>
+using RASBlock_alloc = CIBlock_alloc<DataType, RASString>;
 
 // helper classes for the apply function (this way the main code can be used elsewhere)
 namespace RAS {
@@ -678,7 +646,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
       this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
-        std::shared_ptr<const DistRASBlock<DataType>> distblock = o.block(b->stringb(), b->stringa());
+        std::shared_ptr<const DistCIBlock<DataType>> distblock = o.block(b->stringb(), b->stringa());
         std::copy_n(distblock->local(), distblock->size(), b->data() + distblock->astart()*distblock->lenb());
       } );
       mpi__->allreduce(data(), size());

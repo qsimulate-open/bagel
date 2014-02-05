@@ -407,7 +407,7 @@ class RASTask {
       std::shared_ptr<const RASString> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
       std::shared_ptr<const RASString> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
 
-      auto out = std::make_shared<RASBlock<double>>(ta,tb);
+      auto out = std::make_shared<RASBlock_alloc<double>>(ta,tb);
 
       std::shared_ptr<RAS::apply_block_base<double>> apply_block;
       switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {

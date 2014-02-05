@@ -128,7 +128,7 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
       if (bras->det()->allowed(ketblock->stringb(), ketblock->stringa())) {
         vector<double> values(nbras, 0.0);
         for (int jbra = 0; jbra < nbras; ++jbra) {
-          shared_ptr<const DistRASBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
+          shared_ptr<const DistCIBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
           if (brablock) {
             const double val = blas::dot_product(brablock->local(), brablock->size(), ketblock->data() + brablock->astart()*brablock->lenb());
             values[jbra] = val;
