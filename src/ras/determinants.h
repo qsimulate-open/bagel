@@ -250,7 +250,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin> std::shared_ptr<const StringSpace> space(const std::bitset<nbit__>& bit) const
       { return space<spin>(nholes(bit), nparticles(bit)); }
 
-    template <int spin, int off = 1> size_t lexical(const std::bitset<nbit__>& bit) const { std::shared_ptr<const StringSpace> sspace = space<spin>(bit); return sspace->lexical<off>(bit); }
+    template <int spin> size_t lexical_zero(const std::bitset<nbit__>& bit) const { std::shared_ptr<const StringSpace> sspace = space<spin>(bit); return sspace->lexical_zero(bit); }
+    template <int spin> size_t lexical_offset(const std::bitset<nbit__>& bit) const { std::shared_ptr<const StringSpace> sspace = space<spin>(bit); return sspace->lexical_offset(bit); }
 
     std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
@@ -351,10 +352,10 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   for (auto& istring : string) {
     for (unsigned int i = 0; i != norb_; ++i) {
       if (!(istring)[i]) { // creation
-        const unsigned int source = det->lexical<spin>(istring);
+        const unsigned int source = det->lexical_offset<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
         if (plusdet->allowed(nbit)) {
-          const size_t target = plusdet->lexical<spin>(nbit);
+          const size_t target = plusdet->lexical_offset<spin>(nbit);
           phiup[i].emplace_back(source, target, i, sign<spin>(nbit, i));
         }
       }
@@ -364,10 +365,10 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   for (auto& istring : stringplus) {
     for (unsigned int i = 0; i!= norb_; ++i) {
       if (istring[i]) { // annihilation
-        const unsigned int source = plusdet->lexical<spin>(istring);
+        const unsigned int source = plusdet->lexical_offset<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
         if (det->allowed(nbit)) {
-          const unsigned int target = det->lexical<spin>(nbit);
+          const unsigned int target = det->lexical_offset<spin>(nbit);
           phidown[i].emplace_back(source, target, i, sign<spin>(nbit, i));
         }
       }

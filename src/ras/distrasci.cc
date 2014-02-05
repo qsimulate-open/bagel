@@ -130,9 +130,9 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       shared_ptr<DistRASBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
-      const int aindex = block->stringa()->lexical<0>(get<1>(iter)) - block->astart();
+      const int aindex = block->stringa()->lexical_zero(get<1>(iter)) - block->astart();
       if ( aindex >= 0 && aindex < block->asize()) {
-        const size_t bindex = block->stringb()->lexical<0>(get<0>(iter));
+        const size_t bindex = block->stringb()->lexical_zero(get<0>(iter));
         double* data = block->local() + block->lenb() * aindex + bindex;
         *data = get<2>(iter) * fac;
       }

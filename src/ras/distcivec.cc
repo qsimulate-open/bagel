@@ -51,7 +51,7 @@ namespace bagel {
       {
         const size_t lb = det_->lenb();
 
-        const size_t alexical = det_->lexical<0>(abit_);
+        const size_t alexical = det_->lexical_offset<0>(abit_);
         buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);
 
         int k = 0;
@@ -81,12 +81,12 @@ namespace bagel {
 
       void compute() {
         const int norb = det_->norb();
-        const size_t lex_a = det_->lexical<0, 0>(abit_);
+        const size_t lex_a = det_->lexical_zero<0>(abit_);
 
         vector<shared_ptr<DistRASBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
 
         int k = 0;
-        for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
+        for (auto& iter : det_->phia(det_->lexical_offset<0>(abit_))) {
           const int j = iter.ij / norb;
           const int i = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(j); mask1.set(i);

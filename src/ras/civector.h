@@ -307,7 +307,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
         // locate astring
         std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(astring));
         size_t rank, off;
-        std::tie(rank, off) = aspace->dist().locate(astring - aspace->offset());
+        std::tie(rank, off) = aspace->dist()->locate(astring - aspace->offset());
         assert(rank == mpi__->rank());
         for (auto b : this->template allowed_blocks<0>(aspace))
           std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
@@ -323,7 +323,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
       const size_t mpirank = mpi__->rank();
       std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(a));
       size_t rank, off;
-      std::tie(rank, off) = aspace->dist().locate(a - aspace->offset());
+      std::tie(rank, off) = aspace->dist()->locate(a - aspace->offset());
 
       int out = -1;
       if (mpirank == rank) {
@@ -560,7 +560,7 @@ class RASBlock {
     const DataType& element(const size_t i) const { return data_ptr_[i]; }
 
     const size_t index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
-      { return bstrings_->lexical<0>(bbit) + astrings_->lexical<0>(abit) * lenb(); }
+      { return bstrings_->lexical_zero(bbit) + astrings_->lexical_zero(abit) * lenb(); }
 
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
     const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
@@ -604,7 +604,7 @@ class apply_block_impl : public apply_block_base<DataType> {
           for (auto& abit : *source->stringa()) {
             std::bitset<nbit__> tabit = abit;
             if (condition(tabit)) { // Also sets bit appropriately
-              DataType* targetdata = target->data() + target->stringa()->template lexical<0>(tabit) * lb;
+              DataType* targetdata = target->data() + target->stringa()->lexical_zero(tabit) * lb;
               const DataType sign = static_cast<DataType>(this->sign(abit));
               blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
             }
@@ -626,7 +626,7 @@ class apply_block_impl : public apply_block_base<DataType> {
           const DataType* sourcedata = sourcedata_base;
           std::bitset<nbit__> tbbit = bbit;
           if (condition(tbbit)) {
-            DataType* targetdata = target->data() + target->stringb()->template lexical<0>(tbbit);
+            DataType* targetdata = target->data() + target->stringb()->lexical_zero(tbbit);
             const DataType sign = static_cast<DataType>(this->sign(bbit) * alpha_phase);
             for (size_t i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
               *targetdata += *sourcedata * sign;

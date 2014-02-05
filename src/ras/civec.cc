@@ -57,7 +57,7 @@ namespace bagel {
 
         unique_ptr<double[]> source(new double[det_->lenb()]);
 
-        for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
+        for (auto& iter : det_->phia(det_->lexical_offset<0>(target_))) {
           const int ii = iter.ij / norb;
           const int jj = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(ii); mask1.set(jj);
@@ -97,7 +97,7 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
 
   unordered_map<size_t, size_t> lexicalmap;
   for (auto& i : det_->stringb())
-    lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
+    lexicalmap[i.to_ullong()] = det_->lexical_offset<1>(i);
 
   TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
 
@@ -130,13 +130,13 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : sdet->stringspacea()) {
     shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : sdet->stringspaceb()) {
     shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -191,13 +191,13 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : det_->stringspacea()) {
     shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : det_->stringspaceb()) {
     shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {

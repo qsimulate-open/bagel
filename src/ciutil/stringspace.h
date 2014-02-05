@@ -70,39 +70,56 @@ class CIGraph {
 };
 
 
-class StringSpace {
+
+template<int N>
+class StringSpace_base {
   protected:
-    std::array<const std::pair<const int, const int>, 3> ras_;
+    std::array<std::pair<int, int>, N> subspace_;
 
     std::vector<std::bitset<nbit__>> strings_;
 
-    std::array<std::shared_ptr<CIGraph>, 3> graphs_;
+    std::array<std::shared_ptr<CIGraph>, N> graphs_;
 
-    StaticDist dist_;
+    std::shared_ptr<const StaticDist> dist_;
 
-    const int norb_;
-    const int nele_;
+    int norb_;
+    int nele_;
 
-    const size_t offset_;
+    size_t offset_;
+
+    void init() {
+      compute_strings();
+    }
+    virtual void compute_strings() = 0;
 
   public:
-    StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset = 0);
+    StringSpace_base(std::initializer_list<size_t> args) {
+      assert(args.size() == 2*N+1);
+      auto iter = args.begin();
+      for (int i = 0; i != N; ++i) {
+        const int a = *iter++;
+        const int b = *iter++;
+        subspace_[i] = std::make_pair(a, b);
+        graphs_[i] = std::make_shared<CIGraph>(a, b);
+      }
+      offset_ = *iter++;
+      assert(iter == args.end());
 
-    const int nele() const { return nele_; }
-    const int norb() const { return norb_; }
+      const size_t size = std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); });
+      dist_ = std::make_shared<StaticDist>(size, mpi__->size());
+      norb_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.second; });
+      nele_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.first; });
+    }
 
-    template <int subspace> const std::pair<const int, const int> ras() const { return std::get<subspace>(ras_); }
+    int nele() const { return nele_; }
+    int norb() const { return norb_; }
 
-    const int nholes() const { return ras_[0].second - ras_[0].first; }
-    const int nele2() const { return nele_ - ras_[0].first - ras_[2].first; }
-    const int nparticles() const { return ras_[2].first; }
+    template <int subspace> const std::pair<const int, const int> ras() const { return std::get<subspace>(subspace_); }
 
-    const size_t size() const { return strings_.size(); }
-    const size_t offset() const { return offset_; }
+    size_t size() const { return strings_.size(); }
+    size_t offset() const { return offset_; }
 
-    const size_t size1() const { return graphs_[0]->size(); }
-    const size_t size2() const { return graphs_[1]->size(); }
-    const size_t size3() const { return graphs_[2]->size(); }
+    size_t size(const int& i) const { return graphs_[i]->size(); }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__> strings(const size_t i) const { return strings_[i]; }
@@ -112,20 +129,37 @@ class StringSpace {
     std::vector<std::bitset<nbit__>>::const_iterator begin() const { return strings_.cbegin(); }
     std::vector<std::bitset<nbit__>>::const_iterator end() const { return strings_.cend(); }
 
-    const StaticDist& dist() const { return dist_; }
+    std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
-    // Assumes bit is within this graph
-    template <int off = 1>
-    size_t lexical(const std::bitset<nbit__>& bit) const {
-      size_t out = ( off == 1 ? offset_ : 0 );
+    virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
+    virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
+};
 
-      const size_t r1 = ras_[0].second;
-      const size_t r2 = ras_[1].second;
-      const size_t r3 = ras_[2].second;
+
+class StringSpace : public StringSpace_base<3> {
+  protected:
+    void compute_strings() override;
+
+  public:
+    StringSpace(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
+
+    int nholes() const { return subspace_[0].second - subspace_[0].first; }
+    int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
+    int nparticles() const { return subspace_[2].first; }
+
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const override {
+      return lexical_zero(bit) + offset_;
+    }
+
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const override {
+      const size_t r1 = subspace_[0].second;
+      const size_t r2 = subspace_[1].second;
+      const size_t r3 = subspace_[2].second;
 
       const size_t n2 = graphs_[1]->size();
       const size_t n1 = graphs_[0]->size();
 
+      size_t out = 0;
       out += graphs_[1]->lexical(r1, r1+r2, bit);
       out += n2 * graphs_[0]->lexical(0, r1, bit);
       out += n2 * n1 * graphs_[2]->lexical(r1+r2, r1+r2+r3, bit);
@@ -133,6 +167,7 @@ class StringSpace {
       return out;
     }
 };
+
 
 }
 

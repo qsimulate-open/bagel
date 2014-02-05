@@ -49,16 +49,25 @@ CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb
 }
 
 
-StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
-  ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}},
-    graphs_{{ make_shared<CIGraph>(nele1, norb1), make_shared<CIGraph>(nele2, norb2), make_shared<CIGraph>(nele3, norb3) }},
-    dist_(graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size(), mpi__->size()),
-    norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
-{
-  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
+StringSpace::StringSpace(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
+ : StringSpace_base<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
 
+  init();
+}
+
+
+void StringSpace::compute_strings() {
+  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
+  assert(std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); }) == size);
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
+
+  const int nele1 = subspace_[0].first;
+  const int nele2 = subspace_[1].first;
+  const int nele3 = subspace_[2].first;
+  const int norb1 = subspace_[0].second;
+  const int norb2 = subspace_[1].second;
+  const int norb3 = subspace_[2].second;
 
   size_t cnt = 0;
   vector<int> holes(norb1);
@@ -74,12 +83,11 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
         for (int i = 0; i != nele1; ++i) bit.set(holes[i]);
         for (int i = 0; i != nele2; ++i) bit.set(active[i]);
         for (int i = 0; i != nele3; ++i) bit.set(particles[i]);
-        strings_[lexical<0>(bit)] = bit;
+        strings_[lexical_zero(bit)] = bit;
 
         ++cnt;
       } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
     } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
   } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
-
   assert(cnt == size);
 }
