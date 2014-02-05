@@ -24,8 +24,8 @@
 //
 
 #include <stdexcept>
+#include <iomanip>
 #include <src/fci/determinants.h>
-#include <src/math/comb.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 
@@ -34,35 +34,16 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 using namespace std;
 using namespace bagel;
 
-const static Comb comb;
-
 Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute)
-  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress),
-    astring_(make_shared<FCIString>(nelea_, norb_)), bstring_(make_shared<FCIString>(neleb_, norb_)) {
+  : Determinants_base(_norb, _nelea, _neleb, mute), compress_(_compress) {
 
-  if (!mute) cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
-  if (!mute) cout << "  o alpha-beta strings" << endl;
-  if (!mute) cout << "      length: " << setw(13) << lena() + lenb() << endl;
   if (!mute) cout << "  o single displacement lists (alpha)" << endl;
   const_phis_<0>(stringa(), phia_, phia_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
+  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
   if (!mute) cout << "  o single displacement lists (beta)" << endl;
   const_phis_<1>(stringb(), phib_, phib_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o size of the space " << endl;
-  if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
-  if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
+  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
 
-}
-
-size_t Determinants::ncsfs() const {
-  const int twoS = abs(nspin());
-  const int N = nelea() + neleb();
-  const int M = norb();
-  size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
-  out /= M + 1;
-
-  return out;
 }
 
 

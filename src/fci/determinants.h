@@ -27,19 +27,7 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
-#include <memory>
-#include <tuple>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <map>
-#include <bitset>
-#include <algorithm>
-#include <cassert>
-#include <src/util/constants.h>
-#include <src/util/serialization.h>
-#include <src/ciutil/stringspace.h>
+#include <src/ciutil/determinants_base.h>
 
 namespace bagel {
 
@@ -55,14 +43,8 @@ struct DetMap {
 };
 
 // implements a determinant space
-class Determinants : public std::enable_shared_from_this<Determinants> {
+class Determinants : public Determinants_base, public std::enable_shared_from_this<Determinants> {
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta.
-    int norb_;
-
-    int nelea_;
-    int neleb_;
-
     bool compress_;
 
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
@@ -79,20 +61,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     template <int>
     void const_phis_(const std::vector<std::bitset<nbit__>>& string,
                      std::vector<std::vector<DetMap>>& target, std::vector<std::vector<DetMap>>& uncompressed_target);
-
-    // this is slow but robust implementation of bit to number converter.
-    std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
-      std::vector<int> out;
-      for (int i = 0; i != norb_; ++i) if (bit[i]) out.push_back(i);
-      return out;
-    }
-
-    std::bitset<nbit__> numbers_to_bit(const std::vector<int>& num) const {
-      std::bitset<nbit__> out(0);
-      for (auto& i : num) out.set(i);
-      return out;
-    }
-
 
     // configuration list i^dagger j compressed
     std::vector<std::vector<DetMap>> phia_;
@@ -114,11 +82,9 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-#if 0
-      ar & norb_ & nelea_ & neleb_ & compress_ & detaddalpha_ & detaddbeta_ & detremalpha_ & detrembeta_
-         & zkl_ & stringa_ & stringb_ & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_
-         & phiupa_ & phiupb_ & phidowna_ & phidownb_;
-#endif
+      ar & boost::serialization::base_object<Determinants_base>(*this)
+         & compress_ & detaddalpha_ & detaddbeta_ & detremalpha_ & detrembeta_
+         & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_ & phiupa_ & phiupb_ & phidowna_ & phidownb_;
     }
 
   public:
@@ -131,71 +97,16 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb_, nelea, neleb, false, true); }
 
     // static constants
-    static const int Alpha = 0;
-    static const int Beta = 1;
+    using Determinants_base::Alpha;
+    using Determinants_base::Beta;
 
     bool operator==(const Determinants& o) const
       { return (norb_ == o.norb_ && nelea_ == o.nelea_ && neleb_ == o.neleb_ && compress_ == o.compress_); }
 
-    // string size
-    std::tuple<size_t, size_t> len_string() const { return std::make_tuple(lena(), lenb()); }
-
-    size_t lena() const { return astring_->size(); }
-    size_t lenb() const { return bstring_->size(); }
-
-    size_t ncsfs() const;
-
     std::shared_ptr<Determinants> transpose() const { return std::make_shared<Determinants>(norb_, neleb_, nelea_, compress_, true); }
-
-    std::string print_bit(std::bitset<nbit__> bit) const {
-      std::string out;
-      for (int i = 0; i != norb_; ++i) { out += bit[i] ? "1" : "."; }
-      return out;
-    }
-
-    std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2) const {
-      std::string out;
-      for (int i = 0; i != norb_; ++i) {
-        if (bit1[i] && bit2[i]) { out += "2"; }
-        else if (bit1[i]) { out += "a"; }
-        else if (bit2[i]) { out += "b"; }
-        else { out += "."; }
-      }
-      return out;
-    }
-
-    template<int spin>
-    int sign(std::bitset<nbit__> bit, int i) const {
-      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinant::sign (and other functions)");
-      bit &= (1ull << i) - 1ull;
-      return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
-    }
-
-    static int sign(std::bitset<nbit__> bit, int i, int j) {
-      // masking irrelevant bits
-      int min, max;
-      std::tie(min,max) = std::minmax(i,j);
-      bit &= ~((1ull << (min+1)) - 1ull);
-      bit &= (1ull << max) - 1ull;
-      return 1 - ((bit.count() & 1) << 1);
-    }
-
-    // maps bit to lexical numbers.
-    template <int spin> unsigned int lexical(std::bitset<nbit__> bit) const {
-      return spin == 0 ? astring_->lexical(bit) : bstring_->lexical(bit);
-    }
-
-    const std::bitset<nbit__>& stringa(int i) const { return astring_->strings(i); }
-    const std::bitset<nbit__>& stringb(int i) const { return bstring_->strings(i); }
-    const std::vector<std::bitset<nbit__>>& stringa() const { return astring_->strings(); }
-    const std::vector<std::bitset<nbit__>>& stringb() const { return bstring_->strings(); }
 
     std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
-    int nspin() const { return nelea_ - neleb_; }
-    int norb()  const { return norb_; }
-    int nelea() const { return nelea_; }
-    int neleb() const { return neleb_; }
     bool compress() const { return compress_; }
 
     // single index goes to normal versions (compressed based on compress_)

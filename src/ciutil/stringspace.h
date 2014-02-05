@@ -34,9 +34,9 @@
 #include <algorithm>
 
 #include <src/util/constants.h>
-#include <src/math/comb.h>
 #include <src/parallel/staticdist.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -44,14 +44,20 @@ namespace bagel {
 //   comprised of three subgraphs (one each for RASI, RASII, RASIII)
 class CIGraph {
   protected:
-    const size_t nele_;
-    const size_t norb_;
-
+    size_t nele_;
+    size_t norb_;
     size_t size_;
-
     std::vector<size_t> weights_;
 
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & nele_ & norb_ & size_& weights_;
+    }
+
   public:
+    CIGraph() { }
     CIGraph(const size_t nele, const size_t norb);
 
     size_t& weight(const size_t i, const size_t j) { assert(nele_*norb_ > 0); return weights_[i + j*norb_]; }
@@ -70,9 +76,21 @@ class CIGraph {
 };
 
 
+// dummy base class for serialization
+namespace detail {
+class BaseClass {
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive&, const unsigned int) { }
+  public:
+    BaseClass() { }
+    virtual ~BaseClass() { }
+};
+}
 
 template<int N>
-class StringSpace_base {
+class StringSpace_base : public detail::BaseClass {
   protected:
     std::array<std::pair<int, int>, N> subspace_;
 
@@ -92,7 +110,25 @@ class StringSpace_base {
     }
     virtual void compute_strings() = 0;
 
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template <class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<detail::BaseClass>(*this) << subspace_ << strings_ << graphs_;
+    }
+    template <class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<detail::BaseClass>(*this) >> subspace_ >> strings_ >> graphs_;
+      const size_t size = std::accumulate(graphs_.begin(), graphs_.end(), 1, [](size_t n, const std::shared_ptr<CIGraph>& i) { return n*i->size(); });
+      dist_ = std::make_shared<StaticDist>(size, mpi__->size());
+    }
+
   public:
+    StringSpace_base() { }
     StringSpace_base(std::initializer_list<size_t> args) {
       assert(args.size() == 2*N+1);
       auto iter = args.begin();
@@ -110,6 +146,8 @@ class StringSpace_base {
       norb_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.second; });
       nele_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.first; });
     }
+
+    virtual ~StringSpace_base() { }
 
     int nele() const { return nele_; }
     int norb() const { return norb_; }
@@ -140,7 +178,15 @@ class StringSpace : public StringSpace_base<3> {
   protected:
     void compute_strings() override;
 
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<StringSpace_base>(*this);
+    }
+
   public:
+    StringSpace() { }
     StringSpace(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
 
     int nholes() const { return subspace_[0].second - subspace_[0].first; }
@@ -173,7 +219,15 @@ class FCIString : public StringSpace_base<1> {
   protected:
     void compute_strings() override;
 
+  private:
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<StringSpace_base>(*this);
+    }
+
   public:
+    FCIString() { }
     FCIString(const size_t nele1, const size_t norb1, const size_t offset = 0);
 
     size_t lexical(const std::bitset<nbit__>& bit) const {
@@ -184,7 +238,24 @@ class FCIString : public StringSpace_base<1> {
 
 };
 
+}
 
+extern template class bagel::StringSpace_base<1>;
+extern template class bagel::StringSpace_base<3>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::CIGraph)
+BOOST_CLASS_EXPORT_KEY(bagel::detail::BaseClass)
+BOOST_CLASS_EXPORT_KEY(bagel::StringSpace_base<1>)
+BOOST_CLASS_EXPORT_KEY(bagel::StringSpace_base<3>)
+BOOST_CLASS_EXPORT_KEY(bagel::StringSpace)
+BOOST_CLASS_EXPORT_KEY(bagel::FCIString)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<detail::BaseClass, T>::value>::type> {
+    typedef detail::BaseClass type;
+  };
 }
 
 #endif

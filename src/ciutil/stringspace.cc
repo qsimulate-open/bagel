@@ -24,8 +24,19 @@
 //
 
 #include <cassert>
+#include <src/math/comb.h>
 #include <src/ciutil/stringspace.h>
 #include <src/util/combination.hpp>
+
+template class bagel::StringSpace_base<1>;
+template class bagel::StringSpace_base<3>;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIGraph)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::detail::BaseClass)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace_base<1>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace_base<3>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
 
 using namespace std;
 using namespace bagel;
