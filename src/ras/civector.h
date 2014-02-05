@@ -80,7 +80,7 @@ class RASCivector_base {
     std::shared_ptr<BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
     }
-    std::shared_ptr<BlockType> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) {
+    std::shared_ptr<BlockType> block(std::shared_ptr<const RASString> beta, std::shared_ptr<const RASString> alpha) {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
@@ -94,7 +94,7 @@ class RASCivector_base {
     std::shared_ptr<const BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
     }
-    std::shared_ptr<const BlockType> block(std::shared_ptr<const StringSpace> beta, std::shared_ptr<const StringSpace> alpha) const {
+    std::shared_ptr<const BlockType> block(std::shared_ptr<const RASString> beta, std::shared_ptr<const RASString> alpha) const {
       return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
     }
 
@@ -120,7 +120,7 @@ class RASCivector_base {
     template <int spin>
     const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
     template <int spin>
-    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::shared_ptr<const StringSpace> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
+    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::shared_ptr<const RASString> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
 
     template <int spin>
     const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const int nh, const int np) const {
@@ -145,8 +145,8 @@ template <typename DataType> class RASCivector;
 template <typename DataType>
 class DistRASBlock {
   protected:
-    std::shared_ptr<const StringSpace> astrings_;
-    std::shared_ptr<const StringSpace> bstrings_;
+    std::shared_ptr<const RASString> astrings_;
+    std::shared_ptr<const RASString> bstrings_;
 
     const StaticDist dist_;
 
@@ -160,7 +160,7 @@ class DistRASBlock {
     const size_t block_offset_;
 
   public:
-    DistRASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, const size_t o) :
+    DistRASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings, const size_t o) :
       astrings_(astrings), bstrings_(bstrings), dist_(astrings->size(), mpi__->size()), block_offset_(o)
     {
       std::tie(astart_, aend_) = dist_.range(mpi__->rank());
@@ -187,8 +187,8 @@ class DistRASBlock {
     DataType* local() { return local_.get(); }
     const DataType* local() const { return local_.get(); }
 
-    std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
-    std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
+    std::shared_ptr<const RASString> stringa() const { return astrings_; }
+    std::shared_ptr<const RASString> stringb() const { return bstrings_; }
 };
 
 template <typename DataType>
@@ -305,7 +305,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
         std::unique_ptr<double[]> buf(new double[det_->lenb()]);
         std::fill_n(buf.get(), det_->lenb(), 0.0);
         // locate astring
-        std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(astring));
+        std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->stringa(astring));
         size_t rank, off;
         std::tie(rank, off) = aspace->dist()->locate(astring - aspace->offset());
         assert(rank == mpi__->rank());
@@ -321,7 +321,7 @@ class DistRASCivector : public RASCivector_base<DistRASBlock<DataType>> {
     int get_bstring_buf(double* buf, const size_t a) const {
       assert(put_ && recv_);
       const size_t mpirank = mpi__->rank();
-      std::shared_ptr<const StringSpace> aspace = det_->template space<0>(det_->stringa(a));
+      std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->stringa(a));
       size_t rank, off;
       std::tie(rank, off) = aspace->dist()->locate(a - aspace->offset());
 
@@ -535,8 +535,8 @@ using DistRASDvec = Dvector_base<DistRASCivec>;
 template <typename DataType>
 class RASBlock {
   protected:
-    std::shared_ptr<const StringSpace> astrings_;
-    std::shared_ptr<const StringSpace> bstrings_;
+    std::shared_ptr<const RASString> astrings_;
+    std::shared_ptr<const RASString> bstrings_;
 
     std::unique_ptr<double[]> data_; // can be empty if Block belongs to a Civector
     DataType* const data_ptr_;
@@ -544,9 +544,9 @@ class RASBlock {
     const size_t offset_;
 
   public:
-    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings, DataType* const data_ptr, const size_t o) :
+    RASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings, DataType* const data_ptr, const size_t o) :
       astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o) { }
-    RASBlock(std::shared_ptr<const StringSpace> astrings, std::shared_ptr<const StringSpace> bstrings) :
+    RASBlock(std::shared_ptr<const RASString> astrings, std::shared_ptr<const RASString> bstrings) :
       astrings_(astrings), bstrings_(bstrings), data_(new double[size()]), data_ptr_(data_.get()), offset_(0) { std::fill_n(data(), size(), 0.0); }
 
     const size_t size() const { return lena() * lenb(); }
@@ -565,8 +565,8 @@ class RASBlock {
     DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
     const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
 
-    std::shared_ptr<const StringSpace> stringa() const { return astrings_; }
-    std::shared_ptr<const StringSpace> stringb() const { return bstrings_; }
+    std::shared_ptr<const RASString> stringa() const { return astrings_; }
+    std::shared_ptr<const RASString> stringb() const { return bstrings_; }
 };
 
 // helper classes for the apply function (this way the main code can be used elsewhere)

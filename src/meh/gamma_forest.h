@@ -337,11 +337,11 @@ class RASTask {
 
   public:
     RASTask(const int h, const int p) : holes_(h), particles_(p) {}
-    virtual std::shared_ptr<const StringSpace> stringspace(const int, const int, const int, const int , const int, const int) = 0;
+    virtual std::shared_ptr<const RASString> stringspace(const int, const int, const int, const int , const int, const int) = 0;
     std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<Branch> branch, std::shared_ptr<const RASBlock<double>> base_block,
                                                  const int& orbital, const bool& action, const bool& spin) {
-      std::shared_ptr<const StringSpace> sa = base_block->stringa();
-      std::shared_ptr<const StringSpace> sb = base_block->stringb();
+      std::shared_ptr<const RASString> sa = base_block->stringa();
+      std::shared_ptr<const RASString> sb = base_block->stringb();
 
       std::array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
 
@@ -404,8 +404,8 @@ class RASTask {
           return std::shared_ptr<RASBlock<double>>();
       }
 
-      std::shared_ptr<const StringSpace> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
-      std::shared_ptr<const StringSpace> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
+      std::shared_ptr<const RASString> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;
+      std::shared_ptr<const RASString> tb = spin ? sb : stringspace(info[1], ras[0], info[3], ras[1], info[5], ras[2]);
 
       auto out = std::make_shared<RASBlock<double>>(ta,tb);
 
@@ -436,7 +436,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
     const std::shared_ptr<GammaTree<RASDvec>> tree_;  // destination
 
     // to avoid rebuilding the stringspaces repeatedly
-    std::map<std::tuple<int, int, int, int, int, int>, std::shared_ptr<const StringSpace>> stringspaces_;
+    std::map<std::tuple<int, int, int, int, int, int>, std::shared_ptr<const RASString>> stringspaces_;
 
   public:
     GammaTask(const std::shared_ptr<GammaTree<RASDvec>> tree, const GammaSQ operation, const int a)
@@ -510,13 +510,13 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
         }
       }
 
-      std::shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
+      std::shared_ptr<const RASString> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
         auto iter = stringspaces_.find(std::make_tuple(a,b,c,d,e,f));
         if (iter != stringspaces_.end()) {
           return iter->second;
         }
         else {
-          stringspaces_.emplace(std::make_tuple(a,b,c,d,e,f), std::make_shared<StringSpace>(a,b,c,d,e,f));
+          stringspaces_.emplace(std::make_tuple(a,b,c,d,e,f), std::make_shared<RASString>(a,b,c,d,e,f));
           return stringspaces_[std::make_tuple(a,b,c,d,e,f)];
         }
       }

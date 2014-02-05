@@ -151,7 +151,7 @@ void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   const size_t lb = det->lenb();
 
   for (auto& spaceiter : det->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     auto F = make_shared<Matrix>(lb, ispace->size());
     double* fdata = F->data();
     for (size_t ib = 0; ib < ispace->size(); ++ib, fdata+=lb) {
@@ -185,13 +185,13 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   shared_ptr<const RASDeterminants> det = cc->det();
 
   const int norb = det->norb();
-  list<tuple<int, shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<const StringSpace>, int>> requests;
+  list<tuple<int, shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<const RASString>, int>> requests;
 
   // mapping space offsets to process bounds
   map<size_t, tuple<size_t, size_t>> bounds_map;
   map<size_t, vector<int>> scattering_map;
   for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const StringSpace> sp = spaceiter.second;
+    shared_ptr<const RASString> sp = spaceiter.second;
     StaticDist d(sp->size(), mpi__->size());
     bounds_map.emplace(sp->offset(), d.range(mpi__->rank()));
     vector<int> scat(mpi__->size());
@@ -206,7 +206,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   // Builds prototypes for the sparse F matrices as well as vectors that contain all of the information necessary to update the matrices as they are needed
   const int nspaces = det->stringspacea().size();
   for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     const size_t la = ispace->size();
 
     // These are for building the initial versions of the sparse matrices
@@ -293,7 +293,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
       // build V(I), block by block
       for (auto& spaceiter : det->stringspacea()) {
-        shared_ptr<const StringSpace> ispace = spaceiter.second;
+        shared_ptr<const RASString> ispace = spaceiter.second;
         const size_t la = ispace->size();
 
         // Beware, this COULD be a memory problem
@@ -314,7 +314,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         }
 
         for (auto& iphiblock : det->phib_ij(ij)) {
-          vector<shared_ptr<const StringSpace>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
+          vector<shared_ptr<const RASString>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
           for (auto& mult_space : allowed_spaces) {
             shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
             shared_ptr<SparseMatrix> Ft_block = Fmap[mult_space->offset() + get<0>(bounds_map[mult_space->offset()])].second;
@@ -349,7 +349,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         {
         //if (mpi__->test(rq)) {
           shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
-          shared_ptr<const StringSpace> ispace = get<3>(*ir);
+          shared_ptr<const RASString> ispace = get<3>(*ir);
           const int ij = get<4>(*ir);
 
           const size_t astart = get<0>(bounds_map[ispace->offset()]);
@@ -360,7 +360,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
           const double* vdata = Vt_chunk->data();
           for (auto& iphiblock : det->phib_ij(ij) ) {
             for (auto& iphi : iphiblock) {
-              shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+              shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
               if (det->allowed(ispace, betaspace)) {
 
                 shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);
@@ -393,7 +393,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
       {
       //if (mpi__->test(rq)) {
         shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
-        shared_ptr<const StringSpace> ispace = get<3>(*ir);
+        shared_ptr<const RASString> ispace = get<3>(*ir);
         const int ij = get<4>(*ir);
 
         const size_t astart = get<0>(bounds_map[ispace->offset()]);
@@ -403,7 +403,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         const double* vdata = Vt_chunk->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
 
               shared_ptr<DistRASBlock<double>> sgblock = sigma->block(betaspace, ispace);

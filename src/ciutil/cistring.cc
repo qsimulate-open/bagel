@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ciutil/stringspace.cc
+// Filename: cistring.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -25,27 +25,29 @@
 
 #include <cassert>
 #include <src/math/comb.h>
-#include <src/ciutil/stringspace.h>
+#include <src/ciutil/cistring.h>
 #include <src/util/combination.hpp>
 
-template class bagel::StringSpace_base<1>;
-template class bagel::StringSpace_base<3>;
+// explicit instantiation
+template class bagel::CIString_base<1>;
+template class bagel::CIString_base<3>;
 
+// instantiation of serialization code
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIGraph)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::detail::BaseClass)
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace_base<1>)
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace_base<3>)
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::StringSpace)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base<1>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base<3>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RASString)
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
 
 using namespace std;
 using namespace bagel;
 
+static const Comb comb;
+
 CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
   if (nele*norb != 0) {
     weights_ = vector<size_t>(nele * norb, 0ull);
-
-    Comb comb;
 
     size_ = comb.c(norb, nele);
 
@@ -60,14 +62,14 @@ CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb
 }
 
 
-StringSpace::StringSpace(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
- : StringSpace_base<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
+RASString::RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
+ : CIString_base<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
 
   init();
 }
 
 
-void StringSpace::compute_strings() {
+void RASString::compute_strings() {
   const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
@@ -104,7 +106,7 @@ void StringSpace::compute_strings() {
 
 
 FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset)
- : StringSpace_base<1>{nele1, norb1, offset} {
+ : CIString_base<1>{nele1, norb1, offset} {
 
   init();
 }

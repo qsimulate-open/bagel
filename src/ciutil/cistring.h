@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ciutil/stringspace.h
+// Filename: cistring.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -90,7 +90,7 @@ class BaseClass {
 }
 
 template<int N>
-class StringSpace_base : public detail::BaseClass {
+class CIString_base : public detail::BaseClass {
   protected:
     std::array<std::pair<int, int>, N> subspace_;
 
@@ -128,8 +128,8 @@ class StringSpace_base : public detail::BaseClass {
     }
 
   public:
-    StringSpace_base() { }
-    StringSpace_base(std::initializer_list<size_t> args) {
+    CIString_base() { }
+    CIString_base(std::initializer_list<size_t> args) {
       assert(args.size() == 2*N+1);
       auto iter = args.begin();
       for (int i = 0; i != N; ++i) {
@@ -147,7 +147,7 @@ class StringSpace_base : public detail::BaseClass {
       nele_ = std::accumulate(subspace_.begin(), subspace_.end(), 0, [](int n, const std::pair<int, int>& i) { return n+i.first; });
     }
 
-    virtual ~StringSpace_base() { }
+    virtual ~CIString_base() { }
 
     int nele() const { return nele_; }
     int norb() const { return norb_; }
@@ -174,7 +174,7 @@ class StringSpace_base : public detail::BaseClass {
 };
 
 
-class StringSpace : public StringSpace_base<3> {
+class RASString : public CIString_base<3> {
   protected:
     void compute_strings() override;
 
@@ -182,12 +182,12 @@ class StringSpace : public StringSpace_base<3> {
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<StringSpace_base>(*this);
+      ar & boost::serialization::base_object<CIString_base>(*this);
     }
 
   public:
-    StringSpace() { }
-    StringSpace(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
+    RASString() { }
+    RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
 
     int nholes() const { return subspace_[0].second - subspace_[0].first; }
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
@@ -215,7 +215,7 @@ class StringSpace : public StringSpace_base<3> {
 };
 
 
-class FCIString : public StringSpace_base<1> {
+class FCIString : public CIString_base<1> {
   protected:
     void compute_strings() override;
 
@@ -223,7 +223,7 @@ class FCIString : public StringSpace_base<1> {
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<StringSpace_base>(*this);
+      ar & boost::serialization::base_object<CIString_base>(*this);
     }
 
   public:
@@ -240,15 +240,15 @@ class FCIString : public StringSpace_base<1> {
 
 }
 
-extern template class bagel::StringSpace_base<1>;
-extern template class bagel::StringSpace_base<3>;
+extern template class bagel::CIString_base<1>;
+extern template class bagel::CIString_base<3>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::CIGraph)
 BOOST_CLASS_EXPORT_KEY(bagel::detail::BaseClass)
-BOOST_CLASS_EXPORT_KEY(bagel::StringSpace_base<1>)
-BOOST_CLASS_EXPORT_KEY(bagel::StringSpace_base<3>)
-BOOST_CLASS_EXPORT_KEY(bagel::StringSpace)
+BOOST_CLASS_EXPORT_KEY(bagel::CIString_base<1>)
+BOOST_CLASS_EXPORT_KEY(bagel::CIString_base<3>)
+BOOST_CLASS_EXPORT_KEY(bagel::RASString)
 BOOST_CLASS_EXPORT_KEY(bagel::FCIString)
 
 namespace bagel {

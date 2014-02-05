@@ -34,7 +34,7 @@
 #include <cassert>
 #include <src/util/constants.h>
 #include <src/util/serialization.h>
-#include <src/ciutil/stringspace.h>
+#include <src/ciutil/cistring.h>
 
 namespace bagel {
 

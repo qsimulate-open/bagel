@@ -34,12 +34,12 @@ namespace bagel {
     struct DenomTask {
       double* const data_;
       const bitset<nbit__> abit_;
-      shared_ptr<const StringSpace> stringb_;
+      shared_ptr<const RASString> stringb_;
       const double* const jop_;
       const double* const kop_;
       const double* const h_;
 
-      DenomTask(double* o, bitset<nbit__> ia, shared_ptr<const StringSpace> sb, double* j, double* k, double* h) :
+      DenomTask(double* o, bitset<nbit__> ia, shared_ptr<const RASString> sb, double* j, double* k, double* h) :
         data_(o), abit_(ia), stringb_(sb), jop_(j), kop_(k), h_(h) {}
 
       void compute() {

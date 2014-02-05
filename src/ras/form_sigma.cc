@@ -136,7 +136,7 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
   // Let's just get it working first, thread it later
   for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
     double* fdata = F.get();
@@ -183,17 +183,17 @@ namespace bagel {
     protected:
       // matrices named for which space (RASI, II, or III) runs first.
       // remaining spaces run in original order (II, I, III)
-      shared_ptr<const StringSpace> source_space_;
+      shared_ptr<const RASString> source_space_;
       shared_ptr<const RASDeterminants> det_;
 
       // store all the information relating to which subspaces of C' are present in the matrices
       vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>> blocks_;
 
     public:
-      Cprime(shared_ptr<const StringSpace> space, shared_ptr<const RASDeterminants> det,
+      Cprime(shared_ptr<const RASString> space, shared_ptr<const RASDeterminants> det,
           vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>&& data) : source_space_(space), det_(det), blocks_(move(data)) { }
 
-      shared_ptr<Matrix> get_matrix(shared_ptr<const StringSpace> target_space) const {
+      shared_ptr<Matrix> get_matrix(shared_ptr<const RASString> target_space) const {
         const size_t stringsize = source_space_->size();
         vector<vector<size_t>> indices;
         size_t nallowed = 0;
@@ -239,7 +239,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   map<size_t, map<size_t, pair<vector<tuple<size_t, int, int>>, shared_ptr<SparseMatrix>>>> Fmatrices;
 
   for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     const int nspaces = det->stringspacea().size();
     const size_t la = ispace->size();
 
@@ -251,7 +251,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
     vector<pair<size_t, int>> bounds;
     for (auto& spaceiter : det->stringspacea()) {
-      shared_ptr<const StringSpace> isp = spaceiter.second;
+      shared_ptr<const RASString> isp = spaceiter.second;
       bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
     }
     assert(bounds.size() == nspaces);
@@ -299,11 +299,11 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const RAS::DMapBlock& m) { return i + m.size(); });
       if (phisize == 0) continue;
 
-      map<shared_ptr<const StringSpace>, shared_ptr<Cprime>> Cp_map;
+      map<shared_ptr<const RASString>, shared_ptr<Cprime>> Cp_map;
 
       // gathering
       {
-        map<shared_ptr<const StringSpace>, vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>> Cp_temp;
+        map<shared_ptr<const RASString>, vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>> Cp_temp;
 
         for ( auto& iphiblock : det->phib_ij(ij) ) {
           vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
@@ -331,7 +331,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
       // build V(I), block by block
       for (auto& spaceiter : det->stringspacea()) {
-        shared_ptr<const StringSpace> ispace = spaceiter.second;
+        shared_ptr<const RASString> ispace = spaceiter.second;
         const size_t la = ispace->size();
 
         // build reduced version of phiblock and Cp
@@ -340,7 +340,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         for (auto& phiblock : det->phib_ij(ij)) {
           vector<RAS::DMap> phis;
           for (auto& phi : phiblock) {
-            shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(phi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(phi.target));
             if (det->allowed(ispace, betaspace))
               phis.emplace_back(phi);
           }
@@ -361,7 +361,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         const double* mo2e_ij = mo2e + i + norb*norb*j;
 
         for (auto& cpblock : Cp_map) {
-          shared_ptr<const StringSpace> source_space = cpblock.first;
+          shared_ptr<const RASString> source_space = cpblock.first;
           shared_ptr<Cprime> cp = cpblock.second;
           shared_ptr<Matrix> cp_matrix = cp->get_matrix(ispace);
           if (cp_matrix) {
@@ -391,7 +391,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         double* vdata = Vt->data();
         for (auto& iphiblock : reduced_phi ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
             const double* sourcedata = vdata;
 
             shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
@@ -423,7 +423,7 @@ namespace bagel {
       // remaining spaces run in original order (II, I, III)
       array<shared_ptr<Matrix>, 3> strided_;
       shared_ptr<Matrix> trans_;
-      shared_ptr<const StringSpace> space_;
+      shared_ptr<const RASString> space_;
 
       array<int, 3> nblocks_;
 
@@ -435,7 +435,7 @@ namespace bagel {
       shared_ptr<const Matrix> trans() const { return trans_; }
       const size_t nblocks(const int i) const { return nblocks_[i]; }
 
-      Cprime(shared_ptr<const StringSpace> space, vector<pair<DMapBlock*, shared_ptr<Matrix>>> data) : space_(space) {
+      Cprime(shared_ptr<const RASString> space, vector<pair<DMapBlock*, shared_ptr<Matrix>>> data) : space_(space) {
         assert(!block_data.empty());
         const size_t blocksize = accumulate(data.begin(), data.end(), 0ull,
             [] (size_t i, pair<const DMapBlock*, shared_ptr<Matrix>> p) { return i + p.second->ndim(); });
@@ -512,11 +512,11 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
 
       const double* mo2e_ij = mo2e + i + norb*norb*j;
 
-      map<shared_ptr<const StringSpace>, shared_ptr<Cprime>> Cp_map;
+      map<shared_ptr<const RASString>, shared_ptr<Cprime>> Cp_map;
 
       // gathering
       {
-        map<shared_ptr<const StringSpace>, vector<pair<const DMapBlock*, shared_ptr<Matrix>>>> Cp_tmp;
+        map<shared_ptr<const RASString>, vector<pair<const DMapBlock*, shared_ptr<Matrix>>>> Cp_tmp;
 
         // form matrices for each filled block
         for ( auto& iphiblock : det->phib_ij(ij) ) {
@@ -546,7 +546,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
 
       // build V(I), block by block
       for (auto& spaceiter : det->stringspacea()) {
-        shared_ptr<const StringSpace> ispace = spaceiter.second;
+        shared_ptr<const RASString> ispace = spaceiter.second;
         const size_t la = ispace->size();
 
         auto VI_out = make_shared<Matrix>(phisize, la);
@@ -556,7 +556,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
 
         // spaces are I:0, II:1, II:2
         for(auto& cpblock : Cp_map) {
-          shared_ptr<const StringSpace> source_space = cpblock.first;
+          shared_ptr<const RASString> source_space = cpblock.first;
           const int d1 = -(ispace->nholes() - source_space->nholes());
           const int d2 = ispace->nele2() - source_space->nele2();
           const int d3 = ispace->nparticles() - source_space->nparticles();
@@ -694,7 +694,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
         double* vdata = VI_out->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const StringSpace> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
             if (det->allowed(ispace, betaspace)) {
               const double* sourcedata = vdata;
 

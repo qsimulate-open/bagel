@@ -129,13 +129,13 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : sdet->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : sdet->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
@@ -190,13 +190,13 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : det_->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : det_->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+    shared_ptr<const RASString> ispace = spaceiter.second;
     for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
