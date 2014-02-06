@@ -71,10 +71,10 @@ class CIDeterminants {
     const std::shared_ptr<const StringType>& stringsa() const { return astrings_; }
     const std::shared_ptr<const StringType>& stringsb() const { return bstrings_; }
 
-    const std::bitset<nbit__>& stringa(int i) const { return astrings_->strings(i); }
-    const std::bitset<nbit__>& stringb(int i) const { return bstrings_->strings(i); }
-    const std::vector<std::bitset<nbit__>>& stringa() const { return astrings_->strings(); }
-    const std::vector<std::bitset<nbit__>>& stringb() const { return bstrings_->strings(); }
+    const std::bitset<nbit__>& string_bits_a(int i) const { return astrings_->strings(i); }
+    const std::bitset<nbit__>& string_bits_b(int i) const { return bstrings_->strings(i); }
+    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return astrings_->strings(); }
+    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return bstrings_->strings(); }
 
     template<int spin>
     int sign(const std::bitset<nbit__>& bit, int i) const {

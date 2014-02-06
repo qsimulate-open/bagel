@@ -226,8 +226,8 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
     iter.reserve(downsize);
   }
 
-  std::vector<std::bitset<nbit__>> stringplus = ( (spin==Alpha) ? plusdet->stringa() : plusdet->stringb() );
-  std::vector<std::bitset<nbit__>> string = ( (spin==Alpha) ? det->stringa() : det->stringb() );
+  std::vector<std::bitset<nbit__>> stringplus = (spin==Alpha) ? plusdet->string_bits_a() : plusdet->string_bits_b();
+  std::vector<std::bitset<nbit__>> string = (spin==Alpha) ? det->string_bits_a() : det->string_bits_b();
 
   for (auto& istring : string) {
     for (unsigned int i = 0; i != norb(); ++i) {

@@ -66,10 +66,10 @@ namespace bagel {
           bitset<nbit__> maskij; maskij.set(ii); maskij.flip(jj);
 
           fill_n(source.get(), det_->lenb(), 0.0);
-          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
+          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->string_bits_a(iter.source));
           for (auto& iblock : sourceblocks) {
             const size_t offset = iblock->stringsb()->offset();
-            copy_n(&this_->element(iblock->stringsb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
+            copy_n(&this_->element(iblock->stringsb()->strings(0), det_->string_bits_a(iter.source)), iblock->lenb(), source.get()+offset);
           }
 
           for (auto& iblock : out_->allowed_blocks<0>(target_)) {
@@ -77,7 +77,7 @@ namespace bagel {
             for (auto& btstring : *iblock->stringsb()) {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
-                if (det_->allowed(det_->stringa(iter.source), bsostring))
+                if (det_->allowed(det_->string_bits_a(iter.source), bsostring))
                   *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
               }
               ++outelement;
@@ -96,12 +96,12 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
-  for (auto& i : det_->stringb())
+  for (auto& i : det_->string_bits_b())
     lexicalmap[i.to_ullong()] = det_->lexical_offset<1>(i);
 
-  TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
+  TaskQueue<RAS::SpinTask> tasks(det_->string_bits_a().size());
 
-  for (auto& istring : det_->stringa()) {
+  for (auto& istring : det_->string_bits_a()) {
     tasks.emplace_back(istring, this, out, det_, &lexicalmap);
   }
 

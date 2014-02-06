@@ -210,7 +210,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
 
   vector<pair<bitset<nbit__>, bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
+    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
 
   return out;
 }

@@ -97,8 +97,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::map<int, std::shared_ptr<const RASString>> alphaspaces_;
     std::map<int, std::shared_ptr<const RASString>> betaspaces_;
 
-    std::vector<std::bitset<nbit__>> stringa_;
-    std::vector<std::bitset<nbit__>> stringb_;
+    std::vector<std::bitset<nbit__>> string_bits_a_;
+    std::vector<std::bitset<nbit__>> string_bits_b_;
 
     std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>> stringpairs_;
 
@@ -190,10 +190,12 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
 
     // These access the global string lists
-    const std::bitset<nbit__>& stringa(const size_t i) const { return stringa_[i]; }
-    const std::bitset<nbit__>& stringb(const size_t i) const { return stringb_[i]; }
-    const std::vector<std::bitset<nbit__>>& stringa() const { return stringa_; }
-    const std::vector<std::bitset<nbit__>>& stringb() const { return stringb_; }
+    const std::bitset<nbit__>& string_bits_a(const size_t i) const { return string_bits_a_[i]; }
+    const std::bitset<nbit__>& string_bits_b(const size_t i) const { return string_bits_b_[i]; }
+    std::vector<std::bitset<nbit__>>& string_bits_a() { return string_bits_a_; }
+    std::vector<std::bitset<nbit__>>& string_bits_b() { return string_bits_b_; }
+    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return string_bits_a_; }
+    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return string_bits_b_; }
 
     const std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>>& stringpairs() const { return stringpairs_; }
 
@@ -207,8 +209,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
 
-    const size_t lena() const { return stringa_.size(); }
-    const size_t lenb() const { return stringb_.size(); }
+    const size_t lena() const { return string_bits_a_.size(); }
+    const size_t lenb() const { return string_bits_b_.size(); }
     const size_t size() const { return size_; }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
@@ -277,7 +279,7 @@ void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const 
 
   std::unordered_map<size_t, size_t> lexmap;
   for (size_t i = 0; i < stringsize; ++i)
-    lexmap[ (spin == 0 ? this->stringa(i) : this->stringb(i)).to_ullong() ] = i;
+    lexmap[ (spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i)).to_ullong() ] = i;
 
   std::vector<size_t> offsets(nij, 0);
 
@@ -346,8 +348,8 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
     iter.reserve(downsize);
   }
 
-  std::vector<std::bitset<nbit__>> stringplus = ( (spin==0) ? plusdet->stringa() : plusdet->stringb() );
-  std::vector<std::bitset<nbit__>> string = ( (spin==0) ? det->stringa() : det->stringb() );
+  std::vector<std::bitset<nbit__>> stringplus = (spin==0) ? plusdet->string_bits_a() : plusdet->string_bits_b();
+  std::vector<std::bitset<nbit__>> string = (spin==0) ? det->string_bits_a() : det->string_bits_b();
 
   for (auto& istring : string) {
     for (unsigned int i = 0; i != norb_; ++i) {

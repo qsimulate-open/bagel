@@ -306,7 +306,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         std::unique_ptr<double[]> buf(new double[det_->lenb()]);
         std::fill_n(buf.get(), det_->lenb(), 0.0);
         // locate astring
-        std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->stringa(astring));
+        std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->string_bits_a(astring));
         size_t rank, off;
         std::tie(rank, off) = aspace->dist()->locate(astring - aspace->offset());
         assert(rank == mpi__->rank());
@@ -322,7 +322,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
     int get_bstring_buf(double* buf, const size_t a) const {
       assert(put_ && recv_);
       const size_t mpirank = mpi__->rank();
-      std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->stringa(a));
+      std::shared_ptr<const RASString> aspace = det_->template space<0>(det_->string_bits_a(a));
       size_t rank, off;
       std::tie(rank, off) = aspace->dist()->locate(a - aspace->offset());
 
@@ -509,7 +509,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         std::multimap<double, std::tuple<double, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
         for (int i = 0; i < chunk * mpi__->size(); ++i) {
           if (alldata[i] != 0.0)
-            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->stringa(allabits[i]), det_->stringb(allbbits[i])));
+            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
         }
 
         for (auto& i : tmp) {

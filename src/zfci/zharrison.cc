@@ -135,8 +135,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
-  for (auto& aiter : cdet->stringa()) {
-    for (auto& biter : cdet->stringb()) {
+  for (auto& aiter : cdet->string_bits_a()) {
+    for (auto& biter : cdet->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -145,7 +145,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > cdet->stringa().size()*cdet->stringb().size());
+  assert(tmp.size() == ndet || ndet > cdet->string_bits_a().size()*cdet->string_bits_b().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);

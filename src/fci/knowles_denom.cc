@@ -64,8 +64,8 @@ void KnowlesHandy::const_denom() {
   const int nspin2 = nspin*nspin;
 
   double* iter = denom_->data();
-  for (auto& ia : det()->stringa()) {
-    for (auto& ib : det()->stringb()) {
+  for (auto& ia : det()->string_bits_a()) {
+    for (auto& ib : det()->string_bits_b()) {
       const int nopen = (ia^ib).count();
       const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
       *iter = 0.0;

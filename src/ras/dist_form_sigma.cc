@@ -360,7 +360,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
           const double* vdata = Vt_chunk->data();
           for (auto& iphiblock : det->phib_ij(ij) ) {
             for (auto& iphi : iphiblock) {
-              shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
+              shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
               if (det->allowed(ispace, betaspace)) {
 
                 shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);
@@ -403,7 +403,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         const double* vdata = Vt_chunk->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
             if (det->allowed(ispace, betaspace)) {
 
               shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);

@@ -38,10 +38,10 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
   : Determinants_base(_norb, _nelea, _neleb, mute), compress_(_compress) {
 
   if (!mute) cout << "  o single displacement lists (alpha)" << endl;
-  const_phis_<0>(stringa(), phia_, phia_uncompressed_);
+  const_phis_<0>(string_bits_a(), phia_, phia_uncompressed_);
   if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
   if (!mute) cout << "  o single displacement lists (beta)" << endl;
-  const_phis_<1>(stringb(), phib_, phib_uncompressed_);
+  const_phis_<1>(string_bits_b(), phib_, phib_uncompressed_);
   if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
 
 }

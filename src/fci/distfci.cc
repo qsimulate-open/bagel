@@ -155,7 +155,7 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
     if (basis.size() >= nguess_ && val != last_value)
       break;
     else
-      basis.emplace_back(det_->stringa(p.second.first), det_->stringb(p.second.second));
+      basis.emplace_back(det_->string_bits_a(p.second.first), det_->string_bits_b(p.second.second));
   }
   const int nguess = basis.size();
 
@@ -303,7 +303,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
+    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
 
   return out;
 }
@@ -352,8 +352,8 @@ void DistFCI::const_denom() {
   double* iter = denom_->local();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
-    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop, kop, h);
-    iter += det()->stringb().size();
+    tasks.emplace_back(iter, denom_->det()->string_bits_a(i), det_, jop, kop, h);
+    iter += det()->string_bits_b().size();
   }
   tasks.compute();
 

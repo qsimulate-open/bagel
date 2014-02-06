@@ -98,7 +98,7 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   for (size_t a = 0; a != int_det->lena(); ++a) {
     if (a%size != rank) continue;
 
-    const bitset<nbit__> astring = int_det->stringa(a);
+    const bitset<nbit__> astring = int_det->string_bits_a(a);
 
     tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
 
@@ -212,7 +212,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   for (auto& b : intb)
     tasks.emplace_back(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex);
   // one electron part
-  for (auto& b : int_det->stringb())
+  for (auto& b : int_det->string_bits_b())
     tasks.emplace_back(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex);
 
   tasks.compute();

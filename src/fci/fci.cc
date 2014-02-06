@@ -98,8 +98,8 @@ void FCI::common_init() {
 void FCI::model_guess(shared_ptr<Dvec> out) {
   multimap<double, pair<bitset<nbit__>, bitset<nbit__>>> ordered_elements;
   const double* d = denom_->data();
-  for (auto& abit : det_->stringa()) {
-    for (auto& bbit : det_->stringb()) {
+  for (auto& abit : det_->string_bits_a()) {
+    for (auto& bbit : det_->string_bits_b()) {
       ordered_elements.emplace(*d++, make_pair(abit, bbit));
     }
   }
@@ -207,8 +207,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
-  for (auto& aiter : det()->stringa()) {
-    for (auto& biter : det()->stringb()) {
+  for (auto& aiter : det()->string_bits_a()) {
+    for (auto& biter : det()->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -217,7 +217,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
+  assert(tmp.size() == ndet || ndet > det()->string_bits_a().size()*det()->string_bits_b().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);

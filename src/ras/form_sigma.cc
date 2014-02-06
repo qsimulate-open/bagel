@@ -201,7 +201,7 @@ namespace bagel {
           size_t index = 0;
           vector<size_t> tmp_indices;
           for(auto& i : *b.first) {
-            if (det_->allowed(target_space->strings(0), det_->stringb(i.target))) {
+            if (det_->allowed(target_space->strings(0), det_->string_bits_b(i.target))) {
               tmp_indices.push_back(index);
             }
             ++index;
@@ -340,7 +340,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         for (auto& phiblock : det->phib_ij(ij)) {
           vector<RAS::DMap> phis;
           for (auto& phi : phiblock) {
-            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(phi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(phi.target));
             if (det->allowed(ispace, betaspace))
               phis.emplace_back(phi);
           }
@@ -391,7 +391,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         double* vdata = Vt->data();
         for (auto& iphiblock : reduced_phi ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
             const double* sourcedata = vdata;
 
             shared_ptr<RASBlock<double>> sgblock = sigma->block(betaspace, ispace);
@@ -535,7 +535,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
                 targetdata[i*lb] = sourcedata[i*lb] * sign;
             }
 
-            Cp_tmp[iblock->stringa()].emplace_back(&iphiblock, tmp);
+            Cp_tmp[iblock->string_bits_a()].emplace_back(&iphiblock, tmp);
           }
         }
 
@@ -694,7 +694,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
         double* vdata = VI_out->data();
         for (auto& iphiblock : det->phib_ij(ij) ) {
           for (auto& iphi : iphiblock) {
-            shared_ptr<const RASString> betaspace = det->space<1>(det->stringb(iphi.target));
+            shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
             if (det->allowed(ispace, betaspace)) {
               const double* sourcedata = vdata;
 

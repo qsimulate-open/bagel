@@ -134,7 +134,7 @@ void DistRASCI::const_denom() {
     if ( !iblock ) continue;
     double* iter = iblock->local();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia, iter+=iblock->lenb())
-      tasks.emplace_back(iter, det_->stringa(ia + iblock->stringsa()->offset()), iblock->stringsb(), jop.get(), kop.get(), h.get());
+      tasks.emplace_back(iter, det_->string_bits_a(ia + iblock->stringsa()->offset()), iblock->stringsb(), jop.get(), kop.get(), h.get());
   }
 
   tasks.compute();

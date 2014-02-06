@@ -105,7 +105,7 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
   TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
-  for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
+  for (auto aiter = det->string_bits_a().begin(); aiter != det->string_bits_a().end(); ++aiter, target+=lb)
     tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
 
   tasks.compute();

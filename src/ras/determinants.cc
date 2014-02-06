@@ -59,21 +59,21 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
       if ( (nele1 >= 0) && (nele3 <= norb3) ) {
         if ( (nele2a >= 0) && (nele2a <= norb2) ) {
-          auto sp = make_shared<const RASString>(nele1, norb1, nele2a, norb2, nele3, norb3, stringa_.size());
+          auto sp = make_shared<const RASString>(nele1, norb1, nele2a, norb2, nele3, norb3, string_bits_a().size());
           alphaspaces_.emplace(nparticles + nholes * large__, sp);
-          stringa_.insert(stringa_.end(), sp->strings().begin(), sp->strings().end());
+          string_bits_a().insert(string_bits_a().end(), sp->strings().begin(), sp->strings().end());
         }
 
         if ( (nele2b >= 0) && (nele2b <= norb2) ) {
-          auto sp = make_shared<const RASString>(nele1, norb1, nele2b, norb2, nele3, norb3, stringb_.size());
+          auto sp = make_shared<const RASString>(nele1, norb1, nele2b, norb2, nele3, norb3, string_bits_b().size());
           betaspaces_.emplace(nparticles + nholes * large__, sp);
-          stringb_.insert(stringb_.end(), sp->strings().begin(), sp->strings().end());
+          string_bits_b().insert(string_bits_b().end(), sp->strings().begin(), sp->strings().end());
         }
       }
     }
   }
-  if (!mute) cout << "   - alpha strings: " << stringa_.size() << endl;
-  if (!mute) cout << "   - beta strings: " << stringb_.size() << endl << endl;
+  if (!mute) cout << "   - alpha strings: " << string_bits_a().size() << endl;
+  if (!mute) cout << "   - beta strings: " << string_bits_b().size() << endl << endl;
 
   if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
   construct_phis_<0>(alphaspaces_, phia_, phia_ij_);

@@ -125,7 +125,7 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   unordered_map<size_t, size_t> lexicalmap;
   for (size_t i = 0; i < det_->lenb(); ++i)
-    lexicalmap[det_->stringb(i).to_ullong()] = i;
+    lexicalmap[det_->string_bits_b(i).to_ullong()] = i;
 
   this->init_mpi_recv();
 
@@ -153,7 +153,7 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
     if (astart == aend) continue;
 
     for (size_t ia = astart; ia < aend; ++ia) {
-      tasks.emplace_and_compute(this->det()->stringa(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
+      tasks.emplace_and_compute(this->det()->string_bits_a(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
     }
   }
 
@@ -212,8 +212,8 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->string_bits_a()) {
+      for (auto& bbit : *tblock->string_bits_b()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (abit[i] || !bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.set(i);
@@ -231,12 +231,12 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->string_bits_a()->nholes();
+    const int nhb = iblock->string_bits_b()->nholes();
+    const int npa = iblock->string_bits_a()->nparticles();
+    const int npb = iblock->string_bits_b()->nparticles();
+    const int n2a = iblock->string_bits_a()->nele2();
+    const int n2b = iblock->string_bits_b()->nele2();
 
     if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
@@ -280,8 +280,8 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->string_bits_a()) {
+      for (auto& bbit : *tblock->string_bits_b()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (!abit[i] || bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.reset(i);
@@ -299,12 +299,12 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->string_bits_a()->nholes();
+    const int nhb = iblock->string_bits_b()->nholes();
+    const int npa = iblock->string_bits_a()->nparticles();
+    const int npb = iblock->string_bits_b()->nparticles();
+    const int n2a = iblock->string_bits_a()->nele2();
+    const int n2b = iblock->string_bits_b()->nele2();
 
     if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
