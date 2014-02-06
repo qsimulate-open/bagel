@@ -99,8 +99,8 @@ void RASCI::const_denom() {
   for (auto& iblock : denom_->blocks()) {
     if ( !iblock ) continue;
     double* iter = iblock->data();
-    for (auto& ia : *iblock->stringa()) {
-      tasks.emplace_back(iter, ia, iblock->stringb(), jop.get(), kop.get(), h.get());
+    for (auto& ia : *iblock->stringsa()) {
+      tasks.emplace_back(iter, ia, iblock->stringsb(), jop.get(), kop.get(), h.get());
       iter += iblock->lenb();
     }
   }
@@ -134,7 +134,7 @@ void DistRASCI::const_denom() {
     if ( !iblock ) continue;
     double* iter = iblock->local();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia, iter+=iblock->lenb())
-      tasks.emplace_back(iter, det_->stringa(ia + iblock->stringa()->offset()), iblock->stringb(), jop.get(), kop.get(), h.get());
+      tasks.emplace_back(iter, det_->stringa(ia + iblock->stringsa()->offset()), iblock->stringsb(), jop.get(), kop.get(), h.get());
   }
 
   tasks.compute();

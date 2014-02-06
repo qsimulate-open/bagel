@@ -366,7 +366,7 @@ class DistCivector {
         }
 
         for (auto& i : tmp) {
-          std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
+          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det()->norb())
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
 
         }
@@ -749,7 +749,7 @@ class Civector {
         }
       }
       for (auto& iter : tmp)
-        std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
+        std::cout << "       " << print_bit(std::get<1>(iter.second), std::get<2>(iter.second), det()->norb())
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 

@@ -130,9 +130,9 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
       shared_ptr<DistCIBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
-      const int aindex = block->stringa()->lexical_zero(get<1>(iter)) - block->astart();
+      const int aindex = block->stringsa()->lexical_zero(get<1>(iter)) - block->astart();
       if ( aindex >= 0 && aindex < block->asize()) {
-        const size_t bindex = block->stringb()->lexical_zero(get<0>(iter));
+        const size_t bindex = block->stringsb()->lexical_zero(get<0>(iter));
         double* data = block->local() + block->lenb() * aindex + bindex;
         *data = get<2>(iter) * fac;
       }
@@ -162,8 +162,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->local();
-    const size_t aoff = iblock->stringa()->offset();
-    const size_t boff = iblock->stringb()->offset();
+    const size_t aoff = iblock->stringsa()->offset();
+    const size_t boff = iblock->stringsb()->offset();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
       for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
         const double din = -(*diter);

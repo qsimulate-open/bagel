@@ -171,11 +171,11 @@ void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
     // F is finished, apply to the right places
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
-      if (!det->allowed(ispace, iblock->stringa())) continue;
-      shared_ptr<DistCIBlock<double>> tblock = sigma->block(ispace, iblock->stringa());
+      if (!det->allowed(ispace, iblock->stringsa())) continue;
+      shared_ptr<DistCIBlock<double>> tblock = sigma->block(ispace, iblock->stringsa());
 
       dgemm_("T", "N", ispace->size(), tblock->asize(), iblock->lenb(), 1.0,
-        F->element_ptr(iblock->stringb()->offset(), 0), F->ndim(), iblock->local(), iblock->lenb(), 1.0, tblock->local(), tblock->lenb());
+        F->element_ptr(iblock->stringsb()->offset(), 0), F->ndim(), iblock->local(), iblock->lenb(), 1.0, tblock->local(), tblock->lenb());
     }
   }
 }
@@ -287,7 +287,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
           }
 
           // TODO is using the offset okay here?
-          Cp_map.emplace(make_pair(iblock->stringa()->offset(), iphiblock.offset()), tmp);
+          Cp_map.emplace(make_pair(iblock->stringsa()->offset(), iphiblock.offset()), tmp);
         }
       }
 

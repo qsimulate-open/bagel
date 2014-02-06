@@ -68,13 +68,13 @@ namespace bagel {
           fill_n(source.get(), det_->lenb(), 0.0);
           vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
           for (auto& iblock : sourceblocks) {
-            const size_t offset = iblock->stringb()->offset();
-            copy_n(&this_->element(iblock->stringb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
+            const size_t offset = iblock->stringsb()->offset();
+            copy_n(&this_->element(iblock->stringsb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
           }
 
           for (auto& iblock : out_->allowed_blocks<0>(target_)) {
-            double* outelement = &out_->element(iblock->stringb()->strings(0), target_);
-            for (auto& btstring : *iblock->stringb()) {
+            double* outelement = &out_->element(iblock->stringsb()->strings(0), target_);
+            for (auto& btstring : *iblock->stringsb()) {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
                 if (det_->allowed(det_->stringa(iter.source), bsostring))
@@ -142,8 +142,8 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->stringsa()) {
+      for (auto& bbit : *tblock->stringsb()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (abit[i] || !bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.set(i);
@@ -161,12 +161,12 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->stringsa()->nholes();
+    const int nhb = iblock->stringsb()->nholes();
+    const int npa = iblock->stringsa()->nparticles();
+    const int npb = iblock->stringsb()->nparticles();
+    const int n2a = iblock->stringsa()->nele2();
+    const int n2b = iblock->stringsb()->nele2();
 
     if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
@@ -203,8 +203,8 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->stringsa()) {
+      for (auto& bbit : *tblock->stringsb()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (!abit[i] || bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.reset(i);
@@ -222,12 +222,12 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->stringsa()->nholes();
+    const int nhb = iblock->stringsb()->nholes();
+    const int npa = iblock->stringsa()->nparticles();
+    const int npb = iblock->stringsb()->nparticles();
+    const int n2a = iblock->stringsa()->nele2();
+    const int n2b = iblock->stringsb()->nele2();
 
     if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);

@@ -163,6 +163,7 @@ class CIString_base_impl : public CIString_base {
 
     virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
     virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
+
 };
 
 

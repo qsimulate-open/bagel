@@ -101,8 +101,8 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
   for (auto& b : denom_->blocks()) {
     if (!b) continue;
     const double* d = b->data();
-    for (auto& abit : *b->stringa()) {
-      for (auto& bbit : *b->stringb()) {
+    for (auto& abit : *b->stringsa()) {
+      for (auto& bbit : *b->stringsb()) {
         ordered_elements.emplace(*d++, make_pair(abit, bbit));
       }
     }
@@ -213,8 +213,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->data();
-    for (auto& aiter : *iblock->stringa()) {
-      for (auto& biter : *iblock->stringb()) {
+    for (auto& aiter : *iblock->stringsa()) {
+      for (auto& biter : *iblock->stringsb()) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
           tmp.insert(make_pair(din, make_pair(biter, aiter)));

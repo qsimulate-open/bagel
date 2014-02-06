@@ -157,13 +157,13 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
     // F is finished, matrix-matrix multiply (but to the right place)
     for (auto& iblock : cc->blocks()) {
       if (!iblock) continue;
-      if (!det->allowed(ispace, iblock->stringb())) continue;
-      shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringb(), ispace);
+      if (!det->allowed(ispace, iblock->stringsb())) continue;
+      shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringsb(), ispace);
 
       assert(iblock->lenb() == target_block->lenb());
       assert(ispace->size() == target_block->lena());
       dgemm_("N", "N", target_block->lenb(), target_block->lena(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
-        F.get() + iblock->stringa()->offset(), la, 1.0, target_block->data(), target_block->lenb());
+        F.get() + iblock->stringsa()->offset(), la, 1.0, target_block->data(), target_block->lenb());
     }
   }
 }
@@ -321,7 +321,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
                 *targetdata = *sourcedata * sign;
             }
 
-            Cp_temp[iblock->stringa()].emplace_back(&iphiblock, tmp);
+            Cp_temp[iblock->stringsa()].emplace_back(&iphiblock, tmp);
           }
         }
 

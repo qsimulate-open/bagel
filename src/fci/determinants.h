@@ -94,16 +94,16 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
 
     // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
-    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb_, nelea, neleb, false, true); }
+    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb(), nelea, neleb, false, true); }
 
     // static constants
     using Determinants_base::Alpha;
     using Determinants_base::Beta;
 
     bool operator==(const Determinants& o) const
-      { return (norb_ == o.norb_ && nelea_ == o.nelea_ && neleb_ == o.neleb_ && compress_ == o.compress_); }
+      { return (norb() == o.norb() && nelea() == o.nelea() && neleb() == o.neleb() && compress_ == o.compress_); }
 
-    std::shared_ptr<Determinants> transpose() const { return std::make_shared<Determinants>(norb_, neleb_, nelea_, compress_, true); }
+    std::shared_ptr<Determinants> transpose() const { return std::make_shared<Determinants>(norb(), neleb(), nelea(), compress_, true); }
 
     std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
@@ -114,8 +114,8 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
     const std::vector<DetMap>& phib(const int i) const { return phib_[i]; }
 
     // two indices goes to uncompressed versions
-    const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_[i + j*norb_]; }
-    const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_[i + j*norb_]; }
+    const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_[i + j*norb()]; }
+    const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_[i + j*norb()]; }
 
     const std::vector<DetMap>& phiupa(const int i) const { return phiupa_[i]; }
     const std::vector<DetMap>& phiupb(const int i) const { return phiupb_[i]; }
@@ -143,24 +143,24 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
     std::vector<std::vector<DetMap>>& uncompressed_phi) {
 
   phi.clear();
-  phi.resize(compress_ ? norb_*(norb_+1)/2 : norb_*norb_);
+  phi.resize(compress_ ? norb()*(norb()+1)/2 : norb()*norb());
   for (auto& iter : phi ) {
     iter.reserve(string.size());
   }
 
   uncompressed_phi.clear();
-  uncompressed_phi.resize(norb_*norb_);
+  uncompressed_phi.resize(norb()*norb());
   for (auto& iter : uncompressed_phi ) {
     iter.reserve(string.size());
   }
 
   for (auto iter = string.begin(); iter != string.end(); ++iter) {
-    for (unsigned int i = 0; i != norb_; ++i) { // annihilation
+    for (unsigned int i = 0; i != norb(); ++i) { // annihilation
       // compress_ means that we store info only for i <= j
       if ((*iter)[i] && compress_) {
         const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
-        for (unsigned int j = 0; j != norb_; ++j) { // creation
+        for (unsigned int j = 0; j != norb(); ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
@@ -168,19 +168,19 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
             std::tie(minij, maxij) = std::minmax(i,j);
             auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
             phi[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
-            uncompressed_phi[i + j*norb_].push_back(detmap);
+            uncompressed_phi[i + j*norb()].push_back(detmap);
           }
         }
       } else if ((*iter)[i]) {
         const unsigned int source = lexical<spin>(*iter);
         std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
-        for (unsigned int j = 0; j != norb_; ++j) { // creation
+        for (unsigned int j = 0; j != norb(); ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
             mbit.set(j);
             auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
-            phi[i + j*norb_].push_back(detmap);
-            uncompressed_phi[i + j*norb_].push_back(detmap);
+            phi[i + j*norb()].push_back(detmap);
+            uncompressed_phi[i + j*norb()].push_back(detmap);
           }
         }
       }
@@ -214,13 +214,13 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::vector<std::vector<DetMap>> phiup;
   std::vector<std::vector<DetMap>> phidown;
 
-  phiup.resize(norb_);
+  phiup.resize(norb());
   int upsize = ( (spin==Alpha) ? plusdet->lena() : plusdet->lenb() );
   for (auto& iter : phiup) {
     iter.reserve(upsize);
   }
 
-  phidown.resize(norb_);
+  phidown.resize(norb());
   int downsize = ( (spin==Alpha) ? det->lena() : det->lenb() );
   for (auto& iter : phidown) {
     iter.reserve(downsize);
@@ -230,7 +230,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::vector<std::bitset<nbit__>> string = ( (spin==Alpha) ? det->stringa() : det->stringb() );
 
   for (auto& istring : string) {
-    for (unsigned int i = 0; i != norb_; ++i) {
+    for (unsigned int i = 0; i != norb(); ++i) {
       if (!(istring)[i]) { // creation
         const unsigned int source = det->lexical<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
@@ -241,7 +241,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   }
 
   for (auto& istring : stringplus) {
-    for (unsigned int i = 0; i!= norb_; ++i) {
+    for (unsigned int i = 0; i!= norb(); ++i) {
       if (istring[i]) { // annihilation
         const unsigned int source = plusdet->lexical<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.

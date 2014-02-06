@@ -27,32 +27,77 @@
 #ifndef __SRC_CIUTIL_CIBLOCK_H
 #define __SRC_CIUTIL_CIBLOCK_H
 
+#include <src/ciutil/bitutil.h>
 #include <src/ciutil/cistring.h>
 
 namespace bagel {
 
-// Contains all the information for (a sub block of) the CI coefficient matrix
-// but does NOT own the data
-template <typename DataType, class StringType>
-class CIBlock {
+template<class StringType>
+class CIDeterminants {
   protected:
     std::shared_ptr<const StringType> astrings_;
     std::shared_ptr<const StringType> bstrings_;
 
-    DataType* data_ptr_;
+  public:
+    CIDeterminants() { }
+    CIDeterminants(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
+      : astrings_(ast), bstrings_(bst) {
+      static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
+      assert(astrings_->norb() == bstrings_->norb());
+    }
+    virtual ~CIDeterminants() { }
 
+    size_t size() const { return lena() * lenb(); }
+    size_t lena() const { return astrings_->size(); }
+    size_t lenb() const { return bstrings_->size(); }
+    size_t norb() const { return astrings_->norb(); }
+    int nspin() const { return nelea() - neleb(); }
+    int nelea() const { return astrings_->nele(); }
+    int neleb() const { return bstrings_->nele(); }
+
+    // static constants
+    static const int Alpha = 0;
+    static const int Beta = 1;
+
+    template <int spin>
+    size_t lexical(std::bitset<nbit__> bit) const {
+      return spin == Alpha ? astrings_->lexical(bit) : bstrings_->lexical(bit);
+    }
+
+    size_t index(const std::bitset<nbit__>& bbit, const std::bitset<nbit__>& abit) const {
+      return bstrings_->lexical_zero(bbit) + astrings_->lexical_zero(abit) * lenb();
+    }
+
+    const std::shared_ptr<const StringType>& stringsa() const { return astrings_; }
+    const std::shared_ptr<const StringType>& stringsb() const { return bstrings_; }
+
+    const std::bitset<nbit__>& stringa(int i) const { return astrings_->strings(i); }
+    const std::bitset<nbit__>& stringb(int i) const { return bstrings_->strings(i); }
+    const std::vector<std::bitset<nbit__>>& stringa() const { return astrings_->strings(); }
+    const std::vector<std::bitset<nbit__>>& stringb() const { return bstrings_->strings(); }
+
+    template<int spin>
+    int sign(const std::bitset<nbit__>& bit, int i) const {
+      return bagel::sign(bit, i)*(1-(((spin*nelea())&1)<<1));
+    }
+    static int sign(const std::bitset<nbit__>& bit, int i, int j) { return bagel::sign(bit, i, j); }
+
+};
+
+
+// Contains all the information for (a sub block of) the CI coefficient matrix
+// but does NOT own the data
+template <typename DataType, class StringType>
+class CIBlock : public CIDeterminants<StringType> {
+  protected:
+    DataType* data_ptr_;
     size_t offset_;
 
   public:
     CIBlock(std::shared_ptr<const StringType> astrings, std::shared_ptr<const StringType> bstrings, DataType* const data_ptr, const size_t o) :
-      astrings_(astrings), bstrings_(bstrings), data_ptr_(data_ptr), offset_(o) {
-      static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
+      CIDeterminants<StringType>(astrings, bstrings), data_ptr_(data_ptr), offset_(o) {
     }
     virtual ~CIBlock() { }
-
-    const size_t size() const { return lena() * lenb(); }
-    const size_t lena() const { return astrings_->size(); }
-    const size_t lenb() const { return bstrings_->size(); }
 
     DataType* data() { return data_ptr_; }
     const DataType* data() const { return data_ptr_; }
@@ -60,14 +105,9 @@ class CIBlock {
     DataType& element(const size_t i) { return data_ptr_[i]; }
     const DataType& element(const size_t i) const { return data_ptr_[i]; }
 
-    const size_t index(const std::bitset<nbit__> bbit, const std::bitset<nbit__> abit) const
-      { return bstrings_->lexical_zero(bbit) + astrings_->lexical_zero(abit) * lenb(); }
+    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( this->index(bstring, astring) ); }
+    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( this->index(bstring, astring) ); }
 
-    DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) { return element( index(bstring, astring) ); }
-    const DataType& element(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const { return element( index(bstring, astring) ); }
-
-    std::shared_ptr<const StringType> stringa() const { return astrings_; }
-    std::shared_ptr<const StringType> stringb() const { return bstrings_; }
 };
 
 

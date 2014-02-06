@@ -34,16 +34,17 @@ using namespace bagel;
 
 const static Comb comb;
 
-Determinants_base::Determinants_base(const int _norb, const int _nelea, const int _neleb, const bool mute)
-  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), astring_(make_shared<FCIString>(nelea_, norb_)), bstring_(make_shared<FCIString>(neleb_, norb_)) {
+Determinants_base::Determinants_base(const int norb, const int nelea, const int neleb, const bool mute)
+  : CIDeterminants<FCIString>(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb)) {
 
-  if (!mute) cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
-  if (!mute) cout << "  o alpha-beta strings" << endl;
-  if (!mute) cout << "      length: " << setw(13) << lena() + lenb() << endl;
-  if (!mute) cout << "  o size of the space " << endl;
-  if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
-  if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
-
+  if (!mute) {
+    cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
+    cout << "  o alpha-beta strings" << endl;
+    cout << "      length: " << setw(13) << lena() + lenb() << endl;
+    cout << "  o size of the space " << endl;
+    cout << "      determinant space:  " << lena() * lenb() << endl;
+    cout << "      spin-adapted space: " << ncsfs() << endl << endl;
+  }
 }
 
 size_t Determinants_base::ncsfs() const {

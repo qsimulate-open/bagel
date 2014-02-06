@@ -98,7 +98,7 @@ namespace bagel {
           for (auto& iblock : allowed_blocks) {
             const size_t lb = iblock->lenb();
             double* odata = iblock->local() + lb * (lex_a - iblock->astart());
-            for (auto& ib : *iblock->stringb()) {
+            for (auto& ib : *iblock->stringsb()) {
               if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
                 const bitset<nbit__> bsostring = ib ^ maskij;
                 *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];

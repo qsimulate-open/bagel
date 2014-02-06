@@ -240,7 +240,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;

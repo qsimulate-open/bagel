@@ -188,8 +188,8 @@ class DistCIBlock {
     DataType* local() { return local_.get(); }
     const DataType* local() const { return local_.get(); }
 
-    std::shared_ptr<const RASString> stringa() const { return astrings_; }
-    std::shared_ptr<const RASString> stringb() const { return bstrings_; }
+    std::shared_ptr<const RASString> stringsa() const { return astrings_; }
+    std::shared_ptr<const RASString> stringsb() const { return bstrings_; }
 };
 
 template <typename DataType>
@@ -236,7 +236,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
     DistRASCivector(const RASCivector<DataType>& o) : DistRASCivector(o.det()) {
       for (auto& block : o.blocks()) {
         if (block) {
-          std::shared_ptr<RBlock> distblock = this->block(block->stringb(), block->stringa());
+          std::shared_ptr<RBlock> distblock = this->block(block->stringsb(), block->stringsa());
           std::copy_n(block->data() + distblock->astart()*distblock->lenb(), distblock->size(), distblock->local());
         }
       }
@@ -311,7 +311,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         std::tie(rank, off) = aspace->dist()->locate(astring - aspace->offset());
         assert(rank == mpi__->rank());
         for (auto b : this->template allowed_blocks<0>(aspace))
-          std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringb()->offset());
+          std::copy_n(b->local() + off * b->lenb(), b->lenb(), buf.get() + b->stringsb()->offset());
         put_->request_send(std::move(buf), det_->lenb(), dest, tag);
       }
 #ifndef USE_SERVER_THREAD
@@ -330,7 +330,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
       if (mpirank == rank) {
         std::fill_n(buf, det_->lenb(), 0.0);
         for (auto b : this->template allowed_blocks<0>(aspace))
-          std::copy_n(b->local()+off*b->lenb(), b->lenb(), buf + b->stringb()->offset());
+          std::copy_n(b->local()+off*b->lenb(), b->lenb(), buf + b->stringsb()->offset());
       } else {
         out = recv_->request_recv(buf, det_->lenb(), rank, a);
       }
@@ -349,8 +349,8 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
       std::shared_ptr<DistRASCivector<DataType>> trans = clone();
       for (auto& sblock : blocks_) {
         if (!sblock) continue;
-        std::shared_ptr<RBlock> tblock = out->block(sblock->stringa(), sblock->stringb());
-        std::shared_ptr<RBlock> bufblock = trans->block(sblock->stringb(), sblock->stringa());
+        std::shared_ptr<RBlock> tblock = out->block(sblock->stringsa(), sblock->stringsb());
+        std::shared_ptr<RBlock> bufblock = trans->block(sblock->stringsb(), sblock->stringsa());
         assert(tblock->global_size() == sblock->global_size() && bufblock->global_size() == sblock->global_size());
 
         for (int i = 0; i < mpi__->size(); ++i) {
@@ -405,7 +405,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
       DataType out(0.0);
       for (auto& iblock : this->blocks()) {
         if (!iblock) continue;
-        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
+        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringsb(), iblock->stringsa());
 
         if (jblock) out += blas::dot_product(iblock->local(), iblock->size(), jblock->local());
       }
@@ -422,7 +422,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
     }
     void ax_plus_y(const DataType a, const DistRASCivector<DataType>& o) {
       this->for_each_block( [&a, &o] (std::shared_ptr<RBlock> iblock) {
-        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringb(), iblock->stringa());
+        std::shared_ptr<const RBlock> jblock = o.block(iblock->stringsb(), iblock->stringsa());
         assert(jblock);
         blas::ax_plus_y_n(a, jblock->local(), iblock->size(), iblock->local());
       } );
@@ -482,8 +482,8 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
           for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
             if (std::abs(*i) >= thr) {
               data.push_back(*i);
-              abits.push_back(ia + iblock->stringa()->offset());
-              bbits.push_back(ib + iblock->stringb()->offset());
+              abits.push_back(ia + iblock->stringsa()->offset());
+              bbits.push_back(ib + iblock->stringsb()->offset());
             }
             ++i;
           }
@@ -569,10 +569,10 @@ class apply_block_impl : public apply_block_base<DataType> {
           const size_t lb = source->lenb();
           assert(lb == target->lenb());
           const DataType* sourcedata = source->data();
-          for (auto& abit : *source->stringa()) {
+          for (auto& abit : *source->stringsa()) {
             std::bitset<nbit__> tabit = abit;
             if (condition(tabit)) { // Also sets bit appropriately
-              DataType* targetdata = target->data() + target->stringa()->lexical_zero(tabit) * lb;
+              DataType* targetdata = target->data() + target->stringsa()->lexical_zero(tabit) * lb;
               const DataType sign = static_cast<DataType>(this->sign(abit));
               blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
             }
@@ -588,13 +588,13 @@ class apply_block_impl : public apply_block_base<DataType> {
         const size_t slb = source->lenb();
 
         // phase from alpha electrons
-        const int alpha_phase = 1 - ((source->stringa()->nele() & 1) << 1);
+        const int alpha_phase = 1 - ((source->stringsa()->nele() & 1) << 1);
 
-        for (auto& bbit : *source->stringb()) {
+        for (auto& bbit : *source->stringsb()) {
           const DataType* sourcedata = sourcedata_base;
           std::bitset<nbit__> tbbit = bbit;
           if (condition(tbbit)) {
-            DataType* targetdata = target->data() + target->stringb()->lexical_zero(tbbit);
+            DataType* targetdata = target->data() + target->stringsb()->lexical_zero(tbbit);
             const DataType sign = static_cast<DataType>(this->sign(bbit) * alpha_phase);
             for (size_t i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
               *targetdata += *sourcedata * sign;
@@ -646,7 +646,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     RASCivector(const DistRASCivector<DataType>& o) : RASCivector(o.det()) {
       this->for_each_block( [&o] (std::shared_ptr<RBlock> b) {
-        std::shared_ptr<const DistCIBlock<DataType>> distblock = o.block(b->stringb(), b->stringa());
+        std::shared_ptr<const DistCIBlock<DataType>> distblock = o.block(b->stringsb(), b->stringsa());
         std::copy_n(distblock->local(), distblock->size(), b->data() + distblock->astart()*distblock->lenb());
       } );
       mpi__->allreduce(data(), size());
@@ -690,7 +690,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<RASCivector<DataType>>(det);
       this->for_each_block( [&out]
-        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringa(), b->stringb())->data(), 1.0); }
+        (std::shared_ptr<const RBlock> b) { blas::transpose(b->data(), b->lenb(), b->lena(), out->block(b->stringsa(), b->stringsb())->data(), 1.0); }
       );
       return out;
     }
@@ -702,7 +702,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       assert( det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb() );
       DataType out(0.0);
       this->for_each_block( [&out, &o] (std::shared_ptr<const RBlock> b) {
-        std::shared_ptr<const RBlock> j = o.block(b->stringb(), b->stringa());
+        std::shared_ptr<const RBlock> j = o.block(b->stringsb(), b->stringsa());
         if (j) out += blas::dot_product(b->data(), b->lena()*b->lenb(), j->data());
       } );
       return out;
@@ -737,8 +737,8 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       const int ras_space = ( orbital >= ras1 ) + (orbital >= ras1 + ras2);
 
       auto to_array = [] (std::shared_ptr<const RASBlock<DataType>> block) {
-        auto sa = block->stringa();
-        auto sb = block->stringb();
+        auto sa = block->stringsa();
+        auto sb = block->stringsb();
         return std::array<int, 6>({sa->nholes(), sb->nholes(), sa->nele2(), sb->nele2(), sa->nparticles(), sb->nparticles()});
       };
 
@@ -810,8 +810,8 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       for (auto& iblock : blocks_) {
         if (!iblock) continue;
         double* i = iblock->data();
-        for (auto& ia : *iblock->stringa()) {
-          for (auto& ib : *iblock->stringb()) {
+        for (auto& ia : *iblock->stringsa()) {
+          for (auto& ib : *iblock->stringsb()) {
             if (std::abs(*i) > thr)
               tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
             ++i;

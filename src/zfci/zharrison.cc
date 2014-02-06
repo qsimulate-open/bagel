@@ -112,7 +112,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << space_->finddet(nelea, neleb)->print_bit(alpha&beta) << " open " << setw(20) << space_->finddet(nelea, neleb)->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
     ++oindex;
     if (oindex == offset+nstate) break;

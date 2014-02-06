@@ -340,8 +340,8 @@ class RASTask {
     virtual std::shared_ptr<const RASString> stringspace(const int, const int, const int, const int , const int, const int) = 0;
     std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<Branch> branch, std::shared_ptr<const RASBlock<double>> base_block,
                                                  const int& orbital, const bool& action, const bool& spin) {
-      std::shared_ptr<const RASString> sa = base_block->stringa();
-      std::shared_ptr<const RASString> sb = base_block->stringb();
+      std::shared_ptr<const RASString> sa = base_block->stringsa();
+      std::shared_ptr<const RASString> sb = base_block->stringsb();
 
       std::array<int, 3> ras{{sa->ras<0>().second, sa->ras<1>().second, sa->ras<2>().second}};
 
@@ -501,9 +501,9 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
       void dot_product(std::shared_ptr<const RASDvec> bras, std::shared_ptr<const RASBlock<double>> ketblock, double* target) const {
         const int nbras = bras->ij();
 
-        if (bras->det()->allowed(ketblock->stringb(), ketblock->stringa())) {
+        if (bras->det()->allowed(ketblock->stringsb(), ketblock->stringsa())) {
           for (int jbra = 0; jbra < nbras; ++jbra, ++target) {
-            std::shared_ptr<const RASBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
+            std::shared_ptr<const RASBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringsb(), ketblock->stringsa());
             if (brablock)
               *target += blas::dot_product(brablock->data(), brablock->size(), ketblock->data());
           }

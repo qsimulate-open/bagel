@@ -125,10 +125,10 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
     void dot_product(shared_ptr<const DistRASDvec> bras, shared_ptr<const RASBlock<double>> ketblock, double* target) const {
       const int nbras = bras->ij();
 
-      if (bras->det()->allowed(ketblock->stringb(), ketblock->stringa())) {
+      if (bras->det()->allowed(ketblock->stringsb(), ketblock->stringsa())) {
         vector<double> values(nbras, 0.0);
         for (int jbra = 0; jbra < nbras; ++jbra) {
-          shared_ptr<const DistCIBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
+          shared_ptr<const DistCIBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringsb(), ketblock->stringsa());
           if (brablock) {
             const double val = blas::dot_product(brablock->local(), brablock->size(), ketblock->data() + brablock->astart()*brablock->lenb());
             values[jbra] = val;
