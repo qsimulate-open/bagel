@@ -100,12 +100,16 @@ shared_ptr<Dvec> MEH_CAS::form_sigma_1e(shared_ptr<const Dvec> ccvec, const doub
 
   for (int istate = 0; istate < nstate; ++istate) {
     double* target = sigma->data(istate)->data();
-    for (auto aiter = det->string_bits_a().begin(); aiter != det->string_bits_a().end(); ++aiter, target+=lbs)
-      tasks.emplace_back(ccvec->data(istate), *aiter, target, modata);
+    for (auto& a : det->string_bits_a()) {
+      tasks.emplace_back(ccvec->data(istate), a, target, modata);
+      target += lbs;
+    }
 
     target = sg_trans->data(istate)->data();
-    for (auto aiter = det_trans->string_bits_a().begin(); aiter != det_trans->string_bits_a().end(); ++aiter, target+=las)
-      tasks.emplace_back(cc_trans->data(istate), *aiter, target, modata);
+    for (auto& a : det_trans->string_bits_a()) {
+      tasks.emplace_back(cc_trans->data(istate), a, target, modata);
+      target += las;
+    }
   }
 
   tasks.compute();
@@ -125,8 +129,9 @@ void MEH_CAS::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, cons
   TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
-  for (auto aiter = det->string_bits_a().begin(); aiter != det->string_bits_a().end(); ++aiter, target+=lb) {
-    tasks.emplace_back(cc, *aiter, target, h1, h2);
+  for (auto& a : det->string_bits_a()) {
+    tasks.emplace_back(cc, a, target, h1, h2);
+    target += lb;
   }
 
   tasks.compute();

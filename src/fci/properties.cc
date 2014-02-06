@@ -80,12 +80,16 @@ void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
 
     for (int istate = 0; istate < nstates; ++istate) {
       double *target = sigma->data(istate)->data();
-      for (auto aiter = det->string_bits_a().begin(); aiter != det->string_bits_a().end(); ++aiter, target+=lb)
-        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu]->data());
+      for (auto& a : det->string_bits_a()) {
+        tasks.emplace_back(ccvec->data(istate), a, target, compressed_dipoles_[imu]->data());
+        target += lb;
+      }
 
       target = sg_trans->data(istate)->data();
-      for (auto aiter = det_trans->string_bits_a().begin(); aiter != det_trans->string_bits_a().end(); ++aiter, target+=la)
-        tasks.emplace_back(ccvec->data(istate), *aiter, target, compressed_dipoles_[imu]->data());
+      for (auto& a : det_trans->string_bits_a()) {
+        tasks.emplace_back(ccvec->data(istate), a, target, compressed_dipoles_[imu]->data());
+        target += la;
+      }
     }
 
     tasks.compute();

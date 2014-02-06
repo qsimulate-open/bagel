@@ -172,8 +172,10 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
   const int lb = cc->lenb();
   complex<double>* target = sigma->data();
-  for (auto aiter = det->string_bits_a().begin(); aiter != det->string_bits_a().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
+  for (auto& a : det->string_bits_a()) {
+    tasks.emplace_back(cc, a, target, h1->data(), h2->data());
+    target += lb;
+  }
 
   tasks.compute();
 }
