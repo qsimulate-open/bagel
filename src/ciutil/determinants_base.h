@@ -40,7 +40,7 @@
 namespace bagel {
 
 // Determinants class without linkages.
-class Determinants_base : public CIDeterminants<FCIString> {
+class Determinants_base : public CIBlockInfo<FCIString> {
   private:
     friend class boost::serialization::access;
     template<class Archive>

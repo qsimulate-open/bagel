@@ -33,19 +33,19 @@
 namespace bagel {
 
 template<class StringType>
-class CIDeterminants {
+class CIBlockInfo {
   protected:
     std::shared_ptr<const StringType> astrings_;
     std::shared_ptr<const StringType> bstrings_;
 
   public:
-    CIDeterminants() { }
-    CIDeterminants(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
+    CIBlockInfo() { }
+    CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
       : astrings_(ast), bstrings_(bst) {
       static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
       assert(astrings_->norb() == bstrings_->norb());
     }
-    virtual ~CIDeterminants() { }
+    virtual ~CIBlockInfo() { }
 
     size_t size() const { return lena() * lenb(); }
     size_t lena() const { return astrings_->size(); }
@@ -88,14 +88,14 @@ class CIDeterminants {
 // Contains all the information for (a sub block of) the CI coefficient matrix
 // but does NOT own the data
 template <typename DataType, class StringType>
-class CIBlock : public CIDeterminants<StringType> {
+class CIBlock : public CIBlockInfo<StringType> {
   protected:
     DataType* data_ptr_;
     size_t offset_;
 
   public:
     CIBlock(std::shared_ptr<const StringType> astrings, std::shared_ptr<const StringType> bstrings, DataType* const data_ptr, const size_t o) :
-      CIDeterminants<StringType>(astrings, bstrings), data_ptr_(data_ptr), offset_(o) {
+      CIBlockInfo<StringType>(astrings, bstrings), data_ptr_(data_ptr), offset_(o) {
     }
     virtual ~CIBlock() { }
 

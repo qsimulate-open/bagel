@@ -226,17 +226,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
         const unsigned int target = plusdet->lexical<spin>(nbit);
         phiup[i].push_back(DetMap(target, sign<spin>(nbit, i), source));
-      }
-    }
-  }
-
-  for (auto& istring : stringplus) {
-    for (unsigned int i = 0; i!= norb(); ++i) {
-      if (istring[i]) { // annihilation
-        const unsigned int source = plusdet->lexical<spin>(istring);
-        std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
-        const unsigned int target = det->lexical<spin>(nbit);
-        phidown[i].push_back(DetMap(target, sign<spin>(nbit, i), source));
+        phidown[i].push_back(DetMap(source, sign<spin>(nbit, i), target));
       }
     }
   }

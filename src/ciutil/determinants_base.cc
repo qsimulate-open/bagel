@@ -35,7 +35,7 @@ using namespace bagel;
 const static Comb comb;
 
 Determinants_base::Determinants_base(const int norb, const int nelea, const int neleb, const bool mute)
-  : CIDeterminants<FCIString>(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb)) {
+  : CIBlockInfo<FCIString>(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb)) {
 
   if (!mute) {
     cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
