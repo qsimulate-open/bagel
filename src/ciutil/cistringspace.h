@@ -133,20 +133,7 @@ class CIStringSpace {
               const size_t target = plus->lexical_offset(nbit);
               const int s = sign(nbit, i);
               phiup->data(i).emplace_back(source, target, i, s);
-            }
-          }
-        }
-      }
-
-      for (auto& istring : stringplus) {
-        for (size_t i = 0; i != norb_; ++i) {
-          if (istring[i]) { // annihilation
-            const size_t source = plus->lexical_offset(istring);
-            std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
-            if (ref->contains(nbit)) {
-              const size_t target = ref->lexical_offset(nbit);
-              const int s = sign(nbit, i);
-              phidown->data(i).emplace_back(source, target, i, s);
+              phidown->data(i).emplace_back(target, source, i, s);
             }
           }
         }

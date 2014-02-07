@@ -359,19 +359,7 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
         if (plusdet->allowed(nbit)) {
           const size_t target = plusdet->lexical_offset<spin>(nbit);
           phiup[i].emplace_back(source, target, i, sign<spin>(nbit, i));
-        }
-      }
-    }
-  }
-
-  for (auto& istring : stringplus) {
-    for (unsigned int i = 0; i!= norb_; ++i) {
-      if (istring[i]) { // annihilation
-        const unsigned int source = plusdet->lexical_offset<spin>(istring);
-        std::bitset<nbit__> nbit = istring; nbit.reset(i); //annihilated.
-        if (det->allowed(nbit)) {
-          const unsigned int target = det->lexical_offset<spin>(nbit);
-          phidown[i].emplace_back(source, target, i, sign<spin>(nbit, i));
+          phidown[i].emplace_back(target, source, i, sign<spin>(nbit, i));
         }
       }
     }
