@@ -149,6 +149,15 @@ class CIString_base_impl : public CIString_base {
     size_t size() const { return strings_.size(); }
     size_t offset() const { return offset_; }
 
+    size_t key() const {
+      size_t out = 0;
+      for (int i = 0; i != N; ++i) {
+        assert(subspace_[i].first < (1 << 6));
+        out = (out << 6) + subspace_[i].first;
+      }
+      return out;
+    }
+
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__>& strings(const size_t i) const { return strings_[i]; }
 
@@ -164,12 +173,21 @@ class CIString_base_impl : public CIString_base {
     virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
     virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
 
+    virtual bool contains(const std::bitset<nbit__>& bit) const = 0;
 };
 
 
 class RASString : public CIString_base_impl<3> {
   protected:
     void compute_strings() override;
+
+    // helper functions
+    int nholes(const std::bitset<nbit__>& bit) const {
+      return subspace_[0].second - (bit & std::bitset<nbit__>((1ull << subspace_[0].second) - 1ull)).count();
+    }
+    int nparticles(const std::bitset<nbit__>& bit) const {
+      return (bit & std::bitset<nbit__>(((1ull << subspace_[2].second) - 1ull) << (subspace_[0].second + subspace_[1].second))).count();
+    }
 
   private:
     friend class boost::serialization::access;
@@ -210,6 +228,11 @@ class RASString : public CIString_base_impl<3> {
       static_assert(S == 0 || S == 1 || S == 2, "illegal call of RAString::ras");
       return std::get<S>(subspace_);
     }
+
+    bool contains(const std::bitset<nbit__>& bit) const {
+      assert(bit.count() == nele_);
+      return nholes(bit) == nholes() && nparticles(bit) == nparticles();
+    }
 };
 
 
@@ -234,6 +257,7 @@ class FCIString : public CIString_base_impl<1> {
     size_t lexical_offset(const std::bitset<nbit__>& bit) const override { return lexical(bit)+offset_; }
     size_t lexical_zero(const std::bitset<nbit__>& bit) const override { return lexical(bit); }
 
+    bool contains(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
 };
 
 }

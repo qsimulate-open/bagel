@@ -322,14 +322,14 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   std::shared_ptr<RASDeterminants> det;
   if (spin==0) {
     int de = this->nelea() - odet->nelea();
-    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
-    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
+    if (de == 1) std::tie(det, plusdet) = std::make_pair(odet, shared_from_this());
+    else if (de == -1) std::tie(det, plusdet) = std::make_pair(shared_from_this(), odet);
     else assert(false);
   }
   else {
     int de = this->neleb() - odet->neleb();
-    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
-    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
+    if (de == 1) std::tie(det, plusdet) = std::make_pair(odet, shared_from_this());
+    else if (de == -1) std::tie(det, plusdet) = std::make_pair(shared_from_this(), odet);
     else assert(false);
   }
 

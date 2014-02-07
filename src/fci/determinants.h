@@ -27,20 +27,10 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
+#include <src/ciutil/cistringspace.h>
 #include <src/ciutil/determinants_base.h>
 
 namespace bagel {
-
-struct DetMap {
-  unsigned int target;
-  unsigned int source;
-  int sign;
-  DetMap() { }
-  DetMap(unsigned int t, int si, unsigned int s) : target(t), source(s), sign(si) {}
-
-  template<class Archive>
-  void serialize(Archive& ar, const unsigned int) { ar & target & source & sign; }
-};
 
 // implements a determinant space
 class Determinants : public Determinants_base, public std::enable_shared_from_this<Determinants> {
