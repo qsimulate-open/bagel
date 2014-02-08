@@ -36,11 +36,11 @@ namespace bagel {
 struct DetMap {
   public:
     size_t target;
-    size_t source;
     int sign;
+    size_t source;
 
     DetMap() { }
-    DetMap(size_t t, int si, size_t s) : target(t), source(s), sign(si) {}
+    DetMap(size_t t, int si, size_t s) : target(t), sign(si), source(s) {}
 
   private:
     friend class boost::serialization::access;
@@ -61,9 +61,13 @@ class StringMap {
         i.reserve(n);
     }
 
-    std::vector<DetMap>& data(const size_t i) { assert(i < data_.size()); return data_[i]; }
+    std::vector<DetMap>& operator[](const size_t i) { return data_[i]; }
+    const std::vector<DetMap>& operator[](const size_t i) const { return data_[i]; }
+
+    const std::vector<DetMap>& data(const size_t i) const { assert(i < data_.size()); return data_[i]; }
 
     void insert(const std::vector<std::vector<DetMap>>& inp) {
+      assert(data_.size() == inp.size());
       auto j = inp.begin();
       for (auto& i : data_) {
         i.insert(i.end(), j->begin(), j->end());
@@ -82,7 +86,7 @@ class StringMap {
 template <class StringType>
 class CIStringSpace {
   protected:
-    std::list<std::shared_ptr<StringType>> strings_;
+    std::list<std::shared_ptr<const StringType>> strings_;
 
     // it is assumed that every StringType has the same norb_.
     size_t norb_;
@@ -92,18 +96,7 @@ class CIStringSpace {
 
     static size_t hash(const std::shared_ptr<const StringType>& a) { return a->key(); }
 
-    void build_linkage() {
-      // every time this function is called, we construct phiup and down from scratch (cheap anyway)
-      phiup_.clear();
-      phidown_.clear();
-      for (auto it = strings_.begin(); it != strings_.end(); ++it) {
-        auto jt = it; ++jt;
-        for ( ; jt != strings_.end(); ++jt)
-          build_linkage(*it, *jt);
-      }
-    }
-
-    void build_linkage(std::shared_ptr<const StringType> a, std::shared_ptr<const StringType> b) {
+    void build_linkage(std::shared_ptr<const StringType> a, std::shared_ptr<const StringType> b, const int fac) {
       std::shared_ptr<const StringType> plus, ref;
 
       const int diff = a->nele() - b->nele();
@@ -131,9 +124,9 @@ class CIStringSpace {
             std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
             if (plus->contains(nbit)) {
               const size_t target = plus->lexical_offset(nbit);
-              const int s = sign(nbit, i);
-              phiup->data(i).emplace_back(source, target, i, s);
-              phidown->data(i).emplace_back(target, source, i, s);
+              const int s = sign(nbit, i) * fac;
+              (*phiup)[i].emplace_back(target, s, source);
+              (*phidown)[i].emplace_back(source, s, target);
             }
           }
         }
@@ -147,13 +140,13 @@ class CIStringSpace {
 
       const size_t downkey = plus->key();
       if (phidown_.find(downkey) == phidown_.end())
-        phiup_[downkey] = phidown;
+        phidown_[downkey] = phidown;
       else
-        phiup_[downkey]->insert(phidown);
+        phidown_[downkey]->insert(phidown);
     }
 
   public:
-    CIStringSpace(const std::list<std::shared_ptr<StringType>> s) : strings_(s) {
+    CIStringSpace(std::initializer_list<std::shared_ptr<const StringType>> s) : strings_(s.begin(), s.end()) {
       assert(!strings_.empty());
       norb_ = strings_.front()->norb();
       for (auto& i : strings_)
@@ -161,14 +154,23 @@ class CIStringSpace {
           throw std::logic_error("All CIStrings in CIStringSpace should have the same norb.");
     }
 
-    const DetMap& phiup(const std::shared_ptr<const StringMap>& a, const size_t j) const {
-      assert(phiup_.find(hash(a)) != phiup_.end());
-      return phiup_[hash(a)][j];
+    void build_linkage(const int fac = 1) {
+      // every time this function is called, we construct phiup and down from scratch (cheap anyway)
+      phiup_.clear();
+      phidown_.clear();
+      for (auto it = strings_.begin(); it != strings_.end(); ++it) {
+        auto jt = it; ++jt;
+        for ( ; jt != strings_.end(); ++jt)
+          build_linkage(*it, *jt, fac);
+      }
     }
 
-    const DetMap& phidown(const std::shared_ptr<const StringMap>& a, const size_t j) const {
-      assert(phidown_.find(hash(a)) != phidown_.end());
-      return phidown_[hash(a)][j];
+    std::shared_ptr<const StringMap> phiup(const std::shared_ptr<const StringType>& a) const {
+      return phiup_.find(hash(a))->second;
+    }
+
+    std::shared_ptr<const StringMap> phidown(const std::shared_ptr<const StringType>& a) const {
+      return phidown_.find(hash(a))->second;
     }
 
 };

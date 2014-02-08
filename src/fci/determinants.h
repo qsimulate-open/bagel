@@ -74,12 +74,12 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::vector<std::vector<DetMap>> phib_uncompressed_;
 
     // configuration list i^dagger
-    std::vector<std::vector<DetMap>> phiupa_;
-    std::vector<std::vector<DetMap>> phiupb_;
+    std::shared_ptr<const StringMap> phiupa_;
+    std::shared_ptr<const StringMap> phiupb_;
 
     // configuration list i
-    std::vector<std::vector<DetMap>> phidowna_;
-    std::vector<std::vector<DetMap>> phidownb_;
+    std::shared_ptr<const StringMap> phidowna_;
+    std::shared_ptr<const StringMap> phidownb_;
 
   private:
     friend class boost::serialization::access;
@@ -148,11 +148,11 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_[i + j*norb()]; }
     const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_[i + j*norb()]; }
 
-    const std::vector<DetMap>& phiupa(const int i) const { return phiupa_[i]; }
-    const std::vector<DetMap>& phiupb(const int i) const { return phiupb_[i]; }
+    const std::vector<DetMap>& phiupa(const int i) const { return phiupa_->data(i); }
+    const std::vector<DetMap>& phiupb(const int i) const { return phiupb_->data(i); }
 
-    const std::vector<DetMap>& phidowna(const int i) const { return phidowna_[i]; }
-    const std::vector<DetMap>& phidownb(const int i) const { return phidownb_[i]; }
+    const std::vector<DetMap>& phidowna(const int i) const { return phidowna_->data(i); }
+    const std::vector<DetMap>& phidownb(const int i) const { return phidownb_->data(i); }
 
     std::shared_ptr<const Determinants> addalpha() const { return detaddalpha_.lock();}
     std::shared_ptr<const Determinants> remalpha() const { return detremalpha_.lock();}
@@ -218,63 +218,30 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
 template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::shared_ptr<Determinants> plusdet;
   std::shared_ptr<Determinants> det;
-  if (spin==0) {
-    const int de = this->nelea() - odet->nelea();
-    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
-    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::logic_error("Determinants::link failed");
-  }
-  else {
-    const int de = this->neleb() - odet->neleb();
-    if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
-    else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-    else throw std::logic_error("Determinants::link failed");
-  }
 
-  std::vector<std::vector<DetMap>> phiup;
-  std::vector<std::vector<DetMap>> phidown;
+  const int de = spin == 0 ? this->nelea() - odet->nelea() : this->neleb() - odet->neleb();
+  if      (de ==  1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
+  else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
+  else throw std::logic_error("Determinants::link failed");
 
-  phiup.resize(norb());
-  int upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
-  for (auto& iter : phiup) {
-    iter.reserve(upsize);
-  }
-
-  phidown.resize(norb());
-  int downsize = ( (spin==0) ? det->lena() : det->lenb() );
-  for (auto& iter : phidown) {
-    iter.reserve(downsize);
-  }
-
-  std::vector<std::bitset<nbit__>> stringplus = (spin==0) ? plusdet->string_bits_a() : plusdet->string_bits_b();
-  std::vector<std::bitset<nbit__>> string = (spin==0) ? det->string_bits_a() : det->string_bits_b();
-
-  for (auto& istring : string) {
-    for (unsigned int i = 0; i != norb(); ++i) {
-      if (!istring[i]) { // creation
-        const unsigned int source = det->lexical<spin>(istring);
-        std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
-        const unsigned int target = plusdet->lexical<spin>(nbit);
-        phiup[i].push_back(DetMap(target, sign<spin>(nbit, i), source));
-        phidown[i].push_back(DetMap(source, sign<spin>(nbit, i), target));
-      }
-    }
-  }
+  const int fac = (spin == 1 && (nelea() & 1)) ? -1 : 1;
+  // TODO move this to the driver to process all at once
+  CIStringSpace<FCIString> space{blockinfo(0)->strings<spin>(), odet->blockinfo(0)->strings<spin>()};
+  space.build_linkage(fac);
 
   // finally link
   if (spin == 0) {
     plusdet->detremalpha_ = det;
-    plusdet->phidowna_ = phidown;
+    plusdet->phidowna_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
 
     det->detaddalpha_ = plusdet;
-    det->phiupa_ = phiup;
-  }
-  else {
+    det->phiupa_ = space.phiup(det->blockinfo(0)->strings<spin>());
+  } else {
     plusdet->detrembeta_ = det;
-    plusdet->phidownb_ = phidown;
+    plusdet->phidownb_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
 
     det->detaddbeta_ = plusdet;
-    det->phiupb_ = phiup;
+    det->phiupb_ = space.phiup(det->blockinfo(0)->strings<spin>());
   }
 }
 

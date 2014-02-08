@@ -71,6 +71,9 @@ class CIBlockInfo {
     const std::shared_ptr<const StringType>& stringsa() const { return astrings_; }
     const std::shared_ptr<const StringType>& stringsb() const { return bstrings_; }
 
+    template<int spin>
+    const std::shared_ptr<const StringType>& strings() const { return spin == 0 ? astrings_ : bstrings_; }
+
     const std::bitset<nbit__>& string_bits_a(int i) const { return astrings_->strings(i); }
     const std::bitset<nbit__>& string_bits_b(int i) const { return bstrings_->strings(i); }
     const std::vector<std::bitset<nbit__>>& string_bits_a() const { return astrings_->strings(); }
