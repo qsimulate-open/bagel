@@ -192,12 +192,12 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                 dy = minus1y - 2.0 * cb * worksy[iy+amax3 * (jy+1)] - imag * A_By * worksy[iy + amax3 * jy];
                 dz = minus1z - 2.0 * cb * worksz[iz+amax3 * (jz+1)] - imag * A_Bz * worksz[iz + amax3 * jz];
 
-                Tx = minus2x - imag * 2.0 * A_Bx * minus1x - (2*cb*(2*jx+1) + A_Bx*A_Bx) * worksx[ix+amax3 * jx]
-                     + imag * 4.0 * cb * A_Bx * worksx[ix + amax3 * (jx+1)] + 4 * cb * cb * worksx[ix + amax3 * (jx + 2)];
-                Ty = minus2y - imag * 2.0 * A_By * minus1y - (2*cb*(2*jy+1) + A_By*A_By) * worksy[iy+amax3 * jy]
-                     + imag * 4.0 * cb * A_By * worksy[iy + amax3 * (jy+1)] + 4 * cb * cb * worksy[iy + amax3 * (jy + 2)];
-                Tz = minus2z - imag * 2.0 * A_Bz * minus1z - (2*cb*(2*jz+1) + A_Bz*A_Bz) * worksz[iz+amax3 * jz]
-                     + imag * 4.0 * cb * A_Bz * worksz[iz + amax3 * (jz+1)] + 4 * cb * cb * worksz[iz + amax3 * (jz + 2)];
+                Tx = minus2x - imag * 2.0 * A_Bx * minus1x - (2.0*cb*(2.0*jxd+1.0) + A_Bx*A_Bx) * worksx[ix+amax3 * jx]
+                     + imag * 4.0 * cb * A_Bx * worksx[ix + amax3 * (jx+1)] + 4.0 * cb * cb * worksx[ix + amax3 * (jx + 2)];
+                Ty = minus2y - imag * 2.0 * A_By * minus1y - (2.0*cb*(2.0*jyd+1.0) + A_By*A_By) * worksy[iy+amax3 * jy]
+                     + imag * 4.0 * cb * A_By * worksy[iy + amax3 * (jy+1)] + 4.0 * cb * cb * worksy[iy + amax3 * (jy + 2)];
+                Tz = minus2z - imag * 2.0 * A_Bz * minus1z - (2.0*cb*(2.0*jzd+1.0) + A_Bz*A_Bz) * worksz[iz+amax3 * jz]
+                     + imag * 4.0 * cb * A_Bz * worksz[iz + amax3 * (jz+1)] + 4.0 * cb * cb * worksz[iz + amax3 * (jz + 2)];
 
                 current_data[cnt] = -Tx * Sy * Sz;
                 current_data[cnt] -= Sx * Ty * Sz;

@@ -222,6 +222,8 @@ cout << endl;
   } else if (calculation == 'T') {
     complex<double> FULL_KINETIC = kinetic_MO (field, input.second[0], input.second[1], input.first);
     cout << "Final result = " << FULL_KINETIC << endl;
+    cout << "Magnitude = " << abs(FULL_KINETIC) << endl;
+    cout << "Phase = " << arg(FULL_KINETIC) << endl;
   }
 
   return 0;
