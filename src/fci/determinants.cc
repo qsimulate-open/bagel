@@ -34,8 +34,14 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 using namespace std;
 using namespace bagel;
 
-Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute)
-  : Determinants_base(_norb, _nelea, _neleb, mute), compress_(_compress) {
+Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute) : compress_(_compress) {
+
+  blockinfo_[0] = make_shared<FCIBlockInfo>(_norb, _nelea, _neleb, mute);
+
+  for (auto& i : blockinfo_) {
+    string_bits_a_.insert(string_bits_a_.end(), i.second->string_bits_a().begin(), i.second->string_bits_a().end());
+    string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
+  }
 
   if (!mute) cout << "  o single displacement lists (alpha)" << endl;
   const_phis_<0>(string_bits_a(), phia_, phia_uncompressed_);

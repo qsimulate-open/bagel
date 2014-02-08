@@ -60,7 +60,7 @@ class CIBlockInfo {
     static const int Beta = 1;
 
     template <int spin>
-    size_t lexical(std::bitset<nbit__> bit) const {
+    size_t lexical(const std::bitset<nbit__>& bit) const {
       return spin == Alpha ? astrings_->lexical(bit) : bstrings_->lexical(bit);
     }
 

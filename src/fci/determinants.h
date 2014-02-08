@@ -27,14 +27,31 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
+#include <src/fci/fciblock.h>
 #include <src/ciutil/cistringspace.h>
-#include <src/ciutil/determinants_base.h>
 
 namespace bagel {
 
-// implements a determinant space
-class Determinants : public Determinants_base, public std::enable_shared_from_this<Determinants> {
+//  implements a determinant space with fixed numbers of nelea and neleb.
+
+class Determinants : public std::enable_shared_from_this<Determinants> {
   protected:
+    // vector of length 1. using unordered_map for compatibility to RAS code
+    std::unordered_map<size_t, std::shared_ptr<const FCIBlockInfo>> blockinfo_;
+
+    // global string list (TODO in principle, this is redundant)
+    std::vector<std::bitset<nbit__>> string_bits_a_;
+    std::vector<std::bitset<nbit__>> string_bits_b_;
+
+    // for range check in the debug mode
+    const std::shared_ptr<const FCIBlockInfo>& blockinfo(const int i) const {
+      auto iter = blockinfo_.find(i);
+      assert(iter != blockinfo_.end());
+      return iter->second;
+    }
+
+
+    // TODO this should be the property of string
     bool compress_;
 
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
@@ -42,10 +59,6 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
     std::weak_ptr<Determinants> detaddbeta_;
     std::weak_ptr<Determinants> detremalpha_;
     std::weak_ptr<Determinants> detrembeta_;
-
-    // string lists
-    std::shared_ptr<FCIString> astring_;
-    std::shared_ptr<FCIString> bstring_;
 
     // single displacement vectors Phi's
     template <int>
@@ -72,9 +85,6 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Determinants_base>(*this)
-         & compress_ & detaddalpha_ & detaddbeta_ & detremalpha_ & detrembeta_
-         & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_ & phiupa_ & phiupb_ & phidowna_ & phidownb_;
     }
 
   public:
@@ -84,11 +94,42 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
 
     // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
-    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const { return std::make_shared<Determinants>(norb(), nelea, neleb, false, true); }
+    std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const {
+      return std::make_shared<Determinants>(norb(), nelea, neleb, false, true);
+    }
 
-    // static constants
-    using Determinants_base::Alpha;
-    using Determinants_base::Beta;
+    // some functions to retrieve members of FCIBlockInfo
+    // block-independent members
+    int norb() const { return blockinfo(0)->norb(); }
+    int nelea() const { return blockinfo(0)->nelea(); }
+    int neleb() const { return blockinfo(0)->neleb(); }
+    int nspin() const { return nelea() - neleb(); }
+    // block dependent members
+    size_t lena(const size_t i = 0) const { return blockinfo(i)->lena(); }
+    size_t lenb(const size_t i = 0) const { return blockinfo(i)->lenb(); }
+    size_t size(const size_t i = 0) const { return blockinfo(i)->size(); }
+    size_t ncsfs(const size_t i = 0) const { return blockinfo(i)->ncsfs(); }
+
+    template<int Spin>
+    int sign(const std::bitset<nbit__>& bit, const size_t pos) const {
+      return blockinfo(0)->sign<Spin>(bit, pos);
+    }
+
+    static int sign(const std::bitset<nbit__>& bit, const size_t pos0, const size_t pos1) {
+      return FCIBlockInfo::sign(bit, pos0, pos1);
+    }
+
+    template<int Spin>
+    size_t lexical(const std::bitset<nbit__>& bit) const {
+      return blockinfo(0)->lexical<Spin>(bit);
+    }
+
+    // TODO see above
+    const std::bitset<nbit__>& string_bits_a(const size_t i) const { assert(i < string_bits_a_.size()); return string_bits_a_[i]; }
+    const std::bitset<nbit__>& string_bits_b(const size_t i) const { assert(i < string_bits_b_.size()); return string_bits_b_[i]; }
+    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return string_bits_a_; }
+    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return string_bits_b_; }
+
 
     bool operator==(const Determinants& o) const
       { return (norb() == o.norb() && nelea() == o.nelea() && neleb() == o.neleb() && compress_ == o.compress_); }
@@ -118,11 +159,6 @@ class Determinants : public Determinants_base, public std::enable_shared_from_th
     std::shared_ptr<const Determinants> addbeta() const { return detaddbeta_.lock();}
     std::shared_ptr<const Determinants> rembeta() const { return detrembeta_.lock();}
 
-    std::shared_ptr<Determinants> addalpha() { return detaddalpha_.lock();}
-    std::shared_ptr<Determinants> remalpha() { return detremalpha_.lock();}
-    std::shared_ptr<Determinants> addbeta() { return detaddbeta_.lock();}
-    std::shared_ptr<Determinants> rembeta() { return detrembeta_.lock();}
-
     template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
 
@@ -144,12 +180,12 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
     iter.reserve(string.size());
   }
 
-  for (auto iter = string.begin(); iter != string.end(); ++iter) {
+  for (auto& istring : string) {
     for (unsigned int i = 0; i != norb(); ++i) { // annihilation
       // compress_ means that we store info only for i <= j
-      if ((*iter)[i] && compress_) {
-        const unsigned int source = lexical<spin>(*iter);
-        std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
+      if (istring[i] && compress_) {
+        const unsigned int source = lexical<spin>(istring);
+        std::bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb(); ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
@@ -161,9 +197,9 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
             uncompressed_phi[i + j*norb()].push_back(detmap);
           }
         }
-      } else if ((*iter)[i]) {
-        const unsigned int source = lexical<spin>(*iter);
-        std::bitset<nbit__> nbit = *iter; nbit.reset(i); // annihilated.
+      } else if (istring[i]) {
+        const unsigned int source = lexical<spin>(istring);
+        std::bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
         for (unsigned int j = 0; j != norb(); ++j) { // creation
           if (!(nbit[j])) {
             std::bitset<nbit__> mbit = nbit;
@@ -177,18 +213,12 @@ void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, s
     }
   }
 
-#if 0
-  // sort each vectors
-  for (auto iter = phi.begin(); iter != phi.end(); ++iter) {
-    std::sort(iter->begin(), iter->end());
-  }
-#endif
 }
 
 template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::shared_ptr<Determinants> plusdet;
   std::shared_ptr<Determinants> det;
-  if (spin==Alpha) {
+  if (spin==0) {
     const int de = this->nelea() - odet->nelea();
     if (de == 1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
     else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
@@ -205,23 +235,23 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::vector<std::vector<DetMap>> phidown;
 
   phiup.resize(norb());
-  int upsize = ( (spin==Alpha) ? plusdet->lena() : plusdet->lenb() );
+  int upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
   for (auto& iter : phiup) {
     iter.reserve(upsize);
   }
 
   phidown.resize(norb());
-  int downsize = ( (spin==Alpha) ? det->lena() : det->lenb() );
+  int downsize = ( (spin==0) ? det->lena() : det->lenb() );
   for (auto& iter : phidown) {
     iter.reserve(downsize);
   }
 
-  std::vector<std::bitset<nbit__>> stringplus = (spin==Alpha) ? plusdet->string_bits_a() : plusdet->string_bits_b();
-  std::vector<std::bitset<nbit__>> string = (spin==Alpha) ? det->string_bits_a() : det->string_bits_b();
+  std::vector<std::bitset<nbit__>> stringplus = (spin==0) ? plusdet->string_bits_a() : plusdet->string_bits_b();
+  std::vector<std::bitset<nbit__>> string = (spin==0) ? det->string_bits_a() : det->string_bits_b();
 
   for (auto& istring : string) {
     for (unsigned int i = 0; i != norb(); ++i) {
-      if (!(istring)[i]) { // creation
+      if (!istring[i]) { // creation
         const unsigned int source = det->lexical<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
         const unsigned int target = plusdet->lexical<spin>(nbit);
@@ -232,7 +262,7 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   }
 
   // finally link
-  if (spin == Alpha) {
+  if (spin == 0) {
     plusdet->detremalpha_ = det;
     plusdet->phidowna_ = phidown;
 

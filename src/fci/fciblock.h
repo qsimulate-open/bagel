@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_CIUTIL_DETERMINANTS_BASE_H
-#define __SRC_CIUTIL_DETERMINANTS_BASE_H
+#ifndef __SRC_CIUTIL_FCIBLOCKINFO_H
+#define __SRC_CIUTIL_FCIBLOCKINFO_H
 
 #include <tuple>
 #include <string>
@@ -40,7 +40,7 @@
 namespace bagel {
 
 // Determinants class without linkages.
-class Determinants_base : public CIBlockInfo<FCIString> {
+class FCIBlockInfo : public CIBlockInfo<FCIString> {
   private:
     friend class boost::serialization::access;
     template<class Archive>
@@ -48,24 +48,16 @@ class Determinants_base : public CIBlockInfo<FCIString> {
     }
 
   public:
-    Determinants_base() { }
-    Determinants_base(const int norb, const int nelea, const int neleb, const bool mute = false);
-    virtual ~Determinants_base() { }
+    FCIBlockInfo() { }
+    FCIBlockInfo(const int norb, const int nelea, const int neleb, const bool mute = false);
+    virtual ~FCIBlockInfo() { }
 
     size_t ncsfs() const;
-
-    std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::Determinants_base)
-namespace bagel {
-  template <class T>
-  struct base_of<T, typename std::enable_if<std::is_base_of<Determinants_base, T>::value>::type> {
-    typedef Determinants_base type;
-  };
-}
+BOOST_CLASS_EXPORT_KEY(bagel::FCIBlockInfo)
 
 #endif

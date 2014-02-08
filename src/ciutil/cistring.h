@@ -252,6 +252,7 @@ class FCIString : public CIString_base_impl<1> {
     FCIString(const size_t nele1, const size_t norb1, const size_t offset = 0);
 
     size_t lexical(const std::bitset<nbit__>& bit) const {
+      assert(contains(bit));
       return graphs_[0]->lexical(0, norb_, bit);
     }
     size_t lexical_offset(const std::bitset<nbit__>& bit) const override { return lexical(bit)+offset_; }

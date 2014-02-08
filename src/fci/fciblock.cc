@@ -25,16 +25,16 @@
 
 #include <iomanip>
 #include <src/math/comb.h>
-#include <src/ciutil/determinants_base.h>
+#include <src/fci/fciblock.h>
 
-BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIBlockInfo)
 
 using namespace std;
 using namespace bagel;
 
 const static Comb comb;
 
-Determinants_base::Determinants_base(const int norb, const int nelea, const int neleb, const bool mute)
+FCIBlockInfo::FCIBlockInfo(const int norb, const int nelea, const int neleb, const bool mute)
   : CIBlockInfo<FCIString>(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb)) {
 
   if (!mute) {
@@ -47,12 +47,11 @@ Determinants_base::Determinants_base(const int norb, const int nelea, const int 
   }
 }
 
-size_t Determinants_base::ncsfs() const {
+
+size_t FCIBlockInfo::ncsfs() const {
   const int twoS = abs(nspin());
   const int N = nelea() + neleb();
   const int M = norb();
-  size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
-  out /= M + 1;
-
-  return out;
+  const size_t out = (twoS + 1) * comb.c(M+1, (N-twoS)/2) * comb.c(M+1, (M-((N+twoS)/2)));
+  return out / (M+1);
 }
