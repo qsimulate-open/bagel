@@ -32,6 +32,7 @@
 #include <unordered_map>
 
 #include <src/ciutil/cistring.h>
+#include <src/ciutil/cistringset.h>
 
 namespace bagel {
 class DetMapBlock {
@@ -71,8 +72,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::weak_ptr<RASDeterminants> addbeta_;
     std::weak_ptr<RASDeterminants> rembeta_;
 
-    std::vector<std::vector<DetMap>> phia_;
-    std::vector<std::vector<DetMap>> phib_;
+    std::shared_ptr<const StringMap> phia_;
+    std::shared_ptr<const StringMap> phib_;
 
     std::vector<std::vector<DetMapBlock>> phia_ij_;
     std::vector<std::vector<DetMapBlock>> phib_ij_;
@@ -204,11 +205,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
 
-    const std::vector<std::vector<DetMap>>& phia() const { return phia_; }
-    const std::vector<std::vector<DetMap>>& phib() const { return phib_; }
-
-    const std::vector<DetMap>& phia(const size_t target) const { return phia_[target]; }
-    const std::vector<DetMap>& phib(const size_t target) const { return phib_[target]; }
+    const std::vector<DetMap>& phia(const size_t target) const { return phia_->data(target); }
+    const std::vector<DetMap>& phib(const size_t target) const { return phib_->data(target); }
 
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
@@ -248,20 +246,24 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::vector<std::vector<DetMap>>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
+    template <int spin> void construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::vector<std::vector<DetMap>>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
+void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
+
+  // for the time being make a list of RASString
+  std::list<std::shared_ptr<const RASString>> list;
+  for (auto& i : stringspace) list.push_back(i.second);
+  CIStringSet<RASString> set(list);
+
+  phi = set.phi();
+
+
+  // old code for phi_ij TODO replace
+  const int nij = (norb_ * (norb_ + 1))/2;
   const size_t stringsize = std::accumulate(stringspace.begin(), stringspace.end(), 0ull,
     [] (size_t i, std::pair<int, std::shared_ptr<const RASString>> v) { return i + v.second->size(); });
-
-  phi.clear();
-  phi.resize( stringsize );
-  for (auto& iphi : phi) iphi.reserve(norb_ * norb_);
-
-  const int nij = (norb_ * (norb_ + 1))/2;
-
   phi_ij.clear();
   phi_ij.resize( nij );
   for (auto& iphi : phi_ij) iphi.reserve( stringsize );
@@ -272,11 +274,10 @@ void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const 
 
   std::vector<size_t> offsets(nij, 0);
 
-  auto iphi = phi.begin();
   size_t tindex = 0;
   for (auto& spaceiter : stringspace) {
     std::shared_ptr<const RASString> ispace = spaceiter.second;
-    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++iphi, ++tindex) {
+    for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++tindex) {
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<DetMap>> pij;
       pij.resize( nij );
@@ -288,7 +289,6 @@ void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const 
           std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
           if ( allowed(sourcebit) ) {
             const size_t source_lex = lexmap[sourcebit.to_ullong()];
-            iphi->emplace_back(tindex, sign(targetbit, i, j), source_lex, j+i*norb_);
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
             pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex-ispace->offset(), j+i*norb_);
@@ -300,7 +300,6 @@ void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const 
         phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
         offsets[i] += phi_ij[i].back().size();
       }
-      iphi->shrink_to_fit();
     }
   }
 }

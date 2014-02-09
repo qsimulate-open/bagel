@@ -27,6 +27,7 @@
 #define __SRC_CIUTIL_CISTRINGSET_H
 
 #include <src/ciutil/cistring.h>
+#include <src/ciutil/bitutil.h>
 
 namespace bagel {
 
@@ -52,11 +53,33 @@ class CIStringSet {
       construct_phi();
     }
     void construct_phi() {
-      // TODO
+      phi_ = std::make_shared<StringMap>(size_);
+      phi_->reserve(norb_*norb_);
+
+      std::unordered_map<size_t, size_t> lexmap;
+      for (size_t i = 0; i < size_; ++i)
+        lexmap[strings_[i].to_ullong()] = i;
+
+      size_t tindex = 0;
+      for (auto& istring : strings_) {
+        for (int j = 0; j < norb_; ++j) {
+          if (!istring[j]) continue;
+          std::bitset<nbit__> intermediatebit = istring; intermediatebit.reset(j);
+          for (int i = 0; i < norb_; ++i) {
+            if (intermediatebit[i]) continue;
+            std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
+            if (allowed(sourcebit)) {
+              assert(lexmap.find(sourcebit.to_ullong()) != lexmap.end());
+              (*phi_)[tindex].emplace_back(tindex, sign(istring, i, j), lexmap[sourcebit.to_ullong()], j+i*norb_);
+            }
+          }
+        }
+        (*phi_)[tindex++].shrink_to_fit();
+      }
     }
 
   public:
-    CIStringSet(const std::list<std::shared_ptr<StringType>>& o) {
+    CIStringSet(const std::list<std::shared_ptr<const StringType>>& o) {
       // copy construct with an offset
       nele_ = o.front()->nele();
       norb_ = o.front()->norb();
@@ -65,6 +88,7 @@ class CIStringSet {
         // checks if CIString has the same #electrons and #orbitals
         assert(nele_ == i->nele() && norb_ == i->norb());
         auto tmp = std::make_shared<StringType>(*i, size_);
+        // caution - stringset_ is an unordered_map, and can rearrange the order
         stringset_[tmp->key()] = tmp;
         size_ += tmp->size();
         strings_.insert(strings_.end(), tmp->strings().begin(), tmp->strings().end());
@@ -78,6 +102,11 @@ class CIStringSet {
     int norb() const { return norb_; }
     size_t size() const { return size_; }
 
+    bool allowed(const std::bitset<nbit__>& bit) const {
+      return std::any_of(stringset_.begin(), stringset_.end(),
+                         [&](const std::pair<size_t, std::shared_ptr<StringType>>& a) { return a.second->contains(bit); });
+    }
+
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__>& strings(const size_t i) const { return strings_[i]; }
 
@@ -86,6 +115,7 @@ class CIStringSet {
     std::vector<std::bitset<nbit__>>::const_iterator begin() const { return strings_.cbegin(); }
     std::vector<std::bitset<nbit__>>::const_iterator end() const { return strings_.cend(); }
 
+    std::shared_ptr<const StringMap> phi() const { return phi_; }
 };
 
 }
