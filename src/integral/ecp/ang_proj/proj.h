@@ -16,6 +16,7 @@
 #include "mpreal.h"
 #include "src/math/comb.h"
 #include <complex>
+#include "wigner3j.h"
 
 using namespace mpfr;
 using namespace boost;
@@ -38,15 +39,76 @@ class Factorial {
 
 };
 
+class GaussOntoSph {
+  protected:
+
+  public:
+    GaussOntoSph() {}
+    ~GaussOntoSph() {}
+
+    double compute_c(const int l, const int m, const int lx, const int ly, const int lz) {
+      const int am = fabs(m);
+      const int j = static_cast<int>(0.5*(lx + ly - am));
+      if (lx + ly - am - 2*j != 0) {
+        return 0.0;
+      } else {
+        Factorial fact;
+        mpreal t1, t2, t3;
+        const int lmam = l - am;
+        t1 = fact.compute(2*lx) * fact.compute(2*ly) * fact.compute(2*lz) * fact.compute(l) * fact.compute(lmam);
+        t1 /= (fact.compute(2*l) * fact.compute(lx) * fact.compute(ly) * fact.compute(lz) * fact.compute(l + am));
+        t1 = sqrt(t1) / pow(2, l) / fact.compute(l);
+        Comb comb;
+        mpreal c = "0.0";
+        for (int i = 0; i != lmam/2 + 1; ++i) {
+          t2 = static_cast<mpreal>(comb.c(l, i) * comb.c(i, j) * pow(-1, i) * fact.compute(2*l - 2*i)/ fact.compute(lmam - 2*i));
+          for (int k = 0; k != j+1; ++k) {
+            t3 = static_cast<mpreal>(comb.c(j, k) * comb.c(am, lx - 2*k) * pow(-1, 0.5*(am - lx + 2*k)));
+            c += t1 * t2 * t3;
+          }
+        }
+        return c.toDouble();
+      }
+    }
+
+    void sphcar() {
+       // ylm = c * x^l * y^m * z^n
+    }
+
+    void angular_int(const int a, const int b, const int c, const int ld, const int l, const int m) {
+       // int{ylm * ypq * x^a * y^b * z^c} = C * int{x^(r+u+a) * y^(s+v+b) * z^(t+w+c)}
+       // int{x^i * y^j * z^k} = 0 if i, j, or k odd
+       //                      = (i-1)!!(j-1)!!(k-1)!!(i+j+k+1)!! if i, j, or k even
+    }
+
+};
+
 class CartGauss {
   protected:
 
-    std::array<int, 3> ang_;
-    std::array<double, 3> centre_;
     double norm_;
     double exp_;
+    std::array<int, 3> ang_;
 
   public:
+    explicit CartGauss(const double alpha, const std::array<int, 3> l) : exp_(alpha), ang_(l) { norm_ = normalise(); }
+    ~CartGauss() {}
+
+    double normalise() {
+      Factorial fact;
+      mpreal pi = static_cast<mpreal>(atan(1) * 4);
+      mpreal mexp = static_cast<mpreal>(exp_);
+      mpreal mnorm = fact.compute(2*ang_[0]) * fact.compute(2*ang_[1]) * fact.compute(2*ang_[2]) * pow(pi, 1.5);
+      int l = ang_[0] + ang_[1] + ang_[2];
+      mnorm /= (pow(2, 2*l) * fact.compute(ang_[0]) * fact.compute(ang_[1]) * fact.compute(ang_[2]) * pow(mexp, l+1.5));
+      mnorm = static_cast<mpreal>(1.0 / sqrt(mnorm));
+      return mnorm.toDouble();
+    }
+
+    double compute(const std::array<double, 3> centre) {
+      double rsq = centre[0]*centre[0] + centre[1]*centre[1] * centre[2]*centre[2];
+      return norm_ * std::pow(centre[0], ang_[0]) * std::pow(centre[1], ang_[1]) * std::pow(centre[2], ang_[2]) * std::exp(-exp_*rsq);
+    }
 
 };
 

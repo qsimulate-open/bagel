@@ -24,6 +24,9 @@ int main() {
   const double theta = 3.1;
   cout << "th = " << theta << "  ph = " << phi << "  Y_lm(x) = " << sh.ylm(l, m, theta, phi).real() << "    " << sh.ylm(l, m, theta, phi).imag() << endl;
 
+  GaussOntoSph gos;
+  cout << "coef =   " << gos.compute_c(2, 0, 2, 0, 0) << endl;
+
   return 0;
 
 }
