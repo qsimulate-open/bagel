@@ -32,7 +32,7 @@ using namespace bagel;
 void ZHarrison::compute_rdm12() {
 
   // for one-body RDM
-  auto space1 = make_shared<RelSpace>(norb_, nele_-1, 0);
+  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
   rdm1_.clear();
   rdm2_.clear();
   rdm1_.resize(nstate_);
