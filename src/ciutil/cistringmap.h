@@ -60,6 +60,11 @@ class StringMap {
         i.reserve(n);
     }
 
+    void shrink_to_fit() {
+      for (auto& i : data_)
+        i.shrink_to_fit();
+    }
+
     std::vector<DetMap>& operator[](const size_t i) { return data_[i]; }
     const std::vector<DetMap>& operator[](const size_t i) const { return data_[i]; }
 

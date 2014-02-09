@@ -88,11 +88,11 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::vector<std::vector<RAS::DMapBlock>> phia_ij_;
     std::vector<std::vector<RAS::DMapBlock>> phib_ij_;
 
-    std::vector<std::vector<RAS::DMap>> phiupa_;
-    std::vector<std::vector<RAS::DMap>> phiupb_;
+    std::vector<std::vector<DetMap>> phiupa_;
+    std::vector<std::vector<DetMap>> phiupb_;
 
-    std::vector<std::vector<RAS::DMap>> phidowna_;
-    std::vector<std::vector<RAS::DMap>> phidownb_;
+    std::vector<std::vector<DetMap>> phidowna_;
+    std::vector<std::vector<DetMap>> phidownb_;
 
     std::map<int, std::shared_ptr<const RASString>> alphaspaces_;
     std::map<int, std::shared_ptr<const RASString>> betaspaces_;
@@ -224,10 +224,10 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const std::vector<RAS::DMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<RAS::DMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
 
-    const std::vector<RAS::DMap>& phiupa(const size_t target) const { return phiupa_[target]; }
-    const std::vector<RAS::DMap>& phiupb(const size_t target) const { return phiupb_[target]; }
-    const std::vector<RAS::DMap>& phidowna(const size_t target) const { return phidowna_[target]; }
-    const std::vector<RAS::DMap>& phidownb(const size_t target) const { return phidownb_[target]; }
+    const std::vector<DetMap>& phiupa(const size_t i) const { return phiupa_[i]; }
+    const std::vector<DetMap>& phiupb(const size_t i) const { return phiupb_[i]; }
+    const std::vector<DetMap>& phidowna(const size_t i) const { return phidowna_[i]; }
+    const std::vector<DetMap>& phidownb(const size_t i) const { return phidownb_[i]; }
 
     std::shared_ptr<const RASDeterminants> addalpha() const { return addalpha_.lock();}
     std::shared_ptr<const RASDeterminants> remalpha() const { return remalpha_.lock();}
@@ -325,8 +325,8 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   else if (de == -1) std::tie(det, plusdet) = std::make_pair(shared_from_this(), odet);
   else assert(false);
 
-  std::vector<std::vector<RAS::DMap>> phiup;
-  std::vector<std::vector<RAS::DMap>> phidown;
+  std::vector<std::vector<DetMap>> phiup;
+  std::vector<std::vector<DetMap>> phidown;
 
   phiup.resize(norb_);
   const size_t upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
@@ -350,8 +350,8 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
         if (plusdet->allowed(nbit)) {
           const size_t target = plusdet->lexical_offset<spin>(nbit);
-          phiup[i].emplace_back(source, target, i, sign<spin>(nbit, i));
-          phidown[i].emplace_back(target, source, i, sign<spin>(nbit, i));
+          phiup[i].emplace_back(target, sign<spin>(nbit, i), source);
+          phidown[i].emplace_back(source, sign<spin>(nbit, i), target);
         }
       }
     }

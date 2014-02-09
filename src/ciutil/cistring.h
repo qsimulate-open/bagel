@@ -148,6 +148,11 @@ class CIString_base_impl : public CIString_base {
       dist_ = std::make_shared<StaticDist>(size, mpi__->size());
     }
 
+    // copy construct with an offset update
+    CIString_base_impl(const CIString_base_impl<N>& o, const size_t offset)
+      : norb_(o.norb_), nele_(o.nele_), offset_(offset), strings_(o.strings_), subspace_(o.subspace_),
+        graphs_(o.graphs_), dist_(o.dist_), phi_(o.phi_), uncompressed_phi_(o.uncompressed_phi_) { }
+
     virtual ~CIString_base_impl() { }
 
     int nele() const { return nele_; }
@@ -209,6 +214,7 @@ class RASString : public CIString_base_impl<3> {
   public:
     RASString() { }
     RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
+    RASString(const RASString& o, const size_t offset = 0) : CIString_base_impl<3>(o, offset) { }
 
     int nholes() const { return subspace_[0].second - subspace_[0].first; }
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
@@ -261,6 +267,7 @@ class FCIString : public CIString_base_impl<1> {
   public:
     FCIString() { }
     FCIString(const size_t nele1, const size_t norb1, const size_t offset = 0);
+    FCIString(const FCIString& o, const size_t offset = 0) : CIString_base_impl<1>(o, offset) { }
 
     size_t lexical(const std::bitset<nbit__>& bit) const {
       assert(contains(bit));

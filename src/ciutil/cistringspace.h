@@ -83,6 +83,9 @@ class CIStringSpace {
         }
       }
 
+      phiup->shrink_to_fit();
+      phidown->shrink_to_fit();
+
       const size_t upkey = ref->key();
       if (phiup_.find(upkey) == phiup_.end())
         phiup_[upkey] = phiup;
