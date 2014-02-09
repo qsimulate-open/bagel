@@ -100,8 +100,8 @@ void DistFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  space_ = make_shared<Space>(norb_, nelea_, neleb_, 1);
-  det_ = space_->basedet();
+  space_ = make_shared<HZSpace>(norb_, nelea_, neleb_);
+  det_ = space_->finddet(nelea_, neleb_);
 }
 
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {

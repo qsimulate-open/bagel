@@ -33,46 +33,27 @@
 
 namespace bagel {
 
-// implements a space that contains multiple determinants made by modification of a reference
 class Space_base {
   protected:
-    // assuming that the number of active orbitals are the same in alpha and beta.
-    int norb_;
-
-    int nelea_; // reference number of alpha electrons
-    int neleb_; // reference number of beta electrons
-
-    bool mute_;
+    std::map<int, std::shared_ptr<Determinants>> detmap_;
 
     int key_(const int a, const int b) const { return a*large__ + b; }
-
-    std::map<int, std::shared_ptr<Determinants>> detmap_; // For now, all access should be through Determinants objects
-
-    virtual void common_init() = 0;
 
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & norb_ & nelea_ & mute_ & detmap_;
+      ar & detmap_;
     }
 
   public:
     Space_base() { }
-    Space_base(std::shared_ptr<const Determinants> det_, const bool mute = true) :
-      norb_(det_->norb()), nelea_(det_->nelea()), neleb_(det_->neleb()), mute_(mute) { }
-    Space_base(const int norb, const int nelea, const int neleb, const bool mute = true) :
-      norb_(norb), nelea_(nelea), neleb_(neleb), mute_(mute) { }
-
     virtual ~Space_base() { }
 
     // static constants
     static const int Alpha = 0;
     static const int Beta = 1;
 
-    std::shared_ptr<Determinants> basedet() { return finddet(nelea_, neleb_); }
-    std::shared_ptr<const Determinants> basedet() const { return finddet(nelea_, neleb_); }
-    // Caution: This function does not check to make sure i,j is valid
     std::shared_ptr<Determinants> finddet(const int i, const int j) { return detmap_.at(key_(i,j)); }
     std::shared_ptr<const Determinants> finddet(const int i, const int j) const { return detmap_.at(key_(i,j)); }
 

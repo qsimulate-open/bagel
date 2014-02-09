@@ -28,43 +28,37 @@
 #include <src/math/comb.h>
 #include <src/util/combination.hpp>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelSpace)
+
 using namespace std;
 using namespace bagel;
 
-RelSpace::RelSpace(const int norb, const int nelea, const int neleb, const bool mute, const bool linkup)
-  : Space_base(norb, nelea, neleb, mute), linkup_(linkup) {
+RelSpace::RelSpace(const int norb, const int nele, const bool mute, const bool linkup) {
 
-  common_init();
-}
-
-
-void RelSpace::common_init() {
-  const int nele = nelea_+neleb_;
-
-  for (int i = 0; i <= norb_; ++i) {
-    if (nele-i >= 0 && nele-i <= norb_) {
-      if (!mute_) cout << " Constructing space of all determinants with " << i << " " << nele-i << " "  << endl << endl;
+  for (int i = 0; i <= norb; ++i) {
+    if (nele-i >= 0 && nele-i <= norb) {
+      if (!mute) cout << " Constructing space of all determinants with " << i << " " << nele-i << " "  << endl << endl;
       {
-        auto tmpdet = make_shared<Determinants>(norb_, i, nele-i, false, mute_);
+        auto tmpdet = make_shared<Determinants>(norb, i, nele-i, false, mute);
         detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i, nele-i), tmpdet));
       }
-      if (linkup_) {
-        if (i+1 <= norb_) {
-          auto tmpdet = make_shared<Determinants>(norb_, i+1, nele-i, false, mute_);
+      if (linkup) {
+        if (i+1 <= norb) {
+          auto tmpdet = make_shared<Determinants>(norb, i+1, nele-i, false, mute);
           detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i+1, nele-i), tmpdet));
         }
-        if (nele-i+1 <= norb_) {
-          auto tmpdet2 = make_shared<Determinants>(norb_, i, nele-i+1, false, mute_);
+        if (nele-i+1 <= norb) {
+          auto tmpdet2 = make_shared<Determinants>(norb, i, nele-i+1, false, mute);
           detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(i, nele-i+1), tmpdet2));
         }
       }
     }
   }
 
-  if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
+  if (!mute) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
 
-  if (linkup_) {
-    if (!mute_) cout << "  o forming alpha links" << endl;
+  if (linkup) {
+    if (!mute) cout << "  o forming alpha links" << endl;
 
     int nlinks = 0;
     for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
@@ -75,9 +69,9 @@ void RelSpace::common_init() {
         ++nlinks;
       }
     }
-    if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
+    if (!mute) cout << "    - " << nlinks << " links formed" << endl;
 
-    if (!mute_) cout << "  o forming beta links" << endl;
+    if (!mute) cout << "  o forming beta links" << endl;
 
     nlinks = 0;
     for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
@@ -88,6 +82,6 @@ void RelSpace::common_init() {
         ++nlinks;
       }
     }
-    if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
+    if (!mute) cout << "    - " << nlinks << " links formed" << endl;
   }
 }

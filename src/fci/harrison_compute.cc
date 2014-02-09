@@ -47,7 +47,7 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate_);
   sigmavec->zero();
 
-  shared_ptr<Determinants> base_det = space_->basedet();
+  shared_ptr<Determinants> base_det = space_->finddet(nelea_, neleb_);
   shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */

@@ -68,8 +68,8 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nele_, 0);
-  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   update(rr->relcoeff());
 }
