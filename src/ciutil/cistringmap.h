@@ -50,6 +50,7 @@ class StringMap {
   public:
     StringMap() { }
     StringMap(const int norb) : data_(norb) { }
+    StringMap(const StringMap& o) : data_(o.data_) { }
 
     void clear() { data_.clear(); }
     void resize(const size_t n) { data_.resize(n); }
@@ -75,6 +76,14 @@ class StringMap {
     void insert(const std::shared_ptr<const StringMap>& o) { insert(o->data_); }
 
     size_t size() const { return std::accumulate(data_.begin(), data_.end(), 0, [](size_t n, const std::vector<DetMap>& o) { return n+o.size(); }); }
+
+    std::shared_ptr<StringMap> get_minus() const {
+      auto out = std::make_shared<StringMap>(*this);
+      for (auto& i : out->data_)
+        for (auto& j : i)
+          j.sign = -j.sign;
+      return out;
+    }
 
   private:
     friend class boost::serialization::access;

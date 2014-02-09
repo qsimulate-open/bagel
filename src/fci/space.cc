@@ -40,37 +40,29 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
                   << " alpha and " << neleb << " beta electrons." << endl << endl;
 
   assert(neleb >= 1 && nelea >= 1);
-  for(int i = -1; i <= 0; ++i ) {
-    for(int j = -1; j <= 0; ++j) {
-      detmap_.insert(make_pair(key_(nelea+i,neleb+j), make_shared<Determinants>(norb, nelea + i, neleb + j, compress, /*mute_=*/true)));
-    }
-  }
+
+  list<shared_ptr<const FCIString>> lista{make_shared<FCIString>(nelea-1, norb), make_shared<FCIString>(nelea, norb)};
+  auto spacea = make_shared<CIStringSpace<FCIString>>(lista);
+  spacea->build_linkage();
+
+  list<shared_ptr<const FCIString>> listb{make_shared<FCIString>(neleb-1, norb), make_shared<FCIString>(neleb, norb)};
+  auto spaceb = make_shared<CIStringSpace<FCIString>>(listb);
+  spaceb->build_linkage();
+
   if (!mute) {
-     cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
-     cout << "  o forming alpha links" << endl;
+    cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
+    cout << "  o forming links" << endl;
   }
 
-  int nlinks = 0;
+  // build determinants
+  for (auto& a : lista)
+    for (auto& b : listb)
+      detmap_.insert(make_pair(key_(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true)));
+
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
-    int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na+1,nb));
-    if (jdet != detmap_.end()) {
-      idet->second->link<0>(jdet->second);
-      ++nlinks;
-    }
+    auto jdet = idet; ++jdet;
+    for( ; jdet != detmap_.end(); ++jdet)
+      idet->second->link(jdet->second, spacea, spaceb);
   }
-  if (!mute) cout << "    - " << nlinks << " links formed" << endl;
 
-  if (!mute) cout << "  o forming beta links" << endl;
-
-  nlinks = 0;
-  for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
-    int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na,nb+1));
-    if (jdet != detmap_.end()) {
-      idet->second->link<1>(jdet->second);
-      ++nlinks;
-    }
-  }
-  if (!mute) cout << "    - " << nlinks << " links formed" << endl;
 }

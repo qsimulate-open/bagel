@@ -97,7 +97,11 @@ class CIStringSpace {
     }
 
   public:
-    CIStringSpace(std::initializer_list<std::shared_ptr<const StringType>> s) : strings_(s.begin(), s.end()) {
+    CIStringSpace(std::initializer_list<std::shared_ptr<const StringType>> s)
+      : CIStringSpace(std::list<std::shared_ptr<const StringType>>(s.begin(), s.end())) {
+    }
+
+    CIStringSpace(std::list<std::shared_ptr<const StringType>> s) : strings_(s) {
       assert(!strings_.empty());
       norb_ = strings_.front()->norb();
       for (auto& i : strings_)

@@ -85,6 +85,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
+    Determinants(std::shared_ptr<const FCIString> ast, std::shared_ptr<const FCIString> bst, const bool compress = true, const bool mute = false);
 
     // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
     std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const {
@@ -152,9 +153,10 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::shared_ptr<const Determinants> addbeta() const { return detaddbeta_.lock();}
     std::shared_ptr<const Determinants> rembeta() const { return detrembeta_.lock();}
 
+    void link(std::shared_ptr<Determinants> odet, std::shared_ptr<CIStringSpace<FCIString>>, std::shared_ptr<CIStringSpace<FCIString>>);
+
     template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
-
 
 template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::shared_ptr<Determinants> plusdet;
@@ -166,7 +168,6 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   else throw std::logic_error("Determinants::link failed");
 
   const int fac = (spin == 1 && (nelea() & 1)) ? -1 : 1;
-  // TODO move this to the driver to process all at once
   CIStringSpace<FCIString> space{blockinfo(0)->strings<spin>(), odet->blockinfo(0)->strings<spin>()};
   space.build_linkage(fac);
 

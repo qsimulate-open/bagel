@@ -35,7 +35,6 @@ using namespace std;
 using namespace bagel;
 
 Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute) : compress_(_compress) {
-
   blockinfo_[0] = make_shared<FCIBlockInfo>(_norb, _nelea, _neleb, mute);
 
   for (auto& i : blockinfo_) {
@@ -54,7 +53,23 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
     cout << "  o single displacement lists (beta)" << endl;
     cout << "      length: " << setw(13) << phib_->size() << endl;
   }
+}
 
+
+Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute) : compress_(compress) {
+  blockinfo_[0] = make_shared<FCIBlockInfo>(ast, bst);
+
+  phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
+  phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
+  phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
+  phib_uncompressed_ = blockinfo(0)->strings<1>()->uncompressed_phi();
+
+  if (!mute) {
+    cout << "  o single displacement lists (alpha)" << endl;
+    cout << "      length: " << setw(13) << phia_->size() << endl;
+    cout << "  o single displacement lists (beta)" << endl;
+    cout << "      length: " << setw(13) << phib_->size() << endl;
+  }
 }
 
 
@@ -114,4 +129,36 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
   // scale to make the vector normalized
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
   return make_pair(out, factor);
+}
+
+
+void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<FCIString>> spacea,
+                                                       shared_ptr<CIStringSpace<FCIString>> spaceb) {
+  shared_ptr<Determinants> plusdet;
+  shared_ptr<Determinants> det;
+
+  const bool spinb = this->nelea() == odet->nelea();
+  const bool spina = this->neleb() == odet->neleb();
+  if (!(spina || spinb)) return; // quick return
+
+  const int de = spina ? this->nelea() - odet->nelea() : this->neleb() - odet->neleb();
+  if      (de ==  1) tie(det, plusdet) = make_pair(odet, shared_from_this());
+  else if (de == -1) tie(det, plusdet) = make_pair(shared_from_this(), odet);
+  else return; // quick return
+
+  // finally link
+  if (spina) {
+    plusdet->detremalpha_ = det;
+    plusdet->phidowna_ = spacea->phidown(plusdet->blockinfo(0)->stringsa());
+
+    det->detaddalpha_ = plusdet;
+    det->phiupa_ = spacea->phiup(det->blockinfo(0)->stringsa());
+  } else {
+    plusdet->detrembeta_ = det;
+    plusdet->phidownb_ = (nelea()&1) ? spaceb->phidown(plusdet->blockinfo(0)->stringsb())->get_minus()
+                                     : spaceb->phidown(plusdet->blockinfo(0)->stringsb());
+    det->detaddbeta_ = plusdet;
+    det->phiupb_ = (nelea()&1) ? spaceb->phiup(det->blockinfo(0)->stringsb())->get_minus()
+                               : spaceb->phiup(det->blockinfo(0)->stringsb());
+  }
 }

@@ -50,6 +50,7 @@ class FCIBlockInfo : public CIBlockInfo<FCIString> {
   public:
     FCIBlockInfo() { }
     FCIBlockInfo(const int norb, const int nelea, const int neleb, const bool mute = false);
+    FCIBlockInfo(std::shared_ptr<const FCIString> ast, std::shared_ptr<const FCIString> bst);
     virtual ~FCIBlockInfo() { }
 
     size_t ncsfs() const;

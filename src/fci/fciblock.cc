@@ -48,6 +48,12 @@ FCIBlockInfo::FCIBlockInfo(const int norb, const int nelea, const int neleb, con
 }
 
 
+FCIBlockInfo::FCIBlockInfo(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst)
+  : CIBlockInfo<FCIString>(ast, bst) {
+
+}
+
+
 size_t FCIBlockInfo::ncsfs() const {
   const int twoS = abs(nspin());
   const int N = nelea() + neleb();
