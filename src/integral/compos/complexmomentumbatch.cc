@@ -69,7 +69,7 @@ void ComplexMomentumBatch::compute() {
   }
   stack_->release(size_block_*3, intermediate_p);
 
-  if (swap01_) dscal_(size_block_*3, -1.0, data_, 1);
+  if (swap01_) {for (int n=0; n!=size_block_*3; n++) data_[n] *= -1.0;}
 
 }
 
