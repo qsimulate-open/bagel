@@ -59,6 +59,11 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
 Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute) : compress_(compress) {
   blockinfo_[0] = make_shared<FCIBlockInfo>(ast, bst);
 
+  for (auto& i : blockinfo_) {
+    string_bits_a_.insert(string_bits_a_.end(), i.second->string_bits_a().begin(), i.second->string_bits_a().end());
+    string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
+  }
+
   phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
   phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
   phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
