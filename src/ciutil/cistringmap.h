@@ -33,9 +33,10 @@ struct DetMap {
     size_t target;
     int sign;
     size_t source;
+    int ij;
 
     DetMap() { }
-    DetMap(size_t t, int si, size_t s) : target(t), sign(si), source(s) {}
+    DetMap(size_t t, int si, size_t s, int o) : target(t), sign(si), source(s), ij(o) {}
 
   private:
     friend class boost::serialization::access;

@@ -76,8 +76,8 @@ class CIStringSpace {
             if (plus->contains(nbit)) {
               const size_t target = plus->lexical_offset(nbit);
               const int s = sign(nbit, i) * fac;
-              (*phiup)[i].emplace_back(target, s, source);
-              (*phidown)[i].emplace_back(source, s, target);
+              (*phiup)[i].emplace_back(target, s, source, 0);
+              (*phidown)[i].emplace_back(source, s, target, 0);
             }
           }
         }

@@ -194,7 +194,7 @@ class CIString_base_impl : public CIString_base {
 class RASString : public CIString_base_impl<3> {
   protected:
     void compute_strings() override;
-    void construct_phi() override { /* TODO to be implemented */ }
+    void construct_phi() override { /* do not do anything (RASStringSet will perform this) - TODO FCI should be implemented in the same way */ }
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {

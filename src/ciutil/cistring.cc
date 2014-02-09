@@ -148,7 +148,7 @@ void FCIString::construct_phi() {
             mbit.set(j);
             int minij, maxij;
             tie(minij, maxij) = minmax(i,j);
-            auto detmap = DetMap(lexical(mbit), sign(mbit, i, j), source);
+            auto detmap = DetMap(lexical(mbit), sign(mbit, i, j), source, i+norb()*j);
             (*phi_)[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
             (*uncompressed_phi_)[i + j*norb()].push_back(detmap);
           }

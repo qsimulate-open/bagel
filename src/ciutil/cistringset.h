@@ -48,6 +48,13 @@ class CIStringSet {
 
     std::shared_ptr<StringMap> phi_;
 
+    void init() {
+      construct_phi();
+    }
+    void construct_phi() {
+      // TODO
+    }
+
   public:
     CIStringSet(const std::list<std::shared_ptr<StringType>>& o) {
       // copy construct with an offset
@@ -58,11 +65,13 @@ class CIStringSet {
         // checks if CIString has the same #electrons and #orbitals
         assert(nele_ == i->nele() && norb_ == i->norb());
         auto tmp = std::make_shared<StringType>(*i, size_);
-        stringset_.push_back(tmp);
+        stringset_[tmp->key()] = tmp;
         size_ += tmp->size();
         strings_.insert(strings_.end(), tmp->strings().begin(), tmp->strings().end());
       }
       assert(size_ == strings_.size());
+
+      init();
     }
 
     int nele() const { return nele_; }

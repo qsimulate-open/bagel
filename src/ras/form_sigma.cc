@@ -187,11 +187,11 @@ namespace bagel {
       shared_ptr<const RASDeterminants> det_;
 
       // store all the information relating to which subspaces of C' are present in the matrices
-      vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>> blocks_;
+      vector<pair<const DetMapBlock*, shared_ptr<Matrix>>> blocks_;
 
     public:
       Cprime(shared_ptr<const RASString> space, shared_ptr<const RASDeterminants> det,
-          vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>&& data) : source_space_(space), det_(det), blocks_(move(data)) { }
+          vector<pair<const DetMapBlock*, shared_ptr<Matrix>>>&& data) : source_space_(space), det_(det), blocks_(move(data)) { }
 
       shared_ptr<Matrix> get_matrix(shared_ptr<const RASString> target_space) const {
         const size_t stringsize = source_space_->size();
@@ -296,14 +296,14 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const RAS::DMapBlock& m) { return i + m.size(); });
+      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const DetMapBlock& m) { return i + m.size(); });
       if (phisize == 0) continue;
 
       map<shared_ptr<const RASString>, shared_ptr<Cprime>> Cp_map;
 
       // gathering
       {
-        map<shared_ptr<const RASString>, vector<pair<const RAS::DMapBlock*, shared_ptr<Matrix>>>> Cp_temp;
+        map<shared_ptr<const RASString>, vector<pair<const DetMapBlock*, shared_ptr<Matrix>>>> Cp_temp;
 
         for ( auto& iphiblock : det->phib_ij(ij) ) {
           vector<shared_ptr<const RASBlock<double>>> blks = cc->allowed_blocks<1>(iphiblock.space());
@@ -335,10 +335,10 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         const size_t la = ispace->size();
 
         // build reduced version of phiblock and Cp
-        vector<RAS::DMapBlock> reduced_phi;
+        vector<DetMapBlock> reduced_phi;
         size_t offset = 0;
         for (auto& phiblock : det->phib_ij(ij)) {
-          vector<RAS::DMap> phis;
+          vector<DetMap> phis;
           for (auto& phi : phiblock) {
             shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(phi.target));
             if (det->allowed(ispace, betaspace))
@@ -507,7 +507,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const RAS::DMapBlock& m) { return i + m.size(); });
+      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const DetMapBlock& m) { return i + m.size(); });
       if (phisize == 0) continue;
 
       const double* mo2e_ij = mo2e + i + norb*norb*j;

@@ -264,7 +264,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   for (int i = 0, ij = 0; i < norb; ++i) {
     for (int j = 0; j <= i; ++j, ++ij) {
       // L(I), R(I), sign(I) building
-      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const RAS::DMapBlock& m) { return i + m.size(); });
+      const size_t phisize = accumulate(det->phib_ij(ij).begin(), det->phib_ij(ij).end(), 0ull, [] (size_t i, const DetMapBlock& m) { return i + m.size(); });
       if (phisize == 0) continue;
 
       map<pair<size_t, size_t>, shared_ptr<Matrix>> Cp_map;
