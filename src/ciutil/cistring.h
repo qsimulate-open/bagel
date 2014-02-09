@@ -37,6 +37,7 @@
 #include <src/parallel/staticdist.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
+#include <src/ciutil/cistringmap.h>
 
 namespace bagel {
 
@@ -99,10 +100,15 @@ class CIString_base_impl : public CIString_base {
     std::array<std::shared_ptr<CIGraph>, N> graphs_;
     std::shared_ptr<const StaticDist> dist_;
 
+    std::shared_ptr<StringMap> phi_;
+    std::shared_ptr<StringMap> uncompressed_phi_;
+
     void init() {
       compute_strings();
+      construct_phi();
     }
     virtual void compute_strings() = 0;
+    virtual void construct_phi() = 0;
 
   private:
     friend class boost::serialization::access;
@@ -170,6 +176,9 @@ class CIString_base_impl : public CIString_base {
 
     std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
+    std::shared_ptr<const StringMap> phi() const { return phi_; }
+    std::shared_ptr<const StringMap> uncompressed_phi() const { return uncompressed_phi_; }
+
     virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
     virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
 
@@ -180,6 +189,7 @@ class CIString_base_impl : public CIString_base {
 class RASString : public CIString_base_impl<3> {
   protected:
     void compute_strings() override;
+    void construct_phi() override { /* TODO to be implemented */ }
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {
@@ -239,6 +249,7 @@ class RASString : public CIString_base_impl<3> {
 class FCIString : public CIString_base_impl<1> {
   protected:
     void compute_strings() override;
+    void construct_phi() override;
 
   private:
     friend class boost::serialization::access;
@@ -259,6 +270,8 @@ class FCIString : public CIString_base_impl<1> {
     size_t lexical_zero(const std::bitset<nbit__>& bit) const override { return lexical(bit); }
 
     bool contains(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
+
+
 };
 
 }

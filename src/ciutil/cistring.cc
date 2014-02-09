@@ -25,6 +25,7 @@
 
 #include <cassert>
 #include <src/math/comb.h>
+#include <src/ciutil/bitutil.h>
 #include <src/ciutil/cistring.h>
 #include <src/util/combination.hpp>
 
@@ -125,4 +126,34 @@ void FCIString::compute_strings() {
     ++cnt;
   } while (boost::next_combination(data.begin(), data.begin()+nele_, data.end()));
   assert(cnt == graphs_[0]->size());
+}
+
+
+void FCIString::construct_phi() {
+  phi_ = make_shared<StringMap>(norb()*(norb()+1)/2);
+  phi_->reserve(size());
+
+  uncompressed_phi_ = make_shared<StringMap>(norb()*norb());
+  uncompressed_phi_->reserve(size());
+
+  for (auto& istring : strings_) {
+    for (unsigned int i = 0; i != norb(); ++i) { // annihilation
+      // compress_ means that we store info only for i <= j
+      if (istring[i]) {
+        const unsigned int source = lexical(istring);
+        bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
+        for (unsigned int j = 0; j != norb(); ++j) { // creation
+          if (!(nbit[j])) {
+            bitset<nbit__> mbit = nbit;
+            mbit.set(j);
+            int minij, maxij;
+            tie(minij, maxij) = minmax(i,j);
+            auto detmap = DetMap(lexical(mbit), sign(mbit, i, j), source);
+            (*phi_)[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
+            (*uncompressed_phi_)[i + j*norb()].push_back(detmap);
+          }
+        }
+      }
+    }
+  }
 }

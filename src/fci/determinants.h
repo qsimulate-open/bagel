@@ -43,15 +43,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::vector<std::bitset<nbit__>> string_bits_a_;
     std::vector<std::bitset<nbit__>> string_bits_b_;
 
-    // for range check in the debug mode
-    const std::shared_ptr<const FCIBlockInfo>& blockinfo(const int i) const {
-      auto iter = blockinfo_.find(i);
-      assert(iter != blockinfo_.end());
-      return iter->second;
-    }
-
-
-    // TODO this should be the property of string
     bool compress_;
 
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
@@ -60,18 +51,13 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::weak_ptr<Determinants> detremalpha_;
     std::weak_ptr<Determinants> detrembeta_;
 
-    // single displacement vectors Phi's
-    template <int>
-    void const_phis_(const std::vector<std::bitset<nbit__>>& string,
-                     std::vector<std::vector<DetMap>>& target, std::vector<std::vector<DetMap>>& uncompressed_target);
-
     // configuration list i^dagger j compressed
-    std::vector<std::vector<DetMap>> phia_;
-    std::vector<std::vector<DetMap>> phib_;
+    std::shared_ptr<const StringMap> phia_;
+    std::shared_ptr<const StringMap> phib_;
 
     // configuration list i^dagger j uncompressed
-    std::vector<std::vector<DetMap>> phia_uncompressed_;
-    std::vector<std::vector<DetMap>> phib_uncompressed_;
+    std::shared_ptr<const StringMap> phia_uncompressed_;
+    std::shared_ptr<const StringMap> phib_uncompressed_;
 
     // configuration list i^dagger
     std::shared_ptr<const StringMap> phiupa_;
@@ -80,6 +66,13 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     // configuration list i
     std::shared_ptr<const StringMap> phidowna_;
     std::shared_ptr<const StringMap> phidownb_;
+
+    // for range check in the debug mode
+    const std::shared_ptr<const FCIBlockInfo>& blockinfo(const int i) const {
+      auto iter = blockinfo_.find(i);
+      assert(iter != blockinfo_.end());
+      return iter->second;
+    }
 
   private:
     friend class boost::serialization::access;
@@ -141,12 +134,12 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     bool compress() const { return compress_; }
 
     // single index goes to normal versions (compressed based on compress_)
-    const std::vector<DetMap>& phia(const int i) const { return phia_[i]; }
-    const std::vector<DetMap>& phib(const int i) const { return phib_[i]; }
+    const std::vector<DetMap>& phia(const int i) const { return phia_->data(i); }
+    const std::vector<DetMap>& phib(const int i) const { return phib_->data(i); }
 
     // two indices goes to uncompressed versions
-    const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_[i + j*norb()]; }
-    const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_[i + j*norb()]; }
+    const std::vector<DetMap>& phia(const int i, const int j) const { return phia_uncompressed_->data(i + j*norb()); }
+    const std::vector<DetMap>& phib(const int i, const int j) const { return phib_uncompressed_->data(i + j*norb()); }
 
     const std::vector<DetMap>& phiupa(const int i) const { return phiupa_->data(i); }
     const std::vector<DetMap>& phiupb(const int i) const { return phiupb_->data(i); }
@@ -162,58 +155,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
 
-
-// Template function that creates the single-displacement lists (step a and b in Knowles & Handy paper).
-template <int spin>
-void Determinants::const_phis_(const std::vector<std::bitset<nbit__>>& string, std::vector<std::vector<DetMap>>& phi,
-    std::vector<std::vector<DetMap>>& uncompressed_phi) {
-
-  phi.clear();
-  phi.resize(compress_ ? norb()*(norb()+1)/2 : norb()*norb());
-  for (auto& iter : phi ) {
-    iter.reserve(string.size());
-  }
-
-  uncompressed_phi.clear();
-  uncompressed_phi.resize(norb()*norb());
-  for (auto& iter : uncompressed_phi ) {
-    iter.reserve(string.size());
-  }
-
-  for (auto& istring : string) {
-    for (unsigned int i = 0; i != norb(); ++i) { // annihilation
-      // compress_ means that we store info only for i <= j
-      if (istring[i] && compress_) {
-        const unsigned int source = lexical<spin>(istring);
-        std::bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
-        for (unsigned int j = 0; j != norb(); ++j) { // creation
-          if (!(nbit[j])) {
-            std::bitset<nbit__> mbit = nbit;
-            mbit.set(j);
-            int minij, maxij;
-            std::tie(minij, maxij) = std::minmax(i,j);
-            auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
-            phi[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
-            uncompressed_phi[i + j*norb()].push_back(detmap);
-          }
-        }
-      } else if (istring[i]) {
-        const unsigned int source = lexical<spin>(istring);
-        std::bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
-        for (unsigned int j = 0; j != norb(); ++j) { // creation
-          if (!(nbit[j])) {
-            std::bitset<nbit__> mbit = nbit;
-            mbit.set(j);
-            auto detmap = DetMap(lexical<spin>(mbit), sign(mbit, i, j), source);
-            phi[i + j*norb()].push_back(detmap);
-            uncompressed_phi[i + j*norb()].push_back(detmap);
-          }
-        }
-      }
-    }
-  }
-
-}
 
 template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   std::shared_ptr<Determinants> plusdet;

@@ -43,12 +43,17 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
     string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
   }
 
-  if (!mute) cout << "  o single displacement lists (alpha)" << endl;
-  const_phis_<0>(string_bits_a(), phia_, phia_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o single displacement lists (beta)" << endl;
-  const_phis_<1>(string_bits_b(), phib_, phib_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [](const int init, vector<DetMap>& plist) { return init + plist.size(); }) << endl;
+  phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
+  phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
+  phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
+  phib_uncompressed_ = blockinfo(0)->strings<1>()->uncompressed_phi();
+
+  if (!mute) {
+    cout << "  o single displacement lists (alpha)" << endl;
+    cout << "      length: " << setw(13) << phia_->size() << endl;
+    cout << "  o single displacement lists (beta)" << endl;
+    cout << "      length: " << setw(13) << phib_->size() << endl;
+  }
 
 }
 

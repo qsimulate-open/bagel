@@ -28,60 +28,11 @@
 
 #include <unordered_map>
 #include <src/util/serialization.h>
+#include <src/ciutil/cistringmap.h>
 #include <src/ciutil/bitutil.h>
 #include <src/ciutil/cistring.h>
 
 namespace bagel {
-
-struct DetMap {
-  public:
-    size_t target;
-    int sign;
-    size_t source;
-
-    DetMap() { }
-    DetMap(size_t t, int si, size_t s) : target(t), sign(si), source(s) {}
-
-  private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) { ar & target & source & sign; }
-};
-
-
-class StringMap {
-  protected:
-    std::vector<std::vector<DetMap>> data_;
-  public:
-    StringMap() { }
-    StringMap(const int norb) : data_(norb) { }
-
-    void researve(const size_t n) {
-      for (auto& i : data_)
-        i.reserve(n);
-    }
-
-    std::vector<DetMap>& operator[](const size_t i) { return data_[i]; }
-    const std::vector<DetMap>& operator[](const size_t i) const { return data_[i]; }
-
-    const std::vector<DetMap>& data(const size_t i) const { assert(i < data_.size()); return data_[i]; }
-
-    void insert(const std::vector<std::vector<DetMap>>& inp) {
-      assert(data_.size() == inp.size());
-      auto j = inp.begin();
-      for (auto& i : data_) {
-        i.insert(i.end(), j->begin(), j->end());
-        ++j;
-      }
-    }
-    void insert(const std::shared_ptr<const StringMap>& o) { insert(o->data_); }
-
-  private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) { ar & data_; }
-};
-
 
 template <class StringType>
 class CIStringSpace {
@@ -110,8 +61,8 @@ class CIStringSpace {
 
       auto phiup   = std::make_shared<StringMap>(norb_);
       auto phidown = std::make_shared<StringMap>(norb_);
-      phiup->researve(plus->size());
-      phidown->researve(ref->size());
+      phiup->reserve(plus->size());
+      phidown->reserve(ref->size());
 
       std::vector<std::bitset<nbit__>> stringplus = plus->strings();
       std::vector<std::bitset<nbit__>> string     = ref->strings();
