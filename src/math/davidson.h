@@ -36,6 +36,7 @@
 #include <vector>
 #include <src/math/algo.h>
 #include <src/util/f77.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -43,13 +44,20 @@ template <typename T, class MatType = Matrix>
 class DavidsonDiag {
   protected:
     struct BasisPair {
-      std::shared_ptr<const T> cc;
-      std::shared_ptr<const T> sigma;
-      BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+      public:
+        std::shared_ptr<const T> cc;
+        std::shared_ptr<const T> sigma;
+        BasisPair() { }
+        BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+      private:
+        // serialization
+        friend class boost::serialization::access;
+        template<class Archive>
+        void serialize(Archive& ar, const unsigned int) { ar & cc & sigma; }
     };
 
-    const int nstate_;
-    const int max_;
+    int nstate_;
+    int max_;
     int size_;
 
     std::vector<std::shared_ptr<BasisPair>> basis_;
@@ -57,17 +65,24 @@ class DavidsonDiag {
     // Hamiltonian
     std::shared_ptr<MatType> mat_;
     // eivenvalues
-    std::unique_ptr<double[]> vec_;
+    std::vector<double> vec_;
     // an eigenvector
     std::shared_ptr<MatType> eig_;
     // overlap matrix
     std::shared_ptr<MatType> overlap_;
 
-    std::vector<bool> converged_;
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & nstate_ & max_ & size_ & basis_ & mat_ & vec_ & eig_ & overlap_;
+    }
 
   public:
     // Davidson with periodic collapse of the subspace
-    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(new double[max_]), converged_(n,false) {
+    DavidsonDiag() { }
+    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_) {
       if (max < 2) throw std::runtime_error("Davidson diagonalization requires at least two trial vectors per root.");
     }
 
@@ -79,7 +94,7 @@ class DavidsonDiag {
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
       // reset the convergence flags
-      std::fill(converged_.begin(), converged_.end(), false);
+      std::vector<bool> converged(nstate_, false);
 
       // new pairs
       std::vector<std::shared_ptr<BasisPair>> newbasis;
@@ -89,7 +104,7 @@ class DavidsonDiag {
         if (cc[ic] && cs[ic])
           newbasis.push_back(std::make_shared<BasisPair>(cc[ic], cs[ic]));
         else
-          converged_[ic] = true;
+          converged[ic] = true;
       }
 
       // adding new matrix elements
@@ -119,7 +134,7 @@ class DavidsonDiag {
 
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
-      eig_->diagonalize(vec_.get());
+      eig_->diagonalize(vec_.data());
       eig_ = std::make_shared<MatType>(*ovlp_scr * *eig_);
       eig_ = eig_->slice(0,nstate_);
 
@@ -146,7 +161,7 @@ class DavidsonDiag {
         std::map<int, int> remove;
         const int soff = size_ - newbasis.size();
         for (int i = 0; i != nstate_; ++i) {
-          if (converged_[i]) continue;
+          if (converged[i]) continue;
           // a vector with largest weight will be removed.
           int n = 0;
           double abs = 1.0e10;
@@ -176,7 +191,7 @@ class DavidsonDiag {
         overlap_ = overlap_->get_submatrix(0, 0, size_, size_);
       }
 
-      return std::vector<double>(vec_.get(), vec_.get()+nstate_);
+      return std::vector<double>(vec_.data(), vec_.data()+nstate_);
     }
 
     // perhaps can be cleaner.
@@ -186,11 +201,13 @@ class DavidsonDiag {
         auto tmp = basis_.front()->cc->clone();
         int k = 0;
         for (auto& iv : basis_) {
-          tmp->ax_plus_y(-vec_[i]*eig_->element(k++,i), iv->cc);
+          if ( std::abs(eig_->element(k++,i)) > 1.0e-16 )
+            tmp->ax_plus_y(-vec_[i]*eig_->element(k-1,i), iv->cc);
         }
         k = 0;
         for (auto& iv : basis_) {
-          tmp->ax_plus_y(eig_->element(k++,i), iv->sigma);
+          if (std::abs(eig_->element(k++,i)) > 1.0e-16 )
+            tmp->ax_plus_y(eig_->element(k-1,i), iv->sigma);
         }
         out.push_back(tmp);
       }

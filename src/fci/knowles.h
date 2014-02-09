@@ -50,7 +50,29 @@ class KnowlesHandy : public FCI {
     void sigma_2c1(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
     void sigma_2c2(std::shared_ptr<Civec> sigma, std::shared_ptr<const Dvec> e) const;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<FCI>(*this);
+      std::shared_ptr<const Coeff> coeff = jop_->coeff();
+      ar << coeff;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<FCI>(*this);
+      std::shared_ptr<const Coeff> coeff;
+      ar >> coeff;
+      update(coeff);
+    }
+
   public:
+    KnowlesHandy() { }
+
     // this constructor is ugly... to be fixed some day...
     KnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, g, b, ncore, nocc, nstate) {
@@ -61,6 +83,9 @@ class KnowlesHandy : public FCI {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::KnowlesHandy)
 
 #endif
 

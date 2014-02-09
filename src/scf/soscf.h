@@ -44,6 +44,7 @@ class SOSCF : public SCF_base {
     
 
   public:
+    SOSCF() { }
     SOSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
           const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
 
@@ -58,5 +59,8 @@ class SOSCF : public SCF_base {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SOSCF)
 
 #endif

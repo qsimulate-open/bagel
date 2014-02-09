@@ -1,4 +1,4 @@
-
+//
 // BAGEL - Parallel electron correlation program.
 // Filename: csymmatrix.h
 // Copyright (C) 2013 Toru Shiozaki
@@ -34,11 +34,30 @@ namespace bagel {
 class CSymMatrix {
   protected:
     bool localized_;
-    const int nocc_;
-    const size_t size_;
+    int nocc_;
+    size_t size_;
     std::unique_ptr<double[]> data_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << localized_ << nocc_ << size_ << boost::serialization::make_array(data(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> localized_ >> nocc_ >> size_;
+      data_ = std::unique_ptr<double[]>(new double[size()]);
+      ar >> boost::serialization::make_array(data(), size());
+    }
+
   public:
-    CSymMatrix(int n, bool l) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
+    CSymMatrix() { }
+    CSymMatrix(int n, bool l = true) : localized_(l), nocc_(n), size_(n*(n+1)/2), data_(new double[size_]) { std::fill_n(data_.get(), size_, 0.0); }
 
     CSymMatrix(std::shared_ptr<const Matrix> in) : nocc_(in->ndim()), size_(nocc_*(nocc_+1)/2), data_(new double[size_]) {
       assert(in->ndim() == in->mdim() && (*in - *in->transpose()).rms() < 1.0e-8);
@@ -81,5 +100,8 @@ class CSymMatrix {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::CSymMatrix)
 
 #endif

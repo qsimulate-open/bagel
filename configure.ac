@@ -66,6 +66,15 @@ fi
 
 AX_BOOST_BASE([1.53], [], [AC_MSG_ERROR("BOOST version >= 1.53.0 required.")])
 
+# on some platforms boost shared libs will depend on C++ shared libraries ... switch to C++
+AC_LANG_PUSH([C++])
+AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
+    AC_CHECK_LIB(boost_serialization-mt, main, , [
+        AC_CHECK_LIB(boost_serialization, main, , [
+            AC_MSG_ERROR("Linking against boost::serialization library failed.")
+        ])
+    ])
+])
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [
@@ -80,6 +89,7 @@ AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
         ])
     ])
 ])
+AC_LANG_POP() # switch from C++
 
 # srootlist.h need to be compiled with C++11
 AC_LANG([C++])
@@ -119,6 +129,7 @@ AC_CONFIG_FILES([Makefile
                  src/util/Makefile
                  src/parallel/Makefile
                  src/math/Makefile
+                 src/ciutil/Makefile
                  src/dimer/Makefile
                  src/meh/Makefile
                  src/wfn/Makefile

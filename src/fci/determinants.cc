@@ -24,105 +24,37 @@
 //
 
 #include <stdexcept>
+#include <iomanip>
 #include <src/fci/determinants.h>
-#include <src/math/comb.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
 
-#include <bitset>
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 
 using namespace std;
 using namespace bagel;
 
-const static Comb comb;
+Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute) : compress_(_compress) {
 
-Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute)
-  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress) {
+  blockinfo_[0] = make_shared<FCIBlockInfo>(_norb, _nelea, _neleb, mute);
 
-  if (!mute) cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
-  if (!mute) cout << "  o lexical mappings" << endl;
-  const_lexical_mapping_();
-  if (!mute) cout << "  o alpha-beta strings" << endl;
-  const_string_lists_();
-  if (!mute) cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
-  if (!mute) cout << "  o single displacement lists (alpha)" << endl;
-  const_phis_<0>(stringa_, phia_, phia_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o single displacement lists (beta)" << endl;
-  const_phis_<1>(stringb_, phib_, phib_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o size of the space " << endl;
-  if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
-  if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
-
-}
-
-size_t Determinants::ncsfs() const {
-  const int twoS = abs(nspin());
-  const int N = nelea() + neleb();
-  const int M = norb();
-  size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
-  out /= M + 1;
-
-  return out;
-}
-
-
-void Determinants::const_string_lists_() {
-  vector<int> data(norb_);
-  iota(data.begin(), data.end(), 0);
-
-  const int lengtha = comb.c(norb_, nelea_);
-  const int lengthb = comb.c(norb_, neleb_);
-  stringa_.resize(lengtha);
-  stringb_.resize(lengthb);
-  fill(stringa_.begin(), stringa_.end(), bitset<nbit__>(0));
-  fill(stringb_.begin(), stringb_.end(), bitset<nbit__>(0));
-
-  vector<bitset<nbit__>>::iterator sa = stringa_.begin();
-  do {
-    for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
-    ++sa;
-  } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
-
-  sa = stringb_.begin();
-  do {
-    for (int i=0; i!=neleb_; ++i) sa->set(data[i]);
-    ++sa;
-  } while (boost::next_combination(data.begin(), data.begin()+neleb_, data.end()));
-
-}
-
-
-void Determinants::const_lexical_mapping_() {
-  // combination numbers up to 31 orbitals (util/comb.h)
-  zkl_.resize(nelea_ * norb_ + neleb_ * norb_);
-  fill(zkl_.begin(), zkl_.end(), 0u);
-
-  // this part is 1 offset due to the convention of Knowles & Handy's paper.
-  // Just a blind copy from the paper without understanding much, but the code below works.
-  if( nelea_ != 0 ) { // There may be a better way to deal with zero electrons...
-    for (int k = 1; k < nelea_; ++k) {
-      for (int l = k; l <= norb_-nelea_+k; ++l) {
-        for (int m = norb_-l+1; m <= norb_-k; ++m) {
-          zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
-        }
-      }
-    }
-    for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
+  for (auto& i : blockinfo_) {
+    string_bits_a_.insert(string_bits_a_.end(), i.second->string_bits_a().begin(), i.second->string_bits_a().end());
+    string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
   }
 
-  if (nelea_ == neleb_) {
-    copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
-  } else {
-    if( neleb_ != 0 ) {
-      for (int k = 1; k < neleb_; ++k)
-        for (int l = k; l <= norb_-neleb_+k; ++l)
-          for (int m = norb_-l+1; m <= norb_-k; ++m)
-            zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
-      for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
-    }
+  phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
+  phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
+  phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
+  phib_uncompressed_ = blockinfo(0)->strings<1>()->uncompressed_phi();
+
+  if (!mute) {
+    cout << "  o single displacement lists (alpha)" << endl;
+    cout << "      length: " << setw(13) << phia_->size() << endl;
+    cout << "  o single displacement lists (beta)" << endl;
+    cout << "      length: " << setw(13) << phib_->size() << endl;
   }
+
 }
 
 

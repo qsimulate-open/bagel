@@ -39,8 +39,8 @@ using namespace bagel;
 MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
 : geom_(ref->geom()), ref_(ref), coeff_(ref_->coeff()) {
 
-  do_df_ = geom_->df().get();
-  if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
+  const bool do_df = geom_->df().get();
+  if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
   hz_ = (method=="HZ");
 }
@@ -49,8 +49,8 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
 MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
 : hz_(false), geom_(ref->geom()), ref_(ref), coeff_(c) {
 
-  do_df_ = geom_->df().get();
-  if (!do_df_) throw runtime_error("for the time being I gave up maintaining non-DF codes.");
+  const bool do_df = geom_->df().get();
+  if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
   hz_ = (method=="HZ");
 }
@@ -136,8 +136,7 @@ shared_ptr<const Matrix> Jop::compute_mo1e(const int nstart, const int nfence) {
 
 shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
 
-  const int nocc = nfence - nstart;
-  assert(nocc > 0);
+  assert(nfence-nstart > 0);
   shared_ptr<const Matrix> cdata = coeff_->slice(nstart, nfence);
 
   // first half transformation
@@ -147,7 +146,6 @@ shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
   shared_ptr<DFFullDist> buf = half->compute_second_transform(cdata)->apply_J();
 
   // we want to store half-transformed quantity for latter convenience
-  mo2e_1ext_size_ = nocc*geom_->df()->naux()*geom_->nbasis();
   mo2e_1ext_ = half;
 
   // assembles (ii|ii) = (ii|D)(D|ii)

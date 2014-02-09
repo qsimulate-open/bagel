@@ -33,14 +33,18 @@ namespace bagel {
 
 class SOHcore_base : public Matrix1e {
   protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   public:
+    SOHcore_base() { }
     SOHcore_base(const std::shared_ptr<const Molecule>);
 
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SOHcore_base)
 
 #endif
 

@@ -34,6 +34,7 @@ using namespace bagel;
 
 
 #ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_IMPLEMENT(DistZMatrix)
 
 DistZMatrix::DistZMatrix(const int n, const int m) : DistMatrix_base<complex<double>>(n,m) {}
 
@@ -56,7 +57,7 @@ DistZMatrix DistZMatrix::operator*(const DistZMatrix& o) const {
   const int n = o.mdim_;
 
   DistZMatrix out(l, n);
-  pzgemm_("N", "N", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pzgemm_("N", "N", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -90,7 +91,7 @@ DistZMatrix DistZMatrix::operator%(const DistZMatrix& o) const {
   const int n = o.mdim_;
 
   DistZMatrix out(l, n);
-  pzgemm_("C", "N", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pzgemm_("C", "N", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -102,7 +103,7 @@ DistZMatrix DistZMatrix::operator^(const DistZMatrix& o) const {
   const int n = o.ndim_;
 
   DistZMatrix out(l, n);
-  pzgemm_("N", "C", l, n, m, 1.0, local_.get(), desc_.get(), o.local_.get(), o.desc_.get(), 0.0, out.local_.get(), out.desc_.get());
+  pzgemm_("N", "C", l, n, m, 1.0, local_.get(), desc_.data(), o.local_.get(), o.desc_.data(), 0.0, out.local_.get(), out.desc_.data());
   return out;
 }
 
@@ -122,11 +123,11 @@ void DistZMatrix::diagonalize(double* eig) {
   const int liwork = 7*n + 8*mpi__->npcol() + 2;
   unique_ptr<double[]> rwork(new double[lrwork]);
   unique_ptr<int[]> iwork(new int[liwork]);
-  pzheevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
 
   const int lwork = round(max(131072.0, wsize.real()*2.0));
   unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-  pzheevd_("V", "U", n, local_.get(), desc_.get(), eig, tmp.local_.get(), tmp.desc_.get(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+  pzheevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
   if (info) throw runtime_error("pzheevd failed in DistZMatrix");
 
   *this = tmp;
@@ -142,7 +143,7 @@ shared_ptr<const DistZMatrix> DistZMatrix::form_density_rhf(const int nocc, cons
   const int l = ndim_;
   const int n = ndim_;
   auto out = make_shared<DistZMatrix>(l, n);
-  pzgemm_("N", "C", l, n, nocc, 1.0, local_.get(), 1, 1+off, desc_.get(), local_.get(), 1, 1+off, desc_.get(), 0.0, out->local_.get(), 1, 1, out->desc_.get());
+  pzgemm_("N", "C", l, n, nocc, 1.0, local_.get(), 1, 1+off, desc_.data(), local_.get(), 1, 1+off, desc_.data(), 0.0, out->local_.get(), 1, 1, out->desc_.data());
   return out;
 }
 

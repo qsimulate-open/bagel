@@ -61,7 +61,31 @@ class Dvector {
     std::vector<std::shared_ptr<Civector<DataType>>> dvec_;
     std::unique_ptr<DataType[]> data_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int version) const {
+      // dvec_ is just an alias and therefore not serialized
+      ar << det_ << lena_ << lenb_ << ij_ << boost::serialization::make_array(data(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int version) {
+      ar >> det_ >> lena_ >> lenb_ >> ij_;
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      ar >> boost::serialization::make_array(data(), size());
+      // make an alias and set to dvec_
+      DataType* ptr = data();
+      for (int i = 0; i != ij_; ++i, ptr += lena_*lenb_)
+        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, ptr));
+    }
+
   public:
+    Dvector() { }
+
     Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
       // data should be in a contiguous area to call dgemm.
       data_ = std::unique_ptr<DataType[]>(new DataType[lenb_*lena_*ij_]);
@@ -180,10 +204,10 @@ class Dvector {
     std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
 
     // for double versions
-    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
 
     std::shared_ptr<Dvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
       std::vector<CiPtr> out;
@@ -228,5 +252,8 @@ using Dvec = Dvector<double>;
 using ZDvec = Dvector<std::complex<double>>;
 
 }
+
+extern template class bagel::Dvector<double>;
+extern template class bagel::Dvector<std::complex<double>>;
 
 #endif

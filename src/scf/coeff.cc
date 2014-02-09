@@ -33,6 +33,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
+
 Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
   copy_n(inp.data(), ndim_*mdim_, data());
 }

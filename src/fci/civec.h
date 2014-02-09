@@ -362,11 +362,11 @@ class DistCivector {
         std::multimap<double, std::tuple<double, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
         for (int i = 0; i < chunk * mpi__->size(); ++i) {
           if (alldata[i] != 0.0)
-            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->stringa(allabits[i]), det_->stringb(allbbits[i])));
+            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
         }
 
         for (auto& i : tmp) {
-          std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
+          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det()->norb())
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
 
         }
@@ -417,7 +417,29 @@ class Civector {
     DataType* cc() { return cc_ptr_; }
     const DataType* cc() const { return cc_ptr_; }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      if (!cc_.get())
+        throw std::logic_error("illegal call of Civector<T>::save");
+      ar << det_ << lena_ << lenb_ << boost::serialization::make_array(cc(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> det_ >> lena_ >> lenb_;
+      cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      cc_ptr_ = cc_.get();
+      ar >> boost::serialization::make_array(cc(), size());
+    }
+
   public:
+    Civector() { }
+
     Civector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_]);
       cc_ptr_ = cc_.get();
@@ -427,7 +449,6 @@ class Civector {
     // constructor that is called by Dvec.
     Civector(std::shared_ptr<const Determinants> det, DataType* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ptr_ = din_;
-      std::fill_n(cc(), lena_*lenb_, 0.0);
     }
 
     // copy constructor
@@ -528,7 +549,7 @@ class Civector {
       for (int i = 0; i < norb; ++i) {
         for (int j = 0; j < norb; ++j) {
           intermediate->zero();
-          for ( auto& iter : det_->phia(i,j) ) {
+          for (auto& iter : det_->phia(i,j)) {
             const DataType* source = this->element_ptr(0, iter.source);
             DataType* target = intermediate->element_ptr(0, iter.target);
             double sign = static_cast<double>(iter.sign);
@@ -538,7 +559,7 @@ class Civector {
           for (int ia = 0; ia < lena; ++ia) {
             DataType* target_base = out->element_ptr(0, ia);
             const DataType* source_base = intermediate->element_ptr(0, ia);
-            for ( auto& iter : det_->phib(j,i) ) {
+            for (auto& iter : det_->phib(j,i)) {
               target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
             }
           }
@@ -561,9 +582,9 @@ class Civector {
       DataType* source_data = cc_ptr_;
       // This is a safe but probably slow implementation
       for (int aiter = 0; aiter < source_lena; ++aiter) {
-        auto alphastring = source_det->stringa(aiter);
+        const std::bitset<nbit__> alphastring = source_det->string_bits_a(aiter);
         for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
-          auto betastring = source_det->stringb(biter);
+          const std::bitset<nbit__> betastring = source_det->string_bits_b(biter);
           for (int i = 0; i < norb; ++i) {
             std::bitset<nbit__> abit = alphastring;
             std::bitset<nbit__> bbit = betastring;
@@ -603,9 +624,9 @@ class Civector {
       DataType* source_data = cc_ptr_;
       // This is a safe but probably slow implementation
       for (int aiter = 0; aiter < source_lena; ++aiter) {
-        auto alphastring = source_det->stringa(aiter);
+        const std::bitset<nbit__> alphastring = source_det->string_bits_a(aiter);
         for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
-          auto betastring = source_det->stringb(biter);
+          const std::bitset<nbit__> betastring = source_det->string_bits_b(biter);
           for (int i = 0; i < norb; ++i) {
             std::bitset<nbit__> abit = alphastring;
             std::bitset<nbit__> bbit = betastring;
@@ -720,15 +741,15 @@ class Civector {
       const DataType* i = cc();
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
-      for (auto& ia : det_->stringa()) {
-        for (auto& ib : det_->stringb()) {
+      for (auto& ia : det_->string_bits_a()) {
+        for (auto& ib : det_->string_bits_b()) {
           if (std::abs(*i) > thr)
             tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
           ++i;
         }
       }
       for (auto& iter : tmp)
-        std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
+        std::cout << "       " << print_bit(std::get<1>(iter.second), std::get<2>(iter.second), det()->norb())
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 
@@ -751,5 +772,8 @@ using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
 
 }
+
+extern template class bagel::Civector<double>;
+extern template class bagel::Civector<std::complex<double>>;
 
 #endif

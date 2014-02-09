@@ -68,8 +68,8 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nele_, 0);
-  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   update(rr->relcoeff());
 }
@@ -112,7 +112,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << space_->finddet(nelea, neleb)->print_bit(alpha&beta) << " open " << setw(20) << space_->finddet(nelea, neleb)->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
     ++oindex;
     if (oindex == offset+nstate) break;
@@ -135,8 +135,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
-  for (auto& aiter : cdet->stringa()) {
-    for (auto& biter : cdet->stringb()) {
+  for (auto& aiter : cdet->string_bits_a()) {
+    for (auto& biter : cdet->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -145,7 +145,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > cdet->stringa().size()*cdet->stringb().size());
+  assert(tmp.size() == ndet || ndet > cdet->string_bits_a().size()*cdet->string_bits_b().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);

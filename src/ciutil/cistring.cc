@@ -1,0 +1,159 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: cistring.cc
+// Copyright (C) 2013 Toru Shiozaki
+//
+// Author: Shane Parker <shane.parker@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+#include <cassert>
+#include <src/math/comb.h>
+#include <src/ciutil/bitutil.h>
+#include <src/ciutil/cistring.h>
+#include <src/util/combination.hpp>
+
+// explicit instantiation
+template class bagel::CIString_base_impl<1>;
+template class bagel::CIString_base_impl<3>;
+
+// instantiation of serialization code
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIGraph)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<1>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<3>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RASString)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
+
+using namespace std;
+using namespace bagel;
+
+static const Comb comb;
+
+CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
+  if (nele*norb != 0) {
+    weights_ = vector<size_t>(nele * norb, 0ull);
+
+    size_ = comb.c(norb, nele);
+
+    const size_t nholes = norb - nele;
+    for(size_t k = 1; k <= nele; ++k) {
+      for (size_t l = k; l < nholes + k; ++l) {
+        size_t node_val = comb.c(l, k);
+        weight(l, k-1) = node_val;
+      }
+    }
+  }
+}
+
+
+RASString::RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
+ : CIString_base_impl<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
+
+  init();
+}
+
+
+void RASString::compute_strings() {
+  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
+  // Lexical ordering done, now fill in all the strings
+  strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
+
+  const int nele1 = subspace_[0].first;
+  const int nele2 = subspace_[1].first;
+  const int nele3 = subspace_[2].first;
+  const int norb1 = subspace_[0].second;
+  const int norb2 = subspace_[1].second;
+  const int norb3 = subspace_[2].second;
+
+  size_t cnt = 0;
+  vector<int> holes(norb1);
+  iota(holes.begin(), holes.end(), 0);
+  do {
+    vector<int> active(norb2);
+    iota(active.begin(), active.end(), norb1);
+    do {
+      vector<int> particles(norb3);
+      iota(particles.begin(), particles.end(), norb1 + norb2);
+      do {
+        bitset<nbit__> bit(0ul);
+        for (int i = 0; i != nele1; ++i) bit.set(holes[i]);
+        for (int i = 0; i != nele2; ++i) bit.set(active[i]);
+        for (int i = 0; i != nele3; ++i) bit.set(particles[i]);
+        strings_[lexical_zero(bit)] = bit;
+
+        ++cnt;
+      } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
+    } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
+  } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
+  assert(cnt == size);
+}
+
+
+FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset)
+ : CIString_base_impl<1>{nele1, norb1, offset} {
+
+  init();
+}
+
+
+void FCIString::compute_strings() {
+  vector<int> data(norb_);
+  iota(data.begin(), data.end(), 0);
+  // Lexical ordering done, now fill in all the strings
+  strings_ = vector<bitset<nbit__>>(graphs_[0]->size(), bitset<nbit__>(0ul));
+  size_t cnt = 0;
+  do {
+    bitset<nbit__> bit(0lu);
+    for (int i=0; i!=nele_; ++i) bit.set(data[i]);
+    strings_[lexical_zero(bit)] = bit;
+    ++cnt;
+  } while (boost::next_combination(data.begin(), data.begin()+nele_, data.end()));
+  assert(cnt == graphs_[0]->size());
+}
+
+
+void FCIString::construct_phi() {
+  phi_ = make_shared<StringMap>(norb()*(norb()+1)/2);
+  phi_->reserve(size());
+
+  uncompressed_phi_ = make_shared<StringMap>(norb()*norb());
+  uncompressed_phi_->reserve(size());
+
+  for (auto& istring : strings_) {
+    for (unsigned int i = 0; i != norb(); ++i) { // annihilation
+      // compress_ means that we store info only for i <= j
+      if (istring[i]) {
+        const unsigned int source = lexical(istring);
+        bitset<nbit__> nbit = istring; nbit.reset(i); // annihilated.
+        for (unsigned int j = 0; j != norb(); ++j) { // creation
+          if (!(nbit[j])) {
+            bitset<nbit__> mbit = nbit;
+            mbit.set(j);
+            int minij, maxij;
+            tie(minij, maxij) = minmax(i,j);
+            auto detmap = DetMap(lexical(mbit), sign(mbit, i, j), source);
+            (*phi_)[minij+((maxij*(maxij+1))>>1)].push_back(detmap);
+            (*uncompressed_phi_)[i + j*norb()].push_back(detmap);
+          }
+        }
+      }
+    }
+  }
+}

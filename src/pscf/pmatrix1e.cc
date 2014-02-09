@@ -251,9 +251,7 @@ void PMatrix1e::init() {
           for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1];
             const shared_ptr<const Shell> b1 = shell1[ibatch1];
-            std::vector<RefShell> input;
-            input.push_back(b1);
-            input.push_back(b0);
+            std::array<RefShell,2> input{{ b1, b0 }};
 
             computebatch(input, offset0, offset1, nbasis_, blockoffset);
 

@@ -129,10 +129,10 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      shared_ptr<DistRASBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
-      const int aindex = block->stringa()->lexical<0>(get<1>(iter)) - block->astart();
+      shared_ptr<DistCIBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
+      const int aindex = block->stringsa()->lexical_zero(get<1>(iter)) - block->astart();
       if ( aindex >= 0 && aindex < block->asize()) {
-        const size_t bindex = block->stringb()->lexical<0>(get<0>(iter));
+        const size_t bindex = block->stringsb()->lexical_zero(get<0>(iter));
         double* data = block->local() + block->lenb() * aindex + bindex;
         *data = get<2>(iter) * fac;
       }
@@ -162,8 +162,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->local();
-    const size_t aoff = iblock->stringa()->offset();
-    const size_t boff = iblock->stringb()->offset();
+    const size_t aoff = iblock->stringsa()->offset();
+    const size_t boff = iblock->stringsb()->offset();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
       for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
         const double din = -(*diter);
@@ -210,7 +210,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
 
   vector<pair<bitset<nbit__>, bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
+    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
 
   return out;
 }

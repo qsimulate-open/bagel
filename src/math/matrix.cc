@@ -39,6 +39,7 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Matrix)
 
 Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(n,m,loc) {
 }
@@ -116,7 +117,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
     unique_ptr<double[]> locala = getlocal();
     unique_ptr<double[]> localb = o.getlocal();
     unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -172,7 +173,7 @@ Matrix Matrix::operator%(const Matrix& o) const {
     unique_ptr<double[]> locala = getlocal();
     unique_ptr<double[]> localb = o.getlocal();
     unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -199,7 +200,7 @@ Matrix Matrix::operator^(const Matrix& o) const {
     unique_ptr<double[]> locala = getlocal();
     unique_ptr<double[]> localb = o.getlocal();
     unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.get(), localb.get(), o.desc_.get(), 0.0, localc.get(), out.desc_.get());
+    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
     out.setlocal_(localc);
   }
 #endif
@@ -249,13 +250,13 @@ void Matrix::diagonalize(double* eig) {
     // first compute worksize
     double wsize;
     int liwork = 1;
-    pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), &wsize, -1, &liwork, 1, info);
+    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), &wsize, -1, &liwork, 1, info);
     unique_ptr<int[]> iwork(new int[liwork]);
     wsize =  max(131072.0, wsize*2.0);
 
     const int lwork = round(wsize);
     unique_ptr<double[]> work(new double[lwork]);
-    pdsyevd_("V", "U", n, local.get(), desc_.get(), eig, coeff.get(), desc_.get(), work.get(), lwork, iwork.get(), liwork, info);
+    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
     setlocal_(coeff);
   }
 #endif

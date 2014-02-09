@@ -69,8 +69,8 @@ class ZHarrison : public Method {
     std::shared_ptr<RelMOFile> jop_;
 
     // Determinant space
-    std::shared_ptr<const RelSpace> space_;
-    std::shared_ptr<const RelSpace> int_space_;
+    std::shared_ptr<const Space_base> space_;
+    std::shared_ptr<const Space_base> int_space_;
 
     // denominator
     std::shared_ptr<RelDvec> denom_;

@@ -64,12 +64,12 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
     const int operation_;
     const int a_;
     mutex* mutex_;
-    map<tuple<int,int,int,int,int,int>, shared_ptr<const StringSpace>>* stringspaces_;
+    map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>>* stringspaces_;
     mutex* ssmutex_;
 
   public:
     GammaDistRASTask(shared_ptr<GammaTree<DistRASDvec>> t, shared_ptr<RASBlock<double>> b, const int ist, const GammaSQ op, const int a,
-      mutex* m, map<tuple<int,int,int,int,int,int>, shared_ptr<const StringSpace>>* ss, mutex* ssmutex) :
+      mutex* m, map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>>* ss, mutex* ssmutex) :
         RASTask<GammaBranch<DistRASDvec>>(t->ket()->det()->max_holes(), t->ket()->det()->max_particles()),
         tree_(t), starting_block_(b), istate_(ist), operation_(static_cast<int>(op)), a_(a), mutex_(m), stringspaces_(ss), ssmutex_(ssmutex) {}
 
@@ -125,10 +125,10 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
     void dot_product(shared_ptr<const DistRASDvec> bras, shared_ptr<const RASBlock<double>> ketblock, double* target) const {
       const int nbras = bras->ij();
 
-      if (bras->det()->allowed(ketblock->stringb(), ketblock->stringa())) {
+      if (bras->det()->allowed(ketblock->stringsb(), ketblock->stringsa())) {
         vector<double> values(nbras, 0.0);
         for (int jbra = 0; jbra < nbras; ++jbra) {
-          shared_ptr<const DistRASBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringb(), ketblock->stringa());
+          shared_ptr<const DistCIBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringsb(), ketblock->stringsa());
           if (brablock) {
             const double val = blas::dot_product(brablock->local(), brablock->size(), ketblock->data() + brablock->astart()*brablock->lenb());
             values[jbra] = val;
@@ -141,14 +141,14 @@ class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
       }
     }
 
-    shared_ptr<const StringSpace> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
+    shared_ptr<const RASString> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
       lock_guard<mutex> lk(*ssmutex_);
       auto iter = stringspaces_->find(make_tuple(a,b,c,d,e,f));
       if (iter != stringspaces_->end()) {
         return iter->second;
       }
       else {
-        auto out = make_shared<StringSpace>(a,b,c,d,e,f);
+        auto out = make_shared<RASString>(a,b,c,d,e,f);
         stringspaces_->emplace(make_tuple(a,b,c,d,e,f), out);
         return out;
       }
@@ -164,7 +164,7 @@ void GammaForest<DistRASDvec, 2>::compute() {
 
   allocate_and_count();
 
-  map<tuple<int,int,int,int,int,int>, shared_ptr<const StringSpace>> ssmap;
+  map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>> ssmap;
   mutex ssmut;
 
   // Compute tasks

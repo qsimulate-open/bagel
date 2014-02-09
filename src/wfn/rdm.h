@@ -36,12 +36,36 @@ namespace bagel {
 template<typename DataType>
 class RDM_base {
   protected:
-    std::unique_ptr<DataType[]> data_;
-    const int norb_;
+    int norb_;
     size_t dim_;
     int rank_;
 
+    std::unique_ptr<DataType[]> data_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << norb_ << dim_ << rank_ << boost::serialization::make_array(data(), size());
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> norb_ >> dim_ >> rank_;
+      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      ar >> boost::serialization::make_array(data(), size());
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
   public:
+    RDM_base() : norb_(0), dim_(0) { }
+
     RDM_base(const int n, const int rank) : norb_(n), rank_(rank) {
       assert(rank > 0);
       dim_ = 1lu;
@@ -97,6 +121,7 @@ class RDM : public RDM_base<DataType> {
     }
 
   public:
+    RDM() { }
     RDM(const int n) : RDM_base<DataType>(n, rank) { }
     RDM(const RDM<rank,DataType>& o) : RDM_base<DataType>(o) { }
     RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::forward(o)) { }

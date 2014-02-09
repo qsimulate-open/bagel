@@ -29,6 +29,8 @@
 // toggle for timing print out.
 static const bool tprint = false;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::KnowlesHandy)
+
 using namespace std;
 using namespace bagel;
 

@@ -41,7 +41,7 @@ namespace bagel {
 
 class DistFCI : public Method {
   protected:
-    std::shared_ptr<Space> space_;
+    std::shared_ptr<Space_base> space_;
     std::shared_ptr<DistCivec> denom_;
 
     // Options

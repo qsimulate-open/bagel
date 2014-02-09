@@ -32,6 +32,7 @@
 #include <src/meh/meh_distcas.h>
 #include <src/meh/meh_ras.h>
 #include <src/meh/meh_distras.h>
+#include <src/util/archive.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -92,6 +93,14 @@ int main(int argc, char** argv) {
 
       // most methods are constructed here
       shared_ptr<Method> method = construct_method(title, itree, geom, ref);
+
+      if (title == "continue") {
+        IArchive archive(itree->get<string>("archive"));
+        Method* ptr;
+        archive >> ptr;
+        method = shared_ptr<Method>(ptr);
+      }
+
       if (method) {
 
         method->compute();

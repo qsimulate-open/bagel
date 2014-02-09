@@ -30,6 +30,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(ROHF)
+
 void ROHF::compute() {
 
   eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);

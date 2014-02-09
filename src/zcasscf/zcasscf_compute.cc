@@ -323,8 +323,8 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o) const {
   // function to enforce time-reversal symmetry 
   //    for a complex matrix o, that is SYMMETRIC under time reversal
   assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim());
-  const array<int,3> a0 = {nclosed_, nact_, nvirt_};
-  const array<int,3> a1 = {0, 2*nclosed_, 2*nocc_};
+  const array<int,3> a0 {{nclosed_, nact_, nvirt_}};
+  const array<int,3> a1 {{0, 2*nclosed_, 2*nocc_}};
   for (int ii = 0; ii !=3; ++ii) {
     for (int jj = 0; jj !=3; ++jj) {
       block_trsym(o,1,a0[jj],a0[ii],a1[jj],a1[ii]);

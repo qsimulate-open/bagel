@@ -34,12 +34,12 @@ namespace bagel {
     struct DenomTask {
       double* const data_;
       const bitset<nbit__> abit_;
-      shared_ptr<const StringSpace> stringb_;
+      shared_ptr<const RASString> stringb_;
       const double* const jop_;
       const double* const kop_;
       const double* const h_;
 
-      DenomTask(double* o, bitset<nbit__> ia, shared_ptr<const StringSpace> sb, double* j, double* k, double* h) :
+      DenomTask(double* o, bitset<nbit__> ia, shared_ptr<const RASString> sb, double* j, double* k, double* h) :
         data_(o), abit_(ia), stringb_(sb), jop_(j), kop_(k), h_(h) {}
 
       void compute() {
@@ -99,8 +99,8 @@ void RASCI::const_denom() {
   for (auto& iblock : denom_->blocks()) {
     if ( !iblock ) continue;
     double* iter = iblock->data();
-    for (auto& ia : *iblock->stringa()) {
-      tasks.emplace_back(iter, ia, iblock->stringb(), jop.get(), kop.get(), h.get());
+    for (auto& ia : *iblock->stringsa()) {
+      tasks.emplace_back(iter, ia, iblock->stringsb(), jop.get(), kop.get(), h.get());
       iter += iblock->lenb();
     }
   }
@@ -134,7 +134,7 @@ void DistRASCI::const_denom() {
     if ( !iblock ) continue;
     double* iter = iblock->local();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia, iter+=iblock->lenb())
-      tasks.emplace_back(iter, det_->stringa(ia + iblock->stringa()->offset()), iblock->stringb(), jop.get(), kop.get(), h.get());
+      tasks.emplace_back(iter, det_->string_bits_a(ia + iblock->stringsa()->offset()), iblock->stringsb(), jop.get(), kop.get(), h.get());
   }
 
   tasks.compute();

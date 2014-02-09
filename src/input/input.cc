@@ -30,6 +30,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::PTree)
+
 using namespace bagel;
 using namespace std;
 

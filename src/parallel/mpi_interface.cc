@@ -410,12 +410,12 @@ pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
 #endif
 }
 
-unique_ptr<int[]> MPI_Interface::descinit(const int ndim, const int ncol) const {
-  unique_ptr<int[]> desc(new int[9]);
+vector<int> MPI_Interface::descinit(const int ndim, const int ncol) const {
+  vector<int> desc(9);
 #ifdef HAVE_SCALAPACK
   const int localrow = numroc_(ndim, blocksize__, myprow_, 0, nprow_);
   int info;
-  descinit_(desc.get(), ndim, ncol, blocksize__, blocksize__, 0, 0, context_, max(1,localrow), info);
+  descinit_(desc.data(), ndim, ncol, blocksize__, blocksize__, 0, 0, context_, max(1,localrow), info);
 #endif
   return desc;
 }

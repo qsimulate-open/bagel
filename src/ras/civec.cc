@@ -57,7 +57,7 @@ namespace bagel {
 
         unique_ptr<double[]> source(new double[det_->lenb()]);
 
-        for (auto& iter : det_->phia(det_->lexical<0>(target_))) {
+        for (auto& iter : det_->phia(det_->lexical_offset<0>(target_))) {
           const int ii = iter.ij / norb;
           const int jj = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(ii); mask1.set(jj);
@@ -66,18 +66,18 @@ namespace bagel {
           bitset<nbit__> maskij; maskij.set(ii); maskij.flip(jj);
 
           fill_n(source.get(), det_->lenb(), 0.0);
-          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->stringa(iter.source));
+          vector<shared_ptr<RASBlock<double>>> sourceblocks = out_->allowed_blocks<0>(det_->string_bits_a(iter.source));
           for (auto& iblock : sourceblocks) {
-            const size_t offset = iblock->stringb()->offset();
-            copy_n(&this_->element(iblock->stringb()->strings(0), det_->stringa(iter.source)), iblock->lenb(), source.get()+offset);
+            const size_t offset = iblock->stringsb()->offset();
+            copy_n(&this_->element(iblock->stringsb()->strings(0), det_->string_bits_a(iter.source)), iblock->lenb(), source.get()+offset);
           }
 
           for (auto& iblock : out_->allowed_blocks<0>(target_)) {
-            double* outelement = &out_->element(iblock->stringb()->strings(0), target_);
-            for (auto& btstring : *iblock->stringb()) {
+            double* outelement = &out_->element(iblock->stringsb()->strings(0), target_);
+            for (auto& btstring : *iblock->stringsb()) {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
-                if (det_->allowed(det_->stringa(iter.source), bsostring))
+                if (det_->allowed(det_->string_bits_a(iter.source), bsostring))
                   *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
               }
               ++outelement;
@@ -96,12 +96,12 @@ shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
-  for (auto& i : det_->stringb())
-    lexicalmap[i.to_ullong()] = det_->lexical<1>(i);
+  for (auto& i : det_->string_bits_b())
+    lexicalmap[i.to_ullong()] = det_->lexical_offset<1>(i);
 
-  TaskQueue<RAS::SpinTask> tasks(det_->stringa().size());
+  TaskQueue<RAS::SpinTask> tasks(det_->string_bits_a().size());
 
-  for (auto& istring : det_->stringa()) {
+  for (auto& istring : det_->string_bits_a()) {
     tasks.emplace_back(istring, this, out, det_, &lexicalmap);
   }
 
@@ -129,21 +129,21 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : sdet->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+    shared_ptr<const RASString> ispace = spaceiter.second;
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : sdet->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+    shared_ptr<const RASString> ispace = spaceiter.second;
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->stringsa()) {
+      for (auto& bbit : *tblock->stringsb()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (abit[i] || !bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.set(i);
@@ -161,12 +161,12 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->stringsa()->nholes();
+    const int nhb = iblock->stringsb()->nholes();
+    const int npa = iblock->stringsa()->nparticles();
+    const int npb = iblock->stringsb()->nparticles();
+    const int n2a = iblock->stringsa()->nele2();
+    const int n2b = iblock->stringsb()->nele2();
 
     if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
@@ -190,21 +190,21 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
   for (auto& spaceiter : det_->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+    shared_ptr<const RASString> ispace = spaceiter.second;
+    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
   }
 
   unordered_map<size_t, size_t> blex;
   for (auto& spaceiter : det_->stringspaceb()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+    shared_ptr<const RASString> ispace = spaceiter.second;
+    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->stringsa()) {
+      for (auto& bbit : *tblock->stringsb()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (!abit[i] || bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.reset(i);
@@ -222,12 +222,12 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->stringsa()->nholes();
+    const int nhb = iblock->stringsb()->nholes();
+    const int npa = iblock->stringsa()->nparticles();
+    const int npb = iblock->stringsb()->nparticles();
+    const int n2a = iblock->stringsa()->nele2();
+    const int n2b = iblock->stringsb()->nele2();
 
     if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
