@@ -541,8 +541,7 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
       }
 
       // build V(I), block by block
-      for (auto& spaceiter : *det->stringspacea()) {
-        shared_ptr<const RASString> ispace = spaceiter.second;
+      for (auto& ispace : *det->stringspacea()) {
         const size_t la = ispace->size();
 
         auto VI_out = make_shared<Matrix>(phisize, la);
