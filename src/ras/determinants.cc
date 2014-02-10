@@ -74,9 +74,6 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
     betaspaces_ = make_shared<CIStringSet<RASString>>(beta);
   }
 
-  string_bits_a_ = alphaspaces_->strings();
-  string_bits_b_ = betaspaces_->strings();
-
   if (!mute) cout << "   - alpha strings: " << alphaspaces_->size() << endl;
   if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
 

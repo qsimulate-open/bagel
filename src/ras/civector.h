@@ -39,6 +39,7 @@
 #include <src/ras/determinants.h>
 #include <src/math/algo.h>
 #include <src/ciutil/ciblock.h>
+#include <src/ciutil/bitutil.h>
 
 namespace bagel {
 
@@ -513,7 +514,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         }
 
         for (auto& i : tmp) {
-          std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
+          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->norb())
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
 
         }
@@ -819,7 +820,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         }
       }
       for (auto& iter : tmp)
-        std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
+        std::cout << "       " << print_bit(std::get<1>(iter.second), std::get<2>(iter.second), det_->norb())
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 

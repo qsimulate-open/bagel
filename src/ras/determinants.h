@@ -72,9 +72,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::shared_ptr<const CIStringSet<RASString>> alphaspaces_;
     std::shared_ptr<const CIStringSet<RASString>> betaspaces_;
 
-    std::vector<std::bitset<nbit__>> string_bits_a_;
-    std::vector<std::bitset<nbit__>> string_bits_b_;
-
     std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>> stringpairs_;
 
   public:
@@ -92,22 +89,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     bool operator==(const RASDeterminants& o) const
       { return ( nelea_ == o.nelea_ && neleb_ == o.neleb_ && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
 
-    std::string print_bit(std::bitset<nbit__> bit) const {
-      std::string out;
-      for (int i = 0; i != norb_; ++i) { out += bit[i] ? "1" : "."; }
-      return out;
-    }
-
-    std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2) const {
-      std::string out;
-      for (int i = 0; i != norb_; ++i) {
-        if (bit1[i] && bit2[i]) { out += "2"; }
-        else if (bit1[i]) { out += "a"; }
-        else if (bit2[i]) { out += "b"; }
-        else { out += "."; }
-      }
-      return out;
-    }
 
     template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
@@ -151,14 +132,11 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
       return out;
     }
 
-
     // These access the global string lists
-    const std::bitset<nbit__>& string_bits_a(const size_t i) const { return string_bits_a_[i]; }
-    const std::bitset<nbit__>& string_bits_b(const size_t i) const { return string_bits_b_[i]; }
-    std::vector<std::bitset<nbit__>>& string_bits_a() { return string_bits_a_; }
-    std::vector<std::bitset<nbit__>>& string_bits_b() { return string_bits_b_; }
-    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return string_bits_a_; }
-    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return string_bits_b_; }
+    const std::bitset<nbit__>& string_bits_a(const size_t i) const { return alphaspaces_->strings(i); }
+    const std::bitset<nbit__>& string_bits_b(const size_t i) const { return betaspaces_->strings(i); }
+    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return alphaspaces_->strings(); }
+    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return betaspaces_->strings(); }
 
     const std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>>& stringpairs() const { return stringpairs_; }
 
@@ -172,8 +150,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
 
-    const size_t lena() const { return string_bits_a_.size(); }
-    const size_t lenb() const { return string_bits_b_.size(); }
+    const size_t lena() const { return alphaspaces_->size(); }
+    const size_t lenb() const { return betaspaces_->size(); }
     const size_t size() const { return size_; }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
@@ -193,11 +171,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::shared_ptr<const RASDeterminants> remalpha() const { return remalpha_.lock();}
     std::shared_ptr<const RASDeterminants> addbeta() const { return addbeta_.lock();}
     std::shared_ptr<const RASDeterminants> rembeta() const { return rembeta_.lock();}
-
-    std::shared_ptr<RASDeterminants> addalpha() { return addalpha_.lock();}
-    std::shared_ptr<RASDeterminants> remalpha() { return remalpha_.lock();}
-    std::shared_ptr<RASDeterminants> addbeta() { return addbeta_.lock();}
-    std::shared_ptr<RASDeterminants> rembeta() { return rembeta_.lock();}
 
     template <int spin> void link(std::shared_ptr<RASDeterminants> odet);
 
