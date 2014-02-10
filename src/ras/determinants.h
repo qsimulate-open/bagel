@@ -94,18 +94,12 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     template<int spin>
     int sign(std::bitset<nbit__> bit, int i) const {
-      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinant::sign (and other functions)");
-      bit &= (1ull << i) - 1ull;
-      return (1 - (((bit.count() + spin*nelea_) & 1 ) << 1));
+      auto iter = std::find_if(blockinfo_.begin(), blockinfo_.end(), [](const std::shared_ptr<const RASBlockInfo>& o){ return !o->empty(); });
+      return (*iter)->sign<spin>(bit, i);
     }
 
     int sign(std::bitset<nbit__> bit, int i, int j) const {
-      // masking irrelevant bits
-      int min, max;
-      std::tie(min,max) = std::minmax(i,j);
-      bit &= ~((1ull << (min+1)) - 1ull);
-      bit &= (1ull << max) - 1ull;
-      return 1 - ((bit.count() & 1) << 1);
+      return RASBlockInfo::sign(bit, i, j);
     }
 
     const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & std::bitset<nbit__>((1ull << ras_[0]) - 1ull)).count(); }

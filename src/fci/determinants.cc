@@ -28,11 +28,14 @@
 #include <src/fci/determinants.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
+#include <src/math/comb.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 
 using namespace std;
 using namespace bagel;
+
+const static Comb comb;
 
 Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute)
  : Determinants(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb), compress, mute) {
@@ -52,21 +55,18 @@ Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCI
   phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
   phib_uncompressed_ = bst->uncompressed_phi();
 
-  auto ncsfs = [this]() const {
+  if (!mute) {
     const int twoS = abs(nspin());
     const int N = nelea() + neleb();
-    const int M = norb();
-    const size_t out = (twoS + 1) * comb.c(M+1, (N-twoS)/2) * comb.c(M+1, (M-((N+twoS)/2)));
-    return out / (M+1);
-  };
+    const size_t out = (twoS + 1) * comb.c(norb()+1, (N-twoS)/2) * comb.c(norb()+1, (norb()-((N+twoS)/2)));
+    const size_t ncsfs = out / (norb()+1);
 
-  if (!mute) {
     cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
     cout << "  o alpha-beta strings" << endl;
     cout << "      length: " << setw(13) << lena() + lenb() << endl;
     cout << "  o size of the space " << endl;
     cout << "      determinant space:  " << lena() * lenb() << endl;
-    cout << "      spin-adapted space: " << ncsfs() << endl << endl;
+    cout << "      spin-adapted space: " << ncsfs << endl << endl;
     cout << "  o single displacement lists (alpha)" << endl;
     cout << "      length: " << setw(13) << phia_->size() << endl;
     cout << "  o single displacement lists (beta)" << endl;
