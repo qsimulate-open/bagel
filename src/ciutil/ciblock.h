@@ -43,7 +43,8 @@ class CIBlockInfo {
     CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
       : astrings_(ast), bstrings_(bst) {
       static_assert(std::is_base_of<CIString_base, StringType>::value, "illegal StringType specified");
-      assert(astrings_->norb() == bstrings_->norb());
+      // norb should match or one of strings is dummy
+      assert(astrings_->norb() == bstrings_->norb() || astrings_->norb()*bstrings_->norb() == 0);
     }
     virtual ~CIBlockInfo() { }
 
@@ -54,6 +55,8 @@ class CIBlockInfo {
     int nspin() const { return nelea() - neleb(); }
     int nelea() const { return astrings_->nele(); }
     int neleb() const { return bstrings_->nele(); }
+
+    bool empty() const { return size() == 0; }
 
     // static constants
     static const int Alpha = 0;

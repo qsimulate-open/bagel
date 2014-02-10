@@ -120,13 +120,13 @@ class CIStringSet {
     std::shared_ptr<const StringType> find_string(const std::bitset<nbit__>& bit) const {
       for (auto& i : stringset_)
         if (i->contains(bit)) return i;
-      return  std::shared_ptr<const StringType>();
+      return  std::make_shared<const StringType>();
     }
 
     std::shared_ptr<const StringType> find_string(const int nholes, const int nparticles) const {
       for (auto& i : stringset_)
         if (i->matches(nholes, nparticles)) return i;
-      return  std::shared_ptr<const StringType>();
+      return  std::make_shared<const StringType>();
     }
 
     size_t lexical_offset(const std::bitset<nbit__>& bit) const {

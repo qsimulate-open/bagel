@@ -128,7 +128,7 @@ class CIString_base_impl : public CIString_base {
     }
 
   public:
-    CIString_base_impl() { }
+    CIString_base_impl() : norb_(0), nele_(0), offset_(0) { }
     CIString_base_impl(std::initializer_list<size_t> args) {
       assert(args.size() == 2*N+1);
       auto iter = args.begin();
@@ -159,6 +159,8 @@ class CIString_base_impl : public CIString_base {
     int norb() const { return norb_; }
     size_t size() const { return strings_.size(); }
     size_t offset() const { return offset_; }
+
+    bool empty() const { return size() == 0; }
 
     size_t key() const {
       size_t out = 0;

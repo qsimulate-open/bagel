@@ -34,18 +34,21 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 using namespace std;
 using namespace bagel;
 
-Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute) : compress_(_compress) {
-  blockinfo_[0] = make_shared<FCIBlockInfo>(_norb, _nelea, _neleb, mute);
+Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute) : compress_(compress) {
+  auto ast = make_shared<FCIString>(nelea, norb);
+  auto bst = make_shared<FCIString>(neleb, norb);
 
-  for (auto& i : blockinfo_) {
-    string_bits_a_.insert(string_bits_a_.end(), i.second->string_bits_a().begin(), i.second->string_bits_a().end());
-    string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
-  }
+  alphaspaces_ = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{ast});
+  betaspaces_  = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{bst});
 
-  phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
-  phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
-  phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
-  phib_uncompressed_ = blockinfo(0)->strings<1>()->uncompressed_phi();
+  for (auto& a : *alphaspaces_)
+    for (auto& b : *betaspaces_)
+      blockinfo_.push_back(make_shared<FCIBlockInfo>(a, b));
+
+  phia_ = compress_ ? ast->phi() : ast->uncompressed_phi();
+  phia_uncompressed_ = ast->uncompressed_phi();
+  phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
+  phib_uncompressed_ = bst->uncompressed_phi();
 
   if (!mute) {
     cout << "  o single displacement lists (alpha)" << endl;
@@ -57,17 +60,17 @@ Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, 
 
 
 Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute) : compress_(compress) {
-  blockinfo_[0] = make_shared<FCIBlockInfo>(ast, bst);
+  alphaspaces_ = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{ast});
+  betaspaces_  = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{bst});
 
-  for (auto& i : blockinfo_) {
-    string_bits_a_.insert(string_bits_a_.end(), i.second->string_bits_a().begin(), i.second->string_bits_a().end());
-    string_bits_b_.insert(string_bits_b_.end(), i.second->string_bits_b().begin(), i.second->string_bits_b().end());
-  }
+  for (auto& a : *alphaspaces_)
+    for (auto& b : *betaspaces_)
+      blockinfo_.push_back(make_shared<FCIBlockInfo>(a, b));
 
-  phia_ = compress_ ? blockinfo(0)->strings<0>()->phi() : blockinfo(0)->strings<0>()->uncompressed_phi();
-  phia_uncompressed_ = blockinfo(0)->strings<0>()->uncompressed_phi();
-  phib_ = compress_ ? blockinfo(0)->strings<1>()->phi() : blockinfo(0)->strings<1>()->uncompressed_phi();
-  phib_uncompressed_ = blockinfo(0)->strings<1>()->uncompressed_phi();
+  phia_ = compress_ ? ast->phi() : ast->uncompressed_phi();
+  phia_uncompressed_ = ast->uncompressed_phi();
+  phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
+  phib_uncompressed_ = bst->uncompressed_phi();
 
   if (!mute) {
     cout << "  o single displacement lists (alpha)" << endl;

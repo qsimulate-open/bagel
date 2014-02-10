@@ -28,6 +28,7 @@
 #define __SRC_FCI_DETERMINANTS_H
 
 #include <src/fci/fciblock.h>
+#include <src/ciutil/cistringset.h>
 #include <src/ciutil/cistringspace.h>
 
 namespace bagel {
@@ -37,11 +38,10 @@ namespace bagel {
 class Determinants : public std::enable_shared_from_this<Determinants> {
   protected:
     // vector of length 1. using unordered_map for compatibility to RAS code
-    std::unordered_map<size_t, std::shared_ptr<const FCIBlockInfo>> blockinfo_;
+    std::vector<std::shared_ptr<const FCIBlockInfo>> blockinfo_;
 
-    // global string list (TODO in principle, this is redundant)
-    std::vector<std::bitset<nbit__>> string_bits_a_;
-    std::vector<std::bitset<nbit__>> string_bits_b_;
+    std::shared_ptr<const CIStringSet<FCIString>> alphaspaces_;
+    std::shared_ptr<const CIStringSet<FCIString>> betaspaces_;
 
     bool compress_;
 
@@ -67,12 +67,7 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     std::shared_ptr<const StringMap> phidowna_;
     std::shared_ptr<const StringMap> phidownb_;
 
-    // for range check in the debug mode
-    const std::shared_ptr<const FCIBlockInfo>& blockinfo(const int i) const {
-      auto iter = blockinfo_.find(i);
-      assert(iter != blockinfo_.end());
-      return iter->second;
-    }
+    const std::shared_ptr<const FCIBlockInfo>& blockinfo(const int i) const { return blockinfo_[i]; }
 
   private:
     friend class boost::serialization::access;
@@ -118,12 +113,10 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
       return blockinfo(0)->lexical<Spin>(bit);
     }
 
-    // TODO see above
-    const std::bitset<nbit__>& string_bits_a(const size_t i) const { assert(i < string_bits_a_.size()); return string_bits_a_[i]; }
-    const std::bitset<nbit__>& string_bits_b(const size_t i) const { assert(i < string_bits_b_.size()); return string_bits_b_[i]; }
-    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return string_bits_a_; }
-    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return string_bits_b_; }
-
+    const std::bitset<nbit__>& string_bits_a(const size_t i) const { return alphaspaces_->strings(i); }
+    const std::bitset<nbit__>& string_bits_b(const size_t i) const { return betaspaces_->strings(i); }
+    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return alphaspaces_->strings(); }
+    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return betaspaces_->strings(); }
 
     bool operator==(const Determinants& o) const
       { return (norb() == o.norb() && nelea() == o.nelea() && neleb() == o.neleb() && compress_ == o.compress_); }

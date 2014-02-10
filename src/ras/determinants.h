@@ -31,12 +31,14 @@
 #include <memory>
 #include <unordered_map>
 
+#include <src/ciutil/ciblock.h>
 #include <src/ciutil/cistring.h>
 #include <src/ciutil/cistringset.h>
 
 namespace bagel {
 
 using DetMapBlock = DetMapBlock_base<RASString>;
+using RASBlockInfo = CIBlockInfo<RASString>;
 
 class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
   protected:
@@ -51,6 +53,11 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const int lenparts_; // number of combinations of particles
 
     size_t size_;
+
+    std::shared_ptr<const CIStringSet<RASString>> alphaspaces_;
+    std::shared_ptr<const CIStringSet<RASString>> betaspaces_;
+
+    std::vector<std::shared_ptr<const RASBlockInfo>> blockinfo_;
 
     std::weak_ptr<RASDeterminants> addalpha_;
     std::weak_ptr<RASDeterminants> remalpha_;
@@ -68,11 +75,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     std::vector<std::vector<DetMap>> phidowna_;
     std::vector<std::vector<DetMap>> phidownb_;
-
-    std::shared_ptr<const CIStringSet<RASString>> alphaspaces_;
-    std::shared_ptr<const CIStringSet<RASString>> betaspaces_;
-
-    std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>> stringpairs_;
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
@@ -121,12 +123,10 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin>
     const std::vector<std::shared_ptr<const RASString>> allowed_spaces(std::shared_ptr<const RASString> sp) const {
       std::vector<std::shared_ptr<const RASString>> out;
-      const int np = sp->nparticles();
-      const int nh = sp->nholes();
-      for (int jp = 0; jp + np <= max_particles_; ++jp) {
-        for (int ih = 0; ih + nh <= max_holes_; ++ih) {
-          std::shared_ptr<const RASString> sp = space< (spin == 0 ? 1 : 0) >(ih, jp);
-          if (sp) out.push_back(sp);
+      for (int jp = 0; jp + sp->nparticles() <= max_particles_; ++jp) {
+        for (int ih = 0; ih + sp->nholes() <= max_holes_; ++ih) {
+          std::shared_ptr<const RASString> sp = space<spin^1>(ih, jp);
+          if (!sp->empty()) out.push_back(sp);
         }
       }
       return out;
@@ -138,7 +138,7 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     const std::vector<std::bitset<nbit__>>& string_bits_a() const { return alphaspaces_->strings(); }
     const std::vector<std::bitset<nbit__>>& string_bits_b() const { return betaspaces_->strings(); }
 
-    const std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>>& stringpairs() const { return stringpairs_; }
+    const std::vector<std::shared_ptr<const RASBlockInfo>>& blockinfo() const { return blockinfo_; }
 
     const int nspin() const { return nelea_ - neleb_; }
     const int norb()  const { return norb_; }
@@ -186,8 +186,8 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin> size_t lexical_zero(const std::bitset<nbit__>& bit)   const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_zero(bit); }
     template <int spin> size_t lexical_offset(const std::bitset<nbit__>& bit) const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_offset(bit); }
 
-    std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
-                                                                   const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
+    std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double>
+      spin_adapt(const int spin, const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
     template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);

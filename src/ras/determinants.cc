@@ -85,37 +85,21 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
   if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
   size_ = 0;
-#if 1
+
   for (int nholes = 0; nholes <= max_holes_; ++nholes) {
     for (int nha = nholes; nha >= 0; --nha) {
       const int nhb = nholes - nha;
-
       for (int npart = 0; npart <= max_particles_; ++npart) {
         for (int npa = npart; npa >= 0; --npa) {
           const int npb = npart - npa;
 
-          shared_ptr<const RASString> sa = space<0>(nha, npa);
-          shared_ptr<const RASString> sb = space<1>(nhb, npb);
-
-          stringpairs_.emplace_back(sa, sb);
-
-          if ( sa && sb ) size_ += sa->size() * sb->size();
+          auto block = make_shared<const RASBlockInfo>(space<0>(nha, npa), space<1>(nhb, npb));
+          blockinfo_.push_back(block);
+          if (!block->empty()) size_ += block->size();
         }
       }
     }
   }
-#else
-  for (auto& ma : *alphaspaces_) {
-    shared_ptr<const RASString> a = ma.second;
-    for (auto& mb : *betaspaces_) {
-      shared_ptr<const RASString> b = mb.second;
-      if (a->nholes()+b->nholes() <= max_holes_ && a->nparticles()+b->nparticles() <= max_particles_) {
-        stringpairs_.emplace_back(a, b);
-        size_ += a->size() * b->size();
-      }
-    }
-  }
-#endif
   if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 

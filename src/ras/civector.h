@@ -217,9 +217,9 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
   public:
     DistRASCivector(std::shared_ptr<const RASDeterminants> det) : RASCivector_base<DistCIBlock<DataType>>(det), global_size_(det->size()) {
       size_t block_offset = 0;
-      for (auto& ipair : det->stringpairs()) {
-        if (ipair.first && ipair.second)
-          blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, block_offset));
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty())
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), block_offset));
         else
           blocks_.push_back(std::shared_ptr<RBlock>());
         ++block_offset;
@@ -628,9 +628,9 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
       std::fill_n(data_.get(), size_, 0.0);
 
       size_t sz = 0;
-      for (auto& ipair : det->stringpairs()) {
-        if ( ipair.first && ipair.second ) {
-          blocks_.push_back(std::make_shared<RBlock>(ipair.first, ipair.second, data_.get()+sz, sz));
+      for (auto& ipair : det->blockinfo()) {
+        if (!ipair->empty()) {
+          blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data_.get()+sz, sz));
           sz += blocks_.back()->size();
         }
         else {
