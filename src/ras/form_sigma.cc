@@ -342,7 +342,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
           }
           if (phis.size() > 0) {
             const size_t sz = phis.size();
-            reduced_phi.emplace_back(phiblock.space(), move(phis));
+            reduced_phi.emplace_back(offset, phiblock.space(), move(phis));
             offset += sz;
           }
         }

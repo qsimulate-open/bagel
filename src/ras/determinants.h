@@ -237,6 +237,8 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
   for (size_t i = 0; i < stringsize; ++i)
     lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i)).to_ullong()] = i;
 
+  std::vector<size_t> offsets(nij, 0);
+
   for (auto& ispace : *stringspace) {
     size_t tindex = 0;
     for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++tindex) {
@@ -259,7 +261,8 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
       }
       for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) {
         pij[i].shrink_to_fit();
-        phi_ij[i].emplace_back(ispace, std::move(pij[i]));
+        phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
+        offsets[i] += phi_ij[i].back().size();
       }
     }
   }

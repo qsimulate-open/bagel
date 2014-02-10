@@ -101,16 +101,17 @@ class StringMap {
 template <class StringType>
 class DetMapBlock_base {
   protected:
+    size_t offset_;
     std::shared_ptr<const StringType> space_;
     std::vector<DetMap> phis_;
 
   public:
-    DetMapBlock_base(std::shared_ptr<const StringType> sp, std::vector<DetMap>&& p) : space_(sp), phis_(std::move(p)) {}
+    DetMapBlock_base(const size_t o, std::shared_ptr<const StringType> sp, std::vector<DetMap>&& p) : offset_(o), space_(sp), phis_(std::move(p)) {}
 
     std::vector<DetMap>::const_iterator begin() const { return phis_.begin(); }
     std::vector<DetMap>::const_iterator end() const { return phis_.end(); }
     size_t size() const { return phis_.size(); }
-    size_t offset() const { return space_->offset(); }
+    size_t offset() const { return offset_; }
     std::shared_ptr<const StringType> space() const { return space_; }
 };
 
