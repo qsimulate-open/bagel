@@ -34,28 +34,8 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 using namespace std;
 using namespace bagel;
 
-Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute) : compress_(compress) {
-  auto ast = make_shared<FCIString>(nelea, norb);
-  auto bst = make_shared<FCIString>(neleb, norb);
-
-  alphaspaces_ = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{ast});
-  betaspaces_  = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{bst});
-
-  for (auto& a : *alphaspaces_)
-    for (auto& b : *betaspaces_)
-      blockinfo_.push_back(make_shared<FCIBlockInfo>(a, b));
-
-  phia_ = compress_ ? ast->phi() : ast->uncompressed_phi();
-  phia_uncompressed_ = ast->uncompressed_phi();
-  phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
-  phib_uncompressed_ = bst->uncompressed_phi();
-
-  if (!mute) {
-    cout << "  o single displacement lists (alpha)" << endl;
-    cout << "      length: " << setw(13) << phia_->size() << endl;
-    cout << "  o single displacement lists (beta)" << endl;
-    cout << "      length: " << setw(13) << phib_->size() << endl;
-  }
+Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute)
+ : Determinants(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb), compress, mute) {
 }
 
 
@@ -72,7 +52,21 @@ Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCI
   phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
   phib_uncompressed_ = bst->uncompressed_phi();
 
+  auto ncsfs = [this]() const {
+    const int twoS = abs(nspin());
+    const int N = nelea() + neleb();
+    const int M = norb();
+    const size_t out = (twoS + 1) * comb.c(M+1, (N-twoS)/2) * comb.c(M+1, (M-((N+twoS)/2)));
+    return out / (M+1);
+  };
+
   if (!mute) {
+    cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
+    cout << "  o alpha-beta strings" << endl;
+    cout << "      length: " << setw(13) << lena() + lenb() << endl;
+    cout << "  o size of the space " << endl;
+    cout << "      determinant space:  " << lena() * lenb() << endl;
+    cout << "      spin-adapted space: " << ncsfs() << endl << endl;
     cout << "  o single displacement lists (alpha)" << endl;
     cout << "      length: " << setw(13) << phia_->size() << endl;
     cout << "  o single displacement lists (beta)" << endl;

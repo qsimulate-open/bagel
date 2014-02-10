@@ -27,13 +27,14 @@
 #ifndef __SRC_FCI_DETERMINANTS_H
 #define __SRC_FCI_DETERMINANTS_H
 
-#include <src/fci/fciblock.h>
+#include <src/ciutil/ciblock.h>
 #include <src/ciutil/cistringset.h>
 #include <src/ciutil/cistringspace.h>
 
 namespace bagel {
 
 //  implements a determinant space with fixed numbers of nelea and neleb.
+using FCIBlockInfo = CIBlockInfo<FCIString>;
 
 class Determinants : public std::enable_shared_from_this<Determinants> {
   protected:
@@ -97,7 +98,6 @@ class Determinants : public std::enable_shared_from_this<Determinants> {
     size_t lena(const size_t i = 0) const { return blockinfo(i)->lena(); }
     size_t lenb(const size_t i = 0) const { return blockinfo(i)->lenb(); }
     size_t size(const size_t i = 0) const { return blockinfo(i)->size(); }
-    size_t ncsfs(const size_t i = 0) const { return blockinfo(i)->ncsfs(); }
 
     template<int Spin>
     int sign(const std::bitset<nbit__>& bit, const size_t pos) const {
