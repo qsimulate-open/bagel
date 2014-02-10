@@ -135,8 +135,7 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
   const size_t la = det->lena();
 
   // Let's just get it working first, thread it later
-  for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const RASString> ispace = spaceiter.second;
+  for (auto& ispace : *det->stringspacea()) {
     unique_ptr<double[]> F(new double[la * ispace->size()]);
     fill_n(F.get(), la * ispace->size(), 0.0);
     double* fdata = F.get();
@@ -238,9 +237,8 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
   map<size_t, map<size_t, pair<vector<tuple<size_t, int, int>>, shared_ptr<SparseMatrix>>>> Fmatrices;
 
-  for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const RASString> ispace = spaceiter.second;
-    const int nspaces = det->stringspacea().size();
+  for (auto& ispace : *det->stringspacea()) {
+    const int nspaces = det->stringspacea()->nspaces();
     const size_t la = ispace->size();
 
     // These are for building the initial versions of the sparse matrices
@@ -250,8 +248,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
     vector<vector<tuple<size_t, int, int>>> sparse_info(nspaces);
 
     vector<pair<size_t, int>> bounds;
-    for (auto& spaceiter : det->stringspacea()) {
-      shared_ptr<const RASString> isp = spaceiter.second;
+    for (auto& isp : *det->stringspacea()) {
       bounds.emplace_back(isp->offset(), isp->offset() + isp->size());
     }
     assert(bounds.size() == nspaces);
@@ -330,8 +327,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
       }
 
       // build V(I), block by block
-      for (auto& spaceiter : det->stringspacea()) {
-        shared_ptr<const RASString> ispace = spaceiter.second;
+      for (auto& ispace : *det->stringspacea()) {
         const size_t la = ispace->size();
 
         // build reduced version of phiblock and Cp
@@ -346,7 +342,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
           }
           if (phis.size() > 0) {
             const size_t sz = phis.size();
-            reduced_phi.emplace_back(offset, phiblock.space(), move(phis));
+            reduced_phi.emplace_back(phiblock.space(), move(phis));
             offset += sz;
           }
         }
@@ -545,14 +541,14 @@ void FormSigmaRAS::sigma_ab_1(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec
       }
 
       // build V(I), block by block
-      for (auto& spaceiter : det->stringspacea()) {
+      for (auto& spaceiter : *det->stringspacea()) {
         shared_ptr<const RASString> ispace = spaceiter.second;
         const size_t la = ispace->size();
 
         auto VI_out = make_shared<Matrix>(phisize, la);
         array<shared_ptr<Matrix>, 3> VI{{ VI_out->clone(), VI_out, VI_out->clone() }};
         auto VI_trans = make_shared<Matrix>(la, phisize);
-        const int nspaces = det->stringspacea().size();
+        const int nspaces = det->stringspacea()->nspaces();
 
         // spaces are I:0, II:1, II:2
         for(auto& cpblock : Cp_map) {

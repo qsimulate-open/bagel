@@ -97,5 +97,22 @@ class StringMap {
     void serialize(Archive& ar, const unsigned int) { ar & data_; }
 };
 
+
+template <class StringType>
+class DetMapBlock_base {
+  protected:
+    std::shared_ptr<const StringType> space_;
+    std::vector<DetMap> phis_;
+
+  public:
+    DetMapBlock_base(std::shared_ptr<const StringType> sp, std::vector<DetMap>&& p) : space_(sp), phis_(std::move(p)) {}
+
+    std::vector<DetMap>::const_iterator begin() const { return phis_.begin(); }
+    std::vector<DetMap>::const_iterator end() const { return phis_.end(); }
+    size_t size() const { return phis_.size(); }
+    size_t offset() const { return space_->offset(); }
+    std::shared_ptr<const StringType> space() const { return space_; }
+};
+
 }
 #endif

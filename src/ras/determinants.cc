@@ -50,30 +50,35 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
   if (!mute) cout << "   - RAS3 -> " << ras_[2] << endl << endl;
 
   if (!mute) cout << " o Constructing all possible strings with up to " << max_holes_ << " holes and " << max_particles_ << " particles" << endl;
-  for (int nholes = 0; nholes <= max_holes_; ++nholes) {
-    const int nele1 = norb1 - nholes;
-    for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
-      const int nele3 = nparticles;
-      const int nele2a = nelea_ - (nele1 + nele3);
-      const int nele2b = neleb_ - (nele1 + nele3);
+  {
+    list<shared_ptr<const RASString>> alpha;
+    list<shared_ptr<const RASString>> beta;
 
-      if ( (nele1 >= 0) && (nele3 <= norb3) ) {
-        if ( (nele2a >= 0) && (nele2a <= norb2) ) {
-          auto sp = make_shared<const RASString>(nele1, norb1, nele2a, norb2, nele3, norb3, string_bits_a().size());
-          alphaspaces_.emplace(nparticles + nholes * large__, sp);
-          string_bits_a().insert(string_bits_a().end(), sp->strings().begin(), sp->strings().end());
-        }
+    for (int nholes = 0; nholes <= max_holes_; ++nholes) {
+      const int nele1 = norb1 - nholes;
+      for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
+        const int nele3 = nparticles;
+        const int nele2a = nelea_ - (nele1 + nele3);
+        const int nele2b = neleb_ - (nele1 + nele3);
 
-        if ( (nele2b >= 0) && (nele2b <= norb2) ) {
-          auto sp = make_shared<const RASString>(nele1, norb1, nele2b, norb2, nele3, norb3, string_bits_b().size());
-          betaspaces_.emplace(nparticles + nholes * large__, sp);
-          string_bits_b().insert(string_bits_b().end(), sp->strings().begin(), sp->strings().end());
+        if (nele1 >= 0 && nele3 <= norb3) {
+          if (nele2a >= 0 && nele2a <= norb2)
+            alpha.push_back(make_shared<const RASString>(nele1, norb1, nele2a, norb2, nele3, norb3));
+
+          if (nele2b >= 0 && nele2b <= norb2)
+            beta.push_back(make_shared<const RASString>(nele1, norb1, nele2b, norb2, nele3, norb3));
         }
       }
     }
+    alphaspaces_ = make_shared<CIStringSet<RASString>>(alpha);
+    betaspaces_ = make_shared<CIStringSet<RASString>>(beta);
   }
-  if (!mute) cout << "   - alpha strings: " << string_bits_a().size() << endl;
-  if (!mute) cout << "   - beta strings: " << string_bits_b().size() << endl << endl;
+
+  string_bits_a_ = alphaspaces_->strings();
+  string_bits_b_ = betaspaces_->strings();
+
+  if (!mute) cout << "   - alpha strings: " << alphaspaces_->size() << endl;
+  if (!mute) cout << "   - beta strings: "  <<  betaspaces_->size() << endl << endl;
 
   if (!mute) cout << " o Constructing alpha and beta displacement lists" << endl;
   construct_phis_<0>(alphaspaces_, phia_, phia_ij_);
@@ -83,7 +88,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
   if (!mute) cout << " o Constructing pairs of allowed string spaces" << endl;
   size_ = 0;
-  stringpairs_.reserve( lenholes_ * lenparts_ );
+#if 1
   for (int nholes = 0; nholes <= max_holes_; ++nholes) {
     for (int nha = nholes; nha >= 0; --nha) {
       const int nhb = nholes - nha;
@@ -102,6 +107,18 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       }
     }
   }
+#else
+  for (auto& ma : *alphaspaces_) {
+    shared_ptr<const RASString> a = ma.second;
+    for (auto& mb : *betaspaces_) {
+      shared_ptr<const RASString> b = mb.second;
+      if (a->nholes()+b->nholes() <= max_holes_ && a->nparticles()+b->nparticles() <= max_particles_) {
+        stringpairs_.emplace_back(a, b);
+        size_ += a->size() * b->size();
+      }
+    }
+  }
+#endif
   if (!mute) cout << "   - size of restricted space: " << size_ << endl;
 }
 

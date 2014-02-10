@@ -35,23 +35,8 @@
 #include <src/ciutil/cistringset.h>
 
 namespace bagel {
-class DetMapBlock {
-  protected:
-    const size_t offset_;
-    std::shared_ptr<const RASString> space_;
-    std::vector<DetMap> phis_;
 
-  public:
-    DetMapBlock(const int o, std::shared_ptr<const RASString> sp, std::vector<DetMap>&& p) : offset_(o), space_(sp), phis_(std::move(p)) {}
-
-    std::vector<DetMap>::const_iterator begin() const { return phis_.begin(); }
-    std::vector<DetMap>::const_iterator end() const { return phis_.end(); }
-    size_t size() const { return phis_.size(); }
-
-    size_t offset() const { return offset_; }
-
-    std::shared_ptr<const RASString> space() const { return space_; }
-};
+using DetMapBlock = DetMapBlock_base<RASString>;
 
 class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
   protected:
@@ -84,25 +69,13 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     std::vector<std::vector<DetMap>> phidowna_;
     std::vector<std::vector<DetMap>> phidownb_;
 
-    std::map<int, std::shared_ptr<const RASString>> alphaspaces_;
-    std::map<int, std::shared_ptr<const RASString>> betaspaces_;
+    std::shared_ptr<const CIStringSet<RASString>> alphaspaces_;
+    std::shared_ptr<const CIStringSet<RASString>> betaspaces_;
 
     std::vector<std::bitset<nbit__>> string_bits_a_;
     std::vector<std::bitset<nbit__>> string_bits_b_;
 
     std::vector<std::pair<std::shared_ptr<const RASString>, std::shared_ptr<const RASString>>> stringpairs_;
-
-    std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) const {
-      std::vector<int> out;
-      for (int i = 0; i != norb_; ++i) if (bit[i]) out.push_back(i);
-      return out;
-    }
-
-    std::bitset<nbit__> numbers_to_bit(const std::vector<int>& num) const {
-      std::bitset<nbit__> out(0);
-      for (auto& i : num) out.set(i);
-      return out;
-    }
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
@@ -228,55 +201,44 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     template <int spin> void link(std::shared_ptr<RASDeterminants> odet);
 
-    const std::map<int, std::shared_ptr<const RASString>>& stringspacea() const { return alphaspaces_; }
-    const std::map<int, std::shared_ptr<const RASString>>& stringspaceb() const { return betaspaces_; }
-
     template <int spin> std::shared_ptr<const RASString> space(const int nholes, const int nparticles) const {
-      auto& sp = (spin == Alpha ? alphaspaces_ : betaspaces_);
-      auto i = sp.find(nparticles + nholes * large__);
-      return (i!=sp.end() ? i->second : std::shared_ptr<const RASString>());
+      return (spin == Alpha ? alphaspaces_ : betaspaces_)->find_string(nholes, nparticles);
     }
-    template <int spin> std::shared_ptr<const RASString> space(const std::bitset<nbit__>& bit) const
-      { return space<spin>(nholes(bit), nparticles(bit)); }
+    template <int spin> std::shared_ptr<const RASString> space(const std::bitset<nbit__>& bit) const {
+      return (spin == Alpha ? alphaspaces_ : betaspaces_)->find_string(bit);
+    }
+    const std::shared_ptr<const CIStringSet<RASString>>& stringspacea() const { return alphaspaces_; }
+    const std::shared_ptr<const CIStringSet<RASString>>& stringspaceb() const { return betaspaces_; }
 
-    template <int spin> size_t lexical_zero(const std::bitset<nbit__>& bit) const { std::shared_ptr<const RASString> sspace = space<spin>(bit); return sspace->lexical_zero(bit); }
-    template <int spin> size_t lexical_offset(const std::bitset<nbit__>& bit) const { std::shared_ptr<const RASString> sspace = space<spin>(bit); return sspace->lexical_offset(bit); }
+    template <int spin> size_t lexical_zero(const std::bitset<nbit__>& bit)   const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_zero(bit); }
+    template <int spin> size_t lexical_offset(const std::bitset<nbit__>& bit) const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_offset(bit); }
 
     std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double> spin_adapt(const int spin,
                                                                    const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
   private:
-    template <int spin> void construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
+    template <int spin> void construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij);
 };
 
 template <int spin>
-void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const RASString>>& stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
+void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASString>> stringspace, std::shared_ptr<const StringMap>& phi, std::vector<std::vector<DetMapBlock>>& phi_ij) {
 
-  // for the time being make a list of RASString
-  std::list<std::shared_ptr<const RASString>> list;
-  for (auto& i : stringspace) list.push_back(i.second);
-  CIStringSet<RASString> set(list);
-
-  phi = set.phi();
+  phi = stringspace->phi();
 
 
   // old code for phi_ij TODO replace
   const int nij = (norb_ * (norb_ + 1))/2;
-  const size_t stringsize = std::accumulate(stringspace.begin(), stringspace.end(), 0ull,
-    [] (size_t i, std::pair<int, std::shared_ptr<const RASString>> v) { return i + v.second->size(); });
+  const size_t stringsize = stringspace->size();
   phi_ij.clear();
-  phi_ij.resize( nij );
-  for (auto& iphi : phi_ij) iphi.reserve( stringsize );
+  phi_ij.resize(nij);
+  for (auto& iphi : phi_ij) iphi.reserve(stringsize);
 
   std::unordered_map<size_t, size_t> lexmap;
   for (size_t i = 0; i < stringsize; ++i)
-    lexmap[ (spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i)).to_ullong() ] = i;
+    lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i)).to_ullong()] = i;
 
-  std::vector<size_t> offsets(nij, 0);
-
-  size_t tindex = 0;
-  for (auto& spaceiter : stringspace) {
-    std::shared_ptr<const RASString> ispace = spaceiter.second;
+  for (auto& ispace : *stringspace) {
+    size_t tindex = 0;
     for (auto istring = ispace->begin(); istring != ispace->end(); ++istring, ++tindex) {
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<DetMap>> pij;
@@ -291,14 +253,13 @@ void RASDeterminants::construct_phis_(const std::map<int, std::shared_ptr<const 
             const size_t source_lex = lexmap[sourcebit.to_ullong()];
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
-            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex-ispace->offset(), j+i*norb_);
+            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb_);
           }
         }
       }
       for (int i = 0; i < nij; ++i) if (pij[i].size() > 0) {
         pij[i].shrink_to_fit();
-        phi_ij[i].emplace_back(offsets[i], ispace, std::move(pij[i]));
-        offsets[i] += phi_ij[i].back().size();
+        phi_ij[i].emplace_back(ispace, std::move(pij[i]));
       }
     }
   }

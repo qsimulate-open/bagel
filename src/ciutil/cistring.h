@@ -188,6 +188,7 @@ class CIString_base_impl : public CIString_base {
     virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
 
     virtual bool contains(const std::bitset<nbit__>& bit) const = 0;
+    virtual bool matches(const int, const int) const = 0;
 };
 
 
@@ -249,6 +250,10 @@ class RASString : public CIString_base_impl<3> {
       assert(bit.count() == nele_);
       return nholes(bit) == nholes() && nparticles(bit) == nparticles();
     }
+
+    bool matches(const int nh, const int np) const {
+      return nh == nholes() && np == nparticles();
+    }
 };
 
 
@@ -277,7 +282,7 @@ class FCIString : public CIString_base_impl<1> {
     size_t lexical_zero(const std::bitset<nbit__>& bit) const override { return lexical(bit); }
 
     bool contains(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
-
+    bool matches(const int n, const int m) const { return true; }
 
 };
 

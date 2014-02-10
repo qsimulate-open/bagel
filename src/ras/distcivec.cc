@@ -146,7 +146,7 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 #endif
 
   // task construction by master
-  for (auto& spaceiter : this->det()->stringspacea()) {
+  for (auto& spaceiter : *this->det()->stringspacea()) {
     shared_ptr<const RASString> ispace = spaceiter.second;
     size_t astart, aend;
     tie(astart, aend) = ispace->dist().range(mpi__->rank());
@@ -198,13 +198,13 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : sdet->stringspacea()) {
+  for (auto& ispace : *sdet->stringspacea()) {
     if (ispace)
       for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : sdet->stringspaceb()) {
+  for (auto& ispace : *sdet->stringspaceb()) {
     if (ispace)
       for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
@@ -266,13 +266,13 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : det_->stringspacea()) {
+  for (auto& ispace : *det_->stringspacea()) {
     if (ispace)
       for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : det_->stringspaceb()) {
+  for (auto& ispace : *det_->stringspaceb()) {
     if (ispace)
       for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }

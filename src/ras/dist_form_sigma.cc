@@ -150,8 +150,7 @@ void DistFormSigmaRAS::sigma_bb(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   const int norb = det->norb();
   const size_t lb = det->lenb();
 
-  for (auto& spaceiter : det->stringspaceb()) {
-    shared_ptr<const RASString> ispace = spaceiter.second;
+  for (auto& ispace : *det->stringspaceb()) {
     auto F = make_shared<Matrix>(lb, ispace->size());
     double* fdata = F->data();
     for (size_t ib = 0; ib < ispace->size(); ++ib, fdata+=lb) {
@@ -190,8 +189,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   // mapping space offsets to process bounds
   map<size_t, tuple<size_t, size_t>> bounds_map;
   map<size_t, vector<int>> scattering_map;
-  for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const RASString> sp = spaceiter.second;
+  for (auto& sp : *det->stringspacea()) {
     StaticDist d(sp->size(), mpi__->size());
     bounds_map.emplace(sp->offset(), d.range(mpi__->rank()));
     vector<int> scat(mpi__->size());
@@ -204,9 +202,8 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
   map<size_t, map<size_t, pair<vector<tuple<size_t, int, size_t>>, shared_ptr<SparseMatrix>>>> Fmatrices;
 
   // Builds prototypes for the sparse F matrices as well as vectors that contain all of the information necessary to update the matrices as they are needed
-  const int nspaces = det->stringspacea().size();
-  for (auto& spaceiter : det->stringspacea()) {
-    shared_ptr<const RASString> ispace = spaceiter.second;
+  const int nspaces = det->stringspacea()->nspaces();
+  for (auto& ispace : *det->stringspacea()) {
     const size_t la = ispace->size();
 
     // These are for building the initial versions of the sparse matrices
@@ -292,8 +289,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
       }
 
       // build V(I), block by block
-      for (auto& spaceiter : det->stringspacea()) {
-        shared_ptr<const RASString> ispace = spaceiter.second;
+      for (auto& ispace : *det->stringspacea()) {
         const size_t la = ispace->size();
 
         // Beware, this COULD be a memory problem
