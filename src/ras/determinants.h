@@ -41,9 +41,6 @@ class RASDeterminants : public Determinants_base<RASString>,
     const int max_holes_;
     const int max_particles_;
 
-    const int lenholes_; // number of combinations of holes
-    const int lenparts_; // number of combinations of particles
-
     std::weak_ptr<RASDeterminants> addalpha_;
     std::weak_ptr<RASDeterminants> remalpha_;
     std::weak_ptr<RASDeterminants> addbeta_;
@@ -96,9 +93,6 @@ class RASDeterminants : public Determinants_base<RASString>,
 
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
-
-    const int lenholes() const { return lenholes_; }
-    const int lenparts() const { return lenparts_; }
 
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }

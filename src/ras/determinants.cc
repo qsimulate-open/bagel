@@ -34,10 +34,9 @@ using namespace std;
 using namespace bagel;
 
 RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
-    const int max_holes, const int max_particles, const bool mute) :
-  ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles),
-    lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
-{
+                                 const int max_holes, const int max_particles, const bool mute)
+ : ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles) {
+
   if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
 
   // check that large__ is big enough
