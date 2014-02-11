@@ -75,10 +75,8 @@ void ComplexMomentumBatch::compute() {
 
 
 void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
-  const int worksize = amax1_;
-  complex<double>* workpx = stack_->get<complex<double>>(worksize*worksize);
-  complex<double>* workpy = stack_->get<complex<double>>(worksize*worksize);
-  complex<double>* workpz = stack_->get<complex<double>>(worksize*worksize);
+  const int amax2 = amax1_+1;
+  const int worksize = amax2;
   complex<double>* worksx = stack_->get<complex<double>>(worksize*worksize);
   complex<double>* worksy = stack_->get<complex<double>>(worksize*worksize);
   complex<double>* worksz = stack_->get<complex<double>>(worksize*worksize);
@@ -87,53 +85,36 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
     // Perform VRR
     int offset_ii = ii*asize_intermediate_;
     const double cop = 1.0 / xp_[ii];
-    const double ca = xa_[ii];
-    const double cb = xb_[ii];
-    const double bop = cb*cop;
     const complex<double> cxpa = P_[ii*3  ]-basisinfo_[0]->position(0);
     const complex<double> cypa = P_[ii*3+1]-basisinfo_[0]->position(1);
     const complex<double> czpa = P_[ii*3+2]-basisinfo_[0]->position(2);
     complex<double>* current_data = &intermediate[offset_ii];
 
+    // obtain S(0, 0)
     worksx[0] = coeffsx_[ii];
     worksy[0] = coeffsy_[ii];
     worksz[0] = coeffsz_[ii];
 
-    workpx[0] = coeffsx_[ii]*2.0*ca*cxpa;
-    workpy[0] = coeffsy_[ii]*2.0*ca*cypa;
-    workpz[0] = coeffsz_[ii]*2.0*ca*czpa;
+    // obtain S(1, 0)
+    worksx[1] = cxpa*worksx[0];
+    worksy[1] = cypa*worksy[0];
+    worksz[1] = czpa*worksz[0];
 
-    if (ang0_+ang1_ > 0) {
-      worksx[1] = cxpa*worksx[0];
-      worksy[1] = cypa*worksy[0];
-      worksz[1] = czpa*worksz[0];
-
-      workpx[1] = cxpa*workpx[0]-bop*worksx[0];
-      workpy[1] = cypa*workpy[0]-bop*worksy[0];
-      workpz[1] = czpa*workpz[0]-bop*worksz[0];
-
-      for (int i = 2; i != amax1_; ++i) {
-        worksx[i] = cxpa*worksx[i-1]+0.5*(i-1)*cop*worksx[i-2];
-        worksy[i] = cypa*worksy[i-1]+0.5*(i-1)*cop*worksy[i-2];
-        worksz[i] = czpa*worksz[i-1]+0.5*(i-1)*cop*worksz[i-2];
-
-        workpx[i] = cxpa*workpx[i-1]+0.5*(i-1)*cop*workpx[i-2]-bop*worksx[i-1];
-        workpy[i] = cypa*workpy[i-1]+0.5*(i-1)*cop*workpy[i-2]-bop*worksy[i-1];
-        workpz[i] = czpa*workpz[i-1]+0.5*(i-1)*cop*workpz[i-2]-bop*worksz[i-1];
-      }
+    for (int i = 2; i != amax2; ++i) {
+      // obtain S(i, 0)
+      worksx[i] = cxpa*worksx[i-1]+0.5*(i-1)*cop*worksx[i-2];
+      worksy[i] = cypa*worksy[i-1]+0.5*(i-1)*cop*worksy[i-2];
+      worksz[i] = czpa*worksz[i-1]+0.5*(i-1)*cop*worksz[i-2];
     }
 
-    // peform HRR to obtain S(1, j)
+    // peform HRR
     if (ang1_ > 0) {
-      for (int j = 1; j <= ang1_; ++j) {
-        for (int i = 0; i != amax1_-j; ++i) {
-          worksx[j*amax1_+i] = AB_[0]*worksx[(j-1)*amax1_+i]+worksx[(j-1)*amax1_+i+1];
-          worksy[j*amax1_+i] = AB_[1]*worksy[(j-1)*amax1_+i]+worksy[(j-1)*amax1_+i+1];
-          worksz[j*amax1_+i] = AB_[2]*worksz[(j-1)*amax1_+i]+worksz[(j-1)*amax1_+i+1];
-
-          workpx[j*amax1_+i] = AB_[0]*workpx[(j-1)*amax1_+i]+workpx[(j-1)*amax1_+i+1]+worksx[(j-1)*amax1_+i];
-          workpy[j*amax1_+i] = AB_[1]*workpy[(j-1)*amax1_+i]+workpy[(j-1)*amax1_+i+1]+worksy[(j-1)*amax1_+i];
-          workpz[j*amax1_+i] = AB_[2]*workpz[(j-1)*amax1_+i]+workpz[(j-1)*amax1_+i+1]+worksz[(j-1)*amax1_+i];
+      for (int j = 1; j <= ang1_ + 1; ++j) {
+        for (int i = 0; i != amax2 - j; ++i) {
+          // obtain S(i, j)
+          worksx[j*amax2+i] = AB_[0]*worksx[(j-1)*amax2+i]+worksx[(j-1)*amax2+i+1];
+          worksy[j*amax2+i] = AB_[1]*worksy[(j-1)*amax2+i]+worksy[(j-1)*amax2+i+1];
+          worksz[j*amax2+i] = AB_[2]*worksz[(j-1)*amax2+i]+worksz[(j-1)*amax2+i+1];
         }
       }
     }
@@ -150,9 +131,9 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
             for (int jy = 0; jy <= ang1_-jz; ++jy) {
               const int jx = ang1_-jy-jz;
               if (jx >= 0) {
-                current_data[cnt              ] = workpx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
-                current_data[cnt+size_block_  ] = worksx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
-                current_data[cnt+size_block_*2] = worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
+                current_data[cnt              ] = 0.0; //workpx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
+                current_data[cnt+size_block_  ] = 0.0; //worksx[ix+amax1_*jx]*workpy[iy+amax1_*jy]*worksz[iz+amax1_*jz];
+                current_data[cnt+size_block_*2] = 0.0; //worksx[ix+amax1_*jx]*worksy[iy+amax1_*jy]*workpz[iz+amax1_*jz];
                 ++cnt;
               }
             }
@@ -167,9 +148,6 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
   stack_->release(worksize*worksize, worksz);
   stack_->release(worksize*worksize, worksy);
   stack_->release(worksize*worksize, worksx);
-  stack_->release(worksize*worksize, workpz);
-  stack_->release(worksize*worksize, workpy);
-  stack_->release(worksize*worksize, workpx);
 }
 
 // TODO For efficiency's sake, it's probably best to find a way to avoid repeatedly running basisinfo_[i]->vector_potential(j) each time we want to get a P or Q value
