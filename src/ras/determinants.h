@@ -28,53 +28,29 @@
 #define __SRC_RAS_DETERMINANTS_H
 
 #include <tuple>
-#include <memory>
-#include <unordered_map>
-
-#include <src/ciutil/ciblock.h>
-#include <src/ciutil/cistring.h>
-#include <src/ciutil/cistringset.h>
+#include <src/ciutil/determinants_base.h>
 
 namespace bagel {
 
 using DetMapBlock = DetMapBlock_base<RASString>;
-using RASBlockInfo = CIBlockInfo<RASString>;
 
-class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
+class RASDeterminants : public Determinants_base<RASString>,
+                        public std::enable_shared_from_this<RASDeterminants> {
   protected:
     std::array<int, 3> ras_;
-    const int norb_;
-    const int nelea_;
-    const int neleb_;
     const int max_holes_;
     const int max_particles_;
 
     const int lenholes_; // number of combinations of holes
     const int lenparts_; // number of combinations of particles
 
-    size_t size_;
-
-    std::shared_ptr<const CIStringSet<RASString>> alphaspaces_;
-    std::shared_ptr<const CIStringSet<RASString>> betaspaces_;
-
-    std::vector<std::shared_ptr<const RASBlockInfo>> blockinfo_;
-
     std::weak_ptr<RASDeterminants> addalpha_;
     std::weak_ptr<RASDeterminants> remalpha_;
     std::weak_ptr<RASDeterminants> addbeta_;
     std::weak_ptr<RASDeterminants> rembeta_;
 
-    std::shared_ptr<const StringMap> phia_;
-    std::shared_ptr<const StringMap> phib_;
-
     std::vector<std::vector<DetMapBlock>> phia_ij_;
     std::vector<std::vector<DetMapBlock>> phib_ij_;
-
-    std::shared_ptr<const StringMap> phiupa_;
-    std::shared_ptr<const StringMap> phiupb_;
-
-    std::shared_ptr<const StringMap> phidowna_;
-    std::shared_ptr<const StringMap> phidownb_;
 
   public:
     RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb, const int max_holes, const int max_particles, const bool mute = false);
@@ -83,24 +59,13 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
 
     std::shared_ptr<RASDeterminants> clone(const int nelea, const int neleb) const
       { return std::make_shared<RASDeterminants>(ras_, nelea, neleb, max_holes_, max_particles_, true); }
-    std::shared_ptr<RASDeterminants> transpose() const { return this->clone(neleb_, nelea_); }
+    std::shared_ptr<RASDeterminants> transpose() const { return this->clone(neleb(), nelea()); }
 
     static const int Alpha = 0;
     static const int Beta = 1;
 
     bool operator==(const RASDeterminants& o) const
-      { return ( nelea_ == o.nelea_ && neleb_ == o.neleb_ && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
-
-
-    template<int spin>
-    int sign(std::bitset<nbit__> bit, int i) const {
-      auto iter = std::find_if(blockinfo_.begin(), blockinfo_.end(), [](const std::shared_ptr<const RASBlockInfo>& o){ return !o->empty(); });
-      return (*iter)->sign<spin>(bit, i);
-    }
-
-    int sign(std::bitset<nbit__> bit, int i, int j) const {
-      return RASBlockInfo::sign(bit, i, j);
-    }
+      { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
 
     const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & std::bitset<nbit__>((1ull << ras_[0]) - 1ull)).count(); }
     const int nparticles(const std::bitset<nbit__> bit) const { return (bit & std::bitset<nbit__>(((1ull << ras_[2]) - 1ull) << (ras_[0] + ras_[1]))).count(); }
@@ -126,40 +91,17 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
       return out;
     }
 
-    // These access the global string lists
-    const std::bitset<nbit__>& string_bits_a(const size_t i) const { return alphaspaces_->strings(i); }
-    const std::bitset<nbit__>& string_bits_b(const size_t i) const { return betaspaces_->strings(i); }
-    const std::vector<std::bitset<nbit__>>& string_bits_a() const { return alphaspaces_->strings(); }
-    const std::vector<std::bitset<nbit__>>& string_bits_b() const { return betaspaces_->strings(); }
-
-    const std::vector<std::shared_ptr<const RASBlockInfo>>& blockinfo() const { return blockinfo_; }
-
-    const int nspin() const { return nelea_ - neleb_; }
-    const int norb()  const { return norb_; }
-    const int nelea() const { return nelea_; }
-    const int neleb() const { return neleb_; }
     const std::array<int, 3> ras() const { return ras_; }
     const int ras(const int i) const { return ras_[i]; }
 
     const int max_holes() const { return max_holes_; }
     const int max_particles() const { return max_particles_; }
 
-    const size_t lena() const { return alphaspaces_->size(); }
-    const size_t lenb() const { return betaspaces_->size(); }
-    const size_t size() const { return size_; }
     const int lenholes() const { return lenholes_; }
     const int lenparts() const { return lenparts_; }
 
-    const std::vector<DetMap>& phia(const size_t target) const { return phia_->data(target); }
-    const std::vector<DetMap>& phib(const size_t target) const { return phib_->data(target); }
-
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }
-
-    const std::vector<DetMap>& phiupa(const size_t i) const { return phiupa_->data(i); }
-    const std::vector<DetMap>& phiupb(const size_t i) const { return phiupb_->data(i); }
-    const std::vector<DetMap>& phidowna(const size_t i) const { return phidowna_->data(i); }
-    const std::vector<DetMap>& phidownb(const size_t i) const { return phidownb_->data(i); }
 
     std::shared_ptr<const RASDeterminants> addalpha() const { return addalpha_.lock();}
     std::shared_ptr<const RASDeterminants> remalpha() const { return remalpha_.lock();}
@@ -174,12 +116,6 @@ class RASDeterminants : public std::enable_shared_from_this<RASDeterminants> {
     template <int spin> std::shared_ptr<const RASString> space(const std::bitset<nbit__>& bit) const {
       return (spin == Alpha ? alphaspaces_ : betaspaces_)->find_string(bit);
     }
-    const std::shared_ptr<const CIStringSet<RASString>>& stringspacea() const { return alphaspaces_; }
-    const std::shared_ptr<const CIStringSet<RASString>>& stringspaceb() const { return betaspaces_; }
-
-    template <int spin> size_t lexical_zero(const std::bitset<nbit__>& bit)   const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_zero(bit); }
-    template <int spin> size_t lexical_offset(const std::bitset<nbit__>& bit) const { return (spin == 0 ? alphaspaces_ : betaspaces_)->lexical_offset(bit); }
-
     std::pair<std::vector<std::tuple<std::bitset<nbit__>, std::bitset<nbit__>, int>>, double>
       spin_adapt(const int spin, const std::bitset<nbit__> alpha, const std::bitset<nbit__> beta) const;
 
@@ -194,7 +130,7 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
 
 
   // old code for phi_ij TODO replace
-  const int nij = (norb_ * (norb_ + 1))/2;
+  const int nij = (norb() * (norb() + 1))/2;
   const size_t stringsize = stringspace->size();
   phi_ij.clear();
   phi_ij.resize(nij);
@@ -212,17 +148,17 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
       const std::bitset<nbit__> targetbit = *istring;
       std::vector<std::vector<DetMap>> pij;
       pij.resize( nij );
-      for (int j = 0; j < norb_; ++j) {
+      for (int j = 0; j < norb(); ++j) {
         if ( !targetbit[j] ) continue;
         std::bitset<nbit__> intermediatebit = targetbit; intermediatebit.reset(j);
-        for (int i = 0; i < norb_; ++i) {
+        for (int i = 0; i < norb(); ++i) {
           if ( intermediatebit[i] ) continue;
           std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
           if ( allowed(sourcebit) ) {
             const size_t source_lex = lexmap[sourcebit.to_ullong()];
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
-            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb_);
+            pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());
           }
         }
       }
@@ -244,8 +180,8 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   else if (de == -1) std::tie(det, plusdet) = std::make_pair(shared_from_this(), odet);
   else assert(false);
 
-  auto phiup = std::make_shared<StringMap>(norb_);
-  auto phidown = std::make_shared<StringMap>(norb_);
+  auto phiup = std::make_shared<StringMap>(norb());
+  auto phidown = std::make_shared<StringMap>(norb());
 
   const size_t upsize = ( (spin==0) ? plusdet->lena() : plusdet->lenb() );
   phiup->reserve(upsize);
@@ -257,7 +193,7 @@ void RASDeterminants::link(std::shared_ptr<RASDeterminants> odet) {
   std::vector<std::bitset<nbit__>> string = (spin==0) ? det->string_bits_a() : det->string_bits_b();
 
   for (auto& istring : string) {
-    for (unsigned int i = 0; i != norb_; ++i) {
+    for (unsigned int i = 0; i != norb(); ++i) {
       if (!(istring)[i]) { // creation
         const unsigned int source = det->lexical_offset<spin>(istring);
         std::bitset<nbit__> nbit = istring; nbit.set(i); // created.

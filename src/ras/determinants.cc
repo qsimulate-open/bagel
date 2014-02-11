@@ -35,7 +35,7 @@ using namespace bagel;
 
 RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int norb3, const int nelea, const int neleb,
     const int max_holes, const int max_particles, const bool mute) :
-  ras_{{norb1, norb2, norb3}}, norb_(norb1 + norb2 + norb3), nelea_(nelea), neleb_(neleb), max_holes_(max_holes), max_particles_(max_particles),
+  ras_{{norb1, norb2, norb3}}, max_holes_(max_holes), max_particles_(max_particles),
     lenholes_( ((max_holes_+1)*(max_holes_+2))/2 ), lenparts_( ((max_particles_+1)*(max_particles_+2))/2 )
 {
   if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
@@ -58,8 +58,8 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
       const int nele1 = norb1 - nholes;
       for (int nparticles = 0; nparticles <= max_particles_; ++nparticles) {
         const int nele3 = nparticles;
-        const int nele2a = nelea_ - (nele1 + nele3);
-        const int nele2b = neleb_ - (nele1 + nele3);
+        const int nele2a = nelea - (nele1 + nele3);
+        const int nele2b = neleb - (nele1 + nele3);
 
         if (nele1 >= 0 && nele3 <= norb3) {
           if (nele2a >= 0 && nele2a <= norb2)
@@ -93,7 +93,7 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
         for (int npa = npart; npa >= 0; --npa) {
           const int npb = npart - npa;
 
-          auto block = make_shared<const RASBlockInfo>(space<0>(nha, npa), space<1>(nhb, npb));
+          auto block = make_shared<const CIBlockInfo<RASString>>(space<0>(nha, npa), space<1>(nhb, npb));
           blockinfo_.push_back(block);
           if (!block->empty()) size_ += block->size();
         }
