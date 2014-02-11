@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <list>
 #include <cmath>
 #include <vector>
 #include <boost/lexical_cast.hpp>
@@ -35,6 +36,40 @@ class Factorial {
         fact *= (imp + 1);
       }
       return fact;
+    }
+
+};
+
+class CartesianGauss {
+  protected:
+
+    double norm_;
+    double exponent_;
+    double weight_;
+    std::array<int, 3> angular_momentum_;
+
+  public:
+    explicit CartesianGauss(const double alpha, const std::array<int, 3> l) : exponent_(alpha), angular_momentum_(l) { norm_ = normalise(); }
+    ~CartesianGauss() {}
+
+    double normalise() {
+      Factorial fact;
+      mpreal pi = static_cast<mpreal>(atan(1) * 4);
+      mpreal mexp = static_cast<mpreal>(exponent_);
+      mpreal mnorm = fact.compute(2*angular_momentum_[0]) * fact.compute(2*angular_momentum_[1]) * fact.compute(2*angular_momentum_[2]) * pow(pi, 1.5);
+      int l = angular_momentum_[0] + angular_momentum_[1] + angular_momentum_[2];
+      mnorm /= (pow(2, 2*l) * fact.compute(angular_momentum_[0]) * fact.compute(angular_momentum_[1]) * fact.compute(angular_momentum_[2]) * pow(mexp, l+1.5));
+      mnorm = static_cast<mpreal>(1.0 / sqrt(mnorm));
+      return mnorm.toDouble();
+    }
+
+    std::array<int, 3> angular_momentum() { return angular_momentum_; }
+
+    void set_weight(const double wt) { weight_ = wt; }
+
+    double compute(const std::array<double, 3> centre) {
+      double rsq = centre[0]*centre[0] + centre[1]*centre[1] * centre[2]*centre[2];
+      return norm_ * std::pow(centre[0], angular_momentum_[0]) * std::pow(centre[1], angular_momentum_[1]) * std::pow(centre[2], angular_momentum_[2]) * std::exp(-exponent_*rsq);
     }
 
 };
@@ -71,43 +106,28 @@ class GaussOntoSph {
       }
     }
 
-    void sphcar() {
-       // ylm = c * x^l * y^m * z^n
+    std::list<std::shared_ptr<CartesianGauss>> sphcar(const int l, const int m) {
+      std::list<std::shared_ptr<CartesianGauss>> gauss;
+      for (int i = 0; i != l+1; ++i) {
+        for (int j = 0; j != l+1; ++j) {
+          const int k = l - i - j;
+          if (k >= 0) {
+            const double c = compute_c(l, m, i, j, k);
+            std::cout << "(lm)(ijk) = (" << l << m << ") (" << i << j << k << ")    c = " << c << std::endl;
+            if (c > 1e-13) {
+              std::array<int, 3> ang = {i, j, k};
+              gauss.push_back(std::make_shared<CartesianGauss>(0.0, ang));
+            }
+          }
+        }
+      }
+      return gauss;
     }
 
-    void angular_int(const int a, const int b, const int c, const int ld, const int l, const int m) {
+    void angular_integral(const int a, const int b, const int c, const int ld, const int l, const int m) {
        // int{ylm * ypq * x^a * y^b * z^c} = C * int{x^(r+u+a) * y^(s+v+b) * z^(t+w+c)}
        // int{x^i * y^j * z^k} = 0 if i, j, or k odd
        //                      = (i-1)!!(j-1)!!(k-1)!!(i+j+k+1)!! if i, j, or k even
-    }
-
-};
-
-class CartGauss {
-  protected:
-
-    double norm_;
-    double exp_;
-    std::array<int, 3> ang_;
-
-  public:
-    explicit CartGauss(const double alpha, const std::array<int, 3> l) : exp_(alpha), ang_(l) { norm_ = normalise(); }
-    ~CartGauss() {}
-
-    double normalise() {
-      Factorial fact;
-      mpreal pi = static_cast<mpreal>(atan(1) * 4);
-      mpreal mexp = static_cast<mpreal>(exp_);
-      mpreal mnorm = fact.compute(2*ang_[0]) * fact.compute(2*ang_[1]) * fact.compute(2*ang_[2]) * pow(pi, 1.5);
-      int l = ang_[0] + ang_[1] + ang_[2];
-      mnorm /= (pow(2, 2*l) * fact.compute(ang_[0]) * fact.compute(ang_[1]) * fact.compute(ang_[2]) * pow(mexp, l+1.5));
-      mnorm = static_cast<mpreal>(1.0 / sqrt(mnorm));
-      return mnorm.toDouble();
-    }
-
-    double compute(const std::array<double, 3> centre) {
-      double rsq = centre[0]*centre[0] + centre[1]*centre[1] * centre[2]*centre[2];
-      return norm_ * std::pow(centre[0], ang_[0]) * std::pow(centre[1], ang_[1]) * std::pow(centre[2], ang_[2]) * std::exp(-exp_*rsq);
     }
 
 };
@@ -298,12 +318,12 @@ class grid {
 class Proj {
   protected:
 
-    std::shared_ptr<const CartGauss> gauss_;
+    std::shared_ptr<const CartesianGauss> gauss_;
     std::shared_ptr<const RealSH> sh_;
 
   public:
 
-    Proj(std::shared_ptr<const CartGauss> gauss, std::shared_ptr<const RealSH> sh) : gauss_(gauss), sh_(sh) {}
+    Proj(std::shared_ptr<const CartesianGauss> gauss, std::shared_ptr<const RealSH> sh) : gauss_(gauss), sh_(sh) {}
     ~Proj() {}
     void compute() {}
 

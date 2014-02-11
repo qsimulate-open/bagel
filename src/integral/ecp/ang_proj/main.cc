@@ -26,6 +26,15 @@ int main() {
 
   GaussOntoSph gos;
   cout << "coef =   " << gos.compute_c(2, 0, 2, 0, 0) << endl;
+  std::list<std::shared_ptr<CartesianGauss>> gauss;
+
+  gauss = gos.sphcar(1, 1);
+  cout << "No. of Cartesian Gaussians = " << gauss.size() << endl;
+  for (auto& it : gauss) {
+    cout << setw(17) << setprecision(9) << it->angular_momentum()[0] << " ";
+    cout << setw(17) << setprecision(9) << it->angular_momentum()[1] << " ";
+    cout << setw(17) << setprecision(9) << it->angular_momentum()[2] << endl;
+  }
 
   return 0;
 
