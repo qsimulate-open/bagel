@@ -100,15 +100,10 @@ class CIString_base_impl : public CIString_base {
     std::array<std::shared_ptr<CIGraph>, N> graphs_;
     std::shared_ptr<const StaticDist> dist_;
 
-    std::shared_ptr<StringMap> phi_;
-    std::shared_ptr<StringMap> uncompressed_phi_;
-
     void init() {
       compute_strings();
-      construct_phi();
     }
     virtual void compute_strings() = 0;
-    virtual void construct_phi() = 0;
 
   private:
     friend class boost::serialization::access;
@@ -151,7 +146,7 @@ class CIString_base_impl : public CIString_base {
     // copy construct with an offset update
     CIString_base_impl(const CIString_base_impl<N>& o, const size_t offset)
       : norb_(o.norb_), nele_(o.nele_), offset_(offset), strings_(o.strings_), subspace_(o.subspace_),
-        graphs_(o.graphs_), dist_(o.dist_), phi_(o.phi_), uncompressed_phi_(o.uncompressed_phi_) { }
+        graphs_(o.graphs_), dist_(o.dist_) { }
 
     virtual ~CIString_base_impl() { }
 
@@ -161,15 +156,6 @@ class CIString_base_impl : public CIString_base {
     size_t offset() const { return offset_; }
 
     bool empty() const { return size() == 0; }
-
-    size_t key() const {
-      size_t out = 0;
-      for (int i = 0; i != N; ++i) {
-        assert(subspace_[i].first < (1 << 6));
-        out = (out << 6) + subspace_[i].first;
-      }
-      return out;
-    }
 
     const std::vector<std::bitset<nbit__>>& strings() const { return strings_; }
     const std::bitset<nbit__>& strings(const size_t i) const { return strings_[i]; }
@@ -183,9 +169,6 @@ class CIString_base_impl : public CIString_base {
 
     std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
-    std::shared_ptr<const StringMap> phi() const { return phi_; }
-    std::shared_ptr<const StringMap> uncompressed_phi() const { return uncompressed_phi_; }
-
     virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
     virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
 
@@ -197,7 +180,6 @@ class CIString_base_impl : public CIString_base {
 class RASString : public CIString_base_impl<3> {
   protected:
     void compute_strings() override;
-    void construct_phi() override { /* do not do anything (RASStringSet will perform this) - TODO FCI should be implemented in the same way */ }
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {
@@ -262,7 +244,6 @@ class RASString : public CIString_base_impl<3> {
 class FCIString : public CIString_base_impl<1> {
   protected:
     void compute_strings() override;
-    void construct_phi() override;
 
   private:
     friend class boost::serialization::access;

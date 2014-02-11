@@ -40,13 +40,22 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
                   << " alpha and " << neleb << " beta electrons." << endl << endl;
 
   assert(neleb >= 1 && nelea >= 1);
+  auto na0 = make_shared<FCIString>(nelea  , norb);
+  auto na1 = make_shared<FCIString>(nelea-1, norb);
+  auto nb0 = make_shared<FCIString>(neleb  , norb);
+  auto nb1 = make_shared<FCIString>(neleb-1, norb);
 
-  list<shared_ptr<const FCIString>> lista{make_shared<FCIString>(nelea-1, norb), make_shared<FCIString>(nelea, norb)};
-  auto spacea = make_shared<CIStringSpace<FCIString>>(lista);
+  using FCIStringSet = CIStringSet<FCIString>;
+
+  list<shared_ptr<const FCIStringSet>> lista = { make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{na0}),
+                                                 make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{na1}) };
+  list<shared_ptr<const FCIStringSet>> listb = { make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb0}),
+                                                 make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb1}) };
+
+  auto spacea = make_shared<CIStringSpace<FCIStringSet>>(lista);
   spacea->build_linkage();
 
-  list<shared_ptr<const FCIString>> listb{make_shared<FCIString>(neleb-1, norb), make_shared<FCIString>(neleb, norb)};
-  auto spaceb = make_shared<CIStringSpace<FCIString>>(listb);
+  auto spaceb = make_shared<CIStringSpace<FCIStringSet>>(listb);
   spaceb->build_linkage();
 
   if (!mute) {

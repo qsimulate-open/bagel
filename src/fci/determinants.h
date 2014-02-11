@@ -49,11 +49,11 @@ class Determinants : public Determinants_base<FCIString>,
   public:
     Determinants() { }
     Determinants(const int norb, const int nelea, const int neleb, const bool compress = true, const bool mute = false);
+    Determinants(std::shared_ptr<const FCIString> ast, std::shared_ptr<const FCIString> bst, const bool compress = true, const bool mute = false);
+    Determinants(std::shared_ptr<const CIStringSet<FCIString>> ast, std::shared_ptr<const CIStringSet<FCIString>> bst, const bool compress = true, const bool mute = false);
     Determinants(std::shared_ptr<const Determinants> o, const bool compress = true, const bool mute = false) :
       Determinants(o->norb(), o->nelea(), o->neleb(), compress, mute) {} // Shortcut to change compression of Det
-    Determinants(std::shared_ptr<const FCIString> ast, std::shared_ptr<const FCIString> bst, const bool compress = true, const bool mute = false);
 
-    // Shortcut to make an uncompressed and muted Determinants with specified # of electrons (used for compatibility with RASDet)
     std::shared_ptr<Determinants> clone(const int nelea, const int neleb) const {
       return std::make_shared<Determinants>(norb(), nelea, neleb, false, true);
     }
@@ -70,7 +70,7 @@ class Determinants : public Determinants_base<FCIString>,
     template<int Spin>
     size_t lexical(const std::bitset<nbit__>& bit) const { return lexical_zero<Spin>(bit); }
 
-    void link(std::shared_ptr<Determinants> odet, std::shared_ptr<CIStringSpace<FCIString>>, std::shared_ptr<CIStringSpace<FCIString>>);
+    void link(std::shared_ptr<Determinants> odet, std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>>, std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>>);
     template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
 
@@ -84,22 +84,22 @@ template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
   else throw std::logic_error("Determinants::link failed");
 
   const int fac = (spin == 1 && (nelea() & 1)) ? -1 : 1;
-  CIStringSpace<FCIString> space{blockinfo(0)->strings<spin>(), odet->blockinfo(0)->strings<spin>()};
+  CIStringSpace<CIStringSet<FCIString>> space{spin==0?alphaspaces_:betaspaces_, spin==0?odet->alphaspaces_:odet->betaspaces_};
   space.build_linkage(fac);
 
   // finally link
   if (spin == 0) {
     plusdet->detremalpha_ = det;
-    plusdet->phidowna_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
+    plusdet->phidowna_ = space.phidown(plusdet->alphaspaces_);
 
     det->detaddalpha_ = plusdet;
-    det->phiupa_ = space.phiup(det->blockinfo(0)->strings<spin>());
+    det->phiupa_ = space.phiup(det->alphaspaces_);
   } else {
     plusdet->detrembeta_ = det;
-    plusdet->phidownb_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
+    plusdet->phidownb_ = space.phidown(plusdet->betaspaces_);
 
     det->detaddbeta_ = plusdet;
-    det->phiupb_ = space.phiup(det->blockinfo(0)->strings<spin>());
+    det->phiupb_ = space.phiup(det->betaspaces_);
   }
 }
 

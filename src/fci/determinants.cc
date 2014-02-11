@@ -37,15 +37,22 @@ using namespace bagel;
 
 const static Comb comb;
 
+using FCIStringSet = CIStringSet<FCIString>;
+
 Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute)
  : Determinants(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb), compress, mute) {
 }
 
 
-Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute) {
+Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute)
+ : Determinants(make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{ast}), make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{bst}), compress, mute) {
+}
+
+
+Determinants::Determinants(shared_ptr<const FCIStringSet> ast, shared_ptr<const FCIStringSet> bst, const bool compress, const bool mute) {
   compress_    = compress;
-  alphaspaces_ = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{ast});
-  betaspaces_  = make_shared<CIStringSet<FCIString>>(list<shared_ptr<const FCIString>>{bst});
+  alphaspaces_ = ast;
+  betaspaces_  = bst;
 
   for (auto& a : *alphaspaces_)
     for (auto& b : *betaspaces_)
@@ -135,8 +142,8 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
 }
 
 
-void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<FCIString>> spacea,
-                                                       shared_ptr<CIStringSpace<FCIString>> spaceb) {
+void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<FCIStringSet>> spacea,
+                                                       shared_ptr<CIStringSpace<FCIStringSet>> spaceb) {
   shared_ptr<Determinants> plusdet;
   shared_ptr<Determinants> det;
 
@@ -152,16 +159,16 @@ void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<
   // finally link
   if (spina) {
     plusdet->detremalpha_ = det;
-    plusdet->phidowna_ = spacea->phidown(plusdet->blockinfo(0)->stringsa());
+    plusdet->phidowna_ = spacea->phidown(plusdet->alphaspaces_);
 
     det->detaddalpha_ = plusdet;
-    det->phiupa_ = spacea->phiup(det->blockinfo(0)->stringsa());
+    det->phiupa_ = spacea->phiup(det->alphaspaces_);
   } else {
     plusdet->detrembeta_ = det;
-    plusdet->phidownb_ = (nelea()&1) ? spaceb->phidown(plusdet->blockinfo(0)->stringsb())->get_minus()
-                                     : spaceb->phidown(plusdet->blockinfo(0)->stringsb());
+    plusdet->phidownb_ = (nelea()&1) ? spaceb->phidown(plusdet->betaspaces_)->get_minus()
+                                     : spaceb->phidown(plusdet->betaspaces_);
     det->detaddbeta_ = plusdet;
-    det->phiupb_ = (nelea()&1) ? spaceb->phiup(det->blockinfo(0)->stringsb())->get_minus()
-                               : spaceb->phiup(det->blockinfo(0)->stringsb());
+    det->phiupb_ = (nelea()&1) ? spaceb->phiup(det->betaspaces_)->get_minus()
+                               : spaceb->phiup(det->betaspaces_);
   }
 }

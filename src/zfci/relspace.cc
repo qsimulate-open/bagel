@@ -35,15 +35,18 @@ using namespace bagel;
 
 RelSpace::RelSpace(const int norb, const int nele, const bool mute, const bool linkup) {
 
-  map<int, shared_ptr<const FCIString>> s;
-  list<shared_ptr<const FCIString>> lista;
+  using FCIStringSet = CIStringSet<FCIString>;
+
+  map<int, shared_ptr<const FCIStringSet>> s;
+  list<shared_ptr<const FCIStringSet>> lista;
   for (int i = 0; i <= norb; ++i)
     if ((nele-i >= 0 && nele-i <= norb) || (linkup && nele-i+1 >= 0 && nele-i+1 <= norb)) {
-      s[i] = make_shared<FCIString>(i, norb);
+      auto tmp = make_shared<FCIString>(i, norb);
+      s[i] = make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{tmp});
       lista.push_back(s[i]);
     }
 
-  auto space = make_shared<CIStringSpace<FCIString>>(lista);
+  auto space = make_shared<CIStringSpace<FCIStringSet>>(lista);
   space->build_linkage();
 
   // make Nele determinants

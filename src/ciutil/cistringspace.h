@@ -28,27 +28,27 @@
 
 #include <unordered_map>
 #include <src/util/serialization.h>
-#include <src/ciutil/cistringmap.h>
 #include <src/ciutil/bitutil.h>
-#include <src/ciutil/cistring.h>
+#include <src/ciutil/cistringmap.h>
+#include <src/ciutil/cistringset.h>
 
 namespace bagel {
 
-template <class StringType>
+template <class StringSetType>
 class CIStringSpace {
   protected:
-    std::list<std::shared_ptr<const StringType>> strings_;
+    std::list<std::shared_ptr<const StringSetType>> strings_;
 
-    // it is assumed that every StringType has the same norb_.
+    // it is assumed that every StringSetType has the same norb_.
     size_t norb_;
 
     std::unordered_map<size_t, std::shared_ptr<StringMap>> phiup_;
     std::unordered_map<size_t, std::shared_ptr<StringMap>> phidown_;
 
-    static size_t hash(const std::shared_ptr<const StringType>& a) { return a->key(); }
+    static size_t hash(const std::shared_ptr<const StringSetType>& a) { return a->key(); }
 
-    void build_linkage(std::shared_ptr<const StringType> a, std::shared_ptr<const StringType> b, const int fac) {
-      std::shared_ptr<const StringType> plus, ref;
+    void build_linkage(std::shared_ptr<const StringSetType> a, std::shared_ptr<const StringSetType> b, const int fac) {
+      std::shared_ptr<const StringSetType> plus, ref;
 
       const int diff = a->nele() - b->nele();
       if (diff == 1)
@@ -73,7 +73,7 @@ class CIStringSpace {
           if (!istring[i]) { // creation
             const size_t source = ref->lexical_offset(istring);
             std::bitset<nbit__> nbit = istring; nbit.set(i); // created.
-            if (plus->contains(nbit)) {
+            if (plus->allowed(nbit)) {
               const size_t target = plus->lexical_offset(nbit);
               const int s = sign(nbit, i) * fac;
               (*phiup)[i].emplace_back(target, s, source, 0);
@@ -100,11 +100,11 @@ class CIStringSpace {
     }
 
   public:
-    CIStringSpace(std::initializer_list<std::shared_ptr<const StringType>> s)
-      : CIStringSpace(std::list<std::shared_ptr<const StringType>>(s.begin(), s.end())) {
+    CIStringSpace(std::initializer_list<std::shared_ptr<const StringSetType>> s)
+      : CIStringSpace(std::list<std::shared_ptr<const StringSetType>>(s.begin(), s.end())) {
     }
 
-    CIStringSpace(std::list<std::shared_ptr<const StringType>> s) : strings_(s) {
+    CIStringSpace(std::list<std::shared_ptr<const StringSetType>> s) : strings_(s) {
       assert(!strings_.empty());
       norb_ = strings_.front()->norb();
       for (auto& i : strings_)
@@ -123,11 +123,11 @@ class CIStringSpace {
       }
     }
 
-    std::shared_ptr<const StringMap> phiup(const std::shared_ptr<const StringType>& a) const {
+    std::shared_ptr<const StringMap> phiup(const std::shared_ptr<const StringSetType>& a) const {
       return phiup_.find(hash(a))->second;
     }
 
-    std::shared_ptr<const StringMap> phidown(const std::shared_ptr<const StringType>& a) const {
+    std::shared_ptr<const StringMap> phidown(const std::shared_ptr<const StringSetType>& a) const {
       return phidown_.find(hash(a))->second;
     }
 

@@ -48,34 +48,13 @@ class CIStringSet {
     std::vector<std::bitset<nbit__>> strings_;
 
     std::shared_ptr<StringMap> phi_;
+    std::shared_ptr<StringMap> uncompressed_phi_;
 
     void init() {
       construct_phi();
     }
     void construct_phi() {
-      phi_ = std::make_shared<StringMap>(size_);
-      phi_->reserve(norb_*norb_);
-
-      std::unordered_map<size_t, size_t> lexmap;
-      for (size_t i = 0; i < size_; ++i)
-        lexmap[strings_[i].to_ullong()] = i;
-
-      size_t tindex = 0;
-      for (auto& istring : strings_) {
-        for (int j = 0; j < norb_; ++j) {
-          if (!istring[j]) continue;
-          std::bitset<nbit__> intermediatebit = istring; intermediatebit.reset(j);
-          for (int i = 0; i < norb_; ++i) {
-            if (intermediatebit[i]) continue;
-            std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
-            if (allowed(sourcebit)) {
-              assert(lexmap.find(sourcebit.to_ullong()) != lexmap.end());
-              (*phi_)[tindex].emplace_back(tindex, sign(istring, i, j), lexmap[sourcebit.to_ullong()], j+i*norb_);
-            }
-          }
-        }
-        (*phi_)[tindex++].shrink_to_fit();
-      }
+      assert(false); // should be specialized
     }
 
   public:
@@ -102,6 +81,8 @@ class CIStringSet {
     size_t size() const { return size_; }
     size_t nspaces() const { return stringset_.size(); }
 
+    size_t key() const { return nele_+large__*norb_; }
+
     bool allowed(const std::bitset<nbit__>& bit) const {
       return std::any_of(stringset_.begin(), stringset_.end(),
                          [&](const std::shared_ptr<StringType>& a) { return a->contains(bit); });
@@ -116,6 +97,7 @@ class CIStringSet {
     typename std::list<std::shared_ptr<StringType>>::const_iterator end() const { return stringset_.cend(); }
 
     std::shared_ptr<const StringMap> phi() const { return phi_; }
+    std::shared_ptr<const StringMap> uncompressed_phi() const { return uncompressed_phi_; }
 
     std::shared_ptr<const StringType> find_string(const std::bitset<nbit__>& bit) const {
       for (auto& i : stringset_)
@@ -138,6 +120,14 @@ class CIStringSet {
     }
 };
 
+template<>
+void CIStringSet<FCIString>::construct_phi();
+template<>
+void CIStringSet<RASString>::construct_phi();
+
 }
+
+extern template class bagel::CIStringSet<bagel::FCIString>;
+extern template class bagel::CIStringSet<bagel::RASString>;
 
 #endif
