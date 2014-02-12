@@ -93,12 +93,24 @@ class GaussOntoSph {
         t1 = fact.compute(2*lx) * fact.compute(2*ly) * fact.compute(2*lz) * fact.compute(l) * fact.compute(lmam);
         t1 /= (fact.compute(2*l) * fact.compute(lx) * fact.compute(ly) * fact.compute(lz) * fact.compute(l + am));
         t1 = sqrt(t1) / pow(2, l) / fact.compute(l);
+        std::cout << "t1 = " << t1 << std::endl;
         Comb comb;
-        mpreal c = "0.0";
+        mpreal zero = "0.0";
+        mpreal c = zero;
         for (int i = 0; i != lmam/2 + 1; ++i) {
-          t2 = static_cast<mpreal>(comb.c(l, i) * comb.c(i, j) * pow(-1, i) * fact.compute(2*l - 2*i)/ fact.compute(lmam - 2*i));
+          if (j < 0 || j > i || i > l) {
+            t2 = zero;
+          } else {
+            t2 = static_cast<mpreal>(comb.c(l, i) * comb.c(i, j) * pow(-1, i) * fact.compute(2*l - 2*i)/ fact.compute(lmam - 2*i));
+          }
+          std::cout << "t2 = " << t2 << std::endl;
           for (int k = 0; k != j+1; ++k) {
-            t3 = static_cast<mpreal>(comb.c(j, k) * comb.c(am, lx - 2*k) * pow(-1, 0.5*(am - lx + 2*k)));
+            if (k < j || lx - 2*k < 0 || lx - 2*k < am) {
+              t3 = zero;
+            } else {
+              t3 = static_cast<mpreal>(comb.c(j, k) * comb.c(am, lx - 2*k) * pow(-1, 0.5*(am - lx + 2*k)));
+            }
+            std::cout << "t3 = " << t3 << std::endl;
             c += t1 * t2 * t3;
           }
         }
