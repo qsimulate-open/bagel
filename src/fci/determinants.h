@@ -35,10 +35,10 @@ class Determinants : public Determinants_base<FCIString>,
                      public std::enable_shared_from_this<Determinants> {
   protected:
     /* Links to other determinant spaces accessible by one annihilation or creation operation */
-    std::weak_ptr<Determinants> detaddalpha_;
-    std::weak_ptr<Determinants> detaddbeta_;
-    std::weak_ptr<Determinants> detremalpha_;
-    std::weak_ptr<Determinants> detrembeta_;
+    std::weak_ptr<Determinants> addalpha_;
+    std::weak_ptr<Determinants> addbeta_;
+    std::weak_ptr<Determinants> remalpha_;
+    std::weak_ptr<Determinants> rembeta_;
 
   private:
     friend class boost::serialization::access;
@@ -62,46 +62,24 @@ class Determinants : public Determinants_base<FCIString>,
 
     std::pair<std::vector<std::tuple<int, int, int>>, double> spin_adapt(const int, std::bitset<nbit__>, std::bitset<nbit__>) const;
 
-    std::shared_ptr<const Determinants> addalpha() const { return detaddalpha_.lock();}
-    std::shared_ptr<const Determinants> remalpha() const { return detremalpha_.lock();}
-    std::shared_ptr<const Determinants> addbeta() const { return detaddbeta_.lock();}
-    std::shared_ptr<const Determinants> rembeta() const { return detrembeta_.lock();}
+    std::shared_ptr<const Determinants> addalpha() const { return addalpha_.lock();}
+    std::shared_ptr<const Determinants> remalpha() const { return remalpha_.lock();}
+    std::shared_ptr<const Determinants> addbeta() const { return addbeta_.lock();}
+    std::shared_ptr<const Determinants> rembeta() const { return rembeta_.lock();}
+    void set_addalpha(std::shared_ptr<Determinants> o) { addalpha_ = o;}
+    void set_remalpha(std::shared_ptr<Determinants> o) { remalpha_ = o;}
+    void set_addbeta (std::shared_ptr<Determinants> o) { addbeta_ = o;}
+    void set_rembeta (std::shared_ptr<Determinants> o) { rembeta_ = o;}
 
     template<int Spin>
     size_t lexical(const std::bitset<nbit__>& bit) const { return lexical_zero<Spin>(bit); }
 
+    template<int spin>
+    void link(std::shared_ptr<Determinants> odet) { bagel::link<spin, FCIString>(shared_from_this(), odet); }
+
     void link(std::shared_ptr<Determinants> odet, std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>>, std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>>);
-    template<int spin> void link(std::shared_ptr<Determinants> odet);
 };
 
-template<int spin> void Determinants::link(std::shared_ptr<Determinants> odet) {
-  std::shared_ptr<Determinants> plusdet;
-  std::shared_ptr<Determinants> det;
-
-  const int de = spin == 0 ? this->nelea() - odet->nelea() : this->neleb() - odet->neleb();
-  if      (de ==  1) std::tie(det, plusdet) = make_pair(odet, shared_from_this());
-  else if (de == -1) std::tie(det, plusdet) = make_pair(shared_from_this(), odet);
-  else throw std::logic_error("Determinants::link failed");
-
-  const int fac = (spin == 1 && (nelea() & 1)) ? -1 : 1;
-  CIStringSpace<CIStringSet<FCIString>> space{spin==0?alphaspaces_:betaspaces_, spin==0?odet->alphaspaces_:odet->betaspaces_};
-  space.build_linkage(fac);
-
-  // finally link
-  if (spin == 0) {
-    plusdet->detremalpha_ = det;
-    plusdet->phidowna_ = space.phidown(plusdet->alphaspaces_);
-
-    det->detaddalpha_ = plusdet;
-    det->phiupa_ = space.phiup(det->alphaspaces_);
-  } else {
-    plusdet->detrembeta_ = det;
-    plusdet->phidownb_ = space.phidown(plusdet->betaspaces_);
-
-    det->detaddbeta_ = plusdet;
-    det->phiupb_ = space.phiup(det->betaspaces_);
-  }
-}
 
 }
 

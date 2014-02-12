@@ -158,17 +158,17 @@ void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<
 
   // finally link
   if (spina) {
-    plusdet->detremalpha_ = det;
-    plusdet->phidowna_ = spacea->phidown(plusdet->alphaspaces_);
+    plusdet->set_remalpha(det);
+    plusdet->set_phidowna(spacea->phidown(plusdet->stringspacea()));
 
-    det->detaddalpha_ = plusdet;
-    det->phiupa_ = spacea->phiup(det->alphaspaces_);
+    det->set_addalpha(plusdet);
+    det->set_phiupa(spacea->phiup(det->stringspacea()));
   } else {
-    plusdet->detrembeta_ = det;
-    plusdet->phidownb_ = (nelea()&1) ? spaceb->phidown(plusdet->betaspaces_)->get_minus()
-                                     : spaceb->phidown(plusdet->betaspaces_);
-    det->detaddbeta_ = plusdet;
-    det->phiupb_ = (nelea()&1) ? spaceb->phiup(det->betaspaces_)->get_minus()
-                               : spaceb->phiup(det->betaspaces_);
+    plusdet->set_rembeta(det);
+    plusdet->set_phidownb((nelea()&1) ? spaceb->phidown(plusdet->stringspaceb())->get_minus()
+                                      : spaceb->phidown(plusdet->stringspaceb()));
+    det->set_addbeta(plusdet);
+    det->set_phiupb((nelea()&1) ? spaceb->phiup(det->stringspaceb())->get_minus()
+                                : spaceb->phiup(det->stringspaceb()));
   }
 }

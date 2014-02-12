@@ -122,44 +122,44 @@ class Determinants_base {
 
     const std::vector<DetMap>& phiupa(const int i) const { return phiupa_->data(i); }
     const std::vector<DetMap>& phiupb(const int i) const { return phiupb_->data(i); }
-
     const std::vector<DetMap>& phidowna(const int i) const { return phidowna_->data(i); }
     const std::vector<DetMap>& phidownb(const int i) const { return phidownb_->data(i); }
-
-#if 0
-    void link(std::shared_ptr<Determinants> odet, std::shared_ptr<CIStringSpace<StringType>>, std::shared_ptr<CIStringSpace<StringType>>);
-
-    template<int spin> void link(std::shared_ptr<Determinants_base> odet);
-      std::shared_ptr<Determinants> plusdet;
-      std::shared_ptr<Determinants> det;
-
-      const int de = spin == 0 ? this->nelea() - odet->nelea() : this->neleb() - odet->neleb();
-      if      (de ==  1) std::tie(det, plusdet) = std::make_pair(odet, shared_from_this());
-      else if (de == -1) std::tie(det, plusdet) = std::make_pair(shared_from_this(), odet);
-      else throw std::logic_error("Determinants_base::link failed");
-
-      const int fac = (spin == 1 && (nelea() & 1)) ? -1 : 1;
-      CIStringSpace<StringType> space{blockinfo(0)->strings<spin>(), odet->blockinfo(0)->strings<spin>()};
-      space.build_linkage(fac);
-
-      // finally link
-      if (spin == 0) {
-        plusdet->detremalpha_ = det;
-        plusdet->phidowna_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
-
-        det->detaddalpha_ = plusdet;
-        det->phiupa_ = space.phiup(det->blockinfo(0)->strings<spin>());
-      } else {
-        plusdet->detrembeta_ = det;
-        plusdet->phidownb_ = space.phidown(plusdet->blockinfo(0)->strings<spin>());
-
-        det->detaddbeta_ = plusdet;
-        det->phiupb_ = space.phiup(det->blockinfo(0)->strings<spin>());
-      }
-    }
-#endif
+    void set_phiupa(std::shared_ptr<const StringMap> o) { phiupa_ = o; }
+    void set_phiupb(std::shared_ptr<const StringMap> o) { phiupb_ = o; }
+    void set_phidowna(std::shared_ptr<const StringMap> o) { phidowna_ = o; }
+    void set_phidownb(std::shared_ptr<const StringMap> o) { phidownb_ = o; }
 
 };
+
+template<int spin, typename StringType, class DetClass> void link(std::shared_ptr<DetClass> mdet, std::shared_ptr<DetClass> odet) {
+  std::shared_ptr<DetClass> plusdet;
+  std::shared_ptr<DetClass> det;
+
+  const int de = spin == 0 ? mdet->nelea() - odet->nelea() : mdet->neleb() - odet->neleb();
+  if      (de ==  1) std::tie(det, plusdet) = make_pair(odet, mdet);
+  else if (de == -1) std::tie(det, plusdet) = make_pair(mdet, odet);
+  else throw std::logic_error("Determinants::link failed");
+
+  const int fac = (spin == 1 && (mdet->nelea() & 1)) ? -1 : 1;
+  CIStringSpace<CIStringSet<StringType>> space{spin==0?mdet->stringspacea():mdet->stringspaceb(),
+                                               spin==0?odet->stringspacea():odet->stringspaceb()};
+  space.build_linkage(fac);
+
+  // finally link
+  if (spin == 0) {
+    plusdet->set_remalpha(det);
+    plusdet->set_phidowna(space.phidown(plusdet->stringspacea()));
+
+    det->set_addalpha(plusdet);
+    det->set_phiupa(space.phiup(det->stringspacea()));
+  } else {
+    plusdet->set_rembeta(det);
+    plusdet->set_phidownb(space.phidown(plusdet->stringspaceb()));
+
+    det->set_addbeta(plusdet);
+    det->set_phiupb(space.phiup(det->stringspaceb()));
+  }
+}
 
 }
 
