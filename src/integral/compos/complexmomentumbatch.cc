@@ -69,8 +69,6 @@ void ComplexMomentumBatch::compute() {
   }
   stack_->release(size_block_*3, intermediate_p);
 
-  if (swap01_) {for (int n=0; n!=size_block_*3; n++) data_[n] *= -1.0;}
-
 }
 
 
@@ -124,14 +122,12 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
     }
 
     // peform HRR
-    if (ang1_ > 0) {
-      for (int j = 1; j <= ang1_ + 1; ++j) {
-        for (int i = 0; i != amax2 - j; ++i) {
-          // obtain S(i, j)
-          worksx[j*amax2+i] = AB_[0]*worksx[(j-1)*amax2+i]+worksx[(j-1)*amax2+i+1];
-          worksy[j*amax2+i] = AB_[1]*worksy[(j-1)*amax2+i]+worksy[(j-1)*amax2+i+1];
-          worksz[j*amax2+i] = AB_[2]*worksz[(j-1)*amax2+i]+worksz[(j-1)*amax2+i+1];
-        }
+    for (int j = 1; j <= ang1_ + 1; ++j) {
+      for (int i = 0; i != amax2 - j; ++i) {
+        // obtain S(i, j)
+        worksx[j*amax2+i] = AB_[0]*worksx[(j-1)*amax2+i]+worksx[(j-1)*amax2+i+1];
+        worksy[j*amax2+i] = AB_[1]*worksy[(j-1)*amax2+i]+worksy[(j-1)*amax2+i+1];
+        worksz[j*amax2+i] = AB_[2]*worksz[(j-1)*amax2+i]+worksz[(j-1)*amax2+i+1];
       }
     }
 
