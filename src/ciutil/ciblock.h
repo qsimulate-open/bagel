@@ -27,13 +27,19 @@
 #ifndef __SRC_CIUTIL_CIBLOCK_H
 #define __SRC_CIUTIL_CIBLOCK_H
 
+#include <src/ciutil/citraits.h>
 #include <src/ciutil/bitutil.h>
 #include <src/ciutil/cistring.h>
 
 namespace bagel {
 
-template<class StringType>
+template<class StringType,
+         class = typename std::enable_if<is_cistring<StringType>::value>::type
+        >
 class CIBlockInfo {
+  public:
+    typedef StringType string_type;
+
   protected:
     std::shared_ptr<const StringType> astrings_;
     std::shared_ptr<const StringType> bstrings_;
@@ -95,6 +101,9 @@ class CIBlockInfo {
 // but does NOT own the data
 template <typename DataType, class StringType>
 class CIBlock : public CIBlockInfo<StringType> {
+  public:
+    typedef DataType data_type;
+
   protected:
     DataType* data_ptr_;
     size_t offset_;

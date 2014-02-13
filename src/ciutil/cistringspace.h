@@ -34,7 +34,9 @@
 
 namespace bagel {
 
-template <class StringSetType>
+template <class StringSetType,
+          class = typename std::enable_if<is_cistringset<StringSetType>::value>::type
+         >
 class CIStringSpace {
   protected:
     std::list<std::shared_ptr<const StringSetType>> strings_;

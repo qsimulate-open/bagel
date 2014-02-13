@@ -33,6 +33,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include <src/ras/civector_base.h>
+#include <src/ras/apply_block.h>
 #include <src/parallel/staticdist.h>
 #include <src/parallel/recvrequest.h>
 #include <src/ras/dvector_base.h>
@@ -43,103 +45,6 @@
 
 namespace bagel {
 
-// Base class contains logic for block structure of RASCivecs
-template <class BlockType>
-class RASCivector_base {
-  protected:
-    std::vector<std::shared_ptr<BlockType>> blocks_;
-    std::shared_ptr<const RASDeterminants> det_;
-
-    const int hpaddress(const int na, const int nb) const {
-      const int N = na + nb;
-      return ( (N*(N+1))/2 + nb );
-    }
-
-    template <class Func>
-    void for_each_block(Func func) { for (auto& i: blocks_) if (i) func(i); }
-
-    template <class Func>
-    void for_each_block(Func func) const { for (auto& i: blocks_) if (i) func(i); }
-
-    RASCivector_base(std::shared_ptr<const RASDeterminants> d) : det_(d) {}
-
-  public:
-    std::shared_ptr<const RASDeterminants> det() const { return det_; }
-    void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
-
-    // Access to vectors of blocks
-    const std::vector<std::shared_ptr<BlockType>>& blocks() const { return blocks_; }
-    std::vector<std::shared_ptr<BlockType>>& blocks() { return blocks_; }
-
-    // Access to individual blocks
-    std::shared_ptr<BlockType> block(const int nha, const int nhb, const int npa, const int npb) {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<BlockType>();
-    }
-    std::shared_ptr<BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<BlockType> block(std::shared_ptr<const RASString> beta, std::shared_ptr<const RASString> alpha) {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    std::shared_ptr<const BlockType> block(const int nha, const int nhb, const int npa, const int npb) const {
-      if ( det_->allowed(nha, nhb, npa, npb) ) {
-        const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
-        return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
-      }
-      else return std::shared_ptr<const BlockType>();
-    }
-    std::shared_ptr<const BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
-      return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
-    }
-    std::shared_ptr<const BlockType> block(std::shared_ptr<const RASString> beta, std::shared_ptr<const RASString> alpha) const {
-      return block( alpha->nholes(), beta->nholes(), alpha->nparticles(), beta->nparticles() );
-    }
-
-    // Return set of allowed blocks given an input string or block
-    template <int spin>
-    const std::vector<std::shared_ptr<BlockType>> allowed_blocks(const std::bitset<nbit__> bit) { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<BlockType>> allowed_blocks(const int nh, const int np) {
-      std::vector<std::shared_ptr<BlockType>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<BlockType> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::bitset<nbit__> bit) const { return allowed_blocks<spin>(det_->nholes(bit), det_->nparticles(bit)); }
-    template <int spin>
-    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const std::shared_ptr<const RASString> space) const { return allowed_blocks<spin>(space->nholes(), space->nparticles()); }
-
-    template <int spin>
-    const std::vector<std::shared_ptr<const BlockType>> allowed_blocks(const int nh, const int np) const {
-      std::vector<std::shared_ptr<const BlockType>> out;
-      for (int jp = 0; jp + np <= det_->max_particles(); ++jp) {
-        for (int ih = 0; ih + nh <= det_->max_holes(); ++ih) {
-          std::shared_ptr<const BlockType> blk;
-          if (spin == 0) blk = block(nh, ih, np, jp);
-          else           blk = block(ih, nh, jp, np);
-
-          if (blk) out.push_back(blk);
-        }
-      }
-      return out;
-    }
-
-};
 
 template <typename DataType> class RASCivector;
 
@@ -192,6 +97,7 @@ class DistCIBlock {
     std::shared_ptr<const RASString> stringsa() const { return astrings_; }
     std::shared_ptr<const RASString> stringsb() const { return bstrings_; }
 };
+
 
 template <typename DataType>
 class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
@@ -538,75 +444,6 @@ using RASBlock = CIBlock<DataType, RASString>;
 template<typename DataType>
 using RASBlock_alloc = CIBlock_alloc<DataType, RASString>;
 
-// helper classes for the apply function (this way the main code can be used elsewhere)
-namespace RAS {
-template <typename DataType>
-class apply_block_base {
-  public: virtual void operator()(std::shared_ptr<const RASBlock<DataType>> source, std::shared_ptr<RASBlock<DataType>> target) = 0;
-};
-
-template <typename DataType, bool action, bool spin>
-class apply_block_impl : public apply_block_base<DataType> {
-  protected:
-    const int orbital_;
-
-  private:
-    bool condition(std::bitset<nbit__>& bit) {
-      bool out = action ? !bit[orbital_] : bit[orbital_];
-      action ? bit.set(orbital_) : bit.reset(orbital_);
-      return out;
-    }
-
-    int sign(std::bitset<nbit__> bit) const {
-      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinants::sign (and other functions)");
-      bit &= (1ull << orbital_) - 1ull;
-      return (1 - (( bit.count() & 1 ) << 1));
-    }
-
-  public:
-    apply_block_impl(const int orb) : orbital_(orb) {}
-    void operator()(std::shared_ptr<const RASBlock<DataType>> source, std::shared_ptr<RASBlock<DataType>> target) override {
-      if(spin) {
-          const size_t lb = source->lenb();
-          assert(lb == target->lenb());
-          const DataType* sourcedata = source->data();
-          for (auto& abit : *source->stringsa()) {
-            std::bitset<nbit__> tabit = abit;
-            if (condition(tabit)) { // Also sets bit appropriately
-              DataType* targetdata = target->data() + target->stringsa()->lexical_zero(tabit) * lb;
-              const DataType sign = static_cast<DataType>(this->sign(abit));
-              blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
-            }
-            sourcedata += lb;
-          }
-      }
-      else {
-        const size_t la = source->lena();
-        assert( la == target->lena() );
-        const DataType* sourcedata_base = source->data();
-
-        const size_t tlb = target->lenb();
-        const size_t slb = source->lenb();
-
-        // phase from alpha electrons
-        const int alpha_phase = 1 - ((source->stringsa()->nele() & 1) << 1);
-
-        for (auto& bbit : *source->stringsb()) {
-          const DataType* sourcedata = sourcedata_base;
-          std::bitset<nbit__> tbbit = bbit;
-          if (condition(tbbit)) {
-            DataType* targetdata = target->data() + target->stringsb()->lexical_zero(tbbit);
-            const DataType sign = static_cast<DataType>(this->sign(bbit) * alpha_phase);
-            for (size_t i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
-              *targetdata += *sourcedata * sign;
-            }
-          }
-          ++sourcedata_base;
-        }
-      }
-    }
-};
-}
 
 template <typename DataType>
 class RASCivector : public RASCivector_base<RASBlock<DataType>> {
@@ -751,19 +588,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         return out;
       };
 
-      std::shared_ptr<RAS::apply_block_base<DataType>> apply_block;
-      switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {
-        case 0:
-          apply_block = std::make_shared<RAS::apply_block_impl<DataType, false, false>>(orbital); break;
-        case 1:
-          apply_block = std::make_shared<RAS::apply_block_impl<DataType, false, true>>(orbital);  break;
-        case 2:
-          apply_block = std::make_shared<RAS::apply_block_impl<DataType, true, false>>(orbital);  break;
-        case 3:
-          apply_block = std::make_shared<RAS::apply_block_impl<DataType, true, true>>(orbital);   break;
-        default:
-          assert(false);
-      }
+      RAS::apply_block<DataType> apply_block(orbital, action, spin);
 
       const int mod = action ? +1 : -1;
       const int telea = sdet->nelea() + ( spin ? mod : 0 );
@@ -779,7 +604,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         std::array<int, 6> tar_array = op_on_array(to_array(soblock));
         if ( std::all_of(tar_array.begin(), tar_array.end(), [] (int i) { return i >= 0; }) ) {
           std::shared_ptr<RASBlock<double>> tarblock = out->block(tar_array[0], tar_array[1], tar_array[4], tar_array[5]);
-          if (tarblock) (*apply_block)(soblock, tarblock);
+          if (tarblock) apply_block(soblock, tarblock);
         }
       }
 

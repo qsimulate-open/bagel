@@ -409,20 +409,8 @@ class RASTask {
 
       auto out = std::make_shared<RASBlock_alloc<double>>(ta,tb);
 
-      std::shared_ptr<RAS::apply_block_base<double>> apply_block;
-      switch ( 2*static_cast<int>(action) + static_cast<int>(spin) ) {
-        case 0:
-          apply_block = std::make_shared<RAS::apply_block_impl<double, false, false>>(orbital); break;
-        case 1:
-          apply_block = std::make_shared<RAS::apply_block_impl<double, false, true>>(orbital);  break;
-        case 2:
-          apply_block = std::make_shared<RAS::apply_block_impl<double, true, false>>(orbital);  break;
-        case 3:
-          apply_block = std::make_shared<RAS::apply_block_impl<double, true, true>>(orbital);   break;
-        default:
-          assert(false);
-      }
-      (*apply_block)(base_block, out);
+      RAS::apply_block<double> apply_block(orbital, action, spin);
+      apply_block(base_block, out);
 
       return out;
     }

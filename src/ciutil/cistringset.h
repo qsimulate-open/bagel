@@ -26,6 +26,7 @@
 #ifndef __SRC_CIUTIL_CISTRINGSET_H
 #define __SRC_CIUTIL_CISTRINGSET_H
 
+#include <src/ciutil/citraits.h>
 #include <src/ciutil/cistring.h>
 #include <src/ciutil/bitutil.h>
 
@@ -35,7 +36,9 @@ namespace bagel {
 // which appears often in the RAS implementation
 // Interface is assumed to be identical to that of CIStrings
 
-template <class StringType>
+template <class StringType,
+          class = typename std::enable_if<is_cistring<StringType>::value>::type
+         >
 class CIStringSet {
   protected:
     std::list<std::shared_ptr<StringType>> stringset_;
