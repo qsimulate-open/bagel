@@ -54,7 +54,7 @@ class CIBlockInfo {
     }
     virtual ~CIBlockInfo() { }
 
-    size_t size() const { return lena() * lenb(); }
+    virtual size_t size() const { return lena() * lenb(); }
     size_t lena() const { return astrings_->size(); }
     size_t lenb() const { return bstrings_->size(); }
     size_t norb() const { return astrings_->norb(); }
@@ -137,6 +137,54 @@ class CIBlock_alloc : public CIBlock<DataType, StringType> {
       this->data_ptr_ = data_.get();
     }
 };
+
+
+
+// Contains and owns all the data and information for a sub block of the CI coefficient matrix
+template <typename DataType, class StringType>
+class DistCIBlock_alloc : public CIBlockInfo<StringType> {
+  public:
+    typedef DataType data_type;
+
+  protected:
+    const StaticDist dist_;
+
+    // allocation size
+    size_t astart_;
+    size_t aend_;
+
+    std::unique_ptr<DataType[]> local_;
+
+    // Used during MPI routines
+    const size_t block_offset_;
+
+  public:
+    DistCIBlock_alloc(std::shared_ptr<const StringType> astrings, std::shared_ptr<const StringType> bstrings, const size_t o) :
+      CIBlockInfo<StringType>(astrings, bstrings), dist_(astrings->size(), mpi__->size()), block_offset_(o)
+    {
+      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
+      local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      std::fill_n(local_.get(), size(), 0.0);
+      mutex_ = std::vector<std::mutex>(asize());
+    }
+    // mutex for write accesses to local_
+    mutable std::vector<std::mutex> mutex_;
+
+    const StaticDist& dist() const { return dist_; }
+    size_t block_offset() const { return block_offset_; }
+
+    size_t asize() const { return aend_ - astart_; }
+    size_t astart() const { return astart_; }
+    size_t aend() const { return aend_; }
+
+    size_t size() const override { return (aend_ - astart_) * this->lenb(); }
+    size_t global_size() const { return this->lena() * this->lenb(); }
+
+    DataType* local() { return local_.get(); }
+    const DataType* local() const { return local_.get(); }
+};
+
+
 
 }
 

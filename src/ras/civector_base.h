@@ -26,12 +26,15 @@
 #ifndef __SRC_RAS_CIVECTOR_BASE_H
 #define __SRC_RAS_CIVECTOR_BASE_H
 
+#include <src/ciutil/citraits.h>
 #include <src/ras/determinants.h>
 
 namespace bagel {
 
 // Base class contains logic for block structure of RASCivecs
-template <class BlockType>
+template <class BlockType,
+          class = typename std::enable_if<is_ciblock<BlockType>::value>::type
+         >
 class RASCivector_base {
   protected:
     std::vector<std::shared_ptr<BlockType>> blocks_;
