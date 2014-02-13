@@ -39,6 +39,7 @@ std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_NAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_overlap (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_kinetic (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_momentum (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
 
 }
 

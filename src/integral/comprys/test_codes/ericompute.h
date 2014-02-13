@@ -129,6 +129,8 @@ ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const st
 // Used in computation of kinetic energy
 std::complex<double> kinetic_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
 std::complex<double> kinetic (std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
+std::vector<std::complex<double>> momentum_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
+std::vector<std::complex<double>> momentum (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
 
 }
 

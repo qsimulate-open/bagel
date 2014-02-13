@@ -224,6 +224,14 @@ cout << endl;
     cout << "Final result = " << FULL_KINETIC << endl;
     cout << "Magnitude = " << abs(FULL_KINETIC) << endl;
     cout << "Phase = " << arg(FULL_KINETIC) << endl;
+  } else if (calculation == 'P') {
+    vector<complex<double>> FULL_MOMENTUM = momentum_MO (field, input.second[0], input.second[1], input.first);
+    vector<char> dimension = {'x', 'y', 'z'};
+    for (int i=0; i!=3; i++) {
+      cout << dimension[i] << "-momentum = " << FULL_MOMENTUM[i] << endl;
+      cout << "   " << dimension[i] << " - Magnitude = " << abs(FULL_MOMENTUM[i]) << endl;
+      cout << "   " << dimension[i] << " - Phase = " << arg(FULL_MOMENTUM[i]) << endl;
+    }
   }
 
   return 0;

@@ -1213,4 +1213,78 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   return 0.5 * out;
 }
 
+vector<complex<double>> momentum_MO (vector<double> field, molecular_orbital A_, molecular_orbital B_, vector<atomic_orbital> basis) {
+  const int nbasis = basis.size();
+  complex<double> coeff_prod;
+  vector<complex<double>> current_term;
+  complex<double> fullx, fully, fullz;
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      coeff_prod = conj(A_.coefficient[i]) * B_.coefficient[j];
+      if (abs(coeff_prod)) {
+        current_term = momentum(field, basis[i], basis[j]);
+        fullx += (coeff_prod * current_term[0]);
+        fully += (coeff_prod * current_term[1]);
+        fullz += (coeff_prod * current_term[2]);
+      }
+    }
+  }
+  vector<complex<double>> Full_momentum = {fullx, fully, fullz};
+  return Full_momentum;
+}
+
+vector<std::complex<double>> momentum (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_) {
+  const complex<double> imag (0.0, -1.0);
+  atomic_orbital A = A_;
+  atomic_orbital B = B_;
+  const double alpha = A.exponent;
+  const int ax = A_.angular_momentum[0];
+  const int ay = A_.angular_momentum[1];
+  const int az = A_.angular_momentum[2];
+  //const int bx = B_.angular_momentum[0];
+  //const int by = B_.angular_momentum[1];
+  //const int bz = B_.angular_momentum[2];
+  const double axd = ax;
+  const double ayd = ay;
+  const double azd = az;
+  const double Bx = field[0];
+  const double By = field[1];
+  const double Bz = field[2];
+
+  complex<double> outx = 0.0;
+  complex<double> outy = 0.0;
+  complex<double> outz = 0.0;
+
+  if (ax > 0) {
+    A.change_angular(ax-1,ay  ,az  );
+    outx -= imag * 1.0 * axd * overlap(field,A,B);
+  }
+  if (ay > 0) {
+    A.change_angular(ax  ,ay-1,az  );
+    outy -= imag * 1.0 * ayd * overlap(field,A,B);
+  }
+  if (az > 0) {
+    A.change_angular(ax  ,ay  ,az-1);
+    outz -= imag * 1.0 * azd * overlap(field,A,B);
+  }
+
+  A.change_angular(ax+1,ay  ,az  );
+  outx += imag * 2.0 * alpha * overlap(field,A,B);
+  outy += 0.5 * Bz * overlap(field,A,B);
+  outz -= 0.5 * By * overlap(field,A,B);
+
+  A.change_angular(ax  ,ay+1,az  );
+  outx -= 0.5 * Bz * overlap(field,A,B);
+  outy += imag * 2.0 * alpha * overlap(field,A,B);
+  outz += 0.5 * Bx * overlap(field,A,B);
+
+  A.change_angular(ax  ,ay  ,az+1);
+  outx += 0.5 * By * overlap(field,A,B);
+  outy -= 0.5 * Bx * overlap(field,A,B);
+  outz += imag * 2.0 * alpha * overlap(field,A,B);
+
+  vector<complex<double>> out = {outx, outy, outz};
+  return out;
+}
+
 }
