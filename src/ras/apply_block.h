@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/apply_block_impl.h
+// Filename: ras/apply_block.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,8 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_RAS_APPY_BLOCK_IMPL_H
-#define __SRC_RAS_APPY_BLOCK_IMPL_H
+#ifndef __SRC_RAS_APPLY_BLOCK_H
+#define __SRC_RAS_APPLY_BLOCK_H
 
 #include <bitset>
 #include <src/util/constants.h>
@@ -36,8 +36,7 @@ namespace bagel {
 // helper classes for the apply function (this way the main code can be used elsewhere)
 namespace RAS {
 
-template <typename DataType>
-class apply_block {
+class Apply_block {
   protected:
     const int orbital_;
     const bool action_;
@@ -57,7 +56,7 @@ class apply_block {
     }
 
   public:
-    apply_block(const int orb, const bool action, const bool spin) : orbital_(orb), action_(action), spin_(spin) {}
+    Apply_block(const int orb, const bool action, const bool spin) : orbital_(orb), action_(action), spin_(spin) {}
 
     template <class BlockTypeA, class BlockTypeB,
               // checks if A and B are CIBlocks and if they are based on the same StringType
@@ -68,6 +67,7 @@ class apply_block {
                                              >::type
              >
     void operator()(std::shared_ptr<const BlockTypeA> source, std::shared_ptr<BlockTypeB> target) {
+      typedef typename BlockTypeA::data_type DataType;
       if (spin_) {
           const size_t lb = source->lenb();
           assert(lb == target->lenb());

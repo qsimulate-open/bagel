@@ -588,7 +588,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         return out;
       };
 
-      RAS::apply_block<DataType> apply_block(orbital, action, spin);
+      RAS::Apply_block apply_block(orbital, action, spin);
 
       const int mod = action ? +1 : -1;
       const int telea = sdet->nelea() + ( spin ? mod : 0 );

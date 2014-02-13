@@ -409,7 +409,7 @@ class RASTask {
 
       auto out = std::make_shared<RASBlock_alloc<double>>(ta,tb);
 
-      RAS::apply_block<double> apply_block(orbital, action, spin);
+      RAS::Apply_block apply_block(orbital, action, spin);
       apply_block(base_block, out);
 
       return out;
