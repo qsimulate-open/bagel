@@ -159,3 +159,13 @@ void SparseMatrix::print_table() const {
     }
   }
 }
+
+shared_ptr<Matrix> SparseMatrix::matrix() const {
+  auto out = make_shared<Matrix>(ndim_, mdim_);
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata)
+      out->element(i, cols_[rowdata]-1) = data_[rowdata];
+  }
+
+  return out;
+}
