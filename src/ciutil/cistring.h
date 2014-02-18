@@ -282,11 +282,4 @@ BOOST_CLASS_EXPORT_KEY(bagel::CIString_base_impl<3>)
 BOOST_CLASS_EXPORT_KEY(bagel::RASString)
 BOOST_CLASS_EXPORT_KEY(bagel::FCIString)
 
-namespace bagel {
-  template <class T>
-  struct base_of<T, typename std::enable_if<std::is_base_of<CIString_base, T>::value>::type> {
-    typedef CIString_base type;
-  };
-}
-
 #endif

@@ -28,6 +28,9 @@
 template class bagel::CIStringSet<bagel::FCIString>;
 template class bagel::CIStringSet<bagel::RASString>;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIStringSet<bagel::FCIString>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIStringSet<bagel::RASString>)
+
 using namespace std;
 using namespace bagel;
 

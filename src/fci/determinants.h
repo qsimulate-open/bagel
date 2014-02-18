@@ -43,7 +43,20 @@ class Determinants : public Determinants_base<FCIString>,
   private:
     friend class boost::serialization::access;
     template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Determinants_base<FCIString>>(*this) << addalpha_ << addbeta_;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<Determinants_base<FCIString>>(*this) >> addalpha_ >> addbeta_;
+      if (!addalpha_.expired())
+        addalpha_.lock()->set_remalpha(shared_from_this());
+      if (!addbeta_.expired())
+        addbeta_.lock()->set_rembeta(shared_from_this());
     }
 
   public:

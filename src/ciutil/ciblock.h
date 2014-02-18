@@ -44,6 +44,11 @@ class CIBlockInfo {
     std::shared_ptr<const StringType> astrings_;
     std::shared_ptr<const StringType> bstrings_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & astrings_ & bstrings_; }
+
   public:
     CIBlockInfo() { }
     CIBlockInfo(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst)
@@ -183,8 +188,6 @@ class DistCIBlock_alloc : public CIBlockInfo<StringType> {
     DataType* local() { return local_.get(); }
     const DataType* local() const { return local_.get(); }
 };
-
-
 
 }
 

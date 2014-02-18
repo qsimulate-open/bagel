@@ -60,7 +60,15 @@ class CIStringSet {
       assert(false); // should be specialized
     }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & stringset_ & nele_ & norb_ & size_ & strings_ & phi_ & uncompressed_phi_;
+    }
+
   public:
+    CIStringSet() { }
     CIStringSet(const std::list<std::shared_ptr<const StringType>>& o) {
       // copy construct with an offset
       nele_ = o.front()->nele();
@@ -132,5 +140,9 @@ void CIStringSet<RASString>::construct_phi();
 
 extern template class bagel::CIStringSet<bagel::FCIString>;
 extern template class bagel::CIStringSet<bagel::RASString>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::CIStringSet<bagel::FCIString>)
+BOOST_CLASS_EXPORT_KEY(bagel::CIStringSet<bagel::RASString>)
 
 #endif

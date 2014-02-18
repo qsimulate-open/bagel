@@ -48,6 +48,10 @@ struct DetMap {
 class StringMap {
   protected:
     std::vector<std::vector<DetMap>> data_;
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & data_; }
   public:
     StringMap() { }
     StringMap(const int norb) : data_(norb) { }
@@ -90,11 +94,6 @@ class StringMap {
           j.sign = -j.sign;
       return out;
     }
-
-  private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) { ar & data_; }
 };
 
 
@@ -104,8 +103,13 @@ class DetMapBlock_base {
     size_t offset_;
     std::shared_ptr<const StringType> space_;
     std::vector<DetMap> phis_;
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) { ar & offset_ & space_ & phis_; }
 
   public:
+    DetMapBlock_base() { }
     DetMapBlock_base(const size_t o, std::shared_ptr<const StringType> sp, std::vector<DetMap>&& p) : offset_(o), space_(sp), phis_(std::move(p)) {}
 
     std::vector<DetMap>::const_iterator begin() const { return phis_.begin(); }

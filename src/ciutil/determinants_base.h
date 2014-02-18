@@ -66,11 +66,13 @@ class Determinants_base {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
+      ar & blockinfo_ & alphaspaces_ & betaspaces_ & phia_ & phib_ & phia_uncompressed_ & phib_uncompressed_
+         & phiupa_ & phiupb_ & phidowna_ & phidownb_;
     }
 
   public:
     Determinants_base() { }
-//  Determinants_base(std::shared_ptr<const StringType> ast, std::shared_ptr<const StringType> bst, const bool compress = true, const bool mute = false) { }
+    virtual ~Determinants_base() { }
 
     // some functions to retrieve members of CIBlockInfo<StringType>
     // block-independent members
@@ -163,9 +165,11 @@ template<int spin, typename StringType, class DetClass> void link(std::shared_pt
 
 }
 
-#if 0
+extern template class bagel::Determinants_base<bagel::FCIString>;
+extern template class bagel::Determinants_base<bagel::RASString>;
+
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::Determinants)
-#endif
+BOOST_CLASS_EXPORT_KEY(bagel::Determinants_base<bagel::FCIString>)
+BOOST_CLASS_EXPORT_KEY(bagel::Determinants_base<bagel::RASString>)
 
 #endif
