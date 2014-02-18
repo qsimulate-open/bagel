@@ -48,15 +48,12 @@ class Determinants : public Determinants_base<FCIString>,
     }
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Determinants_base<FCIString>>(*this) << addalpha_ << addbeta_;
+      ar << boost::serialization::base_object<Determinants_base<FCIString>>(*this);
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Determinants_base<FCIString>>(*this) >> addalpha_ >> addbeta_;
-      if (!addalpha_.expired())
-        addalpha_.lock()->set_remalpha(shared_from_this());
-      if (!addbeta_.expired())
-        addbeta_.lock()->set_rembeta(shared_from_this());
+      // links will be re-initialized by the space object
+      ar >> boost::serialization::base_object<Determinants_base<FCIString>>(*this);
     }
 
   public:

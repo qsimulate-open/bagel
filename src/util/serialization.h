@@ -185,6 +185,34 @@ namespace boost {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // serialization of unordered_map
+    template<class Archive, class T, class U>
+    void serialize(Archive& ar, std::unordered_map<T,U>& t, const unsigned int version) {
+      split_free(ar, t, version);
+    }
+
+    template<class Archive, class T, class U>
+    void save(Archive& ar, const std::unordered_map<T,U>& t, const unsigned int version) {
+      int size = t.size();
+      ar << size;
+      for (auto& i : t) ar << i.first << i.second;
+    }
+
+    template<class Archive, class T, class U>
+    void load(Archive& ar, std::unordered_map<T,U>& t, const unsigned int version) {
+      int size;
+      ar >> size;
+      for (int i = 0; i != size; ++i) {
+        typename std::remove_cv<T>::type a;
+        typename std::remove_cv<U>::type b;
+        ar >> a >> b;
+        t.insert(std::make_pair(a, b));
+      }
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
     // serialization of tuple
     template <size_t N>
     struct Serialize {

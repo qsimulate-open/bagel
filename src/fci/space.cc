@@ -52,11 +52,11 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
   list<shared_ptr<const FCIStringSet>> listb = { make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb0}),
                                                  make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb1}) };
 
-  auto spacea = make_shared<CIStringSpace<FCIStringSet>>(lista);
-  spacea->build_linkage();
+  spacea_ = make_shared<CIStringSpace<FCIStringSet>>(lista);
+  spacea_->build_linkage();
 
-  auto spaceb = make_shared<CIStringSpace<FCIStringSet>>(listb);
-  spaceb->build_linkage();
+  spaceb_ = make_shared<CIStringSpace<FCIStringSet>>(listb);
+  spaceb_->build_linkage();
 
   if (!mute) {
     cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
@@ -68,10 +68,15 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
     for (auto& b : listb)
       detmap_.insert(make_pair(key_(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true)));
 
+  // link determinants
+  link();
+}
+
+
+void HZSpace::link() {
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
     auto jdet = idet; ++jdet;
     for( ; jdet != detmap_.end(); ++jdet)
-      idet->second->link(jdet->second, spacea, spaceb);
+      idet->second->link(jdet->second, spacea_, spaceb_);
   }
-
 }

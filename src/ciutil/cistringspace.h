@@ -101,7 +101,16 @@ class CIStringSpace {
         phidown_[downkey]->insert(phidown);
     }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & strings_ & norb_ & phiup_ & phidown_;
+    }
+
   public:
+    CIStringSpace() { }
+
     CIStringSpace(std::initializer_list<std::shared_ptr<const StringSetType>> s)
       : CIStringSpace(std::list<std::shared_ptr<const StringSetType>>(s.begin(), s.end())) {
     }

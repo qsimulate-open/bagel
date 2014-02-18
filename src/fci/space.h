@@ -33,11 +33,26 @@
 namespace bagel {
 
 class HZSpace : public Space_base {
+  protected:
+    std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>> spacea_;
+    std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>> spaceb_;
+
+    void link();
+
   private:
     friend class boost::serialization::access;
     template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Space_base>(*this);
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Space_base>(*this) << spacea_ << spaceb_;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<Space_base>(*this) >> spacea_ >> spaceb_;
+      link();
     }
 
   public:
