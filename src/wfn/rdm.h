@@ -120,11 +120,18 @@ class RDM : public RDM_base<DataType> {
       return out;
     }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<RDM_base<DataType>>(*this);
+    }
+
   public:
     RDM() { }
     RDM(const int n) : RDM_base<DataType>(n, rank) { }
     RDM(const RDM<rank,DataType>& o) : RDM_base<DataType>(o) { }
-    RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::forward(o)) { }
+    RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::move(o)) { }
 
     std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb_); }
     std::shared_ptr<RDM<rank,DataType>> copy() const { return std::make_shared<RDM<rank,DataType>>(*this); }

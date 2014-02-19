@@ -161,4 +161,14 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Reference)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Reference, T>::value>::type> {
+    typedef Reference type;
+  };
+}
+
 #endif

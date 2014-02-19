@@ -38,9 +38,18 @@ class RelDvector {
     using MapType = std::pair<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>;
 
     std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> dvecs_;
-    const std::shared_ptr<const Space_base> space_;
+    std::shared_ptr<const Space_base> space_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & dvecs_ & space_;
+    }
 
   public:
+    RelDvector() { }
+
     // make an empty Dvec
     RelDvector(std::shared_ptr<const Space_base> space, const size_t ij) : space_(space) {
       for (auto& isp : space->detmap())
@@ -175,5 +184,12 @@ using RelDvec = RelDvector<double>;
 using RelZDvec = RelDvector<std::complex<double>>;
 
 }
+
+extern template class bagel::RelDvector<double>;
+extern template class bagel::RelDvector<std::complex<double>>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::RelDvector<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::RelDvector<std::complex<double>>)
 
 #endif

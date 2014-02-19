@@ -27,11 +27,13 @@
 #include <src/math/davidson.h>
 #include <src/zfci/relspace.h>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
+
 using namespace std;
 using namespace bagel;
 
 ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   print_header();
@@ -45,6 +47,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+  restart_ = idata_->get<bool>("restart", false);
 
   states_ = idata_->get_vector<int>("state", 0);
   nstate_ = 0;
@@ -197,6 +200,12 @@ void ZHarrison::compute() {
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
+
+    if (restart_) {
+      stringstream ss; ss << "zfci_" << iter;
+      OArchive ar(ss.str());
+      ar << static_cast<Method*>(this);
+    }
 
     // form a sigma vector given cc
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
