@@ -27,6 +27,15 @@
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 
+#if 0 // for testing:
+#include <iostream>
+#include <src/integral/compos/complexkineticbatch.h>
+#include <src/integral/compos/complexmomentumbatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
+#include <src/integral/compos/matrix_interface.h>
+#include <src/molecule/mixedbasis.h>
+#endif
+
 using namespace bagel;
 using namespace std;
 
@@ -34,6 +43,35 @@ BOOST_CLASS_EXPORT_IMPLEMENT(SCF)
 
 SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
+
+#if 0
+/**** Test Kinetic Energy and Momentum Integrals ****/
+
+cout << endl << "--------------- Testing Integrals --------------- " << endl;
+
+// Creates another version of geom_ that uses the (large) auxiliary basis
+auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
+
+// Creates two new geometries, auxmol and refgeom, that only use the first atom in the system
+vector<shared_ptr<const Atom>> refatom, auxatom;
+refatom.push_back(geom_->atoms(0));
+auxatom.push_back(mol->atoms(0));
+auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
+auto refgeom = make_shared<const Geometry>(geom_->atoms(), make_shared<const PTree>());
+auto auxgeom = make_shared<const Geometry>(mol->atoms(), make_shared<const PTree>());
+refgeom->print_atoms();
+auxmol->print_atoms();
+
+// Create S-1
+MixedBasis<RealLondon<ComplexOverlapBatch>, const bool, const int> S_R (refgeom, refgeom, 0, 1);
+MixedBasis<RealLondon<ComplexOverlapBatch>, const bool, const int> S_I (refgeom, refgeom, 1, 1);
+const complex<Matrix> S (S_R, S_I);
+const complex<Matrix> Si = inverse(S);
+
+cout << endl << "------------------------------------------------- " << endl;
+
+/**** Done Testing ****/
+#endif
 
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
