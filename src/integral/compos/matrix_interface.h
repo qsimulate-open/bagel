@@ -40,24 +40,33 @@ class RealLondon {
     std::shared_ptr<Batch> batch_;
     bool ReIm_;
     int nblocks_;
+    int block_;
     int size_block_;
+    int size_final_;
 
   public:
-    RealLondon(const std::array<std::shared_ptr<const Shell>,2>& input, const bool ReIm, const int nblocks) {
+    RealLondon(const std::array<std::shared_ptr<const Shell>,2>& input, const bool ReIm, const int nblocks, const int block) {
       batch_ = std::make_shared<Batch>(input);
       ReIm_ = ReIm;
       nblocks_ = nblocks;
+      block_ = block;
+      if (block_ > nblocks_) throw std::runtime_error ("You're asking for a block of data that does not exist - ??");
 
       // We could make this a friend class and pull size_block_ directly from the integral codes, but I don't want to modify them if we aren't keeping this
       const int prim01 = input[0]->num_primitive() * input[1]->num_primitive();
       const int ang0 = input[0]->angular_number();
       const int ang1 = input[1]->angular_number();
+      const bool sph = input[0]->spherical();
+      assert (sph == input[1]->spherical());
       const int amin = std::min(ang0, ang1);
       const int amax = ang0 + ang1;
       int asize = 0;
       for (int i=amin; i!=amax+1; i++) asize += (i+1)*(i+2)/2;
-      const int asize_int = (ang0+1)*(ang0+2)*(ang1+1)*(ang1+2)/4;
-      size_block_ = prim01 * std::max(asize, asize_int);
+      const int asize_car = (ang0+1)*(ang0+2)*(ang1+1)*(ang1+2)/4;
+      const int asize_sph = (2*ang0+1)*(2*ang1+1);
+      size_block_ = prim01 * std::max(asize, asize_car);
+      if (sph) { size_final_ = prim01 * asize_sph; }
+      else size_final_ = prim01 * asize_car;
     }
 
     double* data() {return data_;}
@@ -65,22 +74,39 @@ class RealLondon {
     void compute() {
       batch_->compute();
       const std::complex<double>* cdata = batch_->data();
-      data_ = (double*) std::malloc(nblocks_*size_block_*sizeof(double));
+      data_ = (double*) std::malloc(size_final_*sizeof(double));
+      const int i = block_-1;
       if (!ReIm_) {
-        for (int i=0; i!=nblocks_; i++) {
-          for (int j=0; j!=size_block_; j++) {
-            data_[i*nblocks_ + j] = cdata[i*nblocks_ + j].real();
-          }
+        for (int j=0; j!=size_final_; j++) {
+          data_[j] = cdata[i*size_block_ + j].real();
         }
       } else {
-        for (int i=0; i!=nblocks_; i++) {
-          for (int j=0; j!=size_block_; j++) {
-            data_[i*nblocks_ + j] = cdata[i*nblocks_ + j].imag();
-          }
+        for (int j=0; j!=size_final_; j++) {
+          data_[j] = cdata[i*size_block_ + j].imag();
         }
       }
     }
 };
+
+std::complex<Matrix> transpose (std::complex<Matrix> S) {
+  std::shared_ptr<Matrix> RT = S.real().transpose();
+  std::shared_ptr<Matrix> IT = S.imag().transpose();
+  std::complex<Matrix> out (*RT, *IT);
+  return out;
+}
+
+std::complex<Matrix> multiply (std::complex<Matrix> A, std::complex<Matrix> B) {
+  Matrix real = A.real() * B.real() - A.imag() * B.imag();
+  Matrix imag = A.real() * B.imag() + A.imag() * B.real();
+  std::complex<Matrix> out (real, imag);
+  return out;
+}
+
+std::complex<Matrix> multiply (std::complex<Matrix> A, std::complex<Matrix> B, std::complex<Matrix> C) {
+  std::complex<Matrix> D = multiply (A, B);
+  std::complex<Matrix> out = multiply (D, C);
+  return out;
+}
 
 std::complex<Matrix> inverse (std::complex<Matrix> S) {
   Matrix S_Ri = S.real();
