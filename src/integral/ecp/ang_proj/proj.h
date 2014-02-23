@@ -18,6 +18,7 @@
 #include "src/math/comb.h"
 #include <complex>
 #include "wigner3j.h"
+#include "src/integral/carsphlist.h"
 
 using namespace mpfr;
 using namespace boost;
@@ -40,6 +41,47 @@ class Factorial {
 
 };
 
+struct CarSph {
+  protected:
+    int angular_momentum_;
+    std::vector<double> cartesian_;
+    std::vector<double> spherical_;
+
+  public:
+    CarSph(const int l, const std::vector<double> car) : angular_momentum_(l), cartesian_(car) {
+      const int dimsph = 2 * angular_momentum_ + 1;
+      for (int i = 0; i != dimsph; ++i) {
+        spherical_.push_back(0.0);
+      }
+    }
+    ~CarSph() {}
+
+    void transform_CarSph() {
+
+      const int LEND = 7;
+      const int carsphindex = LEND * angular_momentum_;
+      const static bagel::CarSphList carsphlist;
+
+      double* car = cartesian_.data();
+      double* sph = spherical_.data();
+      carsphlist.carsphfunc_call(carsphindex, 1, car, sph);
+    }
+
+    void print() {
+      std::cout << "-- Print Cartesian in carsph --" << std::endl;
+      for (auto it = cartesian_.begin(); it != cartesian_.end(); ++it) {
+        cout << setw(17) << setprecision(9) << *it << " ";
+      }
+      std::cout << std::endl;
+      std::cout << "-- Print Spherical in carsph --" << std::endl;
+      for (auto it = spherical_.begin(); it != spherical_.end(); ++it) {
+        cout << setw(17) << setprecision(9) << *it << " ";
+      }
+      std::cout << std::endl;
+    }
+
+};
+
 class CartesianGauss {
   protected:
 
@@ -47,9 +89,15 @@ class CartesianGauss {
     double exponent_;
     double weight_;
     std::array<int, 3> angular_momentum_;
+    std::array<double, 3> centre_;
 
   public:
-    explicit CartesianGauss(const double alpha, const std::array<int, 3> l) : exponent_(alpha), angular_momentum_(l) { norm_ = normalise(); }
+
+    explicit CartesianGauss(const double alpha, const std::array<int, 3> l, const std::array<double, 3> c) :
+      exponent_(alpha),
+      angular_momentum_(l),
+      centre_(c)
+      { norm_ = normalise(); }
     ~CartesianGauss() {}
 
     double normalise() {
@@ -64,6 +112,7 @@ class CartesianGauss {
     }
 
     std::array<int, 3> angular_momentum() { return angular_momentum_; }
+    double centre(const int i) { return centre_[i]; }
 
     void set_weight(const double wt) { weight_ = wt; }
 
@@ -118,7 +167,7 @@ class GaussOntoSph {
       }
     }
 
-    std::list<std::shared_ptr<CartesianGauss>> sphcar(const int l, const int m) {
+    std::list<std::shared_ptr<CartesianGauss>> sphcar(std::array<double, 3> centre, const int l, const int m) {
       std::list<std::shared_ptr<CartesianGauss>> gauss;
       for (int i = 0; i != l+1; ++i) {
         for (int j = 0; j != l+1; ++j) {
@@ -128,7 +177,7 @@ class GaussOntoSph {
             std::cout << "(lm)(ijk) = (" << l << m << ") (" << i << j << k << ")    c = " << c << std::endl;
             if (c > 1e-13) {
               std::array<int, 3> ang = {i, j, k};
-              gauss.push_back(std::make_shared<CartesianGauss>(0.0, ang));
+              gauss.push_back(std::make_shared<CartesianGauss>(0.0, ang, centre));
             }
           }
         }
