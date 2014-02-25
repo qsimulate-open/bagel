@@ -152,7 +152,7 @@ class Matrix_base {
 
     template <class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << ndim_ << mdim_ << boost::serialization::make_array(data(), size()) << localized_;
+      ar << ndim_ << mdim_ << make_array(data(), size()) << localized_;
 #ifdef HAVE_SCALAPACK
       ar << desc_ << localsize_;
 #endif
@@ -162,7 +162,7 @@ class Matrix_base {
     void load(Archive& ar, const unsigned int) {
       ar >> ndim_ >> mdim_;
       data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      ar >> boost::serialization::make_array(data(), size()) >> localized_;
+      ar >> make_array(data(), size()) >> localized_;
 #ifdef HAVE_SCALAPACK
       ar >> desc_ >> localsize_;
 #endif

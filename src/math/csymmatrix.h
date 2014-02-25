@@ -46,13 +46,13 @@ class CSymMatrix {
     }
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << localized_ << nocc_ << size_ << boost::serialization::make_array(data(), size());
+      ar << localized_ << nocc_ << size_ << make_array(data(), size());
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> localized_ >> nocc_ >> size_;
       data_ = std::unique_ptr<double[]>(new double[size()]);
-      ar >> boost::serialization::make_array(data(), size());
+      ar >> make_array(data(), size());
     }
 
   public:

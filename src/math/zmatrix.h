@@ -214,4 +214,11 @@ BOOST_CLASS_EXPORT_KEY(bagel::ZMatrix)
 BOOST_CLASS_EXPORT_KEY(bagel::DistZMatrix)
 #endif
 
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<ZMatrix, T>::value>::type> {
+    typedef ZMatrix type;
+  };
+}
+
 #endif

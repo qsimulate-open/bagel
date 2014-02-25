@@ -32,6 +32,7 @@
 #include <src/wfn/method.h>
 #include <src/zfci/relmofile.h>
 #include <src/zfci/reldvec.h>
+#include <src/math/davidson.h>
 #include <src/rel/relreference.h>
 
 namespace bagel {
@@ -82,6 +83,8 @@ class ZHarrison : public Method {
     std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
     std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
 
+    std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
+
     // restart
     bool restart_;
     bool restarted_;
@@ -96,14 +99,14 @@ class ZHarrison : public Method {
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
       ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
-         << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << restart_ << restarted_;
+         << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // TODO need to reconstruct jop_
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
-         >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> restart_;
+         >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_;
       // TODO need to reconstruct jop_
       restarted_ = true;
     }

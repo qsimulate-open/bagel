@@ -24,7 +24,6 @@
 //
 
 #include <src/zfci/zharrison.h>
-#include <src/math/davidson.h>
 #include <src/zfci/relspace.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
@@ -161,37 +160,39 @@ void ZHarrison::compute() {
 
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
-  // Creating an initial CI vector
-  cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
+  if (!restarted_) {
+    // Creating an initial CI vector
+    cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 
-  // find determinants that have small diagonal energies
-  int offset = 0;
-  for (int ispin = 0; ispin != states_.size(); ++ispin) {
-    int nstate = 0;
-    for (int i = ispin; i != states_.size(); ++i)
-      nstate += states_[i];
+    // find determinants that have small diagonal energies
+    int offset = 0;
+    for (int ispin = 0; ispin != states_.size(); ++ispin) {
+      int nstate = 0;
+      for (int i = ispin; i != states_.size(); ++i)
+        nstate += states_[i];
 
-    if ((geom_->nele()+ispin-charge_) % 2 == 1) {
-      if (states_[ispin] != 0) throw runtime_error("wrong states specified");
-      continue;
-    }
+      if ((geom_->nele()+ispin-charge_) % 2 == 1) {
+        if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+        continue;
+      }
 
-    const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
-    const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
-    generate_guess(nelea, neleb, nstate, cc_, offset);
-    offset += nstate;
-    if (nelea != neleb) {
-      generate_guess(neleb, nelea, nstate, cc_, offset);
+      const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
+      const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
+      generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
+      if (nelea != neleb) {
+        generate_guess(neleb, nelea, nstate, cc_, offset);
+        offset += nstate;
+      }
     }
+    pdebug.tick_print("guess generation");
+
+    // Davidson utility
+    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, max_iter_);
   }
-  pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
-
-  // Davidson utility
-  DavidsonDiag<RelZDvec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
   cout << "  === Relativistic FCI iteration ===" << endl << endl;
@@ -217,9 +218,9 @@ void ZHarrison::compute() {
     ccn->synchronize();
     sigman->synchronize();
 
-    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
-    vector<shared_ptr<RelZDvec>> errvec = davidson.residual();
+    vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
       i->synchronize();
     pdebug.tick_print("davidson");
@@ -270,7 +271,7 @@ void ZHarrison::compute() {
   }
   // main iteration ends here
 
-  cc_ = make_shared<RelZDvec>(davidson.civec());
+  cc_ = make_shared<RelZDvec>(davidson_->civec());
   cc_->print(print_thresh_);
 
 #if 0

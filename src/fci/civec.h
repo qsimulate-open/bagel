@@ -427,14 +427,14 @@ class Civector {
     void save(Archive& ar, const unsigned int) const {
       if (!cc_.get())
         throw std::logic_error("illegal call of Civector<T>::save");
-      ar << det_ << lena_ << lenb_ << boost::serialization::make_array(cc(), size());
+      ar << det_ << lena_ << lenb_ << make_array(cc(), size());
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> det_ >> lena_ >> lenb_;
       cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       cc_ptr_ = cc_.get();
-      ar >> boost::serialization::make_array(cc(), size());
+      ar >> make_array(cc(), size());
     }
 
   public:

@@ -70,17 +70,25 @@ class Dvector {
     template<class Archive>
     void save(Archive& ar, const unsigned int version) const {
       // dvec_ is just an alias and therefore not serialized
-      ar << det_ << lena_ << lenb_ << ij_ << boost::serialization::make_array(data(), size());
+      const bool alloc = data();
+      ar << det_ << lena_ << lenb_ << ij_ << alloc;
+      if (alloc) ar << make_array(data(), size());
+      else       ar << dvec_;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int version) {
-      ar >> det_ >> lena_ >> lenb_ >> ij_;
-      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      ar >> boost::serialization::make_array(data(), size());
-      // make an alias and set to dvec_
-      DataType* ptr = data();
-      for (int i = 0; i != ij_; ++i, ptr += lena_*lenb_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, ptr));
+      bool alloc;
+      ar >> det_ >> lena_ >> lenb_ >> ij_ >> alloc;
+      if (alloc) {
+        data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+        ar >> make_array(data(), size());
+        // make an alias and set to dvec_
+        DataType* ptr = data();
+        for (int i = 0; i != ij_; ++i, ptr += lena_*lenb_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, ptr));
+      } else {
+        ar >> dvec_;
+      }
     }
 
   public:

@@ -46,13 +46,28 @@
 #include <boost/archive/shared_ptr_helper.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
 
-// default implementation
 namespace bagel {
+  // default implementation of bagel::base_of
   template <class T, typename = void>
   struct base_of {
     // always return non-const type
     typedef typename std::remove_cv<T>::type type;
   };
+
+  // make_array
+  template <typename T>
+  auto make_array(T* data, const size_t n) -> decltype(boost::serialization::make_array(data, n)) {
+    return boost::serialization::make_array(data, n);
+  }
+  // specialization for complex
+  template <typename T>
+  auto make_array(std::complex<T>* data, const size_t n) -> decltype(boost::serialization::make_array(reinterpret_cast<T*>(data), 2*n)) {
+    return boost::serialization::make_array(reinterpret_cast<T*>(data), 2*n);
+  }
+  template <typename T>
+  auto make_array(const std::complex<T>* data, const size_t n) -> decltype(boost::serialization::make_array(reinterpret_cast<const T*>(data), 2*n)) {
+    return boost::serialization::make_array(reinterpret_cast<const T*>(data), 2*n);
+  }
 }
 
 namespace boost {
@@ -237,7 +252,7 @@ namespace boost {
     // serialization of std::array
     template<class Archive, typename T, size_t N>
     void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
-      ar & boost::serialization::make_array(t.data(), N);
+      ar & bagel::make_array(t.data(), N);
     }
 
   }
