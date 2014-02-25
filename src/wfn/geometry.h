@@ -82,8 +82,8 @@ class Geometry : public Molecule {
       ar << boost::serialization::base_object<Molecule>(*this);
       ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
          << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
-      const bool nodf = !df_;
-      ar << nodf;
+      const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
+      ar << dfindex;
       const bool do_rel   = !!dfs_;
       const bool do_gaunt = !!dfsl_;
       ar << do_rel << do_gaunt;
@@ -94,9 +94,17 @@ class Geometry : public Molecule {
       ar >> boost::serialization::base_object<Molecule>(*this);
       ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
          >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_;
-      bool nodf;
-      ar >> nodf;
-      compute_integrals(overlap_thresh_, nodf);
+
+      size_t dfindex;
+      ar >> dfindex;
+      static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
+      if (dfmap[dfindex].expired()) {
+        compute_integrals(overlap_thresh_, dfindex == 0);
+        dfmap[dfindex] = df_;
+      } else {
+        df_ = dfmap[dfindex].lock();
+      }
+
       bool do_rel, do_gaunt;
       ar >> do_rel >> do_gaunt;
       if (do_rel)
