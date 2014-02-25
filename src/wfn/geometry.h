@@ -71,6 +71,7 @@ class Geometry : public Molecule {
     // Constructor helpers
     void common_init1();
     void common_init2(const bool print, const double thresh, const bool nodf = false);
+    void compute_integrals(const double thresh, const bool nodf);
 
   private:
     // serialization
@@ -83,6 +84,9 @@ class Geometry : public Molecule {
          << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
       const bool nodf = !df_;
       ar << nodf;
+      const bool do_rel   = !!dfs_;
+      const bool do_gaunt = !!dfsl_;
+      ar << do_rel << do_gaunt;
     }
 
     template<class Archive>
@@ -92,7 +96,11 @@ class Geometry : public Molecule {
          >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_;
       bool nodf;
       ar >> nodf;
-      common_init2(true, overlap_thresh_, nodf);
+      compute_integrals(overlap_thresh_, nodf);
+      bool do_rel, do_gaunt;
+      ar >> do_rel >> do_gaunt;
+      if (do_rel)
+        compute_relativistic_integrals(do_gaunt);
     }
 
     template<class Archive>
@@ -166,7 +174,8 @@ class Geometry : public Molecule {
     std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = std::shared_ptr<const Matrix>()) const;
 
     // initialize relativistic components
-    std::shared_ptr<const Geometry> relativistic(const bool) const;
+    std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
+    void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 
 };

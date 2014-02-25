@@ -100,14 +100,18 @@ class ZHarrison : public Method {
       ar << boost::serialization::base_object<Method>(*this);
       ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
-      // TODO need to reconstruct jop_
+      // for jop_
+      std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
+      ar << coeff;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
-         >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_;
-      // TODO need to reconstruct jop_
+         >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
+      std::shared_ptr<const ZMatrix> coeff;
+      ar >> coeff;
+      update(coeff);
       restarted_ = true;
     }
 
