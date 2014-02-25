@@ -33,9 +33,9 @@ int main() {
   gauss = gos.sphcar(centre, 1,-1);
   cout << "No. of Cartesian Gaussians = " << gauss.size() << endl;
   for (auto& it : gauss) {
-    cout << setw(17) << setprecision(9) << it->angular_momentum()[0] << " ";
-    cout << setw(17) << setprecision(9) << it->angular_momentum()[1] << " ";
-    cout << setw(17) << setprecision(9) << it->angular_momentum()[2] << endl;
+    cout << setw(17) << setprecision(9) << it->angular_momentum(0) << " ";
+    cout << setw(17) << setprecision(9) << it->angular_momentum(1) << " ";
+    cout << setw(17) << setprecision(9) << it->angular_momentum(2) << endl;
   }
   for (auto& it : gauss) {
     for (int i = 0; i != 3; ++i) {
@@ -44,9 +44,8 @@ int main() {
   }
 
   Comb comb;
-  l = 2;
-  vector<double> cartesian = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  std::shared_ptr<CarSph> carsph = std::make_shared<CarSph>(l, cartesian);
+  std::array<int, 3> cartesian = {0, 0, 2};
+  std::shared_ptr<CarSph> carsph = std::make_shared<CarSph>(cartesian);
   carsph->transform_CarSph();
   carsph->print();
 
