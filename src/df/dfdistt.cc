@@ -29,22 +29,14 @@
 using namespace std;
 using namespace bagel;
 
-DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
- : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()), df_(in->df()) {
+DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const StaticDist> dist)
+ : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()),
+   dist_(dist ? dist : make_shared<StaticDist>(nindex1_*nindex2_, mpi__->size())),
+   start_(dist_->start(mpi__->rank())), size_(dist_->size(mpi__->rank())), df_(in->df()) {
 
 #ifndef HAVE_MPI_H
   assert(false); // this class should be used with MPI (it works without MPI, but it just transposition of data...)
 #endif
-
-  // determine how to distribute...
-  const size_t stride = nindex1_*nindex2_ / mpi__->size();
-  for (int i = 0; i != mpi__->size(); ++i) {
-    tabstart_.push_back(stride*i);
-    tabsize_.push_back((i+1 == mpi__->size()) ? nindex1_*nindex2_-tabstart_[i] : stride);
-  }
-  assert(tabsize_.back() >= 0);
-  start_ = tabstart_[mpi__->rank()];
-  size_ = tabsize_[mpi__->rank()];
 
   vector<int> srequest;
 
@@ -60,24 +52,24 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
     shared_ptr<const DFBlock> source = iblock;
 
     // information on the data layout
-    vector<pair<size_t, size_t>> atab = df_->adist_now()->atable();
+    shared_ptr<const StaticDist> adist = df_->adist_now();
 
     vector<int> rrequest;
     // first issue all the send and receive requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != mpi__->rank()) {
-        srequest.push_back(mpi__->request_send(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], i, mpi__->rank()));
-        rrequest.push_back(mpi__->request_recv(buf->data()+atab[i].first*size_, atab[i].second*size_, i, i));
+        srequest.push_back(mpi__->request_send(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, mpi__->rank()));
+        rrequest.push_back(mpi__->request_recv(buf->data()+adist->start(i)*size_, adist->size(i)*size_, i, i));
       } else {
-        assert(source->asize()*tabsize_[i] == atab[i].second*size_);
-        copy_n(source->get()+source->asize()*tabstart_[i], source->asize()*tabsize_[i], buf->data()+atab[i].first*size_);
+        assert(source->asize()*dist_->size(i) == adist->size(i)*size_);
+        copy_n(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), buf->data()+adist->start(i)*size_);
       }
     }
     for (auto& i : rrequest) mpi__->wait(i);
 
     TaskQueue<CopyBlockTask> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
-      task.emplace_back(buf->data()+atab[i].first*size_, atab[i].second, dat->data()+atab[i].first, naux_, atab[i].second, size_);
+      task.emplace_back(buf->data()+adist->start(i)*size_, adist->size(i), dat->data()+adist->start(i), naux_, adist->size(i), size_);
     task.compute();
 
     data_.push_back(dat);
@@ -88,9 +80,9 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in)
 }
 
 
-DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<size_t> size, const size_t nindex1, const size_t nindex2,
+DFDistT::DFDistT(const size_t naux, shared_ptr<const StaticDist> dist, const size_t nindex1, const size_t nindex2,
                  const shared_ptr<const ParallelDF> p)
- : naux_(naux), nindex1_(nindex1), nindex2_(nindex2), start_(start[mpi__->rank()]), size_(size[mpi__->rank()]), tabstart_(start), tabsize_(size), df_(p) {
+ : naux_(naux), nindex1_(nindex1), nindex2_(nindex2), dist_(dist), start_(dist->start(mpi__->rank())), size_(dist->size(mpi__->rank())), df_(p) {
 
   const int nblock = p->block().size();
   for (int i = 0; i != nblock; ++i)
@@ -100,7 +92,7 @@ DFDistT::DFDistT(const size_t naux, const vector<size_t> start, const vector<siz
 
 
 shared_ptr<DFDistT> DFDistT::clone() const {
-  return make_shared<DFDistT>(naux_, tabstart_, tabsize_, nindex1_, nindex2_, df_);
+  return make_shared<DFDistT>(naux_, dist_, nindex1_, nindex2_, df_);
 }
 
 
@@ -143,23 +135,23 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     // first, issue all the receive requests
     for (int i = 0; i != mpi__->size(); ++i)
       if (i != mpi__->rank())
-        request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*tabstart_[i], iblock->asize()*tabsize_[i], i, i));
+        request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*dist_->start(i), iblock->asize()*dist_->size(i), i, i));
 
     // information on the data layout
-    vector<pair<size_t, size_t>> atab = df_->adist_now()->atable();
+    shared_ptr<const StaticDist> adist = df_->adist_now();
 
     // copy using threads
     TaskQueue<CopyBlockTask> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
-      task.emplace_back((*dat)->data()+atab[i].first, naux_, (*buf)->data()+atab[i].first*size_, atab[i].second, atab[i].second, size_);
+      task.emplace_back((*dat)->data()+adist->start(i), naux_, (*buf)->data()+adist->start(i)*size_, adist->size(i), adist->size(i), size_);
     task.compute(resources__->max_num_threads());
 
     // last, issue all the send requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != mpi__->rank()) {
-        request.push_back(mpi__->request_send((*buf)->data()+atab[i].first*size_, atab[i].second*size_, i, mpi__->rank()));
+        request.push_back(mpi__->request_send((*buf)->data()+adist->start(i)*size_, adist->size(i)*size_, i, mpi__->rank()));
       } else {
-        copy_n((*buf)->data()+atab[i].first*size_, out->block(0)->asize()*tabsize_[i], out->block(0)->get()+out->block(0)->asize()*tabstart_[i]);
+        copy_n((*buf)->data()+adist->start(i)*size_, out->block(0)->asize()*dist_->size(i), out->block(0)->get()+out->block(0)->asize()*dist_->start(i));
       }
     }
     ++dat;
