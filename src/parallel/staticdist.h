@@ -41,19 +41,13 @@ class StaticDist {
     std::vector<size_t> start_;
 
   public:
-    StaticDist(const size_t nele, const size_t np) : nele_(nele), nproc_(np) {
-#if 0
-      if (nele_ < nproc_) {
-        std::stringstream ss;
-        ss << "Parallelization with StaticDist is only supported with Nproc smaller than the number of elements. Nele " << nele_ << " Nproc " << nproc_;
-        throw std::runtime_error(ss.str());
-      }
-#endif
-
-      const size_t maxsize = (nele_-1) / nproc_ + 1;
-      const size_t ares = (nele_-1) % nproc_ + 1;
+    StaticDist(const size_t nele, const size_t np, const size_t chunk = 1) : nele_(nele), nproc_(np) {
+      assert(nele % chunk == 0 && nele / chunk > 0);
+      const size_t ne = nele_ / chunk;
+      const size_t maxsize = (ne-1) / nproc_ + 1;
+      const size_t ares = (ne-1) % nproc_ + 1;
       for (size_t i = 0; i != nproc_; ++i) {
-        start_.push_back((maxsize-1) * i + std::min(i, ares));
+        start_.push_back(((maxsize-1) * i + std::min(i, ares)) * chunk);
       }
       start_.push_back(nele);
     }
