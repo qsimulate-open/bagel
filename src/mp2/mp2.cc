@@ -122,15 +122,6 @@ void MP2::compute() {
 
   auto cache_block = [&](const int nadd, const int ndrop) {
     assert(ndrop < nadd);
-    if (nadd < tasks.size()) {
-      const int ia = get<0>(tasks[nadd][myrank]);
-      const int ja = get<1>(tasks[nadd][myrank]);
-      if (cache.find(ia) == cache.end())
-        cache[ia] = fullt->get_slice(ia*nvirt, (ia+1)*nvirt).front();
-      if (cache.find(ja) == cache.end())
-        cache[ja] = fullt->get_slice(ja*nvirt, (ja+1)*nvirt).front();
-    }
-
     if (ndrop >= 0) {
       const int id = get<0>(tasks[ndrop][myrank]);
       const int jd = get<1>(tasks[ndrop][myrank]);
@@ -143,9 +134,16 @@ void MP2::compute() {
       if (!used.count(id)) cache.erase(id);
       if (!used.count(jd)) cache.erase(jd);
     }
+    if (nadd < tasks.size()) {
+      const int ia = get<0>(tasks[nadd][myrank]);
+      const int ja = get<1>(tasks[nadd][myrank]);
+      if (cache.find(ia) == cache.end())
+        cache[ia] = fullt->get_slice(ia*nvirt, (ia+1)*nvirt).front();
+      if (cache.find(ja) == cache.end())
+        cache[ja] = fullt->get_slice(ja*nvirt, (ja+1)*nvirt).front();
+    }
   };
 
-cout << memory_size << endl;
   const int ncache = memory_size / (nvirt*nvirt*2);
   for (int n = 0; n != ncache; ++n)
     cache_block(n, -1);
