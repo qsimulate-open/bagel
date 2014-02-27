@@ -26,14 +26,13 @@
 
 // implements the MP2-F12 theory
 
-#include <stddef.h>
+#include <set>
 #include <src/mp2/mp2.h>
-#include <iostream>
-#include <iomanip>
 #include <src/util/f77.h>
 #include <src/scf/scf.h>
 #include <src/smith/prim_op.h>
 #include <src/mp2/f12int4.h>
+#include <src/df/dfdistt.h>
 #include <src/util/taskqueue.h>
 #include <src/parallel/resources.h>
 
@@ -73,38 +72,119 @@ void MP2::compute() {
   shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
 
   Timer timer;
+  // compute transformed integrals
+  shared_ptr<DFDistT> fullt;
+  size_t memory_size;
 
-  // first compute half transformed integrals
-  shared_ptr<DFHalfDist> half;
-  if (abasis_.empty()) {
-    half = geom_->df()->compute_half_transform(ocoeff);
-  } else {
-    auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
-    auto cgeom = make_shared<Geometry>(*geom_, info, false);
-    half = cgeom->df()->compute_half_transform(ocoeff);
+  {
+    // first compute half transformed integrals
+    shared_ptr<DFHalfDist> half;
+    if (abasis_.empty()) {
+      half = geom_->df()->compute_half_transform(ocoeff);
+    } else {
+      auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
+      auto cgeom = make_shared<Geometry>(*geom_, info, false);
+      half = cgeom->df()->compute_half_transform(ocoeff);
+    }
+
+    // second transform for virtual index and rearrange data
+    {
+      // this is now (naux, nvirt, nocc), distributed by nvirt*nocc. Always naux*nvirt block is localized to one node
+      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
+      fullt = make_shared<DFDistT>(full, dist);
+    }
+
+    // the memory size info that was used for storing AO integrals here will be used for buffer
+    memory_size = fullt->df()->block(0)->size();
+    fullt->discard_df();
   }
-  // second transform for virtual index
-  // this is now (naux, nocc, nvirt)
-  shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J();
+  assert(fullt->nblocks() == 1);
 
   cout << "    * 3-index integral transformation done" << endl;
 
-  // assemble
-  vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
-  auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  energy_ = 0.0;
-  for (size_t i = 0; i != nvirt; ++i) {
-    shared_ptr<const Matrix> data = full->form_4index_1fixed(full, 1.0, i);
-    *buf = *data;
-    // using SMITH's symmetrizer (src/smith/prim_op.h)
-    SMITH::sort_indices<2,1,0,2,1,-1,1>(data->data(), buf->data(), nocc, nvirt, nocc);
-    double* tdata = buf->data();
-    for (size_t j = 0; j != nocc; ++j)
-      for (size_t k = 0; k != nvirt; ++k)
-        for (size_t l = 0; l != nocc; ++l, ++tdata)
-          *tdata /= -eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l];
-    energy_ += data->dot_product(buf);
+  // make a list of static distribution of ij
+  const int myrank = mpi__->rank();
+  vector<vector<tuple<int,int>>> tasks;
+
+  {
+    StaticDist ijdist(nocc*(nocc+1)/2, mpi__->size());
+    int cnt = 0;
+    for (int i = 0; i < nocc; ++i)
+      for (int j = i; j < nocc; ++j, ++cnt)
+        if (cnt >= ijdist.start(myrank) && cnt < ijdist.start(myrank) + ijdist.size(myrank))
+          tasks.push_back(vector<tuple<int,int>>{ make_tuple(j, i) });
   }
+
+  // start communication (n fetch behind) - n is determined by memory size
+  // the data is stored in a map
+  map<int, shared_ptr<const Matrix>> cache;
+
+  auto cache_block = [&](const int nadd, const int ndrop) {
+    assert(ndrop < nadd);
+    if (nadd < tasks.size()) {
+      const int ia = get<0>(tasks[nadd][myrank]);
+      const int ja = get<1>(tasks[nadd][myrank]);
+      if (cache.find(ia) == cache.end())
+        cache[ia] = fullt->get_slice(ia*nvirt, (ia+1)*nvirt).front();
+      if (cache.find(ja) == cache.end())
+        cache[ja] = fullt->get_slice(ja*nvirt, (ja+1)*nvirt).front();
+    }
+
+    if (ndrop >= 0) {
+      const int id = get<0>(tasks[ndrop][myrank]);
+      const int jd = get<1>(tasks[ndrop][myrank]);
+      // if id and jd are no longer used in the cache, delete the element
+      set<int> used;
+      for (int i = ndrop+1; i <= nadd; ++i) {
+        used.insert(get<0>(tasks[i][myrank]));
+        used.insert(get<1>(tasks[i][myrank]));
+      }
+      if (!used.count(id)) cache.erase(id);
+      if (!used.count(jd)) cache.erase(jd);
+    }
+  };
+
+cout << memory_size << endl;
+  const int ncache = memory_size / (nvirt*nvirt*2);
+  for (int n = 0; n != ncache; ++n)
+    cache_block(n, -1);
+
+  // denominator info
+  const vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
+
+  // loop over tasks
+  energy_ = 0;
+  for (int n = 0; n != tasks.size(); ++n) {
+    // take care of data
+    const int m = n + ncache;
+    const int dm = n - ncache;
+    if (m < tasks.size())
+      cache_block(m, dm);
+
+    const int i = get<0>(tasks[n][myrank]);
+    const int j = get<1>(tasks[n][myrank]);
+
+    shared_ptr<const Matrix> iblock = cache.at(i);
+    shared_ptr<const Matrix> jblock = cache.at(j);
+    const Matrix mat(*iblock % *jblock);
+
+    // should thread
+    double en = 0.0;
+    for (int a = 0; a != nvirt; ++a) {
+      for (int b = a+1; b < nvirt; ++b) {
+        const double ab = mat(a, b);
+        const double ba = mat(b, a);
+        en += 2.0*(ba*ba + ab*ab - ba*ab) / (-eig[a+nocc]+eig[i]-eig[b+nocc]+eig[j]);
+      }
+      const double aa = mat(a, a);
+      en += aa*aa / (-eig[a+nocc]+eig[i]-eig[a+nocc]+eig[j]);
+    }
+    if (i != j) en *= 2.0;
+    energy_ += en;
+  }
+
+  mpi__->allreduce(&energy_, 1);
 
   cout << "    * assembly done" << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;

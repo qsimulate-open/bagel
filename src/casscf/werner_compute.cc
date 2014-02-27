@@ -110,7 +110,7 @@ shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec
 
     // first term
     Matrix all1(nmobasis, nmobasis);
-    for (int i = 0; i != nclosed_; ++i) all1.element(i,i) = 2.0;
+    for (int i = 0; i != nclosed_; ++i) all1(i,i) = 2.0;
     for (int i = 0; i != nact_; ++i) copy_n(fci_->rdm1_av()->data()+nact_*i, nact_, all1.element_ptr(nclosed_, i+nclosed_));
     auto buf = make_shared<Matrix>(nmobasis, nmobasis);
     dgemm_("N", "N", nmobasis, nocc_, nmobasis, 1.0, hcore_mo_->data(), nmobasis, u->data(), nmobasis, 0.0, buf->data(), nmobasis);

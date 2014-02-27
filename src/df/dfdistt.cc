@@ -34,11 +34,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const Sta
    dist_(dist ? dist : make_shared<StaticDist>(nindex1_*nindex2_, mpi__->size())),
    start_(dist_->start(mpi__->rank())), size_(dist_->size(mpi__->rank())), df_(in->df()) {
 
-#ifndef HAVE_MPI_H
-  assert(false); // this class should be used with MPI (it works without MPI, but it just transposition of data...)
-#endif
-
   vector<int> srequest;
+  const int myrank = mpi__->rank();
 
   // loop over DFBlocks
   for (auto& iblock : in->block()) {
@@ -57,8 +54,8 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const Sta
     vector<int> rrequest;
     // first issue all the send and receive requests
     for (int i = 0; i != mpi__->size(); ++i) {
-      if (i != mpi__->rank()) {
-        srequest.push_back(mpi__->request_send(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, mpi__->rank()));
+      if (i != myrank) {
+        srequest.push_back(mpi__->request_send(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, myrank));
         rrequest.push_back(mpi__->request_recv(buf->data()+adist->start(i)*size_, adist->size(i)*size_, i, i));
       } else {
         assert(source->asize()*dist_->size(i) == adist->size(i)*size_);
@@ -121,6 +118,7 @@ vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o,
 void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
 
   vector<int> request;
+  const int myrank = mpi__->rank();
 
   // we need buffer n regions (n is the number of blocks)
   assert(out->block().size() == data_.size());
@@ -134,7 +132,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
   for (auto& iblock : out->block()) {
     // first, issue all the receive requests
     for (int i = 0; i != mpi__->size(); ++i)
-      if (i != mpi__->rank())
+      if (i != myrank)
         request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*dist_->start(i), iblock->asize()*dist_->size(i), i, i));
 
     // information on the data layout
@@ -148,8 +146,8 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
 
     // last, issue all the send requests
     for (int i = 0; i != mpi__->size(); ++i) {
-      if (i != mpi__->rank()) {
-        request.push_back(mpi__->request_send((*buf)->data()+adist->start(i)*size_, adist->size(i)*size_, i, mpi__->rank()));
+      if (i != myrank) {
+        request.push_back(mpi__->request_send((*buf)->data()+adist->start(i)*size_, adist->size(i)*size_, i, myrank));
       } else {
         copy_n((*buf)->data()+adist->start(i)*size_, out->block(0)->asize()*dist_->size(i), out->block(0)->get()+out->block(0)->asize()*dist_->start(i));
       }
@@ -160,3 +158,14 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
 
   for (auto& i : request) mpi__->wait(i);
 }
+
+
+// function that returns a slice of local data
+vector<shared_ptr<Matrix>> DFDistT::get_slice(const int start, const int end) const {
+  assert(start >= start_ && end <= start_+size_);
+  vector<shared_ptr<Matrix>> out;
+  for (auto& i : data_)
+    out.push_back(i->slice(start-start_, end-start_));
+  return out;
+}
+

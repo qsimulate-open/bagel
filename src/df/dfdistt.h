@@ -53,7 +53,7 @@ class DFDistT {
     size_t start_;
     size_t size_;
 
-    const std::shared_ptr<const ParallelDF> df_;
+    std::shared_ptr<const ParallelDF> df_;
 
   public:
     // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
@@ -71,8 +71,14 @@ class DFDistT {
 
     int size() const { return size_; }
     int start() const { return start_; }
+    int nblocks() const { return data_.size(); }
     const double* data() const { assert(data_.size() == 1); return data(0); }
     const double* data(const int i) const { return data_[i]->data(); }
+
+    std::vector<std::shared_ptr<Matrix>> get_slice(const int start, const int end) const;
+
+    std::shared_ptr<const ParallelDF> df() const { return df_; }
+    void discard_df() { df_.reset(); }
 };
 
 }

@@ -301,7 +301,7 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
   for (int i = deg; i != 1; --i) {
     const double inv = 1.0/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf;
     if (i != 1) buf = *out;
   }
@@ -313,13 +313,13 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
 shared_ptr<Matrix> Matrix::log(const int deg) const {
   auto out = make_shared<Matrix>(ndim_, mdim_);
   Matrix buf(*this);
-  for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
+  for (int j = 0; j != ndim_; ++j) buf(j,j) -= 1.0;
   assert(ndim_ == mdim_);
 
   for (int i = deg; i != 1; --i) {
     const double inv = -static_cast<double>(i-1)/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf - buf;
     if (i != 1) buf = *out;
   }

@@ -439,6 +439,14 @@ void DFFullDist::add_product(const shared_ptr<const DFFullDist> o, const shared_
 }
 
 
+shared_ptr<DFFullDist> DFFullDist::swap() const {
+  auto out = make_shared<DFFullDist>(shared_from_this(), nocc1(), nocc2());
+  for (auto& i : block_)
+    out->add_block(i->swap());
+  return out;
+}
+
+
 //////// apply J functions ////////
 
 shared_ptr<DFFullDist> DFFullDist::apply_J(const shared_ptr<const Matrix> d) const {
@@ -491,5 +499,3 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
   }
   return out;
 }
-
-
