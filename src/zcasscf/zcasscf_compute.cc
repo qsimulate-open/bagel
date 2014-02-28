@@ -78,7 +78,6 @@ void ZCASSCF::compute() {
     // closed Fock operator
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
-    // cfock->print("cfock", 7);
 
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
@@ -122,8 +121,10 @@ void ZCASSCF::compute() {
     if (!___debug___break_kramers)
       kramers_adapt(grad);
 
-    if (___debug___break_kramers)
+    if (___debug___break_kramers) {
       ___debug___print_gradient(grad);
+      ___debug___compute_hessian(cfock, afock);
+    }
 
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
     shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
