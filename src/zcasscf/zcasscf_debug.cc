@@ -90,7 +90,7 @@ void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const b
 }
 
 
-void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock) const {
+void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, const bool with_kramers) const {
   shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
   shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
   shared_ptr<ZMatrix> maaii = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
@@ -104,12 +104,25 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     }
   }
 
+  if (with_kramers) {
+    shared_ptr<ZMatrix> kaaii = ___debug___diagonal_integrals_coulomb_kramers(coeffa, coeffi);
+    shared_ptr<ZMatrix> kaiia = ___debug___diagonal_integrals_exchange_kramers(coeffa, coeffi);
+    *maiia += *kaiia;
+    *maiia -= *kaaii;
+    *maiia *= 2.0;
+  }
+
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "diagonal hessian value" << endl;
-  cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
+  cout << setprecision(10) << (*maiia)(morbital, norbital).real()*2.0 << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
+
+
+/////////////////////////////////////
+/// integral routines. They work. ///
+/////////////////////////////////////
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) = (aa|ii)
@@ -259,6 +272,166 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange(shared_ptr<c
 
   return out;
 }
+
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+  // returns Mat(a,i) = (aa'|i'i)
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = coeffa->get_submatrix(i*coeffa->ndim()/4, 0, coeffa->ndim()/4, coeffa->mdim());
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+  list<shared_ptr<RelDFHalf>> half_complexi = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J()->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti;
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+
+  list<shared_ptr<RelDFHalf>> half_complex_facta;
+  for (auto& i : half_complexa) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
+  }
+  half_complexa.clear();
+  DFock::factorize(half_complex_facti);
+  DFock::factorize(half_complex_facta);
+
+
+  // (4) compute (gamma|xx)
+  list<shared_ptr<RelDFFull>> dffulli;
+  for (auto& i : half_complex_facti)
+    dffulli.push_back(make_shared<RelDFFull>(i, ricoeff, iicoeff));
+  DFock::factorize(dffulli);
+  dffulli.front()->scale(dffulli.front()->fac()); // take care of the factor
+  assert(dffulli.size() == 1);
+  shared_ptr<const RelDFFull> fulli = dffulli.front();
+
+  list<shared_ptr<RelDFFull>> dffulla;
+  for (auto& i : half_complex_facta)
+    dffulla.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
+  DFock::factorize(dffulla);
+  dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
+  assert(dffulla.size() == 1);
+  shared_ptr<const RelDFFull> fulla = dffulla.front();
+
+  // (5) form (aa|ii) where a runs fastest
+  shared_ptr<const ZMatrix> aaii = fulla->form_4index(fulli, 1.0);
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+    for (int i = 0; i != coeffi->mdim(); ++i) {
+      const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      (*out)(a, i) = (*aaii)(a+coeffa->mdim()*ap, ip+coeffi->mdim()*i);
+    }
+  }
+
+  return out;
+}
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+  // returns Mat(a,i) = (ai|i'a')
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = coeffa->get_submatrix(i*coeffa->ndim()/4, 0, coeffa->ndim()/4, coeffa->mdim());
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+  list<shared_ptr<RelDFHalf>> half_complexi = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J()->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti;
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+
+  list<shared_ptr<RelDFHalf>> half_complex_facta;
+  for (auto& i : half_complexa) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
+  }
+  half_complexa.clear();
+  DFock::factorize(half_complex_facti);
+  DFock::factorize(half_complex_facta);
+
+
+  // (4) compute (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulli;
+  for (auto& i : half_complex_facti)
+    dffulli.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffulli);
+  dffulli.front()->scale(dffulli.front()->fac()); // take care of the factor
+  assert(dffulli.size() == 1);
+  shared_ptr<const RelDFFull> fullia = dffulli.front();
+
+  list<shared_ptr<RelDFFull>> dffulla;
+  for (auto& i : half_complex_facta)
+    dffulla.push_back(make_shared<RelDFFull>(i, ricoeff, iicoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffulla);
+  dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
+  assert(dffulla.size() == 1);
+  shared_ptr<const RelDFFull> fullai = dffulla.front();
+
+  // (5) form (ai|ia) where a runs fastest
+  shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullia, 1.0);
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+    for (int i = 0; i != coeffi->mdim(); ++i) {
+      const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
+    }
+  }
+
+  return out;
+}
+
 
 
 // almost exactly the same code. Correct
