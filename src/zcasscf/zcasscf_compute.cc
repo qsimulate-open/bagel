@@ -50,9 +50,14 @@ void ZCASSCF::compute() {
 
   // intialize coefficients
   init_kramers_coeff(hcore, overlap);
+
+  // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
+  const bool ___debug___break_kramers = true;
+  if (___debug___break_kramers)
+    ___debug___orbital_rotation(/*kramers*/ false);
+
   if (nact_)
     fci_->update(coeff_);
-
 
   cout << " See casscf.log file for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -113,11 +118,17 @@ void ZCASSCF::compute() {
     grad_vc(cfock, afock, grad);
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
-    kramers_adapt(grad);
+    *grad *= 2.0;
+    if (!___debug___break_kramers)
+      kramers_adapt(grad);
+
+    if (___debug___break_kramers)
+      ___debug___print_gradient(grad);
 
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
     shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
-    kramers_adapt(a);
+    if (!___debug___break_kramers)
+      kramers_adapt(a);
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
 
     const double gradient = amat->rms();
@@ -134,7 +145,8 @@ void ZCASSCF::compute() {
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-    kramers_adapt(expa);
+    if (!___debug___break_kramers)
+      kramers_adapt(expa);
 
     coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
     // for next BFGS extrapolation

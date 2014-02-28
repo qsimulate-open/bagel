@@ -94,6 +94,10 @@ class ZCASSCF : public Method {
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
 
+  private:
+    // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
+    void ___debug___orbital_rotation(const bool kramers);
+    void ___debug___print_gradient(std::shared_ptr<const ZRotFile> grad) const;
 };
 
 }
