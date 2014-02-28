@@ -53,8 +53,9 @@ void ZCASSCF::compute() {
 
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = true;
+  const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", false);
   if (___debug___break_kramers)
-    ___debug___orbital_rotation(/*kramers*/ false);
+    ___debug___orbital_rotation(___debug___with_kramers);
 
   if (nact_)
     fci_->update(coeff_);
