@@ -422,12 +422,18 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 
   // (5) form (ai|ia) where a runs fastest
   shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullia, 1.0);
+  shared_ptr<const ZMatrix> aiai = fullai->form_4index(fullai, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {
     const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      // contribution from G(1,1)
       (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
+
+      // contribution from G(1,2)
+      (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
+      (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
     }
   }
 
