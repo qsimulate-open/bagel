@@ -29,6 +29,7 @@
 #include <src/zfci/zharrison.h>
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
+#include <src/rel/reloverlap.h>
 
 namespace bagel {
 
@@ -60,6 +61,8 @@ class ZCASSCF : public Method {
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
+    void init_kramers_coeff(std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<const RelOverlap> overlap);
+
     void mute_stdcout() const;
     void resume_stdcout() const;
 
@@ -76,11 +79,11 @@ class ZCASSCF : public Method {
     void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
                  std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
 
-    std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
+                                                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
     void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
-    void block_trsym(std::shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff) const;
 
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,

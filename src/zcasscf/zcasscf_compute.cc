@@ -46,25 +46,16 @@ void ZCASSCF::compute() {
   x->unit();
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-  shared_ptr<const ZMatrix> overlap = make_shared<RelOverlap>(geom_);
+  shared_ptr<const RelOverlap> overlap = make_shared<RelOverlap>(geom_);
 
-  // coeff_ is a kramers adapted coefficient..
-  {
-    array<shared_ptr<const ZMatrix>,2> tmp = RelMOFile::kramers(coeff_, overlap, hcore);
-    auto ctmp = coeff_->clone();
-    int i = 0;
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_; 
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_; 
-    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
-    coeff_ = ctmp;
-  }
+  // intialize coefficients
+  init_kramers_coeff(hcore, overlap);
+  if (nact_)
+    fci_->update(coeff_);
 
-  cout << " See casscf.log file for further information on FCI output " << endl; 
+
+  cout << " See casscf.log file for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
-//  for (int iter = 0; iter != 1; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       mute_stdcout();
@@ -180,7 +171,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
   // form natural orbitals
-  // JEB :  cout << "presently forming natural orbitals via diagonalization" << endl; 
+  // JEB :  cout << "presently forming natural orbitals via diagonalization" << endl;
   unique_ptr<double[]> eig(new double[nact_*2]);
   auto tmp = make_shared<ZMatrix>(*rdm1);
   tmp->diagonalize(eig.get());
@@ -200,155 +191,5 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 }
 
 
-shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
-
-  shared_ptr<ZMatrix> cfockd;
-  if (nact_) {
-    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-    // TODO check
-    cfockd->hermite();
-  }
-
-  // ia part (4.7a)
-  if (nvirt_ && nclosed_) {
-    complex<double>* target = out->ptr_vc();
-    for (int i = 0; i != nclosed_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = cfock->element(j+nocc_*2, j+nocc_*2) + afock->element(j+nocc_*2, j+nocc_*2) - cfock->element(i,i) - afock->element(i,i);
-      }
-    }
-  }
-  // ra part (4.7b)
-  if (nvirt_ && nact_) {
-    complex<double>* target = out->ptr_va();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = rdm1->element(i, i)*(cfock->element(j+nocc_*2, j+nocc_*2)+afock->element(j+nocc_*2, j+nocc_*2))
-                  - cfockd->element(i, i) - qxr->element(i+nclosed_*2, i);
-      }
-    }
-  }
-  // it part (4.7c)
-  if (nclosed_ && nact_) {
-    complex<double>* target = out->ptr_ca();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nclosed_*2; ++j) {
-        *target++ = (cfock->element(i+nclosed_*2, i+nclosed_*2)+afock->element(i+nclosed_*2, i+nclosed_*2) - cfock->element(j,j) - afock->element(j,j))
-                  + rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - cfockd->element(i,i) - qxr->element(i+nclosed_*2, i);
-      }
-    }
-  }
-
-  const double thresh = 1.0e-8;
-  for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh) {
-      out->data(i) = 1.0e10;
-    }
-  return out;
-}
 
 
-
-// grad(a/i) (eq.4.3a): (cfock_ai+afock_ai)
-void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
-  if (!nvirt_ || !nclosed_) return;
-  complex<double>* target = sigma->ptr_vc();
-  for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2) {
-    zaxpy_(nvirt_*2, 1.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
-    zaxpy_(nvirt_*2, 1.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
-  }
-}
-
-
-// grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
-void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
-  if (!nvirt_ || !nact_) return;
-  // TODO not sure about complex conjugation of rdm1
-  zgemm3m_("N", "T", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
-  complex<double>* target = sigma->ptr_va();
-  for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
-    zaxpy_(nvirt_*2, 1.0, qxr->element_ptr(nocc_*2, i), 1, target, 1);
-  }
-}
-
-
-// grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
-void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
-  if (!nclosed_ || !nact_) return;
-  // TODO check
-  auto qxrc = qxr->get_conjg();
-  complex<double>* target = sigma->ptr_ca();
-  for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
-    zaxpy_(nclosed_*2, 1.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, 1.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, -1.0, qxrc->element_ptr(0, i), 1, target, 1);
-  }
-  // "T" effectively makes complex conjugate of cfock
-  zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
-}
-
-
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o) const {
-  for (int i = 0; i != nclosed_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt_, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt_, i+nclosed_) = conj(o->ele_vc(j, i));
-
-      o->ele_vc(j+nvirt_, i) = (o->ele_vc(j+nvirt_, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt_, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt_, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt_, i+nact_) = conj(o->ele_va(j, i));
-
-      o->ele_va(j+nvirt_, i) = (o->ele_va(j+nvirt_, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt_, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j) {
-      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
-      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
-
-      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
-      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
-    }
-  }
-}
-
-void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o) const {
-  // function to enforce time-reversal symmetry 
-  //    for a complex matrix o, that is SYMMETRIC under time reversal
-  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim());
-  const array<int,3> a0 {{nclosed_, nact_, nvirt_}};
-  const array<int,3> a1 {{0, 2*nclosed_, 2*nocc_}};
-  for (int ii = 0; ii !=3; ++ii) {
-    for (int jj = 0; jj !=3; ++jj) {
-      block_trsym(o,1,a0[jj],a0[ii],a1[jj],a1[ii]);
-    }
-  }
-}
-
-void ZCASSCF::block_trsym(shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff) const {
-  // function to enforce time-reversal symmetry for a given block of a complex matrix o. 
-  // tfac                 symmetry factor under time-reversal (symmetric : t=1, antisymm : t=-1)
-  // nq1, nq2             nclosed_, nact_, nvirt_
-  // ioff, joff           column and row offsets, respectively
-  assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim() );
-  assert( tfac == 1 || tfac == -1);
-  const double t = tfac == 1 ? 1.0 : -1.0;
-  for (int i = 0; i != nq2; ++i) {
-    for (int j = 0; j != nq1; ++j) {
-      // Diagonal contributions : "A" matrices in notation of T. Suae thesis
-      o->element(joff+j, ioff+i) = ( o->element(joff+j, ioff+i) + conj(o->element(joff+j+nq1, ioff+i+nq2)) ) * 0.5;
-      o->element(joff+j+nq1,ioff+i+nq2) = t * conj(o->element(joff+j,ioff+i));
-
-      // Diagonal contributions : "B" matrices in notation of T. Suae thesis
-      o->element(joff+nq1+j, ioff+i) = ( o->element(joff+nq1+j, ioff+i) - conj(o->element(joff+j, ioff+nq2+i)) ) * 0.5;
-      o->element(joff+j, ioff+nq2+i) = -t * conj(o->element(joff+nq1+j,ioff+i));
-    }
-  }
-}
