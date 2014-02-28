@@ -109,14 +109,12 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     shared_ptr<ZMatrix> kaiia = ___debug___diagonal_integrals_exchange_kramers(coeffa, coeffi);
     *maiia += *kaiia;
     *maiia -= *kaaii; // this appears zero for (at least) coulomb integrals due to symmetry
-    *maiia *= 2.0;
+    *maiia += *maiia->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
   }
 
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "diagonal hessian value" << endl;
   cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
-  if (with_kramers)
-    cout << setprecision(10) << (*maiia)(morbital, norbital)+(*maiia)(morbital+nvirt_, norbital+nclosed_) << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
@@ -422,7 +420,9 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 
   // (5) form (ai|ia) where a runs fastest
   shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullia, 1.0);
-  shared_ptr<const ZMatrix> aiai = fullai->form_4index(fullai, 1.0);
+  // need to include metric
+  auto fullai_j = fullai->apply_J();
+  shared_ptr<const ZMatrix> aiai = fullai_j->form_4index(fullai_j, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {
     const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
