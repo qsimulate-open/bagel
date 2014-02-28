@@ -100,7 +100,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
   for (int i = 0; i != nclosed_*2; ++i) {
     for (int a = 0; a != nvirt_*2; ++a) {
       const int na = a + nocc_*2;
-      (*maiia)(a, i) += (*cfock)(na,na) + (*afock)(na,na) - (*cfock)(i,i) + (*afock)(i,i);
+      (*maiia)(a, i) += (*cfock)(na,na) + (*afock)(na,na) - (*cfock)(i,i) - (*afock)(i,i);
     }
   }
 
@@ -108,13 +108,15 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     shared_ptr<ZMatrix> kaaii = ___debug___diagonal_integrals_coulomb_kramers(coeffa, coeffi);
     shared_ptr<ZMatrix> kaiia = ___debug___diagonal_integrals_exchange_kramers(coeffa, coeffi);
     *maiia += *kaiia;
-    *maiia -= *kaaii;
+    *maiia -= *kaaii; // this appears zero for (at least) coulomb integrals due to symmetry
     *maiia *= 2.0;
   }
 
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "diagonal hessian value" << endl;
-  cout << setprecision(10) << (*maiia)(morbital, norbital).real()*2.0 << endl;
+  cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
+  if (with_kramers)
+    cout << setprecision(10) << (*maiia)(morbital, norbital)+(*maiia)(morbital+nvirt_, norbital+nclosed_) << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
