@@ -123,7 +123,7 @@ void ZCASSCF::compute() {
       kramers_adapt(grad);
 
     if (___debug___break_kramers) {
-      ___debug___print_gradient(grad);
+      ___debug___print_gradient(grad, ___debug___with_kramers);
       ___debug___compute_hessian(cfock, afock);
     }
 

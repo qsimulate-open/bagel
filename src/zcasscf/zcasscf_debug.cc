@@ -42,9 +42,10 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 
   shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
 
+  // currently ++ and -- blocks
   atmp->ele_vc(morbital, norbital) = angle;
   if (kramers)
-    atmp->ele_vc(nvirt_+morbital, nclosed_+norbital);
+    atmp->ele_vc(nvirt_+morbital, nclosed_+norbital) = angle; // = conj(angle)
 
   shared_ptr<ZMatrix> amattmp = atmp->unpack<ZMatrix>();
 
@@ -70,17 +71,22 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   auto tt = make_shared<ZMatrix>(*coeff_ - *pco);
 
   cout << "norm delta(coeff) = " << setprecision(8) << tt->norm() << endl;
-  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl;
+  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 
   coeff_ = pco;
 }
 
 
-void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad) const {
+void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "orbital gradient" << endl;
-  cout << setprecision(10) << grad->ele_vc(morbital, norbital) << endl;
-  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl;
+
+  // currently ++ and -- blocks
+  const complex<double> gradient = grad->ele_vc(morbital, norbital)
+                                 + (with_kramers ? grad->ele_vc(nvirt_+morbital, nclosed_+norbital) : complex<double>(0.0));
+
+  cout << setprecision(10) << gradient << endl;
+  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
 
@@ -101,7 +107,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "diagonal hessian value" << endl;
   cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
-  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl;
+  cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
 
