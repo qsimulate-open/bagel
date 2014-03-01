@@ -29,6 +29,64 @@
 #define BAGEL_MEH_H
 
 template <class VecType>
+void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Matrix> cc) {
+  int trialsize = 0;
+  int nguess = nguess_;
+
+  std::map<double, std::vector<int>> seeds;
+  for (int state = 0; state < dimerstates_; ++state)
+    seeds[denom_[state]].push_back(state);
+
+  while (trialsize < nstates_) {
+    std::vector<int> b;
+    b.reserve(nguess);
+
+    for (auto& i : seeds) {
+      b.insert(b.end(), i.second.begin(), i.second.end());
+      if (b.size() >= nguess) break;
+    }
+
+    // build matrix
+    auto basis = std::make_shared<Matrix>(dimerstates_, b.size());
+    for (int i = 0; i < b.size(); ++i)
+      basis->element(b[i], i) = 1.0;
+
+    // build spin operator
+    std::shared_ptr<Matrix> spn = spin_->apply(*basis);
+    spn = std::make_shared<Matrix>( *spn % *basis );
+    std::vector<double> spin_values(b.size(), 0.0);
+    spn->diagonalize(spin_values.data());
+    const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
+    int start, end;
+    for (start = 0; start < nguess; ++start)
+      if (std::fabs(spin_values[start] - expected_spin) < 1.0e-8) break;
+    for (end = start; end < nguess; ++end)
+      if (std::fabs(spin_values[end] - expected_spin) > 1.0e-8) break;
+
+    trialsize = end - start;
+
+    if (trialsize >= nstates_) {
+      basis = (*basis * *spn).slice(start, end);
+
+      std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis);
+      auto H = std::make_shared<Matrix>(*sigma % *basis);
+      std::vector<double> energies(trialsize, 0.0);
+      H->diagonalize(energies.data());
+
+      basis = std::make_shared<Matrix>(*basis * *H);
+      for (int i = 0; i < nstates_; ++i)
+        std::copy_n(basis->element_ptr(0, i), basis->ndim(), cc->element_ptr(0, i));
+    }
+    else if (nguess >= dimerstates_) {
+      throw std::runtime_error("Requesting more spin allowed states than exist in MEH space");
+    }
+    else {
+      nguess *= 2;
+    }
+  }
+}
+
+template <class VecType>
 void MultiExcitonHamiltonian<VecType>::compute() {
   Timer mehtime;
   std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << std::endl;
@@ -58,6 +116,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   denom_ = std::unique_ptr<double[]>(new double[dimerstates_]);
 
   for (auto& subspace : subspaces_) {
+    compute_pure_terms(subspace, jop_);
     std::shared_ptr<Matrix> block = compute_diagonal_block(subspace);
     if (store_matrix_)
       hamiltonian_->add_block(1.0, subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
@@ -82,60 +141,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   }
 
   std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
-  DavidsonDiag<Matrix> davidson(nstates_, davidsonceiling_);
+  DavidsonDiag<Matrix> davidson(nstates_, davidson_subspace_);
 
-  // Generate initial guesses
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
-  int trialsize = std::min(2 * spin_->max() * nstates_, dimerstates_);
-  {
-    int multiple = 1;
-    std::multimap<double,int> seeds;
-    while (seeds.size() < trialsize) {
-      seeds.clear();
-      for ( auto& iAB : subspaces_ ) {
-        const int ioff = iAB.offset();
-        const int nstatesA = iAB.template nstates<0>();
-        const int nstatesB = iAB.template nstates<1>();
-        for (int mult = 0; mult != multiple; ++mult) {
-          for (int i = 0; i != nstatesA; ++i) {
-            const int dindex = iAB.dimerindex(i,mult) + ioff;
-            seeds.insert(std::make_pair(denom_[dindex], dindex));
-          }
-          for (int i = mult + 1; i != nstatesB; ++i) {
-            const int dindex = iAB.dimerindex(mult,i) + ioff;
-            seeds.insert(std::make_pair(denom_[dindex], dindex));
-          }
-        }
-      }
-      ++multiple;
-    }
-
-    auto iseed = seeds.begin();
-    auto initial = std::make_shared<Matrix>(dimerstates_,trialsize);
-    for (int istate = 0; istate != trialsize; ++istate, ++iseed)
-      initial->element(iseed->second, istate) = 1.0;
-    spin_->filter(*initial, nspin_);
-
-    // Symmetric orthogonalization to get rid of linear dependencies
-    Matrix overlap = *initial % *initial;
-    overlap.inverse_half();
-    *initial = *initial * overlap;
-
-    // Average diagonal elements to pick the best options
-    std::multimap<double, int> tmpmap;
-    for (int j = 0; j < trialsize; ++j) {
-      double energy = 0;
-      for (int i = 0; i < dimerstates_; ++i)
-        energy += initial->element(i,j) * initial->element(i,j) * denom_[i];
-      tmpmap.emplace(energy,j);
-    }
-
-    auto imap = tmpmap.begin();
-    for (int istate = 0; istate < nstates_; ++istate, ++imap) {
-      int ii = imap->second;
-      std::copy_n(initial->element_ptr(0, ii), dimerstates_, cc->element_ptr(0, istate));
-    }
-  }
+  generate_initial_guess(cc);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl << std::endl;
 
   std::vector<int> conv(nstates_, static_cast<int>(false));
@@ -149,6 +158,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
       if (!conv[i]) {
         sigman.push_back(sigma->slice(i,i+1));
         ccn.push_back(cc->slice(i,i+1));
+      }
+      else {
+        sigman.push_back(std::shared_ptr<const Matrix>());
+        ccn.push_back(std::shared_ptr<const Matrix>());
       }
     }
     const std::vector<double> energies = davidson.compute(ccn, sigman);
@@ -172,16 +185,14 @@ void MultiExcitonHamiltonian<VecType>::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / std::min(en - denom_[i], -0.1);
         }
-        davidson.orthog(tmp_cc);
         std::list<std::shared_ptr<const Matrix>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc->slice(jst, jst+1));
-        tmp_cc->orthog(tmp);
         spin_->filter(*tmp_cc, nspin_);
         double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
         tmp_cc->scale(scal);
         std::copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
       }
+      cc->broadcast();
     }
 
     if (nstates_ != 1 && iter) std::cout << std::endl;

@@ -37,13 +37,12 @@
 using namespace std;
 using namespace bagel;
 
-PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
+PGeometry::PGeometry(const string fil, const int levl) {
   ifstream ifs(fil);
   if(!ifs.is_open()) throw runtime_error("input file could not be opened.");
 
   smatch what;
   regex reg("Periodic");
-  int out = 0;
   bool found = false;
   while(!ifs.eof()) {
     string sline;
@@ -56,7 +55,7 @@ PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
     }
   }
 
-  assert(found);
+  if (!found) throw runtime_error("PGeometry constructor");
   regex regL("L");
   regex regS("S");
   regex regK("K");

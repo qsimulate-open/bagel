@@ -32,11 +32,8 @@
 namespace bagel {
 
 class FormSigmaRAS {
-  protected:
-    const bool sparse_;
-
   public:
-    FormSigmaRAS(const bool sparse) : sparse_(sparse) {}
+    FormSigmaRAS() {}
 
     // This is really all this class is
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;

@@ -43,9 +43,7 @@ void R0Batch::compute_ssss(const double integral_thresh) {
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
-        // zeta = -zeta for testing
-        double zeta = -(*aiter)->ecp(0);
-        double Z = (*aiter)->atom_charge();
+        double zeta = (*aiter)->ecp(0);
         const double cxp = *expi0 + *expi1;
         const double socxp = cxp + zeta;
         xp_[index] = cxp;

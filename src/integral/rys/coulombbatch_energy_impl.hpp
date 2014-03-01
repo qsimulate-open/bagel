@@ -39,8 +39,6 @@ const static CarSphList carsphlist;
 template <typename DataType>
 void CoulombBatch_Energy<DataType>::compute() {
   const double zero = 0.0;
-  const int zeroint = 0;
-  const int unit = 1;
 
   DataType* const stack_save = stack_->template get<DataType>(size_alloc_);
   bkup_ = stack_save;

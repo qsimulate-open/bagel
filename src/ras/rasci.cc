@@ -41,12 +41,11 @@ RASCI::RASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_
 void RASCI::common_init() {
   print_header();
 
-  const bool frozen = idata_->get<bool>("frozen", false);
+//const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
-  sparse_ = idata_->get<bool>("sparse", true);
 
   nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -102,8 +101,8 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
   for (auto& b : denom_->blocks()) {
     if (!b) continue;
     const double* d = b->data();
-    for (auto& abit : *b->stringa()) {
-      for (auto& bbit : *b->stringb()) {
+    for (auto& abit : *b->stringsa()) {
+      for (auto& bbit : *b->stringsb()) {
         ordered_elements.emplace(*d++, make_pair(abit, bbit));
       }
     }
@@ -193,7 +192,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
     out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
@@ -214,8 +213,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->data();
-    for (auto& aiter : *iblock->stringa()) {
-      for (auto& biter : *iblock->stringb()) {
+    for (auto& aiter : *iblock->stringsa()) {
+      for (auto& biter : *iblock->stringsb()) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
           tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -259,10 +258,10 @@ void RASCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<RASCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<RASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
-  FormSigmaRAS form_sigma(sparse_);
+  FormSigmaRAS form_sigma;
 
   // main iteration starts here
   cout << "  === RAS-CI iteration ===" << endl << endl;
@@ -282,6 +281,10 @@ void RASCI::compute() {
       if (!conv[i]) {
         ccn.push_back(make_shared<const RASCivec>(*cc_->data(i)));
         sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
+      }
+      else {
+        ccn.push_back(shared_ptr<const RASCivec>());
+        sigman.push_back(shared_ptr<const RASCivec>());
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -308,13 +311,10 @@ void RASCI::compute() {
         double* denom_array = denom_->data();
         const double en = energies.at(ist);
         transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const RASCivec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
-        cc_->data(ist)->spin_decontaminate();
+        cc_->data(ist)->normalize();
         cc_->data(ist)->synchronize();
       }
+        cc_->spin_decontaminate();
     }
 
     pdebug.tick_print("denominator");

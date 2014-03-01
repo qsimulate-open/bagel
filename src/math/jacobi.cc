@@ -97,9 +97,9 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
   auto P_A = make_shared<DistMatrix>(norb_, norb_);
 
 #ifdef HAVE_SCALAPACK
-  pdgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->local().get(), 1, 1, S_->desc().get(),
-                                                 Q_->local().get(), 1, nstart_ + 1, Q_->desc().get(),
-                                            0.0, mos->local().get(), 1, 1, mos->desc().get());
+  pdgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->local().get(), 1, 1, S_->desc().data(),
+                                                 Q_->local().get(), 1, nstart_ + 1, Q_->desc().data(),
+                                            0.0, mos->local().get(), 1, 1, mos->desc().data());
 #else
   dgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->data(), nbasis_, Q_->element_ptr(0, nstart_), nbasis_, 0.0, mos->data(), nbasis_);
 #endif
@@ -112,9 +112,9 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
     const int natombasis = ibounds.second - ibounds.first;
 
 #ifdef HAVE_SCALAPACK
-    pdgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->local().get(), ibounds.first + 1, 1, mos->desc().get(),
-                                                         Q_->local().get(), ibounds.first + 1, nstart_ + 1, Q_->desc().get(),
-                                                    0.0, P_A->local().get(), 1, 1, P_A->desc().get());
+    pdgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->local().get(), ibounds.first + 1, 1, mos->desc().data(),
+                                                         Q_->local().get(), ibounds.first + 1, nstart_ + 1, Q_->desc().data(),
+                                                    0.0, P_A->local().get(), 1, 1, P_A->desc().data());
 
 #else
     dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,

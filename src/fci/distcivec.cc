@@ -103,7 +103,6 @@ namespace bagel { namespace DFCI {
 
 template <>
 shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
-  const size_t la = det_->lena();
   const size_t lb = det_->lenb();
   auto out = this->clone();
 
@@ -116,7 +115,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
 #endif
 
   for (size_t ia = astart_; ia < aend_; ++ia)
-    dq.emplace_and_compute(det_->stringa(ia), out->local() + (ia - astart_) * lb, this);
+    dq.emplace_and_compute(det_->string_bits_a(ia), out->local() + (ia - astart_) * lb, this);
 
   const double sz = 0.5*static_cast<double>(det_->nspin());
   out->ax_plus_y(sz*sz + sz + static_cast<double>(det_->neleb()), *this);
@@ -175,7 +174,7 @@ namespace bagel { namespace DFCI {
         buf_ = unique_ptr<double[]>(new double[lbs * (norb - abit_.count())]);
 
         for (int i = 0, k = 0; i < norb; ++i) {
-          if ( !abit_[i] ) {
+          if (!abit_[i]) {
             bitset<nbit__> sourcebit = abit_; sourcebit.set(i);
             const int l = cc_->get_bstring_buf(buf_.get() + lbs*k++, det->lexical<0>(sourcebit));
             if (l >= 0) requests_.push_back(l);
@@ -204,12 +203,12 @@ namespace bagel { namespace DFCI {
         const int norb = sdet->norb();
 
         for (int i = 0, k = 0; i < norb; ++i) {
-          if ( abit_[i] ) continue;
+          if (abit_[i]) continue;
           bitset<nbit__> sabit = abit_; sabit.set(i);
           const int aphase = sdet->sign<0>(sabit, i);
           const double* sourcedata = buf_.get() + lbs * k++;
           double* targetdata = target_;
-          for ( auto& bbit : tdet_->stringb() ) {
+          for (auto& bbit : tdet_->string_bits_b()) {
             if ( bbit[i] ) {
               bitset<nbit__> sbbit = bbit; sbbit.reset(i);
               const int bphase = -sdet->sign<1>(sbbit, i);
@@ -241,7 +240,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(shared_ptr<con
 #endif
 
   for (size_t ia = tastart; ia < taend; ++ia)
-    dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet);
+    dq.emplace_and_compute(tdet->string_bits_a(ia), out->local() + (ia - tastart) * lbt, this, tdet);
 
   dq.finish();
 
@@ -303,7 +302,7 @@ namespace bagel { namespace DFCI {
           const int aphase = sdet->sign<0>(sabit, i);
           const double* sourcedata = buf_.get() + lbs * k++;
           double* targetdata = target_;
-          for ( auto& bbit : tdet_->stringb() ) {
+          for (auto& bbit : tdet_->string_bits_b()) {
             if ( !bbit[i] ) {
               bitset<nbit__> sbbit = bbit; sbbit.set(i);
               const int bphase = sdet->sign<1>(sbbit, i);
@@ -335,7 +334,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(shared_ptr<con
 #endif
 
   for (size_t ia = tastart; ia < taend; ++ia)
-    dq.emplace_and_compute(tdet->stringa(ia), out->local() + (ia - tastart) * lbt, this, tdet);
+    dq.emplace_and_compute(tdet->string_bits_a(ia), out->local() + (ia - tastart) * lbt, this, tdet);
 
   dq.finish();
 
@@ -348,9 +347,7 @@ shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, 
   // action: true -> create; false -> annihilate
   // spin:   true -> alpha;  false -> beta
   shared_ptr<const Determinants> sdet = this->det();
-  const int norb = sdet->norb();
 
-  const size_t las = sdet->lena();
   const size_t lbs = sdet->lenb();
 
   shared_ptr<DistCivector<double>> out;

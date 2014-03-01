@@ -24,6 +24,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 
 #include <src/math/sparsematrix.h>
 #include <src/math/algo.h>
@@ -149,4 +150,22 @@ void SparseMatrix::print_block_structure(const size_t nsize, const size_t msize)
     }
     cout << endl;
   }
+}
+
+void SparseMatrix::print_table() const {
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
+      cout << setw(6) << setprecision(0) << "(" <<  i << ", " << cols_[rowdata] - 1 << ")" << setw(20) << setprecision(8) << data_[rowdata] << endl;
+    }
+  }
+}
+
+shared_ptr<Matrix> SparseMatrix::matrix() const {
+  auto out = make_shared<Matrix>(ndim_, mdim_);
+  for (int i = 0; i < ndim_; ++i) {
+    for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata)
+      out->element(i, cols_[rowdata]-1) = data_[rowdata];
+  }
+
+  return out;
 }

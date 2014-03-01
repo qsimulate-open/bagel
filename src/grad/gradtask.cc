@@ -47,9 +47,8 @@ void GradTask3::compute() {
   GradBatch gradbatch(shell_, 0.0);
 #endif
   gradbatch.compute();
-  const size_t block = gradbatch.size_block();
   const size_t sblock = shell_[1]->nbasis()*shell_[2]->nbasis()*shell_[3]->nbasis();
-  assert(sblock <= block);
+  assert(sblock <= gradbatch.size_block());
 
   // unfortunately the convention is different...
   array<int,4> jatom = {{-1, atomindex_[2], atomindex_[1], atomindex_[0]}};
@@ -85,9 +84,8 @@ void GradTask1f::compute() {
   GradBatch gradbatch(shell_, 0.0);
 #endif
   gradbatch.compute();
-  const size_t block = gradbatch.size_block();
   const size_t sblock = shell_[2]->nbasis()*shell_[3]->nbasis();
-  assert(sblock <= block && shell_[1]->nbasis() == 1);
+  assert(sblock <= gradbatch.size_block() && shell_[1]->nbasis() == 1);
 
   // unfortunately the convention is different...
   array<int,4> jatom = {{-1, atomindex_[2], atomindex_[1], atomindex_[0]}};
@@ -120,7 +118,6 @@ void GradTask2::compute() {
   GradBatch gradbatch(shell_, 0.0);
 #endif
   gradbatch.compute();
-  const size_t block = gradbatch.size_block();
 
   // unfortunately the convention is different...
   int jatom[4] = {atomindex_[1], -1, atomindex_[0], -1};

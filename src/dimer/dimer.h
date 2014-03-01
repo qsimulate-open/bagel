@@ -111,6 +111,7 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
       std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
+      std::shared_ptr<DimerDistRAS> compute_distrcispace(std::shared_ptr<const PTree> idata);
 
    private:
       void construct_geometry();
@@ -179,7 +180,6 @@ template<int unit>
 std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
   const int nclosed = nclosed_;
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
-  const int nact = (unit == 0) ? nact_.first : nact_.second;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
 
   // Make new input data, set charge, spin to what I want

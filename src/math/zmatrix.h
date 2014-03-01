@@ -50,6 +50,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(ZMatrix&&);
     ZMatrix(const Matrix& real, const Matrix& imag);
     ZMatrix(const Matrix& real, const std::complex<double> factor);
+    ZMatrix() { }
+    virtual ~ZMatrix() { }
 
     void antisymmetrize();
     void hermite();
@@ -170,6 +172,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistZMatrix : public DistMatrix_base<std::complex<double>> {
   public:
+    DistZMatrix() { }
     DistZMatrix(const int n, const int m);
     DistZMatrix(const DistZMatrix&);
     DistZMatrix(DistZMatrix&&);
@@ -203,6 +206,19 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
 };
 #endif
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ZMatrix)
+#ifdef HAVE_SCALAPACK
+BOOST_CLASS_EXPORT_KEY(bagel::DistZMatrix)
+#endif
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<ZMatrix, T>::value>::type> {
+    typedef ZMatrix type;
+  };
 }
 
 #endif

@@ -27,15 +27,17 @@
 #include <src/fci/space.h>
 #include <src/fci/modelci.h>
 #include <src/util/combination.hpp>
-#include <src/math/davidson.h>
 
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(FCI)
+
 FCI::FCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   common_init();
 }
+
 
 void FCI::common_init() {
   print_header();
@@ -43,10 +45,11 @@ void FCI::common_init() {
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+  restart_ = idata_->get<bool>("restart", false);
 
   if (nstate_ < 0) nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -66,7 +69,8 @@ void FCI::common_init() {
   }
 
   // Configure properties to be calculated on the final wavefunctions
-  if (idata_->get<bool>("dipoles", false)) properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
+  if (idata_->get<bool>("dipoles", false))
+    properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
 
   // additional charge
   const int charge = idata_->get<int>("charge", 0);
@@ -90,11 +94,12 @@ void FCI::common_init() {
   det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
 }
 
+
 void FCI::model_guess(shared_ptr<Dvec> out) {
   multimap<double, pair<bitset<nbit__>, bitset<nbit__>>> ordered_elements;
   const double* d = denom_->data();
-  for (auto& abit : det_->stringa()) {
-    for (auto& bbit : det_->stringb()) {
+  for (auto& abit : det_->string_bits_a()) {
+    for (auto& bbit : det_->string_bits_b()) {
       ordered_elements.emplace(*d++, make_pair(abit, bbit));
     }
   }
@@ -183,7 +188,7 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
     out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
@@ -202,8 +207,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->data();
-  for (auto& aiter : det()->stringa()) {
-    for (auto& biter : det()->stringb()) {
+  for (auto& aiter : det()->string_bits_a()) {
+    for (auto& biter : det()->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -212,7 +217,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > det()->stringa().size()*det()->stringb().size());
+  assert(tmp.size() == ndet || ndet > det()->string_bits_a().size()*det()->string_bits_b().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
@@ -233,32 +238,31 @@ shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
 void FCI::compute() {
   Timer pdebug(2);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
+  if (!restarted_) {
+    // at the moment I only care about C1 symmetry, with dynamics in mind
+    if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
 
-  // some constants
-  //const int ij = nij();
+    // Creating an initial CI vector
+    cc_ = make_shared<Dvec>(det_, nstate_); // B runs first
 
-  // Creating an initial CI vector
-  cc_ = make_shared<Dvec>(det_, nstate_); // B runs first
+    // find determinants that have small diagonal energies
+    if (nguess_ <= nstate_)
+      generate_guess(nelea_-neleb_, nstate_, cc_);
+    else
+      model_guess(cc_);
+    pdebug.tick_print("guess generation");
 
-  // find determinants that have small diagonal energies
-  if (nguess_ <= nstate_)
-    generate_guess(nelea_-neleb_, nstate_, cc_);
-  else
-    model_guess(cc_);
-  pdebug.tick_print("guess generation");
+    // Davidson utility
+    davidson_ = make_shared<DavidsonDiag<Civec>>(nstate_, davidson_subspace_);
+  }
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
-  // Davidson utility
-  DavidsonDiag<Civec> davidson(nstate_, davidsonceiling_);
-
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
   // 0 means not converged
-  vector<int> conv(nstate_,0);
+  vector<int> conv(nstate_, 0);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
@@ -267,13 +271,19 @@ void FCI::compute() {
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+    if (restart_) {
+      stringstream ss; ss << "fci_" << iter;
+      OArchive ar(ss.str());
+      ar << static_cast<Method*>(this);
+    }
+
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);
     auto sigman = make_shared<const Dvec>(sigma);
-    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors
-    vector<shared_ptr<Civec>> errvec = davidson.residual();
+    vector<shared_ptr<Civec>> errvec = davidson_->residual();
     pdebug.tick_print("davidson");
 
     // compute errors
@@ -296,10 +306,7 @@ void FCI::compute() {
         for (int i = 0; i != size; ++i) {
           target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
         }
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const Civec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
+        cc_->data(ist)->normalize();
         cc_->data(ist)->spin_decontaminate();
         cc_->data(ist)->synchronize();
       }
@@ -319,7 +326,7 @@ void FCI::compute() {
   }
   // main iteration ends here
 
-  auto s = make_shared<Dvec>(davidson.civec());
+  auto s = make_shared<Dvec>(davidson_->civec());
   s->print(print_thresh_);
   cc_ = make_shared<Dvec>(s);
 

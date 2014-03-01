@@ -36,9 +36,9 @@ namespace bagel {
 template <typename Batch>
 class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
   protected:
-    void init() override {
+    void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
-      for (auto& i : this->mol_->atoms())
+      for (auto& i : mol->atoms())
         shells.insert(shells.end(), i->shells().begin(), i->shells().end());
 
       // TODO thread, parallel
@@ -47,7 +47,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
         int o1 = 0;
         for (auto& a1 : shells) {
           std::array<std::shared_ptr<const Shell>,2> input = {{a1, a0}};
-          computebatch(input, o0, o1);
+          computebatch(input, o0, o1, mol);
           o1 += a1->nbasis();
         }
         o0 += a0->nbasis();
@@ -56,15 +56,15 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
 
   public:
     Small1e(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks()>(mol) {
-      init();
+      init(mol);
     }
 
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e<Batch> batch(input, this->mol_);
+      SmallInts1e<Batch> batch(input, mol);
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
@@ -76,7 +76,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
     }
 };
 
-template<> void Small1e<ERIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1);
+template<> void Small1e<ERIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>);
 
 }
 

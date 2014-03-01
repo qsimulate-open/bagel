@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/distcivector.cc
+// Filename: ras/distcivec.cc
 // Copyright (C) 2013 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -26,7 +26,7 @@
 
 #include <iomanip>
 #include <unordered_map>
-#include <src/ras/distcivector.h>
+#include <src/ras/civector.h>
 #include <src/parallel/distqueue.h>
 
 using namespace std;
@@ -50,9 +50,8 @@ namespace bagel {
         abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
       {
         const size_t lb = det_->lenb();
-        const int norb = det_->norb();
 
-        const size_t alexical = det_->lexical<0>(abit_);
+        const size_t alexical = det_->lexical_offset<0>(abit_);
         buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);
 
         int k = 0;
@@ -82,12 +81,12 @@ namespace bagel {
 
       void compute() {
         const int norb = det_->norb();
-        const size_t lex_a = det_->lexical<0, 0>(abit_);
+        const size_t lex_a = det_->lexical_zero<0>(abit_);
 
-        vector<shared_ptr<DistRASBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
+        vector<shared_ptr<DistCIBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
 
         int k = 0;
-        for (auto& iter : det_->phia(det_->lexical<0>(abit_))) {
+        for (auto& iter : det_->phia(det_->lexical_offset<0>(abit_))) {
           const int j = iter.ij / norb;
           const int i = iter.ij % norb;
           bitset<nbit__> mask1; mask1.set(j); mask1.set(i);
@@ -99,7 +98,7 @@ namespace bagel {
           for (auto& iblock : allowed_blocks) {
             const size_t lb = iblock->lenb();
             double* odata = iblock->local() + lb * (lex_a - iblock->astart());
-            for (auto& ib : *iblock->stringb()) {
+            for (auto& ib : *iblock->stringsb()) {
               if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
                 const bitset<nbit__> bsostring = ib ^ maskij;
                 *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
@@ -117,11 +116,16 @@ namespace bagel {
 // S^2 = S_z^2 + S_z + S_-S_+ with S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_beta
 template<>
 shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
+#if 1
+  auto local = civec();
+  auto spun = local->spin();
+  return spun->distcivec();
+#else
   auto out = make_shared<DistRASCivector<double>>(det_);
 
   unordered_map<size_t, size_t> lexicalmap;
   for (size_t i = 0; i < det_->lenb(); ++i)
-    lexicalmap[det_->stringb(i).to_ullong()] = i;
+    lexicalmap[det_->string_bits_b(i).to_ullong()] = i;
 
   this->init_mpi_recv();
 
@@ -142,14 +146,13 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 #endif
 
   // task construction by master
-  for (auto& spaceiter : this->det()->stringspacea()) {
-    shared_ptr<const StringSpace> ispace = spaceiter.second;
+  for (auto& ispace : *this->det()->stringspacea()) {
     size_t astart, aend;
     tie(astart, aend) = ispace->dist().range(mpi__->rank());
     if (astart == aend) continue;
 
     for (size_t ia = astart; ia < aend; ++ia) {
-      tasks.emplace_and_compute(this->det()->stringa(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
+      tasks.emplace_and_compute(this->det()->string_bits_a(ia + ispace->offset()), this, out, this->det(), &lexicalmap);
     }
   }
 
@@ -172,11 +175,16 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
   this->terminate_mpi_recv();
 
   return out;
+#endif
 }
 
 // S_- = \sum_i i^dagger_beta i_alpha
 template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
-#if 0
+#if 1
+  shared_ptr<RASCivector<double>> local = civec();
+  shared_ptr<RASCivector<double>> lowered = local->spin_lower(tdet);
+  return lowered->distcivec();
+#else
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
   assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
@@ -189,13 +197,13 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : sdet->stringspacea()) {
+  for (auto& ispace : *sdet->stringspacea()) {
     if (ispace)
       for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : sdet->stringspaceb()) {
+  for (auto& ispace : *sdet->stringspaceb()) {
     if (ispace)
       for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
@@ -203,8 +211,8 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->string_bits_a()) {
+      for (auto& bbit : *tblock->string_bits_b()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (abit[i] || !bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.set(i);
@@ -222,12 +230,12 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->string_bits_a()->nholes();
+    const int nhb = iblock->string_bits_b()->nholes();
+    const int npa = iblock->string_bits_a()->nparticles();
+    const int npb = iblock->string_bits_b()->nparticles();
+    const int n2a = iblock->string_bits_a()->nele2();
+    const int n2b = iblock->string_bits_b()->nele2();
 
     if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
@@ -235,14 +243,16 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   }
 
   return out;
-#else
-  return shared_ptr<DistRASCivector<double>>();
 #endif
 }
 
 // S_+ = \sum_i i^dagger_alpha i_beta
 template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
-#if 0
+#if 1
+  shared_ptr<RASCivector<double>> local = civec();
+  shared_ptr<RASCivector<double>> raised = local->spin_raise(tdet);
+  return raised->distcivec();
+#else
   shared_ptr<const RASDeterminants> sdet = det_;
   if (!tdet) tdet = sdet->clone(sdet->nelea()+1, sdet->neleb()-1);
   assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
@@ -255,13 +265,13 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
 
   // maps bits to their local offsets
   unordered_map<size_t, size_t> alex;
-  for (auto& ispace : det_->stringspacea()) {
+  for (auto& ispace : *det_->stringspacea()) {
     if (ispace)
       for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
   }
 
   unordered_map<size_t, size_t> blex;
-  for (auto& ispace : det_->stringspaceb()) {
+  for (auto& ispace : *det_->stringspaceb()) {
     if (ispace)
       for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
   }
@@ -269,8 +279,8 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
     const size_t lb = sblock->lenb();
     double* odata = tblock->data();
-    for (auto& abit : *tblock->stringa()) {
-      for (auto& bbit : *tblock->stringb()) {
+    for (auto& abit : *tblock->string_bits_a()) {
+      for (auto& bbit : *tblock->string_bits_b()) {
         for ( int i = nstart; i < nfence; ++i) {
           if (!abit[i] || bbit[i]) continue;
           bitset<nbit__> sabit = abit; sabit.reset(i);
@@ -288,12 +298,12 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
   for (auto& iblock : out->blocks()) {
     if (!iblock) continue;
-    const int nha = iblock->stringa()->nholes();
-    const int nhb = iblock->stringb()->nholes();
-    const int npa = iblock->stringa()->nparticles();
-    const int npb = iblock->stringb()->nparticles();
-    const int n2a = iblock->stringa()->nele2();
-    const int n2b = iblock->stringb()->nele2();
+    const int nha = iblock->string_bits_a()->nholes();
+    const int nhb = iblock->string_bits_b()->nholes();
+    const int npa = iblock->string_bits_a()->nparticles();
+    const int npb = iblock->string_bits_b()->nparticles();
+    const int n2a = iblock->string_bits_a()->nele2();
+    const int n2b = iblock->string_bits_b()->nele2();
 
     if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
     if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
@@ -301,8 +311,6 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   }
 
   return out;
-#else
-  return shared_ptr<DistRASCivector<double>>();
 #endif
 }
 

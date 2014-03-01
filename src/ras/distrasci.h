@@ -32,7 +32,7 @@
 #include <src/fci/properties.h>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-#include <src/ras/distcivector.h>
+#include <src/ras/civector.h>
 
 namespace bagel {
 
@@ -40,7 +40,7 @@ class DistRASCI : public Method {
   protected:
     // max #iteration
     int max_iter_;
-    int davidsonceiling_;
+    int davidson_subspace_;
 
     // threshold for variants
     double thresh_;

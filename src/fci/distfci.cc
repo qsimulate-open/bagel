@@ -56,7 +56,7 @@ void DistFCI::common_init() {
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
@@ -100,8 +100,8 @@ void DistFCI::common_init() {
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
-  space_ = make_shared<Space>(norb_, nelea_, neleb_, 1);
-  det_ = space_->basedet();
+  space_ = make_shared<HZSpace>(norb_, nelea_, neleb_);
+  det_ = space_->finddet(nelea_, neleb_);
 }
 
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
@@ -155,7 +155,7 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
     if (basis.size() >= nguess_ && val != last_value)
       break;
     else
-      basis.emplace_back(det_->stringa(p.second.first), det_->stringb(p.second.second));
+      basis.emplace_back(det_->string_bits_a(p.second.first), det_->string_bits_b(p.second.second));
   }
   const int nguess = basis.size();
 
@@ -240,7 +240,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
@@ -303,7 +303,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
+    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
 
   return out;
 }
@@ -352,8 +352,8 @@ void DistFCI::const_denom() {
   double* iter = denom_->local();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
-    tasks.emplace_back(iter, denom_->det()->stringa(i), det_, jop, kop, h);
-    iter += det()->stringb().size();
+    tasks.emplace_back(iter, denom_->det()->string_bits_a(i), det_, jop, kop, h);
+    iter += det()->string_bits_b().size();
   }
   tasks.compute();
 
@@ -385,7 +385,7 @@ void DistFCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<DistCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<DistCivec> davidson(nstate_, davidson_subspace_);
 
   // main iteration starts here
   cout << "  === FCI iteration ===" << endl << endl;
@@ -401,10 +401,13 @@ void DistFCI::compute() {
     vector<shared_ptr<DistCivec>> sigma = form_sigma(cc, jop_, conv);
     pdebug.tick_print("sigma vector");
 
-    // Davidson
     vector<shared_ptr<const DistCivec>> ccn, sigman;
-    for (auto& i : cc) if (i) ccn.push_back(i);
-    for (auto& i : sigma) if (i) sigman.push_back(i);
+    for (int i = 0; i < nstate_; ++i) {
+      ccn.push_back(cc[i]);
+      sigman.push_back(sigma[i]);
+    }
+
+    // Davidson
     const vector<double> energies = davidson.compute(ccn, sigman);
 
     // get residual and new vectors
@@ -435,11 +438,7 @@ void DistFCI::compute() {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
           c->spin_decontaminate();
-          davidson.orthog(c);
-          list<shared_ptr<const DistCivec>> tmp;
-          for (int jst = 0; jst != ist; ++jst)
-            if (!conv[jst]) tmp.push_back(cc.at(jst));
-          c->orthog(tmp);
+          c->normalize();
           cc.push_back(c);
         } else {
           cc.push_back(shared_ptr<DistCivec>());

@@ -41,12 +41,12 @@ namespace bagel {
 
 class DistFCI : public Method {
   protected:
-    std::shared_ptr<Space> space_;
+    std::shared_ptr<Space_base> space_;
     std::shared_ptr<DistCivec> denom_;
 
     // Options
     int max_iter_;
-    int davidsonceiling_;
+    int davidson_subspace_;
     int nguess_;
     double thresh_;
     double print_thresh_;

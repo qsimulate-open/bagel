@@ -61,10 +61,10 @@ namespace bagel {
     #ifdef LIBINT_INTERFACE
       // TODO 20LU should not be hardwired
       libint_t_ = std::unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]);
-      if (libint2_need_memory_3eri1(LIBINT_MAX_AM) < libint2_need_memory_eri(LIBINT_MAX_AM)) {
-        LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT_MAX_AM, 0);
+      if (libint2_need_memory_3eri1(LIBINT2_MAX_AM_3ERI1) < libint2_need_memory_eri(LIBINT2_MAX_AM_ERI)) {
+        LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT2_MAX_AM_ERI, 0);
       } else {
-        LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT_MAX_AM, 0);
+        LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT2_MAX_AM_3ERI1, 0);
       }
     #endif
     }
@@ -104,14 +104,14 @@ namespace bagel {
 
   public:
     Resources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
+#ifdef LIBINT_INTERFACE
+      LIBINT2_PREFIXED_NAME(libint2_static_init)();
+#endif
+
       for (int i = 0; i != max_num_threads_; ++i) {
         flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
         stackmem_.push_back(std::make_shared<StackMem>());
       }
-
-    #ifdef LIBINT_INTERFACE
-      LIBINT2_PREFIXED_NAME(libint2_static_init)();
-    #endif
     }
 
     std::shared_ptr<StackMem> get() {

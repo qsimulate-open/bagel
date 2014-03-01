@@ -46,28 +46,29 @@ void ZCASSCF::compute() {
   x->unit();
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-  shared_ptr<const ZMatrix> overlap = make_shared<RelOverlap>(geom_);
+  shared_ptr<const RelOverlap> overlap = make_shared<RelOverlap>(geom_);
 
-  // coeff_ is a kramers adapted coefficient..
-  {
-    array<shared_ptr<const ZMatrix>,2> tmp = RelMOFile::kramers(coeff_, overlap, hcore);
-    auto ctmp = coeff_->clone();
-    int i = 0;
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[1]->slice(0,nclosed_)); i += nclosed_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[0]->slice(nclosed_, nocc_)); i += nact_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nact_, tmp[1]->slice(nclosed_, nocc_)); i += nact_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[0]->slice(nocc_, nocc_+nvirt_)); i += nvirt_;
-    ctmp->copy_block(0, i, coeff_->ndim(), nvirt_, tmp[1]->slice(nocc_, nocc_+nvirt_));
-    coeff_ = ctmp;
-  }
+  // intialize coefficients
+  init_kramers_coeff(hcore, overlap);
 
+  // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
+  const bool ___debug___break_kramers = true;
+  const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", false);
+  if (___debug___break_kramers)
+    ___debug___orbital_rotation(___debug___with_kramers);
+
+  if (nact_)
+    fci_->update(coeff_);
+
+  cout << " See casscf.log file for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       mute_stdcout();
       if (iter) fci_->update(coeff_);
+      cout << " Executing FCI calculation " << endl;
       fci_->compute();
+      cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
       resume_stdcout();
     }
@@ -117,11 +118,19 @@ void ZCASSCF::compute() {
     grad_vc(cfock, afock, grad);
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
-    kramers_adapt(grad);
+    *grad *= 2.0;
+    if (!___debug___break_kramers)
+      kramers_adapt(grad);
+
+    if (___debug___break_kramers) {
+      ___debug___print_gradient(grad, ___debug___with_kramers);
+      ___debug___compute_hessian(cfock, afock, ___debug___with_kramers);
+    }
 
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
     shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
-    kramers_adapt(a);
+    if (!___debug___break_kramers)
+      kramers_adapt(a);
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
 
     const double gradient = amat->rms();
@@ -137,9 +146,11 @@ void ZCASSCF::compute() {
       complex<double> ex = exp(complex<double>(0.0, teig[i]));
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
-    auto expa = make_shared<const ZMatrix>(*amat ^ *amat_sav);
+    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+    if (!___debug___break_kramers)
+      kramers_adapt(expa);
 
-    coeff_ = make_shared<const ZMatrix>(*coeff_**expa);
+    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
     // for next BFGS extrapolation
     *x *= *expa;
 
@@ -164,7 +175,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   auto coeff_tot = fci_->coeff()->get_conjg();
 
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
-  // TODO compute RelOverlap only once (this is comptued also in qzvec)
+  // TODO compute RelOverlap only once (this is comptued also in zqvec)
   auto overlap = make_shared<const RelOverlap>(geom_);
   shared_ptr<const ZMatrix> ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2)->get_conjg();
   const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
@@ -174,6 +185,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
   // form natural orbitals
+  // JEB :  cout << "presently forming natural orbitals via diagonalization" << endl;
   unique_ptr<double[]> eig(new double[nact_*2]);
   auto tmp = make_shared<ZMatrix>(*rdm1);
   tmp->diagonalize(eig.get());
@@ -193,121 +205,5 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 }
 
 
-shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
-
-  shared_ptr<ZMatrix> cfockd;
-  if (nact_) {
-    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-    // TODO check
-    cfockd->hermite();
-  }
-
-  // ia part (4.7a)
-  if (nvirt_ && nclosed_) {
-    complex<double>* target = out->ptr_vc();
-    for (int i = 0; i != nclosed_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = cfock->element(j+nocc_*2, j+nocc_*2) + afock->element(j+nocc_*2, j+nocc_*2) - cfock->element(i,i) - afock->element(i,i);
-      }
-    }
-  }
-  // ra part (4.7b)
-  if (nvirt_ && nact_) {
-    complex<double>* target = out->ptr_va();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = rdm1->element(i, i)*(cfock->element(j+nocc_*2, j+nocc_*2)+afock->element(j+nocc_*2, j+nocc_*2))
-                  - cfockd->element(i, i) - qxr->element(i+nclosed_*2, i);
-      }
-    }
-  }
-  // it part (4.7c)
-  if (nclosed_ && nact_) {
-    complex<double>* target = out->ptr_ca();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nclosed_*2; ++j) {
-        *target++ = (cfock->element(i+nclosed_*2, i+nclosed_*2)+afock->element(i+nclosed_*2, i+nclosed_*2) - cfock->element(j,j) - afock->element(j,j))
-                  + rdm1->element(i,i)*(cfock->element(j,j)+afock->element(j,j)) - cfockd->element(i,i) - qxr->element(i+nclosed_*2, i);
-      }
-    }
-  }
-
-  const double thresh = 1.0e-8;
-  for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh) {
-      out->data(i) = 1.0e10;
-    }
-  return out;
-}
 
 
-
-// grad(a/i) (eq.4.3a): (cfock_ai+afock_ai)
-void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
-  if (!nvirt_ || !nclosed_) return;
-  complex<double>* target = sigma->ptr_vc();
-  for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2) {
-    zaxpy_(nvirt_*2, 1.0, cfock->element_ptr(nocc_*2, i), 1, target, 1);
-    zaxpy_(nvirt_*2, 1.0, afock->element_ptr(nocc_*2, i), 1, target, 1);
-  }
-}
-
-
-// grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
-void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
-  if (!nvirt_ || !nact_) return;
-  // TODO not sure about complex conjugation of rdm1
-  zgemm3m_("N", "T", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
-  complex<double>* target = sigma->ptr_va();
-  for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
-    zaxpy_(nvirt_*2, 1.0, qxr->element_ptr(nocc_*2, i), 1, target, 1);
-  }
-}
-
-
-// grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
-void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
-  if (!nclosed_ || !nact_) return;
-  // TODO check
-  auto qxrc = qxr->get_conjg();
-  complex<double>* target = sigma->ptr_ca();
-  for (int i = 0; i != nact_*2; ++i, target += nclosed_*2) {
-    zaxpy_(nclosed_*2, 1.0, afock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, 1.0, cfock->element_ptr(0,nclosed_*2+i), 1, target, 1);
-    zaxpy_(nclosed_*2, -1.0, qxrc->element_ptr(0, i), 1, target, 1);
-  }
-  // "T" effectively makes complex conjugate of cfock
-  zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
-}
-
-
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o) const {
-  for (int i = 0; i != nclosed_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt_, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt_, i+nclosed_) = conj(o->ele_vc(j, i));
-
-      o->ele_vc(j+nvirt_, i) = (o->ele_vc(j+nvirt_, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt_, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt_, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt_, i+nact_) = conj(o->ele_va(j, i));
-
-      o->ele_va(j+nvirt_, i) = (o->ele_va(j+nvirt_, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt_, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j) {
-      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
-      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
-
-      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
-      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
-    }
-  }
-}

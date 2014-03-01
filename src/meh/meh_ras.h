@@ -32,9 +32,6 @@
 namespace bagel {
 
 class MEH_RAS : public MultiExcitonHamiltonian<RASDvec> {
-   protected:
-      bool sparse_;
-
    public:
       MEH_RAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerRAS> cispace);
 

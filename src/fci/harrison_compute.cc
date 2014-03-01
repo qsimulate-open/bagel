@@ -29,11 +29,14 @@
 #include <src/fci/hztasks.h>
 #include <src/smith/prim_op.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::HarrisonZarrabian)
 
 using namespace std;
 using namespace bagel;
+
+// toggle for timing print out.
+static const bool tprint = false;
+
 
 /* Implementing the method as described by Harrison and Zarrabian */
 shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
@@ -44,7 +47,7 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate_);
   sigmavec->zero();
 
-  shared_ptr<Determinants> base_det = space_->basedet();
+  shared_ptr<Determinants> base_det = space_->finddet(nelea_, neleb_);
   shared_ptr<Determinants> int_det = space_->finddet(nelea_-1,neleb_-1);
 
   /* d and e are only used in the alpha-beta case and exist in the (nalpha-1)(nbeta-1) spaces */
@@ -102,8 +105,10 @@ void HarrisonZarrabian::sigma_aa(shared_ptr<const Civec> cc, shared_ptr<Civec> s
   TaskQueue<HZTaskAA<double>> tasks(det->lena());
 
   double* target = sigma->data();
-  for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
+  for (auto& a : det->string_bits_a()) {
+    tasks.emplace_back(cc, a, target, h1->data(), h2->data());
+    target += lb;
+  }
 
   tasks.compute();
 }
@@ -125,7 +130,6 @@ void HarrisonZarrabian::sigma_2ab_1(shared_ptr<const Civec> cc, shared_ptr<Dvec>
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
-  const int lbt = tdet->lenb();
   const int lbs = bdet->lenb();
   const double* source_base = cc->data();
 

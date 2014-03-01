@@ -42,7 +42,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
   protected:
     // Geometry which this wave function is belonging to
-    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
     // MO coefficients
     std::shared_ptr<const Coeff> coeff_;
     // in case of spin-broken wave functions (UHF)
@@ -50,15 +50,15 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Coeff> coeffB_;
     int noccA_, noccB_;
 
-    const double energy_;
+    double energy_;
 
     std::shared_ptr<const Hcore> hcore_;
     std::vector<double> eig_;
 
     int ncore_;
-    const int nclosed_;
-    const int nact_;
-    const int nvirt_;
+    int nclosed_;
+    int nact_;
+    int nvirt_;
 
     int nstate_;
 
@@ -70,7 +70,18 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
     std::shared_ptr<const Matrix> erdm1_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
+         & ncore_ & nclosed_ & nact_ & nvirt_ & nstate_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
+    }
+
   public:
+    Reference() { }
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
               const double en = 0.0,
@@ -82,6 +93,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference(std::shared_ptr<const Reference> o, std::shared_ptr<const Coeff> c) :
       Reference( o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(),
       o->rdm1(), o->rdm2(), o->rdm1_av(), o->rdm2_av() ) {};
+    virtual ~Reference() { }
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
@@ -147,6 +159,16 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
 };
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Reference)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Reference, T>::value>::type> {
+    typedef Reference type;
+  };
 }
 
 #endif

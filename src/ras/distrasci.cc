@@ -45,9 +45,9 @@ DistRASCI::DistRASCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
 void DistRASCI::common_init() {
   print_header();
 
-  const bool frozen = idata_->get<bool>("frozen", false);
+//const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
-  davidsonceiling_ = idata_->get<int>("davidsonceiling", 10);
+  davidson_subspace_ = idata_->get<int>("davidson_subspace", 10);
   thresh_ = idata_->get<double>("thresh", 1.0e-16);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   sparse_ = idata_->get<bool>("sparse", true);
@@ -129,10 +129,10 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
     for (auto& iter : adapt.first) {
-      shared_ptr<DistRASBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
-      const size_t aindex = block->stringa()->lexical<0>(get<1>(iter)) - block->astart();
+      shared_ptr<DistCIBlock<double>> block = out->data(oindex)->block(get<0>(iter), get<1>(iter));
+      const int aindex = block->stringsa()->lexical_zero(get<1>(iter)) - block->astart();
       if ( aindex >= 0 && aindex < block->asize()) {
-        const size_t bindex = block->stringb()->lexical<0>(get<0>(iter));
+        const size_t bindex = block->stringsb()->lexical_zero(get<0>(iter));
         double* data = block->local() + block->lenb() * aindex + bindex;
         *data = get<2>(iter) * fac;
       }
@@ -140,7 +140,7 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     out->data(oindex)->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << det()->print_bit(alpha&beta) << " open " << setw(20) << det()->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
@@ -162,8 +162,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
     double* diter = iblock->local();
-    const size_t aoff = iblock->stringa()->offset();
-    const size_t boff = iblock->stringb()->offset();
+    const size_t aoff = iblock->stringsa()->offset();
+    const size_t boff = iblock->stringsb()->offset();
     for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
       for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
         const double din = -(*diter);
@@ -210,7 +210,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistRASCI::detseeds(const int ndet
 
   vector<pair<bitset<nbit__>, bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->stringb(ball[i]), det_->stringa(aall[i])));
+    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
 
   return out;
 }
@@ -239,7 +239,7 @@ void DistRASCI::compute() {
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
 
   // Davidson utility
-  DavidsonDiag<DistRASCivec> davidson(nstate_, davidsonceiling_);
+  DavidsonDiag<DistRASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
   DistFormSigmaRAS form_sigma(sparse_);
@@ -262,6 +262,10 @@ void DistRASCI::compute() {
       if (!conv[i]) {
         ccn.push_back(make_shared<const DistRASCivec>(*cc_->data(i)));
         sigman.push_back(make_shared<const DistRASCivec>(*sigma->data(i)));
+      }
+      else {
+        ccn.push_back(shared_ptr<const DistRASCivec>());
+        sigman.push_back(shared_ptr<const DistRASCivec>());
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -291,10 +295,7 @@ void DistRASCI::compute() {
               [&en] (const double& cc, const double& den) { return cc / min(en - den, -0.1); });
           }
         }
-        davidson.orthog(cc_->data(ist));
-        list<shared_ptr<const DistRASCivec>> tmp;
-        for (int jst = 0; jst != ist; ++jst) tmp.push_back(cc_->data(jst));
-        cc_->data(ist)->orthog(tmp);
+        cc_->data(ist)->normalize();
         cc_->data(ist)->spin_decontaminate();
       }
     }

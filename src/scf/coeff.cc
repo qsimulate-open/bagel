@@ -33,6 +33,8 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
+
 Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
   copy_n(inp.data(), ndim_*mdim_, data());
 }
@@ -73,7 +75,6 @@ int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
 
 
 shared_ptr<Matrix> Coeff::form_density_rhf(const int n, const int offset) const {
-  const int nb = ndim_;
   shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;

@@ -31,6 +31,8 @@
 #include <src/meh/meh_cas.h>
 #include <src/meh/meh_distcas.h>
 #include <src/meh/meh_ras.h>
+#include <src/meh/meh_distras.h>
+#include <src/util/archive.h>
 
 // debugging
 extern void test_solvers(std::shared_ptr<bagel::Geometry>);
@@ -91,6 +93,14 @@ int main(int argc, char** argv) {
 
       // most methods are constructed here
       shared_ptr<Method> method = construct_method(title, itree, geom, ref);
+
+      if (title == "continue") {
+        IArchive archive(itree->get<string>("archive"));
+        Method* ptr;
+        archive >> ptr;
+        method = shared_ptr<Method>(ptr);
+      }
+
       if (method) {
 
         method->compute();
@@ -155,6 +165,11 @@ throw logic_error("broken!");
           shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
 
           auto meh = make_shared<MEH_RAS>(itree, dimer, cispace);
+          meh->compute();
+      } else if (title == "meh-dist-ras") { // Not the best solution, but it'll do for now
+          shared_ptr<DimerDistRAS> cispace = dimer->compute_distrcispace(itree);
+
+          auto meh = make_shared<MEH_DistRAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

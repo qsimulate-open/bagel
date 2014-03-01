@@ -33,9 +33,6 @@ using namespace std;
 using namespace bagel;
 
 vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_ptr<DistCivec>>& ccvec, shared_ptr<const MOFile> jop, const vector<int>& conv) const {
-  const int norb = jop->nocc();
-  const int ij = norb*norb;
-
   const int nstate = ccvec.size();
 
   vector<shared_ptr<DistCivec>> sigmavec;
@@ -90,12 +87,6 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   shared_ptr<const Determinants> base_det = cc->det();
   shared_ptr<const Determinants> int_det = base_det->remalpha()->rembeta();
 
-  const int norb = base_det->norb();
-
-  const size_t lbt = int_det->lenb();
-  const size_t lbs = base_det->lenb();
-  const int ij = norb*norb;
-
   const int rank = mpi__->rank();
   const int size = mpi__->size();
 
@@ -107,7 +98,7 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   for (size_t a = 0; a != int_det->lena(); ++a) {
     if (a%size != rank) continue;
 
-    const bitset<nbit__> astring = int_det->stringa(a);
+    const bitset<nbit__> astring = int_det->string_bits_a(a);
 
     tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
 
@@ -200,7 +191,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   sigma->flush();
 #endif
 
-  const size_t nelea = base_det->nelea();
   const size_t neleb = base_det->neleb();
 
   const static Comb comb;
@@ -222,7 +212,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   for (auto& b : intb)
     tasks.emplace_back(la, source.get(), target.get(), hamil2.get(), base_det, b, &localmutex);
   // one electron part
-  for (auto& b : int_det->stringb())
+  for (auto& b : int_det->string_bits_b())
     tasks.emplace_back(la, source.get(), target.get(), hamil1.get(), base_det, b, &localmutex);
 
   tasks.compute();

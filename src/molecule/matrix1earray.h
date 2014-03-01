@@ -37,23 +37,21 @@ class Matrix1eArray {
   protected:
     std::array<std::shared_ptr<Matrix>, N> matrices_;
 
-    std::shared_ptr<const Molecule> mol_;
-
-    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
+    virtual void init(std::shared_ptr<const Molecule>);
+    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
 
     bool localized_;
 
   public:
     Matrix1eArray(const std::shared_ptr<const Molecule>, const bool loc = false);
-    Matrix1eArray(const std::shared_ptr<const Molecule>, const int n, const int m, const bool loc = false);
+    Matrix1eArray(const int n, const int m, const bool loc = false);
     Matrix1eArray(const Matrix1eArray&);
+    virtual ~Matrix1eArray() { }
 
     void ax_plus_y(const double a, const Matrix1eArray<N>& o) {
       std::transform(o.matrices_.begin(), o.matrices_.end(), matrices_.begin(), matrices_.begin(),
                      [&a](std::shared_ptr<Matrix> p, std::shared_ptr<Matrix> q) { q->ax_plus_y(a, p); return q; });
     }
-
-    const std::shared_ptr<const Molecule> mol() const { return mol_; }
 
     std::shared_ptr<Matrix>& data(const int i) { return matrices_[i]; }
     std::shared_ptr<Matrix>& operator[](const int i) { return data(i); }
@@ -64,7 +62,6 @@ class Matrix1eArray {
     void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
 
     virtual void print(const std::string name = "") const;
-    virtual void init();
 
     void localize() {
       localized_ = true;
@@ -74,25 +71,25 @@ class Matrix1eArray {
 };
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : mol_(mol), localized_(loc) {
+Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const bool loc) : localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis());
+    matrices_[i] = std::make_shared<Matrix>(mol->nbasis(), mol->nbasis(), loc);
   }
 }
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const std::shared_ptr<const Molecule> mol, const int n, const int m, const bool loc) : mol_(mol), localized_(loc) {
+Matrix1eArray<N>::Matrix1eArray(const int n, const int m, const bool loc) : localized_(loc) {
   static_assert(N > 0, "Matrix1eArray should be constructed with N > 0");
   for(int i = 0; i < N; ++i) {
-    matrices_[i] = std::make_shared<Matrix>(n, m);
+    matrices_[i] = std::make_shared<Matrix>(n, m, loc);
   }
 }
 
 
 template <int N>
-Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : Matrix1eArray(o.mol(), o.localized_) {
+Matrix1eArray<N>::Matrix1eArray(const Matrix1eArray& o) : localized_(o.localized_) {
   for (int i = 0; i < N; ++i) {
     *data(i) = *o.data(i);
   }
@@ -109,7 +106,7 @@ void Matrix1eArray<N>::print(const std::string name) const {
 }
 
 template <int N>
-void Matrix1eArray<N>::init() {
+void Matrix1eArray<N>::init(std::shared_ptr<const Molecule> mol) {
 
   // identical to Matrix1e::init()
   // only lower half will be stored
@@ -117,14 +114,14 @@ void Matrix1eArray<N>::init() {
 
   size_t oa0 = 0;
   int u = 0;
-  for (auto a0 = mol_->atoms().begin(); a0 != mol_->atoms().end(); ++a0) {
+  for (auto a0 = mol->atoms().begin(); a0 != mol->atoms().end(); ++a0) {
     // iatom1 = iatom1;
     size_t ob0 = oa0;
     for (auto& b0 : (*a0)->shells()) {
       size_t ob1 = oa0;
       for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          computebatch({{b1, b0}}, ob0, ob1);
+          computebatch({{b1, b0}}, ob0, ob1, mol);
         }
         ob1 += b1->nbasis();
       }
@@ -132,13 +129,13 @@ void Matrix1eArray<N>::init() {
     }
 
     auto oa1 = oa0 + (*a0)->nbasis();
-    for (auto a1 = a0+1; a1 != mol_->atoms().end(); ++a1) {
+    for (auto a1 = a0+1; a1 != mol->atoms().end(); ++a1) {
       size_t ob0 = oa0;
       for (auto& b0 : (*a0)->shells()) {
         size_t ob1 = oa1;
         for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            computebatch({{b1, b0}}, ob0, ob1);
+            computebatch({{b1, b0}}, ob0, ob1, mol);
           }
           ob1 += b1->nbasis();
         }

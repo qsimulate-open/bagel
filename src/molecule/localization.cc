@@ -270,14 +270,12 @@ double PMLocalization::calc_P(shared_ptr<const DistMatrix> coeff, const int nsta
   auto mos = make_shared<DistMatrix>(nbasis, norb);
 
 #ifdef HAVE_SCALAPACK
-  pdgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->local().get(), 1, 1, S_->desc().get(),
-                                                 coeff->local().get(), 1, nstart + 1, coeff->desc().get(),
-                                            0.0, mos->local().get(), 1, 1, mos->desc().get());
+  pdgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->local().get(), 1, 1, S_->desc().data(),
+                                                 coeff->local().get(), 1, nstart + 1, coeff->desc().data(),
+                                            0.0, mos->local().get(), 1, 1, mos->desc().data());
 #else
   dgemm_("N", "N", nbasis, norb, nbasis, 1.0, S_->data(), nbasis, coeff->element_ptr(0, nstart), nbasis, 0.0, mos->data(), nbasis);
 #endif
-
-  const int natom = atom_bounds_.size();
 
   auto P_A = make_shared<DistMatrix>(norb, norb);
 
@@ -285,9 +283,9 @@ double PMLocalization::calc_P(shared_ptr<const DistMatrix> coeff, const int nsta
     const int natombasis = ibounds.second - ibounds.first;
 
 #ifdef HAVE_SCALAPACK
-    pdgemm_("T", "N", norb, norb, natombasis, 1.0, mos->local().get(), ibounds.first + 1, 1, mos->desc().get(),
-                                                         coeff->local().get(), ibounds.first + 1, nstart + 1, coeff->desc().get(),
-                                                    0.0, P_A->local().get(), 1, 1, P_A->desc().get());
+    pdgemm_("T", "N", norb, norb, natombasis, 1.0, mos->local().get(), ibounds.first + 1, 1, mos->desc().data(),
+                                                         coeff->local().get(), ibounds.first + 1, nstart + 1, coeff->desc().data(),
+                                                    0.0, P_A->local().get(), 1, 1, P_A->desc().data());
 #else
     dgemm_("T", "N", norb, norb, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis,
                               coeff->element_ptr(ibounds.first, nstart), nbasis, 0.0, P_A->data(), norb);

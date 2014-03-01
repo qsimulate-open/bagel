@@ -41,8 +41,6 @@ using namespace bagel;
 
 Resources b(8);
 Resources* bagel::resources__ = &b;
-static int argc = 0;
-static char** argv;
 static MPI_Interface c;
 MPI_Interface* bagel::mpi__ = &c;
 

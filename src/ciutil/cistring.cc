@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ras/stringspace.cc
+// Filename: cistring.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,19 +24,31 @@
 //
 
 #include <cassert>
-
-#include <src/ras/stringspace.h>
+#include <src/math/comb.h>
+#include <src/ciutil/bitutil.h>
+#include <src/ciutil/cistring.h>
 #include <src/util/combination.hpp>
+
+// explicit instantiation
+template class bagel::CIString_base_impl<1>;
+template class bagel::CIString_base_impl<3>;
+
+// instantiation of serialization code
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIGraph)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<1>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::CIString_base_impl<3>)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RASString)
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
 
 using namespace std;
 using namespace bagel;
 
-RASGraph::RASGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
-  if ( nele*norb != 0 ) {
-    weights_ = unique_ptr<size_t[]>(new size_t[nele * norb]);
-    fill_n(weights_.get(), nele * norb, 0ull);
+static const Comb comb;
 
-    Comb comb;
+CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
+  if (nele*norb != 0) {
+    weights_ = vector<size_t>(nele * norb, 0ull);
 
     size_ = comb.c(norb, nele);
 
@@ -50,16 +62,25 @@ RASGraph::RASGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(no
   }
 }
 
-StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, const int norb2, const int nele3, const int norb3, const size_t offset) :
-  ras_{{make_pair(nele1, norb1), make_pair(nele2, norb2), make_pair(nele3, norb3)}},
-    graphs_{{ make_shared<RASGraph>(nele1, norb1), make_shared<RASGraph>(nele2, norb2), make_shared<RASGraph>(nele3, norb3) }},
-    dist_(graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size(), mpi__->size()),
-    norb_(norb1 + norb2 + norb3), nele_( nele1 + nele2 + nele3 ), offset_(offset)
-{
-  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
 
+RASString::RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset)
+ : CIString_base_impl<3>{nele1, norb1, nele2, norb2, nele3, norb3, offset} {
+
+  init();
+}
+
+
+void RASString::compute_strings() {
+  const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
+
+  const int nele1 = subspace_[0].first;
+  const int nele2 = subspace_[1].first;
+  const int nele3 = subspace_[2].first;
+  const int norb1 = subspace_[0].second;
+  const int norb2 = subspace_[1].second;
+  const int norb3 = subspace_[2].second;
 
   size_t cnt = 0;
   vector<int> holes(norb1);
@@ -75,12 +96,36 @@ StringSpace::StringSpace(const int nele1, const int norb1, const int nele2, cons
         for (int i = 0; i != nele1; ++i) bit.set(holes[i]);
         for (int i = 0; i != nele2; ++i) bit.set(active[i]);
         for (int i = 0; i != nele3; ++i) bit.set(particles[i]);
-        strings_[lexical<0>(bit)] = bit;
+        strings_[lexical_zero(bit)] = bit;
 
         ++cnt;
       } while (boost::next_combination(particles.begin(), particles.begin() + nele3, particles.end()));
     } while (boost::next_combination(active.begin(), active.begin() + nele2, active.end()));
   } while (boost::next_combination(holes.begin(), holes.begin() + nele1, holes.end()));
-
   assert(cnt == size);
 }
+
+
+FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset)
+ : CIString_base_impl<1>{nele1, norb1, offset} {
+
+  init();
+}
+
+
+void FCIString::compute_strings() {
+  vector<int> data(norb_);
+  iota(data.begin(), data.end(), 0);
+  // Lexical ordering done, now fill in all the strings
+  strings_ = vector<bitset<nbit__>>(graphs_[0]->size(), bitset<nbit__>(0ul));
+  size_t cnt = 0;
+  do {
+    bitset<nbit__> bit(0lu);
+    for (int i=0; i!=nele_; ++i) bit.set(data[i]);
+    strings_[lexical_zero(bit)] = bit;
+    ++cnt;
+  } while (boost::next_combination(data.begin(), data.begin()+nele_, data.end()));
+  assert(cnt == graphs_[0]->size());
+}
+
+

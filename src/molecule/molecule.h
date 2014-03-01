@@ -30,6 +30,7 @@
 #include <src/molecule/atom.h>
 #include <src/molecule/petite.h>
 #include <src/math/xyzfile.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -53,9 +54,19 @@ class Molecule {
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & external_;
+    }
+
   public:
     Molecule() : symmetry_("c1"), nirrep_(1) {}
     Molecule(const std::vector<std::shared_ptr<const Atom>> a, const std::vector<std::shared_ptr<const Atom>> b) : atoms_(a), aux_atoms_(b), symmetry_("c1"), nirrep_(1) { }
+    virtual ~Molecule() { }
 
     // Returns shared pointers of Atom objects, which contains basis-set info.
     const std::vector<std::shared_ptr<const Atom>>& atoms() const { return atoms_; }
@@ -88,6 +99,16 @@ class Molecule {
 
 };
 
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Molecule)
+
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<Molecule, T>::value>::type> {
+    typedef Molecule type;
+  };
 }
 
 #endif

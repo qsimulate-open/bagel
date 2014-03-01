@@ -44,8 +44,18 @@ class Fock : public Fock_base {
     bool store_half_;
     std::shared_ptr<DFHalfDist> half_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Fock_base>(*this) & store_half_;
+    }
+
   public:
+    Fock() { }
     // Fock operator for DF cases
+    template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
          const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base(a,b,c), store_half_(store) {
@@ -54,9 +64,11 @@ class Fock : public Fock_base {
     }
 
     // Fock operator
+    template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, const std::vector<double>& d) : Fock(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
+    template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c, std::shared_ptr<const Matrix> ex,
          const std::vector<double>& d)
      : Fock_base(a,b,c,d), store_half_(false) {
@@ -70,9 +82,6 @@ class Fock : public Fock_base {
 
 template<int DF>
 void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
-
-  if (den_ex != density_) throw std::logic_error("den_ex in Fock<DF>::fock_two_electron_part is only with DF");
-  if (den_ex == nullptr) den_ex = density_;
 
   const std::vector<std::shared_ptr<const Atom>> atoms = geom_->atoms();
   std::vector<std::shared_ptr<const Shell>> basis;
@@ -119,7 +128,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
   if (DF == 0) {
     //////////////// ONLY FOR REFERENCES. //////////////////
     std::shared_ptr<Petite> plist = geom_->plist();;
-    const bool c1 = plist->nirrep() == 1;
 
     for (int i0 = 0; i0 != size; ++i0) {
       if (!plist->in_p1(i0)) continue;
@@ -242,7 +250,6 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
-    const int naux = df->naux();
     assert(ndim_ == df->nbasis0());
 
     Timer pdebug(3);
@@ -315,5 +322,11 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
 
 }
 
+extern template class bagel::Fock<0>;
+extern template class bagel::Fock<1>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<0>)
+BOOST_CLASS_EXPORT_KEY(bagel::Fock<1>)
 
 #endif

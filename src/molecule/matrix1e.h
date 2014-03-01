@@ -36,20 +36,29 @@ namespace bagel {
 class Matrix1e : public Matrix {
   friend class Matrix1eTask;
   protected:
-    std::shared_ptr<const Molecule> mol_;
+    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
+    virtual void init(std::shared_ptr<const Molecule>);
 
-    virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) = 0;
-    virtual void init();
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix>(*this);
+    }
 
   public:
+    Matrix1e() { }
     Matrix1e(const std::shared_ptr<const Molecule>);
-    Matrix1e(const std::shared_ptr<const Molecule>, const int n, const int m);
     Matrix1e(const Matrix1e&);
-
-    const std::shared_ptr<const Molecule> mol() const { return mol_; };
+    virtual ~Matrix1e() { }
 
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Matrix1e)
 
 #endif

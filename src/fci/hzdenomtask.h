@@ -53,7 +53,7 @@ class HZDenomTask {
       const int norb = det_->norb();
       double* iter = out_;
       const std::bitset<nbit__> ia = a_;
-      for (auto& ib : det_->stringb()) {
+      for (auto& ib : det_->string_bits_b()) {
         const int nopen = (ia^ib).count();
         const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
         *iter = 0.0;

@@ -206,9 +206,6 @@ void Dimer::construct_coeff() {
     coeffs_ = make_pair(refA->coeff(), refB->coeff());
   }
 
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
-
   if(refs_.first) {
     ncore_ = make_pair(refs_.first->nclosed(), refs_.second->nclosed());
     nact_ = make_pair(refs_.first->nact(), refs_.second->nact());
@@ -220,9 +217,6 @@ void Dimer::construct_coeff() {
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
-
-  const size_t Amos = coeffs_.first->mdim();
-  const size_t Bmos = coeffs_.second->mdim();
 
   {
     shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
@@ -241,8 +235,10 @@ void Dimer::construct_coeff() {
   const int nvirtA = nvirt_.first;
   const int nvirtB = nvirt_.second;
 
-  assert(Amos == ncloA + nactA + nvirtA);
-  assert(Bmos == ncloB + nactB + nvirtB);
+  assert(coeffs_.first->mdim()  == ncloA + nactA + nvirtA);
+  assert(coeffs_.second->mdim() == ncloB + nactB + nvirtB);
+
+  const size_t Amos = coeffs_.first->mdim();
 
   // form "projected" coefficients
   const int dimerbasis = dimerbasis_;
@@ -269,10 +265,6 @@ void Dimer::construct_coeff() {
 }
 
 void Dimer::embed_refs() {
-  const int noccA = nele_.first/2;
-  const int noccB = nele_.second/2;
-  const int nocc  = noccA + noccB;
-
   const int nclosed = nclosed_;
 
   // filled_active is the number of orbitals in the active space that should be filled
@@ -281,10 +273,6 @@ void Dimer::embed_refs() {
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
-  const int nact = nactA + nactB;
-
-  const int nbasisA = nbasis_.first;
-  const int nbasisB = nbasis_.second;
 
   { // Move occupied orbitals of unit B to form the core orbitals
     auto Amatrix = make_shared<Matrix>(dimerbasis_, nclosed + filled_activeB + nactA);
@@ -459,27 +447,71 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
     tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
   }
 
-  const size_t active_size = active_list.size();
+  const int active_size = active_list.size();
   cout << "    - size of candidate space: " << active_size << endl;
   cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl << endl;
 
   shared_ptr<Reference> out;
 
   if (active_size != nact) {
+    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
+
     cout << "  o Performing SVD in candidate space" << endl;
     Matrix subspace(dimerbasis_, active_size);
-    for (int i = 0; i < active_size; ++i)
-      copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
+    const int nclosed = count_if(active_list.begin(), active_list.end(), [&nocc] (const int& i) { return i < nocc; });
+
+    int ii = 0;
+    int jj = nclosed;
+    for (int i = 0; i < active_size; ++i) {
+      if (active_list[i] < nocc)
+        copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, ii++));
+      else
+        copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, jj++));
+    }
 
     Matrix Sactive(active % S * active);
     Sactive.inverse_half();
 
     Matrix projector( Sactive * ( active % S * subspace ) );
-    shared_ptr<Matrix> V;
-    vector<double> singulars(nact, 0.0);
-    tie(ignore, V) = projector.svd(singulars.data());
+    vector<double> singulars(active_size, 0.0);
+    auto V = make_shared<Matrix>(active_size, active_size);
 
-    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl;
+    {
+      Matrix tmpV(active_size, active_size);
+      multimap<double, int> ordered_singulars;
+
+      shared_ptr<Matrix> Vocc;
+      Matrix occ_projector = *projector.slice(0, nclosed);
+      vector<double> occ_sings(min(nclosed, nact), 0.0);
+      tie(ignore, Vocc) = occ_projector.svd(occ_sings.data());
+      tmpV.copy_block(0, 0, nclosed, nclosed, Vocc->transpose());
+
+      int nsing = occ_sings.size();
+      for (int i = 0; i < nsing; ++i)
+        ordered_singulars.emplace(occ_sings[i], i);
+      for (int i = nsing; nsing < nclosed; ++i)
+        ordered_singulars.emplace(0.0, i);
+
+      shared_ptr<Matrix> Vvirt;
+      Matrix virt_projector = *projector.slice(nclosed, active_size);
+      vector<double> virt_sings(min(nact, virt_projector.mdim()), 0.0);
+      tie(ignore, Vvirt) = virt_projector.svd(virt_sings.data());
+      tmpV.copy_block(nclosed, nclosed, active_size - nclosed, active_size - nclosed, Vvirt->transpose());
+
+      nsing = virt_sings.size();
+      for (int i = 0; i < nsing; ++i)
+        ordered_singulars.emplace(virt_sings[i], i + nclosed);
+      for (int i = nsing; nsing < (active_size - nclosed); ++i)
+        ordered_singulars.emplace(0.0, i + nclosed);
+
+      int iv = 0;
+      for (auto i = ordered_singulars.rbegin(); i != ordered_singulars.rend(); ++i) {
+        singulars[iv] = i->first;
+        copy_n(tmpV.element_ptr(0, i->second), active_size, V->element_ptr(0, iv++));
+      }
+    }
+
+    cout << "    - largest singular value: " << singulars[0] << ", smallest: " << singulars[nact-1] << endl;
 
 #if 0
     cout << "singular values:" << endl;
@@ -489,20 +521,11 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 #endif
 
     Matrix occupations = *V->clone();
-    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
-    for (int i = 0; i < active_size; ++i)
-      if (active_list[i] < nocc) occupations(i,i) = 2.0;
-    occupations = *V * occupations ^ *V;
+    for (int i = 0; i < nclosed; ++i)
+      occupations(i,i) = 2.0;
 
-    // non-active candidate orbitals are mixtures of closed and virtual orbitals
-    // diagonalizing the corresponding block of the density matrix separates the closed from the virtual
-    {
-      vector<double> eigs(active_size, 0.0);
-      Matrix transform = *occupations.diagonalize_blocks(eigs.data(), {{static_cast<int>(nact), static_cast<int>(active_size - nact)}});
-
-      occupations = transform % occupations * transform;
-      subspace = (subspace ^ *V) * transform;
-    }
+    occupations = *V % occupations * *V;
+    subspace = (subspace * *V);
 
     int nactive_ele = 0;
     double occ_in_active = 0.0;
@@ -757,6 +780,97 @@ shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> 
   auto d2 = make_shared<RASDeterminants>(get<0>(ras_desc.second), nelea.second, neleb.second, get<1>(ras_desc.second), get<2>(ras_desc.second), true);
 
   auto out = make_shared<DimerRAS>(make_pair(d1, d2), nelea, neleb);
+
+  vector<vector<int>> spaces_A;
+  vector<vector<int>> spaces_B;
+
+  auto space = idata->get_child_optional("space");
+  if (space) {
+    // TODO make a function
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    spaces_B = spaces_A;
+  }
+  else {
+    auto spacea = idata->get_child_optional("space_a");
+    auto spaceb = idata->get_child_optional("space_b");
+    if (!(spacea && spaceb)) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    }
+    // TODO make a function
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+  }
+
+  Timer castime;
+
+  shared_ptr<const PTree> rasdata = idata->get_child_optional("ras");
+  if (!rasdata) rasdata = make_shared<const PTree>();
+
+  // Embedded RAS-CI calculations
+  cout << "    Starting embedded RAS-CI calculations on monomer A" << endl;
+  for (auto& ispace : spaces_A) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+  cout << endl << "    Starting embedded RAS-CI calculations on monomer B" << endl;
+  for (auto& ispace : spaces_B) {
+    if (ispace.size() != 3) throw runtime_error("Spaces should be input as \"space = charge, spin, nstates\"");
+    const int charge = ispace.at(0);
+    const int spin = ispace.at(1);
+    const int nstate = ispace.at(2);
+
+    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
+
+    cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
+                               << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
+  }
+
+
+  return out;
+}
+
+
+shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const PTree> idata) {
+  embed_refs();
+  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+
+  // { {nras1, nras2, nras3}, max holes, max particles }
+  pair<tuple<array<int, 3>, int, int>, tuple<array<int, 3>, int, int>> ras_desc;
+
+  // Sample:
+  // "restricted" : [ { "orbitals" : [1, 2, 3], "max_holes" : 0, "max_particles" : 2 } ],
+  //  puts 1 orbital in RAS1 with no holes allowed, 2 orbital in RAS2, and 3 orbitals in RAS3 with up to 2 particles
+  auto restrictions = idata->get_child("restricted");
+
+  auto get_restricted_data = [] (shared_ptr<const PTree> i) {
+    return make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+  };
+
+  if (restrictions->size() == 1) {
+    ras_desc = make_pair( get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) );
+  }
+  else if (restrictions->size() == 2) {
+    auto iter = restrictions->begin();
+    auto tmp1 = get_restricted_data(*iter++);
+    auto tmp2 = get_restricted_data(*iter);
+    ras_desc = make_pair(tmp1, tmp2);
+  }
+  else throw logic_error("One or two sets of restrictions must be provided.");
+
+  // This is less than ideal. It'd be better to have some sort of generator object that can be passed around.
+  auto d1 = make_shared<RASDeterminants>(get<0>(ras_desc.first), nelea.first, neleb.first, get<1>(ras_desc.first), get<2>(ras_desc.first), true);
+  auto d2 = make_shared<RASDeterminants>(get<0>(ras_desc.second), nelea.second, neleb.second, get<1>(ras_desc.second), get<2>(ras_desc.second), true);
+
+  auto out = make_shared<DimerDistRAS>(make_pair(d1, d2), nelea, neleb);
 
   vector<vector<int>> spaces_A;
   vector<vector<int>> spaces_B;

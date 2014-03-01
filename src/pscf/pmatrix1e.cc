@@ -251,9 +251,7 @@ void PMatrix1e::init() {
           for (int ibatch1 = 0; ibatch1 != numshell1; ++ibatch1) {
             const int offset1 = coffset1[ibatch1];
             const shared_ptr<const Shell> b1 = shell1[ibatch1];
-            std::vector<RefShell> input;
-            input.push_back(b1);
-            input.push_back(b0);
+            std::array<RefShell,2> input{{ b1, b0 }};
 
             computebatch(input, offset0, offset1, nbasis_, blockoffset);
 
@@ -266,9 +264,6 @@ void PMatrix1e::init() {
 
 
 PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
-  const int unit = 1;
-  const Complex one(1.0, 0.0);
-  const Complex zero(0.0, 0.0);
   const int l = ndim_;
   const int m = mdim_;
   assert(mdim_ == o.ndim());
@@ -286,7 +281,7 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
     const Complex* cdata = data_->pointer(boffset1);
     const Complex* codata = odata->pointer(boffset2);
     Complex* coutdata = outdata->pointer(boffset3);
-    zgemm3m_("N", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &mdim_, &zero, coutdata, &ndim_);
+    zgemm3m_("N", "N", l, n, m, 1.0, cdata, ndim_, codata, mdim_, 0.0, coutdata, ndim_);
   }
 
   return out;
@@ -295,9 +290,6 @@ PMatrix1e PMatrix1e::operator*(const PMatrix1e& o) const {
 
 PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
 
-  const int unit = 1;
-  const Complex one(1.0, 0.0);
-  const Complex zero(0.0, 0.0);
   const int l = mdim_;
   const int m = ndim_;
   assert(ndim_ == o.ndim());
@@ -315,7 +307,7 @@ PMatrix1e PMatrix1e::operator%(const PMatrix1e& o) const {
     const Complex* cdata = data_->pointer(boffset1);
     const Complex* codata = odata->pointer(boffset2);
     Complex* coutdata = outdata->pointer(boffset3);
-    zgemm3m_("C", "N", &l, &n, &m, &one, cdata, &ndim_, codata, &ndim_, &zero, coutdata, &mdim_);
+    zgemm3m_("C", "N", l, n, m, 1.0, cdata, ndim_, codata, ndim_, 0.0, coutdata, mdim_);
   }
 
   return out;

@@ -30,19 +30,16 @@ using namespace std;
 using namespace bagel;
 
 MEH_RAS::MEH_RAS(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer, shared_ptr<DimerRAS> cispace) :
-  MultiExcitonHamiltonian<RASDvec>(input, dimer, cispace)
-{
-  sparse_ = input->get<bool>("sparse", true);
-}
+  MultiExcitonHamiltonian<RASDvec>(input, dimer, cispace) { }
 
 
 shared_ptr<RASDvec> MEH_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop) const {
-  FormSigmaRAS form(sparse_);
+  FormSigmaRAS form;
   vector<int> conv(ccvec->ij(), static_cast<int>(false));
   return form(ccvec, jop, conv);
 }
 
 shared_ptr<RASDvec> MEH_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, const double* modata) const {
-  FormSigmaRAS form(sparse_);
+  FormSigmaRAS form;
   return form(ccvec, modata);
 }

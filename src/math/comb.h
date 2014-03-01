@@ -572,6 +572,8 @@ class Comb {
     size_t c(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; }
 };
 
+}
+
 #endif
 
 #if 0
@@ -603,6 +605,3 @@ int main() {
   return 0;
 }
 #endif
-
-
-}

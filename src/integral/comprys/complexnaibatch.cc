@@ -59,8 +59,6 @@ std::complex<double> ComplexNAIBatch::get_PQ(const double coord1, const double c
 
 void ComplexNAIBatch::compute() {
   const double zero = 0.0;
-  const int zeroint = 0;
-  const int unit = 1;
 
   complex<double>* const stack_save = stack_->template get<complex<double>>(size_alloc_);
   bkup_ = stack_save;

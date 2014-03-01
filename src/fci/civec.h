@@ -44,6 +44,7 @@ template<typename DataType> class Civector;
 template<typename DataType>
 class DistCivector {
   public: using DetType = Determinants;
+  public: using LocalizedType = std::false_type;
 
   protected:
     mutable std::shared_ptr<const Determinants> det_;
@@ -94,6 +95,7 @@ class DistCivector {
       std::copy_n(o.local_.get(), alloc_, local_.get());
       mutex_ = std::vector<std::mutex>(asize());
     }
+    DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
     DistCivector<DataType>& operator=(const DistCivector<DataType>& o) {
       assert(o.size() == size());
@@ -257,14 +259,18 @@ class DistCivector {
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
-      return norm;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const DistCivector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const DistCivector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(DataType(scal));
+      return norm;
     }
 
     // mutex
@@ -356,11 +362,11 @@ class DistCivector {
         std::multimap<double, std::tuple<double, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
         for (int i = 0; i < chunk * mpi__->size(); ++i) {
           if (alldata[i] != 0.0)
-            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->stringa(allabits[i]), det_->stringb(allbbits[i])));
+            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
         }
 
         for (auto& i : tmp) {
-          std::cout << "       " << det_->print_bit(std::get<1>(i.second), std::get<2>(i.second))
+          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det()->norb())
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
 
         }
@@ -390,6 +396,7 @@ using DistDvec = Dvector_base<DistCivec>;
 template<typename DataType>
 class Civector {
   public: using DetType = Determinants; // used to automatically determine type for Determinants object in templates
+  public: using LocalizedType = std::true_type;
 
   protected:
     // The determinant space in which this Civec object is defined
@@ -410,7 +417,29 @@ class Civector {
     DataType* cc() { return cc_ptr_; }
     const DataType* cc() const { return cc_ptr_; }
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      if (!cc_.get())
+        throw std::logic_error("illegal call of Civector<T>::save");
+      ar << det_ << lena_ << lenb_ << make_array(cc(), size());
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> det_ >> lena_ >> lenb_;
+      cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      cc_ptr_ = cc_.get();
+      ar >> make_array(cc(), size());
+    }
+
   public:
+    Civector() { }
+
     Civector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_]);
       cc_ptr_ = cc_.get();
@@ -420,7 +449,6 @@ class Civector {
     // constructor that is called by Dvec.
     Civector(std::shared_ptr<const Determinants> det, DataType* din_) : det_(det), lena_(det->lena()), lenb_(det->lenb()) {
       cc_ptr_ = din_;
-      std::fill_n(cc(), lena_*lenb_, 0.0);
     }
 
     // copy constructor
@@ -521,7 +549,7 @@ class Civector {
       for (int i = 0; i < norb; ++i) {
         for (int j = 0; j < norb; ++j) {
           intermediate->zero();
-          for ( auto& iter : det_->phia(i,j) ) {
+          for (auto& iter : det_->phia(i,j)) {
             const DataType* source = this->element_ptr(0, iter.source);
             DataType* target = intermediate->element_ptr(0, iter.target);
             double sign = static_cast<double>(iter.sign);
@@ -531,7 +559,7 @@ class Civector {
           for (int ia = 0; ia < lena; ++ia) {
             DataType* target_base = out->element_ptr(0, ia);
             const DataType* source_base = intermediate->element_ptr(0, ia);
-            for ( auto& iter : det_->phib(j,i) ) {
+            for (auto& iter : det_->phib(j,i)) {
               target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
             }
           }
@@ -554,9 +582,9 @@ class Civector {
       DataType* source_data = cc_ptr_;
       // This is a safe but probably slow implementation
       for (int aiter = 0; aiter < source_lena; ++aiter) {
-        auto alphastring = source_det->stringa(aiter);
+        const std::bitset<nbit__> alphastring = source_det->string_bits_a(aiter);
         for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
-          auto betastring = source_det->stringb(biter);
+          const std::bitset<nbit__> betastring = source_det->string_bits_b(biter);
           for (int i = 0; i < norb; ++i) {
             std::bitset<nbit__> abit = alphastring;
             std::bitset<nbit__> bbit = betastring;
@@ -596,9 +624,9 @@ class Civector {
       DataType* source_data = cc_ptr_;
       // This is a safe but probably slow implementation
       for (int aiter = 0; aiter < source_lena; ++aiter) {
-        auto alphastring = source_det->stringa(aiter);
+        const std::bitset<nbit__> alphastring = source_det->string_bits_a(aiter);
         for (int biter = 0; biter < source_lenb; ++biter, ++source_data) {
-          auto betastring = source_det->stringb(biter);
+          const std::bitset<nbit__> betastring = source_det->string_bits_b(biter);
           for (int i = 0; i < norb; ++i) {
             std::bitset<nbit__> abit = alphastring;
             std::bitset<nbit__> bbit = betastring;
@@ -629,9 +657,7 @@ class Civector {
       // spin: true -> alpha; false -> beta
 
       std::shared_ptr<const Determinants> source_det = this->det();
-      const int norb = source_det->norb();
 
-      const int source_lena = source_det->lena();
       const int source_lenb = source_det->lenb();
 
       std::shared_ptr<Civector<DataType>> out;
@@ -640,7 +666,6 @@ class Civector {
         std::shared_ptr<const Determinants> target_det = ( action ? source_det->addalpha() : source_det->remalpha() );
         out = std::make_shared<Civector<DataType>>(target_det);
 
-        const int target_lena = target_det->lena();
         const int target_lenb = target_det->lenb();
 
         DataType* target_base = out->data();
@@ -656,7 +681,6 @@ class Civector {
         std::shared_ptr<const Determinants> target_det = ( action ? source_det->addbeta() : source_det->rembeta() );
 
         const int target_lena = target_det->lena();
-        const int target_lenb = target_det->lenb();
 
         out = std::make_shared<Civector<DataType>>(target_det);
 
@@ -697,14 +721,18 @@ class Civector {
     double orthog(std::list<std::shared_ptr<const Civector<DataType>>> c) {
       for (auto& iter : c)
         project_out(iter);
-      const double norm = this->norm();
-      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(scal);
-      return 1.0/scal;
+      return normalize();
     }
 
     double orthog(std::shared_ptr<const Civector<DataType>> o) {
       return orthog(std::list<std::shared_ptr<const Civector<DataType>>>{o});
+    }
+
+    double normalize() {
+      const double norm = this->norm();
+      const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
+      scale(scal);
+      return 1.0/scal;
     }
 
     void project_out(std::shared_ptr<const Civector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
@@ -713,15 +741,15 @@ class Civector {
       const DataType* i = cc();
       // multimap sorts elements so that they will be shown in the descending order in magnitude
       std::multimap<double, std::tuple<DataType, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
-      for (auto& ia : det_->stringa()) {
-        for (auto& ib : det_->stringb()) {
+      for (auto& ia : det_->string_bits_a()) {
+        for (auto& ib : det_->string_bits_b()) {
           if (std::abs(*i) > thr)
             tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
           ++i;
         }
       }
       for (auto& iter : tmp)
-        std::cout << "       " << det_->print_bit(std::get<1>(iter.second), std::get<2>(iter.second))
+        std::cout << "       " << print_bit(std::get<1>(iter.second), std::get<2>(iter.second), det()->norb())
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 
@@ -744,5 +772,8 @@ using Civec = Civector<double>;
 using ZCivec = Civector<std::complex<double>>;
 
 }
+
+extern template class bagel::Civector<double>;
+extern template class bagel::Civector<std::complex<double>>;
 
 #endif

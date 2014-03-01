@@ -91,7 +91,6 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
   const bool noaa =  base_det->nelea() <= 1 || base_det->neleb()+1 > norb_;
 
   const bool output1 = base_det->nelea()-1 >= 0 && base_det->neleb()+1 <= norb_;
-  const bool output2 = base_det->nelea()-2 >= 0 && base_det->neleb()+2 <= norb_;
 
   if (!noab && (diag || output1)) {
     shared_ptr<const Determinants> int_det = int_space_->finddet(nelea-1, neleb-1);
@@ -173,8 +172,10 @@ void ZHarrison::sigma_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigma, 
 
   const int lb = cc->lenb();
   complex<double>* target = sigma->data();
-  for (auto aiter = det->stringa().begin(); aiter != det->stringa().end(); ++aiter, target+=lb)
-    tasks.emplace_back(cc, *aiter, target, h1->data(), h2->data());
+  for (auto& a : det->string_bits_a()) {
+    tasks.emplace_back(cc, a, target, h1->data(), h2->data());
+    target += lb;
+  }
 
   tasks.compute();
 }
@@ -196,7 +197,7 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
 
   // One-electron part
   for (int i = 0; i != norb_; ++i) {
-    for (auto& a : sigmadet->stringa()) {
+    for (auto& a : sigmadet->string_bits_a()) {
       if (a[i]) continue;
       auto ca = a; ca.set(i);
       const complex<double>* source =    cc->data() + lbs * ccdet->lexical<0>(ca);
@@ -204,7 +205,7 @@ void ZHarrison::sigma_1e_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZCivec> sigm
       const double asign = ccdet->sign<0>(ca, i);
 
       for (int j = 0; j != norb_; ++j) {
-        for (auto& b : ccdet->stringb()) {
+        for (auto& b : ccdet->string_bits_b()) {
           if (b[j]) continue;
           auto cb = b; cb.set(j);
           const complex<double> fac = h1->element(j,i) * (sigmadet->sign<1>(b, j) * asign);
@@ -229,7 +230,7 @@ void ZHarrison::sigma_2e_annih_aa(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
     for (int j = 0; j != norb_; ++j) {
       if (i == j) continue;
       complex<double>* target = d->data(j+norb_*i)->data();
-      for (auto& a : d->det()->stringa()) {
+      for (auto& a : d->det()->string_bits_a()) {
         if (a[i] || a[j]) continue;
         auto ca = a; ca.set(i); ca.set(j);
         const double factor = Determinants::sign(a, i, j) * (i < j ? -1.0 : 1.0);
@@ -247,7 +248,6 @@ void ZHarrison::sigma_2e_annih_ab(shared_ptr<const ZCivec> cc, shared_ptr<ZDvec>
   shared_ptr<const Determinants> bdet = cc->det(); // base
   shared_ptr<const Determinants> tdet = d->det();  // target
 
-  const int lbt = tdet->lenb();
   const int lbs = bdet->lenb();
   const complex<double>* source_base = cc->data();
 
@@ -315,7 +315,7 @@ void ZHarrison::sigma_2e_create_bb(shared_ptr<ZCivec> sigma, shared_ptr<const ZD
         complex<double>* target = target_base + ia*lbt;
         const complex<double>* source = source_base + ia*lbs;
 
-        for (auto& b : int_det->stringb()) {
+        for (auto& b : int_det->string_bits_b()) {
           if (b[i] || b[j]) continue;
           bitset<nbit__> cb = b;
           cb.set(i); cb.set(j);

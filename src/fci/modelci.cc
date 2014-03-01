@@ -201,8 +201,6 @@ class CISpinTask : public CITask {
 
         const int nexch = (abra ^ aket).count() + (bbra ^ bket).count();
 
-        const int norb = norb_;
-
         if (nexch == 0) {
           const double sz = 0.5*static_cast<double>(bra.first.count() - bra.second.count());
           out += sz*sz + sz + static_cast<double>(bket.count());

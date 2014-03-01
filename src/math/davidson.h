@@ -33,37 +33,57 @@
 #ifndef __BAGEL_UTIL_DAVIDSON
 #define __BAGEL_UTIL_DAVIDSON
 
-#include <list>
+#include <vector>
 #include <src/math/algo.h>
 #include <src/util/f77.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
 template <typename T, class MatType = Matrix>
 class DavidsonDiag {
   protected:
-    const int nstate_;
-    const int max_;
+    struct BasisPair {
+      public:
+        std::shared_ptr<const T> cc;
+        std::shared_ptr<const T> sigma;
+        BasisPair() { }
+        BasisPair(std::shared_ptr<const T> a, std::shared_ptr<const T> b) : cc(a), sigma(b) { }
+      private:
+        // serialization
+        friend class boost::serialization::access;
+        template<class Archive>
+        void serialize(Archive& ar, const unsigned int) { ar & cc & sigma; }
+    };
+
+    int nstate_;
+    int max_;
     int size_;
 
-    std::list<std::shared_ptr<const T>> c_;
-    std::list<std::shared_ptr<const T>> sigma_;
+    std::vector<std::shared_ptr<BasisPair>> basis_;
 
-    // contains
+    // Hamiltonian
     std::shared_ptr<MatType> mat_;
-    // scratch area for diagonalization
-    std::shared_ptr<MatType> scr_;
-    std::unique_ptr<double[]> vec_;
+    // eivenvalues
+    std::vector<double> vec_;
     // an eigenvector
     std::shared_ptr<MatType> eig_;
     // overlap matrix
     std::shared_ptr<MatType> overlap_;
-    std::shared_ptr<MatType> ovlp_scr_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & nstate_ & max_ & size_ & basis_ & mat_ & vec_ & eig_ & overlap_;
+    }
 
   public:
     // Davidson with periodic collapse of the subspace
-    DavidsonDiag(int n, int max) : nstate_(n), max_(max*n), size_(0), mat_(std::make_shared<MatType>(max_,max_,true)),
-                                 vec_(new double[max_]), overlap_(std::make_shared<MatType>(max_,max_,true)) {
+    DavidsonDiag() { }
+    DavidsonDiag(int n, int max) : nstate_(n), max_((max+1)*n), size_(0), vec_(max_) {
+      if (max < 2) throw std::runtime_error("Davidson diagonalization requires at least two trial vectors per root.");
     }
 
     double compute(std::shared_ptr<const T> cc, std::shared_ptr<const T> cs) {
@@ -73,57 +93,121 @@ class DavidsonDiag {
     }
 
     std::vector<double> compute(std::vector<std::shared_ptr<const T>> cc, std::vector<std::shared_ptr<const T>> cs) {
-      if (size_ + cc.size() > max_)
-        collapse_subspace();
+      // reset the convergence flags
+      std::vector<bool> converged(nstate_, false);
 
-      // add entry
-      for (auto& it : cc) c_.push_back(it);
-      for (auto& it : cs) sigma_.push_back(it);
+      // new pairs
+      std::vector<std::shared_ptr<BasisPair>> newbasis;
+      assert(cc.size() == nstate_ && cs.size() == nstate_);
+      for (int ic = 0; ic < nstate_; ++ic) {
+        assert(!cc[ic] == !cs[ic]);
+        if (cc[ic] && cs[ic])
+          newbasis.push_back(std::make_shared<BasisPair>(cc[ic], cs[ic]));
+        else
+          converged[ic] = true;
+      }
 
       // adding new matrix elements
-      auto icivec = cc.begin();
-      for (auto isigma = cs.begin(); isigma != cs.end(); ++isigma, ++icivec) {
+      {
+        const int n = newbasis.size();
+        mat_ = mat_ ? mat_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n);
+        overlap_ = overlap_ ? overlap_->resize(size_+n, size_+n) : std::make_shared<MatType>(n, n);
+      }
+
+      basis_.insert(basis_.end(), newbasis.begin(), newbasis.end());
+      for (auto& ib : newbasis) {
         ++size_;
-        auto cciter = c_.begin();
-        for (int i = 0; i != size_; ++i, ++cciter) {
-          mat_->element(i, size_-1) = (*cciter)->dot_product(**isigma);
+        int i = 0;
+        for (auto& b : basis_) {
+          if (i > size_-1) break;
+          mat_->element(i, size_-1) = b->cc->dot_product(ib->sigma);
           mat_->element(size_-1, i) = detail::conj(mat_->element(i, size_-1));
 
-          overlap_->element(i, size_-1) = (*cciter)->dot_product(**icivec);
+          overlap_->element(i, size_-1) = b->cc->dot_product(ib->cc);
           overlap_->element(size_-1, i) = detail::conj(overlap_->element(i, size_-1));
+          ++i;
         }
       }
 
-      if ( std::fabs(static_cast<double>(size_) - overlap_->dot_product(*overlap_)) > 1.0e-6 )
-        ovlp_scr_ = overlap_->get_submatrix(0, 0, size_, size_)->tildex();
+      // canonical orthogonalization
+      std::shared_ptr<const MatType> ovlp_scr = overlap_->tildex();
 
       // diagonalize matrix to get
-      scr_ = mat_->get_submatrix(0, 0, size_, size_);
-      if (ovlp_scr_) scr_ = std::make_shared<MatType>(*ovlp_scr_ % *scr_ * *ovlp_scr_);
-      scr_->diagonalize(vec_.get());
-      if (ovlp_scr_) scr_ = std::make_shared<MatType>(*ovlp_scr_ * *scr_);
+      eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
+      eig_->diagonalize(vec_.data());
+      eig_ = std::make_shared<MatType>(*ovlp_scr * *eig_);
+      eig_ = eig_->slice(0,nstate_);
 
-      // orthogonalize ci vectors
-      if (ovlp_scr_)
-        orthogonalize_subspace();
+      // first basis vector is always the current best guess
+      std::vector<std::shared_ptr<T>> cv = civec();
+      std::vector<std::shared_ptr<T>> sv = sigmavec();
+      for (int i = 0; i != nstate_; ++i)
+        basis_[i] = std::make_shared<BasisPair>(cv[i], sv[i]);
 
-      eig_ = scr_->slice(0,nstate_);
+      // due to this, we need to transform mat_ and overlap_
+      auto trans = eig_->resize(eig_->ndim(), eig_->ndim());
+      for (int i = nstate_; i != eig_->ndim(); ++i)
+        trans->element(i, i) = 1.0;
+      mat_ = std::make_shared<MatType>(*trans % *mat_ * *trans);
+      overlap_ = std::make_shared<MatType>(*trans % *overlap_ * *trans);
 
-      return std::vector<double>(vec_.get(), vec_.get()+nstate_);
+      eig_->zero();
+      for (int i = 0; i != nstate_; ++i)
+        eig_->element(i, i) = 1.0;
+
+      // possibly reduce the dimension
+      assert(size_ == basis_.size());
+      if (size_ > max_-nstate_) {
+        std::map<int, int> remove;
+        const int soff = size_ - newbasis.size();
+        for (int i = 0; i != nstate_; ++i) {
+          if (converged[i]) continue;
+          // a vector with largest weight will be removed.
+          int n = 0;
+          double abs = 1.0e10;
+          for (int j = nstate_; j < soff; ++j) {
+            if (std::abs(trans->element(j, i)) < abs) {
+              if (remove.find(j) != remove.end()) continue;
+              abs = std::abs(trans->element(j, i));
+              n = j;
+            }
+          }
+          remove.insert(std::make_pair(n, soff+remove.size()));
+        }
+        assert(newbasis.size() == remove.size());
+        std::cout << "    ** throwing out " << remove.size() << " trial vectors **" << std::endl;
+        for (auto m : remove) {
+          basis_[m.first] = basis_[m.second];
+          mat_->copy_block(0, m.first, size_, 1, mat_->get_submatrix(0, m.second, size_, 1));
+          mat_->copy_block(m.first, 0, 1, size_, mat_->get_submatrix(m.second, 0, 1, size_));
+          overlap_->copy_block(0, m.first, size_, 1, overlap_->get_submatrix(0, m.second, size_, 1));
+          overlap_->copy_block(m.first, 0, 1, size_, overlap_->get_submatrix(m.second, 0, 1, size_));
+
+          trans->copy_block(m.first, 0, 1, nstate_, trans->get_submatrix(m.second, 0, 1, nstate_));
+        }
+        basis_ = std::vector<std::shared_ptr<BasisPair>>(basis_.begin(), basis_.end()-remove.size());
+        size_ = basis_.size();
+        mat_ = mat_->get_submatrix(0, 0, size_, size_);
+        overlap_ = overlap_->get_submatrix(0, 0, size_, size_);
+      }
+
+      return std::vector<double>(vec_.data(), vec_.data()+nstate_);
     }
 
     // perhaps can be cleaner.
     std::vector<std::shared_ptr<T>> residual() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        auto tmp = c_.front()->clone();
+        auto tmp = basis_.front()->cc->clone();
         int k = 0;
-        for (auto& iv : c_) {
-          tmp->ax_plus_y(-vec_[i]*eig_->element(k++,i), iv);
+        for (auto& iv : basis_) {
+          if ( std::abs(eig_->element(k++,i)) > 1.0e-16 )
+            tmp->ax_plus_y(-vec_[i]*eig_->element(k-1,i), iv->cc);
         }
         k = 0;
-        for (auto& iv : sigma_) {
-          tmp->ax_plus_y(eig_->element(k++,i), iv);
+        for (auto& iv : basis_) {
+          if (std::abs(eig_->element(k++,i)) > 1.0e-16 )
+            tmp->ax_plus_y(eig_->element(k-1,i), iv->sigma);
         }
         out.push_back(tmp);
       }
@@ -134,94 +218,28 @@ class DavidsonDiag {
     std::vector<std::shared_ptr<T>> civec() {
       std::vector<std::shared_ptr<T>> out;
       for (int i = 0; i != nstate_; ++i) {
-        auto tmp = c_.front()->clone();
+        auto tmp = basis_.front()->cc->clone();
         int k = 0;
-        for (auto& iv : c_) {
-          tmp->ax_plus_y(eig_->element(k++,i), iv);
+        for (auto& iv : basis_) {
+          tmp->ax_plus_y(eig_->element(k++,i), iv->cc);
         }
         out.push_back(tmp);
       }
       return out;
     }
 
-    // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T>& cc) { return cc->orthog(c_); }
-
-    void collapse_subspace() {
-      mat_->zero();
-      for (int i = 0; i < nstate_; ++i)
-        mat_->element(i,i) = vec_[i];
-
-      overlap_->zero();
-      for (int i = 0; i < nstate_; ++i)
-        overlap_->element(i,i) = 1.0;
-
-      {
-        std::list<std::shared_ptr<const T>> collapsed_c;
-        for (int i = 0; i < nstate_; ++i) {
-          auto tmp_c = c_.front()->clone();
-          int k = 0;
-          for (auto ic = c_.begin(); ic != c_.end(); ++ic, ++k)
-            tmp_c->ax_plus_y(eig_->element(k, i), *ic);
-          collapsed_c.push_back(tmp_c);
+    // return sigma vector
+    std::vector<std::shared_ptr<T>> sigmavec() {
+      std::vector<std::shared_ptr<T>> out;
+      for (int i = 0; i != nstate_; ++i) {
+        auto tmp = basis_.front()->sigma->clone();
+        int k = 0;
+        for (auto& iv : basis_) {
+          tmp->ax_plus_y(eig_->element(k++,i), iv->sigma);
         }
-        c_ = std::move(collapsed_c);
+        out.push_back(tmp);
       }
-      {
-        std::list<std::shared_ptr<const T>> collapsed_s;
-        for (int i = 0; i < nstate_; ++i) {
-          auto tmp_s = sigma_.front()->clone();
-          int k = 0;
-          for (auto is = sigma_.begin(); is != sigma_.end(); ++is, ++k)
-            tmp_s->ax_plus_y(eig_->element(k, i), *is);
-          collapsed_s.push_back(tmp_s);
-        }
-        sigma_ = std::move(collapsed_s);
-      }
-
-      std::fill(vec_.get() + nstate_, vec_.get() + max_, 0.0);
-      size_ = nstate_;
-    }
-
-    void orthogonalize_subspace() {
-      const int size = scr_->mdim();
-      {
-        std::list<std::shared_ptr<const T>> collapsed_c;
-        for (int i = 0; i < size; ++i) {
-          auto tmp_c = c_.front()->clone();
-          int k = 0;
-          for (auto ic = c_.begin(); ic != c_.end(); ++ic, ++k)
-            tmp_c->ax_plus_y(scr_->element(k, i), *ic);
-          collapsed_c.push_back(tmp_c);
-        }
-        c_ = std::move(collapsed_c);
-      }
-      {
-        std::list<std::shared_ptr<const T>> collapsed_s;
-        for (int i = 0; i < size; ++i) {
-          auto tmp_s = sigma_.front()->clone();
-          int k = 0;
-          for (auto is = sigma_.begin(); is != sigma_.end(); ++is, ++k)
-            tmp_s->ax_plus_y(scr_->element(k, i), *is);
-          collapsed_s.push_back(tmp_s);
-        }
-        sigma_ = std::move(collapsed_s);
-      }
-
-      // update mat_ which should be diagonal
-      mat_->zero();
-      for (int i = 0; i < size; ++i)
-        mat_->element(i,i) = vec_[i];
-
-      overlap_->zero();
-      for (int i = 0; i < size; ++i)
-        overlap_->element(i,i) = 1.0;
-
-      scr_ = std::make_shared<MatType>(size, size); scr_->unit();
-      ovlp_scr_.reset();
-
-      std::fill(vec_.get() + size, vec_.get() + max_, 0.0);
-      size_ = size;
+      return out;
     }
 
 };

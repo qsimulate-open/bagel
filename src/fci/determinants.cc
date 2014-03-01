@@ -24,104 +24,61 @@
 //
 
 #include <stdexcept>
+#include <iomanip>
 #include <src/fci/determinants.h>
-#include <src/math/comb.h>
 #include <src/util/combination.hpp>
 #include <src/util/constants.h>
+#include <src/math/comb.h>
 
-#include <bitset>
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Determinants)
 
 using namespace std;
 using namespace bagel;
 
 const static Comb comb;
 
-Determinants::Determinants(const int _norb, const int _nelea, const int _neleb, const bool _compress, const bool mute)
-  : norb_(_norb), nelea_(_nelea), neleb_(_neleb), compress_(_compress) {
+using FCIStringSet = CIStringSet<FCIString>;
 
-  if (!mute) cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
-  if (!mute) cout << "  o lexical mappings" << endl;
-  const_lexical_mapping_();
-  if (!mute) cout << "  o alpha-beta strings" << endl;
-  const_string_lists_();
-  if (!mute) cout << "      length: " << setw(13) << stringa_.size() + stringb_.size() << endl;
-  if (!mute) cout << "  o single displacement lists (alpha)" << endl;
-  const_phis_<0>(stringa_, phia_, phia_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phia_.begin(), phia_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o single displacement lists (beta)" << endl;
-  const_phis_<1>(stringb_, phib_, phib_uncompressed_);
-  if (!mute) cout << "      length: " << setw(13) << accumulate(phib_.begin(), phib_.end(), 0, [] (const int init, vector<DetMap> plist) { return init + plist.size(); }) << endl;
-  if (!mute) cout << "  o size of the space " << endl;
-  if (!mute) cout << "      determinant space:  " << lena() * lenb() << endl;
-  if (!mute) cout << "      spin-adapted space: " << ncsfs() << endl << endl;
-
-}
-
-size_t Determinants::ncsfs() const {
-  const int twoS = abs(nspin());
-  const int N = nelea() + neleb();
-  const int M = norb();
-  size_t out = (twoS + 1) * comb.c( M + 1, (N - twoS)/2 ) * comb.c( M + 1, (M - ((N + twoS)/2)) );
-  out /= M + 1;
-
-  return out;
+Determinants::Determinants(const int norb, const int nelea, const int neleb, const bool compress, const bool mute)
+ : Determinants(make_shared<FCIString>(nelea, norb), make_shared<FCIString>(neleb, norb), compress, mute) {
 }
 
 
-void Determinants::const_string_lists_() {
-  vector<int> data(norb_);
-  iota(data.begin(), data.end(), 0);
-
-  const int lengtha = comb.c(norb_, nelea_);
-  const int lengthb = comb.c(norb_, neleb_);
-  stringa_.resize(lengtha);
-  stringb_.resize(lengthb);
-  fill(stringa_.begin(), stringa_.end(), bitset<nbit__>(0));
-  fill(stringb_.begin(), stringb_.end(), bitset<nbit__>(0));
-
-  vector<bitset<nbit__>>::iterator sa = stringa_.begin();
-  do {
-    for (int i=0; i!=nelea_; ++i) sa->set(data[i]);
-    ++sa;
-  } while (boost::next_combination(data.begin(), data.begin()+nelea_, data.end()));
-
-  sa = stringb_.begin();
-  do {
-    for (int i=0; i!=neleb_; ++i) sa->set(data[i]);
-    ++sa;
-  } while (boost::next_combination(data.begin(), data.begin()+neleb_, data.end()));
-
+Determinants::Determinants(shared_ptr<const FCIString> ast, shared_ptr<const FCIString> bst, const bool compress, const bool mute)
+ : Determinants(make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{ast}), make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{bst}), compress, mute) {
 }
 
 
-void Determinants::const_lexical_mapping_() {
-  // combination numbers up to 31 orbitals (util/comb.h)
-  zkl_.resize(nelea_ * norb_ + neleb_ * norb_);
-  fill(zkl_.begin(), zkl_.end(), 0u);
+Determinants::Determinants(shared_ptr<const FCIStringSet> ast, shared_ptr<const FCIStringSet> bst, const bool compress, const bool mute) {
+  compress_    = compress;
+  alphaspaces_ = ast;
+  betaspaces_  = bst;
 
-  // this part is 1 offset due to the convention of Knowles & Handy's paper.
-  // Just a blind copy from the paper without understanding much, but the code below works.
-  if( nelea_ != 0 ) { // There may be a better way to deal with zero electrons...
-    for (int k = 1; k < nelea_; ++k) {
-      for (int l = k; l <= norb_-nelea_+k; ++l) {
-        for (int m = norb_-l+1; m <= norb_-k; ++m) {
-          zkl(k-1, l-1, Alpha) += comb.c(m, nelea_-k) - comb.c(m-1, nelea_-k-1);
-        }
-      }
-    }
-    for (int l = nelea_; l <= norb_; ++l) zkl(nelea_-1, l-1, Alpha) = l - nelea_;
-  }
+  for (auto& a : *alphaspaces_)
+    for (auto& b : *betaspaces_)
+      blockinfo_.push_back(make_shared<CIBlockInfo<FCIString>>(a, b));
 
-  if (nelea_ == neleb_) {
-    copy(zkl_.begin(), zkl_.begin() + nelea_*norb_, zkl_.begin() + nelea_*norb_);
-  } else {
-    if( neleb_ != 0 ) {
-      for (int k = 1; k < neleb_; ++k)
-        for (int l = k; l <= norb_-neleb_+k; ++l)
-          for (int m = norb_-l+1; m <= norb_-k; ++m)
-            zkl(k-1, l-1, Beta) += comb.c(m, neleb_-k) - comb.c(m-1, neleb_-k-1);
-      for (int l = neleb_; l <= norb_; ++l) zkl(neleb_-1, l-1, Beta) = l - neleb_;
-    }
+  phia_ = compress_ ? ast->phi() : ast->uncompressed_phi();
+  phia_uncompressed_ = ast->uncompressed_phi();
+  phib_ = compress_ ? bst->phi() : bst->uncompressed_phi();
+  phib_uncompressed_ = bst->uncompressed_phi();
+
+  if (!mute) {
+    const int twoS = abs(nspin());
+    const int N = nelea() + neleb();
+    const size_t out = (twoS + 1) * comb.c(norb()+1, (N-twoS)/2) * comb.c(norb()+1, (norb()-((N+twoS)/2)));
+    const size_t ncsfs = out / (norb()+1);
+
+    cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;
+    cout << "  o alpha-beta strings" << endl;
+    cout << "      length: " << setw(13) << lena() + lenb() << endl;
+    cout << "  o size of the space " << endl;
+    cout << "      determinant space:  " << lena() * lenb() << endl;
+    cout << "      spin-adapted space: " << ncsfs << endl << endl;
+    cout << "  o single displacement lists (alpha)" << endl;
+    cout << "      length: " << setw(13) << phia_->size() << endl;
+    cout << "  o single displacement lists (beta)" << endl;
+    cout << "      length: " << setw(13) << phib_->size() << endl;
   }
 }
 
@@ -182,4 +139,36 @@ pair<vector<tuple<int, int, int>>, double> Determinants::spin_adapt(const int sp
   // scale to make the vector normalized
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
   return make_pair(out, factor);
+}
+
+
+void Determinants::link(shared_ptr<Determinants> odet, shared_ptr<CIStringSpace<FCIStringSet>> spacea,
+                                                       shared_ptr<CIStringSpace<FCIStringSet>> spaceb) {
+  shared_ptr<Determinants> plusdet;
+  shared_ptr<Determinants> det;
+
+  const bool spinb = this->nelea() == odet->nelea();
+  const bool spina = this->neleb() == odet->neleb();
+  if (!(spina || spinb)) return; // quick return
+
+  const int de = spina ? this->nelea() - odet->nelea() : this->neleb() - odet->neleb();
+  if      (de ==  1) tie(det, plusdet) = make_pair(odet, shared_from_this());
+  else if (de == -1) tie(det, plusdet) = make_pair(shared_from_this(), odet);
+  else return; // quick return
+
+  // finally link
+  if (spina) {
+    plusdet->set_remalpha(det);
+    plusdet->set_phidowna(spacea->phidown(plusdet->stringspacea()));
+
+    det->set_addalpha(plusdet);
+    det->set_phiupa(spacea->phiup(det->stringspacea()));
+  } else {
+    plusdet->set_rembeta(det);
+    plusdet->set_phidownb((nelea()&1) ? spaceb->phidown(plusdet->stringspaceb())->get_minus()
+                                      : spaceb->phidown(plusdet->stringspaceb()));
+    det->set_addbeta(plusdet);
+    det->set_phiupb((nelea()&1) ? spaceb->phiup(det->stringspaceb())->get_minus()
+                                : spaceb->phiup(det->stringspaceb()));
+  }
 }

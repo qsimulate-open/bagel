@@ -40,7 +40,7 @@ class RASCI : public Method {
   protected:
     // max #iteration
     int max_iter_;
-    int davidsonceiling_;
+    int davidson_subspace_;
     int nguess_;
 
     // threshold for variants
@@ -58,9 +58,6 @@ class RASCI : public Method {
 
     // number of states
     int nstate_;
-
-    // options
-    bool sparse_;
 
     // properties to be calculated
     //std::vector<std::shared_ptr<CIProperties>> properties_;

@@ -33,14 +33,27 @@ namespace bagel {
 
 class Overlap : public Matrix1e {
   protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int) override;
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix1e>(*this);
+    }
 
   public:
+    Overlap() { }
     Overlap(const std::shared_ptr<const Molecule>);
 
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Overlap)
 
 #endif
 

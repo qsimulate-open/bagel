@@ -30,16 +30,16 @@
 using namespace std;
 using namespace bagel;
 
-DipoleMatrix::DipoleMatrix(const shared_ptr<const Molecule> mo) : Matrix1eArray<3>(mo) {
-  init();
+DipoleMatrix::DipoleMatrix(const shared_ptr<const Molecule> mol) : Matrix1eArray<3>(mol) {
+  init(mol);
   fill_upper();
 }
 
-void DipoleMatrix::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
+void DipoleMatrix::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
   // input = [b1, b0]
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  DipoleBatch dipole(input, mol_);
+  DipoleBatch dipole(input, mol);
   dipole.compute();
 
   for (int i = 0; i < Nblocks(); ++i) {
