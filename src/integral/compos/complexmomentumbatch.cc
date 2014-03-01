@@ -39,6 +39,7 @@ void ComplexMomentumBatch::compute() {
   const CSortList sort_ (spherical_);
 
   complex<double>* const intermediate_p = stack_->get<complex<double>>(size_block_*3);
+  fill_n(intermediate_p, size_block_*3, 0.0);
   perform_VRR(intermediate_p);
 
   for (int i = 0; i != 3; ++i) {
@@ -53,6 +54,7 @@ void ComplexMomentumBatch::compute() {
     if (basisinfo_[0]->spherical() && basisinfo_[1]->spherical()) {
       // transform both indices to spherical
       complex<double>* const intermediate_i = stack_->get<complex<double>>(cont0_ * cont1_ * asize_final_);
+      fill_n(intermediate_i, cont0_ * cont1_ * asize_final_, 0.0);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       const int nloops = cont0_ * cont1_;
       carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
@@ -195,7 +197,6 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
   stack_->release(worksize*worksize, worksx);
 }
 
-// TODO For efficiency's sake, it's probably best to find a way to avoid repeatedly running basisinfo_[i]->vector_potential(j) each time we want to get a P or Q value
 std::complex<double> ComplexMomentumBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                                  const int dim, const bool swap) {
   const double Areal = coord1*exp1;

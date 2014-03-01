@@ -156,6 +156,7 @@ int main (int argc, char*argv[]) {
   if (calculation == 'E') cout << "Full ERI summation over four molecular orbitals specified below,";
   else if (calculation == 'N') cout << "Full NAI summation over two molecular orbitals and " << natom << " nuclei specified below,";
   else if (calculation == 'T') cout << "Full kinetic energy summation over two molecular orbitals specified below,";
+  else if (calculation == 'P') cout << "Full momentum summation over two molecular orbitals specified below,";
   else throw runtime_error ("Desired calculation not recognized.  Enter 'E' for ERI or 'N' for NAI.");
   if (scale_input) cout << "with coefficients scaled to one, ";
   else cout << "with coefficients taken as-is, ";

@@ -27,18 +27,6 @@
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 
-#if 0 // for testing:
-#include <iostream>
-#include <src/integral/os/kineticbatch.h>
-#include <src/integral/os/momentumbatch.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/integral/compos/complexkineticbatch.h>
-#include <src/integral/compos/complexmomentumbatch.h>
-#include <src/integral/compos/complexoverlapbatch.h>
-#include <src/integral/compos/matrix_interface.h>
-#include <src/molecule/mixedbasis.h>
-#endif
-
 using namespace bagel;
 using namespace std;
 
@@ -46,65 +34,6 @@ BOOST_CLASS_EXPORT_IMPLEMENT(SCF)
 
 SCF::SCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
-
-#if 0
-/**** Test Kinetic Energy and Momentum Integrals ****/
-
-cout << endl << "--------------- Testing Integrals --------------- " << endl;
-
-// Creates another version of geom_ that uses the (large) auxiliary basis
-auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
-
-// Creates two new geometries, auxgeom and refgeom, which use the desired atoms
-vector<shared_ptr<const Atom>> refatom, auxatom;
-refatom.push_back(geom_->atoms(0));
-auxatom.push_back(mol->atoms(0));
-auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
-
-// one atom
-auto refgeom = make_shared<const Geometry>(refatom, make_shared<const PTree>());
-auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
-
-// all atoms
-//auto refgeom = make_shared<const Geometry>(geom_->atoms(), make_shared<const PTree>());
-//auto auxgeom = make_shared<const Geometry>(mol->atoms(), make_shared<const PTree>());
-cout << "auxgeom: " << endl;  auxgeom->print_atoms();
-cout << "refgeom: " << endl;  refgeom->print_atoms();
-cout << "auxmol: " << endl;  auxmol->print_atoms();
-
-// Create S-1
-MixedBasis<RealLondon<ComplexOverlapBatch>, const bool, const int, const int> S_R (auxgeom, auxgeom, 0, 1, 1);
-MixedBasis<RealLondon<ComplexOverlapBatch>, const bool, const int, const int> S_I (auxgeom, auxgeom, 1, 1, 1);
-const complex<Matrix> S (S_R, S_I);
-const complex<Matrix> Si = inverse(S);
-(S*Si).real().print("I", 30);
-(S*Si).imag().print("0", 30);
-
-MixedBasis<RealLondon<ComplexKineticBatch>, const bool, const int, const int> T_R (refgeom, refgeom, 0, 1, 1);
-MixedBasis<RealLondon<ComplexKineticBatch>, const bool, const int, const int> T_I (refgeom, refgeom, 1, 1, 1);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> px_R (auxmol, refgeom, 0, 3, 1);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> px_I (auxmol, refgeom, 1, 3, 1);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> py_R (auxmol, refgeom, 0, 3, 2);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> py_I (auxmol, refgeom, 1, 3, 2);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> pz_R (auxmol, refgeom, 0, 3, 3);
-MixedBasis<RealLondon<ComplexMomentumBatch>, const bool, const int, const int> pz_I (auxmol, refgeom, 1, 3, 3);
-
-const complex<Matrix> T (T_R, T_I);
-const complex<Matrix> px (px_R, px_I);
-const complex<Matrix> py (py_R, py_I);
-const complex<Matrix> pz (pz_R, pz_I);
-const complex<Matrix> TT = multiply (px, Si, transpose(px)) + multiply (py, Si, transpose(py)) + multiply (pz, Si, transpose(pz));
-//const complex<Matrix> TT = multiply (transpose(multiply(Si, px)), px) + multiply (transpose(multiply(Si, py)), py) + multiply (transpose(multiply(Si, pz)), pz);
-
-T.real().print("kinetic, real", 40);
-T.imag().print("kinetic, imag", 40);
-TT.real().print("res ID , real", 40);
-TT.imag().print("res ID , imag", 40);
-
-cout << endl << "------------------------------------------------- " << endl;
-
-/**** Done Testing ****/
-#endif
 
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");

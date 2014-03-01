@@ -1203,11 +1203,6 @@ std::complex<double> kinetic (const std::vector<double> field, atomic_orbital A_
   A.change_angular(ax+2,ay  ,az  );
   TSS += 4.0 * alpha * alpha * overlap(field,A,B);
 
-  //cout << "Fakebagel:  S_xS_yS_z = " << SSS << endl;
-  //cout << "Fakebagel:  o_xS_yS_z = " << oSS << endl;
-  //cout << "Fakebagel:  t_xS_yS_z = " << tSS << endl;
-  //cout << "Fakebagel:  d_xS_yS_z = " << dSS << endl;
-  //cout << "Fakebagel:  T_xS_yS_z = " << TSS << endl;
   */
 
   return 0.5 * out;
