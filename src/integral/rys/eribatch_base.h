@@ -35,7 +35,7 @@
 namespace bagel {
 
 template <typename DataType, Int_t IntType = Int_t::Standard>
-class ERIBatch_Base : public RysIntegral<DataType> {
+class ERIBatch_Base : public RysIntegral<DataType,IntType> {
 
   protected:
 
@@ -57,7 +57,7 @@ class ERIBatch_Base : public RysIntegral<DataType> {
   public:
 
     ERIBatch_Base(const std::array<std::shared_ptr<const Shell>,4>& o, const int deriv, const int breit = 0,
-              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType>(o, stack) {
+              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>()) : RysIntegral<DataType, IntType>(o, stack) {
 
       breit_ = breit;
       deriv_rank_ = deriv;
@@ -83,38 +83,38 @@ class ERIBatch_Base : public RysIntegral<DataType> {
 
 
   protected:
-    using RysIntegral<DataType>::basisinfo_;
-    using RysIntegral<DataType>::stack_;
-    using RysIntegral<DataType>::stack_save_;
-    using RysIntegral<DataType>::stack_save2_;
-    using RysIntegral<DataType>::AB_;
-    using RysIntegral<DataType>::CD_;
-    using RysIntegral<DataType>::contsize_;
-    using RysIntegral<DataType>::asize_;
-    using RysIntegral<DataType>::csize_;
-    using RysIntegral<DataType>::primsize_;
-    using RysIntegral<DataType>::prim0size_;
-    using RysIntegral<DataType>::prim1size_;
-    using RysIntegral<DataType>::prim2size_;
-    using RysIntegral<DataType>::prim3size_;
-    using RysIntegral<DataType>::screening_;
-    using RysIntegral<DataType>::screening_size_;
-    using RysIntegral<DataType>::T_;
-    using RysIntegral<DataType>::P_;
-    using RysIntegral<DataType>::Q_;
-    using RysIntegral<DataType>::xp_;
-    using RysIntegral<DataType>::xq_;
-    using RysIntegral<DataType>::size_block_;
-    using RysIntegral<DataType>::size_alloc_;
-    using RysIntegral<DataType>::size_final_;
-    using RysIntegral<DataType>::coeff_;
-    using RysIntegral<DataType>::deriv_rank_;
-    using RysIntegral<DataType>::tenno_;
-    using RysIntegral<DataType>::breit_;
-    using RysIntegral<DataType>::data_;
-    using RysIntegral<DataType>::data2_;
-    using RysIntegral<DataType>::swap01_;
-    using RysIntegral<DataType>::swap23_;
+    using RysIntegral<DataType,IntType>::basisinfo_;
+    using RysIntegral<DataType,IntType>::stack_;
+    using RysIntegral<DataType,IntType>::stack_save_;
+    using RysIntegral<DataType,IntType>::stack_save2_;
+    using RysIntegral<DataType,IntType>::AB_;
+    using RysIntegral<DataType,IntType>::CD_;
+    using RysIntegral<DataType,IntType>::contsize_;
+    using RysIntegral<DataType,IntType>::asize_;
+    using RysIntegral<DataType,IntType>::csize_;
+    using RysIntegral<DataType,IntType>::primsize_;
+    using RysIntegral<DataType,IntType>::prim0size_;
+    using RysIntegral<DataType,IntType>::prim1size_;
+    using RysIntegral<DataType,IntType>::prim2size_;
+    using RysIntegral<DataType,IntType>::prim3size_;
+    using RysIntegral<DataType,IntType>::screening_;
+    using RysIntegral<DataType,IntType>::screening_size_;
+    using RysIntegral<DataType,IntType>::T_;
+    using RysIntegral<DataType,IntType>::P_;
+    using RysIntegral<DataType,IntType>::Q_;
+    using RysIntegral<DataType,IntType>::xp_;
+    using RysIntegral<DataType,IntType>::xq_;
+    using RysIntegral<DataType,IntType>::size_block_;
+    using RysIntegral<DataType,IntType>::size_alloc_;
+    using RysIntegral<DataType,IntType>::size_final_;
+    using RysIntegral<DataType,IntType>::coeff_;
+    using RysIntegral<DataType,IntType>::deriv_rank_;
+    using RysIntegral<DataType,IntType>::tenno_;
+    using RysIntegral<DataType,IntType>::breit_;
+    using RysIntegral<DataType,IntType>::data_;
+    using RysIntegral<DataType,IntType>::data2_;
+    using RysIntegral<DataType,IntType>::swap01_;
+    using RysIntegral<DataType,IntType>::swap23_;
 };
 
 using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;

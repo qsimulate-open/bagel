@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: overlapbatch.cc
+// Filename: complexoverlapbatch.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -26,28 +26,28 @@
 
 #include <src/integral/hrrlist.h>
 #include <src/integral/carsphlist.h>
-#include <src/integral/os/overlapbatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
+#include <complex>
 
 using namespace std;
 using namespace bagel;
 
-const static HRRList hrr;
-const static CarSphList carsphlist;
+const static CHRRList hrr;
+const static CCarSphList carsphlist;
 
+void ComplexOverlapBatch::compute() {
 
-void OverlapBatch::compute() {
+  const CSortList sort_ (spherical_);
 
-  const SortList sort_ (spherical_);
-
-  double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
+  complex<double>* const intermediate_p = stack_->get<complex<double>>(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
 
-  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
+  complex<double>* const intermediate_c = stack_->get<complex<double>>(cont0_ * cont1_ * asize_);
   perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c,
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-  double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
+  complex<double>* const intermediate_fi = stack_->get<complex<double>>(cont0_ * cont1_ * asize_intermediate_);
 
   if (basisinfo_[1]->angular_number() != 0) {
     const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -58,7 +58,7 @@ void OverlapBatch::compute() {
   }
 
   if (spherical_) {
-    double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
+    complex<double>* const intermediate_i = stack_->get<complex<double>>(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i);
@@ -76,4 +76,18 @@ void OverlapBatch::compute() {
   stack_->release(prim0_*prim1_*asize_, intermediate_p);
 
 }
+
+std::complex<double> ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+                                                const int dim, const bool swap) {
+  const double Areal = coord1*exp1;
+  const double Breal = coord2*exp2;
+  const double Aimag = basisinfo_[0]->vector_potential(dim);
+  const double Bimag = basisinfo_[1]->vector_potential(dim);
+  double imag;
+  if (swap) imag = 0.5*(Bimag - Aimag);
+  else imag = 0.5*(Aimag - Bimag);
+  const std::complex<double> num (Areal + Breal, imag);
+  return num * one12;
+}
+
 

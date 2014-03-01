@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: mixed_matrix1e.h
+// Filename: mixedbasis.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_MOLECULE_MIXED_MATRIX1E_H
-#define __SRC_MOLECULE_MIXED_MATRIX1E_H
+#ifndef __SRC_MOLECULE_MIXEDBASIS_H
+#define __SRC_MOLECULE_MIXEDBASIS_H
 
 #include <src/molecule/molecule.h>
 

@@ -155,6 +155,8 @@ int main (int argc, char*argv[]) {
   const int nbasis = exponents.size();
   if (calculation == 'E') cout << "Full ERI summation over four molecular orbitals specified below,";
   else if (calculation == 'N') cout << "Full NAI summation over two molecular orbitals and " << natom << " nuclei specified below,";
+  else if (calculation == 'T') cout << "Full kinetic energy summation over two molecular orbitals specified below,";
+  else if (calculation == 'P') cout << "Full momentum summation over two molecular orbitals specified below,";
   else throw runtime_error ("Desired calculation not recognized.  Enter 'E' for ERI or 'N' for NAI.");
   if (scale_input) cout << "with coefficients scaled to one, ";
   else cout << "with coefficients taken as-is, ";
@@ -218,6 +220,19 @@ cout << endl;
   } else if (calculation == 'N') {
     complex<double> FULL_NAI = compute_nai (input.first, input.second, field, nuclei);
     cout << "Final result = " << FULL_NAI << endl;
+  } else if (calculation == 'T') {
+    complex<double> FULL_KINETIC = kinetic_MO (field, input.second[0], input.second[1], input.first);
+    cout << "Final result = " << FULL_KINETIC << endl;
+    cout << "Magnitude = " << abs(FULL_KINETIC) << endl;
+    cout << "Phase = " << arg(FULL_KINETIC) << endl;
+  } else if (calculation == 'P') {
+    vector<complex<double>> FULL_MOMENTUM = momentum_MO (field, input.second[0], input.second[1], input.first);
+    vector<char> dimension = {'x', 'y', 'z'};
+    for (int i=0; i!=3; i++) {
+      cout << dimension[i] << "-momentum = " << FULL_MOMENTUM[i] << endl;
+      cout << "   " << dimension[i] << " - Magnitude = " << abs(FULL_MOMENTUM[i]) << endl;
+      cout << "   " << dimension[i] << " - Phase = " << arg(FULL_MOMENTUM[i]) << endl;
+    }
   }
 
   return 0;

@@ -53,6 +53,7 @@ class atomic_orbital {
   }
 
   void set_data (const double* pos, const double exp, const int* ang_mom, const std::vector<double> field);
+  void change_angular (const int ax, const int ay, const int az);
 };
 
 
@@ -124,6 +125,12 @@ std::complex<double> compute_nai (std::vector<atomic_orbital> basis, std::vector
 
 ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
+
+// Used in computation of kinetic energy
+std::complex<double> kinetic_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
+std::complex<double> kinetic (std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
+std::vector<std::complex<double>> momentum_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
+std::vector<std::complex<double>> momentum (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
 
 }
 
