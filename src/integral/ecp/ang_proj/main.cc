@@ -11,10 +11,10 @@ using namespace std;
 
 int main() {
 
-
+#if 0
   cout << " Expansion of a Gaussian about a different centre " << endl;
   BesselI besselI;
-  int l = 1;
+  int l = 0;
   const double x =0.1;
   cout << "I_n(x) where n = " << l << " and x = " << x << " is   " << besselI.besseln(l, x) << endl;
 
@@ -29,8 +29,8 @@ int main() {
   cout << "coef =   " << gos.compute_c(2, 0, 2, 0, 0) << endl;
   std::list<std::shared_ptr<CartesianGauss>> gauss;
 
-  std::array<double, 3> centre = {1.0, 1.0, 1.0};
-  gauss = gos.sphcar(centre, 1,-1);
+  std::array<double, 3> centre = {0.0, 0.0, 0.0};
+  gauss = gos.sphcar(centre, 0,0);
   cout << "No. of Cartesian Gaussians = " << gauss.size() << endl;
   for (auto& it : gauss) {
     cout << setw(17) << setprecision(9) << it->angular_momentum(0) << " ";
@@ -38,9 +38,11 @@ int main() {
     cout << setw(17) << setprecision(9) << it->angular_momentum(2) << endl;
   }
   for (auto& it : gauss) {
+    cout << "Centre of Gaussian =  " << endl;
     for (int i = 0; i != 3; ++i) {
-      cout << "Centre = " << it->centre(i) << endl;
+      cout << setw(17) << setprecision(9) << it->centre(i) << "   ";
     }
+    cout << endl;
   }
 
   Comb comb;
@@ -48,6 +50,35 @@ int main() {
   std::shared_ptr<CarSph> carsph = std::make_shared<CarSph>(cartesian);
   carsph->transform_CarSph();
   carsph->print();
+#endif
+
+  std::array<double, 3> centreB = {0.0, 0.0, 0.0};
+  std::array<int, 2> lm = {0, 0};
+  std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
+  rsh->print();
+
+  std::array<double, 3> centreA = {0.0, 0.0, 0.0};
+  std::array<int, 3> angular_momentum = {0, 0, 0};
+  const double alpha = 0.0;
+  std::shared_ptr<CartesianGauss> cargauss = std::make_shared<CartesianGauss>(alpha, angular_momentum, centreA);
+  cargauss->print();
+
+  AngularProj proj(cargauss, rsh);
+  cout << "Now integrate... " << endl;
+  const double integral = proj.integrate(1.0);
+  cout << " Ans = " << integral << endl;
+
+  cout << endl;
+
+  const int lp = 3;
+  for (int i = 0; i <= 2*lp; ++i) {
+    const int mp = i - lp;
+    std::array<int, 2> lmp = {lp, mp};
+    std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lmp);
+
+    sphusp->print();
+
+  }
 
   return 0;
 

@@ -23,6 +23,7 @@
 
 using namespace mpfr;
 using namespace boost;
+constexpr int GMPPREC = 256;
 
 class Factorial {
   protected:
@@ -42,7 +43,94 @@ class Factorial {
 
 };
 
-struct CarSph {
+class SphUSP {
+  protected:
+    std::array<int, 2> angular_momentum_;
+    std::vector<pair<double, int>> usp_;
+
+  public:
+    SphUSP(const std::array<int, 2> lm) : angular_momentum_(lm) {}
+    ~SphUSP() {}
+
+    double compute_coeff(const int lx, const int ly) const {
+      mpfr::mpreal::set_default_prec(GMPPREC);
+      const int am = fabs(angular_momentum_[1]);
+      const int j = (lx + ly - am) / 2;
+      if ((lx + ly - am) % 2 != 0 || j < 0) {
+        return 0.0;
+      } else {
+        const mpreal zero = "0.0";
+        const mpreal pi = static_cast<mpreal>(atan(1) * 4);
+        const int lz = angular_momentum_[0] - lx - ly;
+        Factorial fact;
+        const int lmam = angular_momentum_[0] - am;
+        const mpreal lmamf = fact.compute(lmam);
+        const mpreal lpamf = fact.compute(angular_momentum_[0] + am);
+        const mpreal lf = fact.compute(angular_momentum_[0]);
+        const mpreal prefactor = sqrt(0.5 * (2*angular_momentum_[0]+1) * lmamf / lpamf / pi) / std::pow(2, angular_momentum_[0]) / lf;
+        const int parity = (am - lx) % 2;
+        double factor;
+        if (angular_momentum_[1] > 0 && parity == 0) {
+          factor = 1.0;
+        } else if (angular_momentum_[1] == 0 && lx % 2 == 0) {
+          factor = 1.0 / std::sqrt(2.0);
+        } else if (angular_momentum_[1] < 0 && parity != 0) {
+          factor = 1.0;
+        } else {
+          factor = 0.0;
+        }
+
+        mpreal si = zero;
+        Comb comb;
+        const int jp = lmam / 2;
+        for (int i = j; i <= jp; ++i) {
+          si += comb.c(angular_momentum_[0], i) * comb.c(i, j) * std::pow(-1.0, i)
+              * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact.compute(2 * angular_momentum_[0] - 2 * i) : zero)
+              / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact.compute(angular_momentum_[0] - am - 2 * i) : zero);
+        }
+        mpreal sk = zero;
+        for (int k = 0; k <= j; ++k) {
+          if (lx - 2*k >= 0 && lx - 2*k <= am) {
+            sk += (k <= j ? comb.c(j, k) : zero) * comb.c(am, lx - 2*k) * std::pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
+          }
+        }
+        std::cout << "(xyz) = (" << lx << ", " << ly << ", " << lz << ")" << " prefactor = " << prefactor << " si = " << si << " sk = " << sk << " factor = " << factor << " ans = " << (prefactor * si * sk * factor).toDouble() << std::endl;
+        return (prefactor * si * sk * factor).toDouble();
+      }
+    }
+
+    void expand() {
+      int cnt = 0;
+      std::cout << "---- Expansion ----" << std::endl;
+      for (int lz = 0; lz <= angular_momentum_[0]; ++lz) {
+        for (int ly = 0; ly <= angular_momentum_[0] - lz; ++ly) {
+          cnt += 1;
+          const int lx = angular_momentum_[0] - lz - ly;
+          const double coeff = compute_coeff(lx, ly);
+//        std::pair<double, int> c_usp = std::make_pair<int, double>(coeff, cnt);
+          std::pair<double, int> c_usp(coeff, cnt);
+          usp_.push_back(c_usp);
+        }
+      }
+    }
+
+    int angular_momentum(const int i) const { return angular_momentum_[i]; }
+
+    std::vector<pair<double, int>> usp() const { return usp_; }
+
+    void print() {
+      std::cout << "** Real spherical harmonics to unitary sphere polynomials **" << std::endl;
+      std::cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "
+                                               << angular_momentum_[1] << ")" << std::endl;
+      std::cout << "Y_lm = sum_i c_i * usp_i" << std::endl;
+      this->expand();
+      for (auto& it : usp_) {
+        std::cout << "(" << setw(17) << setprecision(9) << it.first << ", " << it.second << ")" << std::endl;
+      }
+    }
+};
+
+class CarSph {
   protected:
     int angular_momentum_;
     std::array<int, 3> exp_;
@@ -89,22 +177,23 @@ struct CarSph {
 
     void print() {
       std::cout << "-- Print Cartesian in carsph --" << std::endl;
+      std::cout << "car[" << (angular_momentum_ + 2) * (angular_momentum_ + 1) / 2 << "] = (";
       for (auto it = cartesian_.begin(); it != cartesian_.end(); ++it) {
-        cout << setw(17) << setprecision(9) << *it << " ";
+        std::cout << setw(17) << setprecision(9) << *it << ", ";
       }
-      std::cout << std::endl;
+      std::cout << ")" << std::endl;
       std::cout << "-- Print Spherical in carsph --" << std::endl;
+      std::cout << "sph[" << 2 * angular_momentum_ + 1 << "] = (";
       for (auto it = spherical_.begin(); it != spherical_.end(); ++it) {
-        cout << setw(17) << setprecision(9) << *it << " ";
+        cout << setw(17) << setprecision(9) << *it << ", ";
       }
-      std::cout << std::endl;
+      std::cout << ")" << std::endl;
     }
 
 };
 
 class SH {
   protected:
-  const mpreal pi_ = "3.1415926535897932384626433";
 
   public:
 
@@ -126,7 +215,7 @@ class SH {
       return pmm;
     } else {
       double pmmp1 = x * (2.0 * m + 1) * pmm;
-      if (l == (m+1)) {
+      if (l == m+1) {
         return pmmp1;
       } else {
         double plm = 0.0;
@@ -141,6 +230,7 @@ class SH {
   }
 
   std::complex<double> ylm(const int l, const int m, const double theta, const double phi) const {
+    const mpreal pi = static_cast<mpreal>(atan(1) * 4);
     Factorial fact;
     const double cth = cos(theta);
     if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
@@ -148,7 +238,7 @@ class SH {
     const int am = fabs(m);
     const double plm = alegendre(l, am, cth);
     mpreal f = fact.compute(l-am)/fact.compute(l+am);
-    const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi_.toDouble());
+    const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());
     double real = coef * plm * cos(am * phi);
     double imag = coef * plm * sin(am * phi);
     if (m < 0) {
@@ -160,6 +250,7 @@ class SH {
   }
 
   double realSH(const int l, const int m, const double theta, const double phi) const {
+    const mpreal pi = static_cast<mpreal>(atan(1) * 4);
     Factorial fact;
     const double cth = cos(theta);
     if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
@@ -167,7 +258,7 @@ class SH {
     const int am = fabs(m);
     const double plm = alegendre(l, am, cth);
     mpreal f = fact.compute(l-am) / fact.compute(l+am);
-    const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi_.toDouble());
+    const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());
     if (m == 0) {
       return coef * plm;
     } else if (m > 0) {
@@ -196,6 +287,18 @@ class RealSH : public SH {
     double centre(const int i) const { return centre_[i]; }
 
     int angular_momentum(const int i) const { return angular_momentum_[i]; }
+
+    void print() {
+      std::cout << "** Real Spherical Harmonics **" << std::endl;
+      std::cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "
+                                               << angular_momentum_[1] << ")" << std::endl;
+      std::cout << "Centre = " ;
+      for (int i = 0; i != 3; ++i) {
+        std::cout << setw(17) << setprecision(9) << centre_[i] << ";   ";
+      }
+      std::cout << std::endl;
+      std::cout << "---" << std::endl;
+    }
 
 };
 
@@ -241,6 +344,21 @@ class CartesianGauss {
       return norm_ * std::pow(centre[0], angular_momentum_[0]) * std::pow(centre[1], angular_momentum_[1]) * std::pow(centre[2], angular_momentum_[2]) * std::exp(-exponent_ * rsq);
     }
 
+    void print() {
+      std::cout << "** Cartesian Gaussian **" << std::endl;
+      std::cout << "Angular momentum (lx, ly, lz) = (" << angular_momentum_[0] << ", "
+                                                       << angular_momentum_[1] << ", "
+                                                       << angular_momentum_[2] << ")" << std::endl;
+      std::cout << "Centre = " ;
+      for (int i = 0; i != 3; ++i) {
+        std::cout << setw(17) << setprecision(9) << centre_[i] << ";   ";
+      }
+      std::cout << std::endl;
+      std::cout << "Exponent alpha = " << setw(17) << setprecision(9) << exponent_  << std::endl;
+      std::cout << "Normalisation const N = " << setw(17) << setprecision(9) << norm_ << std::endl;
+      std::cout << "---" << std::endl;
+    }
+
 };
 
 class AngularProj {
@@ -269,28 +387,40 @@ class AngularProj {
       std::array<double, 3> AB;
       for (int i = 0; i != 3; ++i) AB[i] = sh_->centre(i) - gauss_->centre(i);
       const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
+      std::cout << "Distance between centres A and B =   " << dAB << std::endl;
       const double thAB = acos(AB[2]/dAB);
       const double phAB = atan2(AB[1], AB[0]);
       const int nx = gauss_->angular_momentum(0);
       const int ny = gauss_->angular_momentum(1);
       const int nz = gauss_->angular_momentum(2);
-      const int n = nx + ny + nz;
+      const int nu = nx + ny + nz;
+      const int lnu = sh_->angular_momentum(0) + nu;
       Comb comb;
       double ans = 0.0;
-      for (int kx = 0; kx != nx; ++kx) {
-        double ckx = comb.c(nx, kx);
-        for (int ky = 0; ky != ny; ++ky) {
-          double cky = comb.c(ny, ky);
-          for (int kz = 0; kz != nz; ++kz) {
-            double ckz = comb.c(nz, kz);
+      for (int kx = 0; kx != nx+1; ++kx) {
+        std::cout << "kx = " << kx << std::endl;
+        const double ckx = comb.c(nx, kx);
+        for (int ky = 0; ky != ny+1; ++ky) {
+          std::cout << "ky = " << ky << std::endl;
+          const double cky = comb.c(ny, ky);
+          for (int kz = 0; kz != nz+1; ++kz) {
+            std::cout << "kz = " << kz << std::endl;
+            const double ckz = comb.c(nz, kz);
             const int lk = kx + ky + kz;
-            for (int ld = 0; ld - sh_->angular_momentum(0) - n != 0; ++ld) {
-              for (int m = 0; m != 2 * ld; ++m) {
-                int mu = m - ld;
+            double sld = 0.0;
+            for (int ld = 0; ld != lnu+1; ++ld) {
+              std::cout << "lambda =  " << ld << std::endl;
+              double smu = 0.0;
+              for (int m = 0; m != 2 * ld + 1; ++m) {
+                const int mu = m - ld;
+                std::cout << "m = " << m << "   mu = " << mu << std::endl;
                 const double Z_AB = sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB);
-                std::array<int, 3> exp = {kx, ky, kz};
+                std::cout << "theta = " << thAB << " phi = " << phAB << " Z_AB(r_AB) =  " << Z_AB << std::endl;
+                const std::array<int, 3> exp = {kx, ky, kz};
                 CarSph carsph(exp);
                 carsph.transform_CarSph();
+                std::cout << "Debug: CarSph line 321" << std::endl;
+                carsph.print();
                 int cnt = 0;
                 for (auto lxyz = carsph.spherical().begin(); lxyz != carsph.spherical().end(); ++lxyz) {
                   int mk = 0;
@@ -300,16 +430,20 @@ class AngularProj {
                     } else {
                       mk = -lk + (cnt - 1) / 2;
                     }
-                    ans += Z_AB * integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk);
+                    std::cout << "SH integral  =  " << integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk) << std::endl;
+                    smu += Z_AB * integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk);
                   }
                   cnt += 1;
                 }
               }
               const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
-              double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-              ans += std::pow(r, lk) * (exponential.toDouble() * sbessel);
+              const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
+              std::cout << "sbessel  = " << sbessel << std::endl;
+              std::cout << "exponential = " << exponential.toDouble() << std::endl;
+              sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
             }
-            ans += ckx * cky * ckz * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
+            ans += sld * ckx * cky * ckz * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
+            std::cout << "ans before summing over kx, ky, kz and being multiplied by 4pi = " << ans << std::endl;
           }
         }
       }
@@ -340,7 +474,7 @@ class GaussOntoSph {
         t1 = sqrt(t1) / pow(2, l) / fact.compute(l);
         std::cout << "t1 = " << t1 << std::endl;
         Comb comb;
-        mpreal zero = "0.0";
+        const mpreal zero = "0.0";
         mpreal c = zero;
         for (int i = 0; i != lmam/2 + 1; ++i) {
           if (j < 0 || j > i || i > l) {
@@ -434,7 +568,7 @@ class BesselI {
     }
 
     const double besseln(const int l, const double x) {
-      const mpreal pi = "3.1415926535897932384626433";
+      const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       mpreal mbessi = "0.0";
       Factorial fact;
       const mpreal mfact = fact.compute(l);
