@@ -43,7 +43,7 @@ static auto householder = [](const complex<double>* const hin, complex<double>* 
 
 // implementation...
 
-void zquatev(const int n2, complex<double>* const D, double* const eig) {
+void zquatev_(const int n2, complex<double>* const D, double* const eig) {
   assert(n2 % 2 == 0);
   const int n = n2/2;
 
