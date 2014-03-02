@@ -112,7 +112,8 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [x,t,u] = (xu|tx) (x is an index of coeffa, and coeffi should be active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-
+    // returns [s,t,u,v] = (st|uv) (stuv are indicies of coeffi and coeffi should be active)
+    std::shared_ptr<ZMatrix> ___debug___all_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffi) const;
 };
 
 }

@@ -595,3 +595,52 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 
   return out;
 }
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffi) const {
+  // returns Mat(i,j,k,l) = (ij|kl) where all indices are in the active space.
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+  assert(coeffi->mdim() == nact_);
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexi = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti;
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+  DFock::factorize(half_complex_facti);
+
+  // (4) compute (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulli;
+  for (auto& i : half_complex_facti)
+    dffulli.push_back(make_shared<RelDFFull>(i, ricoeff, iicoeff));
+  DFock::factorize(dffulli);
+  dffulli.front()->scale(dffulli.front()->fac()); // take care of the factor
+  assert(dffulli.size() == 1);
+  shared_ptr<const RelDFFull> fulli = dffulli.front();
+
+  // (5) form (ij|kl) where i runs fastest // <- only difference is here
+  shared_ptr<ZMatrix> out = fulli->form_4index(fulli, 1.0);
+
+  return out;
+}
