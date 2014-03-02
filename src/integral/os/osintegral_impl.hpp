@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-static const double pisqrt__ = ::sqrt(pi__);
+static const double pisqrt__ = std::sqrt(pi__);
 
 template <typename DataType, Int_t IntType>
 OSIntegral<DataType, IntType>::OSIntegral(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack)
@@ -101,10 +101,10 @@ void OSIntegral<DataType, IntType>::common_init() {
       P_.push_back(px);
       P_.push_back(py);
       P_.push_back(pz);
-      const double tmp = pisqrt__ * ::sqrt(cxp_inv);
-      DataType coeffsx = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0]));
-      DataType coeffsy = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1]));
-      DataType coeffsz = tmp * ::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2]));
+      const double tmp = pisqrt__ * std::sqrt(cxp_inv);
+      DataType coeffsx = tmp * std::exp(- *expi0 * *expi1 * cxp_inv * (AB_[0] * AB_[0]));
+      DataType coeffsy = tmp * std::exp(- *expi0 * *expi1 * cxp_inv * (AB_[1] * AB_[1]));
+      DataType coeffsz = tmp * std::exp(- *expi0 * *expi1 * cxp_inv * (AB_[2] * AB_[2]));
       if (IntType == Int_t::London) {
         DataType factor_x;
         DataType factor_y;

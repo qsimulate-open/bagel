@@ -57,7 +57,7 @@ void CoulombBatch_energy::compute() {
   double r2[20];
 
   const int alc = size_alloc_;
-  std::fill_n(data_, alc, zero);
+  fill_n(data_, alc, zero);
 
   const SortList sort(spherical1_);
 
@@ -109,7 +109,7 @@ void CoulombBatch_energy::compute() {
     // assembly step
     for (int iz = 0; iz <= amax_; ++iz) {
       for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        for (int ix = std::max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
+        for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
           const int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
           for (int r = 0; r != rank_; ++r)
           current_data[pos] += workz[iz * rank_ + r] * worky[iy * rank_ + r] * workx[ix * rank_ + r];
@@ -134,7 +134,7 @@ void CoulombBatch_energy::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      std::copy(bkup_, bkup_+size_alloc_, data_);
+      copy(bkup_, bkup_+size_alloc_, data_);
     }
   }
 
@@ -154,7 +154,7 @@ void CoulombBatch_energy::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    std::copy(bkup_, bkup_+size_final_, data_);
+    copy(bkup_, bkup_+size_final_, data_);
   }
 
   stack_->release(worksize, workz);
@@ -167,12 +167,12 @@ void CoulombBatch_energy::root_weight(const int ps) {
   if (amax_ + cmax_ == 0) {
     for (int j = 0; j != screening_size_; ++j) {
       int i = screening_[j];
-      if (std::abs(T_[i]) < T_thresh__) {
+      if (abs(T_[i]) < T_thresh__) {
         weights_[i] = 1.0;
       } else {
-        const double sqrtt = std::sqrt(T_[i]);
+        const double sqrtt = sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else {
