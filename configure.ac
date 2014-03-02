@@ -71,11 +71,8 @@ AC_LANG_PUSH([C++])
 AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
     AC_CHECK_LIB(boost_serialization-mt, main, , [
         AC_CHECK_LIB(boost_serialization, main, , [
-            AC_MSG_ERROR("Linking against boost::serialization library failed.")
-        ])
-    ])
-])
-# check boost serialization
+            AC_MSG_ERROR("Linking against boost::serialization library failed.") ])])])
+echo -n "checking if boost::serialization works... "
 AC_RUN_IFELSE([AC_LANG_PROGRAM([[@%:@include<fstream>
                                  @%:@include<boost/archive/binary_oarchive.hpp>
                                  @%:@include<boost/archive/binary_iarchive.hpp>
@@ -83,24 +80,24 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([[@%:@include<fstream>
                                  @%:@include<cstdlib>]],
                                [[std::string s("test");{std::ofstream ofs("config.bagel");boost::archive::binary_oarchive oa(ofs);oa<<s;}
                                  std::string t;        {std::ifstream ifs("config.bagel");boost::archive::binary_iarchive ia(ifs);ia>>t;}
-                                 std::system("rm config.bagel");return (t==s?0:1)]])],
-              [echo "checking if boost::serialization works"],
-              [AC_MSG_FAILURE([test boost::serialization failed. Make sure that boost was compiled by the same compiler.])])
+                                 std::system("rm config.bagel");return (t==s?0:1)]])], [serialization_result="yes"], [serialization_result="no"])
+echo $serialization_result
+if test x${serialization_result} = xno; then
+AC_MSG_WARN([
 
+test boost::serialization failed. Make sure that boost was compiled by the same compiler.
+])
+fi
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [
-            AC_MSG_ERROR("Linking against boost::regex library failed.")
-        ])
-    ])
-])
+            AC_MSG_ERROR("Linking against boost::regex library failed.") ])])])
+
 AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     AC_CHECK_LIB(boost_unit_test_framework-mt, main, , [
         AC_CHECK_LIB(boost_unit_test_framework, main, , [
-            AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.")
-        ])
-    ])
-])
+            AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.") ])])])
+
 AC_LANG_POP() # switch from C++
 
 # srootlist.h need to be compiled with C++11
