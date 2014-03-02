@@ -30,6 +30,7 @@
 using namespace std;
 using namespace bagel;
 
+
 ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
                    shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, 0, 0, stack) {
 
@@ -53,8 +54,6 @@ void ComplexERIBatch::root_weight(const int ps) {
   }
 }
 
-
-// TODO For efficiency's sake, it's probably best to find a way to avoid repeatedly running basisinfo_[i]->vector_potential(j) each time we want to get a P or Q value
 std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                              const int center1, const int dim, const bool swap) {
   const double Areal = coord1*exp1;
@@ -65,7 +64,6 @@ std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double c
   if (swap) imag = 0.5*(Bimag - Aimag);
   else imag = 0.5*(Aimag - Bimag);
   const std::complex<double> num (Areal + Breal, imag);
-  return num * one12;
   return num * one12;
 }
 

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ovrr.cc
+// Filename: covrr.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,23 +24,23 @@
 //
 
 
-#include <src/integral/os/overlapbatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
 
 using namespace std;
 using namespace bagel;
 
 // private functions
-void OverlapBatch::perform_VRR(double* intermediate) {
+void ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) {
 
   const int worksize = amax1_;
-  double* workx = stack_->get(worksize);
-  double* worky = stack_->get(worksize);
-  double* workz = stack_->get(worksize);
+  complex<double>* workx = stack_->get<complex<double>>(worksize);
+  complex<double>* worky = stack_->get<complex<double>>(worksize);
+  complex<double>* workz = stack_->get<complex<double>>(worksize);
 
   // Perform VRR
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     const int offset_ii = ii * asize_;
-    double* current_data = &intermediate[offset_ii];
+    complex<double>* current_data = &intermediate[offset_ii];
 
     /// Sx(0 : i + j, 0) etc will be made here
     workx[0] = coeffsx_[ii];
@@ -61,7 +61,7 @@ void OverlapBatch::perform_VRR(double* intermediate) {
 
     for (int iz = 0; iz <= amax_; ++iz) {
       for (int iy = 0; iy <= amax_ - iz; ++iy) {
-        const double iyiz = workz[iz] * worky[iy];
+        const complex<double> iyiz = workz[iz] * worky[iy];
         for (int ix = max(0, amin_ - iy - iz); ix <= amax_ - iy - iz; ++ix) {
           int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
           current_data[pos] = workx[ix] * iyiz;

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: overlapbatch.h
+// Filename: complexoverlapbatch.h
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,23 +24,25 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_OS_OVERLAPBATCH_H
-#define __SRC_INTEGRAL_OS_OVERLAPBATCH_H
+#ifndef __SRC_INTEGRAL_COMPOS_COMPLEXOVERLAPBATCH_H
+#define __SRC_INTEGRAL_COMPOS_COMPLEXOVERLAPBATCH_H
 
 #include <src/integral/os/osintegral.h>
 
 namespace bagel {
 
-class OverlapBatch : public OSInt {
+class ComplexOverlapBatch : public OSIntegral<std::complex<double>,Int_t::London> {
   protected:
-    void perform_VRR(double*) override;
+    void perform_VRR(std::complex<double>*) override;
+    virtual std::complex<double> get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+                                                const int dim, const bool swap) override;
 
     int nblocks() const override { return 1; }
     int nrank() const override { return 0; }
 
   public:
-    OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
-    : OSInt(basis, stack) { common_init(); }
+    ComplexOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
 
     void compute() override;
 };
