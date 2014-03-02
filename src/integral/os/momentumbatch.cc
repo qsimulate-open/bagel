@@ -35,6 +35,8 @@ const static CarSphList carsphlist;
 
 void MomentumBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(size_block_*3);
   perform_VRR(intermediate_p);
 
@@ -87,9 +89,9 @@ void MomentumBatch::perform_VRR(double* intermediate) {
     const double ca = xa_[ii];
     const double cb = xb_[ii];
     const double bop = cb*cop;
-    const double cxpa = p_[ii*3  ]-basisinfo_[0]->position(0);
-    const double cypa = p_[ii*3+1]-basisinfo_[0]->position(1);
-    const double czpa = p_[ii*3+2]-basisinfo_[0]->position(2);
+    const double cxpa = P_[ii*3  ]-basisinfo_[0]->position(0);
+    const double cypa = P_[ii*3+1]-basisinfo_[0]->position(1);
+    const double czpa = P_[ii*3+2]-basisinfo_[0]->position(2);
     double* current_data = &intermediate[offset_ii];
     worksx[0] = coeffsx_[ii];
     worksy[0] = coeffsy_[ii];

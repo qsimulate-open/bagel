@@ -34,7 +34,6 @@ namespace bagel {
 
 class Atom {
   protected:
-
     bool spherical_;
 
     std::string name_;
@@ -61,7 +60,17 @@ class Atom {
     void basis_init(std::shared_ptr<const PTree>);
     void common_init();
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_ & ecp_;
+    }
+
   public:
+    Atom() { }
     Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux= false);
 
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem);

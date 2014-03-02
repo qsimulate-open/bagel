@@ -50,6 +50,9 @@ using geometry_details::adf_rho;
 
 const static AtomMap atommap_;
 
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
+
 Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   : spherical_(true), lmax_(0) {
 
@@ -197,16 +200,19 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
     cout << "    o Being stored without compression. Storage requirement is "
          << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
     Timer timer;
+    compute_integrals(thresh, nodf);
+    cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
+  }
+}
+
+
+void Geometry::compute_integrals(const double thresh, const bool nodf) {
 #ifdef LIBINT_INTERFACE
     df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
 #else
     df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
 #endif
-    cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
-  }
-
 }
-
 
 
 // suitable for geometry updates in optimization
@@ -864,17 +870,23 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
     atom.push_back(i->relativistic());
   geom->atoms_ = atom;
 
-  geom->df_->average_3index();
-  geom->dfs_  = geom->form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
-  if (do_gaunt)
-    geom->dfsl_ = geom->form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+  geom->compute_relativistic_integrals(do_gaunt);
 
-  // suppress some of the printing
-  resources__->proc()->set_print_level(2);
   cout << endl;
   timer.tick_print("Geometry relativistic (total)");
   cout << endl;
   return geom;
+}
+
+
+void Geometry::compute_relativistic_integrals(const bool do_gaunt) {
+  df_->average_3index();
+  dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+  if (do_gaunt)
+    dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+
+  // suppress some of the printing
+  resources__->proc()->set_print_level(2);
 }
 
 

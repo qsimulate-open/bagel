@@ -47,12 +47,24 @@ class SOHcore : public Matrix {
     // initialize "this"
     void form_sohcore();
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix>(*this) & geom_ & hcore_;
+    }
+
   public:
+    SOHcore() { }
     SOHcore(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const SOHcore_base> h);
 
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SOHcore)
 
 #endif
 

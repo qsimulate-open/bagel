@@ -26,12 +26,13 @@
 #ifndef __SRC_INPUT_INPUT_H
 #define __SRC_INPUT_INPUT_H
 
-#include <boost/property_tree/ptree.hpp>
 #include <array>
 #include <sstream>
 #include <memory>
 #include <vector>
 #include <src/util/string.h>
+#include <src/util/serialization.h>
+#include <boost/property_tree/ptree.hpp>
 
 namespace bagel {
 
@@ -62,6 +63,7 @@ class PTreeIterator {
 class PTreeReverseIterator {
   private:
     boost::property_tree::ptree::const_reverse_iterator current;
+
   public:
     PTreeReverseIterator() {}
     explicit PTreeReverseIterator(boost::property_tree::ptree::const_reverse_iterator curr): current(curr) {}
@@ -86,6 +88,13 @@ class PTree {
   protected:
     boost::property_tree::ptree data_;
     std::string key_;
+
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & data_ & key_;
+    }
 
   public:
     PTree() : data_() {}
@@ -169,5 +178,8 @@ template<typename T, int N> std::array<T,N> PTree::get_array(const std::string k
 
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::PTree)
 
 #endif

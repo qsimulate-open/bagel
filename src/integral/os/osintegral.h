@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: osint.h
+// Filename: osintegral.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_OS_OSINT_H
-#define __SRC_INTEGRAL_OS_OSINT_H
+#ifndef __SRC_INTEGRAL_OS_OSINTEGRAL_H
+#define __SRC_INTEGRAL_OS_OSINTEGRAL_H
 
 #include <src/molecule/shell.h>
 #include <src/integral/sortlist.h>
@@ -35,16 +35,18 @@
 
 namespace bagel {
 
-class OSInt : public Integral {
+template <typename DataType, Int_t IntType = Int_t::Standard>
+class OSIntegral : public Integral_base<DataType> {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     bool spherical_;
 
-    double* data_;
-    std::vector<double> xp_, xa_, xb_, rho_, p_;
-    std::vector<double> coeffsx_, coeffsy_, coeffsz_;
-    std::vector<double> coefftx_, coeffty_, coefftz_;
+    DataType* data_;
+    std::vector<double> xp_, xa_, xb_, rho_;
+    std::vector<DataType> P_;
+    std::vector<DataType> coeffsx_, coeffsy_, coeffsz_;
+    std::vector<DataType> coefftx_, coeffty_, coefftz_;
     std::array<double,3> AB_;
 
     int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
@@ -54,17 +56,18 @@ class OSInt : public Integral {
 
     bool swap01_;
 
-    const SortList sort_;
-
     size_t size_alloc_;
     size_t size_block_;
 
-    double* stack_save_;
+    DataType* stack_save_;
 
-    virtual void perform_VRR(double*) { throw std::logic_error("OSInt::perform_VRR should not be called"); }
-    void perform_contraction(const int, const double*, const int, const int, double*,
+    virtual void perform_VRR(DataType*) { throw std::logic_error("OSInt::perform_VRR should not be called"); }
+    void perform_contraction(const int, const DataType*, const int, const int, DataType*,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
                              const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
+    virtual DataType get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12, const int dim, const bool swap) {
+      return (coord1*exp1 + coord2*exp2) * one12;
+    }
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
@@ -75,11 +78,11 @@ class OSInt : public Integral {
 
   public:
     // deriv rank negative means multipole integrals
-    OSInt(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
-    ~OSInt();
+    OSIntegral(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
+    ~OSIntegral();
 
-    double* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
-    const double* data() const { return data_; }
+    DataType* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }
+    const DataType* data() const { return data_; }
 
     // since this is convenient for gradient evaluation....
     bool swap01() const { return swap01_; }
@@ -89,7 +92,14 @@ class OSInt : public Integral {
     virtual std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const;
 };
 
+using OSInt = OSIntegral<double,Int_t::Standard>;
+
 }
+
+#define OSINTEGRAL_HEADERS
+#include <src/integral/os/osintegral_impl.hpp>
+#include <src/integral/os/oscontraction_impl.hpp>
+#undef OSINTEGRAL_HEADERS
 
 #endif
 

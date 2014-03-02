@@ -26,7 +26,6 @@
 
 #include <src/smith/smith_info.h>
 
-using namespace std;
 using namespace bagel::SMITH;
 
 SMITH_info::SMITH_info() {

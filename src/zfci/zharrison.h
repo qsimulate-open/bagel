@@ -32,6 +32,7 @@
 #include <src/wfn/method.h>
 #include <src/zfci/relmofile.h>
 #include <src/zfci/reldvec.h>
+#include <src/math/davidson.h>
 #include <src/rel/relreference.h>
 
 namespace bagel {
@@ -75,6 +76,46 @@ class ZHarrison : public Method {
     // denominator
     std::shared_ptr<RelDvec> denom_;
 
+    // RDMs
+    std::vector<std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>>> rdm1_;
+    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
+    // state averaged RDMs
+    std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
+    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
+
+    std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
+
+    // restart
+    bool restart_;
+    bool restarted_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Method>(*this);
+      ar << max_iter_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
+         << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
+      // for jop_
+      std::shared_ptr<const ZMatrix> coeff = jop_->coeff_input();
+      ar << coeff;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<Method>(*this);
+      ar >> max_iter_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
+         >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
+      std::shared_ptr<const ZMatrix> coeff;
+      ar >> coeff;
+      update(coeff);
+      restarted_ = true;
+    }
+
+  protected:
     // obtain determinants for guess generation
     void generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset);
     // generate spin-adapted guess configurations
@@ -112,14 +153,8 @@ class ZHarrison : public Method {
     void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
 
-    // RDMs
-    std::vector<std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>>> rdm1_;
-    std::vector<std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>>> rdm2_;
-    // state averaged RDMs
-    std::unordered_map<std::bitset<2>, std::shared_ptr<ZRDM<1>>> rdm1_av_;
-    std::unordered_map<std::bitset<4>, std::shared_ptr<ZRDM<2>>> rdm2_av_;
-
   public:
+    ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
@@ -162,6 +197,9 @@ class ZHarrison : public Method {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ZHarrison)
 
 #endif
 

@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-PGeometry::PGeometry(const string fil, const int levl) : Geometry(fil) {
+PGeometry::PGeometry(const string fil, const int levl) {
   ifstream ifs(fil);
   if(!ifs.is_open()) throw runtime_error("input file could not be opened.");
 

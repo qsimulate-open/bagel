@@ -38,18 +38,14 @@
 using namespace std;
 using namespace bagel;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)
 
-Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()), mol_(mol) {
+Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
   zero();
 }
 
 
-Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol, const int n, const int m) : Matrix(n,m), mol_(mol) {
-  zero();
-}
-
-
-Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_), mol_(o.mol_) {
+Matrix1e::Matrix1e(const Matrix1e& o) : Matrix(o.ndim_, o.mdim_) {
   copy_n(o.data(), ndim_*mdim_, data());
 }
 
@@ -60,29 +56,30 @@ class Matrix1eTask {
     Matrix1e* parent_;
     size_t ob0, ob1;
     array<shared_ptr<const Shell>,2> bas; 
+    shared_ptr<const Molecule> mol;
   public:
-    Matrix1eTask(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, Matrix1e* d)
-      : parent_(d), ob0(b), ob1(c), bas(a) { }
-    void compute() const { parent_->computebatch(bas, ob0, ob1); }
+    Matrix1eTask(array<shared_ptr<const Shell>,2> a, size_t b, size_t c, shared_ptr<const Molecule> m, Matrix1e* d)
+      : parent_(d), ob0(b), ob1(c), bas(a), mol(m) { }
+    void compute() const { parent_->computebatch(bas, ob0, ob1, mol); }
 };
 }
 
-void Matrix1e::init() {
+void Matrix1e::init(shared_ptr<const Molecule> mol) {
 
   // CAUTION only lower half will be stored
-  const size_t nshell = accumulate(mol_->atoms().begin(), mol_->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
+  const size_t nshell = accumulate(mol->atoms().begin(), mol->atoms().end(), 0, [](int r, shared_ptr<const Atom> p) { return r+p->nshell(); });
   TaskQueue<Matrix1eTask> task(nshell*(nshell+1)/2);
 
   size_t oa0 = 0; 
   int u = 0;
-  for (auto a0 = mol_->atoms().begin(); a0 != mol_->atoms().end(); ++a0) {
+  for (auto a0 = mol->atoms().begin(); a0 != mol->atoms().end(); ++a0) {
     // iatom1 = iatom1;
     size_t ob0 = oa0;
     for (auto& b0 : (*a0)->shells()) {
       size_t ob1 = oa0;
       for (auto& b1 : (*a0)->shells()) {
         if (u++ % mpi__->size() == mpi__->rank()) {
-          task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, this);
+          task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, mol, this);
         }
         ob1 += b1->nbasis();
       }
@@ -90,13 +87,13 @@ void Matrix1e::init() {
     }
 
     auto oa1 = oa0 + (*a0)->nbasis();
-    for (auto a1 = a0+1; a1 != mol_->atoms().end(); ++a1) {
+    for (auto a1 = a0+1; a1 != mol->atoms().end(); ++a1) {
       size_t ob0 = oa0;
       for (auto& b0 : (*a0)->shells()) {
         size_t ob1 = oa1;
         for (auto& b1 : (*a1)->shells()) {
           if (u++ % mpi__->size() == mpi__->rank()) {
-            task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, this);
+            task.emplace_back(array<shared_ptr<const Shell>,2>{{b1, b0}}, ob0, ob1, mol, this);
           }
           ob1 += b1->nbasis();
         }

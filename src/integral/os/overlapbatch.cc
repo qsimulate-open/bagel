@@ -37,6 +37,8 @@ const static CarSphList carsphlist;
 
 void OverlapBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
 

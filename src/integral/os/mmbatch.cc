@@ -35,6 +35,8 @@ const static CarSphList carsphlist;
 
 void MMBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*nblocks());
   perform_VRR(intermediate_p);
 
@@ -109,19 +111,19 @@ void MMBatch::perform_VRR(double* intermediate) {
     workx[0][0] = coeffsx_[ii];
     worky[0][0] = coeffsy_[ii];
     workz[0][0] = coeffsz_[ii];
-    workx[0][1] = (p_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][0];
-    worky[0][1] = (p_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][0];
-    workz[0][1] = (p_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][0];
+    workx[0][1] = (P_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][0];
+    worky[0][1] = (P_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][0];
+    workz[0][1] = (P_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][0];
     for (int i = 2; i < amax1_; ++i) {
-      workx[0][i] = (p_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][i - 1] + 0.5*(i-1)/xp_[ii] * workx[0][i - 2];
-      worky[0][i] = (p_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][i - 1] + 0.5*(i-1)/xp_[ii] * worky[0][i - 2];
-      workz[0][i] = (p_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][i - 1] + 0.5*(i-1)/xp_[ii] * workz[0][i - 2];
+      workx[0][i] = (P_[ii*3  ] - basisinfo_[0]->position(0)) * workx[0][i - 1] + 0.5*(i-1)/xp_[ii] * workx[0][i - 2];
+      worky[0][i] = (P_[ii*3+1] - basisinfo_[0]->position(1)) * worky[0][i - 1] + 0.5*(i-1)/xp_[ii] * worky[0][i - 2];
+      workz[0][i] = (P_[ii*3+2] - basisinfo_[0]->position(2)) * workz[0][i - 1] + 0.5*(i-1)/xp_[ii] * workz[0][i - 2];
     }
 
     // take a linear combination to get dipole..
-    const double acx = p_[ii*3]   - center_[0];
-    const double acy = p_[ii*3+1] - center_[1];
-    const double acz = p_[ii*3+2] - center_[2];
+    const double acx = P_[ii*3]   - center_[0];
+    const double acy = P_[ii*3+1] - center_[1];
+    const double acz = P_[ii*3+2] - center_[2];
 
     for (int i = 0; i < amax1_; ++i) {
       workx[1][i] = 0.5*i*workx[0][i-1]/xp_[ii] + acx*workx[0][i];

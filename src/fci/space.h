@@ -32,20 +32,40 @@
 
 namespace bagel {
 
-// implements a space that contains all determinants that can be obtained by adding or removing M electrons from a reference
-class Space : public Space_base {
+class HZSpace : public Space_base {
   protected:
-    const int M_; // number of electrons added or removed from a reference
-    const bool compress_;
-    void common_init() override;
+    std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>> spacea_;
+    std::shared_ptr<CIStringSpace<CIStringSet<FCIString>>> spaceb_;
+
+    void link();
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+      boost::serialization::split_member(ar, *this, version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Space_base>(*this) << spacea_ << spaceb_;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> boost::serialization::base_object<Space_base>(*this) >> spacea_ >> spaceb_;
+      link();
+    }
 
   public:
-    Space(std::shared_ptr<const Determinants>, const int M, const bool compress = false, const bool mute = false);
-    Space(const int norb, const int nelea, const int neleb, const int M, const bool compress = false, const bool mute = false);
-
-    int nspin() const { return nelea_ - neleb_; };
+    HZSpace() { }
+    HZSpace(const int norb, const int nelea, const int neleb, const bool compress = false, const bool mute = false);
+    HZSpace(std::shared_ptr<const Determinants> det, const bool compress = false, const bool mute = false)
+      : HZSpace(det->norb(), det->nelea(), det->neleb(), compress, mute) {
+    }
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::HZSpace)
 
 #endif

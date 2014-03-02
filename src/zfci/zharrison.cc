@@ -24,14 +24,15 @@
 //
 
 #include <src/zfci/zharrison.h>
-#include <src/math/davidson.h>
 #include <src/zfci/relspace.h>
+
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
 using namespace std;
 using namespace bagel;
 
 ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   print_header();
@@ -45,6 +46,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   thresh_ = idata_->get<double>("thresh", 1.0e-20);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+  restart_ = idata_->get<bool>("restart", false);
 
   states_ = idata_->get_vector<int>("state", 0);
   nstate_ = 0;
@@ -68,8 +70,8 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   energy_.resize(nstate_);
 
-  space_ = make_shared<RelSpace>(norb_, nele_, 0);
-  int_space_ = make_shared<RelSpace>(norb_, nele_-2, 0, /*mute*/true, /*link up*/true);
+  space_ = make_shared<RelSpace>(norb_, nele_);
+  int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   update(rr->relcoeff());
 }
@@ -112,7 +114,7 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       out->find(nelea, neleb)->data(oindex)->element(get<0>(iter), get<1>(iter)) = get<2>(iter)*fac;
     }
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << space_->finddet(nelea, neleb)->print_bit(alpha&beta) << " open " << setw(20) << space_->finddet(nelea, neleb)->print_bit(open_bit) << right << endl;
+          setw(20) << left << print_bit(alpha&beta, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
     ++oindex;
     if (oindex == offset+nstate) break;
@@ -135,8 +137,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
 
   double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
-  for (auto& aiter : cdet->stringa()) {
-    for (auto& biter : cdet->stringb()) {
+  for (auto& aiter : cdet->string_bits_a()) {
+    for (auto& biter : cdet->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
         tmp.insert(make_pair(din, make_pair(biter, aiter)));
@@ -145,7 +147,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
       ++diter;
     }
   }
-  assert(tmp.size() == ndet || ndet > cdet->stringa().size()*cdet->stringb().size());
+  assert(tmp.size() == ndet || ndet > cdet->string_bits_a().size()*cdet->string_bits_b().size());
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (auto iter = tmp.rbegin(); iter != tmp.rend(); ++iter)
     out.push_back(iter->second);
@@ -158,37 +160,39 @@ void ZHarrison::compute() {
 
   if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
 
-  // Creating an initial CI vector
-  cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
+  if (!restarted_) {
+    // Creating an initial CI vector
+    cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
 
-  // find determinants that have small diagonal energies
-  int offset = 0;
-  for (int ispin = 0; ispin != states_.size(); ++ispin) {
-    int nstate = 0;
-    for (int i = ispin; i != states_.size(); ++i)
-      nstate += states_[i];
+    // find determinants that have small diagonal energies
+    int offset = 0;
+    for (int ispin = 0; ispin != states_.size(); ++ispin) {
+      int nstate = 0;
+      for (int i = ispin; i != states_.size(); ++i)
+        nstate += states_[i];
 
-    if ((geom_->nele()+ispin-charge_) % 2 == 1) {
-      if (states_[ispin] != 0) throw runtime_error("wrong states specified");
-      continue;
-    }
+      if ((geom_->nele()+ispin-charge_) % 2 == 1) {
+        if (states_[ispin] != 0) throw runtime_error("wrong states specified");
+        continue;
+      }
 
-    const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
-    const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
-    generate_guess(nelea, neleb, nstate, cc_, offset);
-    offset += nstate;
-    if (nelea != neleb) {
-      generate_guess(neleb, nelea, nstate, cc_, offset);
+      const int nelea = (geom_->nele()+ispin-charge_)/2 - ncore_;
+      const int neleb = (geom_->nele()-ispin-charge_)/2 - ncore_;
+      generate_guess(nelea, neleb, nstate, cc_, offset);
       offset += nstate;
+      if (nelea != neleb) {
+        generate_guess(neleb, nelea, nstate, cc_, offset);
+        offset += nstate;
+      }
     }
+    pdebug.tick_print("guess generation");
+
+    // Davidson utility
+    davidson_ = make_shared<DavidsonDiag<RelZDvec, ZMatrix>>(nstate_, max_iter_);
   }
-  pdebug.tick_print("guess generation");
 
   // nuclear energy retrieved from geometry
   const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
-
-  // Davidson utility
-  DavidsonDiag<RelZDvec, ZMatrix> davidson(nstate_, max_iter_);
 
   // main iteration starts here
   cout << "  === Relativistic FCI iteration ===" << endl << endl;
@@ -197,6 +201,12 @@ void ZHarrison::compute() {
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
+
+    if (restart_) {
+      stringstream ss; ss << "zfci_" << iter;
+      OArchive ar(ss.str());
+      ar << static_cast<Method*>(this);
+    }
 
     // form a sigma vector given cc
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);
@@ -208,9 +218,9 @@ void ZHarrison::compute() {
     ccn->synchronize();
     sigman->synchronize();
 
-    const vector<double> energies = davidson.compute(ccn->dvec(conv), sigman->dvec(conv));
+    const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
     // get residual and new vectors
-    vector<shared_ptr<RelZDvec>> errvec = davidson.residual();
+    vector<shared_ptr<RelZDvec>> errvec = davidson_->residual();
     for (auto& i : errvec)
       i->synchronize();
     pdebug.tick_print("davidson");
@@ -261,7 +271,7 @@ void ZHarrison::compute() {
   }
   // main iteration ends here
 
-  cc_ = make_shared<RelZDvec>(davidson.civec());
+  cc_ = make_shared<RelZDvec>(davidson_->civec());
   cc_->print(print_thresh_);
 
 #if 0

@@ -36,8 +36,6 @@
 using namespace std;
 using namespace bagel;
 
-extern "C" { void start_up_slater_(); };
-
 #ifdef HAVE_LIBSLATER
 void F12Ref::compute() {
     // TODO this 2 is bad
@@ -46,8 +44,6 @@ void F12Ref::compute() {
     const size_t naobasis = geom_->nbasis();
     const double* const coeff = ref_->coeff()->data();
     const double* const ocoeff = coeff + ncore*naobasis;
-
-    start_up_slater_();
 
     shared_ptr<Matrix> caom, cxxm, callm;
     int ncabs;

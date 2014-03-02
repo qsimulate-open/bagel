@@ -28,6 +28,8 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/kineticbatch.h>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference)
+
 using namespace std;
 using namespace bagel;
 

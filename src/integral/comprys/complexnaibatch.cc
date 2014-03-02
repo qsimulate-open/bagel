@@ -1,9 +1,10 @@
+#if 1
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: coulombbatch_energy_impl.hpp
+// Filename: complexnaibatch.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,45 +24,63 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/integral/comprys/complexnaibatch.h>
+#include <src/integral/comprys/comperirootlist.h>
+#include <complex>
 
-#ifdef COULOMBBATCH_ENERGY_HEADERS
+using namespace std;
+using namespace bagel;
 
-#ifndef __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
-#define __SRC_INTEGRAL_RYS_COULOMBBATCH_ENERGY_HPP
+const static CHRRList hrr;
+const static CCarSphList carsphlist;
 
+void ComplexNAIBatch::root_weight(const int ps) {
+  if (breit_ == 0) {
+    complexeriroot__.root(rank_, T_, roots_, weights_, ps);
+  } else {
+    assert(0);
+    throw runtime_error("Relativistic calculations have not been set up for London orbitals");
+  }
+}
 
-namespace bagel {
+std::complex<double> ComplexNAIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+                                             const int center1, const int dim, const bool swap) {
+  const double Areal = coord1*exp1;
+  const double Breal = coord2*exp2;
+  const double Aimag = basisinfo_[center1]->vector_potential(dim);
+  const double Bimag = basisinfo_[center1+1]->vector_potential(dim);
+  double imag;
+  if (swap) imag = 0.5*(Bimag - Aimag);
+  else imag = 0.5*(Aimag - Bimag);
+  const std::complex<double> num (Areal + Breal, imag);
+  return num * one12;
+}
 
-constexpr static double PITWOHALF = 17.493418327624862;
-const static HRRList hrr;
-const static CarSphList carsphlist;
-
-template <typename DataType>
-void CoulombBatch_Energy<DataType>::compute() {
+void ComplexNAIBatch::compute() {
   const double zero = 0.0;
 
-  double* const stack_save = stack_->get(size_alloc_);
+  complex<double>* const stack_save = stack_->template get<complex<double>>(size_alloc_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
 
-  double* const workx = stack_->get(worksize);
-  double* const worky = stack_->get(worksize);
-  double* const workz = stack_->get(worksize);
+  complex<double>* const workx = stack_->template get<complex<double>>(worksize);
+  complex<double>* const worky = stack_->template get<complex<double>>(worksize);
+  complex<double>* const workz = stack_->template get<complex<double>>(worksize);
 
   const double Ax = basisinfo_[0]->position(0);
   const double Ay = basisinfo_[0]->position(1);
   const double Az = basisinfo_[0]->position(2);
 
-  double r1x[20];
-  double r1y[20];
-  double r1z[20];
-  double r2[20];
+  complex<double> r1x[20];
+  complex<double> r1y[20];
+  complex<double> r1z[20];
+  complex<double> r2[20];
 
   const int alc = size_alloc_;
   std::fill_n(data_, alc, zero);
 
-  const SortList sort(spherical1_);
+  const CSortList sort(spherical1_);
 
   // perform VRR
   const int natom_unit = natom_ / (2 * L_ + 1);
@@ -76,19 +95,17 @@ void CoulombBatch_Energy<DataType>::compute() {
     disp[0] = disp[1] = 0.0;
     disp[2] = A_ * cell;
     const int offset_iprim = iprim * asize_;
-    double* current_data = &data_[offset_iprim];
+    complex<double>* current_data = &data_[offset_iprim];
 
-    const double* croots = roots_ + i * rank_;
-    const double* cweights = weights_ + i * rank_;
+    const complex<double>* croots = roots_ + i * rank_;
+    const complex<double>* cweights = &weights_[i * rank_];
     for (int r = 0; r != rank_; ++r) {
-      const double sroot = scale_root(croots[r], xp_[i], mol_->atoms(iatom)->ecp(0));
-      const double sweight = scale_weight(cweights[r], mol_->atoms(iatom)->ecp(1));
-      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * sroot;
-      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * sroot;
-      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * sroot;
-      r2[r] = (1.0 - sroot) * 0.5 / xp_[i];
+      r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * croots[r];
+      r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * croots[r];
+      r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * croots[r];
+      r2[r] = (1.0 - croots[r]) * 0.5 / xp_[i];
 
-      workx[r] = sweight * coeff_[i];
+      workx[r] = cweights[r] * coeff_[i];
       worky[r] = 1.0;
       workz[r] = 1.0;
     }
@@ -102,9 +119,9 @@ void CoulombBatch_Energy<DataType>::compute() {
       for (int j = 2; j <= amax_; ++j) {
         const int offset = j * rank_;
         for (int r = 0; r != rank_; ++r) {
-          workx[offset + r] = r1x[r] * workx[offset - rank_ + r] + (j - 1) * r2[r] * workx[offset - rank_ * 2 + r];
-          worky[offset + r] = r1y[r] * worky[offset - rank_ + r] + (j - 1) * r2[r] * worky[offset - rank_ * 2 + r];
-          workz[offset + r] = r1z[r] * workz[offset - rank_ + r] + (j - 1) * r2[r] * workz[offset - rank_ * 2 + r];
+          workx[offset + r] = r1x[r] * workx[offset - rank_ + r] + (j - 1.0) * r2[r] * workx[offset - rank_ * 2 + r];
+          worky[offset + r] = r1y[r] * worky[offset - rank_ + r] + (j - 1.0) * r2[r] * worky[offset - rank_ * 2 + r];
+          workz[offset + r] = r1z[r] * workz[offset - rank_ + r] + (j - 1.0) * r2[r] * workz[offset - rank_ * 2 + r];
         }
       }
     }
@@ -165,7 +182,4 @@ void CoulombBatch_Energy<DataType>::compute() {
   stack_->release(size_alloc_, stack_save);
 }
 
-}
-
-#endif
 #endif

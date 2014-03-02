@@ -33,14 +33,21 @@ namespace bagel {
 
 // implements spaces that contain all determinants |PQ> for a given Kramers index -N/2 to N/2
 class RelSpace : public Space_base {
-  protected:
-    const bool linkup_;
-    void common_init() override;
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Space_base>(*this);
+    }
 
   public:
-    RelSpace(const int norb, const int nelea, const int neleb, const bool mute = true, const bool linkup = false);
+    RelSpace() { }
+    RelSpace(const int norb, const int nele, const bool mute = true, const bool linkup = false);
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::RelSpace)
 
 #endif

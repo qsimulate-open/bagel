@@ -30,8 +30,8 @@
 
 namespace bagel {
 
-template<typename DataType>
-void RysIntegral<DataType>::set_ab_cd() {
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::set_ab_cd() {
   AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);
@@ -41,8 +41,8 @@ void RysIntegral<DataType>::set_ab_cd() {
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::set_prim_contsizes() {
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::set_prim_contsizes() {
   prim0size_ = basisinfo_[0]->num_primitive();
   prim1size_ = basisinfo_[1]->num_primitive();
   prim2size_ = basisinfo_[2]->num_primitive();
@@ -56,8 +56,8 @@ void RysIntegral<DataType>::set_prim_contsizes() {
 }
 
 
-template<typename DataType>
-std::tuple<int, int, int, int> RysIntegral<DataType>::set_angular_info() {
+template <typename DataType, Int_t IntType>
+std::tuple<int, int, int, int> RysIntegral<DataType,IntType>::set_angular_info() {
   const int ang0 = basisinfo_[0]->angular_number();
   const int ang1 = basisinfo_[1]->angular_number();
   const int ang2 = basisinfo_[2]->angular_number();
@@ -107,8 +107,8 @@ std::tuple<int, int, int, int> RysIntegral<DataType>::set_angular_info() {
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::set_swap_info(const bool swap_bra_ket) {
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::set_swap_info(const bool swap_bra_ket) {
   // swap 01 indices when needed: Larger angular momentum function comes first
   if (basisinfo_[0]->angular_number() < basisinfo_[1]->angular_number() || basisinfo_[0]->angular_number() == 0) {
     std::swap(basisinfo_[0], basisinfo_[1]);
@@ -136,8 +136,8 @@ void RysIntegral<DataType>::set_swap_info(const bool swap_bra_ket) {
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::allocate_arrays(const size_t ps) {
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::allocate_arrays(const size_t ps) {
   size_allocated_ = tenno_ > 0 ? ((rank_ * 2 + 13) * ps) : ((rank_ * 2 + 11) * ps);
 
   buff_ = stack_->get<DataType>(size_allocated_);  // stack_->get(size_alloc_) stack_->get((rank_ * 2 + 10) * ps)
@@ -159,8 +159,8 @@ void RysIntegral<DataType>::allocate_arrays(const size_t ps) {
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::perform_contraction_new_outer(const int nsize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                      const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                      const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
   const int worksize = nsize * pdim1;
@@ -187,8 +187,8 @@ void RysIntegral<DataType>::perform_contraction_new_outer(const int nsize, const
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const int ac, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::perform_contraction_new_inner(const int nsize, const int ac, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                  const std::vector<std::vector<double>>& coeff0, const std::vector<int>& upper0, const std::vector<int>& lower0, const int cdim0,
                  const std::vector<std::vector<double>>& coeff1, const std::vector<int>& upper1, const std::vector<int>& lower1, const int cdim1) {
   const int worksize = pdim1 * ac;
@@ -219,8 +219,8 @@ void RysIntegral<DataType>::perform_contraction_new_inner(const int nsize, const
 }
 
 
-template<typename DataType>
-void RysIntegral<DataType>::perform_contraction(const int asize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
+template <typename DataType, Int_t IntType>
+void RysIntegral<DataType,IntType>::perform_contraction(const int asize, const DataType* prim, const int pdim0, const int pdim1, DataType* cont,
                            const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
                            const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1) {
   // transformation of index1

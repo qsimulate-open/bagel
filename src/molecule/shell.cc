@@ -41,19 +41,19 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
   // TODO Set these values to those of the applied magnetic field vector ultimately coming from an input file.
   // Probably the best approach is to pass it as an argument of the constructor.
-  std::array<double,3> magnetic_field;
+//  std::array<double,3> magnetic_field;
 #if 0
-  magnetic_field[0] =  0.0032;
-  magnetic_field[1] =  0.0006;
-  magnetic_field[2] = -0.0051;
+  magnetic_field_[0] =  0.0032;
+  magnetic_field_[1] =  0.0006;
+  magnetic_field_[2] = -0.0051;
 #else
-  fill(magnetic_field.begin(), magnetic_field.end(), 0.0);
+  fill(magnetic_field_.begin(), magnetic_field_.end(), 0.0);
 #endif
 
   // TODO We might want to do this calculation in geometry, then pass the result to Shell or a derived class of Shell
-  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
-  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
-  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+  vector_potential_[0] = 0.5*(magnetic_field_[1]*position_[2] - magnetic_field_[2]*position_[1]);
+  vector_potential_[1] = 0.5*(magnetic_field_[2]*position_[0] - magnetic_field_[0]*position_[2]);
+  vector_potential_[2] = 0.5*(magnetic_field_[0]*position_[1] - magnetic_field_[1]*position_[0]);
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());

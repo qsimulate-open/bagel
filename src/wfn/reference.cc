@@ -28,6 +28,8 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
+
 using namespace std;
 using namespace bagel;
 

@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
+#include <src/util/serialization.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class
 // which have daxpy and ddot functions.
@@ -41,14 +42,23 @@ namespace bagel {
 template <class T, typename Mat = Matrix>
 class DIIS {
   protected:
-    const int ndiis_;
+    int ndiis_;
 
     std::list<std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>>> data_;
 
     std::shared_ptr<Mat> matrix_;
     std::shared_ptr<Mat> coeff_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ndiis_ & data_ & matrix_ & coeff_;
+    }
+
   public:
+    DIIS() { }
     DIIS(const int ndiis) : ndiis_(ndiis), matrix_(new Mat(ndiis+1, ndiis+1, true)), coeff_(new Mat(ndiis+1, 1)) { }
 
     std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>> input) {

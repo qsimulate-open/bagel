@@ -38,17 +38,26 @@ class RelDvector {
     using MapType = std::pair<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>;
 
     std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> dvecs_;
-    const std::shared_ptr<const RelSpace> space_;
+    std::shared_ptr<const Space_base> space_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & dvecs_ & space_;
+    }
 
   public:
+    RelDvector() { }
+
     // make an empty Dvec
-    RelDvector(std::shared_ptr<const RelSpace> space, const size_t ij) : space_(space) {
+    RelDvector(std::shared_ptr<const Space_base> space, const size_t ij) : space_(space) {
       for (auto& isp : space->detmap())
         dvecs_.insert(std::make_pair(std::make_pair(isp.second->nelea(), isp.second->neleb()),
                                      std::make_shared<Dvector<DataType>>(isp.second, ij)));
     }
 
-    RelDvector(const std::map<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const RelSpace> space) : dvecs_(o), space_(space) { }
+    RelDvector(const std::map<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const Space_base> space) : dvecs_(o), space_(space) { }
 
     RelDvector(const RelDvector<DataType>& o) : space_(o.space_) {
       for (auto& i : o.dvecs_)
@@ -77,7 +86,7 @@ class RelDvector {
     std::shared_ptr<Dvector<DataType>> find(int a, int b) { return dvecs_.at(std::make_pair(a, b)); }
     std::shared_ptr<const Dvector<DataType>> find(int a, int b) const { return dvecs_.at(std::make_pair(a, b)); }
 
-    std::shared_ptr<const RelSpace> space() const { return space_; }
+    std::shared_ptr<const Space_base> space() const { return space_; }
 
     void set_data(const int istate, std::shared_ptr<const RelDvector<DataType>> o) {
       assert(space_ == o->space_ || o->dvecs_.begin()->second->ij() == 1);
@@ -175,5 +184,12 @@ using RelDvec = RelDvector<double>;
 using RelZDvec = RelDvector<std::complex<double>>;
 
 }
+
+extern template class bagel::RelDvector<double>;
+extern template class bagel::RelDvector<std::complex<double>>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::RelDvector<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::RelDvector<std::complex<double>>)
 
 #endif

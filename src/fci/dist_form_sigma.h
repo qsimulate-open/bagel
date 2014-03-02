@@ -34,10 +34,10 @@ namespace bagel {
 
 class FormSigmaDistFCI {
   protected:
-    std::shared_ptr<const Space> space_;
+    std::shared_ptr<const Space_base> space_;
 
   public:
-    FormSigmaDistFCI(std::shared_ptr<const Space> sp = std::shared_ptr<const Space>()) : space_(sp) {}
+    FormSigmaDistFCI(std::shared_ptr<const Space_base> sp = std::shared_ptr<const Space_base>()) : space_(sp) {}
 
     std::vector<std::shared_ptr<DistCivec>> operator()(const std::vector<std::shared_ptr<DistCivec>>& cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;
     std::shared_ptr<DistDvec> operator()(std::shared_ptr<const DistDvec> cc, std::shared_ptr<const MOFile> jop) const;

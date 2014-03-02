@@ -29,56 +29,54 @@
 #include <src/math/comb.h>
 #include <src/util/combination.hpp>
 
+BOOST_CLASS_EXPORT_IMPLEMENT(bagel::HZSpace)
+
 using namespace std;
 using namespace bagel;
 
-Space::Space(const int _norb, const int _nelea, const int _neleb, const int _M, const bool _compress, const bool _mute)
-  : Space_base(_norb, _nelea, _neleb, _mute), M_(_M), compress_(_compress) {
+HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool compress, const bool mute) {
 
-  common_init();
+  if (!mute) cout << " Constructing space of all determinants that can formed by removing 1 electron from " << nelea
+                  << " alpha and " << neleb << " beta electrons." << endl << endl;
+
+  assert(neleb >= 1 && nelea >= 1);
+  auto na0 = make_shared<FCIString>(nelea  , norb);
+  auto na1 = make_shared<FCIString>(nelea-1, norb);
+  auto nb0 = make_shared<FCIString>(neleb  , norb);
+  auto nb1 = make_shared<FCIString>(neleb-1, norb);
+
+  using FCIStringSet = CIStringSet<FCIString>;
+
+  list<shared_ptr<const FCIStringSet>> lista = { make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{na0}),
+                                                 make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{na1}) };
+  list<shared_ptr<const FCIStringSet>> listb = { make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb0}),
+                                                 make_shared<FCIStringSet>(list<shared_ptr<const FCIString>>{nb1}) };
+
+  spacea_ = make_shared<CIStringSpace<FCIStringSet>>(lista);
+  spacea_->build_linkage();
+
+  spaceb_ = make_shared<CIStringSpace<FCIStringSet>>(listb);
+  spaceb_->build_linkage();
+
+  if (!mute) {
+    cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
+    cout << "  o forming links" << endl;
+  }
+
+  // build determinants
+  for (auto& a : lista)
+    for (auto& b : listb)
+      detmap_.insert(make_pair(key_(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true)));
+
+  // link determinants
+  link();
 }
 
-Space::Space(shared_ptr<const Determinants> det, int _M, const bool _compress, const bool _mute) :
-  Space_base(det, _mute), M_(_M), compress_(_compress) {
 
-  common_init();
-}
-
-void Space::common_init() {
-  if (!mute_) cout << " Constructing space of all determinants that can formed by removing "
-                  << M_ << " electrons from " << nelea_
-                  << " alpha and " << neleb_ << " beta electrons." << endl << endl;
-  assert(neleb_ >= M_ && nelea_ >= M_);
-  for(int i = -M_; i <= 0; ++i ) {
-    for(int j = -M_; j <= 0; ++j) {
-      auto tmpdet = make_shared<Determinants>(norb_, nelea_ + i, neleb_ + j, compress_, /*mute_=*/true);
-      detmap_.insert(pair<int,shared_ptr<Determinants>>(key_(nelea_+i,neleb_+j), tmpdet));
-    }
-  }
-  if (!mute_) cout << " Space is made up of " << detmap_.size() << " determinants." << endl;
-  if (!mute_) cout << "  o forming alpha links" << endl;
-
-  int nlinks = 0;
+void HZSpace::link() {
   for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
-    int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na+1,nb));
-    if (jdet != detmap_.end()) {
-      idet->second->link<0>(jdet->second);
-      ++nlinks;
-    }
+    auto jdet = idet; ++jdet;
+    for( ; jdet != detmap_.end(); ++jdet)
+      idet->second->link(jdet->second, spacea_, spaceb_);
   }
-  if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
-
-  if (!mute_) cout << "  o forming beta links" << endl;
-
-  nlinks = 0;
-  for(auto idet = detmap_.begin(); idet != detmap_.end(); ++idet) {
-    int na = idet->second->nelea(); int nb = idet->second->neleb();
-    auto jdet = detmap_.find(key_(na,nb+1));
-    if (jdet != detmap_.end()) {
-      idet->second->link<1>(jdet->second);
-      ++nlinks;
-    }
-  }
-  if (!mute_) cout << "    - " << nlinks << " links formed" << endl;
 }

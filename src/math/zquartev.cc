@@ -41,14 +41,9 @@ static auto householder = [](const complex<double>* const hin, complex<double>* 
   return conj(1.0 / (conj(out[0]) * (sign*norm)));
 };
 
-static auto conjarray = [](unique_ptr<complex<double>[]>& a, const int n) {
-  for (int i = 0; i != n; ++i) a[i] = conj(a[i]);
-};
-
-
 // implementation...
 
-void zquatev(const int n2, complex<double>* const D, double* const eig) {
+void zquatev_(const int n2, complex<double>* const D, double* const eig) {
   assert(n2 % 2 == 0);
   const int n = n2/2;
 

@@ -47,13 +47,13 @@ void OverlapBatch::perform_VRR(double* intermediate) {
     worky[0] = coeffsy_[ii];
     workz[0] = coeffsz_[ii];
     if (ang0_ + ang1_ > 0) {
-      workx[1] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
-      worky[1] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
-      workz[1] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];
+      workx[1] = (P_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[0];
+      worky[1] = (P_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[0];
+      workz[1] = (P_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[0];
       for (int i = 2; i != amax1_; ++i) {
-        workx[i] = (p_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
-        worky[i] = (p_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
-        workz[i] = (p_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
+        workx[i] = (P_[ii * 3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
+        worky[i] = (P_[ii * 3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
+        workz[i] = (P_[ii * 3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
       }
     }
 

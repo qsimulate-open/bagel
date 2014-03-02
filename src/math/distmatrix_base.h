@@ -40,15 +40,15 @@ template<typename DataType>
 class DistMatrix_base {
   protected:
     // global dimension
-    const int ndim_;
-    const int mdim_;
+    int ndim_;
+    int mdim_;
 
     // distributed data
     std::unique_ptr<DataType[]> local_;
 
     // Scalapack specific
-    std::unique_ptr<int[]> desc_;
-    const std::tuple<int, int> localsize_;
+    std::vector<int> desc_;
+    std::tuple<int, int> localsize_;
 
     template<class T>
     void ax_plus_y_impl(const DataType a, const T& o) {
@@ -84,7 +84,31 @@ class DistMatrix_base {
       return std::make_pair(pcol, off);
     }
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << ndim_ << mdim_ << desc_ << localsize_;
+      for (size_t i = 0; i != size(); ++i) ar << local_[i];
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> ndim_ >> mdim_ >> desc_ >> localsize_;
+      local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+      for (size_t i = 0; i != size(); ++i) ar >> local_[i];
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
   public:
+    DistMatrix_base() { }
+
     DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
       local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
       zero();
@@ -98,8 +122,10 @@ class DistMatrix_base {
     DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(std::move(o.local_)), desc_(std::move(o.desc_)), localsize_(o.localsize_) {
     }
 
+    virtual ~DistMatrix_base() { }
+
     const std::unique_ptr<DataType[]>& local() const { return local_; }
-    const std::unique_ptr<int[]>& desc() const { return desc_; }
+    const std::vector<int>& desc() const { return desc_; }
 
     size_t size() const { return std::get<0>(localsize_)*std::get<1>(localsize_); }
     int ndim() const { return ndim_; }

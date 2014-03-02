@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-template <typename DataType>
+template <typename DataType, Int_t IntType = Int_t::Standard>
 class RysIntegral : public Integral_base<DataType> {
   protected:
     // some basic info for integral evaluations
@@ -174,6 +174,9 @@ using RysInt = RysIntegral<double>;
 #define RYSINTEGRAL_HEADERS
 #include <src/integral/rys/rysintegral_impl.hpp>
 #undef RYSINTEGRAL_HEADERS
+
+extern template class bagel::RysIntegral<double>;
+extern template class bagel::RysIntegral<std::complex<double>>;
 
 #endif
 

@@ -24,6 +24,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <thread>
 #include <stdexcept>
@@ -54,6 +55,26 @@ MPI_Interface::MPI_Interface()
   sl_init_(context_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
 #endif
+
+  // print out the node name
+  {
+    constexpr const size_t maxlen = MPI_MAX_PROCESSOR_NAME;
+    int len;
+    char name[maxlen];
+    MPI_Get_processor_name(name, &len);
+
+    unique_ptr<char[]> buf(new char[maxlen*size_]);
+    unique_ptr<int[]> lens(new int[size_]);
+    MPI_Gather(static_cast<void*>(name), maxlen, MPI_CHAR, static_cast<void*>(buf.get()), maxlen, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Gather(static_cast<void*>(&len),      1, MPI_INT,  static_cast<void*>(lens.get()),     1, MPI_INT,  0, MPI_COMM_WORLD);
+    if (rank() == 0) {
+      for (int i = 0; i != size_; ++i)
+        cout << left << "    " << setw(32) << string(&buf[i*maxlen], &buf[i*maxlen+lens[i]]) << right << endl;
+      cout << endl;
+    }
+  }
+
+  // obtain the upper bound of tags
   {
     int flag, *get_val;
     MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &get_val, &flag);
@@ -410,12 +431,12 @@ pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
 #endif
 }
 
-unique_ptr<int[]> MPI_Interface::descinit(const int ndim, const int ncol) const {
-  unique_ptr<int[]> desc(new int[9]);
+vector<int> MPI_Interface::descinit(const int ndim, const int ncol) const {
+  vector<int> desc(9);
 #ifdef HAVE_SCALAPACK
   const int localrow = numroc_(ndim, blocksize__, myprow_, 0, nprow_);
   int info;
-  descinit_(desc.get(), ndim, ncol, blocksize__, blocksize__, 0, 0, context_, max(1,localrow), info);
+  descinit_(desc.data(), ndim, ncol, blocksize__, blocksize__, 0, 0, context_, max(1,localrow), info);
 #endif
   return desc;
 }

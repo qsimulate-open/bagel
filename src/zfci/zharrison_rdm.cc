@@ -32,7 +32,7 @@ using namespace bagel;
 void ZHarrison::compute_rdm12() {
 
   // for one-body RDM
-  auto space1 = make_shared<RelSpace>(norb_, nele_-1, 0);
+  auto space1 = make_shared<RelSpace>(norb_, nele_-1);
   rdm1_.clear();
   rdm2_.clear();
   rdm1_.resize(nstate_);
@@ -114,7 +114,7 @@ void ZHarrison::compute_rdm12() {
         auto cc = cc_->find(nelea+1, neleb)->data(istate);
         auto d = make_shared<ZDvec>(int_det, norb_);
         const int lenb = int_det->lenb();
-        for (auto& s : int_det->stringa()) {
+        for (auto& s : int_det->string_bits_a()) {
           for (int i = 0; i != norb_; ++i) {
             if (s[i]) continue;
             const double sign = int_det->sign<0>(s, i);
@@ -135,7 +135,7 @@ void ZHarrison::compute_rdm12() {
           const complex<double>* source = cc->data()+ia*lenbs;
           for (int i = 0; i != norb_; ++i) {
             complex<double>* target = d->data(i)->data()+ia*lenbt;
-            for (auto& s : int_det->stringb()) {
+            for (auto& s : int_det->string_bits_b()) {
               if (s[i]) continue;
               const double sign = int_det->sign<1>(s, i);
               auto cs = s; cs.set(i);

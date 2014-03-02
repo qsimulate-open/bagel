@@ -180,7 +180,6 @@ template<class T>
 void PCompFile<T>::add_block(const long position, const long length, const double* data) {
   long remaining = length;
   long current = 0L;
-  const double cone = 1.0;
   double* work = (double*) work_char;
 
   while (remaining > 0L) {

@@ -447,27 +447,71 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
     tie(min_overlap, max_overlap) = make_tuple(mnmx.first->first, mnmx.second->first);
   }
 
-  const size_t active_size = active_list.size();
+  const int active_size = active_list.size();
   cout << "    - size of candidate space: " << active_size << endl;
   cout << "    - largest overlap with monomer space: " << max_overlap << ", smallest: " << min_overlap << endl << endl;
 
   shared_ptr<Reference> out;
 
   if (active_size != nact) {
+    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
+
     cout << "  o Performing SVD in candidate space" << endl;
     Matrix subspace(dimerbasis_, active_size);
-    for (int i = 0; i < active_size; ++i)
-      copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, i));
+    const int nclosed = count_if(active_list.begin(), active_list.end(), [&nocc] (const int& i) { return i < nocc; });
+
+    int ii = 0;
+    int jj = nclosed;
+    for (int i = 0; i < active_size; ++i) {
+      if (active_list[i] < nocc)
+        copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, ii++));
+      else
+        copy_n(scoeff_->element_ptr(0, active_list[i]), dimerbasis_, subspace.element_ptr(0, jj++));
+    }
 
     Matrix Sactive(active % S * active);
     Sactive.inverse_half();
 
     Matrix projector( Sactive * ( active % S * subspace ) );
-    shared_ptr<Matrix> V;
-    vector<double> singulars(nact, 0.0);
-    tie(ignore, V) = projector.svd(singulars.data());
+    vector<double> singulars(active_size, 0.0);
+    auto V = make_shared<Matrix>(active_size, active_size);
 
-    cout << "    - largest singular value: " << singulars.front() << ", smallest: " << singulars.back() << endl;
+    {
+      Matrix tmpV(active_size, active_size);
+      multimap<double, int> ordered_singulars;
+
+      shared_ptr<Matrix> Vocc;
+      Matrix occ_projector = *projector.slice(0, nclosed);
+      vector<double> occ_sings(min(nclosed, nact), 0.0);
+      tie(ignore, Vocc) = occ_projector.svd(occ_sings.data());
+      tmpV.copy_block(0, 0, nclosed, nclosed, Vocc->transpose());
+
+      int nsing = occ_sings.size();
+      for (int i = 0; i < nsing; ++i)
+        ordered_singulars.emplace(occ_sings[i], i);
+      for (int i = nsing; nsing < nclosed; ++i)
+        ordered_singulars.emplace(0.0, i);
+
+      shared_ptr<Matrix> Vvirt;
+      Matrix virt_projector = *projector.slice(nclosed, active_size);
+      vector<double> virt_sings(min(nact, virt_projector.mdim()), 0.0);
+      tie(ignore, Vvirt) = virt_projector.svd(virt_sings.data());
+      tmpV.copy_block(nclosed, nclosed, active_size - nclosed, active_size - nclosed, Vvirt->transpose());
+
+      nsing = virt_sings.size();
+      for (int i = 0; i < nsing; ++i)
+        ordered_singulars.emplace(virt_sings[i], i + nclosed);
+      for (int i = nsing; nsing < (active_size - nclosed); ++i)
+        ordered_singulars.emplace(0.0, i + nclosed);
+
+      int iv = 0;
+      for (auto i = ordered_singulars.rbegin(); i != ordered_singulars.rend(); ++i) {
+        singulars[iv] = i->first;
+        copy_n(tmpV.element_ptr(0, i->second), active_size, V->element_ptr(0, iv++));
+      }
+    }
+
+    cout << "    - largest singular value: " << singulars[0] << ", smallest: " << singulars[nact-1] << endl;
 
 #if 0
     cout << "singular values:" << endl;
@@ -477,20 +521,11 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata) {
 #endif
 
     Matrix occupations = *V->clone();
-    const size_t nocc = (sgeom_->nele()-1)/2 + 1;
-    for (int i = 0; i < active_size; ++i)
-      if (active_list[i] < nocc) occupations(i,i) = 2.0;
-    occupations = *V * occupations ^ *V;
+    for (int i = 0; i < nclosed; ++i)
+      occupations(i,i) = 2.0;
 
-    // non-active candidate orbitals are mixtures of closed and virtual orbitals
-    // diagonalizing the corresponding block of the density matrix separates the closed from the virtual
-    {
-      vector<double> eigs(active_size, 0.0);
-      Matrix transform = *occupations.diagonalize_blocks(eigs.data(), {{static_cast<int>(nact), static_cast<int>(active_size - nact)}});
-
-      occupations = transform % occupations * transform;
-      subspace = (subspace ^ *V) * transform;
-    }
+    occupations = *V % occupations * *V;
+    subspace = (subspace * *V);
 
     int nactive_ele = 0;
     double occ_in_active = 0.0;

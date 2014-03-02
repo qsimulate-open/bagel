@@ -543,7 +543,6 @@ void PMOFile<T>::print() const {
   const size_t ijsize = isize * jsize;
   const size_t absize = asize * bsize;
   const int k = this->K_;
-  const int kk = std::max(k + k, 1);
   T* buffer = new T[ijsize * absize];
 
   // I will print out in ne case...

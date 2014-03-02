@@ -29,22 +29,24 @@
 
 #include <array>
 #include <src/math/matrix.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 
 class Shell {
 
   protected:
-    const bool spherical_;
+    bool spherical_;
 
     std::array<double,3> position_;
     std::array<double,3> vector_potential_;
-    const int angular_number_;
-    const std::vector<double> exponents_;     // length of primitive basis function
-    const std::vector<std::vector<double>> contractions_;  // length of contracted basis function
-    const std::vector<std::pair<int, int>> contraction_ranges_;
+    std::array<double,3> magnetic_field_;
+    int angular_number_;
+    std::vector<double> exponents_;     // length of primitive basis function
+    std::vector<std::vector<double>> contractions_;  // length of contracted basis function
+    std::vector<std::pair<int, int>> contraction_ranges_;
 
-    const bool dummy_;
+    bool dummy_;
     std::vector<int> contraction_upper_;
     std::vector<int> contraction_lower_;
 
@@ -60,7 +62,31 @@ class Shell {
     std::shared_ptr<const Matrix> overlap_compute_() const;
     std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << spherical_ << position_ << vector_potential_ << angular_number_ << exponents_ << contractions_ << contraction_ranges_
+         << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> spherical_ >> position_ >> vector_potential_ >> angular_number_ >> exponents_ >> contractions_ >> contraction_ranges_
+         >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_;
+      if (relativistic_)
+        init_relativistic();
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
   public:
+    Shell() { }
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
           const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
     // default constructor for adding null basis
@@ -74,6 +100,9 @@ class Shell {
     double position(const int i) const { return position_[i]; };
     const std::array<double,3>& position() const { return position_; };
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
+    const std::array<double,3>& vector_potential() const { return vector_potential_; };
+    double magnetic_field(const unsigned int i) const { return magnetic_field_[i]; }
+    const std::array<double,3>& magnetic_field() const { return magnetic_field_; };
     int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };

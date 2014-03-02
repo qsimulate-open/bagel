@@ -34,13 +34,21 @@ namespace bagel {
 
 class RelReference : public Reference {
   protected:
-    const bool gaunt_;
-    const bool breit_;
-    const int nneg_;
-    const std::shared_ptr<const ZMatrix> relcoeff_;
-    const std::shared_ptr<const ZMatrix> relcoeff_full_;
+    bool gaunt_;
+    bool breit_;
+    int nneg_;
+    std::shared_ptr<const ZMatrix> relcoeff_;
+    std::shared_ptr<const ZMatrix> relcoeff_full_;
+
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & relcoeff_full_;
+    }
 
   public:
+    RelReference() { }
     RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc, const int nvirt, const bool ga, const bool br)
      : Reference(g, std::shared_ptr<Coeff>(), nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice(nneg_, c->mdim())), relcoeff_full_(c) {
     }
@@ -58,5 +66,8 @@ class RelReference : public Reference {
 };
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::RelReference)
 
 #endif
