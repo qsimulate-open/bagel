@@ -48,8 +48,11 @@ class Molecule {
     std::shared_ptr<Petite> plist_;
     int nirrep_;
 
-    // external field
+    // external electric field
     std::array<double,3> external_;
+
+    // external magnetic field
+    std::array<double,3> magnetic_field_;
 
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
@@ -60,7 +63,7 @@ class Molecule {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & external_;
+      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & external_ & magnetic_field_;
     }
 
   public:
@@ -86,9 +89,13 @@ class Molecule {
     // finite nucleus
     bool has_finite_nucleus() const;
 
-    // external field
+    // external electric field
     bool external() const { return external(0) != 0.0 || external(1) != 0.0 || external(2) != 0.0; }
     double external(const int i) const { return external_[i]; }
+
+    // external magnetic field
+    bool magnetic_field() const { return magnetic_field(0) != 0.0 || magnetic_field(1) != 0.0 || magnetic_field(2) != 0.0; }
+    double magnetic_field(const int i) const { return magnetic_field_[i]; }
 
     virtual size_t nbasis() const { return std::accumulate(atoms_.begin(), atoms_.end(), 0,
                                     [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }

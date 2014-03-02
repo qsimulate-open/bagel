@@ -126,9 +126,17 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
   print_atoms();
 
+  // static external magnetic field
+  magnetic_field_ = geominfo->get_array_optional<double,3>("magnetic_field", {0.0, 0.0, 0.0});
+  if (magnetic_field())
+  cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
+                                                            << setw(7) << magnetic_field_[1] << ", "
+                                                            << setw(7) << magnetic_field_[2] << ") a.u." << endl << endl;
+  // TODO throw runtime error if magnetic field is specified with a method that doesn't use it?
+
   common_init2(true, overlap_thresh_);
 
-  // static external field
+  // static external electric field
   external_[0] = geominfo->get<double>("ex", 0.0);
   external_[1] = geominfo->get<double>("ey", 0.0);
   external_[2] = geominfo->get<double>("ez", 0.0);

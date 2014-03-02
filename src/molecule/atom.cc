@@ -272,7 +272,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         double denom = 1.0;
         for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
-          *diter *= ::pow(2.0 * *eiter / pi__, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
+          *diter *= std::pow(2.0 * *eiter / pi__, 0.75) * std::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / std::sqrt(denom);
 
         vector<vector<double>> cont(1, *iter);
         vector<pair<int, int>> cran(1, *citer);
@@ -280,7 +280,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
-        const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
+        const double scal = 1.0 / std::sqrt((coverlap.data())[0]);
         for (auto& d : *iter) d *= scal;
       }
 
@@ -378,7 +378,7 @@ double Atom::angle(const shared_ptr<const Atom> a, const shared_ptr<const Atom> 
   bp -= op;
   Quatern<double> rot = ap * bp;
   rot[0] = 0;
-  return ::atan2(rot.norm(), ap.dot_product(bp)) * rad2deg__;
+  return std::atan2(rot.norm(), ap.dot_product(bp)) * rad2deg__;
 }
 
 
@@ -394,7 +394,7 @@ double Atom::dihedral_angle(const shared_ptr<const Atom> a, const shared_ptr<con
   Quatern<double> b3 = bp - op;
   Quatern<double> b12 = b1 * b2; b12[0] = 0.0;
   Quatern<double> b23 = b2 * b3; b23[0] = 0.0;
-  return ::atan2(b2.norm()*b1.dot_product(b23), b12.dot_product(b23)) * rad2deg__;
+  return std::atan2(b2.norm()*b1.dot_product(b23), b12.dot_product(b23)) * rad2deg__;
 }
 
 

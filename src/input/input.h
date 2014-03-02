@@ -128,6 +128,7 @@ class PTree {
 
     template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;
     template<typename T, int N> std::array<T,N> get_array(const std::string s) const;
+    template<typename T, int N> std::array<T,N> get_array_optional(const std::string s, const std::array<T,N> def) const;
 
     void erase(const std::string key) { data_.erase(key); }
 
@@ -174,6 +175,24 @@ template<typename T, int N> std::array<T,N> PTree::get_array(const std::string k
   for (auto& i : *tmp)
     out[n++] = lexical_cast<T>(i->data());
   return out;
+}
+
+template<typename T, int N> std::array<T,N> PTree::get_array_optional(const std::string key, const std::array<T,N> def) const {
+  std::array<T,N> out;
+  auto tmp = get_child_optional(key);
+  if(tmp) {
+    if (tmp->size() != N) {
+      std::stringstream err;
+      err << "Unexpected number of elements in array " << key << ". Expected: " << N << ", received: " << tmp->size();
+      throw std::runtime_error(err.str());
+    }
+    int n = 0;
+    for (auto& i : *tmp)
+      out[n++] = lexical_cast<T>(i->data());
+    return out;
+  } else {
+    return def;
+  }
 }
 
 
