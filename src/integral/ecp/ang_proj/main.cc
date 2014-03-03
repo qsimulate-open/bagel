@@ -11,7 +11,7 @@ using namespace std;
 
 int main() {
 
-#if 0
+#if 1
   cout << " Expansion of a Gaussian about a different centre " << endl;
   BesselI besselI;
   int l = 0;
@@ -45,13 +45,21 @@ int main() {
     cout << endl;
   }
 
-  Comb comb;
-  std::array<int, 3> cartesian = {0, 0, 2};
-  std::shared_ptr<CarSph> carsph = std::make_shared<CarSph>(cartesian);
-  carsph->transform_CarSph();
-  carsph->print();
+const int maxl = 3;
+for (int iz = 0; iz <= maxl; ++iz) {
+  for (int iy = 0; iy <= maxl - iz; ++iy) {
+    const int ix = maxl - iz - iy;
+    Comb comb;
+    std::array<int, 3> cartesian = {ix, iy, iz};
+    std::shared_ptr<CarSph> carsph = std::make_shared<CarSph>(cartesian);
+    carsph->transform_CarSph();
+    carsph->print();
+    cout << "---" << endl;
+  }
+}
 #endif
 
+#if 0
   std::array<double, 3> centreB = {0.0, 0.0, 0.0};
   std::array<int, 2> lm = {0, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
@@ -79,6 +87,7 @@ int main() {
     sphusp->print();
 
   }
+#endif
 
   return 0;
 

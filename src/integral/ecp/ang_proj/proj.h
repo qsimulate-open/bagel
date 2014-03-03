@@ -104,10 +104,9 @@ class SphUSP {
       std::cout << "---- Expansion ----" << std::endl;
       for (int lz = 0; lz <= angular_momentum_[0]; ++lz) {
         for (int ly = 0; ly <= angular_momentum_[0] - lz; ++ly) {
-          cnt += 1;
+          cnt ++;
           const int lx = angular_momentum_[0] - lz - ly;
           const double coeff = compute_coeff(lx, ly);
-//        std::pair<double, int> c_usp = std::make_pair<int, double>(coeff, cnt);
           std::pair<double, int> c_usp(coeff, cnt);
           usp_.push_back(c_usp);
         }
@@ -177,17 +176,21 @@ class CarSph {
 
     void print() {
       std::cout << "-- Print Cartesian in carsph --" << std::endl;
-      std::cout << "car[" << (angular_momentum_ + 2) * (angular_momentum_ + 1) / 2 << "] = (";
+      std::cout << "car[" << (angular_momentum_ + 2) * (angular_momentum_ + 1) / 2 << "]" << std::endl;
       for (auto it = cartesian_.begin(); it != cartesian_.end(); ++it) {
-        std::cout << setw(17) << setprecision(9) << *it << ", ";
+        std::cout << setw(17) << setprecision(9) << *it << std::endl;
       }
-      std::cout << ")" << std::endl;
       std::cout << "-- Print Spherical in carsph --" << std::endl;
-      std::cout << "sph[" << 2 * angular_momentum_ + 1 << "] = (";
+      std::cout << "sph[" << 2 * angular_momentum_ + 1 << "]" << std::endl;
+      int cnt = 0;
       for (auto it = spherical_.begin(); it != spherical_.end(); ++it) {
-        cout << setw(17) << setprecision(9) << *it << ", ";
+        if (cnt % 2 == 0) {
+          cout << "(" << angular_momentum_ << ", " << setw(3) << angular_momentum_ - cnt/2 << ") " << setw(17) << setprecision(9) << *it << std::endl;
+        } else {
+          cout << "(" << angular_momentum_ << ", " << setw(3) << -(angular_momentum_ - cnt/2) << ") " << setw(17) << setprecision(9) << *it << std::endl;
+        }
+        cnt ++;
       }
-      std::cout << ")" << std::endl;
     }
 
 };
@@ -382,6 +385,89 @@ class AngularProj {
       return coeff * w1 * w2;
     }
 
+    double integrate3USP(const int i, const int j, const int k) {
+      const mpreal pi = static_cast<mpreal>(atan(1.0) * 4.0);
+      if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
+        Factorial fact;
+        mpreal num = "2.0" * fact.compute(i) * fact.compute(j) * fact.compute(k) * fact.compute((i+j+k+2)/2);
+        mpreal denom = fact.compute(i/2) * fact.compute(j/2) * fact.compute(k/2) * fact.compute(i+j+k+2);
+        return ("4.0" * pi * num / denom).toDouble();
+      } else {
+        return 0.0;
+      }
+    }
+
+    double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, std::array<int, 3> ijk) {
+      std::vector<std::pair<double, int>> usp;
+      int cnt = 0;
+      for (int lz = 0; lz <= lm1.first; ++lz) {
+        for (int ly = 0; ly <= lm1.first - lz; ++ly) {
+          const int lx = lm1.first - lz - ly;
+          std::array<int, 2> lm = {lm1.first, lm1.second};
+          std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
+          const double coeff = sphusp->compute_coeff(lx, ly);
+          if (coeff != 0.0) {
+            cnt ++;
+            std::pair<double, int> c_usp(coeff, cnt);
+            usp.push_back(c_usp);
+          }
+        }
+      }
+      const int n1 = cnt;
+      cnt = 0;
+      for (int lz = 0; lz <= lm2.first; ++lz) {
+        for (int ly = 0; ly <= lm2.first - lz; ++ly) {
+          const int lx = lm2.first - lz - ly;
+          std::array<int, 2> lm = {lm2.first, lm2.second};
+          std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
+          const double coeff = sphusp->compute_coeff(lx, ly);
+          if (coeff != 0.0) {
+            cnt ++;
+            std::pair<double, int> c_usp(coeff, cnt);
+            usp.push_back(c_usp);
+          }
+        }
+      }
+      const int n2 = cnt;
+      assert (n1 + n2 == usp.size() - 1);
+      double ans = 0.0;
+      for (int i = 0; i != n1; ++i) {
+        for (int j = n1; j != n1 + n2; ++j) {
+          const double coeff = usp[i].first * usp[j].first;
+          std::array<int, 3> ki;
+          int id = usp[i].second;
+          int kx = 0;
+          for (int lp1 = lm1.first + 1; lp1 != 0; --lp1) {
+            if (id - lp1 < 0) {
+              ki[0] = kx;
+              ki[1] = id;
+              ki[2] = lm1.first - ki[0] - ki[1];
+            } else {
+              kx++;
+              id -= lp1;
+            }
+          }
+          std::array<int, 3> kj;
+          id = usp[j].second;
+          kx = 0;
+          for (int lp1 = lm2.first + 1; lp1 != 0; --lp1) {
+            if (id - lp1 < 0) {
+              kj[0] = kx;
+              kj[1] = id;
+              kj[2] = lm2.first - kj[0] - kj[1];
+            } else {
+              kx++;
+              id -= lp1;
+            }
+          }
+          const int x = ki[0] + kj[0] + ijk[0];
+          const int y = ki[1] + kj[1] + ijk[1];
+          const int z = ki[2] + kj[2] + ijk[2];
+          ans += coeff * integrate3USP(x, y, z);
+        }
+      }
+    }
+
     double integrate(const double r) const {
       const double pi = static_cast<double>(atan(1.0) * 4.0);
       std::array<double, 3> AB;
@@ -416,6 +502,7 @@ class AngularProj {
                 std::cout << "m = " << m << "   mu = " << mu << std::endl;
                 const double Z_AB = sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB);
                 std::cout << "theta = " << thAB << " phi = " << phAB << " Z_AB(r_AB) =  " << Z_AB << std::endl;
+#if 0
                 const std::array<int, 3> exp = {kx, ky, kz};
                 CarSph carsph(exp);
                 carsph.transform_CarSph();
@@ -433,8 +520,9 @@ class AngularProj {
                     std::cout << "SH integral  =  " << integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk) << std::endl;
                     smu += Z_AB * integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk);
                   }
-                  cnt += 1;
+                  cnt ++;
                 }
+#endif
               }
               const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
               const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
