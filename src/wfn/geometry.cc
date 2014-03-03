@@ -127,7 +127,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   print_atoms();
 
   // static external magnetic field
-  magnetic_field_ = geominfo->get_array_optional<double,3>("magnetic_field", {0.0, 0.0, 0.0});
+  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   if (magnetic_field())
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
