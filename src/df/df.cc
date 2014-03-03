@@ -440,7 +440,7 @@ void DFFullDist::add_product(const shared_ptr<const DFFullDist> o, const shared_
 
 
 shared_ptr<DFFullDist> DFFullDist::swap() const {
-  auto out = make_shared<DFFullDist>(shared_from_this(), nocc1(), nocc2());
+  auto out = make_shared<DFFullDist>(shared_from_this(), nocc2(), nocc1());
   for (auto& i : block_)
     out->add_block(i->swap());
   return out;

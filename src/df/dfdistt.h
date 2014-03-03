@@ -69,11 +69,18 @@ class DFDistT {
 
     void get_paralleldf(std::shared_ptr<ParallelDF>) const;
 
+    size_t naux() const { return naux_; }
+    size_t nindex1() const { return nindex1_; }
+    size_t nindex2() const { return nindex2_; }
+
     int size() const { return size_; }
     int start() const { return start_; }
     int nblocks() const { return data_.size(); }
     const double* data() const { assert(data_.size() == 1); return data(0); }
     const double* data(const int i) const { return data_[i]->data(); }
+
+    // returns the process that has the data
+    int locate(const size_t, const size_t n) const { return std::get<0>(dist_->locate(n)); }
 
     std::vector<std::shared_ptr<Matrix>> get_slice(const int start, const int end) const;
 
