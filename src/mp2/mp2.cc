@@ -194,9 +194,9 @@ void MP2::compute() {
     }
   };
 
-  const size_t ncache = memory_size / (nvirt*nvirt*2);
+  const int ncache = memory_size / (nvirt*nvirt*2);
   cout << "    * ncache = " << ncache << endl;
-  for (int n = 0; n != min(ncache, nocc*(nocc+1)/2); ++n)
+  for (int n = 0; n != min(ncache, nloop); ++n)
     cache_block(n, -1);
 
   // denominator info
@@ -206,7 +206,7 @@ void MP2::compute() {
   energy_ = 0;
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
-    if (n+ncache < nocc*(nocc+1)/2)
+    if (n+ncache < nloop)
       cache_block(n+ncache, n-1);
 
     const int i = get<0>(tasks[myrank][n]);
