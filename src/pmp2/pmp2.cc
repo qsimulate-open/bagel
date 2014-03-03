@@ -45,8 +45,6 @@ typedef shared_ptr<PCoeff> RefPCoeff;
 typedef shared_ptr<Shell> RefShell;
 typedef shared_ptr<PMatrix1e> RefMatrix;
 
-extern "C" { void start_up_slater_(); };
-
 // TODO I have not symmetrize intermediates to Hermitian as we are now using fixed amplitudes.
 
 #define DEBUG_PRINT
@@ -84,8 +82,6 @@ PMP2::PMP2(const RefGeom g, const RefPCoeff co, const vector<double> eg, const s
   if (geom_->naux() == 0) {
     throw runtime_error("CABS should be specified.");
   }
-
-  start_up_slater_();
 
 }
 

@@ -827,7 +827,7 @@ array<shared_ptr<const Matrix>,2> Geometry::compute_internal_coordinate(shared_p
   Matrix scale = bbslice;
   for (int i = 0; i != ninternal; ++i) {
     for (int j = 0; j != primsize; ++j) {
-      scale.element(j,i) *= hessprim[j];
+      scale(j,i) *= hessprim[j];
     }
   }
   Matrix hess = bbslice % scale;

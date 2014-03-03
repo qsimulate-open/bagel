@@ -304,6 +304,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const ParallelDF> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
 
+    std::shared_ptr<DFFullDist> swap() const;
 };
 
 }
