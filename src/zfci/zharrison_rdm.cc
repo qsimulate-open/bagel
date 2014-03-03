@@ -306,9 +306,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   for (int i = 0; i != 2; ++i) {
     shared_ptr<const ZMatrix> ocoeff = jop_->kramers_coeff(i)->get_conjg();
     auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
-co->print("aa", 40);
     bitset<1> b(i);
-cout << b<< endl;
     trans.insert(make_pair(b, co)); 
   }
 
@@ -325,9 +323,7 @@ cout << b<< endl;
     unique_ptr<complex<double>[]> tmp1(new complex<double>[2*norb4]);
     unique_ptr<complex<double>[]> tmp2(new complex<double>[4*norb4]);
     unique_ptr<complex<double>[]> tmp3(new complex<double>[8*norb4]);
-    trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->print("bbbb");//FIXME
-    zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_,
-            0.0, tmp1.get(), 2*norb_);
+    zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_, 0.0, tmp1.get(), 2*norb_);
     for (int i = 0; i != norb2; ++i)
       zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_); 
     for (int i = 0; i != norb_; ++i)
