@@ -122,6 +122,7 @@ void MP2::compute() {
       for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
     }
   }
+  const int nloop = tasks[0].size();
 
   // start communication (n fetch behind) - n is determined by memory size
   // the data is stored in a map
@@ -151,7 +152,7 @@ void MP2::compute() {
         }
       }
     }
-    if (nadd < tasks[myrank].size()) {
+    if (nadd < nloop) {
       // issue recv requests
       auto request_one_ = [&](const int i, const int rank) {
         if (i < 0) return -1;
@@ -163,8 +164,7 @@ void MP2::compute() {
             cache[i] = fullt->get_slice(i*nvirt, (i+1)*nvirt).front();
           } else {
             cache[i] = make_shared<Matrix>(naux, nvirt);
-            tag = myrank*nocc+i;
-            mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, tag);
+            tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nocc+i);
           }
         }
         return tag;
@@ -175,19 +175,20 @@ void MP2::compute() {
         if (i < 0) return;
         // see if "i" is cached at dest
         if (cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank) return;
-        const int tag = dest*nocc+i;
-        mpi__->request_send(fullt->data() + (i*nvirt-fullt->start())*naux, nvirt*naux, dest, tag);
+        mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nocc+i);
       };
 
       for (int inode = 0; inode != mpi__->size(); ++inode) {
         if (inode == myrank) {
-          get<2>(tasks[myrank][nadd]) = request_one_(get<0>(tasks[inode][nadd]), inode); // receive requests
-          get<3>(tasks[myrank][nadd]) = request_one_(get<1>(tasks[inode][nadd]), inode);
+          // recieve data from other processes
+          get<2>(tasks[myrank][nadd]) = request_one_(get<0>(tasks[myrank][nadd]), myrank); // receive requests
+          get<3>(tasks[myrank][nadd]) = request_one_(get<1>(tasks[myrank][nadd]), myrank);
         } else {
-          request_one_(get<0>(tasks[inode][nadd]), inode); // update cachetable
-          request_one_(get<1>(tasks[inode][nadd]), inode);
+          // send data to other processes
           send_one_(get<0>(tasks[inode][nadd]), inode); // send requests
           send_one_(get<1>(tasks[inode][nadd]), inode);
+          request_one_(get<0>(tasks[inode][nadd]), inode); // update cachetable
+          request_one_(get<1>(tasks[inode][nadd]), inode);
         }
       }
     }
@@ -203,7 +204,7 @@ void MP2::compute() {
 
   // loop over tasks
   energy_ = 0;
-  for (int n = 0; n != tasks[myrank].size(); ++n) {
+  for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nocc*(nocc+1)/2)
       cache_block(n+ncache, n-1);

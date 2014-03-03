@@ -50,8 +50,8 @@ class DFDistT {
     std::shared_ptr<const StaticDist> dist_;
 
     // second and third dimension
-    size_t start_;
-    size_t size_;
+    size_t bstart_;
+    size_t bsize_;
 
     std::shared_ptr<const ParallelDF> df_;
 
@@ -73,8 +73,8 @@ class DFDistT {
     size_t nindex1() const { return nindex1_; }
     size_t nindex2() const { return nindex2_; }
 
-    int size() const { return size_; }
-    int start() const { return start_; }
+    int bsize() const { return bsize_; }
+    int bstart() const { return bstart_; }
     int nblocks() const { return data_.size(); }
     const double* data() const { assert(data_.size() == 1); return data(0); }
     const double* data(const int i) const { return data_[i]->data(); }
