@@ -253,7 +253,7 @@ void ZHarrison::compute_rdm12() {
   const double recomp_energy =
           (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core
         + (trace2("0000")*0.5 + trace2("1111")*0.5
-            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av(bitset<4>("0101"))->data(), 1)
+            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
             + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
   cout << "    *  recalculated FCI energy (state averaged)" << endl;
   cout << setw(29) << setprecision(8) << recomp_energy << endl;
