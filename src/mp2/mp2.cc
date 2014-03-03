@@ -129,6 +129,7 @@ void MP2::compute() {
   map<int, shared_ptr<Matrix>> cache;
   // pair of node and set of integers
   vector<set<int>> cachetable(mpi__->size());
+  vector<int> sendreqs;
 
   auto cache_block = [&](const int nadd, const int ndrop) {
     assert(ndrop < nadd);
@@ -172,10 +173,10 @@ void MP2::compute() {
 
       // issue send requests
       auto send_one_ = [&](const int i, const int dest) {
-        if (i < 0) return;
         // see if "i" is cached at dest
-        if (cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank) return;
-        mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nocc+i);
+        if (i < 0 || cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank)
+          return -1;
+        return mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nocc+i);
       };
 
       for (int inode = 0; inode != mpi__->size(); ++inode) {
@@ -185,9 +186,11 @@ void MP2::compute() {
           get<3>(tasks[myrank][nadd]) = request_one_(get<1>(tasks[myrank][nadd]), myrank);
         } else {
           // send data to other processes
-          send_one_(get<0>(tasks[inode][nadd]), inode); // send requests
-          send_one_(get<1>(tasks[inode][nadd]), inode);
+          const int i = send_one_(get<0>(tasks[inode][nadd]), inode); // send requests
+          if (i >= 0) sendreqs.push_back(i);
           request_one_(get<0>(tasks[inode][nadd]), inode); // update cachetable
+          const int j = send_one_(get<1>(tasks[inode][nadd]), inode); // send requests
+          if (j >= 0) sendreqs.push_back(j);
           request_one_(get<1>(tasks[inode][nadd]), inode);
         }
       }
@@ -237,6 +240,10 @@ void MP2::compute() {
     energy_ += en;
   }
 
+  // just to double check that all the communition is done
+  for (auto& i : sendreqs)
+    mpi__->wait(i); 
+  // allreduce energy contributions
   mpi__->allreduce(&energy_, 1);
 
   cout << "    * assembly done" << endl << endl;
