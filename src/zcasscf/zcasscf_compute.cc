@@ -124,7 +124,7 @@ void ZCASSCF::compute() {
 
     if (___debug___break_kramers) {
       ___debug___print_gradient(grad, ___debug___with_kramers);
-      ___debug___compute_hessian(cfock, afock, ___debug___with_kramers);
+      ___debug___compute_hessian(cfock, afock, qvec, ___debug___with_kramers);
     }
 
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);

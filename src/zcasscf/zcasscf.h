@@ -98,7 +98,7 @@ class ZCASSCF : public Method {
     // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
     void ___debug___orbital_rotation(const bool kramers);
     void ___debug___print_gradient(std::shared_ptr<const ZRotFile> grad, const bool kramers) const;
-    void ___debug___compute_hessian(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, const bool kramers) const;
+    void ___debug___compute_hessian(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, const bool kramers) const;
     // returns [x,y] = (xx|yy) (x is an index of coeffa, and y is an index of coeffi)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [x,y] = (xy|yx) (x is an index of coeffa, and y is an index of coeffi)
@@ -115,9 +115,9 @@ class ZCASSCF : public Method {
     // returns [s,t,u,v] = (st|uv) (stuv are indicies of coeffi and coeffi should be active)
     std::shared_ptr<ZMatrix> ___debug___all_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [a,t] = (aa|vw) * G(vw,tt) (a is index of coeffa, and t is active)
-    std::shared_ptr<ZMatrix> ___debug___2rdm_contraction_coulomb(std::shared_ptr<const ZMatrix> coeffa) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_coulomb(std::shared_ptr<const ZMatrix> coeffa) const;
     // returns [a,t] = (aw|va) * G(vw,tt) (a is index of coeffa, and t is active)
-    std::shared_ptr<ZMatrix> ___debug___2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa) const;
     // return FCI energy from transformed 1&2RDM
     double ___debug___recompute_fci_energy(std::shared_ptr<const ZMatrix> cfock) const;
 };

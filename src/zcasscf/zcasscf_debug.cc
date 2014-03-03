@@ -43,9 +43,15 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
 
   // currently ++ and -- blocks
-  atmp->ele_vc(morbital, norbital) = angle;
-  if (kramers)
-    atmp->ele_vc(nvirt_+morbital, nclosed_+norbital) = angle; // = conj(angle)
+  if (nact_) {
+    atmp->ele_va(morbital, norbital) = angle;
+    if (kramers)
+      atmp->ele_va(nvirt_+morbital, nact_+norbital) = angle; // = conj(angle)
+  } else {
+    atmp->ele_vc(morbital, norbital) = angle;
+    if (kramers)
+      atmp->ele_vc(nvirt_+morbital, nclosed_+norbital) = angle; // = conj(angle)
+  }
 
   shared_ptr<ZMatrix> amattmp = atmp->unpack<ZMatrix>();
 
@@ -64,13 +70,32 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 
   auto expatmp = make_shared<ZMatrix>(*amattmp ^ *amattmp_sav);
 
-  if (kramers)
+  if (kramers) {
     kramers_adapt(expatmp);
+    assert( ( (*expatmp->get_submatrix(nocc_*2, 0, nvirt_, nclosed_)) 
+             - (*expatmp->get_submatrix(nocc_*2+nvirt_, nclosed_, nvirt_, nclosed_)->get_conjg()) ).rms() < 1e-20 );
+  }
 
+  expatmp->purify_unitary(); //FIXME ; needed to ensure orthonormality in the perturbed coefficients
   shared_ptr<const ZMatrix> pco = make_shared<const ZMatrix>(*coeff_ * *expatmp);
   auto tt = make_shared<ZMatrix>(*coeff_ - *pco);
+  // check orthonormality
+  {
+    auto overlap = make_shared<const RelOverlap>(geom_);
+    auto orth = make_shared<ZMatrix>(*pco % *overlap * *pco);
+    auto unit = orth->clone();
+    unit->unit();
+    *orth -= *unit; 
+    if (orth->rms() > 1e-15) {
+      stringstream ss;
+      ss << "coefficients are not orthonormal. Residual: " << scientific << setprecision(4) << orth->rms();
+      throw runtime_error(ss.str());
+    }
+  }
 
-  cout << "norm delta(coeff) = " << setprecision(8) << tt->norm() << endl;
+  cout << "norm coeff  = "        << setprecision(20) << coeff_->norm() << endl; 
+  cout << "norm pcoeff = "        << setprecision(20) << pco->norm() << endl; 
+  cout << "norm delta(coeff) = "  << setprecision(8) << tt->norm() << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 
   coeff_ = pco;
@@ -79,18 +104,26 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 
 void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
-  cout << "orbital gradient" << endl;
 
-  // currently ++ and -- blocks
-  const complex<double> gradient = grad->ele_vc(morbital, norbital)
-                                 + (with_kramers ? grad->ele_vc(nvirt_+morbital, nclosed_+norbital) : complex<double>(0.0));
+  if (nact_) {
+    cout << "virtual-active orbital gradient" << endl;
+    // currently ++ and -- blocks
+    const complex<double> gradient = grad->ele_va(morbital, norbital)
+                                   + (with_kramers ? grad->ele_va(nvirt_+morbital, nact_+norbital) : complex<double>(0.0));
+    cout << setprecision(10) << gradient << endl;
+  } else {
+    cout << "virtual-closed orbital gradient" << endl;
+    // currently ++ and -- blocks
+    const complex<double> gradient = grad->ele_vc(morbital, norbital)
+                                   + (with_kramers ? grad->ele_vc(nvirt_+morbital, nclosed_+norbital) : complex<double>(0.0));
+    cout << setprecision(10) << gradient << endl;
+  }
 
-  cout << setprecision(10) << gradient << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 }
 
 
-void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, const bool with_kramers) const {
+void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
   shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
   shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
   shared_ptr<ZMatrix> maaii = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
@@ -112,9 +145,26 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     *maiia += *maiia->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
   }
 
+  shared_ptr<ZMatrix> cfockd;
   if (nact_) {
-    shared_ptr<ZMatrix> maatt  = ___debug___2rdm_contraction_coulomb(coeffa);
-    shared_ptr<ZMatrix> matta = ___debug___2rdm_contraction_exchange(coeffa);
+    shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
+    cfockd->hermite();
+
+    shared_ptr<ZMatrix> maatt = ___debug___diagonal_2rdm_contraction_coulomb(coeffa);
+    shared_ptr<ZMatrix> matta = ___debug___diagonal_2rdm_contraction_exchange(coeffa);
+    *maatt -= *matta;
+
+    for (int t = 0; t != nact_*2; ++t) {
+      for (int a = 0; a != nvirt_*2; ++a) {
+        const int na = a + nocc_*2;
+        (*maatt)(a, t) += ((*cfock)(na,na) * (*rdm1)(t,t))  - (*cfockd)(t,t) - (*qxr)(nclosed_*2 + t, t);
+      }
+    }
+    cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
+    cout << "diagonal hessian value" << endl;
+    cout << setprecision(10) << (*maatt)(morbital, norbital)*2.0 << endl;
+    cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 
     double fcienergy = ___debug___recompute_fci_energy(cfock->get_submatrix(nclosed_*2,nclosed_*2,nact_*2,nact_*2));
     cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
@@ -671,7 +721,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___2rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa) const {
   // returns Mat(a,t) = (aa|vw)*(G(vw,tt)  where a is an index of coeffa, and t is active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -696,7 +746,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___2rdm_contraction_coulomb(shared_ptr<cons
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___2rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa) const {
   // returns Mat(a,t) = (aw|va)*(G(vw,tt)  where a is an index of coeffa, and t is active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
