@@ -112,6 +112,14 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     *maiia += *maiia->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
   }
 
+  if (nact_) {
+    double fcienergy = ___debug___recompute_fci_energy(cfock->get_submatrix(nclosed_*2,nclosed_*2,nact_*2,nact_*2));
+    cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
+    cout << "recomputed FCI energy" << endl;
+    cout << setprecision(12) << fcienergy << endl;
+    cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
+  }
+
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
   cout << "diagonal hessian value" << endl;
   cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
@@ -119,6 +127,20 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 }
 
 
+double ZCASSCF::___debug___recompute_fci_energy(shared_ptr<const ZMatrix> cfock) const {
+  // returns FCI energy ; requires core fock matrix for active orbitals as input
+  assert(cfock->ndim() == 2*nact_ && cfock->ndim() == cfock->mdim());
+
+  shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
+  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+  shared_ptr<ZMatrix> ijkl = ___debug___all_integrals_coulomb_active(coeff_->slice(nclosed_*2, nclosed_*2 + nact_*2));
+
+  double twoelen = (rdm2->dot_product(ijkl)).real();
+  double oneelen = (rdm1->dot_product(cfock)).real();
+  double tote = fci_->core_energy()  + geom_->nuclear_repulsion() + oneelen + 0.5*twoelen;
+
+  return tote;
+}
 
 /////////////////////////////////////
 /// integral routines. They work. ///
