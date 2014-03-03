@@ -114,6 +114,8 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 
   if (nact_) {
     shared_ptr<ZMatrix> maatt  = ___debug___2rdm_contraction_coulomb(coeffa);
+    shared_ptr<ZMatrix> matta = ___debug___2rdm_contraction_exchange(coeffa);
+
     double fcienergy = ___debug___recompute_fci_energy(cfock->get_submatrix(nclosed_*2,nclosed_*2,nact_*2,nact_*2));
     cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
     cout << "recomputed FCI energy" << endl;
@@ -682,6 +684,31 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___2rdm_contraction_coulomb(shared_ptr<cons
 
   // (2) contract integrals with 2RDM
   shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(*maavw * *rdm2);
+  
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coefft->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    for (int t = 0; t != coefft->mdim(); ++t) {
+      (*out)(a, t) = (*intermed1)(a, t+coefft->mdim()*t) ;
+    }
+  }
+
+  return out;
+}
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___2rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa) const {
+  // returns Mat(a,t) = (aw|va)*(G(vw,tt)  where a is an index of coeffa, and t is active.
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+
+  shared_ptr<ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
+  shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
+
+  // (1) compute (aw|va) integrals
+  shared_ptr<ZMatrix> mawva = ___debug___diagonal_integrals_exchange_active(coeffa, coefft); // <- only difference is here
+  assert(mawva->ndim() == coeffa->mdim());
+
+  // (2) contract integrals with 2RDM
+  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(*mawva * *rdm2);
   
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coefft->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {

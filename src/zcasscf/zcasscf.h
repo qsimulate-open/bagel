@@ -116,6 +116,8 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___all_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [a,t] = (aa|vw) * G(vw,tt) (a is index of coeffa, and t is active)
     std::shared_ptr<ZMatrix> ___debug___2rdm_contraction_coulomb(std::shared_ptr<const ZMatrix> coeffa) const;
+    // returns [a,t] = (aw|va) * G(vw,tt) (a is index of coeffa, and t is active)
+    std::shared_ptr<ZMatrix> ___debug___2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa) const;
     // return FCI energy from transformed 1&2RDM
     double ___debug___recompute_fci_energy(std::shared_ptr<const ZMatrix> cfock) const;
 };
