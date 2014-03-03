@@ -468,7 +468,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,j,i) = (aa|ji) where i and j are active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
-  assert(coeffi->mdim() == nact_);
+  assert(coeffi->mdim() == 2*nact_);
 
   // (1) Sepeate real and imaginary parts for pcoeff
   array<shared_ptr<const Matrix>, 4> racoeff;
@@ -545,7 +545,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active(shared
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,j,i) = (ai|ja), where i is an active index
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
-  assert(coeffi->mdim() == nact_);
+  assert(coeffi->mdim() == 2*nact_);
 
   // (1) Sepeate real and imaginary parts for pcoeff
   array<shared_ptr<const Matrix>, 4> racoeff;
@@ -622,7 +622,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(i,j,k,l) = (ij|kl) where all indices are in the active space.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
-  assert(coeffi->mdim() == nact_);
+  assert(coeffi->mdim() == 2*nact_);
 
   // (1) Sepeate real and imaginary parts for pcoeff
   array<shared_ptr<const Matrix>, 4> ricoeff;
