@@ -61,7 +61,7 @@ class RegionLocalization : public OrbitalLocalization {
     std::vector<std::pair<int, int>> bounds_;
     std::vector<int> sizes_;
     std::shared_ptr<Matrix> sqrt_S_;
-    std::shared_ptr<DistMatrix> S_inverse_half_;
+    std::shared_ptr<Matrix> S_inverse_half_;
     std::vector<std::vector<int>> region_orbitals_;
 
     std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> coeff) override;
