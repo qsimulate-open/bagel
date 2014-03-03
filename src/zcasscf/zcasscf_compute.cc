@@ -164,22 +164,9 @@ void ZCASSCF::compute() {
 
 shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
   assert(fci_);
-
-  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  auto rdm1_tot = make_shared<ZMatrix>(nact_*2, nact_*2);
-  rdm1_tot->copy_block(    0,     0, nact_, nact_, fci_->rdm1_av("00")->data());
-  rdm1_tot->copy_block(nact_, nact_, nact_, nact_, fci_->rdm1_av("11")->data());
-  rdm1_tot->copy_block(nact_,     0, nact_, nact_, fci_->rdm1_av("10")->data());
-  rdm1_tot->copy_block(    0, nact_, nact_, nact_, rdm1_tot->get_submatrix(nact_, 0, nact_, nact_)->transpose_conjg());
-
-  auto coeff_tot = fci_->coeff()->get_conjg();
-
-  // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
-  // TODO compute RelOverlap only once (this is comptued also in zqvec)
-  auto overlap = make_shared<const RelOverlap>(geom_);
-  shared_ptr<const ZMatrix> ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2)->get_conjg();
-  const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
-  return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
+  shared_ptr<const ZMatrix> out = fci_->rdm1_av();
+  assert(out->ndim() == 2*nact_ && out->mdim() == 2*nact_);
+  return out; 
 }
 
 

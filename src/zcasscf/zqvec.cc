@@ -91,7 +91,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
       // JEB : read the above as if each index was a creation/annihilation operator for target and source indices
       b[3] = t.first[1]; b[2] = s.first[1]; b[1] = t.first[0]; b[0] = s.first[0];
       // JEB : take the bitset b, and return the 2rdm_av value for specified bitset
-      shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av(b); 
+      shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av_kramers(b); 
       // JEB : after swapping the indices order will be :
       // t^+ t s^+ s
       shared_ptr<ZRDM<2>> rdm = rdmbuf->clone();
