@@ -163,7 +163,7 @@ void MP2::compute() {
           if (origin == myrank) {
             cache[i] = fullt->get_slice(i*nvirt, (i+1)*nvirt).front();
           } else {
-            cache[i] = make_shared<Matrix>(naux, nvirt);
+            cache[i] = make_shared<Matrix>(naux, nvirt, true);
             tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nocc+i);
           }
         }
