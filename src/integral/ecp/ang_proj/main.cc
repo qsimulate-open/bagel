@@ -24,11 +24,13 @@ int main() {
   const double phi = 1.3;
   const double theta = 3.1;
   cout << "th = " << theta << "  ph = " << phi << "  Y_lm(x) = " << sh.ylm(l, m, theta, phi).real() << "    " << sh.ylm(l, m, theta, phi).imag() << endl;
+#endif
 
+#if 0
   GaussOntoSph gos;
   cout << "coef =   " << gos.compute_c(2, 0, 2, 0, 0) << endl;
-  std::list<std::shared_ptr<CartesianGauss>> gauss;
 
+  std::list<std::shared_ptr<CartesianGauss>> gauss;
   std::array<double, 3> centre = {0.0, 0.0, 0.0};
   gauss = gos.sphcar(centre, 0,0);
   cout << "No. of Cartesian Gaussians = " << gauss.size() << endl;
@@ -44,7 +46,9 @@ int main() {
     }
     cout << endl;
   }
+#endif
 
+#if 0
 const int maxl = 3;
 for (int iz = 0; iz <= maxl; ++iz) {
   for (int iy = 0; iy <= maxl - iz; ++iy) {
@@ -61,12 +65,12 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
 #if 1
   std::array<double, 3> centreB = {0.0, 0.0, 0.0};
-  std::array<int, 2> lm = {0, 0};
+  std::array<int, 2> lm = {1, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
 
   std::array<double, 3> centreA = {0.0, 0.0, 0.0};
-  std::array<int, 3> angular_momentum = {0, 0, 0};
+  std::array<int, 3> angular_momentum = {0, 0, 1};
   const double alpha = 0.0;
   std::shared_ptr<CartesianGauss> cargauss = std::make_shared<CartesianGauss>(alpha, angular_momentum, centreA);
   cargauss->print();
@@ -84,7 +88,7 @@ for (int iz = 0; iz <= maxl; ++iz) {
     std::array<int, 2> lmp = {lp, mp};
     std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lmp);
 
-    sphusp->print();
+//  sphusp->print();
 
   }
 #endif

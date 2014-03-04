@@ -103,7 +103,7 @@ class SphUSP {
       int cnt = 0;
       for (int lz = 0; lz <= angular_momentum_[0]; ++lz) {
         for (int ly = 0; ly <= angular_momentum_[0] - lz; ++ly) {
-          cnt ++;
+          ++cnt;
           const int lx = angular_momentum_[0] - lz - ly;
           const double coeff = compute_coeff(lx, ly);
           std::pair<double, int> c_usp(coeff, cnt);
@@ -188,7 +188,7 @@ class CarSph {
         } else {
           cout << "(" << angular_momentum_ << ", " << setw(3) << -(angular_momentum_ - cnt/2) << ") " << setw(17) << setprecision(9) << *it << std::endl;
         }
-        cnt ++;
+        ++cnt;
       }
     }
 
@@ -384,7 +384,7 @@ class AngularProj {
       return coeff * w1 * w2;
     }
 
-    double integrate3USP(const int i, const int j, const int k) {
+    double integrate3USP(const int i, const int j, const int k) const {
       const mpreal pi = static_cast<mpreal>(atan(1.0) * 4.0);
       if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
         Factorial fact;
@@ -396,7 +396,7 @@ class AngularProj {
       }
     }
 
-    double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, std::array<int, 3> ijk) {
+    double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const {
       std::vector<std::pair<double, int>> usp;
       std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
       std::array<int, 2> lm = {lm1.first, lm1.second};
@@ -411,14 +411,12 @@ class AngularProj {
           if (coeff != 0.0) {
             nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
-            std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
-          cnt ++;
+          ++cnt;
         }
       }
       const int n1 = nonzero;
-      std::cout << "n1 = " << n1 << std::endl;
 
       lm = {lm2.first, lm2.second};
       sphusp = std::make_shared<SphUSP>(lm);
@@ -435,12 +433,10 @@ class AngularProj {
             std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
-          cnt ++;
+          ++cnt;
         }
       }
       const int n2 = nonzero;
-      std::cout << "n2 = " << n2 << std::endl;
-      std::cout << "usp.size() = n1 + n2 = " << usp.size() << std::endl;
 
       assert (n1 + n2 == usp.size());
       double ans = 0.0;
@@ -466,7 +462,6 @@ class AngularProj {
           id = usp[j].second;
           kz = 0;
           for (int lp1 = lm2.first + 1; lp1 != 0; --lp1) {
-//          std::cout << "Debug ** id = " << id << " lp1 = " << lp1 << " kz = " << kz << std::endl;
             if (id - lp1 < 0) {
               kj[2] = kz;
               kj[1] = id;
@@ -477,11 +472,9 @@ class AngularProj {
               id -= lp1;
             }
           }
-//        std::cout << "kj[0] = " << kj[0] << " kj[1] = " << kj[1] << " kj[2] = " << kj[2] << std::endl;
           const int x = ki[0] + kj[0] + ijk[0];
           const int y = ki[1] + kj[1] + ijk[1];
           const int z = ki[2] + kj[2] + ijk[2];
-          std::cout << " i = " << i << " j = " << j << " idi = " << usp[i].second << " idj = " << usp[j].second << " coeff = " << coeff << " x = " << x << " y = " << y << " z = " << z << std::endl;
           ans += coeff * integrate3USP(x, y, z);
         }
       }
@@ -496,69 +489,57 @@ class AngularProj {
       for (int i = 0; i != 3; ++i) AB[i] = sh_->centre(i) - gauss_->centre(i);
       const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
       std::cout << "Distance between centres A and B =   " << dAB << std::endl;
-      const double thAB = acos(AB[2]/dAB);
-      const double phAB = atan2(AB[1], AB[0]);
-      const int nx = gauss_->angular_momentum(0);
-      const int ny = gauss_->angular_momentum(1);
-      const int nz = gauss_->angular_momentum(2);
-      const int nu = nx + ny + nz;
-      const int lnu = sh_->angular_momentum(0) + nu;
-      Comb comb;
-      double ans = 0.0;
-      for (int kx = 0; kx != nx+1; ++kx) {
-        std::cout << "kx = " << kx << std::endl;
-        const double ckx = comb.c(nx, kx);
-        for (int ky = 0; ky != ny+1; ++ky) {
-          std::cout << "ky = " << ky << std::endl;
-          const double cky = comb.c(ny, ky);
-          for (int kz = 0; kz != nz+1; ++kz) {
-            std::cout << "kz = " << kz << std::endl;
-            const double ckz = comb.c(nz, kz);
-            const int lk = kx + ky + kz;
-            double sld = 0.0;
-            for (int ld = 0; ld != lnu+1; ++ld) {
-              std::cout << "lambda =  " << ld << std::endl;
-              double smu = 0.0;
-              for (int m = 0; m != 2 * ld + 1; ++m) {
-                const int mu = m - ld;
-                std::cout << "m = " << m << "   mu = " << mu << std::endl;
-                const double Z_AB = sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB);
-                std::cout << "theta = " << thAB << " phi = " << phAB << " Z_AB(r_AB) =  " << Z_AB << std::endl;
-#if 0
-                const std::array<int, 3> exp = {kx, ky, kz};
-                CarSph carsph(exp);
-                carsph.transform_CarSph();
-                std::cout << "Debug: CarSph line 321" << std::endl;
-                carsph.print();
-                int cnt = 0;
-                for (auto lxyz = carsph.spherical().begin(); lxyz != carsph.spherical().end(); ++lxyz) {
-                  int mk = 0;
-                  if (*lxyz != 0.0) {
-                    if (cnt % 2 == 0) {
-                      mk = lk - cnt / 2;
-                    } else {
-                      mk = -lk + (cnt - 1) / 2;
-                    }
-                    std::cout << "SH integral  =  " << integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk) << std::endl;
-                    smu += Z_AB * integrate3SHs(ld, mu, sh_->angular_momentum(0), sh_->angular_momentum(1), lk, mk);
-                  }
-                  cnt ++;
+      if (dAB == 0) {
+        const std::pair<int, int> lm1 = std::make_pair<int, int>(0, 0);
+        const std::pair<int, int> lm2 = std::make_pair<int, int>(sh_->angular_momentum(0), sh_->angular_momentum(1));
+        const std::array<int, 3> ijk = {gauss_->angular_momentum(0), gauss_->angular_momentum(1), gauss_->angular_momentum(2)};
+        const double rAsq = gauss_->centre(0) * gauss_->centre(0) + gauss_->centre(1) * gauss_->centre(1)
+                                                                  + gauss_->centre(2) * gauss_->centre(2);
+        return std::exp(-gauss_->exponent() * rAsq) * integrate2SH1USP(lm1, lm2, ijk);
+      } else {
+        const double thAB = acos(AB[2]/dAB);
+        const double phAB = atan2(AB[1], AB[0]);
+        const int nx = gauss_->angular_momentum(0);
+        const int ny = gauss_->angular_momentum(1);
+        const int nz = gauss_->angular_momentum(2);
+        const int nu = nx + ny + nz;
+        const int lnu = sh_->angular_momentum(0) + nu;
+        Comb comb;
+        double ans = 0.0;
+        for (int kx = 0; kx != nx+1; ++kx) {
+          std::cout << "kx = " << kx << std::endl;
+          const double ckx = comb.c(nx, kx);
+          for (int ky = 0; ky != ny+1; ++ky) {
+            std::cout << "ky = " << ky << std::endl;
+            const double cky = comb.c(ny, ky);
+            for (int kz = 0; kz != nz+1; ++kz) {
+              std::cout << "kz = " << kz << std::endl;
+              const double ckz = comb.c(nz, kz);
+              const int lk = kx + ky + kz;
+              double sld = 0.0;
+              for (int ld = 0; ld != lnu+1; ++ld) {
+                std::cout << "lambda =  " << ld << std::endl;
+                double smu = 0.0;
+                for (int m = 0; m != 2 * ld + 1; ++m) {
+                  const int mu = m - ld;
+                  const double Z_AB = sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB);
+                  const std::array<int, 3> exp = {kx, ky, kz};
+                  const std::pair<int, int> lm1(ld, mu);
+                  const std::pair<int, int> lm2(sh_->angular_momentum(0), sh_->angular_momentum(1));
+                  smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
                 }
-#endif
+                const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
+                const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
+                std::cout << "sbessel  = " << sbessel << std::endl;
+                std::cout << "exponential = " << exponential.toDouble() << std::endl;
+                sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
               }
-              const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
-              const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-              std::cout << "sbessel  = " << sbessel << std::endl;
-              std::cout << "exponential = " << exponential.toDouble() << std::endl;
-              sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
+              ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
             }
-            ans += sld * ckx * cky * ckz * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
-            std::cout << "ans before summing over kx, ky, kz and being multiplied by 4pi = " << ans << std::endl;
           }
         }
+        return ans * 4.0 * pi;
       }
-
-      return ans * 4.0 * pi;
     }
 
 };
@@ -582,7 +563,6 @@ class GaussOntoSph {
         t1 = fact.compute(2*lx) * fact.compute(2*ly) * fact.compute(2*lz) * fact.compute(l) * fact.compute(lmam);
         t1 /= (fact.compute(2*l) * fact.compute(lx) * fact.compute(ly) * fact.compute(lz) * fact.compute(l + am));
         t1 = sqrt(t1) / pow(2, l) / fact.compute(l);
-        std::cout << "t1 = " << t1 << std::endl;
         Comb comb;
         const mpreal zero = "0.0";
         mpreal c = zero;
@@ -592,14 +572,12 @@ class GaussOntoSph {
           } else {
             t2 = static_cast<mpreal>(comb.c(l, i) * comb.c(i, j) * pow(-1, i) * fact.compute(2*l - 2*i)/ fact.compute(lmam - 2*i));
           }
-          std::cout << "t2 = " << t2 << std::endl;
           for (int k = 0; k != j+1; ++k) {
             if (k < j || lx - 2*k < 0 || lx - 2*k < am) {
               t3 = zero;
             } else {
               t3 = static_cast<mpreal>(comb.c(j, k) * comb.c(am, lx - 2*k) * pow(-1, 0.5*(am - lx + 2*k)));
             }
-            std::cout << "t3 = " << t3 << std::endl;
             c += t1 * t2 * t3;
           }
         }
@@ -614,7 +592,7 @@ class GaussOntoSph {
           const int k = l - i - j;
           if (k >= 0) {
             const double c = compute_c(l, m, i, j, k);
-            std::cout << "(lm)(ijk) = (" << l << m << ") (" << i << j << k << ")    c = " << c << std::endl;
+//          std::cout << "(lm)(ijk) = (" << l << m << ") (" << i << j << k << ")    c = " << c << std::endl;
             if (c > 1e-13) {
               std::array<int, 3> ang = {i, j, k};
               gauss.push_back(std::make_shared<CartesianGauss>(0.0, ang, centre));
