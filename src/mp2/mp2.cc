@@ -101,7 +101,6 @@ void MP2::compute() {
       fullt = make_shared<DFDistT>(full, dist);
     }
 
-    // the memory size info that was used for storing AO integrals here will be used for buffer
     fullt->discard_df();
   }
   assert(fullt->nblocks() == 1);
