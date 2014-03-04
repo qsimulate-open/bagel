@@ -41,12 +41,12 @@ namespace bagel {
       const DistRASCivector<double>* this_;
       shared_ptr<DistRASCivector<double>> out_;
       shared_ptr<const RASDeterminants> det_;
-      unordered_map<size_t, size_t>* lexicalmap_;
+      unordered_map<bitset<nbit__>, size_t>* lexicalmap_;
 
       unique_ptr<double[]> buf_;
       list<int> requests_;
 
-      DistSpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
+      DistSpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<bitset<nbit__>, size_t>* lex) :
         abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
       {
         const size_t lb = det_->lenb();
@@ -101,7 +101,7 @@ namespace bagel {
             for (auto& ib : *iblock->stringsb()) {
               if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
                 const bitset<nbit__> bsostring = ib ^ maskij;
-                *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
+                *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring]];
               }
               ++odata;
             }
@@ -123,9 +123,9 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 #else
   auto out = make_shared<DistRASCivector<double>>(det_);
 
-  unordered_map<size_t, size_t> lexicalmap;
+  unordered_map<bitset<nbit__>, size_t> lexicalmap;
   for (size_t i = 0; i < det_->lenb(); ++i)
-    lexicalmap[det_->string_bits_b(i).to_ullong()] = i;
+    lexicalmap[det_->string_bits_b(i)] = i;
 
   this->init_mpi_recv();
 
@@ -196,16 +196,16 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
   const int ras3 = sdet->ras(2);
 
   // maps bits to their local offsets
-  unordered_map<size_t, size_t> alex;
+  unordered_map<bitset<nbit__>, size_t> alex;
   for (auto& ispace : *sdet->stringspacea()) {
     if (ispace)
-      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+      for (auto& abit : *ispace) alex[abit] = ispace->lexical<0>(abit);
   }
 
-  unordered_map<size_t, size_t> blex;
+  unordered_map<bitset<nbit__>, size_t> blex;
   for (auto& ispace : *sdet->stringspaceb()) {
     if (ispace)
-      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+      for (auto& bbit : *ispace) blex[bbit] = ispace->lexical<0>(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -220,7 +220,7 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_low
 
           const double phase = static_cast<double>(-1 * sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
 
-          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
         }
         ++odata;
       }
@@ -264,16 +264,16 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
   const int ras3 = sdet->ras(2);
 
   // maps bits to their local offsets
-  unordered_map<size_t, size_t> alex;
+  unordered_map<bitset<nbit__>, size_t> alex;
   for (auto& ispace : *det_->stringspacea()) {
     if (ispace)
-      for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical<0>(abit);
+      for (auto& abit : *ispace) alex[abit] = ispace->lexical<0>(abit);
   }
 
-  unordered_map<size_t, size_t> blex;
+  unordered_map<bitset<nbit__>, size_t> blex;
   for (auto& ispace : *det_->stringspaceb()) {
     if (ispace)
-      for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical<0>(bbit);
+      for (auto& bbit : *ispace) blex[bbit] = ispace->lexical<0>(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -288,7 +288,7 @@ template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_rai
 
           const double phase = static_cast<double>(sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
 
-          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
         }
         ++odata;
       }
