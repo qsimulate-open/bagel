@@ -36,7 +36,7 @@ namespace bagel {
 
 class Comb {
     constexpr static int max_ = 65;
-    std::array<unsigned long, max_*max_> c_;
+    std::array<size_t, max_*max_> c_;
   public:
     Comb() {
       std::fill(c_.begin(), c_.end(), 0U);
