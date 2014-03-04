@@ -81,10 +81,16 @@ void MP2::compute() {
     shared_ptr<DFHalfDist> half;
     if (abasis_.empty()) {
       half = geom_->df()->compute_half_transform(ocoeff);
+      // used later to determine the cache size
+      memory_size = half->block(0)->size() * 2;
+      mpi__->broadcast(&memory_size, 1, 0); 
     } else {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       half = cgeom->df()->compute_half_transform(ocoeff);
+      // used later to determine the cache size
+      memory_size = cgeom->df()->block(0)->size();
+      mpi__->broadcast(&memory_size, 1, 0); 
     }
 
     // second transform for virtual index and rearrange data
@@ -95,8 +101,6 @@ void MP2::compute() {
       fullt = make_shared<DFDistT>(full, dist);
     }
 
-    // the memory size info that was used for storing AO integrals here will be used for buffer
-    memory_size = fullt->df()->block(0)->size();
     fullt->discard_df();
   }
   assert(fullt->nblocks() == 1);
@@ -197,7 +201,7 @@ void MP2::compute() {
     }
   };
 
-  const int ncache = memory_size / (nvirt*nvirt*2);
+  const int ncache = min(memory_size/(nvirt*nvirt), size_t(20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
     cache_block(n, -1);
