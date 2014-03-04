@@ -44,11 +44,14 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
 
   // currently ++ and -- blocks
-  if (nact_) {
+  const bool perturb_active = idata_->get<bool>("perturb_active", false);
+  if (perturb_active) {
+    cout << "perturbing virtual active block" << endl;
     atmp->ele_va(morbital, norbital) = angle;
     if (kramers)
       atmp->ele_va(nvirt_+morbital, nact_+norbital) = angle; // = conj(angle)
   } else {
+    cout << "perturbing virtual closed block" << endl;
     atmp->ele_vc(morbital, norbital) = angle;
     if (kramers)
       atmp->ele_vc(nvirt_+morbital, nclosed_+norbital) = angle; // = conj(angle)
@@ -159,13 +162,16 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 
     shared_ptr<ZMatrix> mapattp = ___debug___diagonal_integrals_coulomb_active_kramers(coeffa, coefft); // 0 by symmetry
     shared_ptr<ZMatrix> maptpta = ___debug___diagonal_integrals_exchange_active_kramers(coeffa, coefft);
+    *mapattp -= *maptpta;
 
     for (int t = 0; t != nact_*2; ++t) {
       for (int a = 0; a != nvirt_*2; ++a) {
         const int na = a + nocc_*2;
-        (*maatt)(a, t) += ((*cfock)(na,na) * (*rdm1)(t,t))  - (*cfockd)(t,t) - (*qxr)(nclosed_*2 + t, t);
+        (*maatt)(a, t) += ((*cfock)(na,na) * (*rdm1)(t,t))  - (*cfockd)(t,t) - (*qxr)(nclosed_*2 + t, t)
+                          + (*mapattp)(a,t);
       }
     }
+    *maatt += *maatt->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>>" << endl;
     cout << "virtual-active diagonal hessian value" << endl;
@@ -833,13 +839,19 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
 
   // (5) form (aw|vb) where a runs fastest ; sort indices and contract with 2RDM
   shared_ptr<const ZMatrix> awvb = fullai->form_4index(fullia, 1.0);
-  auto intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
   SMITH::sort_indices<0,3,2,1,0,1,1,1>(awvb->data(), intermed1->data(), coeffa->mdim(), coeffi->mdim(), coeffi->mdim(), coeffa->mdim());
   *intermed1 *= *(fci_->rdm2_av());
 
-  // need to include metric
-  //  auto fullai_j = fullai->apply_J();
-  //  shared_ptr<const ZMatrix> aiai = fullai_j->form_4index(fullai_j, 1.0);
+  // need to include metric for (aw|bv) ; contract with 2 RDM
+  auto fullai_j = fullai->apply_J();
+  shared_ptr<const ZMatrix> awbv = fullai_j->form_4index(fullai_j, 1.0);
+  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  SMITH::sort_indices<0,2,1,3,0,1,1,1>(awbv->data(), intermed2->data(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim());
+  shared_ptr<ZMatrix> tmp1 = fci_->rdm2_av()->clone();
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), tmp1->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
+  *intermed2 *= *tmp1;
+
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {
     const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
@@ -847,6 +859,9 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1)
       (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+
+      // contribution from G(1,2)
+      (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
     }
   }
 
