@@ -24,7 +24,6 @@
 //
 
 #include <cassert>
-#include <src/math/comb.h>
 #include <src/ciutil/bitutil.h>
 #include <src/ciutil/cistring.h>
 #include <src/util/combination.hpp>
@@ -44,20 +43,26 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCIString)
 using namespace std;
 using namespace bagel;
 
-static const Comb comb;
-
 CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb), size_(1) {
   if (nele*norb != 0) {
     weights_ = vector<size_t>(nele * norb, 0ull);
 
-    size_ = comb(norb, nele);
-
     const size_t nholes = norb - nele;
-    for(size_t k = 1; k <= nele; ++k) {
-      for (size_t l = k; l < nholes + k; ++l) {
-        size_t node_val = comb(l, k);
-        weight(l, k-1) = node_val;
+    for (size_t orb = 0; orb <= nholes; ++orb) {
+      weight(orb, 0) = orb;
+    }
+
+    for (size_t ele = 1; ele < nele; ++ele) {
+      for (size_t orb = ele; orb <= nholes + ele; ++orb) {
+        weight(orb, ele) = weight(orb-1, ele-1) + weight(orb-1, ele);
       }
+    }
+
+    // compute size by "filling in" bottom row of graph
+    size_ = nholes+1;
+
+    for (size_t ele = 1; ele < nele; ++ele) {
+      size_ += weight(ele+nholes, ele);
     }
   }
 }
