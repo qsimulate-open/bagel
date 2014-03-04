@@ -5,13 +5,13 @@
 
 
 #include "proj.h"
-#include "src/integral/carsphlist.h"
+//#include "src/integral/carsphlist.h"
 
 using namespace std;
 
 int main() {
 
-#if 1
+#if 0
   cout << " Expansion of a Gaussian about a different centre " << endl;
   BesselI besselI;
   int l = 0;
@@ -59,7 +59,7 @@ for (int iz = 0; iz <= maxl; ++iz) {
 }
 #endif
 
-#if 0
+#if 1
   std::array<double, 3> centreB = {0.0, 0.0, 0.0};
   std::array<int, 2> lm = {0, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
@@ -88,6 +88,13 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
   }
 #endif
+  cout << "***  TEST INTEGRATION ***" << endl;
+  std::array<int, 3> ijk = {1, 4, 2};
+  std::pair<int, int> lm1 = std::make_pair(4, 2);
+  std::pair<int, int> lm2 = std::make_pair(3, 1);
+  const double ans = proj.integrate2SH1USP(lm1, lm2, ijk);
+  cout << "int_(lm1 * lm2 * xyz) = " << ans << endl;
+
 
   return 0;
 

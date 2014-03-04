@@ -94,14 +94,13 @@ class SphUSP {
             sk += (k <= j ? comb.c(j, k) : zero) * comb.c(am, lx - 2*k) * std::pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
           }
         }
-        std::cout << "(xyz) = (" << lx << ", " << ly << ", " << lz << ")" << " prefactor = " << prefactor << " si = " << si << " sk = " << sk << " factor = " << factor << " ans = " << (prefactor * si * sk * factor).toDouble() << std::endl;
+//      std::cout << "(xyz) = (" << lx << ", " << ly << ", " << lz << ")" << " prefactor = " << prefactor << " si = " << si << " sk = " << sk << " factor = " << factor << " ans = " << (prefactor * si * sk * factor).toDouble() << std::endl;
         return (prefactor * si * sk * factor).toDouble();
       }
     }
 
     void expand() {
       int cnt = 0;
-      std::cout << "---- Expansion ----" << std::endl;
       for (int lz = 0; lz <= angular_momentum_[0]; ++lz) {
         for (int ly = 0; ly <= angular_momentum_[0] - lz; ++ly) {
           cnt ++;
@@ -399,73 +398,96 @@ class AngularProj {
 
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, std::array<int, 3> ijk) {
       std::vector<std::pair<double, int>> usp;
+      std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
+      std::array<int, 2> lm = {lm1.first, lm1.second};
+      std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
+      std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       int cnt = 0;
+      int nonzero = 0;
       for (int lz = 0; lz <= lm1.first; ++lz) {
         for (int ly = 0; ly <= lm1.first - lz; ++ly) {
           const int lx = lm1.first - lz - ly;
-          std::array<int, 2> lm = {lm1.first, lm1.second};
-          std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
           const double coeff = sphusp->compute_coeff(lx, ly);
           if (coeff != 0.0) {
-            cnt ++;
+            nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
+            std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
+          cnt ++;
         }
       }
-      const int n1 = cnt;
+      const int n1 = nonzero;
+      std::cout << "n1 = " << n1 << std::endl;
+
+      lm = {lm2.first, lm2.second};
+      sphusp = std::make_shared<SphUSP>(lm);
+      std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       cnt = 0;
+      nonzero = 0;
       for (int lz = 0; lz <= lm2.first; ++lz) {
         for (int ly = 0; ly <= lm2.first - lz; ++ly) {
           const int lx = lm2.first - lz - ly;
-          std::array<int, 2> lm = {lm2.first, lm2.second};
-          std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
           const double coeff = sphusp->compute_coeff(lx, ly);
           if (coeff != 0.0) {
-            cnt ++;
+            nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
+            std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
+          cnt ++;
         }
       }
-      const int n2 = cnt;
-      assert (n1 + n2 == usp.size() - 1);
+      const int n2 = nonzero;
+      std::cout << "n2 = " << n2 << std::endl;
+      std::cout << "usp.size() = n1 + n2 = " << usp.size() << std::endl;
+
+      assert (n1 + n2 == usp.size());
       double ans = 0.0;
       for (int i = 0; i != n1; ++i) {
         for (int j = n1; j != n1 + n2; ++j) {
           const double coeff = usp[i].first * usp[j].first;
           std::array<int, 3> ki;
           int id = usp[i].second;
-          int kx = 0;
+          int kz = 0;
           for (int lp1 = lm1.first + 1; lp1 != 0; --lp1) {
             if (id - lp1 < 0) {
-              ki[0] = kx;
+              ki[2] = kz;
               ki[1] = id;
-              ki[2] = lm1.first - ki[0] - ki[1];
+              ki[0] = lm1.first - ki[2] - ki[1];
+              break;
             } else {
-              kx++;
+              kz++;
               id -= lp1;
             }
           }
+//        std::cout << "ki[0] = " << ki[0] << " ki[1] = " << ki[1] << " ki[2] = " << ki[2] << std::endl;
           std::array<int, 3> kj;
           id = usp[j].second;
-          kx = 0;
+          kz = 0;
           for (int lp1 = lm2.first + 1; lp1 != 0; --lp1) {
+//          std::cout << "Debug ** id = " << id << " lp1 = " << lp1 << " kz = " << kz << std::endl;
             if (id - lp1 < 0) {
-              kj[0] = kx;
+              kj[2] = kz;
               kj[1] = id;
-              kj[2] = lm2.first - kj[0] - kj[1];
+              kj[0] = lm2.first - kj[2] - kj[1];
+              break;
             } else {
-              kx++;
+              kz++;
               id -= lp1;
             }
           }
+//        std::cout << "kj[0] = " << kj[0] << " kj[1] = " << kj[1] << " kj[2] = " << kj[2] << std::endl;
           const int x = ki[0] + kj[0] + ijk[0];
           const int y = ki[1] + kj[1] + ijk[1];
           const int z = ki[2] + kj[2] + ijk[2];
+          std::cout << " i = " << i << " j = " << j << " idi = " << usp[i].second << " idj = " << usp[j].second << " coeff = " << coeff << " x = " << x << " y = " << y << " z = " << z << std::endl;
           ans += coeff * integrate3USP(x, y, z);
         }
       }
+
+      return ans;
+
     }
 
     double integrate(const double r) const {
