@@ -50,12 +50,12 @@ CIGraph::CIGraph(const size_t nele, const size_t norb) : nele_(nele), norb_(norb
   if (nele*norb != 0) {
     weights_ = vector<size_t>(nele * norb, 0ull);
 
-    size_ = comb.c(norb, nele);
+    size_ = comb(norb, nele);
 
     const size_t nholes = norb - nele;
     for(size_t k = 1; k <= nele; ++k) {
       for (size_t l = k; l < nholes + k; ++l) {
-        size_t node_val = comb.c(l, k);
+        size_t node_val = comb(l, k);
         weight(l, k-1) = node_val;
       }
     }

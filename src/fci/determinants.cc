@@ -66,7 +66,7 @@ Determinants::Determinants(shared_ptr<const FCIStringSet> ast, shared_ptr<const 
   if (!mute) {
     const int twoS = abs(nspin());
     const int N = nelea() + neleb();
-    const size_t out = (twoS + 1) * comb.c(norb()+1, (N-twoS)/2) * comb.c(norb()+1, (norb()-((N+twoS)/2)));
+    const size_t out = (twoS + 1) * comb(norb()+1, (N-twoS)/2) * comb(norb()+1, (norb()-((N+twoS)/2)));
     const size_t ncsfs = out / (norb()+1);
 
     cout << "  Performs exactly the same way as Knowles & Handy 1984 CPL" << endl << endl;

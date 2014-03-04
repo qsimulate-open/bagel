@@ -39,7 +39,7 @@ class Comb {
     std::array<size_t, max_*max_> c_;
   public:
     Comb() {
-      std::fill(c_.begin(), c_.end(), 0U);
+      std::fill(c_.begin(), c_.end(), 0);
       c_[ 0*max_+ 0] =                    1ull; c_[ 1*max_+ 0] =                    1ull; c_[ 1*max_+ 1] =                    1ull; c_[ 2*max_+ 0] =                    1ull;
       c_[ 2*max_+ 1] =                    2ull; c_[ 2*max_+ 2] =                    1ull; c_[ 3*max_+ 0] =                    1ull; c_[ 3*max_+ 1] =                    3ull;
       c_[ 3*max_+ 2] =                    3ull; c_[ 3*max_+ 3] =                    1ull; c_[ 4*max_+ 0] =                    1ull; c_[ 4*max_+ 1] =                    4ull;
@@ -578,7 +578,7 @@ class Comb {
       c_[64*max_+60] =               635376ull; c_[64*max_+61] =                41664ull; c_[64*max_+62] =                 2016ull; c_[64*max_+63] =                   64ull;
       c_[64*max_+64] =                    1ull;
     }
-    size_t c(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; }
+    size_t operator()(const int i, const int j) const { assert(i >= 0 && j >= 0); return c_[i*max_+j]; }
 };
 
 }
