@@ -24,6 +24,7 @@
 //
 
 #include <src/zcasscf/zcasscf.h>
+#include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
@@ -86,7 +87,7 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
     auto unit = orth->clone();
     unit->unit();
     *orth -= *unit; 
-    if (orth->rms() > 1e-15) {
+    if (orth->rms() > 1e-14) {
       stringstream ss;
       ss << "coefficients are not orthonormal. Residual: " << scientific << setprecision(4) << orth->rms();
       throw runtime_error(ss.str());
@@ -157,6 +158,8 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     *maatt -= *matta;
 
     shared_ptr<ZMatrix> mapattp = ___debug___diagonal_integrals_coulomb_active_kramers(coeffa, coefft); // 0 by symmetry
+    shared_ptr<ZMatrix> maptpta = ___debug___diagonal_integrals_exchange_active_kramers(coeffa, coefft);
+
     for (int t = 0; t != nact_*2; ++t) {
       for (int a = 0; a != nvirt_*2; ++a) {
         const int na = a + nocc_*2;
@@ -760,6 +763,97 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
 
  return out;
 }
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+  // returns Mat(a,t) = (a'w|va) * G(vw,tt') = (a't'|ta) where a is an index of coeffa, and t is active
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+  // may be possible to eliminate after Hessian has been confirmed
+  assert(coeffi->mdim() == nact_*2);
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = coeffa->get_submatrix(i*coeffa->ndim()/4, 0, coeffa->ndim()/4, coeffa->mdim());
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+  list<shared_ptr<RelDFHalf>> half_complexi = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J()->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti;
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+
+  list<shared_ptr<RelDFHalf>> half_complex_facta;
+  for (auto& i : half_complexa) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
+  }
+  half_complexa.clear();
+  DFock::factorize(half_complex_facti);
+  DFock::factorize(half_complex_facta);
+
+
+  // (4) compute (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulli;
+  for (auto& i : half_complex_facti)
+    dffulli.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffulli);
+  dffulli.front()->scale(dffulli.front()->fac()); // take care of the factor
+  assert(dffulli.size() == 1);
+  shared_ptr<const RelDFFull> fullia = dffulli.front();
+
+  list<shared_ptr<RelDFFull>> dffulla;
+  for (auto& i : half_complex_facta)
+    dffulla.push_back(make_shared<RelDFFull>(i, ricoeff, iicoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffulla);
+  dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
+  assert(dffulla.size() == 1);
+  shared_ptr<const RelDFFull> fullai = dffulla.front();
+
+  // (5) form (aw|vb) where a runs fastest ; sort indices and contract with 2RDM
+  shared_ptr<const ZMatrix> awvb = fullai->form_4index(fullia, 1.0);
+  auto intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  SMITH::sort_indices<0,3,2,1,0,1,1,1>(awvb->data(), intermed1->data(), coeffa->mdim(), coeffi->mdim(), coeffi->mdim(), coeffa->mdim());
+  *intermed1 *= *(fci_->rdm2_av());
+
+  // need to include metric
+  //  auto fullai_j = fullai->apply_J();
+  //  shared_ptr<const ZMatrix> aiai = fullai_j->form_4index(fullai_j, 1.0);
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+    for (int i = 0; i != coeffi->mdim(); ++i) {
+      const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      // contribution from G(1,1)
+      (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+    }
+  }
+
+  return out;
+}
+
+
 shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(i,j,k,l) = (ij|kl) where all indices are in the active space.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
