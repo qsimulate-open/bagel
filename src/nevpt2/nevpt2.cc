@@ -75,25 +75,25 @@ void NEVPT2::compute() {
   vector<double> oeig(nclosed);
   {
     // * core Fock operator
-    shared_ptr<const Matrix> oden = nclosed+ncore_ ? ref_->coeff()->form_density_rhf(nclosed+ncore_, 0) : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis());
-    shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, oden, ref_->coeff()->slice(0, ncore_+nclosed)) : hcore;
+    shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
-    shared_ptr<Matrix> acoeffw = acoeff->copy();
+    shared_ptr<Matrix> acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)));
     shared_ptr<Matrix> rdm1mat = rdm1->rdm1_mat(0);
     rdm1mat->sqrt();
     *acoeffw *= *rdm1mat;
-    *acoeffw *= 1.0/sqrt(2.0);
     // then make a AO density matrix
-    shared_ptr<const Matrix> aden = make_shared<Matrix>((*acoeffw ^ *acoeffw)*2.0);
-    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore, aden, acoeffw);
+    auto fockao = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
     // MO Fock
-    shared_ptr<Matrix> omofock = make_shared<Matrix>(*ccoeff % (*ofockao + *afockao - *hcore) * *ccoeff);
-    omofock->diagonalize(oeig.data());
-    *ccoeff *= *omofock;
-    shared_ptr<Matrix> vmofock = make_shared<Matrix>(*vcoeff % (*ofockao + *afockao - *hcore) * *vcoeff);
-    vmofock->diagonalize(veig.data());
-    *vcoeff *= *vmofock;
+    {
+      Matrix omofock(*ccoeff % *fockao * *ccoeff);
+      omofock.diagonalize(oeig.data());
+      *ccoeff *= omofock;
+    } {
+      Matrix vmofock(*vcoeff % *fockao * *vcoeff);
+      vmofock.diagonalize(veig.data());
+      *vcoeff *= vmofock;
+    }
   }
 
 
