@@ -35,7 +35,6 @@
 namespace bagel {
 
 class MP2 : public Method {
-  friend class MP2AssemTask;
   protected:
     std::shared_ptr<SCF> scf_;
     int ncore_;
