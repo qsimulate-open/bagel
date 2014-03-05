@@ -107,9 +107,10 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 
 
 void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
+  const bool perturb_active = idata_->get<bool>("perturb_active", false);
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
 
-  if (nact_) {
+  if (perturb_active) {
     cout << "virtual-active orbital gradient" << endl;
     // currently ++ and -- blocks
     const complex<double> gradient = grad->ele_va(morbital, norbital)
@@ -128,30 +129,14 @@ void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const b
 
 
 void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
+  const bool perturb_active = idata_->get<bool>("perturb_active", false);
+
   shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
   shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
   shared_ptr<const ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
-  shared_ptr<ZMatrix> maaii = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
-  shared_ptr<ZMatrix> maiia = ___debug___diagonal_integrals_exchange(coeffa, coeffi);
-  *maiia -= *maaii;
-
-  for (int i = 0; i != nclosed_*2; ++i) {
-    for (int a = 0; a != nvirt_*2; ++a) {
-      const int na = a + nocc_*2;
-      (*maiia)(a, i) += (*cfock)(na,na) + (*afock)(na,na) - (*cfock)(i,i) - (*afock)(i,i);
-    }
-  }
-
-  if (with_kramers) {
-    shared_ptr<ZMatrix> kaaii = ___debug___diagonal_integrals_coulomb_kramers(coeffa, coeffi);
-    shared_ptr<ZMatrix> kaiia = ___debug___diagonal_integrals_exchange_kramers(coeffa, coeffi);
-    *maiia += *kaiia;
-    *maiia -= *kaaii; // this appears zero for (at least) coulomb integrals due to symmetry
-    *maiia += *maiia->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
-  }
 
   shared_ptr<ZMatrix> cfockd;
-  if (nact_) {
+  if (perturb_active) {
     shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
     cfockd->hermite();
@@ -162,7 +147,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 
     shared_ptr<ZMatrix> mapattp = ___debug___diagonal_integrals_coulomb_active_kramers(coeffa, coefft); // 0 by symmetry
     shared_ptr<ZMatrix> maptpta = ___debug___diagonal_integrals_exchange_active_kramers(coeffa, coefft);
-    *mapattp -= *maptpta;
+    *mapattp -= *maptpta; // <- need - sign for ++/-- debug ; + sign for +-/-+
 
     for (int t = 0; t != nact_*2; ++t) {
       for (int a = 0; a != nvirt_*2; ++a) {
@@ -178,17 +163,39 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     cout << setprecision(10) << (*maatt)(morbital, norbital)*2.0 << endl;
     cout << "<<<<<<<<<<<<<<< debug <<<<<<<<<<<<<<<" << endl << endl;
 
+  } else {
+    shared_ptr<ZMatrix> maaii = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
+    shared_ptr<ZMatrix> maiia = ___debug___diagonal_integrals_exchange(coeffa, coeffi);
+    *maiia -= *maaii;
+
+    for (int i = 0; i != nclosed_*2; ++i) {
+      for (int a = 0; a != nvirt_*2; ++a) {
+        const int na = a + nocc_*2;
+        (*maiia)(a, i) += (*cfock)(na,na) + (*afock)(na,na) - (*cfock)(i,i) - (*afock)(i,i);
+      }
+    }
+
+    if (with_kramers) {
+      shared_ptr<ZMatrix> kaaii = ___debug___diagonal_integrals_coulomb_kramers(coeffa, coeffi);
+      shared_ptr<ZMatrix> kaiia = ___debug___diagonal_integrals_exchange_kramers(coeffa, coeffi);
+      *maiia += *kaiia; // <- + sign for ++/-- debugging ; need - sign for +-/-+ debugging
+      *maiia -= *kaaii; // this appears zero for (at least) coulomb integrals due to symmetry
+      *maiia += *maiia->get_conjg(); // due to ++ <-> -- and +- <-> -+ symmetry
+    }
+
+    cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>>" << endl;
+    cout << "virtual-closed diagonal hessian value" << endl;
+    cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
+    cout << "<<<<<<<<<<<<<<< debug <<<<<<<<<<<<<<<" << endl << endl;
+  }
+
+  if (nact_) {
     double fcienergy = ___debug___recompute_fci_energy(cfock->get_submatrix(nclosed_*2,nclosed_*2,nact_*2,nact_*2));
     cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
     cout << "recomputed FCI energy" << endl;
     cout << setprecision(12) << fcienergy << endl;
     cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
   }
-
-  cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>>" << endl;
-  cout << "virtual-closed diagonal hessian value" << endl;
-  cout << setprecision(10) << (*maiia)(morbital, norbital)*2.0 << endl;
-  cout << "<<<<<<<<<<<<<<< debug <<<<<<<<<<<<<<<" << endl << endl;
 }
 
 
