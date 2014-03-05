@@ -158,6 +158,7 @@ AC_CONFIG_FILES([Makefile
                  src/ras/Makefile
                  src/casscf/Makefile
                  src/zcasscf/Makefile
+                 src/nevpt2/Makefile
                  src/pscf/Makefile
                  src/pmp2/Makefile
                  src/rel/Makefile
