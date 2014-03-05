@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-template <typename DataType>
+template <typename DataType, Int_t IntType = Int_t::Standard>
 class RysIntegral : public Integral_base<DataType> {
   protected:
     // some basic info for integral evaluations

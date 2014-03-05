@@ -183,10 +183,10 @@ class RASString : public CIString_base_impl<3> {
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {
-      return subspace_[0].second - (bit & std::bitset<nbit__>((1ull << subspace_[0].second) - 1ull)).count();
+      return subspace_[0].second - (bit & (~std::bitset<nbit__>(0ull) >> (nbit__ - subspace_[0].second))).count();
     }
     int nparticles(const std::bitset<nbit__>& bit) const {
-      return (bit & std::bitset<nbit__>(((1ull << subspace_[2].second) - 1ull) << (subspace_[0].second + subspace_[1].second))).count();
+      return (bit & (~(~std::bitset<nbit__>(0ull) << subspace_[2].second) << subspace_[0].second + subspace_[1].second)).count();
     }
 
   private:

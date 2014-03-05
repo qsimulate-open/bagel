@@ -65,20 +65,20 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
         // JEB : double operator construct means take the kth element of rocoeff, then extract the ith element of the result.
         //       in this case then, the k-index runs over kramers pairs, and the i index runs over the 4 components of the AO basis
         //      e.g. for k=0, i=2 the result would be S^+ for the first kramers pair (in addition to the real and imaginary parts)
-        rocoeff[k][i] = oc->get_real_part(); 
+        rocoeff[k][i] = oc->get_real_part();
         iocoeff[k][i] = oc->get_imag_part();
       }
     }
     // JEB : result of compute_full is to return a three idx ERI in the kramers MO basis (with re and im parts), e.g. a transformation of Eq. (36) in KS_JCP13 to all MO
     // JEB : full(g,kl) = J^-1_{gg'} * (g'|kl) ; complex result with kl in the krammers basis
-    full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, /*apply_J*/false, /*apply_JJ*/true); 
-  } 
+    full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, /*apply_J*/false, /*apply_JJ*/true);
+  }
 
   // JEB : copy over the size,dimensions,bitsets of full to full_d, but no values
   assert(full.size() == 4); // JEB: full is size 4 from kramers*complex quantity
   unordered_map<bitset<2>, shared_ptr<RelDFFull>> full_d;
   for (auto& i : full)
-    full_d.insert(make_pair(i.first, i.second->clone())); 
+    full_d.insert(make_pair(i.first, i.second->clone()));
 
   // [2] compute [g|ji] = (g|kl)*G(ji|kl)
   // JEB : Contract 2RDM with 3idx integrals in kramers MO basis ; all indices active for 2RDM
@@ -95,7 +95,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
       // JEB : after swapping the indices order will be :
       // t^+ t s^+ s
       shared_ptr<ZRDM<2>> rdm = rdmbuf->clone();
-      assert(rdm->norb() == nact); 
+      assert(rdm->norb() == nact);
       // JEB : the following changes the ordering G(jk|il) -> G(ji|kl) ; then contract and accumulate
       SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdmbuf->data(), rdm->data(), nact, nact, nact, nact);
       *t.second += *s.second->apply_2rdm(rdm);
@@ -113,9 +113,9 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
       rcoeff[i] = oc->get_real_part();
       icoeff[i] = oc->get_imag_part();
     }
-    for (size_t t = 0; t != 2; ++t) { // JEB : loop over kramers pairs 
+    for (size_t t = 0; t != 2; ++t) { // JEB : loop over kramers pairs
       list<std::shared_ptr<RelDFFull>> dffull;
-      for (auto& i : half_coulomb[t]) 
+      for (auto& i : half_coulomb[t])
         dffull.push_back(std::make_shared<RelDFFull>(i, rcoeff, icoeff));
       DFock::factorize(dffull);
       assert(dffull.size() == 1);
@@ -129,7 +129,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   for (auto& i : fullia) { // (g|jr)
     for (auto& j : full_d) { // (g|ji)
       // JEB : match bitset values for index j
-      if (i.first[0] == j.first[1]) { 
+      if (i.first[0] == j.first[1]) {
         shared_ptr<ZMatrix> tmp = i.second->form_2index(j.second, 1.0, false); // JEB : contract full_d with fullia
         bitset<1> target; target[0] = j.first[0];
         // JEB : if this is the first time the kramers index apperas, put the value of form_2indx on qri, otherwise add onto previous value
@@ -142,7 +142,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     }
   }
 
-  // transform the active orbital to the original 
+  // transform the active orbital to the original
   // I need overlap..
   // JEB : Transform from NaturalOrbs to standard MOs for index i
   auto overlap = make_shared<const RelOverlap>(geom);

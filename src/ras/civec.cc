@@ -47,9 +47,9 @@ namespace bagel {
       const RASCivector<double>* this_;
       shared_ptr<RASCivector<double>> out_;
       shared_ptr<const RASDeterminants> det_;
-      unordered_map<size_t, size_t>* lexicalmap_;
+      unordered_map<bitset<nbit__>, size_t>* lexicalmap_;
 
-      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<size_t, size_t>* lex) :
+      SpinTask(const std::bitset<nbit__> t, const RASCivector<double>* th, shared_ptr<RASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<bitset<nbit__>, size_t>* lex) :
         target_(t), this_(th), out_(o), det_(d), lexicalmap_(lex) {}
 
       void compute() {
@@ -78,7 +78,7 @@ namespace bagel {
               if ( ((btstring & mask1) ^ mask2).none() ) { // equivalent to "btstring[ii] && (ii == jj || !btstring[jj])"
                 const bitset<nbit__> bsostring = btstring ^ maskij;
                 if (det_->allowed(det_->string_bits_a(iter.source), bsostring))
-                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring.to_ullong()]];
+                  *outelement -= static_cast<double>(iter.sign * det_->sign(bsostring, ii, jj)) * source[(*lexicalmap_)[bsostring]];
               }
               ++outelement;
             }
@@ -95,9 +95,9 @@ template<>
 shared_ptr<RASCivector<double>> RASCivector<double>::spin() const {
   auto out = make_shared<RASCivector<double>>(det_);
 
-  unordered_map<size_t, size_t> lexicalmap;
+  unordered_map<bitset<nbit__>, size_t> lexicalmap;
   for (auto& i : det_->string_bits_b())
-    lexicalmap[i.to_ullong()] = det_->lexical_offset<1>(i);
+    lexicalmap[i] = det_->lexical_offset<1>(i);
 
   TaskQueue<RAS::SpinTask> tasks(det_->string_bits_a().size());
 
@@ -127,14 +127,14 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
   const int ras3 = sdet->ras(2);
 
   // maps bits to their local offsets
-  unordered_map<size_t, size_t> alex;
+  unordered_map<bitset<nbit__>, size_t> alex;
   for (auto& ispace : *sdet->stringspacea()) {
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
+    for (auto& abit : *ispace) alex[abit] = ispace->lexical_zero(abit);
   }
 
-  unordered_map<size_t, size_t> blex;
+  unordered_map<bitset<nbit__>, size_t> blex;
   for (auto& ispace : *sdet->stringspaceb()) {
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
+    for (auto& bbit : *ispace) blex[bbit] = ispace->lexical_zero(bbit);
   }
 
   auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -149,7 +149,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_lower(share
 
           const double phase = static_cast<double>(-1 * sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
 
-          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
         }
         ++odata;
       }
@@ -186,14 +186,14 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
   const int ras3 = sdet->ras(2);
 
   // maps bits to their local offsets
-  unordered_map<size_t, size_t> alex;
+  unordered_map<bitset<nbit__>, size_t> alex;
   for (auto& ispace : *det_->stringspacea()) {
-    for (auto& abit : *ispace) alex[abit.to_ullong()] = ispace->lexical_zero(abit);
+    for (auto& abit : *ispace) alex[abit] = ispace->lexical_zero(abit);
   }
 
-  unordered_map<size_t, size_t> blex;
+  unordered_map<bitset<nbit__>, size_t> blex;
   for (auto& ispace : *det_->stringspaceb()) {
-    for (auto& bbit : *ispace) blex[bbit.to_ullong()] = ispace->lexical_zero(bbit);
+    for (auto& bbit : *ispace) blex[bbit] = ispace->lexical_zero(bbit);
   }
 
   auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
@@ -208,7 +208,7 @@ template<> shared_ptr<RASCivector<double>> RASCivector<double>::spin_raise(share
 
           const double phase = static_cast<double>(sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
 
-          *odata += phase * sblock->element( blex[sbbit.to_ullong()] + alex[sabit.to_ullong()] * lb );
+          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
         }
         ++odata;
       }

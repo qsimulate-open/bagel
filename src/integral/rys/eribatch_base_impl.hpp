@@ -35,6 +35,7 @@ namespace bagel {
 template <typename DataType, Int_t IntType>
 void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh) {
   static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
+  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
 
   // set atomic coordinates
   const double ax = basisinfo_[0]->position(0);
@@ -139,7 +140,7 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
           const double tsqrt = std::sqrt(T);
           const double ssss = 16.0 * Ecd_save[index23] * min_Eab * abcd_sc_3_4 * onepqp_q
                               * (T > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-          if (std::abs(ssss) > integral_thresh) {
+          if (ssss > integral_thresh) {
             tuple_field[tuple_length*2  ] = *expi2;
             tuple_field[tuple_length*2+1] = *expi3;
             tuple_index[tuple_length] = index23;
@@ -185,7 +186,7 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         const double abcd_sc_3_4 = std::sqrt(std::sqrt(abcd_sc_3));
         const double ssss = 16.0 * min_Ecd * Eab * abcd_sc_3_4 * onepqp_q_sc
                           * (T_sc > 1.0e-8 ? inline_erf(tsqrt) * 0.5 / tsqrt : 1.0/std::sqrt(std::atan(1.0)*4.0) );
-        if (std::abs(ssss) < std::abs(integral_thresh)) continue;
+        if (ssss < integral_thresh) continue;
       }
 
       const int index_base = prim2size_ * prim3size_ * index01;
@@ -236,26 +237,30 @@ void ERIBatch_Base<DataType, IntType>::compute_ssss(const double integral_thresh
         T_[index] = T;
         screening_[screening_size_] = index;
         ++screening_size_;
-/*
-        if (IntType == Int_t::London && ax != bx && bx != cx && cx != dx && ax != cx && ax != dx && bx != dx) {
-          std::cout << std::setprecision(14) << "A = " << ax << ", " << ay << ", " << az << std::endl;
-          std::cout << "B = " << bx << ", " << by << ", " << bz << std::endl;
-          std::cout << "C = " << cx << ", " << cy << ", " << cz << std::endl;
-          std::cout << "D = " << dx << ", " << dy << ", " << dz << std::endl;
-          std::cout << "A_A = " << basisinfo_[0]->vector_potential(0) << ", " << basisinfo_[0]->vector_potential(1) << ", " << basisinfo_[0]->vector_potential(2) << std::endl;
-          std::cout << "A_B = " << basisinfo_[1]->vector_potential(0) << ", " << basisinfo_[1]->vector_potential(1) << ", " << basisinfo_[1]->vector_potential(2) << std::endl;
-          std::cout << "A_C = " << basisinfo_[2]->vector_potential(0) << ", " << basisinfo_[2]->vector_potential(1) << ", " << basisinfo_[2]->vector_potential(2) << std::endl;
-          std::cout << "A_D = " << basisinfo_[3]->vector_potential(0) << ", " << basisinfo_[3]->vector_potential(1) << ", " << basisinfo_[3]->vector_potential(2) << std::endl;
-          std::cout << "exponents = " << *expi0 << ", " << *expi1 << ", " << exp2value << ", " << exp3value << std::endl;
-          std::cout << "p = " << cxp << ", q = " << cxq << ", rho = " << rho << std::endl;
-          std::cout << "P = " << P_[index3] << ", " << P_[index3+1] << ", " << P_[index3+2] << std::endl;
-          std::cout << "Q = " << Q_[index3] << ", " << Q_[index3+1] << ", " << Q_[index3+2] << std::endl;
-          std::cout << "T = " << T_[index] << std::endl;
-          std::cout << "Eab (real) = " << Eab << ", Ecd (real) = " << Ecd_save[index23] << std::endl;
-          std::cout << "factor_ab = " << factor_ab << ", factor_cd = " << factor_cd_save[index23] << std::endl;
-          std::cout << "coefficient = " << coeff_[index] << std::endl << std::endl;
+#if 0
+        if (true); // use to only print the ones you want
+          if (IntType == Int_t::London) {
+            if (this->swap01_) std::cout << "Swap indices A and B" << std::endl;
+            if (this->swap23_) std::cout << "Swap indices C and D" << std::endl;
+            std::cout << std::setprecision(14) << "A = " << ax << ", " << ay << ", " << az << std::endl;
+            std::cout << "B = " << bx << ", " << by << ", " << bz << std::endl;
+            std::cout << "C = " << cx << ", " << cy << ", " << cz << std::endl;
+            std::cout << "D = " << dx << ", " << dy << ", " << dz << std::endl;
+            std::cout << "A_A = " << basisinfo_[0]->vector_potential(0) << ", " << basisinfo_[0]->vector_potential(1) << ", " << basisinfo_[0]->vector_potential(2) << std::endl;
+            std::cout << "A_B = " << basisinfo_[1]->vector_potential(0) << ", " << basisinfo_[1]->vector_potential(1) << ", " << basisinfo_[1]->vector_potential(2) << std::endl;
+            std::cout << "A_C = " << basisinfo_[2]->vector_potential(0) << ", " << basisinfo_[2]->vector_potential(1) << ", " << basisinfo_[2]->vector_potential(2) << std::endl;
+            std::cout << "A_D = " << basisinfo_[3]->vector_potential(0) << ", " << basisinfo_[3]->vector_potential(1) << ", " << basisinfo_[3]->vector_potential(2) << std::endl;
+            std::cout << "exponents = " << *expi0 << ", " << *expi1 << ", " << exp2value << ", " << exp3value << std::endl;
+            std::cout << "p = " << cxp << ", q = " << cxq << ", rho = " << rho << std::endl;
+            std::cout << "P = " << P_[index3] << ", " << P_[index3+1] << ", " << P_[index3+2] << std::endl;
+            std::cout << "Q = " << Q_[index3] << ", " << Q_[index3+1] << ", " << Q_[index3+2] << std::endl;
+            std::cout << "T = " << T_[index] << std::endl;
+            std::cout << "Eab (real) = " << Eab << ", Ecd (real) = " << Ecd_save[index23] << std::endl;
+            std::cout << "factor_ab = " << factor_ab << ", factor_cd = " << factor_cd_save[index23] << std::endl;
+            std::cout << "coefficient = " << coeff_[index] << std::endl << std::endl;
+          }
         }
-*/
+#endif
       }
     }
   }

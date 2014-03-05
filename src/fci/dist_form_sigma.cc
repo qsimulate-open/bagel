@@ -194,7 +194,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   const size_t neleb = base_det->neleb();
 
   const static Comb comb;
-  const size_t lengb = comb.c(norb, neleb-2);
+  const size_t lengb = comb(norb, neleb-2);
   vector<bitset<nbit__>> intb(lengb, bitset<nbit__>(0));
   vector<int> data(norb);
   iota(data.begin(), data.end(), 0);

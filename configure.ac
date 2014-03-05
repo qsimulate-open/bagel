@@ -67,32 +67,41 @@ fi
 AX_BOOST_BASE([1.53], [], [AC_MSG_ERROR("BOOST version >= 1.53.0 required.")])
 
 # on some platforms boost shared libs will depend on C++ shared libraries ... switch to C++
-AC_LANG_PUSH([C++]) 
+AC_LANG_PUSH([C++])
 AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
     AC_CHECK_LIB(boost_serialization-mt, main, , [
         AC_CHECK_LIB(boost_serialization, main, , [
-            AC_MSG_ERROR("Linking against boost::serialization library failed.")
-        ])
-    ])
+            AC_MSG_ERROR("Linking against boost::serialization library failed.") ])])])
+echo -n "checking if boost::serialization works... "
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[@%:@include<fstream>
+                                 @%:@include<boost/archive/binary_oarchive.hpp>
+                                 @%:@include<boost/archive/binary_iarchive.hpp>
+                                 @%:@include<boost/serialization/string.hpp>
+                                 @%:@include<cstdlib>]],
+                               [[std::string s("test");{std::ofstream ofs("config.bagel");boost::archive::binary_oarchive oa(ofs);oa<<s;}
+                                 std::string t;        {std::ifstream ifs("config.bagel");boost::archive::binary_iarchive ia(ifs);ia>>t;}
+                                 std::system("rm config.bagel");return (t==s?0:1)]])], [serialization_result="yes"], [serialization_result="no"])
+echo $serialization_result
+if test x${serialization_result} = xno; then
+AC_MSG_WARN([
+
+test boost::serialization failed. Make sure that boost was compiled by the same compiler.
 ])
+fi
 AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
     AC_CHECK_LIB(boost_regex-mt, main, , [
         AC_CHECK_LIB(boost_regex, main, , [
-            AC_MSG_ERROR("Linking against boost::regex library failed.")
-        ])
-    ])
-])
+            AC_MSG_ERROR("Linking against boost::regex library failed.") ])])])
+
 AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
     AC_CHECK_LIB(boost_unit_test_framework-mt, main, , [
         AC_CHECK_LIB(boost_unit_test_framework, main, , [
-            AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.")
-        ])
-    ])
-])
+            AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.") ])])])
+
 AC_LANG_POP() # switch from C++
 
 # srootlist.h need to be compiled with C++11
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 if test x${slater} = xyes; then
   AC_CHECK_HEADERS([srootlist.h], [], [AC_MSG_ERROR(["srootlist.h not found"])], [])
   AC_CHECK_LIB(slater, main, , AC_MSG_ERROR(["libslater not found"]))
@@ -102,6 +111,7 @@ if test x${libxc} = xyes; then
   AC_CHECK_HEADERS([xc.h], [], [AC_MSG_ERROR([xc.h not found or not working])], [])
   AC_CHECK_LIB(xc, main, , AC_MSG_ERROR([libxc not found]))
 fi
+AC_LANG_POP()
 
 if test x${use_mkl} = xyes; then
     AC_CHECK_HEADERS([mkl.h], [], [AC_MSG_ERROR([mkl.h not found or not working])], [])

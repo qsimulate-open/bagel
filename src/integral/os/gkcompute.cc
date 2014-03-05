@@ -36,6 +36,8 @@ const static CarSphList carsphlist;
 
 void GKineticBatch::compute() {
 
+  const SortList sort_ (spherical_);
+
   fill_n(data_, size_alloc_, 0.0);
 
   const int a = basisinfo_[0]->angular_number();
@@ -55,9 +57,9 @@ void GKineticBatch::compute() {
     for (int ia = 0; ia <= a+nrank(); ++ia, ++k) {
       if (ia > a && ib > b) continue;
       for (int i = ia; i <= ia+ib; ++i) {
-        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
-        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
-        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
+        transx[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
+        transy[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
+        transz[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
       }
     }
   }
@@ -80,13 +82,13 @@ void GKineticBatch::compute() {
     workx[0] = coeffsx_[ii];
     worky[0] = coeffsy_[ii];
     workz[0] = coeffsz_[ii];
-    workx[1] = (p_[ii*3    ] - basisinfo_[0]->position(0)) * workx[0];
-    worky[1] = (p_[ii*3 + 1] - basisinfo_[0]->position(1)) * worky[0];
-    workz[1] = (p_[ii*3 + 2] - basisinfo_[0]->position(2)) * workz[0];
+    workx[1] = (P_[ii*3    ] - basisinfo_[0]->position(0)) * workx[0];
+    worky[1] = (P_[ii*3 + 1] - basisinfo_[0]->position(1)) * worky[0];
+    workz[1] = (P_[ii*3 + 2] - basisinfo_[0]->position(2)) * workz[0];
     for (int i = 2; i <= amax_; ++i) {
-      workx[i] = (p_[ii*3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
-      worky[i] = (p_[ii*3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
-      workz[i] = (p_[ii*3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
+      workx[i] = (P_[ii*3    ] - basisinfo_[0]->position(0)) * workx[i - 1] + 0.5 * (i - 1) / xp_[ii] * workx[i - 2];
+      worky[i] = (P_[ii*3 + 1] - basisinfo_[0]->position(1)) * worky[i - 1] + 0.5 * (i - 1) / xp_[ii] * worky[i - 2];
+      workz[i] = (P_[ii*3 + 2] - basisinfo_[0]->position(2)) * workz[i - 1] + 0.5 * (i - 1) / xp_[ii] * workz[i - 2];
     }
     // HRR is done in one shot
     dgemv_("T", amax_+1, a2*b2, 1.0, transx, amax_+1, workx, 1, 0.0, bufx, 1);

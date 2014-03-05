@@ -27,7 +27,7 @@
 #ifndef __SRC_INTEGRAL_OS_MMBATCH_H
 #define __SRC_INTEGRAL_OS_MMBATCH_H
 
-#include <src/integral/os/osint.h>
+#include <src/integral/os/osintegral.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {

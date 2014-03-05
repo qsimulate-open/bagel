@@ -41,6 +41,8 @@ class GNAIBatch : public CoulombBatch_base {
 
     std::tuple<int,int> iatom_;
 
+    void root_weight(const int ps) override;
+
   public:
 
     GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
