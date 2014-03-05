@@ -210,7 +210,7 @@ namespace bagel {
         }
 
         if (nallowed == 0)
-        { return shared_ptr<Matrix>(); }
+        { return nullptr; }
         else {
           size_t col = 0;
           auto out = make_shared<Matrix>(stringsize, nallowed);
@@ -284,7 +284,7 @@ void FormSigmaRAS::sigma_ab(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
         const int mdim = bounds.at(isp).second - bounds.at(isp).first;
         Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), make_shared<SparseMatrix>(la, mdim, data[isp], cols[isp], rind[isp])));
       }
-      else Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), shared_ptr<SparseMatrix>()));
+      else Fmap.emplace(bounds[isp].first, make_pair(move(sparse_info[isp]), nullptr));
     }
 
     Fmatrices.emplace(ispace->offset(), move(Fmap));

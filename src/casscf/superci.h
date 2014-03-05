@@ -62,7 +62,7 @@ class SuperCI : public CASSCF {
     std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
 
   public:
-    SuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+    SuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;

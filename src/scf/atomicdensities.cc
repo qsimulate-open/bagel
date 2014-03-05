@@ -59,7 +59,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       const string dfbasis = (*ai)->basis();
       geomop->put("df_basis", !dfbasis.empty() ? dfbasis : basis);
 
-      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), std::shared_ptr<const PTree>());
+      auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
       atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
@@ -141,9 +141,9 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   const int maxiter = 100;
   double prev_energy = 0.0;
   for (; iter != maxiter; ++iter) {
-    shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, std::shared_ptr<const Matrix>(), ocoeff->slice(0,sclosed/2), false/*store*/, true/*rhf*/)
+    shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, nullptr, ocoeff->slice(0,sclosed/2), false/*store*/, true/*rhf*/)
                                       : hcore->copy();
-    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, std::shared_ptr<const Matrix>(), false/*store*/, false/*rhf*/, 0.0/*exch*/);
+    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, nullptr, false/*store*/, false/*rhf*/, 0.0/*exch*/);
     *fock += *fock2 - *hcore;
 
     auto aodensity = make_shared<const Matrix>((*ocoeff^*ocoeff)*2.0 + *vden);

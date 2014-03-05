@@ -283,8 +283,8 @@ void RASCI::compute() {
         sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
       }
       else {
-        ccn.push_back(shared_ptr<const RASCivec>());
-        sigman.push_back(shared_ptr<const RASCivec>());
+        ccn.push_back(nullptr);
+        sigman.push_back(nullptr);
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);

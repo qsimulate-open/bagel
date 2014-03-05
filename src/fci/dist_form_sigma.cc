@@ -39,7 +39,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_p
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) {
-      sigmavec.push_back(shared_ptr<DistCivec>());
+      sigmavec.push_back(nullptr);
       continue;
     }
     shared_ptr<const DistCivec> cc = ccvec[istate];

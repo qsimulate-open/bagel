@@ -47,7 +47,7 @@ class CASBFGS : public CASSCF {
     std::shared_ptr<const RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
 
   public:
-    CASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+    CASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;

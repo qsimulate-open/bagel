@@ -152,7 +152,7 @@ class Dvector {
       auto c = conv.begin();
       for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
-        else out.push_back(std::shared_ptr<Civector<DataType>>());
+        else out.push_back(nullptr);
       }
       return out;
     }
@@ -161,7 +161,7 @@ class Dvector {
       auto c = conv.begin();
       for (auto& iter : dvec_) {
         if (*c++ == 0) out.push_back(iter);
-        else out.push_back(std::shared_ptr<const Civector<DataType>>());
+        else out.push_back(nullptr);
       }
       return out;
     }
@@ -212,10 +212,10 @@ class Dvector {
     std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
 
     // for double versions
-    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
-    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const { assert(false); return std::shared_ptr<Dvector<DataType>>(); }
+    std::shared_ptr<Dvector<DataType>> spin() const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spinflip(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
+    std::shared_ptr<Dvector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const { assert(false); return nullptr; }
 
     std::shared_ptr<Dvector<DataType>> apply(const int orbital, const bool action, const int spin) const {
       std::vector<CiPtr> out;

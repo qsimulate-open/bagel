@@ -105,7 +105,7 @@ shared_ptr<Matrix> ParallelDF::get_block(const int i, const int id, const int j,
   } else {
     throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
   }
-  return shared_ptr<Matrix>();
+  return nullptr;
 }
 
 

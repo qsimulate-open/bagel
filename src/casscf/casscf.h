@@ -76,8 +76,7 @@ class CASSCF : public Method {
     std::vector<double> energy_;
 
   public:
-    CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,
-           const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
     virtual ~CASSCF();
 
     virtual void compute() override = 0;

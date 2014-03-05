@@ -118,7 +118,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   DFock::factorize(dffull);
   dffull.front()->scale(dffull.front()->fac()); // take care of the factor
   assert(dffull.size() == 1);
-  shared_ptr<const RelDFFull> full = dffull.front(); 
+  shared_ptr<const RelDFFull> full = dffull.front();
 
   cout << "    * 3-index integral transformation done" << endl;
 
@@ -180,7 +180,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   }
 
   throw logic_error("not yet implemented");
-  return shared_ptr<GradFile>();
+  return nullptr;
 }
 
 

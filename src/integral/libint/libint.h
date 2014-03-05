@@ -39,7 +39,7 @@ class Libint : public RysIntegral<double> {
     void compute_ssss(double) {}
 
   public:
-    Libint(const std::array<std::shared_ptr<const Shell>,4>&, const double dum = 0.0, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
+    Libint(const std::array<std::shared_ptr<const Shell>,4>&, const double dum = 0.0, std::shared_ptr<StackMem> stack = nullptr);
 
     void compute() {}
 

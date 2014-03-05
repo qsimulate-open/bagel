@@ -46,7 +46,7 @@ class GNAIBatch : public CoulombBatch_base {
   public:
 
     GNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i,
-              std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
+              std::shared_ptr<StackMem> stack = nullptr);
 
     /// compute a batch of integrals
     void compute();

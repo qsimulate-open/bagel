@@ -86,13 +86,12 @@ class ZCASSCF : public Method {
     void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
 
   public:
-    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,
-            const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
 
     void compute();
 
     // TODO
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
   private:
     // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.

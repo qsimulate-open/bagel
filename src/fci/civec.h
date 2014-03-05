@@ -166,8 +166,8 @@ class DistCivector {
         if (!done) std::this_thread::sleep_for(sleeptime__);
       } while (!done);
       // cancel all MPI calls
-      send_  = std::shared_ptr<SendRequest>();
-      accum_ = std::shared_ptr<AccRequest>();
+      send_.reset();
+      accum_.reset();
     }
 
     void init_mpi_recv() const {
@@ -205,8 +205,8 @@ class DistCivector {
         if (!done) std::this_thread::sleep_for(sleeptime__);
       } while (!done);
       // cancel all MPI calls
-      recv_  = std::shared_ptr<RecvRequest>();
-      put_   = std::shared_ptr<PutRequest>();
+      recv_.reset();
+      put_.reset();
     }
 
     // utility functions
@@ -241,19 +241,19 @@ class DistCivector {
       std::shared_ptr<DistCivector<DataType>> S2 = spin();
       return dot_product(*S2);
     }
-    std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return std::shared_ptr<DistCivector<DataType>>(); }
+    std::shared_ptr<DistCivector<DataType>> spin() const { assert(false); return nullptr; }
     void spin_decontaminate(const double thresh = 1.0e-4) { assert(false); }
-    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const {
       assert(false);
-      return std::shared_ptr<DistCivector<DataType>>();
+      return nullptr;
     }
-    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = std::shared_ptr<const Determinants>()) const {
+    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const {
       assert(false);
-      return std::shared_ptr<DistCivector<DataType>>();
+      return nullptr;
     }
     std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       assert(false);
-      return std::shared_ptr<DistCivector<DataType>>();
+      return nullptr;
     }
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
@@ -319,11 +319,11 @@ class DistCivector {
     void transpose_wait() {
       for (auto& i : transp_)
         mpi__->wait(i);
-      buf_ = std::shared_ptr<DistCivector<DataType>>();
+      buf_.reset();
       buf_ = clone();
       blas::transpose(local(), asize(), lenb_, buf_->local());
       std::copy_n(buf_->local(), asize()*lenb_, local());
-      buf_ = std::shared_ptr<DistCivector<DataType>>();
+      buf_.reset();
     }
 
     void print(const double thresh = 0.05) const {
@@ -494,7 +494,7 @@ class Civector {
 
     size_t size() const { return lena_*lenb_; }
 
-    std::shared_ptr<Civector<DataType>> transpose(std::shared_ptr<const Determinants> det = std::shared_ptr<Determinants>()) const {
+    std::shared_ptr<Civector<DataType>> transpose(std::shared_ptr<const Determinants> det = nullptr) const {
       if (det == nullptr) det = det_->transpose();
       auto ct = std::make_shared<Civector<DataType>>(det);
       blas::transpose(cc(), lenb_, lena_, ct->data());
@@ -569,7 +569,7 @@ class Civector {
     }
 
     // S_- = \sum_i i_beta^\dagger i_alpha
-    std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const {
+    std::shared_ptr<Civector<DataType>> spin_lower(std::shared_ptr<const Determinants> target_det = nullptr) const {
       if (target_det == nullptr)
         target_det = std::make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
       assert( (target_det->nelea() == det_->nelea()-1) && (target_det->neleb() == det_->neleb()+1) );
@@ -610,7 +610,7 @@ class Civector {
     }
 
     // S_+ = \sum_i i_alpha^\dagger i_beta
-    std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = std::shared_ptr<Determinants>()) const {
+    std::shared_ptr<Civector<DataType>> spin_raise(std::shared_ptr<const Determinants> target_det = nullptr) const {
       if (target_det == nullptr)
         target_det = std::make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
       assert( (target_det->nelea() == det_->nelea()+1) && (target_det->neleb() == det_->neleb()-1) );

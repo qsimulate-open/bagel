@@ -70,8 +70,7 @@ class Dirac : public Method {
     std::list<std::shared_ptr<RelDFHalf>> half_; 
 
   public:
-    Dirac(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+    Dirac(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
 
     ~Dirac() { geom_->discard_relativistic(); }
 

@@ -180,7 +180,7 @@ class ZHarrison : public Method {
     int nij() const { return norb_*norb_; }
 
     // TODO
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
     std::vector<double> energy() const { return energy_; }
 

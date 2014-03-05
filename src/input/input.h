@@ -111,7 +111,7 @@ class PTree {
 
     std::shared_ptr<PTree> get_child_optional(const std::string& key) const {
       auto out = data_.get_child_optional(key);
-      return out ? std::make_shared<PTree>(*out, key) : std::shared_ptr<PTree>();
+      return out ? std::make_shared<PTree>(*out, key) : nullptr;
     }
 
     template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
