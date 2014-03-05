@@ -30,7 +30,6 @@
 #include <src/mp2/f12int.h>
 #include <src/scf/scf.h>
 #include <src/wfn/method.h>
-#include <mutex>
 
 namespace bagel {
 
@@ -42,7 +41,6 @@ class MP2 : public Method {
     std::string abasis_;
 
     double energy_;
-    std::mutex mut_;
 
   public:
     MP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
