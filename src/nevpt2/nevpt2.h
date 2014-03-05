@@ -34,7 +34,7 @@ namespace bagel {
 
 class NEVPT2 : public Method {
   protected:
-    std::shared_ptr<CASSCF> scf_;
+    std::shared_ptr<CASSCF> casscf_;
     int ncore_;
 
     std::string abasis_;

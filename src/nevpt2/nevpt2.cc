@@ -26,7 +26,7 @@
 #include <set>
 #include <src/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
-#include <src/casscf/casscf.h>
+#include <src/casscf/casbfgs.h>
 #include <src/parallel/resources.h>
 
 using namespace std;
@@ -34,38 +34,68 @@ using namespace bagel;
 
 NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
-#if 0
-  scf_ = make_shared<SCF>(input, g, ref);
-  scf_->compute();
-  ref_ = scf_->conv_to_ref();
+  casscf_ = make_shared<CASBFGS>(input, g, ref);
+  casscf_->compute();
+  ref_ = casscf_->conv_to_ref();
 
-  cout << endl << "  === DF-MP2 calculation ===" << endl << endl;
+  cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
 
   // checks for frozen core
-  const bool frozen = idata_->get<bool>("frozen", false);
+  const bool frozen = idata_->get<bool>("frozen", true);
   ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
 
-  if (geom_->df() == nullptr) throw logic_error("MP2 is only implemented with DF");
-
   // if three is a aux_basis keyword, we use that basis
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
-#endif
 
 }
 
 
 void NEVPT2::compute() {
-#if 0
-  const size_t nbasis = ref_->coeff()->mdim();
-  const size_t nocc = ref_->nocc() - ncore_;
-  if (nocc < 1) throw runtime_error("no correlated electrons");
-  const size_t nvirt = nbasis - nocc - ncore_;
-  if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
+  const size_t nclosed = ref_->nclosed() - ncore_;
+  const size_t nact = ref_->nact();
+  const size_t nvirt = ref_->nvirt();
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
+  if (nclosed+nact < 1) throw runtime_error("no correlated electrons");
+  if (nvirt < 1)        throw runtime_error("no virtuals orbitals");
+
+  // coefficients
+  shared_ptr<Matrix> ccoeff = ref_->coeff()->slice(ncore_, ncore_+nclosed);
+  shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
+  shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed+nact, ncore_+nclosed+nact+nvirt);
+  // rdm
+  shared_ptr<const RDM<1>> rdm1 = ref_->rdm1(0);
+
+  // Hcore
+  shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
+
+  // make canonical orbitals in closed and virtual subspaces
+  vector<double> veig(nvirt);
+  vector<double> oeig(nclosed);
+  {
+    // * core Fock operator
+    shared_ptr<const Matrix> oden = nclosed+ncore_ ? ref_->coeff()->form_density_rhf(nclosed+ncore_, 0) : make_shared<const Matrix>(geom_->nbasis(), geom_->nbasis());
+    shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, oden, ref_->coeff()->slice(0, ncore_+nclosed)) : hcore;
+    // * active Fock operator
+    // first make a weighted coefficient
+    shared_ptr<Matrix> acoeffw = acoeff->copy();
+    shared_ptr<Matrix> rdm1mat = rdm1->rdm1_mat(0);
+    rdm1mat->sqrt();
+    *acoeffw *= *rdm1mat;
+    *acoeffw *= 1.0/sqrt(2.0);
+    // then make a AO density matrix
+    shared_ptr<const Matrix> aden = make_shared<Matrix>((*acoeffw ^ *acoeffw)*2.0);
+    shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore, aden, acoeffw);
+    // MO Fock
+    shared_ptr<Matrix> omofock = make_shared<Matrix>(*ccoeff % (*ofockao + *afockao - *hcore) * *ccoeff);
+    omofock->diagonalize(oeig.data());
+    *ccoeff *= *omofock;
+    shared_ptr<Matrix> vmofock = make_shared<Matrix>(*vcoeff % (*ofockao + *afockao - *hcore) * *vcoeff);
+    vmofock->diagonalize(veig.data());
+    *vcoeff *= *vmofock;
+  }
+
 
   Timer timer;
   // compute transformed integrals
@@ -76,14 +106,14 @@ void NEVPT2::compute() {
     // first compute half transformed integrals
     shared_ptr<DFHalfDist> half;
     if (abasis_.empty()) {
-      half = geom_->df()->compute_half_transform(ocoeff);
+      half = geom_->df()->compute_half_transform(ccoeff);
       // used later to determine the cache size
       memory_size = half->block(0)->size() * 2;
       mpi__->broadcast(&memory_size, 1, 0);
     } else {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
-      half = cgeom->df()->compute_half_transform(ocoeff);
+      half = cgeom->df()->compute_half_transform(ccoeff);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
       mpi__->broadcast(&memory_size, 1, 0);
@@ -91,7 +121,7 @@ void NEVPT2::compute() {
 
     // second transform for virtual index and rearrange data
     {
-      // this is now (naux, nvirt, nocc), distributed by nvirt*nocc. Always naux*nvirt block is localized to one node
+      // this is now (naux, nvirt, nclosed), distributed by nvirt*nclosed. Always naux*nvirt block is localized to one node
       shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullt = make_shared<DFDistT>(full, dist);
@@ -109,10 +139,10 @@ void NEVPT2::compute() {
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
   {
     int nmax = 0;
-    StaticDist ijdist(nocc*(nocc+1)/2, mpi__->size());
+    StaticDist ijdist(nclosed*(nclosed+1)/2, mpi__->size());
     for (int inode = 0; inode != mpi__->size(); ++inode) {
-      for (int i = 0, cnt = 0; i < nocc; ++i)
-        for (int j = i; j < nocc; ++j, ++cnt)
+      for (int i = 0, cnt = 0; i < nclosed; ++i)
+        for (int j = i; j < nclosed; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
             tasks[inode].push_back(make_tuple(j, i, /*mpitags*/-1,-1));
       if (tasks[inode].size() > nmax) nmax = tasks[inode].size();
@@ -123,6 +153,9 @@ void NEVPT2::compute() {
     }
   }
   const int nloop = tasks[0].size();
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // TODO this is identical to code in mp2.cc. Isolate
 
   // start communication (n fetch behind) - n is determined by memory size
   // the data is stored in a map
@@ -165,7 +198,7 @@ void NEVPT2::compute() {
             cache[i] = fullt->get_slice(i*nvirt, (i+1)*nvirt).front();
           } else {
             cache[i] = make_shared<Matrix>(naux, nvirt, true);
-            tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nocc+i);
+            tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nclosed+i);
           }
         }
         return tag;
@@ -176,7 +209,7 @@ void NEVPT2::compute() {
         // see if "i" is cached at dest
         if (i < 0 || cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank)
           return -1;
-        return mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nocc+i);
+        return mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nclosed+i);
       };
 
       for (int inode = 0; inode != mpi__->size(); ++inode) {
@@ -196,14 +229,12 @@ void NEVPT2::compute() {
       }
     }
   };
+  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
   const int ncache = min(memory_size/(nvirt*nvirt), size_t(20));
   cout << "    * ncache = " << ncache << endl;
   for (int n = 0; n != min(ncache, nloop); ++n)
     cache_block(n, -1);
-
-  // denominator info
-  const vector<double> eig(ref_->eig().begin()+ncore_, ref_->eig().end());
 
   // loop over tasks
   energy_ = 0;
@@ -231,10 +262,10 @@ void NEVPT2::compute() {
       for (int b = a+1; b < nvirt; ++b) {
         const double ab = mat(a, b);
         const double ba = mat(b, a);
-        en += 2.0*(ba*ba + ab*ab - ba*ab) / (-eig[a+nocc]+eig[i]-eig[b+nocc]+eig[j]);
+        en += 2.0*(ba*ba + ab*ab - ba*ab) / (-veig[a]+oeig[i]-veig[b]+oeig[j]);
       }
       const double aa = mat(a, a);
-      en += aa*aa / (-eig[a+nocc]+eig[i]-eig[a+nocc]+eig[j]);
+      en += aa*aa / (-veig[a]+oeig[i]-veig[a]+oeig[j]);
     }
     if (i != j) en *= 2.0;
     energy_ += en;
@@ -247,26 +278,9 @@ void NEVPT2::compute() {
   mpi__->allreduce(&energy_, 1);
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+  cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
   energy_ += ref_->energy();
-  cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+  cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
-  // check if F12 is requested.
-  const bool do_f12 = idata_->get<bool>("f12", false);
-  if (do_f12) {
-#ifdef HAVE_LIBSLATER
-    const double gamma = idata_->get<double>("gamma", 1.5);
-    cout << "    * F12 calculation requested with gamma = " << setprecision(2) << gamma << endl;
-#if 0
-    auto f12int = make_shared<F12Int>(idata_, geom_, ref_, gamma, ncore_);
-#else
-    auto f12ref = make_shared<F12Ref>(geom_, ref_, ncore_, gamma);
-    f12ref->compute();
-#endif
-#else
-  throw runtime_error("Slater-quadrature library not linked");
-#endif
-  }
-#endif
 }
