@@ -99,14 +99,17 @@ void NEVPT2::compute() {
 
   Timer timer;
   // compute transformed integrals
-  shared_ptr<DFDistT> fullt;
+  shared_ptr<DFDistT> fullvi;
+  shared_ptr<Matrix> fullva;
+  shared_ptr<Matrix> fullai;
   size_t memory_size;
 
   {
     // first compute half transformed integrals
-    shared_ptr<DFHalfDist> half;
+    shared_ptr<DFHalfDist> half, halfa;
     if (abasis_.empty()) {
       half = geom_->df()->compute_half_transform(ccoeff);
+      halfa = geom_->df()->compute_half_transform(acoeff);
       // used later to determine the cache size
       memory_size = half->block(0)->size() * 2;
       mpi__->broadcast(&memory_size, 1, 0);
@@ -114,6 +117,7 @@ void NEVPT2::compute() {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       half = cgeom->df()->compute_half_transform(ccoeff);
+      halfa = cgeom->df()->compute_half_transform(acoeff);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
       mpi__->broadcast(&memory_size, 1, 0);
@@ -124,13 +128,27 @@ void NEVPT2::compute() {
       // this is now (naux, nvirt, nclosed), distributed by nvirt*nclosed. Always naux*nvirt block is localized to one node
       shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff)->apply_J()->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
-      fullt = make_shared<DFDistT>(full, dist);
+      fullvi = make_shared<DFDistT>(full, dist);
+    }
+    {
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(vcoeff)->apply_J()->swap();
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+      auto fullvat = make_shared<DFDistT>(full, dist);
+      // Matrix(naux, nvirt*nact) is replicated to each node
+      fullva = fullvat->replicate();
+    }
+    {
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(ccoeff)->apply_J();
+      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
+      auto fullait = make_shared<DFDistT>(full, dist);
+      // Matrix(naux, nact*nclosed) is replicated to each node
+      fullai = fullait->replicate();
     }
 
-    fullt->discard_df();
+    fullvi->discard_df();
   }
-  assert(fullt->nblocks() == 1);
-  const size_t naux = fullt->naux();
+  assert(fullvi->nblocks() == 1);
+  const size_t naux = fullvi->naux();
 
   cout << "    * 3-index integral transformation done" << endl;
 
@@ -193,9 +211,9 @@ void NEVPT2::compute() {
         cachetable[rank].insert(i);
         int tag = -1;
         if (cache.find(i) == cache.end() && myrank == rank) {
-          const int origin = fullt->locate(0, i*nvirt);
+          const int origin = fullvi->locate(0, i*nvirt);
           if (origin == myrank) {
-            cache[i] = fullt->get_slice(i*nvirt, (i+1)*nvirt).front();
+            cache[i] = fullvi->get_slice(i*nvirt, (i+1)*nvirt).front();
           } else {
             cache[i] = make_shared<Matrix>(naux, nvirt, true);
             tag = mpi__->request_recv(cache[i]->data(), cache[i]->size(), origin, myrank*nclosed+i);
@@ -207,9 +225,9 @@ void NEVPT2::compute() {
       // issue send requests
       auto send_one_ = [&](const int i, const int dest) {
         // see if "i" is cached at dest
-        if (i < 0 || cachetable[dest].count(i) || fullt->locate(0, i*nvirt) != myrank)
+        if (i < 0 || cachetable[dest].count(i) || fullvi->locate(0, i*nvirt) != myrank)
           return -1;
-        return mpi__->request_send(fullt->data() + (i*nvirt-fullt->bstart())*naux, nvirt*naux, dest, dest*nclosed+i);
+        return mpi__->request_send(fullvi->data() + (i*nvirt-fullvi->bstart())*naux, nvirt*naux, dest, dest*nclosed+i);
       };
 
       for (int inode = 0; inode != mpi__->size(); ++inode) {

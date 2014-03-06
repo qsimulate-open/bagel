@@ -86,6 +86,8 @@ class DFDistT {
 
     std::shared_ptr<const ParallelDF> df() const { return df_; }
     void discard_df() { df_.reset(); }
+
+    std::shared_ptr<Matrix> replicate(const int i = 0) const;
 };
 
 }
