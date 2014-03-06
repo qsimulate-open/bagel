@@ -89,6 +89,7 @@ class CASSCF : public Method {
 
     void set_occup(const std::vector<double>& o) { occup_ = o; };
 
+    double energy(const int i) const { return energy_[i]; };
     double energy() const { return energy_[istate_]; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.

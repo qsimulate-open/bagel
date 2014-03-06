@@ -109,7 +109,7 @@ void NEVPT2::compute() {
   shared_ptr<Matrix> kmat;
   shared_ptr<Matrix> kmatp;
   {
-    kmat = fockact_c->copy();
+    kmat = make_shared<Matrix>(*fockact_c * *rdm1);
     *kmat += Qvec(nact, nact, acoeff, /*nclosed*/0, casscf_->fci(), casscf_->fci()->rdm2(istate));
     *kmat *= -1.0;
 
@@ -277,7 +277,6 @@ void NEVPT2::compute() {
 
   // loop over tasks
   energy_ = 0;
-  double __debug__norm = 0.0;
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
@@ -304,24 +303,30 @@ void NEVPT2::compute() {
     // hole density matrix
     const Matrix mat_vaR(mat_va * *hrdm1);
     const Matrix mat_avR(*hrdm1 % mat_av);
+    // K' matrix
+    const Matrix mat_vaKp(mat_va * *kmatp);
+    const Matrix mat_avKp(*kmatp % mat_av);
 
+    // TODO should thread
     double en1 = 0.0;
     for (int v = 0; v != nvirt; ++v) {
       double norm = 0.0;
+      double denom = 0.0;
       for (int a = 0; a != nact; ++a) {
         const double va = mat_va(v, a);
         const double av = mat_av(a, v);
         const double vaR = mat_vaR(v, a);
         const double avR = mat_avR(a, v);
-        norm += (2.0*(va*vaR + av*avR) - av*vaR + va*avR);
+        const double vaK = mat_vaKp(v, a);
+        const double avK = mat_avKp(a, v);
+        norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
+        denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
       }
-      en1 += norm;
+      en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
     }
-    if (i != j) en1 *= 2.0;
-    __debug__norm += en1;
+    if (i == j) en1 *= 0.5;
+    energy_ += en1;
 
-
-    // TODO should thread
     double en = 0.0;
     for (int v = 0; v != nvirt; ++v) {
       for (int u = v+1; u < nvirt; ++u) {
@@ -341,8 +346,6 @@ void NEVPT2::compute() {
     mpi__->wait(i);
   // allreduce energy contributions
   mpi__->allreduce(&energy_, 1);
-  mpi__->allreduce(&__debug__norm, 1);
-cout << setprecision(10) << __debug__norm << endl;
 
   cout << "    * assembly done" << endl << endl;
   cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
