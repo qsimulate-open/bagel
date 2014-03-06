@@ -24,6 +24,7 @@
 //
 
 #include <set>
+#include <src/smith/prim_op.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
 #include <src/casscf/casbfgs.h>
@@ -68,10 +69,39 @@ void NEVPT2::compute() {
   shared_ptr<Matrix> ccoeff = ref_->coeff()->slice(ncore_, ncore_+nclosed);
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
   shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed+nact, ncore_+nclosed+nact+nvirt);
-  // rdm
-  shared_ptr<const Matrix> rdm1 = ref_->rdm1(istate)->rdm1_mat(/*nclosed*/0);
+  // rdm 1
+  shared_ptr<const Matrix> rdm1 = casscf_->fci()->rdm1(istate)->rdm1_mat(/*nclosed*/0);
   shared_ptr<Matrix> unit = rdm1->clone(); unit->unit();
   shared_ptr<const Matrix> hrdm1 = make_shared<Matrix>(*unit*2.0 - *rdm1);
+  // rdm 2
+  shared_ptr<Matrix> rdm2 = make_shared<Matrix>(nact*nact, nact*nact);
+  {
+    shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate);
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(r2->data(), rdm2->data(), nact, nact, nact, nact);
+  }
+  shared_ptr<Matrix> hrdm2 = rdm2->copy();
+  for (int i = 0; i != nact; ++i) {
+    for (int j = 0; j != nact; ++j) {
+      for (int k = 0; k != nact; ++k) {
+        hrdm2->element(k+nact*j, i+nact*k) -= hrdm1->element(j,i);
+        hrdm2->element(j+nact*k, k+nact*i) +=  rdm1->element(j,i);
+        hrdm2->element(k+nact*j, k+nact*i) += 2.0 * hrdm1->element(j,i);
+        hrdm2->element(j+nact*k, i+nact*k) -= 2.0 *  rdm1->element(j,i);
+      }
+    }
+  }
+  // rdm 3 and 4
+  shared_ptr<Matrix> rdm3 = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
+  shared_ptr<Matrix> rdm4 = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
+  {
+    shared_ptr<const RDM<3>> r3;
+    shared_ptr<const RDM<4>> r4;
+    tie(r3, r4) = casscf_->fci()->compute_rdm34(istate);
+    SMITH::sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), rdm3->data(), nact, nact, nact, nact, nact, nact);
+    SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), rdm4->data(), nact, nact, nact, nact, nact, nact, nact, nact);
+  }
+//shared_ptr<Matrix> hrdm3 = rdm3->copy();
+//shared_ptr<Matrix> hrdm4 = rdm4->copy();
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
@@ -116,6 +146,8 @@ void NEVPT2::compute() {
     kmatp = kmat->copy();
     *kmatp += *fockact * 2.0;
   }
+//shared_ptr<Matrix> kmat2 = make_shared<Matrix>(nact*nact, nact*nact);
+  shared_ptr<Matrix> kmatp2 = make_shared<Matrix>(nact*nact, nact*nact);
 
 
   Timer timer;
@@ -277,6 +309,7 @@ void NEVPT2::compute() {
 
   // loop over tasks
   energy_ = 0;
+double __debug = 0.0;
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
@@ -307,7 +340,18 @@ void NEVPT2::compute() {
     const Matrix mat_vaKp(mat_va * *kmatp);
     const Matrix mat_avKp(*kmatp % mat_av);
 
+    // S(2)ij,rs sector
+    const Matrix mat_aa(*iablock % *jablock);
+    Matrix mat_aaR(nact, nact);
+    Matrix mat_aaK(nact, nact);
+    dgemv_("N", nact*nact, nact*nact, 1.0, hrdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
+    dgemv_("N", nact*nact, nact*nact, 1.0, kmatp2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
+    const double norm2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+    const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+    __debug += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
+
     // TODO should thread
+    // S(1)ij,r sector
     double en1 = 0.0;
     for (int v = 0; v != nvirt; ++v) {
       double norm = 0.0;
@@ -327,6 +371,7 @@ void NEVPT2::compute() {
     if (i == j) en1 *= 0.5;
     energy_ += en1;
 
+    // S(0)ij,rs sector
     double en = 0.0;
     for (int v = 0; v != nvirt; ++v) {
       for (int u = v+1; u < nvirt; ++u) {
@@ -340,6 +385,7 @@ void NEVPT2::compute() {
     if (i != j) en *= 2.0;
     energy_ += en;
   }
+cout << setprecision(10) <<  __debug << endl;
 
   // just to double check that all the communition is done
   for (auto& i : sendreqs)
