@@ -190,6 +190,20 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     shared_ptr<ZMatrix> mitti2rdm = ___debug___diagonal_2rdm_contraction_exchange(coeffi);
     *miitt2rdm -= *mitti2rdm;
 
+    shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft);
+    shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft);
+    *miitt1rdm -= *mitti1rdm;
+    *miitt1rdm += *miitt1rdm->get_conjg(); // derivation has both terms ; compare to finite difference
+
+    for (int t = 0; t != nact_*2; ++t) {
+      for (int i = 0; i != nclosed_*2; ++i) {
+        const int nt = t + nclosed_*2;
+        (*mitti)(i, t) += (*cfock)(nt,nt) + (*afock)(nt,nt) - (*cfock)(i,i) - (*afock)(i,i)
+                          + (*rdm1)(t,t)*(*cfock)(i,i) - (*cfockd)(t,t) - (*qxr->get_conjg())(nt,t)
+                          + (*miitt2rdm)(i,t) + (*miitt1rdm)(i,t);
+      }
+    }
+
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
     cout << "closed-active diagonal hessian value" << endl;
     cout << setprecision(10) << (*mitti)(morbital, norbital)*2.0 << endl;
