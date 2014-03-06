@@ -186,7 +186,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
+  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
 
   {
     // Fock operators

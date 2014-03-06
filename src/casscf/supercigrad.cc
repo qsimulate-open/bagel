@@ -68,7 +68,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
     auto fact_ao = make_shared<Fock<1>>(geom_, task_->hcore(), denact, ref_->schwarz());
     auto f = make_shared<Matrix>(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff);
 
-    auto fact = make_shared<Qvec>(nmobasis, nact, geom_->df(), ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
+    auto fact = make_shared<Qvec>(nmobasis, nact, ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2(target));
     for (int i = 0; i != nact; ++i)
       daxpy_(nmobasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
 

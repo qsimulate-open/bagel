@@ -91,7 +91,7 @@ void CASBFGS::compute() {
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
 
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
-    auto qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
+    auto qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);

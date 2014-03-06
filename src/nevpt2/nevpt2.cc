@@ -27,10 +27,14 @@
 #include <src/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
 #include <src/casscf/casbfgs.h>
+#include <src/casscf/qvec.h>
 #include <src/parallel/resources.h>
 
 using namespace std;
 using namespace bagel;
+
+// TODO
+const static int istate = 0;
 
 NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
@@ -65,7 +69,7 @@ void NEVPT2::compute() {
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
   shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed+nact, ncore_+nclosed+nact+nvirt);
   // rdm
-  shared_ptr<const Matrix> rdm1 = ref_->rdm1(/*TODO hardwired state*/0)->rdm1_mat(/*nclosed*/0);
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1(istate)->rdm1_mat(/*nclosed*/0);
   shared_ptr<Matrix> unit = rdm1->clone(); unit->unit();
   shared_ptr<const Matrix> hrdm1 = make_shared<Matrix>(*unit*2.0 - *rdm1);
 
@@ -76,6 +80,7 @@ void NEVPT2::compute() {
   vector<double> veig(nvirt);
   vector<double> oeig(nclosed);
   shared_ptr<const Matrix> fockact;
+  shared_ptr<const Matrix> fockact_c;
   {
     // * core Fock operator
     shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
@@ -98,6 +103,18 @@ void NEVPT2::compute() {
       *vcoeff *= vmofock;
     }
     fockact = make_shared<Matrix>(*acoeff % *fockao * *acoeff);
+    fockact_c = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
+  }
+  // make K and K' matrix
+  shared_ptr<Matrix> kmat;
+  shared_ptr<Matrix> kmatp;
+  {
+    kmat = fockact_c->copy();
+    *kmat += Qvec(nact, nact, acoeff, /*nclosed*/0, casscf_->fci(), casscf_->fci()->rdm2(istate));
+    *kmat *= -1.0;
+
+    kmatp = kmat->copy();
+    *kmatp += *fockact * 2.0;
   }
 
 
