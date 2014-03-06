@@ -65,7 +65,9 @@ void NEVPT2::compute() {
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
   shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed+nact, ncore_+nclosed+nact+nvirt);
   // rdm
-  shared_ptr<const RDM<1>> rdm1 = ref_->rdm1(0);
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1(/*TODO hardwired state*/0)->rdm1_mat(/*nclosed*/0);
+  shared_ptr<Matrix> unit = rdm1->clone(); unit->unit();
+  shared_ptr<const Matrix> hrdm1 = make_shared<Matrix>(*unit*2.0 - *rdm1);
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
@@ -73,13 +75,14 @@ void NEVPT2::compute() {
   // make canonical orbitals in closed and virtual subspaces
   vector<double> veig(nvirt);
   vector<double> oeig(nclosed);
+  shared_ptr<const Matrix> fockact;
   {
     // * core Fock operator
     shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)));
-    shared_ptr<Matrix> rdm1mat = rdm1->rdm1_mat(0);
+    shared_ptr<Matrix> rdm1mat = rdm1->copy();
     rdm1mat->sqrt();
     *acoeffw *= *rdm1mat;
     // then make a AO density matrix
@@ -94,6 +97,7 @@ void NEVPT2::compute() {
       vmofock.diagonalize(veig.data());
       *vcoeff *= vmofock;
     }
+    fockact = make_shared<Matrix>(*acoeff % *fockao * *acoeff);
   }
 
 
@@ -256,6 +260,7 @@ void NEVPT2::compute() {
 
   // loop over tasks
   energy_ = 0;
+  double __debug__norm = 0.0;
   for (int n = 0; n != nloop; ++n) {
     // take care of data. The communication should be hidden
     if (n+ncache < nloop)
@@ -274,16 +279,41 @@ void NEVPT2::compute() {
     shared_ptr<const Matrix> jblock = cache.at(j);
     const Matrix mat(*iblock % *jblock);
 
-    // should thread
-    double en = 0.0;
-    for (int a = 0; a != nvirt; ++a) {
-      for (int b = a+1; b < nvirt; ++b) {
-        const double ab = mat(a, b);
-        const double ba = mat(b, a);
-        en += 2.0*(ba*ba + ab*ab - ba*ab) / (-veig[a]+oeig[i]-veig[b]+oeig[j]);
+    // active part
+    shared_ptr<const Matrix> iablock = fullai->slice(i*nact, (i+1)*nact);
+    shared_ptr<const Matrix> jablock = fullai->slice(j*nact, (j+1)*nact);
+    const Matrix mat_va(*iblock % *jablock);
+    const Matrix mat_av(*iablock % *jblock);
+    // hole density matrix
+    const Matrix mat_vaR(mat_va * *hrdm1);
+    const Matrix mat_avR(*hrdm1 % mat_av);
+
+    double en1 = 0.0;
+    for (int v = 0; v != nvirt; ++v) {
+      double norm = 0.0;
+      for (int a = 0; a != nact; ++a) {
+        const double va = mat_va(v, a);
+        const double av = mat_av(a, v);
+        const double vaR = mat_vaR(v, a);
+        const double avR = mat_avR(a, v);
+        norm += (2.0*(va*vaR + av*avR) - av*vaR + va*avR);
       }
-      const double aa = mat(a, a);
-      en += aa*aa / (-veig[a]+oeig[i]-veig[a]+oeig[j]);
+      en1 += norm;
+    }
+    if (i != j) en1 *= 2.0;
+    __debug__norm += en1;
+
+
+    // TODO should thread
+    double en = 0.0;
+    for (int v = 0; v != nvirt; ++v) {
+      for (int u = v+1; u < nvirt; ++u) {
+        const double vu = mat(v, u);
+        const double uv = mat(u, v);
+        en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig[v]+oeig[i]-veig[u]+oeig[j]);
+      }
+      const double vv = mat(v, v);
+      en += vv*vv / (-veig[v]+oeig[i]-veig[v]+oeig[j]);
     }
     if (i != j) en *= 2.0;
     energy_ += en;
@@ -294,6 +324,8 @@ void NEVPT2::compute() {
     mpi__->wait(i);
   // allreduce energy contributions
   mpi__->allreduce(&energy_, 1);
+  mpi__->allreduce(&__debug__norm, 1);
+cout << setprecision(10) << __debug__norm << endl;
 
   cout << "    * assembly done" << endl << endl;
   cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
