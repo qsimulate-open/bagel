@@ -35,8 +35,6 @@ const static CarSphList carsphlist;
 
 void KineticBatch::compute() {
 
-  const SortList sort_ (spherical_);
-
   double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_intermediate_);
   perform_VRR(intermediate_p);
 
@@ -45,6 +43,7 @@ void KineticBatch::compute() {
                       basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                       basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
+  const SortList sort(spherical_);
   if (spherical_) {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
     const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
@@ -52,11 +51,11 @@ void KineticBatch::compute() {
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
 
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
     stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_c, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data_, intermediate_c, cont1_, cont0_, 1, swap01_);
   }
 
   stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_c);

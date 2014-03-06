@@ -85,7 +85,7 @@ void CASBFGS::compute() {
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff = coeff_->slice(nclosed_, nocc_);
     for (int i = 0; i != nact_; ++i)
-      dscal_(acoeff->ndim(), sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), 1);
+      blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     // then make a AO density matrix
     shared_ptr<const Matrix> afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);

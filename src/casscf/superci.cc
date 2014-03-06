@@ -167,7 +167,7 @@ void SuperCI::compute() {
 
     // rotation parameters
     cc_ = davidson.civec().front();
-    dscal_(cc_->size()-1, 1.0/cc_->ele_ref(), cc_->data(), 1);
+    blas::scale_n(1.0/cc_->ele_ref(), cc_->data(), cc_->size()-1);
     // unitary matrix
     shared_ptr<Matrix> rot = cc_->unpack<Matrix>()->exp();
     // forcing rot to be unitary (usually not needed, though)

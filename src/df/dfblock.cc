@@ -153,7 +153,7 @@ void DFBlock::shell_boundary() {
 
   const size_t asendsize = t_start - o_start;
   const size_t arecvsize = t_end - o_end;
-  assert(t_start >= o_start && t_end >= o_end); 
+  assert(t_start >= o_start && t_end >= o_end);
 
   unique_ptr<double[]> sendbuf, recvbuf;
   int sendtag = 0;
@@ -189,7 +189,7 @@ void DFBlock::shell_boundary() {
         if (i*asize_+asendsize > i*t_size) {
           copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
         } else if (i*asize_+asendsize < i*t_size) {
-          copy_backward(data_.get()+i*asize_+asendsize, data_.get()+(i+1)*asize_, data_.get()+i*t_size+retsize); 
+          copy_backward(data_.get()+i*asize_+asendsize, data_.get()+(i+1)*asize_, data_.get()+i*t_size+retsize);
         }
       }
     }
@@ -270,12 +270,12 @@ DFBlock& DFBlock::operator-=(const DFBlock& o) { ax_plus_y(-1.0, o); return *thi
 
 void DFBlock::ax_plus_y(const double a, const DFBlock& o) {
   if (size() != o.size()) throw logic_error("DFBlock::daxpy called illegally");
-  daxpy_(size(), a, o.data_.get(), 1, data_.get(), 1);
+  blas::ax_plus_y_n(a, o.data_.get(), size(), data_.get());
 }
 
 
 void DFBlock::scale(const double a) {
-  dscal_(size(), a, data_, 1);
+  blas::scale_n(a, data_.get(), size());
 }
 
 
@@ -290,7 +290,7 @@ void DFBlock::symmetrize() {
   const int n = b1size_;
   for (int i = 0; i != n; ++i)
     for (int j = i; j != n; ++j) {
-      daxpy_(asize_, 1.0, data_.get()+asize_*(j+n*i), 1, data_.get()+asize_*(i+n*j), 1);
+      blas::ax_plus_y_n(1.0, data_.get()+asize_*(j+n*i), asize_, data_.get()+asize_*(i+n*j));
       copy_n(data_.get()+asize_*(i+n*j), asize_, data_.get()+asize_*(j+n*i));
     }
 }
@@ -316,9 +316,9 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nocc; ++i)
-    daxpy_(asize_, 1.0, data_.get()+asize_*(i+nocc*i), 1, diagsum.get(), 1);
+    blas::ax_plus_y_n(1.0, data_.get()+asize_*(i+nocc*i), asize_, diagsum.get());
   for (int i = 0; i != nocc; ++i)
-    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+nocc*i), 1);
+    blas::ax_plus_y_n(4.0, diagsum.get(), asize_, out->get()+asize_*(i+nocc*i));
   return out;
 }
 
@@ -347,9 +347,9 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const double* amat, const double* bm
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nocc; ++i)
-    daxpy_(asize_, sum[i], data_.get()+asize_*(i+nocc*i), 1, diagsum.get(), 1);
+    blas::ax_plus_y_n(sum[i], data_.get()+asize_*(i+nocc*i), asize_, diagsum.get());
   for (int i = 0; i != nocc; ++i)
-    daxpy_(asize_, sum[i], diagsum.get(), 1, out->get()+asize_*(i+nocc*i), 1);
+    blas::ax_plus_y_n(sum[i], diagsum.get(), asize_, out->get()+asize_*(i+nocc*i));
   return out;
 }
 
@@ -373,14 +373,14 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   // exchange contribution
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nclosed; ++j)
-      daxpy_(asize_, -2.0, data_.get()+asize_*(j+b1size_*i), 1, out->get()+asize_*(j+b1size_*i), 1);
+      blas::ax_plus_y_n(-2.0, data_.get()+asize_*(j+b1size_*i), asize_, out->get()+asize_*(j+b1size_*i));
   // coulomb contribution
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 1.0, data_.get()+asize_*(i+b1size_*i), 1, diagsum.get(), 1);
+    blas::ax_plus_y_n(1.0, data_.get()+asize_*(i+b1size_*i), asize_, diagsum.get());
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+    blas::ax_plus_y_n(4.0, diagsum.get(), asize_, out->get()+asize_*(i+b1size_*i));
 
   // act-act part
   // compress
@@ -400,16 +400,16 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   // coulomb contribution G^ia_ia = 2*gamma_ab
   // ASSUMING natural orbitals
   for (int i = 0; i != nact; ++i)
-    daxpy_(asize_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)), 1);
+    blas::ax_plus_y_n(2.0*rdm1[i+nact*i], diagsum.get(), asize_, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)));
   unique_ptr<double[]> diagsum2(new double[asize_]);
   dgemv_("N", asize_, nact*nact, 1.0, buf.get(), asize_, rdm1, 1, 0.0, diagsum2.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 2.0, diagsum2.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+    blas::ax_plus_y_n(2.0, diagsum2.get(), asize_, out->get()+asize_*(i+b1size_*i));
   // exchange contribution
   for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nclosed; ++j) {
-      daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), 1, out->get()+asize_*(j+b1size_*(i+nclosed)), 1);
-      daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), 1, out->get()+asize_*(i+nclosed+b1size_*j), 1);
+      blas::ax_plus_y_n(-rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), asize_, out->get()+asize_*(j+b1size_*(i+nclosed)));
+      blas::ax_plus_y_n(-rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), asize_, out->get()+asize_*(i+nclosed+b1size_*j));
     }
   }
   return out;
@@ -496,7 +496,7 @@ void DFBlock::copy_block(const std::shared_ptr<const Matrix> o, const int jdim, 
 
 void DFBlock::add_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset, const double fac) {
   assert(o->size() == asize_*jdim);
-  daxpy_(asize_*jdim, fac, o->data(), 1, data_.get()+offset, 1);
+  blas::ax_plus_y_n(fac, o->data(), asize_*jdim, data_.get()+offset);
 }
 
 

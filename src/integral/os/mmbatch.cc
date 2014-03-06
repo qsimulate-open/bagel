@@ -35,13 +35,13 @@ const static CarSphList carsphlist;
 
 void MMBatch::compute() {
 
-  const SortList sort_ (spherical_);
-
   double* const intermediate_p = stack_->get(prim0_*prim1_*asize_*nblocks());
   perform_VRR(intermediate_p);
 
   double* cdata = data_;
   double* csource = intermediate_p;
+  const SortList sort(spherical_);
+
   for (int iblock = 0; iblock != nblocks(); ++iblock,
                                     cdata += size_block_, csource += prim0_*prim1_*asize_) {
 
@@ -67,11 +67,11 @@ void MMBatch::compute() {
       carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i);
 
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
       stack_->release(cont0_*cont1_*asize_final_, intermediate_i);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_fi, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
 
     stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);

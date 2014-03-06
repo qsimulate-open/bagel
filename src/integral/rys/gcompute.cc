@@ -184,21 +184,22 @@ void GradBatch::compute() {
 
   } // end of loop 12
 
+  using bagel::blas::ax_plus_y_n;
   if (!basisinfo_[3]->dummy()) {
     // use symmetry for shell3.
     if (!basisinfo_[0]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*9, 1);
+      ax_plus_y_n(-1.0, data_+size_block_*0, 3*size_block_, data_+size_block_*9);
     if (!basisinfo_[1]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*9, 1);
+      ax_plus_y_n(-1.0, data_+size_block_*3, 3*size_block_, data_+size_block_*9);
     if (!basisinfo_[2]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*6, 1, data_+size_block_*9, 1);
+      ax_plus_y_n(-1.0, data_+size_block_*6, 3*size_block_, data_+size_block_*9);
   } else {
     // use symmetry for shell2
     assert(!basisinfo_[2]->dummy());
     if (!basisinfo_[0]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*0, 1, data_+size_block_*6, 1);
+      ax_plus_y_n(-1.0, data_+size_block_*0, 3*size_block_, data_+size_block_*6);
     if (!basisinfo_[1]->dummy())
-      daxpy_(3*size_block_, -1.0, data_+size_block_*3, 1, data_+size_block_*6, 1);
+      ax_plus_y_n(-1.0, data_+size_block_*3, 3*size_block_, data_+size_block_*6);
   }
 
   stack_->release(size_block_, stack_sav);
