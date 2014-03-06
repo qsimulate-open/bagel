@@ -34,7 +34,6 @@ shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfoc
   shared_ptr<ZMatrix> cfockd;
   if (nact_) {
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-    // TODO check
     cfockd->hermite();
   }
 
