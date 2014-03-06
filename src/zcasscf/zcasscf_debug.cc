@@ -419,7 +419,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange(shared_ptr<c
 
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,i) = (aa'|i'i)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -491,6 +491,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(share
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       (*out)(a, i) = (*aaii)(a+coeffa->mdim()*ap, ip+coeffi->mdim()*i);
+      if (closed_active)
+        (*out)(a, i) -= (*aaii)(ap+coeffa->mdim()*a, ip+coeffi->mdim()*i);
     }
   }
 
