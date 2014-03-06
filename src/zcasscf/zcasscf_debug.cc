@@ -193,7 +193,11 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft);
     shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft);
     *miitt1rdm -= *mitti1rdm;
-    *miitt1rdm += *miitt1rdm->get_conjg(); // derivation has both terms ; compare to finite difference
+    *miitt1rdm += *miitt1rdm->get_conjg(); //TODO : check that derivation has both terms ; compare to finite difference
+
+    shared_ptr<ZMatrix> kmiitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // appears 0 by symmetry
+    shared_ptr<ZMatrix> kmitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true);
+    *kmiitt1rdm -= *kmitti1rdm;
 
     for (int t = 0; t != nact_*2; ++t) {
       for (int i = 0; i != nclosed_*2; ++i) {
@@ -1021,7 +1025,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_exchange(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (aa|iu) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
@@ -1097,15 +1101,26 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared
   // (5) form (aa|iu) D(iu) where a runs fastest
   shared_ptr<const ZMatrix> aaii = fulla->form_4index(fulli, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
-  for (int a = 0; a != coeffa->mdim(); ++a)
-    for (int i = 0; i != coeffi->mdim(); ++i)
-      (*out)(a, i) = (*aaii)(a+coeffa->mdim()*a, i+coeffi->mdim()*i);
+  if (with_kramers) {
+    for (int a = 0; a != coeffa->mdim(); ++a) {
+      const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+      for (int i = 0; i != coeffi->mdim(); ++i) {
+        const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+        // G(1,1) contribution : (a ka| ki u) * D(iu)
+        (*out)(a, i) = (*aaii)(a+coeffa->mdim()*ap, ip+coeffi->mdim()*i);
+      }
+    }
+  } else {
+    for (int a = 0; a != coeffa->mdim(); ++a)
+      for (int i = 0; i != coeffi->mdim(); ++i)
+        (*out)(a, i) = (*aaii)(a+coeffa->mdim()*a, i+coeffi->mdim()*i);
+  }
 
   return out;
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (au|ia) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
@@ -1178,12 +1193,23 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
   assert(dffulla.size() == 1);
   shared_ptr<const RelDFFull> fullai = dffulla.front();
 
-  // (5) form (ai|ia) where a runs fastest
+  // (5) form (au|ia) * {^{A}D}_{iu} where a runs fastest
   shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullia, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
-  for (int a = 0; a != coeffa->mdim(); ++a)
-    for (int i = 0; i != coeffi->mdim(); ++i)
-      (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, i+coeffi->mdim()*a); // <- only difference from the Coulomb version
+  if (with_kramers) {
+    for (int a = 0; a != coeffa->mdim(); ++a) {
+      const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+      for (int i = 0; i != coeffi->mdim(); ++i) {
+        const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+        // G(1,1) contribution
+        (*out)(a, i) = (*aiia->get_conjg())(ap+coeffa->mdim()*ip, i+coeffi->mdim()*a); // <- only difference from the Coulomb version
+      }
+    }
+  } else {
+    for (int a = 0; a != coeffa->mdim(); ++a)
+      for (int i = 0; i != coeffi->mdim(); ++i)
+        (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, i+coeffi->mdim()*a); // <- only difference from the Coulomb version
+  }
 
   return out;
 }
