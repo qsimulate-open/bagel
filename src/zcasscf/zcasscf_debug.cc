@@ -755,7 +755,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
-  // returns Mat(a,t) = (a'a|tt') = (a'a|uv)G(uv,tt'), where t is an active index and a is an index of coeffa
+  // returns Mat(a,t) = (a'a|t't) = (a'a|uv)G(uv,t't), where t is an active index and a is an index of coeffa
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be able to eliminate completely after hessian is confirmed
   assert(coeffi->mdim() == nact_*2);
@@ -827,13 +827,13 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
   shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
   shared_ptr<const ZMatrix> intermed1 = make_shared<ZMatrix>(*abji * *rdm2);
 
-  // (7) form (a'a|tt') where a runs fastest
+  // (7) form (a'a|t't) where a runs fastest
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int t = 0; t != coeffi->mdim(); ++t) {
     const int tp = (t < coeffi->mdim()/2) ? t+coeffi->mdim()/2 : t-coeffi->mdim()/2;
     for (int a = 0; a != coeffa->mdim(); ++a) {
       const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
-      (*out)(a, t) = (*intermed1)(ap+coeffa->mdim()*a, t+coeffi->mdim()*tp);
+      (*out)(a, t) = (*intermed1)(ap+coeffa->mdim()*a, tp+coeffi->mdim()*t);
     }
   }
 
@@ -841,7 +841,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,t) = (a'w|va) * G(vw,tt') = (a't'|ta) where a is an index of coeffa, and t is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be possible to eliminate after Hessian has been confirmed
@@ -911,16 +911,16 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
   shared_ptr<const ZMatrix> awvb = fullai->form_4index(fullia, 1.0);
   shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
   SMITH::sort_indices<0,3,2,1,0,1,1,1>(awvb->data(), intermed1->data(), coeffa->mdim(), coeffi->mdim(), coeffi->mdim(), coeffa->mdim());
-  *intermed1 *= *(fci_->rdm2_av());
+  *intermed1 *= *(fci_->rdm2_av()); // stored as abtu
 
   // need to include metric for (aw|bv) ; contract with 2 RDM
   auto fullai_j = fullai->apply_J();
   shared_ptr<const ZMatrix> awbv = fullai_j->form_4index(fullai_j, 1.0);
-  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4); // abvw
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(awbv->data(), intermed2->data(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim());
   shared_ptr<ZMatrix> rdmtmp = fci_->rdm2_av()->clone();
   SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), rdmtmp->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
-  *intermed2 *= *rdmtmp;
+  *intermed2 *= *rdmtmp; // stored as abtu
 
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {
@@ -928,10 +928,18 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1)
-      (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+      if (closed_active) {
+        (*out)(a, i) = (*intermed1)(a+coeffa->mdim()*ap, i+coeffi->mdim()*ip);
+      } else {
+        (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, ip+coeffi->mdim()*i);
+      }
 
       // contribution from G(1,2)
-      (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+      if (closed_active) {
+       (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+      } else { 
+       (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+      }
     }
   }
 
