@@ -195,18 +195,23 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     *miitt1rdm -= *mitti1rdm;
     *miitt1rdm += *miitt1rdm->get_conjg(); //TODO : check that derivation has both terms ; compare to finite difference
 
+    for (int t = 0; t != nact_*2; ++t) {
+      for (int i = 0; i != nclosed_*2; ++i) {
+        const int nt = t + nclosed_*2;
+        (*mitti)(i, t) += (*cfock)(nt, nt) + (*afock)(nt, nt) - (*cfock)(i, i) - (*afock)(i, i)
+                          + (*rdm1)(t,t)*(*cfock)(i, i) - (*cfockd)(t, t) - (*qxr->get_conjg())(nt ,t)
+                          + (*miitt2rdm)(i, t) + (*miitt1rdm)(i, t);
+      }
+    }
+
+    // (1) G(1,1)_{kt ki,ti} + G(1,2)_{kt i, t ki}
     shared_ptr<ZMatrix> kmiitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // appears 0 by symmetry
     shared_ptr<ZMatrix> kmitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true);
     *kmiitt1rdm -= *kmitti1rdm;
 
-    for (int t = 0; t != nact_*2; ++t) {
-      for (int i = 0; i != nclosed_*2; ++i) {
-        const int nt = t + nclosed_*2;
-        (*mitti)(i, t) += (*cfock)(nt,nt) + (*afock)(nt,nt) - (*cfock)(i,i) - (*afock)(i,i)
-                          + (*rdm1)(t,t)*(*cfock)(i,i) - (*cfockd)(t,t) - (*qxr->get_conjg())(nt,t)
-                          + (*miitt2rdm)(i,t) + (*miitt1rdm)(i,t);
-      }
-    }
+    shared_ptr<ZMatrix> kmiitt = ___debug___diagonal_integrals_coulomb_kramers(coeffi, coefft, true); // appears 0 by symmetry
+    shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true); // appears 0 by symmetry
+    *kmitti -= *kmiitt;
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
     cout << "closed-active diagonal hessian value" << endl;
@@ -418,7 +423,6 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange(shared_ptr<c
 }
 
 
-
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,i) = (aa'|i'i)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -500,7 +504,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,i) = (ai|i'a')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -576,10 +580,17 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1)
       (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
+      if (closed_active)
+        (*out)(a, i) -= (*aiia)(ap+coeffa->mdim()*i, ip+coeffi->mdim()*a);
 
       // contribution from G(1,2)
-      (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
-      (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
+      if (closed_active) {
+        (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
+        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
+      } else {
+        (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
+        (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
+      }
     }
   }
 
@@ -907,9 +918,9 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
   shared_ptr<const ZMatrix> awbv = fullai_j->form_4index(fullai_j, 1.0);
   shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(awbv->data(), intermed2->data(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim());
-  shared_ptr<ZMatrix> tmp1 = fci_->rdm2_av()->clone();
-  SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), tmp1->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
-  *intermed2 *= *tmp1;
+  shared_ptr<ZMatrix> rdmtmp = fci_->rdm2_av()->clone();
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), rdmtmp->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
+  *intermed2 *= *rdmtmp;
 
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {

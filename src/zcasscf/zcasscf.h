@@ -106,7 +106,7 @@ class ZCASSCF : public Method {
     // returns [x,y] = (xx'|y'y) (x is an index of coeffa, and y is an index of coeffi)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool closed_active = false) const;
     // returns [x,y] = (xy|y'x') (x is an index of coeffa, and y is an index of coeffi)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool closed_active = false) const;
 
     // returns [x,t,u] = (xx|tu) (x is an index of coeffa, and coeffi should be active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
