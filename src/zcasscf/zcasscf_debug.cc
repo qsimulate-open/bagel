@@ -1226,3 +1226,96 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
 
   return out;
 }
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+  /* returns Mat(a,i) =   [ (i a|v ka)  - (i ka|v a) ] * {^{A}D}_{v ki}
+                        + [ (ki ka|v a) - (ki a|v ka) ] * {^{A}D}_{v i}
+     where a is an index of coeffa and i is active
+     for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+  */
+  assert(coeffi->mdim() == nact_*2);
+  shared_ptr<const ZMatrix> rdm1t = (transform_rdm1())->transpose();
+  shared_ptr<const ZMatrix> cordm1 = make_shared<ZMatrix>(*coeffi * *rdm1t);
+  
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  array<shared_ptr<const Matrix>, 4> rrdmcoeff;
+  array<shared_ptr<const Matrix>, 4> irdmcoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = coeffa->get_submatrix(i*coeffa->ndim()/4, 0, coeffa->ndim()/4, coeffa->mdim());
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    shared_ptr<const ZMatrix> rc = cordm1->get_submatrix(i*cordm1->ndim()/4, 0, cordm1->ndim()/4, cordm1->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+    rrdmcoeff[i] = rc->get_real_part();
+    irdmcoeff[i] = rc->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform ; traditional on 2nd quantities ; J^-1 applied to RDM weighted
+  list<shared_ptr<RelDFHalf>> half_complexi  = DFock::make_half_complex(dfdists, rrdmcoeff, irdmcoeff);
+  list<shared_ptr<RelDFHalf>> half_complexi2 = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J()->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti; // density matrix weighted
+  list<shared_ptr<RelDFHalf>> half_complex_facti2; // traditional
+  for (auto& i : half_complexi2) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti2.insert(half_complex_facti2.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi2.clear();
+  DFock::factorize(half_complex_facti2);
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+  DFock::factorize(half_complex_facti);
+
+  // (4) compute density matrix weighted (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulla;
+  for (auto& i : half_complex_facti)
+    dffulla.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
+  DFock::factorize(dffulla);
+  dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
+  assert(dffulla.size() == 1);
+  shared_ptr<const RelDFFull> fullrdma = dffulla.front();
+
+  // (4.5) compute traditional (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulla2;
+  for (auto& i : half_complex_facti2)
+    dffulla2.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
+  DFock::factorize(dffulla2);
+  dffulla2.front()->scale(dffulla2.front()->fac()); // take care of the factor
+  cout << " dffulla2 size = " << dffulla2.size() << endl;
+  assert(dffulla2.size() == 1);
+  shared_ptr<const RelDFFull> fullia = dffulla2.front();
+
+  shared_ptr<const ZMatrix> iaia = fullia->form_4index(fullrdma, 1.0);
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+    for (int i = 0; i != coeffi->mdim(); ++i) {
+      const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      // G(1,2) contributions
+      (*out)(a, i)  = (*iaia)(i+coeffi->mdim()*a, ip+coeffi->mdim()*ap);
+      (*out)(a, i) -= (*iaia)(i+coeffi->mdim()*a, ip+coeffi->mdim()*ap);
+      (*out)(a, i) += (*iaia)(ip+coeffi->mdim()*ap, i+coeffi->mdim()*a);
+      (*out)(a, i) -= (*iaia)(ip+coeffi->mdim()*a, i+coeffi->mdim()*ap);
+    }
+  }
+
+  return out;
+}
