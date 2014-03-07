@@ -83,16 +83,24 @@ void NEVPT2::compute() {
   for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nact; ++j) {
       for (int k = 0; k != nact; ++k) {
+        hrdm2->element(j+nact*k, i+nact*k) += 2.0 * hrdm1->element(j,i);
         hrdm2->element(k+nact*j, i+nact*k) -= hrdm1->element(j,i);
-        hrdm2->element(j+nact*k, k+nact*i) +=  rdm1->element(j,i);
-        hrdm2->element(k+nact*j, k+nact*i) += 2.0 * hrdm1->element(j,i);
-        hrdm2->element(j+nact*k, i+nact*k) -= 2.0 *  rdm1->element(j,i);
+        hrdm2->element(j+nact*k, k+nact*i) +=  rdm1->element(i,j);
+        hrdm2->element(k+nact*j, k+nact*i) -= 2.0 *  rdm1->element(i,j);
       }
     }
   }
+  // helper matrix for higher-order hole RDMs
+  shared_ptr<Matrix> srdm2 = hrdm2->clone(); // S(a,b,c,d) = <0|a+p bp cq d+q|0>
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        for (int l = 0; l != nact; ++l)
+          srdm2->element(l+nact*k,j+nact*i) = -rdm2->element(l+nact*i,k+nact*j) + (i == j ? 2.0*rdm1->element(l,k) : 0.0) - (i == k ? rdm1->element(l,j) : 0.0);
+
   // rdm 3 and 4
   shared_ptr<Matrix> rdm3 = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
-  shared_ptr<Matrix> rdm4 = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
+  shared_ptr<Matrix> rdm4 = make_shared<Matrix>(nact*nact*nact*nact, nact*nact*nact*nact);
   {
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
@@ -100,8 +108,32 @@ void NEVPT2::compute() {
     SMITH::sort_indices<0,2,4,  1,3,5,  0,1,1,1>(r3->data(), rdm3->data(), nact, nact, nact, nact, nact, nact);
     SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), rdm4->data(), nact, nact, nact, nact, nact, nact, nact, nact);
   }
-//shared_ptr<Matrix> hrdm3 = rdm3->copy();
+  shared_ptr<Matrix> hrdm3 = make_shared<Matrix>(*rdm3 * (-1.0));
 //shared_ptr<Matrix> hrdm4 = rdm4->copy();
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        for (int l = 0; l != nact; ++l)
+          for (int m = 0; m != nact; ++m) {
+            hrdm3->element(l+nact*(k+nact*m),j+nact*(i+nact*m)) += 2.0*hrdm2->element(l+nact*k,j+nact*i);
+            hrdm3->element(l+nact*(m+nact*k),j+nact*(i+nact*m)) -=     hrdm2->element(l+nact*k,j+nact*i);
+            hrdm3->element(m+nact*(l+nact*k),j+nact*(i+nact*m)) -=     hrdm2->element(l+nact*k,i+nact*j);
+            hrdm3->element(l+nact*(k+nact*m),j+nact*(m+nact*i)) +=     srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(l+nact*(m+nact*k),j+nact*(m+nact*i)) -= 2.0*srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(m+nact*(l+nact*k),j+nact*(m+nact*i)) +=     srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(l+nact*(k+nact*m),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,l+nact*k);
+            hrdm3->element(l+nact*(m+nact*k),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,k+nact*l);
+            hrdm3->element(m+nact*(l+nact*k),m+nact*(j+nact*i)) += 2.0* rdm2->element(i+nact*j,k+nact*l);
+          }
+#if 0
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        for (int l = 0; l != nact; ++l)
+          for (int m = 0; m != nact; ++m)
+            for (int n = 0; n != nact; ++n)
+    cout << i << " " << j << " " << k << " " << l << " " << m << " " << n << " " << setw(20) << setprecision(10) << hrdm3->element(n+nact*(m+nact*l),k+nact*(j+nact*i)) << endl;
+#endif
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
@@ -109,18 +141,20 @@ void NEVPT2::compute() {
   // make canonical orbitals in closed and virtual subspaces
   vector<double> veig(nvirt);
   vector<double> oeig(nclosed);
+  // fock
   shared_ptr<const Matrix> fockact;
+  // core fock
   shared_ptr<const Matrix> fockact_c;
+  // heff_p in active
+  shared_ptr<const Matrix> fockact_p;
   {
     // * core Fock operator
     shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
-    shared_ptr<Matrix> acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)));
     shared_ptr<Matrix> rdm1mat = rdm1->copy();
     rdm1mat->sqrt();
-    *acoeffw *= *rdm1mat;
-    // then make a AO density matrix
+    auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1mat);
     auto fockao = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
     // MO Fock
     {
@@ -134,6 +168,10 @@ void NEVPT2::compute() {
     }
     fockact = make_shared<Matrix>(*acoeff % *fockao * *acoeff);
     fockact_c = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
+
+    // h'eff (only exchange in the active space)
+    auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0))), /*store*/false, /*rhf*/false);
+    fockact_p = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
   }
   // make K and K' matrix
   shared_ptr<Matrix> kmat;
@@ -146,9 +184,50 @@ void NEVPT2::compute() {
     kmatp = kmat->copy();
     *kmatp += *fockact * 2.0;
   }
-//shared_ptr<Matrix> kmat2 = make_shared<Matrix>(nact*nact, nact*nact);
+  shared_ptr<Matrix> kmat2 = make_shared<Matrix>(nact*nact, nact*nact);
   shared_ptr<Matrix> kmatp2 = make_shared<Matrix>(nact*nact, nact*nact);
-
+  {
+    // TODO stupid code
+    shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff)->apply_J();
+    shared_ptr<const Matrix> tmp = full->form_4index(full, 1.0);
+    shared_ptr<Matrix> four = make_shared<Matrix>(nact*nact, nact*nact);
+    assert(tmp->size() == four->size());
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp->data(), four->data(), nact, nact, nact, nact);
+    for (int b = 0; b != nact; ++b)
+      for (int a = 0; a != nact; ++a)
+        for (int bp = 0; bp != nact; ++bp)
+          for (int ap = 0; ap != nact; ++ap)
+            for (int c = 0; c != nact; ++c) {
+              kmatp2->element(ap+nact*bp, a+nact*b) += hrdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(c, a)
+                                                     + hrdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(c, b);
+              kmat2->element(ap+nact*bp, a+nact*b) -= rdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(a, c)
+                                                    - rdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(b, c);
+              for (int d = 0; d != nact; ++d)
+                for (int e = 0; e != nact; ++e) {
+                  kmatp2->element(ap+nact*bp, a+nact*b) += 0.5 * four->element(c+nact*d, e+nact*a)
+                                                         * (- 2.0* hrdm3->element(ap+nact*(bp+nact*e), d+nact*(b+nact*c))
+                                                            + 4.0*(c == e ? hrdm2->element(ap+nact*bp, d+nact*b) : 0.0)
+                                                            -     (d == e ? hrdm2->element(ap+nact*bp, c+nact*b) : 0.0)
+                                                            -     (b == e ? hrdm2->element(ap+nact*bp, d+nact*c) : 0.0))
+                                                        +  0.5 * four->element(c+nact*d, e+nact*b)
+                                                         * (- 2.0* hrdm3->element(ap+nact*(bp+nact*e), a+nact*(d+nact*c))
+                                                            + 4.0*(c == e ? hrdm2->element(ap+nact*bp, a+nact*d) : 0.0)
+                                                            -     (a == e ? hrdm2->element(ap+nact*bp, c+nact*d) : 0.0)
+                                                            -     (d == e ? hrdm2->element(ap+nact*bp, a+nact*c) : 0.0));
+                  // d->c e->e f->d
+                  kmat2->element(ap+nact*bp, a+nact*b) -= 0.5 * four->element(c+nact*a, e+nact*d)
+                                                         * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), d+nact*(b+nact*e))
+                                                            +     (c == d ? rdm2->element(ap+nact*bp, e+nact*b) : 0.0)
+                                                            +     (b == c ? rdm2->element(ap+nact*bp, d+nact*e) : 0.0))
+                                                        - 0.5 * four->element(c+nact*b, e+nact*d)
+                                                         * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), a+nact*(d+nact*e))
+                                                            +     (a == c ? rdm2->element(ap+nact*bp, e+nact*d) : 0.0)
+                                                            +     (c == d ? rdm2->element(ap+nact*bp, a+nact*e) : 0.0));
+                }
+            }
+  }
+kmatp2->print();
+kmat2->print();
 
   Timer timer;
   // compute transformed integrals
@@ -344,9 +423,9 @@ double __debug = 0.0;
     const Matrix mat_aa(*iablock % *jablock);
     Matrix mat_aaR(nact, nact);
     Matrix mat_aaK(nact, nact);
-    dgemv_("N", nact*nact, nact*nact, 1.0, hrdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
+    dgemv_("N", nact*nact, nact*nact, 1.0,  hrdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
     dgemv_("N", nact*nact, nact*nact, 1.0, kmatp2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
-    const double norm2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+    const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
     const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
     __debug += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
 
