@@ -182,6 +182,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
     cfockd->hermite();
 
+    // (1) G(1,1)_{ti,ti}
     shared_ptr<ZMatrix> miitt = ___debug___diagonal_integrals_coulomb(coeffi, coefft);
     shared_ptr<ZMatrix> mitti = ___debug___diagonal_integrals_exchange(coeffi, coefft);
     *mitti -= *miitt;
@@ -754,7 +755,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,t) = (a'a|t't) = (a'a|uv)G(uv,t't), where t is an active index and a is an index of coeffa
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be able to eliminate completely after hessian is confirmed
@@ -833,7 +834,11 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
     const int tp = (t < coeffi->mdim()/2) ? t+coeffi->mdim()/2 : t-coeffi->mdim()/2;
     for (int a = 0; a != coeffa->mdim(); ++a) {
       const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
-      (*out)(a, t) = (*intermed1)(ap+coeffa->mdim()*a, tp+coeffi->mdim()*t);
+      if (closed_active) {
+        (*out)(a, t) = (*intermed1)(a+coeffa->mdim()*ap, t+coeffi->mdim()*tp);
+      } else {
+        (*out)(a, t) = (*intermed1)(ap+coeffa->mdim()*a, tp+coeffi->mdim()*t);
+      }
     }
   }
 
@@ -936,7 +941,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
 
       // contribution from G(1,2)
       if (closed_active) {
-       (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
+       (*out)(a, i) += (*intermed2->get_conjg())(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
       } else { 
        (*out)(a, i) += (*intermed2)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
       }

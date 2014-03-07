@@ -119,7 +119,7 @@ class ZCASSCF : public Method {
     // returns [a,t] = (aw|va) * G(vw,tt) (a is index of coeffa, and t is active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa) const;
     // returns [a,t] = (ka a|vw) * G(vw,kt t) (a is index of coeffa, and t is active)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool closed_active = false) const;
     // returns [a,t] = (ka w|v a) * G(vw,kt t) (a is index of coeffa, and t is active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_active_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool closed_active = false) const;
     // returns [a,i] = (a a|i u) * D(iu) (a is index of coeffa, and i is active)
