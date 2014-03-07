@@ -585,8 +585,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 
       // contribution from G(1,2)
       if (closed_active) {
-        (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
-        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
+        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
+        (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
       } else {
         (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
         (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
@@ -1229,8 +1229,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
 
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
-  /* returns Mat(a,i) =   [ (i a|v ka)  - (i ka|v a) ] * {^{A}D}_{v ki}
-                        + [ (ki ka|v a) - (ki a|v ka) ] * {^{A}D}_{v i}
+  /* returns Mat(a,i) =   [  (i ka|v a) -  (i a|v ka) ] * {^{A}D}_{v ki}
+                        + [ (ki a|v ka) - (ki ka|v a) ] * {^{A}D}_{v i}
      where a is an index of coeffa and i is active
      for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   */
@@ -1310,10 +1310,10 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // G(1,2) contributions
-      (*out)(a, i)  = (*iaia)(i+coeffi->mdim()*a, ip+coeffi->mdim()*ap);
-      (*out)(a, i) -= (*iaia)(i+coeffi->mdim()*a, ip+coeffi->mdim()*ap);
-      (*out)(a, i) += (*iaia)(ip+coeffi->mdim()*ap, i+coeffi->mdim()*a);
-      (*out)(a, i) -= (*iaia)(ip+coeffi->mdim()*a, i+coeffi->mdim()*ap);
+      (*out)(a, i)  = (*iaia)(i+coeffi->mdim()*ap, ip+coeffi->mdim()*a);
+      (*out)(a, i) -= (*iaia)(i+coeffi->mdim()*a,  ip+coeffi->mdim()*ap);
+      (*out)(a, i) += (*iaia)(ip+coeffi->mdim()*a, i+coeffi->mdim()*ap);
+      (*out)(a, i) -= (*iaia)(ip+coeffi->mdim()*ap, i+coeffi->mdim()*a);
     }
   }
 
