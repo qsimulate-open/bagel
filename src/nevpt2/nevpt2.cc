@@ -126,6 +126,27 @@ void NEVPT2::compute() {
             hrdm3->element(l+nact*(m+nact*k),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,k+nact*l);
             hrdm3->element(m+nact*(l+nact*k),m+nact*(j+nact*i)) += 2.0* rdm2->element(i+nact*j,k+nact*l);
           }
+  // <a+ a b+ b> and <a+ a b+ b c+ c>
+  shared_ptr<Matrix> ardm2 = rdm2->clone();
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k) {
+        for (int l = 0; l != nact; ++l)
+          ardm2->element(l+nact*k,j+nact*i) += rdm2->element(l+nact*j,k+nact*i);
+        ardm2->element(k+nact*j,j+nact*i) += rdm1->element(k,i);
+      }
+  shared_ptr<Matrix> ardm3 = rdm3->clone();
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        for (int l = 0; l != nact; ++l)
+          for (int m = 0; m != nact; ++m) {
+            for (int n = 0; n != nact; ++n)
+              ardm3->element(n+nact*(m+nact*l),k+nact*(j+nact*i)) += rdm3->element(n+nact*(l+nact*j),m+nact*(k+nact*i));
+            ardm3->element(m+nact*(l+nact*l),k+nact*(j+nact*i)) += ardm2->element(m+nact*k,j+nact*i);
+            ardm3->element(m+nact*(l+nact*k),j+nact*(j+nact*i)) += rdm2->element(m+nact*k,l+nact*i);
+            ardm3->element(m+nact*(l+nact*k),j+nact*(l+nact*i)) += rdm2->element(m+nact*k,i+nact*j);
+          }
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
@@ -181,7 +202,8 @@ void NEVPT2::compute() {
     fockact_h = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
     fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
   }
-  // make K and K' matrix
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // make K and K' matrices
   shared_ptr<Matrix> kmat;
   shared_ptr<Matrix> kmatp;
   {
@@ -193,12 +215,14 @@ void NEVPT2::compute() {
   }
   shared_ptr<const Matrix> kmat2;
   shared_ptr<const Matrix> kmatp2;
+  shared_ptr<const Matrix> ints2;
   {
     shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff)->apply_J();
     // integrals (ij|kl) and <ik|jl>
     shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
-    shared_ptr<Matrix> ints2 = make_shared<Matrix>(nact*nact, nact*nact);
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), ints2->data(), nact, nact, nact, nact);
+    auto tmp = make_shared<Matrix>(nact*nact, nact*nact);
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact, nact, nact, nact);
+    ints2 = tmp;
 
     auto compute_kmat = [](const int nact, shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock,
                            shared_ptr<const Matrix> ints, const double sign) {
@@ -229,12 +253,31 @@ void NEVPT2::compute() {
     kmat2  = compute_kmat(nact,  rdm2,  rdm3, fockact_c, ints2,  1.0);
     kmatp2 = compute_kmat(nact, hrdm2, hrdm3, fockact_h, ints2, -1.0);
   }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // A matrices
+  shared_ptr<Matrix> amat2 = rdm2->clone();
+  {
+    for (int b = 0; b != nact; ++b)
+      for (int a = 0; a != nact; ++a)
+        for (int bp = 0; bp != nact; ++bp)
+          for (int ap = 0; ap != nact; ++ap)
+            for (int c = 0; c != nact; ++c) {
+              amat2->element(ap+nact*bp,a+nact*b) += fockact_p->element(c,a) * ardm2->element(bp+nact*ap,c+nact*b) - fockact_p->element(c,b) * ardm2->element(bp+nact*ap,a+nact*c);
+              for (int d = 0; d != nact; ++d)
+                for (int e = 0; e != nact; ++e)
+                  amat2->element(ap+nact*bp,a+nact*b) += 0.5 * ints2->element(c+nact*d,e+nact*a) * (ardm3->element(bp+nact*(ap+nact*c),e+nact*(d+nact*b))
+                                                                                                  + ardm3->element(bp+nact*(ap+nact*d),b+nact*(c+nact*e)))
+                                                       - 0.5 * ints2->element(b+nact*c,e+nact*d) * (ardm3->element(bp+nact*(ap+nact*a),e+nact*(c+nact*d))
+                                                                                                  + ardm3->element(bp+nact*(ap+nact*c),d+nact*(a+nact*e)));
+            }
+  }
 
   Timer timer;
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
   shared_ptr<const Matrix> fullav;
   shared_ptr<const Matrix> fullai;
+  // TODO probably we want to use JKFIT for this for consistency?
   shared_ptr<const Matrix> fullaa;
   size_t memory_size;
 
