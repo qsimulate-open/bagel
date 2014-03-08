@@ -47,6 +47,9 @@ class RASCI : public Method {
     double thresh_;
     double print_thresh_;
 
+    // algorithmic options
+    int batchsize_;
+
     // numbers of electrons
     int nelea_;
     int neleb_;

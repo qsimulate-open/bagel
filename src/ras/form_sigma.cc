@@ -136,33 +136,45 @@ void FormSigmaRAS::sigma_aa(shared_ptr<const RASCivec> cc, shared_ptr<RASCivec> 
 
   // Let's just get it working first, thread it later
   for (auto& ispace : *det->stringspacea()) {
-    unique_ptr<double[]> F(new double[la * ispace->size()]);
-    fill_n(F.get(), la * ispace->size(), 0.0);
-    double* fdata = F.get();
-    for (size_t ia = 0; ia < ispace->size(); ++ia, fdata+=la) {
-      for (auto& iterkl : det->phia(ia + ispace->offset())) {
-        fdata[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
-        for (auto& iterij : det->phia(iterkl.source)) {
-          if (iterij.ij < iterkl.ij) continue;
-          const int ii = iterij.ij/norb;
-          const int jj = iterij.ij%norb;
-          const int kk = iterkl.ij/norb;
-          const int ll = iterkl.ij%norb;
-          fdata[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * mo2e[ii + kk*norb + norb*norb*(jj + ll * norb)];
+    // Do this multiplication batchwise
+    const int nbatches = (ispace->size() - 1)/batchsize_ + 1;
+    Matrix F(la, batchsize_);
+    for (int batch = 0; batch < nbatches; ++batch) {
+      const size_t batchstart = batch * batchsize_;
+      const size_t batchlength = min(static_cast<size_t>(batchsize_), ispace->size() - batchstart);
+
+      F.zero();
+
+      for (size_t ia = 0; ia < batchlength; ++ia) {
+        double * const fdata = F.element_ptr(0, ia);
+        const size_t offset = batchstart + ispace->offset();
+        for (auto& iterkl : det->phia(ia + offset)) {
+          fdata[iterkl.source] += static_cast<double>(iterkl.sign) * g[iterkl.ij];
+          for (auto& iterij : det->phia(iterkl.source)) {
+            if (iterij.ij < iterkl.ij) continue;
+            const int ii = iterij.ij/norb;
+            const int jj = iterij.ij%norb;
+            const int kk = iterkl.ij/norb;
+            const int ll = iterkl.ij%norb;
+            fdata[iterij.source] += static_cast<double>(iterkl.sign*iterij.sign) * (iterkl.ij == iterij.ij ? 0.5 : 1.0) * mo2e[ii + kk*norb + norb*norb*(jj + ll * norb)];
+          }
         }
       }
-    }
 
-    // F is finished, matrix-matrix multiply (but to the right place)
-    for (auto& iblock : cc->blocks()) {
-      if (!iblock) continue;
-      if (!det->allowed(ispace, iblock->stringsb())) continue;
-      shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringsb(), ispace);
+      // F is finished, matrix-matrix multiply (but to the right place)
+      // S(beta, alpha) += C(beta, alpha) * F(alpha, alpha')
+      for (auto& iblock : cc->blocks()) {
+        if (!iblock) continue;
+        if (!det->allowed(ispace, iblock->stringsb())) continue;
+        shared_ptr<RASBlock<double>> target_block = sigma->block(iblock->stringsb(), ispace);
 
-      assert(iblock->lenb() == target_block->lenb());
-      assert(ispace->size() == target_block->lena());
-      dgemm_("N", "N", target_block->lenb(), target_block->lena(), iblock->lena(), 1.0, iblock->data(), iblock->lenb(),
-        F.get() + iblock->stringsa()->offset(), la, 1.0, target_block->data(), target_block->lenb());
+        assert(iblock->lenb() == target_block->lenb());
+        assert(ispace->size() == target_block->lena());
+        dgemm_("N", "N", target_block->lenb(), batchlength, iblock->lena(), 1.0,
+                         iblock->data(), iblock->lenb(),
+                         F.element_ptr(iblock->stringsa()->offset(), 0), F.ndim(), 1.0,
+                         target_block->data() + batchstart * target_block->lenb(), target_block->lenb());
+      }
     }
   }
 }
