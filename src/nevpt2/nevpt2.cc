@@ -223,7 +223,7 @@ kmat2->print();
   Timer timer;
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
-  shared_ptr<Matrix> fullva;
+  shared_ptr<Matrix> fullav;
   shared_ptr<Matrix> fullai;
   size_t memory_size;
 
@@ -254,11 +254,11 @@ kmat2->print();
       fullvi = make_shared<DFDistT>(full, dist);
     }
     {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(vcoeff)->apply_J()->swap();
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(vcoeff)->apply_J();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      auto fullvat = make_shared<DFDistT>(full, dist);
+      auto fullavt = make_shared<DFDistT>(full, dist);
       // Matrix(naux, nvirt*nact) is replicated to each node
-      fullva = fullvat->replicate();
+      fullav = fullavt->replicate();
     }
     {
       shared_ptr<DFFullDist> full = halfa->compute_second_transform(ccoeff)->apply_J();
@@ -289,14 +289,14 @@ kmat2->print();
             tasks[inode].push_back(make_tuple(j, i, /*mpitags*/-1,-1));
     }
   }
-  // distribution of ab
+  // distribution of virt-virt (cheap as both involve active indices)
   {
-    StaticDist ijdist(nact*(nact+1)/2, mpi__->size());
+    StaticDist ijdist(nvirt*(nvirt+1)/2, mpi__->size());
     for (int inode = 0; inode != mpi__->size(); ++inode) {
-      for (int i = 0, cnt = 0; i < nact; ++i)
-        for (int j = i; j < nact; ++j, ++cnt)
+      for (int i = 0, cnt = 0; i < nvirt; ++i)
+        for (int j = i; j < nvirt; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
-            tasks[inode].push_back(make_tuple(j+nclosed, i+nclosed, /*mpitags*/-1,-1));
+            tasks[inode].push_back(make_tuple(j+nclosed+nact, i+nclosed+nact, /*mpitags*/-1,-1));
     }
   }
   {
@@ -471,8 +471,20 @@ double __debug = 0.0;
       }
       if (i != j) en *= 2.0;
       energy_ += en;
+
+    } else if (i >= nclosed+nact && j >= nclosed+nact) {
+      const int iv = i-nclosed-nact;
+      const int jv = j-nclosed-nact;
+      shared_ptr<const Matrix> iablock = fullav->slice(iv*nact, (iv+1)*nact);
+      shared_ptr<const Matrix> jablock = fullav->slice(jv*nact, (jv+1)*nact);
+      Matrix mat_aa(*iablock % *jablock);
+      Matrix mat_aaR(nact*nact, nact*nact);
+      dgemv_("N", nact*nact, nact*nact, 1.0,  rdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
+      const double norm = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+__debug += norm;
     }
   }
+mpi__->allreduce(&__debug, 1);
 cout << setprecision(10) <<  __debug << endl;
 
   // just to double check that all the communition is done
