@@ -275,19 +275,34 @@ kmat2->print();
 
   cout << "    * 3-index integral transformation done" << endl;
 
-  // make a list of static distribution of ij
+  /////////////////////////////////////////////////////////////////////////////////////
+  // make a list of static distribution
   const int myrank = mpi__->rank();
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
+  // distribution of occ-occ
   {
-    int nmax = 0;
     StaticDist ijdist(nclosed*(nclosed+1)/2, mpi__->size());
     for (int inode = 0; inode != mpi__->size(); ++inode) {
       for (int i = 0, cnt = 0; i < nclosed; ++i)
         for (int j = i; j < nclosed; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
             tasks[inode].push_back(make_tuple(j, i, /*mpitags*/-1,-1));
-      if (tasks[inode].size() > nmax) nmax = tasks[inode].size();
     }
+  }
+  // distribution of ab
+  {
+    StaticDist ijdist(nact*(nact+1)/2, mpi__->size());
+    for (int inode = 0; inode != mpi__->size(); ++inode) {
+      for (int i = 0, cnt = 0; i < nact; ++i)
+        for (int j = i; j < nact; ++j, ++cnt)
+          if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
+            tasks[inode].push_back(make_tuple(j+nclosed, i+nclosed, /*mpitags*/-1,-1));
+    }
+  }
+  {
+    int nmax = 0;
+    for (auto& i : tasks)
+      if (nmax < i.size()) nmax = i.size();
     for (auto& i : tasks) {
       const int n = i.size();
       for (int j = 0; j != nmax-n; ++j) i.push_back(make_tuple(-1,-1,-1,-1));
@@ -317,11 +332,11 @@ kmat2->print();
           used.insert(get<0>(tasks[inode][i]));
           used.insert(get<1>(tasks[inode][i]));
         }
-        if (!used.count(id)) {
+        if (id >= 0 && id < nclosed && !used.count(id)) {
           if (inode == myrank) cache.erase(id);
           cachetable[inode].erase(id);
         }
-        if (!used.count(jd)) {
+        if (jd >= 0 && jd < nclosed && !used.count(jd)) {
           if (inode == myrank) cache.erase(jd);
           cachetable[inode].erase(jd);
         }
@@ -330,7 +345,7 @@ kmat2->print();
     if (nadd < nloop) {
       // issue recv requests
       auto request_one_ = [&](const int i, const int rank) {
-        if (i < 0) return -1;
+        if (i < 0 || i >= nclosed) return -1;
         cachetable[rank].insert(i);
         int tag = -1;
         if (cache.find(i) == cache.end() && myrank == rank) {
@@ -348,7 +363,7 @@ kmat2->print();
       // issue send requests
       auto send_one_ = [&](const int i, const int dest) {
         // see if "i" is cached at dest
-        if (i < 0 || cachetable[dest].count(i) || fullvi->locate(0, i*nvirt) != myrank)
+        if (i < 0 || i >= nclosed || cachetable[dest].count(i) || fullvi->locate(0, i*nvirt) != myrank)
           return -1;
         return mpi__->request_send(fullvi->data() + (i*nvirt-fullvi->bstart())*naux, nvirt*naux, dest, dest*nclosed+i);
       };
@@ -387,73 +402,76 @@ double __debug = 0.0;
 
     const int i = get<0>(tasks[myrank][n]);
     const int j = get<1>(tasks[myrank][n]);
-    if (i < 0 || j < 0) continue;
 
-    const int ti = get<2>(tasks[myrank][n]);
-    const int tj = get<3>(tasks[myrank][n]);
-    if (ti >= 0) mpi__->wait(ti);
-    if (tj >= 0) mpi__->wait(tj);
+    if (i < 0 || j < 0) {
+      continue;
+    } else if (i < nclosed && j < nclosed) {
+      const int ti = get<2>(tasks[myrank][n]);
+      const int tj = get<3>(tasks[myrank][n]);
+      if (ti >= 0) mpi__->wait(ti);
+      if (tj >= 0) mpi__->wait(tj);
 
-    shared_ptr<const Matrix> iblock = cache.at(i);
-    shared_ptr<const Matrix> jblock = cache.at(j);
-    const Matrix mat(*iblock % *jblock);
+      shared_ptr<const Matrix> iblock = cache.at(i);
+      shared_ptr<const Matrix> jblock = cache.at(j);
+      const Matrix mat(*iblock % *jblock);
 
-    // active part
-    shared_ptr<const Matrix> iablock = fullai->slice(i*nact, (i+1)*nact);
-    shared_ptr<const Matrix> jablock = fullai->slice(j*nact, (j+1)*nact);
-    const Matrix mat_va(*iblock % *jablock);
-    const Matrix mat_av(*iablock % *jblock);
-    // hole density matrix
-    const Matrix mat_vaR(mat_va * *hrdm1);
-    const Matrix mat_avR(*hrdm1 % mat_av);
-    // K' matrix
-    const Matrix mat_vaKp(mat_va * *kmatp);
-    const Matrix mat_avKp(*kmatp % mat_av);
+      // active part
+      shared_ptr<const Matrix> iablock = fullai->slice(i*nact, (i+1)*nact);
+      shared_ptr<const Matrix> jablock = fullai->slice(j*nact, (j+1)*nact);
+      const Matrix mat_va(*iblock % *jablock);
+      const Matrix mat_av(*iablock % *jblock);
+      // hole density matrix
+      const Matrix mat_vaR(mat_va * *hrdm1);
+      const Matrix mat_avR(*hrdm1 % mat_av);
+      // K' matrix
+      const Matrix mat_vaKp(mat_va * *kmatp);
+      const Matrix mat_avKp(*kmatp % mat_av);
 
-    // S(2)ij,rs sector
-    const Matrix mat_aa(*iablock % *jablock);
-    Matrix mat_aaR(nact, nact);
-    Matrix mat_aaK(nact, nact);
-    dgemv_("N", nact*nact, nact*nact, 1.0,  hrdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
-    dgemv_("N", nact*nact, nact*nact, 1.0, kmatp2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
-    const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
-    const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
-    __debug += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
+      // S(2)ij,rs sector
+      const Matrix mat_aa(*iablock % *jablock);
+      Matrix mat_aaR(nact, nact);
+      Matrix mat_aaK(nact, nact);
+      dgemv_("N", nact*nact, nact*nact, 1.0,  hrdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
+      dgemv_("N", nact*nact, nact*nact, 1.0, kmatp2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
+      const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+      const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+      energy_ += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
 
-    // TODO should thread
-    // S(1)ij,r sector
-    double en1 = 0.0;
-    for (int v = 0; v != nvirt; ++v) {
-      double norm = 0.0;
-      double denom = 0.0;
-      for (int a = 0; a != nact; ++a) {
-        const double va = mat_va(v, a);
-        const double av = mat_av(a, v);
-        const double vaR = mat_vaR(v, a);
-        const double avR = mat_avR(a, v);
-        const double vaK = mat_vaKp(v, a);
-        const double avK = mat_avKp(a, v);
-        norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
-        denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
+      // TODO should thread
+      // S(1)ij,r sector
+      double en1 = 0.0;
+      for (int v = 0; v != nvirt; ++v) {
+        double norm = 0.0;
+        double denom = 0.0;
+        for (int a = 0; a != nact; ++a) {
+          const double va = mat_va(v, a);
+          const double av = mat_av(a, v);
+          const double vaR = mat_vaR(v, a);
+          const double avR = mat_avR(a, v);
+          const double vaK = mat_vaKp(v, a);
+          const double avK = mat_avKp(a, v);
+          norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
+          denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
+        }
+        en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
       }
-      en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
-    }
-    if (i == j) en1 *= 0.5;
-    energy_ += en1;
+      if (i == j) en1 *= 0.5;
+      energy_ += en1;
 
-    // S(0)ij,rs sector
-    double en = 0.0;
-    for (int v = 0; v != nvirt; ++v) {
-      for (int u = v+1; u < nvirt; ++u) {
-        const double vu = mat(v, u);
-        const double uv = mat(u, v);
-        en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig[v]+oeig[i]-veig[u]+oeig[j]);
+      // S(0)ij,rs sector
+      double en = 0.0;
+      for (int v = 0; v != nvirt; ++v) {
+        for (int u = v+1; u < nvirt; ++u) {
+          const double vu = mat(v, u);
+          const double uv = mat(u, v);
+          en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig[v]+oeig[i]-veig[u]+oeig[j]);
+        }
+        const double vv = mat(v, v);
+        en += vv*vv / (-veig[v]+oeig[i]-veig[v]+oeig[j]);
       }
-      const double vv = mat(v, v);
-      en += vv*vv / (-veig[v]+oeig[i]-veig[v]+oeig[j]);
+      if (i != j) en *= 2.0;
+      energy_ += en;
     }
-    if (i != j) en *= 2.0;
-    energy_ += en;
   }
 cout << setprecision(10) <<  __debug << endl;
 
