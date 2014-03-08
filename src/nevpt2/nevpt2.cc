@@ -278,7 +278,7 @@ void NEVPT2::compute() {
   // make a list of static distribution
   const int myrank = mpi__->rank();
   vector<vector<tuple<int,int,int,int>>> tasks(mpi__->size());
-  // distribution of occ-occ
+  // distribution of closed-closed
   {
     StaticDist ijdist(nclosed*(nclosed+1)/2, mpi__->size());
     for (int inode = 0; inode != mpi__->size(); ++inode) {
@@ -296,6 +296,15 @@ void NEVPT2::compute() {
         for (int j = i; j < nvirt; ++j, ++cnt)
           if (cnt >= ijdist.start(inode) && cnt < ijdist.start(inode) + ijdist.size(inode))
             tasks[inode].push_back(make_tuple(j+nclosed+nact, i+nclosed+nact, /*mpitags*/-1,-1));
+    }
+  }
+  // distribution of closed (sort of cheap)
+  {
+    StaticDist ijdist(nclosed, mpi__->size());
+    for (int inode = 0; inode != mpi__->size(); ++inode) {
+      for (int i = 0; i < nclosed; ++i)
+        if (i >= ijdist.start(inode) && i < ijdist.start(inode) + ijdist.size(inode))
+          tasks[inode].push_back(make_tuple(i, -1, /*mpitags*/-1,-1));
     }
   }
   {
@@ -402,7 +411,7 @@ double __debug = 0.0;
     const int i = get<0>(tasks[myrank][n]);
     const int j = get<1>(tasks[myrank][n]);
 
-    if (i < 0 || j < 0) {
+    if (i < 0 && j < 0) {
       continue;
     } else if (i < nclosed && j < nclosed) {
       const int ti = get<2>(tasks[myrank][n]);
@@ -474,6 +483,7 @@ double __debug = 0.0;
       energy_ += en;
 
     } else if (i >= nclosed+nact && j >= nclosed+nact) {
+      // S(-2)rs sector
       const int iv = i-nclosed-nact;
       const int jv = j-nclosed-nact;
       shared_ptr<const Matrix> iablock = fullav->slice(iv*nact, (iv+1)*nact);
@@ -487,6 +497,26 @@ double __debug = 0.0;
       const double denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
       if (norm > norm_thresh_)
         energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
+
+    } else if (i < nclosed && j < 0) {
+      // S(-1)rs sector
+      shared_ptr<const Matrix> iblock = cache.at(i); // (g|vi) with i fixed
+      for (int r = 0; r != nvirt; ++r) {
+        for (int s = r; s != nvirt; ++s) {
+          shared_ptr<const Matrix> rblock = fullav->slice(r*nact, (r+1)*nact);
+          shared_ptr<const Matrix> sblock = fullav->slice(s*nact, (s+1)*nact);
+          const Matrix mat1(*iblock % *rblock); // (vi|ar) (i, r fixed)
+          const Matrix mat2(*iblock % *sblock); // (vi|as) (i, s fixed)
+          const Matrix mat1R(*iblock % *rblock * *rdm1); // (vi|ar) (i, r fixed)
+          const Matrix mat2R(*iblock % *sblock * *rdm1); // (vi|as) (i, s fixed)
+          double en = 0;
+          for (int a = 0; a != nact; ++a) {
+            en += 2.0*(mat2R(r,a)*mat2(r,a) + mat1R(s,a)*mat1(s,a) - mat2R(r,a)*mat1(s,a));
+          }
+          if (r == s) en *= 0.5;
+          __debug += en;
+        }
+      }
     }
   }
 mpi__->allreduce(&__debug, 1);
