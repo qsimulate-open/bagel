@@ -171,9 +171,8 @@ void NEVPT2::compute() {
   {
     kmat = make_shared<Matrix>(*fockact_c * *rdm1);
     *kmat += Qvec(nact, nact, acoeff, /*nclosed*/0, casscf_->fci(), casscf_->fci()->rdm2(istate));
-    *kmat *= -1.0;
 
-    kmatp = kmat->copy();
+    kmatp = make_shared<Matrix>(*kmat * (-1.0));
     *kmatp += *fockact * 2.0;
   }
   shared_ptr<Matrix> kmat2 = make_shared<Matrix>(nact*nact, nact*nact);
@@ -502,19 +501,21 @@ double __debug = 0.0;
       // S(-1)rs sector
       shared_ptr<const Matrix> iblock = cache.at(i); // (g|vi) with i fixed
       for (int r = 0; r != nvirt; ++r) {
+        shared_ptr<const Matrix> ibr = iblock->slice(r, r+1);
+        shared_ptr<const Matrix> rblock = fullav->slice(r*nact, (r+1)*nact);
         for (int s = r; s != nvirt; ++s) {
-          shared_ptr<const Matrix> rblock = fullav->slice(r*nact, (r+1)*nact);
+          shared_ptr<const Matrix> ibs = iblock->slice(s, s+1);
           shared_ptr<const Matrix> sblock = fullav->slice(s*nact, (s+1)*nact);
-          const Matrix mat1(*iblock % *rblock); // (vi|ar) (i, r fixed)
-          const Matrix mat2(*iblock % *sblock); // (vi|as) (i, s fixed)
-          const Matrix mat1R(*iblock % *rblock * *rdm1); // (vi|ar) (i, r fixed)
-          const Matrix mat2R(*iblock % *sblock * *rdm1); // (vi|as) (i, s fixed)
-          double en = 0;
-          for (int a = 0; a != nact; ++a) {
-            en += 2.0*(mat2R(r,a)*mat2(r,a) + mat1R(s,a)*mat1(s,a) - mat2R(r,a)*mat1(s,a));
-          }
-          if (r == s) en *= 0.5;
-          __debug += en;
+          const Matrix mat1(*ibs % *rblock); // (vi|ar) (i, r fixed)
+          const Matrix mat2(*ibr % *sblock); // (vi|as) (i, s fixed)
+          const Matrix mat1R(*ibs % *rblock * *rdm1); // (vi|ar) (i, r fixed)
+          const Matrix mat2R(*ibr % *sblock * *rdm1); // (vi|as) (i, s fixed)
+          const Matrix mat1K(*ibs % *rblock * *kmat); // (vi|ar) (i, r fixed)
+          const Matrix mat2K(*ibr % *sblock * *kmat); // (vi|as) (i, s fixed)
+          const double norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
+          const double denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
+          if (norm > norm_thresh_)
+            energy_ += norm / (denom/norm + oeig[i] - veig[r] - veig[s]);
         }
       }
     }
