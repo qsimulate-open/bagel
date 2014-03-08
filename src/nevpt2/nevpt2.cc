@@ -125,15 +125,6 @@ void NEVPT2::compute() {
             hrdm3->element(l+nact*(m+nact*k),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,k+nact*l);
             hrdm3->element(m+nact*(l+nact*k),m+nact*(j+nact*i)) += 2.0* rdm2->element(i+nact*j,k+nact*l);
           }
-#if 0
-  for (int i = 0; i != nact; ++i)
-    for (int j = 0; j != nact; ++j)
-      for (int k = 0; k != nact; ++k)
-        for (int l = 0; l != nact; ++l)
-          for (int m = 0; m != nact; ++m)
-            for (int n = 0; n != nact; ++n)
-    cout << i << " " << j << " " << k << " " << l << " " << m << " " << n << " " << setw(20) << setprecision(10) << hrdm3->element(n+nact*(m+nact*l),k+nact*(j+nact*i)) << endl;
-#endif
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
