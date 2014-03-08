@@ -192,7 +192,7 @@ void NEVPT2::compute() {
               kmatp2->element(ap+nact*bp, a+nact*b) += hrdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(c, a)
                                                      + hrdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(c, b);
               kmat2->element(ap+nact*bp, a+nact*b) -= rdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(a, c)
-                                                    - rdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(b, c);
+                                                    + rdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(b, c);
               for (int d = 0; d != nact; ++d)
                 for (int e = 0; e != nact; ++e) {
                   kmatp2->element(ap+nact*bp, a+nact*b) += 0.5 * four->element(c+nact*d, e+nact*a)
@@ -210,7 +210,7 @@ void NEVPT2::compute() {
                                                          * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), d+nact*(b+nact*e))
                                                             +     (c == d ? rdm2->element(ap+nact*bp, e+nact*b) : 0.0)
                                                             +     (b == c ? rdm2->element(ap+nact*bp, d+nact*e) : 0.0))
-                                                        - 0.5 * four->element(c+nact*b, e+nact*d)
+                                                        + 0.5 * four->element(c+nact*b, e+nact*d)
                                                          * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), a+nact*(d+nact*e))
                                                             +     (a == c ? rdm2->element(ap+nact*bp, e+nact*d) : 0.0)
                                                             +     (c == d ? rdm2->element(ap+nact*bp, a+nact*e) : 0.0));
@@ -479,9 +479,13 @@ double __debug = 0.0;
       shared_ptr<const Matrix> jablock = fullav->slice(jv*nact, (jv+1)*nact);
       Matrix mat_aa(*iablock % *jablock);
       Matrix mat_aaR(nact*nact, nact*nact);
+      Matrix mat_aaK(nact*nact, nact*nact);
       dgemv_("N", nact*nact, nact*nact, 1.0,  rdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
+      dgemv_("N", nact*nact, nact*nact, 1.0, kmat2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
       const double norm = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
-__debug += norm;
+      const double denom= (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+      energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
+__debug += norm / (denom/norm - veig[iv] - veig[jv]);
     }
   }
 mpi__->allreduce(&__debug, 1);
