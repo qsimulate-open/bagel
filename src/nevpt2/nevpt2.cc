@@ -139,6 +139,8 @@ void NEVPT2::compute() {
   shared_ptr<const Matrix> fockact_c;
   // heff_p in active
   shared_ptr<const Matrix> fockact_p;
+  // heff_h in active (active treated as closed)
+  shared_ptr<const Matrix> fockact_h;
   {
     // * core Fock operator
     shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
@@ -161,9 +163,13 @@ void NEVPT2::compute() {
     fockact = make_shared<Matrix>(*acoeff % *fockao * *acoeff);
     fockact_c = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
 
-    // h'eff (only exchange in the active space)
+    // h'eff (only 1/2 exchange in the active space)
     auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0))), /*store*/false, /*rhf*/false);
     fockact_p = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
+
+    // h''eff (treat active orbitals as closed)
+    auto fockao_h = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeff, /*store*/false, /*rhf*/true);
+    fockact_h = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
   }
   // make K and K' matrix
   shared_ptr<Matrix> kmat;
@@ -175,47 +181,43 @@ void NEVPT2::compute() {
     kmatp = make_shared<Matrix>(*kmat * (-1.0));
     *kmatp += *fockact * 2.0;
   }
-  shared_ptr<Matrix> kmat2 = make_shared<Matrix>(nact*nact, nact*nact);
-  shared_ptr<Matrix> kmatp2 = make_shared<Matrix>(nact*nact, nact*nact);
+  shared_ptr<const Matrix> kmat2;
+  shared_ptr<const Matrix> kmatp2;
   {
-    // TODO stupid code
     shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff)->apply_J();
-    shared_ptr<const Matrix> tmp = full->form_4index(full, 1.0);
-    shared_ptr<Matrix> four = make_shared<Matrix>(nact*nact, nact*nact);
-    assert(tmp->size() == four->size());
-    SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp->data(), four->data(), nact, nact, nact, nact);
-    for (int b = 0; b != nact; ++b)
-      for (int a = 0; a != nact; ++a)
-        for (int bp = 0; bp != nact; ++bp)
-          for (int ap = 0; ap != nact; ++ap)
-            for (int c = 0; c != nact; ++c) {
-              kmatp2->element(ap+nact*bp, a+nact*b) += hrdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(c, a)
-                                                     + hrdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(c, b);
-              kmat2->element(ap+nact*bp, a+nact*b) += rdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(a, c)
-                                                    + rdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(b, c);
-              for (int d = 0; d != nact; ++d)
-                for (int e = 0; e != nact; ++e) {
-                  kmatp2->element(ap+nact*bp, a+nact*b) += 0.5 * four->element(c+nact*d, e+nact*a)
-                                                         * (- 2.0* hrdm3->element(ap+nact*(bp+nact*e), d+nact*(b+nact*c))
-                                                            + 4.0*(c == e ? hrdm2->element(ap+nact*bp, d+nact*b) : 0.0)
-                                                            -     (d == e ? hrdm2->element(ap+nact*bp, c+nact*b) : 0.0)
-                                                            -     (b == e ? hrdm2->element(ap+nact*bp, d+nact*c) : 0.0))
-                                                        +  0.5 * four->element(c+nact*d, e+nact*b)
-                                                         * (- 2.0* hrdm3->element(ap+nact*(bp+nact*e), a+nact*(d+nact*c))
-                                                            + 4.0*(c == e ? hrdm2->element(ap+nact*bp, a+nact*d) : 0.0)
-                                                            -     (a == e ? hrdm2->element(ap+nact*bp, c+nact*d) : 0.0)
-                                                            -     (d == e ? hrdm2->element(ap+nact*bp, a+nact*c) : 0.0));
-                  // d->c e->e f->d
-                  kmat2->element(ap+nact*bp, a+nact*b) += 0.5 * four->element(c+nact*a, e+nact*d)
-                                                         * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), d+nact*(b+nact*e))
-                                                            +     (c == d ? rdm2->element(ap+nact*bp, e+nact*b) : 0.0)
-                                                            +     (b == c ? rdm2->element(ap+nact*bp, d+nact*e) : 0.0))
-                                                        + 0.5 * four->element(c+nact*b, e+nact*d)
-                                                         * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), a+nact*(d+nact*e))
-                                                            +     (a == c ? rdm2->element(ap+nact*bp, e+nact*d) : 0.0)
-                                                            +     (c == d ? rdm2->element(ap+nact*bp, a+nact*e) : 0.0));
-                }
-            }
+    // integrals (ij|kl) and <ik|jl>
+    shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
+    shared_ptr<Matrix> ints2 = make_shared<Matrix>(nact*nact, nact*nact);
+    SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), ints2->data(), nact, nact, nact, nact);
+
+    auto compute_kmat = [](const int nact, shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock,
+                           shared_ptr<const Matrix> ints, const double sign) {
+      auto out = make_shared<Matrix>(nact*nact, nact*nact);
+      // temp area
+      shared_ptr<Matrix> four  = make_shared<Matrix>(nact*nact, nact*nact);
+      shared_ptr<Matrix> four2 = make_shared<Matrix>(nact*nact, nact*nact);
+      shared_ptr<Matrix> six   = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
+
+      // + (h)rdm2(i,j,k,m) * fockact_h(m,l)
+      dgemm_("N", "N", nact*nact*nact, nact, nact, 1.0, rdm2->data(), nact*nact*nact, fock->data(), nact, 1.0, out->data(), nact*nact*nact);
+      // + (h)rdm2(i,j,m,k) * fockact_h(m,l)
+      SMITH::sort_indices<0,1,3,2,0,1,1,1>(rdm2->data(), four->data(), nact, nact, nact, nact);
+      dgemm_("N", "N", nact*nact*nact, nact, nact, 1.0, four->data(), nact*nact*nact, fock->data(), nact, 0.0, four2->data(), nact*nact*nact);
+      SMITH::sort_indices<0,1,3,2,1,1,1,1>(four2->data(), out->data(), nact, nact, nact, nact);
+      // +/- (h)rdm2(i,j,m,n) * <mn|kl>
+      dgemm_("N", "N", nact*nact, nact*nact, nact*nact, sign, rdm2->data(), nact*nact, ints->data(), nact*nact, 1.0, out->data(), nact*nact);
+      // +/- (h)rdm3(i,j,x,y,l,z) * (<kx|yz>*)
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm3->data(), six->data(), nact*nact, nact*nact, nact, nact); // (i,j,l,x,y,w)
+      dgemm_("N", "T", nact*nact*nact, nact, nact*nact*nact, sign, six->data(), nact*nact*nact, ints->data(), nact, 0.0, four->data(), nact*nact*nact);
+      SMITH::sort_indices<0,1,3,2,1,1,1,1>(four->data(), out->data(), nact, nact, nact, nact);
+      // +/- (h)rdm3(i,j,x,k,y,z) * (<lx|yz>*)
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm3->data(), six->data(), nact*nact, nact, nact, nact*nact); // (i,j,k,x,y,w)
+      dgemm_("N", "T", nact*nact*nact, nact, nact*nact*nact, sign, six->data(), nact*nact*nact, ints->data(), nact, 1.0, out->data(), nact*nact*nact);
+      return out;
+    };
+
+    kmat2  = compute_kmat(nact,  rdm2,  rdm3, fockact_c, ints2,  1.0);
+    kmatp2 = compute_kmat(nact, hrdm2, hrdm3, fockact_h, ints2, -1.0);
   }
 
   Timer timer;
