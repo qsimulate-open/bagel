@@ -66,7 +66,7 @@ void NEVPT2::compute() {
   if (nclosed+nact < 1) throw runtime_error("no correlated electrons");
   if (nvirt < 1)        throw runtime_error("no virtuals orbitals");
 
-  // coefficients
+  // coefficients -- will be updated later
   shared_ptr<Matrix> ccoeff = ref_->coeff()->slice(ncore_, ncore_+nclosed);
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
   shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed+nact, ncore_+nclosed+nact+nvirt);
@@ -133,14 +133,15 @@ void NEVPT2::compute() {
   // make canonical orbitals in closed and virtual subspaces
   vector<double> veig(nvirt);
   vector<double> oeig(nclosed);
+  shared_ptr<Matrix> coeffall;
   // fock
-  shared_ptr<const Matrix> fockact;
+  shared_ptr<const Matrix> fockact,   fock;
   // core fock
-  shared_ptr<const Matrix> fockact_c;
+  shared_ptr<const Matrix> fockact_c, fock_c;
   // heff_p in active
-  shared_ptr<const Matrix> fockact_p;
+  shared_ptr<const Matrix> fockact_p, fock_p;
   // heff_h in active (active treated as closed)
-  shared_ptr<const Matrix> fockact_h;
+  shared_ptr<const Matrix> fockact_h, fock_h;
   {
     // * core Fock operator
     shared_ptr<const Matrix> ofockao = nclosed+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed), /*store*/false, /*rhf*/true) : hcore;
@@ -160,16 +161,25 @@ void NEVPT2::compute() {
       vmofock.diagonalize(veig.data());
       *vcoeff *= vmofock;
     }
+    coeffall = make_shared<Matrix>(ccoeff->ndim(), nclosed+nact+nvirt);
+    coeffall->copy_block(0, 0           , ccoeff->ndim(), nclosed, ccoeff);
+    coeffall->copy_block(0, nclosed     , acoeff->ndim(), nact   , acoeff);
+    coeffall->copy_block(0, nclosed+nact, vcoeff->ndim(), nvirt  , vcoeff);
+
     fockact = make_shared<Matrix>(*acoeff % *fockao * *acoeff);
     fockact_c = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
+    fock   = make_shared<Matrix>(*coeffall % *fockao * *coeffall);
+    fock_c = make_shared<Matrix>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only 1/2 exchange in the active space)
     auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0))), /*store*/false, /*rhf*/false);
     fockact_p = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
+    fock_p = make_shared<Matrix>(*coeffall % *fockao_p * *coeffall);
 
     // h''eff (treat active orbitals as closed)
     auto fockao_h = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeff, /*store*/false, /*rhf*/true);
     fockact_h = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
+    fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
   }
   // make K and K' matrix
   shared_ptr<Matrix> kmat;
@@ -192,11 +202,11 @@ void NEVPT2::compute() {
 
     auto compute_kmat = [](const int nact, shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock,
                            shared_ptr<const Matrix> ints, const double sign) {
-      auto out = make_shared<Matrix>(nact*nact, nact*nact);
+      auto out = rdm2->clone();
       // temp area
-      shared_ptr<Matrix> four  = make_shared<Matrix>(nact*nact, nact*nact);
-      shared_ptr<Matrix> four2 = make_shared<Matrix>(nact*nact, nact*nact);
-      shared_ptr<Matrix> six   = make_shared<Matrix>(nact*nact*nact, nact*nact*nact);
+      shared_ptr<Matrix> four  = rdm2->clone();
+      shared_ptr<Matrix> four2 = rdm2->clone();
+      shared_ptr<Matrix> six   = rdm3->clone();
 
       // + (h)rdm2(i,j,k,m) * fockact_h(m,l)
       dgemm_("N", "N", nact*nact*nact, nact, nact, 1.0, rdm2->data(), nact*nact*nact, fock->data(), nact, 1.0, out->data(), nact*nact*nact);
@@ -223,8 +233,9 @@ void NEVPT2::compute() {
   Timer timer;
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
-  shared_ptr<Matrix> fullav;
-  shared_ptr<Matrix> fullai;
+  shared_ptr<const Matrix> fullav;
+  shared_ptr<const Matrix> fullai;
+  shared_ptr<const Matrix> fullaa;
   size_t memory_size;
 
   {
@@ -254,20 +265,15 @@ void NEVPT2::compute() {
       fullvi = make_shared<DFDistT>(full, dist);
     }
     {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(vcoeff)->apply_J();
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(coeffall)->apply_J();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      auto fullavt = make_shared<DFDistT>(full, dist);
-      // Matrix(naux, nvirt*nact) is replicated to each node
-      fullav = fullavt->replicate();
-    }
-    {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(ccoeff)->apply_J();
-      auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
-      auto fullait = make_shared<DFDistT>(full, dist);
-      // Matrix(naux, nact*nclosed) is replicated to each node
-      fullai = fullait->replicate();
-    }
+      auto fullax_all = make_shared<DFDistT>(full, dist);
+      shared_ptr<const Matrix> fullax = fullax_all->replicate();
 
+      fullai = fullax->slice(0, nact*nclosed);
+      fullaa = fullax->slice(nact*nclosed, nact*(nclosed+nact));
+      fullav = fullax->slice(nact*(nclosed+nact), nact*(nclosed+nact+nvirt));
+    }
     fullvi->discard_df();
   }
   assert(fullvi->nblocks() == 1);
@@ -500,11 +506,19 @@ double __debug = 0.0;
         energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
 
     } else if (i < nclosed && j < 0) {
-      // S(-1)rs sector
-      shared_ptr<const Matrix> iblock = cache.at(i); // (g|vi) with i fixed
+      // (g|vi) with i fixed
+      shared_ptr<const Matrix> iblock = cache.at(i);
+      // (g|ai) with i fixed
+      shared_ptr<const Matrix> iablock = fullai->slice(i*nact, (i+1)*nact);
+      // reordered srdm
+      Matrix srdm2p(nact*nact, nact*nact);
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(srdm2->data(), srdm2p.data(), nact, nact, nact, nact);
+
       for (int r = 0; r != nvirt; ++r) {
         shared_ptr<const Matrix> ibr = iblock->slice(r, r+1);
         shared_ptr<const Matrix> rblock = fullav->slice(r*nact, (r+1)*nact);
+
+        // S(-1)rs sector
         for (int s = r; s != nvirt; ++s) {
           shared_ptr<const Matrix> ibs = iblock->slice(s, s+1);
           shared_ptr<const Matrix> sblock = fullav->slice(s*nact, (s+1)*nact);
@@ -519,6 +533,19 @@ double __debug = 0.0;
           if (norm > norm_thresh_)
             energy_ += norm / (denom/norm + oeig[i] - veig[r] - veig[s]);
         }
+
+        // S(0)ir sector
+        const Matrix mat1(*ibr % *fullaa); // (ir|ab)  as (1,nact*nact)
+        const Matrix mat2(*rblock % *iablock); // (ra|bi) as (nact, nact)
+        const Matrix mat1S(mat1 * *srdm2);
+        const Matrix mat1Ssym(mat1S + (mat1 ^ *srdm2));
+              Matrix mat2Sp(nact, nact);
+        dgemv_("N", nact*nact, nact*nact, 1.0, srdm2p.data(), nact*nact, mat2.data(), 1, 0.0, mat2Sp.data(), 1);
+        const int ir = r + nclosed + nact;
+        const double norm = - 2.0*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
+                          + 2.0*(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
+                          + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
+__debug += norm;
       }
     }
   }
