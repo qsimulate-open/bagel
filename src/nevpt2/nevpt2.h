@@ -36,6 +36,7 @@ class NEVPT2 : public Method {
   protected:
     std::shared_ptr<CASSCF> casscf_;
     int ncore_;
+    double norm_thresh_;
 
     std::string abasis_;
 

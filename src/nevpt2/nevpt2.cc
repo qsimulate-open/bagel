@@ -52,6 +52,7 @@ NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geome
 
   // if three is a aux_basis keyword, we use that basis
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
+  norm_thresh_ = idata_->get<double>("norm_thresh", 1.0e-13);
 
 }
 
@@ -191,7 +192,7 @@ void NEVPT2::compute() {
             for (int c = 0; c != nact; ++c) {
               kmatp2->element(ap+nact*bp, a+nact*b) += hrdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(c, a)
                                                      + hrdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(c, b);
-              kmat2->element(ap+nact*bp, a+nact*b) -= rdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(a, c)
+              kmat2->element(ap+nact*bp, a+nact*b) += rdm2->element(ap+nact*bp, c+nact*b) * fockact_p->element(a, c)
                                                     + rdm2->element(ap+nact*bp, a+nact*c) * fockact_p->element(b, c);
               for (int d = 0; d != nact; ++d)
                 for (int e = 0; e != nact; ++e) {
@@ -206,7 +207,7 @@ void NEVPT2::compute() {
                                                             -     (a == e ? hrdm2->element(ap+nact*bp, c+nact*d) : 0.0)
                                                             -     (d == e ? hrdm2->element(ap+nact*bp, a+nact*c) : 0.0));
                   // d->c e->e f->d
-                  kmat2->element(ap+nact*bp, a+nact*b) -= 0.5 * four->element(c+nact*a, e+nact*d)
+                  kmat2->element(ap+nact*bp, a+nact*b) += 0.5 * four->element(c+nact*a, e+nact*d)
                                                          * ( 2.0* rdm3->element(ap+nact*(bp+nact*c), d+nact*(b+nact*e))
                                                             +     (c == d ? rdm2->element(ap+nact*bp, e+nact*b) : 0.0)
                                                             +     (b == c ? rdm2->element(ap+nact*bp, d+nact*e) : 0.0))
@@ -217,8 +218,6 @@ void NEVPT2::compute() {
                 }
             }
   }
-kmatp2->print();
-kmat2->print();
 
   Timer timer;
   // compute transformed integrals
@@ -435,7 +434,8 @@ double __debug = 0.0;
       dgemv_("N", nact*nact, nact*nact, 1.0, kmatp2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
       const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
       const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
-      energy_ += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
+      if (norm2 > norm_thresh_)
+        energy_ += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
 
       // TODO should thread
       // S(1)ij,r sector
@@ -453,7 +453,8 @@ double __debug = 0.0;
           norm  += (2.0*(va*vaR + av*avR) - av*vaR - va*avR);
           denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
         }
-        en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
+        if (norm > norm_thresh_)
+          en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
       }
       if (i == j) en1 *= 0.5;
       energy_ += en1;
@@ -482,10 +483,10 @@ double __debug = 0.0;
       Matrix mat_aaK(nact*nact, nact*nact);
       dgemv_("N", nact*nact, nact*nact, 1.0,  rdm2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
       dgemv_("N", nact*nact, nact*nact, 1.0, kmat2->data(), nact*nact, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
-      const double norm = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
-      const double denom= (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
-      energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
-__debug += norm / (denom/norm - veig[iv] - veig[jv]);
+      const double norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
+      const double denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
+      if (norm > norm_thresh_)
+        energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
     }
   }
 mpi__->allreduce(&__debug, 1);
