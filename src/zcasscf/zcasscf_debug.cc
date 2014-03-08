@@ -205,14 +205,11 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
       }
     }
 
-    // (1) G(1,1)_{kt ki,ti} + G(1,2)_{kt i, t ki}
-    shared_ptr<ZMatrix> kmiitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // appears 0 by symmetry
-    shared_ptr<ZMatrix> kmitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true);
-    *kmiitt1rdm -= *kmitti1rdm;
-
-    shared_ptr<ZMatrix> kmiitt = ___debug___diagonal_integrals_coulomb_kramers(coeffi, coefft, true); // appears 0 by symmetry
-    shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true); // appears 0 by symmetry
-    *kmitti -= *kmiitt;
+    //  (tb ib|t i) - (tb i|t ib)
+    shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true);
+    shared_ptr<ZMatrix> offd1rdmx = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
+    shared_ptr<ZMatrix> mititG12 = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
+    *kmitti += (*offd1rdmx - *mititG12);
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
     cout << "closed-active diagonal hessian value" << endl;
@@ -586,8 +583,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 
       // contribution from G(1,2)
       if (closed_active) {
-        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
-        (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
+        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip); //  (a i|ka ki)
+        (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i); // -(a ki|ka i)
       } else {
         (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
         (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
@@ -921,7 +918,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
   // need to include metric for (aw|bv) ; contract with 2 RDM
   auto fullai_j = fullai->apply_J();
   shared_ptr<const ZMatrix> awbv = fullai_j->form_4index(fullai_j, 1.0);
-  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4); // abvw
+  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4); // abwv
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(awbv->data(), intermed2->data(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim());
   shared_ptr<ZMatrix> rdmtmp = fci_->rdm2_av()->clone();
   SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), rdmtmp->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
@@ -1312,7 +1309,6 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(
     dffulla2.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
   DFock::factorize(dffulla2);
   dffulla2.front()->scale(dffulla2.front()->fac()); // take care of the factor
-  cout << " dffulla2 size = " << dffulla2.size() << endl;
   assert(dffulla2.size() == 1);
   shared_ptr<const RelDFFull> fullia = dffulla2.front();
 
@@ -1323,10 +1319,82 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // G(1,2) contributions
-      (*out)(a, i)  = (*iaia)(i+coeffi->mdim()*ap, ip+coeffi->mdim()*a);
-      (*out)(a, i) -= (*iaia)(i+coeffi->mdim()*a,  ip+coeffi->mdim()*ap);
-      (*out)(a, i) += (*iaia)(ip+coeffi->mdim()*a, i+coeffi->mdim()*ap);
-      (*out)(a, i) -= (*iaia)(ip+coeffi->mdim()*ap, i+coeffi->mdim()*a);
+      (*out)(a, i)  = (*iaia)(i+coeffi->mdim()*ap, ip+coeffi->mdim()*a);    //  (i ka|v a) D(v ki)
+      (*out)(a, i) -= (*iaia)(i+coeffi->mdim()*a,  ip+coeffi->mdim()*ap);    // - (i a|v ka) D(v ki)
+      (*out)(a, i) += (*iaia)(ip+coeffi->mdim()*a, i+coeffi->mdim()*ap);      // (ki a|v ka) D(v i)
+      (*out)(a, i) -= (*iaia)(ip+coeffi->mdim()*ap, i+coeffi->mdim()*a);      // (ki ka|v a) D(v i)
+    }
+  }
+
+  return out;
+}
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_2rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+  // returns Mat(a,i) = (u ka|v a) * G(u i, v ki)   where a is an index of coeffa and i is active
+  // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
+  assert(coeffi->mdim() == nact_*2);
+
+  // (1) Sepeate real and imaginary parts for pcoeff
+  array<shared_ptr<const Matrix>, 4> racoeff;
+  array<shared_ptr<const Matrix>, 4> iacoeff;
+  array<shared_ptr<const Matrix>, 4> ricoeff;
+  array<shared_ptr<const Matrix>, 4> iicoeff;
+  for (int i = 0; i != 4; ++i) {
+    shared_ptr<const ZMatrix> ac = coeffa->get_submatrix(i*coeffa->ndim()/4, 0, coeffa->ndim()/4, coeffa->mdim());
+    shared_ptr<const ZMatrix> ic = coeffi->get_submatrix(i*coeffi->ndim()/4, 0, coeffi->ndim()/4, coeffi->mdim());
+    racoeff[i] = ac->get_real_part();
+    iacoeff[i] = ac->get_imag_part();
+    ricoeff[i] = ic->get_real_part();
+    iicoeff[i] = ic->get_imag_part();
+  }
+
+  // (1.5) dfdists
+  vector<shared_ptr<const DFDist>> dfs = geom_->dfs()->split_blocks();
+  dfs.push_back(geom_->df());
+  list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
+
+  // (2) half transform
+  list<shared_ptr<RelDFHalf>> half_complexi = DFock::make_half_complex(dfdists, ricoeff, iicoeff);
+  for (auto& i : half_complexi)
+    i = i->apply_J();
+
+  // (3) split and factorize
+  list<shared_ptr<RelDFHalf>> half_complex_facti;
+  for (auto& i : half_complexi) {
+    list<shared_ptr<RelDFHalf>> tmp = i->split(false);
+    half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
+  }
+  half_complexi.clear();
+
+  DFock::factorize(half_complex_facti);
+
+
+  // (4) compute (gamma|xy)
+  list<shared_ptr<RelDFFull>> dffulli;
+  for (auto& i : half_complex_facti)
+    dffulli.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff)); // <- only difference from the Coulomb version
+  DFock::factorize(dffulli);
+  dffulli.front()->scale(dffulli.front()->fac()); // take care of the factor
+  assert(dffulli.size() == 1);
+  shared_ptr<const RelDFFull> fullia = dffulli.front();
+
+  // (5) compute (i a|j b)
+  shared_ptr<ZMatrix> iajb = fullia->form_4index(fullia, 1.0);
+  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(coeffa->mdim()*coeffa->mdim(),nact_*nact_*4);
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(iajb->data(), intermed1->data(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim()); // sorted to abij
+  shared_ptr<ZMatrix> rdm2tmp = fci_->rdm2_av()->clone();
+  SMITH::sort_indices<0,2,1,3,0,1,1,1>(fci_->rdm2_av()->data(), rdm2tmp->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
+
+  *intermed1 *= *(rdm2tmp); 
+
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
+  for (int a = 0; a != coeffa->mdim(); ++a) {
+    const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
+    for (int i = 0; i != coeffi->mdim(); ++i) {
+      const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
+      // contribution from G(1,2)
+      (*out)(a, i) = (*intermed1)(a+coeffa->mdim()*ap, ip+coeffi->mdim()*i);
     }
   }
 

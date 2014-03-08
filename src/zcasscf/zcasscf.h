@@ -128,6 +128,7 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___diagonal_1rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool with_kramers = false) const;
     // returns [a,i] = [ (i a|v ka)  - (i ka|v a) ] * {^{A}D}_{v ki} + [ (ki ka|v a) - (ki a|v ka) ] * {^{A}D}_{v i} (a is index of coeffa, and i is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_1rdm_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_2rdm_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // return FCI energy from transformed 1&2RDM
     double ___debug___recompute_fci_energy(std::shared_ptr<const ZMatrix> cfock) const;
 };
