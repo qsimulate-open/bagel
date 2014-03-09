@@ -91,9 +91,9 @@ std::complex<bagel::Matrix> multiply (std::complex<bagel::Matrix> A, std::comple
 
 std::complex<bagel::Matrix> inverse (std::complex<bagel::Matrix> S) {
   bagel::Matrix S_Ri = S.real();
-  S_Ri.inverse_symmetric();
+  S_Ri.inverse();
   bagel::Matrix Si_R = S.real() + (S.imag() * S_Ri * S.imag());
-  Si_R.inverse_symmetric();
+  Si_R.inverse();
   bagel::Matrix Si_I = S_Ri * S.imag() * Si_R;
   Si_I.scale(-1.0);
   std::complex<bagel::Matrix> out (Si_R, Si_I);
