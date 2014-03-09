@@ -271,6 +271,34 @@ void NEVPT2::compute() {
                                                                                                   + ardm3->element(bp+nact*(ap+nact*c),d+nact*(a+nact*e)));
             }
   }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // D matrices
+  shared_ptr<Matrix> dmat2 = rdm2->clone();
+  {
+    for (int b = 0; b != nact; ++b)
+      for (int a = 0; a != nact; ++a)
+        for (int bp = 0; bp != nact; ++bp)
+          for (int ap = 0; ap != nact; ++ap)
+            for (int c = 0; c != nact; ++c) {
+              dmat2->element(ap+nact*bp,a+nact*b) -= fockact_p->element(b,c) * ((a == ap ? 1.0 : 0.0) * rdm1->element(bp,c) - rdm2->element(a+nact*bp,ap+nact*c));
+              dmat2->element(ap+nact*bp,a+nact*b) += fockact_p->element(a,c) * ((c == ap ? 1.0 : 0.0) * rdm1->element(bp,b) - rdm2->element(a+nact*bp,ap+nact*b));
+              for (int d = 0; d != nact; ++d)
+                for (int e = 0; e != nact; ++e) {
+                  dmat2->element(ap+nact*bp,a+nact*b) -= 0.5 * ints2->element(c+nact*b,e+nact*d)
+                           * ((a == ap ? 1.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*d) - ardm3->element(c+nact*(e+nact*a),ap+nact*(bp+nact*d))
+                           +  (a == ap ? 1.0 : 0.0) * ardm2->element(bp+nact*d,c+nact*e) - ardm3->element(a+nact*(ap+nact*bp),d+nact*(c+nact*e))
+                           + (ap == bp ? 1.0 : 0.0) *(ardm2->element(c+nact*e,a+nact*d)  + ardm2->element(a+nact*d,c+nact*e))
+                           +  (c == ap ? 1.0 : 0.0) *((a == e  ? 1.0 : 0.0) * rdm1->element(bp, d) - ardm2->element(a+nact*e,bp+nact*d))
+                           - (bp == e  ? 1.0 : 0.0) *((a == ap ? 1.0 : 0.0) * rdm1->element(c,d)   - ardm2->element(a+nact*ap,c+nact*d)));
+                  dmat2->element(ap+nact*bp,a+nact*b) += 0.5 * ints2->element(c+nact*d,e+nact*a)
+                           * ((d == ap ? 1.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*b) - ardm3->element(c+nact*(e+nact*d),ap+nact*(bp+nact*b))
+                           +  (d == ap ? 1.0 : 0.0) * ardm2->element(bp+nact*b,c+nact*e) - ardm3->element(d+nact*(ap+nact*bp),b+nact*(c+nact*e))
+                           + (ap == bp ? 1.0 : 0.0) *(ardm2->element(c+nact*e,d+nact*b) + ardm2->element(d+nact*b,c+nact*e))
+                           +  (c == ap ? 1.0 : 0.0) *((d == e  ? 1.0 : 0.0) * rdm1->element(bp, b) - ardm2->element(d+nact*e,bp+nact*b))
+                           - (bp == e  ? 1.0 : 0.0) *((d == ap ? 1.0 : 0.0) * rdm1->element(c,b)   - ardm2->element(d+nact*ap,c+nact*b)));
+                }
+            }
+  }
 
   Timer timer;
   // compute transformed integrals
