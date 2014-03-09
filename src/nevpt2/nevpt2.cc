@@ -810,7 +810,7 @@ void NEVPT2::compute() {
                           + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
         const double denom = 2.0*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
         if (norm > norm_thresh_)
-          energy[sect["(+1)"]] += norm / (-denom/norm + oeig[i] - veig[r]);
+          energy[sect["(+0)'"]] += norm / (-denom/norm + oeig[i] - veig[r]);
       }
 
       // S(1)i sector
