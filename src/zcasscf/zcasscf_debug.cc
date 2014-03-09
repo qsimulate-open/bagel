@@ -1224,13 +1224,12 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
       const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
       for (int i = 0; i != coeffi->mdim(); ++i) {
         const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
-        // G(1,1) contribution
-        (*out)(a, i) = (*aiia->get_conjg())(ap+coeffa->mdim()*ip, i+coeffi->mdim()*a); // <- only difference from the Coulomb version
+        (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
       }
     }
   } else {
-    for (int a = 0; a != coeffa->mdim(); ++a)
-      for (int i = 0; i != coeffi->mdim(); ++i)
+    for (int a = 0; a != coeffa->mdim(); ++a) 
+      for (int i = 0; i != coeffi->mdim(); ++i) 
         (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, i+coeffi->mdim()*a); // <- only difference from the Coulomb version
   }
 
