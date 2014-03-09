@@ -71,6 +71,8 @@ void NEVPT2::compute() {
   if (nclosed+nact < 1) throw runtime_error("no correlated electrons");
   if (nvirt < 1)        throw runtime_error("no virtuals orbitals");
 
+  Timer timer;
+
   // coefficients -- will be updated later
   shared_ptr<Matrix> ccoeff = ref_->coeff()->slice(ncore_, ncore_+nclosed);
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed, ncore_+nclosed+nact);
@@ -171,6 +173,8 @@ void NEVPT2::compute() {
                   ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += rdm4->element(id4(a,c,e,g),id4(b,d,f,h));
                 }
 
+  timer.tick_print("RDM computation");
+
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
 
@@ -225,6 +229,9 @@ void NEVPT2::compute() {
     fockact_h = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
     fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
   }
+
+  timer.tick_print("Fock computation");
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // make K and K' matrices
   shared_ptr<Matrix> kmat;
@@ -276,6 +283,8 @@ void NEVPT2::compute() {
     kmat2  = compute_kmat(nact,  rdm2,  rdm3, fockact_c, ints2,  1.0);
     kmatp2 = compute_kmat(nact, hrdm2, hrdm3, fockact_h, ints2, -1.0);
   }
+  timer.tick_print("K matrices computation");
+
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // A matrices
   shared_ptr<Matrix> amat2 = rdm2->clone();
@@ -402,7 +411,8 @@ void NEVPT2::compute() {
         }
   }
 
-  Timer timer;
+  timer.tick_print("A, B, C, and D matrices computation");
+
   // compute transformed integrals
   shared_ptr<DFDistT> fullvi;
   shared_ptr<const Matrix> fullav;
