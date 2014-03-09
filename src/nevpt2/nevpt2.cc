@@ -63,6 +63,11 @@ void NEVPT2::compute() {
   const size_t nact = ref_->nact();
   const size_t nvirt = ref_->nvirt();
 
+  // helper functions
+  auto id2 = [&nact](                          const int k, const int l) { return        (       (k+nact*l)); };
+  auto id3 = [&nact](             const int j, const int k, const int l) { return        (j+nact*(k+nact*l)); };
+  auto id4 = [&nact](const int i, const int j, const int k, const int l) { return i+nact*(j+nact*(k+nact*l)); };
+
   if (nclosed+nact < 1) throw runtime_error("no correlated electrons");
   if (nvirt < 1)        throw runtime_error("no virtuals orbitals");
 
@@ -110,21 +115,20 @@ void NEVPT2::compute() {
     SMITH::sort_indices<0,2,4,6,1,3,5,7,0,1,1,1>(r4->data(), rdm4->data(), nact, nact, nact, nact, nact, nact, nact, nact);
   }
   shared_ptr<Matrix> hrdm3 = make_shared<Matrix>(*rdm3 * (-1.0));
-//shared_ptr<Matrix> hrdm4 = rdm4->copy();
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k)
         for (int l = 0; l != nact; ++l)
           for (int m = 0; m != nact; ++m) {
-            hrdm3->element(l+nact*(k+nact*m),j+nact*(i+nact*m)) += 2.0*hrdm2->element(l+nact*k,j+nact*i);
-            hrdm3->element(l+nact*(m+nact*k),j+nact*(i+nact*m)) -=     hrdm2->element(l+nact*k,j+nact*i);
-            hrdm3->element(m+nact*(l+nact*k),j+nact*(i+nact*m)) -=     hrdm2->element(l+nact*k,i+nact*j);
-            hrdm3->element(l+nact*(k+nact*m),j+nact*(m+nact*i)) +=     srdm2->element(i+nact*k,l+nact*j);
-            hrdm3->element(l+nact*(m+nact*k),j+nact*(m+nact*i)) -= 2.0*srdm2->element(i+nact*k,l+nact*j);
-            hrdm3->element(m+nact*(l+nact*k),j+nact*(m+nact*i)) +=     srdm2->element(i+nact*k,l+nact*j);
-            hrdm3->element(l+nact*(k+nact*m),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,l+nact*k);
-            hrdm3->element(l+nact*(m+nact*k),m+nact*(j+nact*i)) -=      rdm2->element(i+nact*j,k+nact*l);
-            hrdm3->element(m+nact*(l+nact*k),m+nact*(j+nact*i)) += 2.0* rdm2->element(i+nact*j,k+nact*l);
+            hrdm3->element(id3(l,k,m),id3(j,i,m)) += 2.0*hrdm2->element(l+nact*k,j+nact*i);
+            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=     hrdm2->element(l+nact*k,j+nact*i);
+            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=     hrdm2->element(l+nact*k,i+nact*j);
+            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=     srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= 2.0*srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=     srdm2->element(i+nact*k,l+nact*j);
+            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2->element(i+nact*j,l+nact*k);
+            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2->element(i+nact*j,k+nact*l);
+            hrdm3->element(id3(m,l,k),id3(m,j,i)) += 2.0* rdm2->element(i+nact*j,k+nact*l);
           }
   // <a+ a b+ b> and <a+ a b+ b c+ c>
   shared_ptr<Matrix> ardm2 = rdm2->clone();
@@ -142,11 +146,30 @@ void NEVPT2::compute() {
         for (int l = 0; l != nact; ++l)
           for (int m = 0; m != nact; ++m) {
             for (int n = 0; n != nact; ++n)
-              ardm3->element(n+nact*(m+nact*l),k+nact*(j+nact*i)) += rdm3->element(n+nact*(l+nact*j),m+nact*(k+nact*i));
-            ardm3->element(m+nact*(l+nact*l),k+nact*(j+nact*i)) += ardm2->element(m+nact*k,j+nact*i);
-            ardm3->element(m+nact*(l+nact*k),j+nact*(j+nact*i)) += rdm2->element(m+nact*k,l+nact*i);
-            ardm3->element(m+nact*(l+nact*k),j+nact*(l+nact*i)) += rdm2->element(m+nact*k,i+nact*j);
+              ardm3->element(id3(n,m,l),id3(k,j,i)) += rdm3->element(id3(n,l,j),id3(m,k,i));
+            ardm3->element(id3(m,l,l),id3(k,j,i)) += ardm2->element(m+nact*k,j+nact*i);
+            ardm3->element(id3(m,l,k),id3(j,j,i)) += rdm2->element(m+nact*k,l+nact*i);
+            ardm3->element(id3(m,l,k),id3(j,l,i)) += rdm2->element(m+nact*k,i+nact*j);
           }
+  shared_ptr<Matrix> ardm4 = rdm4->clone();
+  for (int h = 0; h != nact; ++h)
+    for (int g = 0; g != nact; ++g)
+      for (int f = 0; f != nact; ++f)
+        for (int e = 0; e != nact; ++e)
+          for (int d = 0; d != nact; ++d)
+            for (int c = 0; c != nact; ++c)
+              for (int b = 0; b != nact; ++b)
+                for (int a = 0; a != nact; ++a) {
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == c ? 1.0 : 0.0) * ardm3->element(id3(a,d,e),id3(f,g,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) -= (d == e && b == c ? 1.0 : 0.0) * ardm2->element(id2(a,f),id2(g,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (d == e ? 1.0 : 0.0) * ardm3->element(id3(a,b,c),id3(f,g,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) -= (b == e && c == f ? 1.0 : 0.0) * ardm2->element(id2(a,d),id2(g,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == e ? 1.0 : 0.0) * ardm3->element(id3(a,f,c),id3(d,g,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (f == g ? 1.0 : 0.0) *  rdm3->element(id3(a,c,e),id3(b,d,h));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (d == g ? 1.0 : 0.0) *  rdm3->element(id3(a,c,e),id3(b,h,f));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == g ? 1.0 : 0.0) *  rdm3->element(id3(a,c,e),id3(h,d,f));
+                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += rdm4->element(id4(a,c,e,g),id4(h,d,f,h));
+                }
 
   // Hcore
   shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
@@ -265,10 +288,10 @@ void NEVPT2::compute() {
               amat2->element(ap+nact*bp,a+nact*b) += fockact_p->element(c,a) * ardm2->element(bp+nact*ap,c+nact*b) - fockact_p->element(c,b) * ardm2->element(bp+nact*ap,a+nact*c);
               for (int d = 0; d != nact; ++d)
                 for (int e = 0; e != nact; ++e)
-                  amat2->element(ap+nact*bp,a+nact*b) += 0.5 * ints2->element(c+nact*d,e+nact*a) * (ardm3->element(bp+nact*(ap+nact*c),e+nact*(d+nact*b))
-                                                                                                  + ardm3->element(bp+nact*(ap+nact*d),b+nact*(c+nact*e)))
-                                                       - 0.5 * ints2->element(b+nact*c,e+nact*d) * (ardm3->element(bp+nact*(ap+nact*a),e+nact*(c+nact*d))
-                                                                                                  + ardm3->element(bp+nact*(ap+nact*c),d+nact*(a+nact*e)));
+                  amat2->element(ap+nact*bp,a+nact*b) += 0.5 * ints2->element(c+nact*d,e+nact*a) * (ardm3->element(id3(bp,ap,c),id3(e,d,b))
+                                                                                                  + ardm3->element(id3(bp,ap,d),id3(b,c,e)))
+                                                       - 0.5 * ints2->element(b+nact*c,e+nact*d) * (ardm3->element(id3(bp,ap,a),id3(e,c,d))
+                                                                                                  + ardm3->element(id3(bp,ap,c),id3(d,a,e)));
             }
     shared_ptr<Matrix> tmp = amat2->copy();
     SMITH::sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact, nact, nact, nact);
@@ -287,14 +310,14 @@ void NEVPT2::compute() {
               for (int d = 0; d != nact; ++d)
                 for (int e = 0; e != nact; ++e) {
                   dmat2->element(ap+nact*bp,a+nact*b) -= 0.5 * ints2->element(c+nact*b,e+nact*d)
-                           * ((a == ap ? 2.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*d) - ardm3->element(c+nact*(e+nact*a),ap+nact*(bp+nact*d))
-                           +  (a == ap ? 2.0 : 0.0) * ardm2->element(bp+nact*d,c+nact*e) - ardm3->element(a+nact*(ap+nact*bp),d+nact*(c+nact*e))
+                           * ((a == ap ? 2.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*d) - ardm3->element(id3(c,e,a),id3(ap,bp,d))
+                           +  (a == ap ? 2.0 : 0.0) * ardm2->element(bp+nact*d,c+nact*e) - ardm3->element(id3(a,ap,bp),id3(d,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2->element(c+nact*e,a+nact*d)  + ardm2->element(a+nact*d,c+nact*e))
                            +  (c == ap ? 1.0 : 0.0) *((a == e  ? 2.0 : 0.0) * rdm1->element(bp, d) - ardm2->element(a+nact*e,bp+nact*d))
                            - (bp == e  ? 1.0 : 0.0) *((a == ap ? 2.0 : 0.0) * rdm1->element(c,d)   - ardm2->element(a+nact*ap,c+nact*d)));
                   dmat2->element(ap+nact*bp,a+nact*b) += 0.5 * ints2->element(c+nact*d,e+nact*a)
-                           * ((d == ap ? 2.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*b) - ardm3->element(c+nact*(e+nact*d),ap+nact*(bp+nact*b))
-                           +  (d == ap ? 2.0 : 0.0) * ardm2->element(bp+nact*b,c+nact*e) - ardm3->element(d+nact*(ap+nact*bp),b+nact*(c+nact*e))
+                           * ((d == ap ? 2.0 : 0.0) * ardm2->element(c+nact*e,bp+nact*b) - ardm3->element(id3(c,e,d),id3(ap,bp,b))
+                           +  (d == ap ? 2.0 : 0.0) * ardm2->element(bp+nact*b,c+nact*e) - ardm3->element(id3(d,ap,bp),id3(b,c,e))
                            + (ap == bp ? 1.0 : 0.0) *(ardm2->element(c+nact*e,d+nact*b)  + ardm2->element(d+nact*b,c+nact*e))
                            +  (c == ap ? 1.0 : 0.0) *((d == e  ? 2.0 : 0.0) * rdm1->element(bp, b) - ardm2->element(d+nact*e,bp+nact*b))
                            - (bp == e  ? 1.0 : 0.0) *((d == ap ? 2.0 : 0.0) * rdm1->element(c,b)   - ardm2->element(d+nact*ap,c+nact*b)));
