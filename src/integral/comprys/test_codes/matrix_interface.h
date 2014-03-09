@@ -10,10 +10,11 @@
 #define __SRC_INTEGRAL_COMPRYS_TEST_CODES_MATRIX_INTERFACE_H
 
 #include <cstdlib>
+#include <type_traits>
 
 namespace ryan {
 
-template<typename Batch>
+template<typename Batch, typename DataType>
 class RealLondon {
   protected:
 
@@ -38,18 +39,24 @@ class RealLondon {
 
     void compute() {
       batch_->compute();
-      const std::complex<double>* cdata = batch_->data();
+      const DataType* cdata = batch_->data();
       data_ = (double*) std::malloc(size_block_*sizeof(double));
       const int i = block_-1;
-      if (!ReIm_) {
+      if (std::is_same<DataType, double>::value) {
         for (int j=0; j!=size_block_; j++) {
-          data_[j] = cdata[i*size_block_ + j].real();
+          data_[j] = std::real(cdata[i*size_block_ + j]);
         }
-      } else {
-        for (int j=0; j!=size_block_; j++) {
-          data_[j] = cdata[i*size_block_ + j].imag();
+      } else if (std::is_same<DataType, std::complex<double>>::value) {
+        if (!ReIm_) {
+          for (int j=0; j!=size_block_; j++) {
+            data_[j] = std::real(cdata[i*size_block_ + j]);
+          }
+        } else {
+          for (int j=0; j!=size_block_; j++) {
+            data_[j] = std::imag(cdata[i*size_block_ + j]);
+          }
         }
-      }
+      } else throw std::runtime_error("data_ should be either double* or complex<double>*");
     }
 };
 
@@ -97,6 +104,55 @@ std::complex<bagel::Matrix> inverse (std::complex<bagel::Matrix> S) {
   bagel::Matrix Si_I = S_Ri * S.imag() * Si_R;
   Si_I.scale(-1.0);
   std::complex<bagel::Matrix> out (Si_R, Si_I);
+  return out;
+}
+
+double mean_unsigned_error (bagel::Matrix A, bagel::Matrix B, const bool rel) {
+  assert (A.size() == B.size());
+  const size_t size = A.size();
+  const double* a = A.begin();
+  const double* b = B.begin();
+  double out = 0;
+  if (rel) {
+    for (int i=0; i!= size; i++) out += std::abs((a[i]-b[i])/a[i]);
+  } else {
+    for (int i=0; i!= size; i++) out += std::abs(a[i]-b[i]);
+  }
+  out /= size;
+  return out;
+}
+
+double mean_unsigned_error (std::complex<bagel::Matrix> A, std::complex<bagel::Matrix> B, const bool rel) {
+  assert (A.real().size() == B.real().size());
+  assert (A.real().size() == B.imag().size());
+  assert (A.real().size() == A.imag().size());
+  const size_t size = A.real().size();
+
+  bagel::Matrix Ar = A.real();
+  bagel::Matrix Ai = A.imag();
+  bagel::Matrix Br = B.real();
+  bagel::Matrix Bi = B.imag();
+  const double* ar = Ar.begin();
+  const double* ai = Ai.begin();
+  const double* br = Br.begin();
+  const double* bi = Bi.begin();
+
+  std::vector<std::complex<double>> a = {};
+  std::vector<std::complex<double>> b = {};
+  for (int i=0; i!=size; i++) {
+    std::complex<double> an (ar[i],ai[i]);
+    std::complex<double> bn (br[i],bi[i]);
+    a.push_back(an);
+    b.push_back(bn);
+  }
+
+  double out = 0;
+  if (rel) {
+    for (int i=0; i!= size; i++) out += std::abs((a[i]-b[i])/a[i]);
+  } else {
+    for (int i=0; i!= size; i++) out += std::abs(a[i]-b[i]);
+  }
+  out /= size;
   return out;
 }
 
