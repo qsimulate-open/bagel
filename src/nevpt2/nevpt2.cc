@@ -282,8 +282,8 @@ void NEVPT2::compute() {
         for (int bp = 0; bp != nact; ++bp)
           for (int ap = 0; ap != nact; ++ap)
             for (int c = 0; c != nact; ++c) {
-              dmat2->element(ap+nact*bp,a+nact*b) -= fockact_p->element(b,c) * ((a == ap ? 2.0 : 0.0) * rdm1->element(bp,c) - ardm2->element(a+nact*ap,bp+nact*c) + (ap == bp ? 1.0 : 0.0)*rdm1->element(c,a));
-              dmat2->element(ap+nact*bp,a+nact*b) += fockact_p->element(a,c) * ((c == ap ? 2.0 : 0.0) * rdm1->element(bp,b) - ardm2->element(c+nact*ap,bp+nact*b) + (ap == bp ? 1.0 : 0.0)*rdm1->element(b,c));
+              dmat2->element(ap+nact*bp,a+nact*b) -= fockact_p->element(b,c) * ((a == ap ? 2.0 : 0.0) * rdm1->element(bp,c) - rdm2->element(a+nact*bp,ap+nact*c));
+              dmat2->element(ap+nact*bp,a+nact*b) += fockact_p->element(a,c) * ((c == ap ? 2.0 : 0.0) * rdm1->element(bp,b) - rdm2->element(c+nact*bp,ap+nact*b));
               for (int d = 0; d != nact; ++d)
                 for (int e = 0; e != nact; ++e) {
                   dmat2->element(ap+nact*bp,a+nact*b) -= 0.5 * ints2->element(c+nact*b,e+nact*d)
