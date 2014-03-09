@@ -59,9 +59,9 @@ NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geome
 
 void NEVPT2::compute() {
 
-  const size_t nclosed = ref_->nclosed() - ncore_;
-  const size_t nact = ref_->nact();
-  const size_t nvirt = ref_->nvirt();
+  const int nclosed = ref_->nclosed() - ncore_;
+  const int nact = ref_->nact();
+  const int nvirt = ref_->nvirt();
 
   // helper functions
   auto id2 = [&nact](                          const int k, const int l) { return        (       (k+nact*l)); };
@@ -487,6 +487,15 @@ void NEVPT2::compute() {
           tasks[inode].push_back(make_tuple(i, -1, /*mpitags*/-1,-1));
     }
   }
+  // distribution of virt for S_r(-1) (sort of cheap)
+  {
+    StaticDist ijdist(nvirt, mpi__->size());
+    for (int inode = 0; inode != mpi__->size(); ++inode) {
+      for (int i = 0; i < nvirt; ++i)
+        if (i >= ijdist.start(inode) && i < ijdist.start(inode) + ijdist.size(inode))
+          tasks[inode].push_back(make_tuple(i+nclosed+nact, -1, /*mpitags*/-1,-1));
+    }
+  }
   {
     int nmax = 0;
     for (auto& i : tasks)
@@ -593,7 +602,7 @@ double __debug = 0.0;
 
     if (i < 0 && j < 0) {
       continue;
-    } else if (i < nclosed && j < nclosed) {
+    } else if (i < nclosed && j < nclosed && i >= 0 && j >= 0) {
       const int ti = get<2>(tasks[myrank][n]);
       const int tj = get<3>(tasks[myrank][n]);
       if (ti >= 0) mpi__->wait(ti);
@@ -677,6 +686,24 @@ double __debug = 0.0;
       const double denom = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
       if (norm > norm_thresh_)
         energy_ += norm / (denom/norm - veig[iv] - veig[jv]);
+
+    } else if (i >= nclosed+nact && j < 0) {
+      // S(-1)r sector
+      shared_ptr<Matrix> ardm3_sorted = ardm3->clone();
+      shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact*nact*nact, nact);
+      SMITH::sort_indices<1,2,0,3,    0,1,1,1>(ardm2->data(), ardm2_sorted->data(), nact, nact, nact, nact);
+      SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3->data(), ardm3_sorted->data(), nact, nact, nact, nact, nact, nact);
+      const int iv = i-nclosed-nact;
+      shared_ptr<const Matrix> rblock = fullav->slice(iv*nact, (iv+1)*nact);
+      shared_ptr<const Matrix> bac = make_shared<Matrix>(*rblock % *fullaa);
+      shared_ptr<Matrix> abc = make_shared<Matrix>(nact*nact*nact, 1);
+      SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact, nact, nact);
+      shared_ptr<Matrix> heff = make_shared<Matrix>(nact, 1);
+      for (int a = 0; a != nact; ++a)
+        heff->element(a,0) = (2.0*fock_p->element(a+nclosed, i) - fock_c->element(a+nclosed, i));
+      const double norm = abc->dot_product(*ardm3_sorted % *abc) + 2.0*heff->dot_product(*ardm2_sorted % *abc) + heff->dot_product(*rdm1 % *heff);
+      const double denom = abc->dot_product(*amat3 % *abc) + heff->dot_product(*bmat2 % *abc) + heff->dot_product(*cmat2 * *abc) + heff->dot_product(*dmat1 % *heff);
+      energy_ += norm / (-denom/norm - veig[iv]);
 
     } else if (i < nclosed && j < 0) {
       // (g|vi) with i fixed
