@@ -270,6 +270,8 @@ void NEVPT2::compute() {
                                                        - 0.5 * ints2->element(b+nact*c,e+nact*d) * (ardm3->element(bp+nact*(ap+nact*a),e+nact*(c+nact*d))
                                                                                                   + ardm3->element(bp+nact*(ap+nact*c),d+nact*(a+nact*e)));
             }
+    shared_ptr<Matrix> tmp = amat2->copy();
+    SMITH::sort_indices<1,0,3,2,0,1,1,1>(tmp->data(), amat2->data(), nact, nact, nact, nact);
   }
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // D matrices
@@ -609,14 +611,20 @@ double __debug = 0.0;
         const Matrix mat1(*ibr % *fullaa); // (ir|ab)  as (1,nact*nact)
         const Matrix mat2(*rblock % *iablock); // (ra|bi) as (nact, nact)
         const Matrix mat1S(mat1 * *srdm2);
+        const Matrix mat1A(mat1 * *amat2);
         const Matrix mat1Ssym(mat1S + (mat1 ^ *srdm2));
+        const Matrix mat1Asym(mat1A + (mat1 ^ *amat2));
               Matrix mat2Sp(nact, nact);
+              Matrix mat2D (nact, nact);
         dgemv_("N", nact*nact, nact*nact, 1.0, srdm2p.data(), nact*nact, mat2.data(), 1, 0.0, mat2Sp.data(), 1);
+        dgemv_("N", nact*nact, nact*nact, 1.0, dmat2->data(), nact*nact, mat2.data(), 1, 0.0,  mat2D.data(), 1);
         const int ir = r + nclosed + nact;
         const double norm = - 2.0*mat1S.dot_product(mat1) + blas::dot_product(mat1Ssym.data(), mat1Ssym.size(), mat2.data()) + mat2Sp.dot_product(mat2)
                           + 2.0*(fock->element(ir,i) - fock_c->element(ir,i))*(fock_c->element(ir,i) + fock_h->element(ir,i))
                           + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
-__debug += norm;
+        const double denom = 2.0*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
+if (norm > norm_thresh_)
+__debug += norm / (-denom/norm + oeig[i] - veig[r]);
       }
     }
   }
