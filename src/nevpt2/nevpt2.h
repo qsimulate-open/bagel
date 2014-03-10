@@ -42,6 +42,11 @@ class NEVPT2 : public Method {
 
     double energy_;
 
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>
+      compute_hrdm(std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> rdm2, std::shared_ptr<const Matrix> rdm3, std::shared_ptr<const Matrix> srdm2) const;
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>
+      compute_asrdm(std::shared_ptr<const Matrix> rdm1, std::shared_ptr<const Matrix> rdm2, std::shared_ptr<const Matrix> rdm3, std::shared_ptr<const Matrix> rdm4) const;
+
   public:
     NEVPT2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
 
