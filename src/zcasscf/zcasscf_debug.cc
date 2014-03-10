@@ -183,27 +183,9 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     cfockd->hermite();
 
     // (1) G(1,1)_{ti,ti}
-    shared_ptr<ZMatrix> miitt = ___debug___diagonal_integrals_coulomb(coeffi, coefft);
-    shared_ptr<ZMatrix> mitti = ___debug___diagonal_integrals_exchange(coeffi, coefft);
-    *mitti -= *miitt;
+    shared_ptr<ZMatrix> mitti = ___debug___closed_active_diagonal_hessian(coeffi, coefft, cfock, afock, qxr);
 
-    shared_ptr<ZMatrix> miitt2rdm = ___debug___diagonal_2rdm_contraction_coulomb(coeffi);
-    shared_ptr<ZMatrix> mitti2rdm = ___debug___diagonal_2rdm_contraction_exchange(coeffi);
-    *miitt2rdm -= *mitti2rdm;
 
-    shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft);
-    shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft);
-    *miitt1rdm -= *mitti1rdm;
-    *miitt1rdm += *miitt1rdm->get_conjg(); //TODO : check that derivation has both terms ; compare to finite difference
-
-    for (int t = 0; t != nact_*2; ++t) {
-      for (int i = 0; i != nclosed_*2; ++i) {
-        const int nt = t + nclosed_*2;
-        (*mitti)(i, t) += (*cfock)(nt, nt) + (*afock)(nt, nt) - (*cfock)(i, i) - (*afock)(i, i)
-                          + (*rdm1)(t,t)*(*cfock)(i, i) - (*cfockd)(t, t) - (*qxr->get_conjg())(nt ,t)
-                          + (*miitt2rdm)(i, t) + (*miitt1rdm)(i, t);
-      }
-    }
 
     //  (tb ib|t i) - (tb i|t ib)
     shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true);
@@ -1398,4 +1380,66 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_2rdm_exchange(
   }
 
   return out;
+}
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool verbose) const {
+  /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = cfock(tt) + afock(tt) - cfock(ii) - afock(ii) - cfockd(tt) + D(tt)*cfock(ii)
+                                          - Q^{*}_{tt} + [ (ii|vu) - (iu|vi) ] G(ttvu)
+                                          + ([ (ii|tu) - (iu|ti) ] D(tu) + c.c. )
+                                          + [ (ti|it) - (ii|tt) ]
+  for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
+
+  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+  shared_ptr<ZMatrix> cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
+  cfockd->hermite();
+  if (verbose)
+    rdm1->print("1rdm");
+
+  shared_ptr<ZMatrix> miitt = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
+  shared_ptr<ZMatrix> mitti = ___debug___diagonal_integrals_exchange(coeffa, coeffi);
+  if (verbose) {
+    miitt->get_submatrix(morbital,norbital,1,1)->print("(ii|tt)");
+    mitti->get_submatrix(morbital,norbital,1,1)->print("(it|ti)");
+  }
+  *mitti -= *miitt;
+
+  shared_ptr<ZMatrix> miitt2rdm = ___debug___diagonal_2rdm_contraction_coulomb(coeffa);
+  shared_ptr<ZMatrix> mitti2rdm = ___debug___diagonal_2rdm_contraction_exchange(coeffa);
+  if (verbose) {
+    miitt2rdm->get_submatrix(morbital,norbital,1,1)->print("(ii|vu) * G(ttvu)");
+    mitti2rdm->get_submatrix(morbital,norbital,1,1)->print("(iu|vi) * G(ttvu)");
+  }
+  *miitt2rdm -= *mitti2rdm;
+
+  shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffa, coeffi);
+  shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffa, coeffi);
+  if (verbose) {
+    miitt1rdm->get_submatrix(morbital,norbital,1,1)->print("(ii|tu) * D(tu)");
+    mitti1rdm->get_submatrix(morbital,norbital,1,1)->print("(iu|ti) * D(tu)");
+  }
+  *miitt1rdm -= *mitti1rdm;
+  *miitt1rdm += *miitt1rdm->get_conjg();
+  if (verbose) {
+    cout << setprecision(12) << "cfockdtt    = " <<  cfockd->element(norbital,norbital) << endl;
+    cout << setprecision(12) << "cfockii     = " <<  cfock->element(morbital,morbital) << endl;
+    cout << setprecision(12) << "afockii     = " <<  afock->element(morbital,morbital) << endl;
+    cout << setprecision(12) << "cfocktt     = " <<  cfock->element(nclosed_*2+norbital,nclosed_*2+norbital) << endl;
+    cout << setprecision(12) << "afocktt     = " <<  afock->element(nclosed_*2+norbital,nclosed_*2+norbital) << endl;
+    cout << setprecision(12) << "rdm1tt      = " <<  rdm1->element(norbital,norbital) << endl;
+    cout << setprecision(12) << "qvectt      = " <<  qxr->element(nclosed_*2 + norbital, norbital) << endl;
+  }
+
+  for (int t = 0; t != nact_*2; ++t) {
+    for (int i = 0; i != nclosed_*2; ++i) {
+      const int nt = t + nclosed_*2; 
+      (*mitti)(i, t) += (*cfock)(nt, nt) + (*afock)(nt, nt) - (*cfock)(i, i) - (*afock)(i, i)
+                        + (*rdm1)(t,t)*(*cfock)(i, i) - (*cfockd)(t, t) - (*qxr->get_conjg())(nt ,t)
+                        + (*miitt2rdm)(i, t) + (*miitt1rdm)(i, t);
+    }                   
+  } 
+
+  if (verbose)
+    mitti->get_submatrix(morbital, norbital, 1, 1)->print("G(1,1)_{ti,ti}");
+
+  return mitti;
 }
