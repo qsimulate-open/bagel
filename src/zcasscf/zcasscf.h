@@ -129,12 +129,16 @@ class ZCASSCF : public Method {
     // returns [a,i] = [ (i a|v ka)  - (i ka|v a) ] * {^{A}D}_{v ki} + [ (ki ka|v a) - (ki a|v ka) ] * {^{A}D}_{v i} (a is index of coeffa, and i is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_1rdm_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_2rdm_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_1rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // return FCI energy from transformed 1&2RDM
     double ___debug___recompute_fci_energy(std::shared_ptr<const ZMatrix> cfock) const;
 
     // CLOSED-ACTIVE debugging
     // returns M(a,i) = G^(1,1)_(ia,ia) (a is an index of coeffa, and i is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, const bool verbose = false) const;
+    // returns M(a,i) = (a u|v ka) * G(v u,i ki) ; where a is index of coeffa and i is active
+    std::shared_ptr<ZMatrix> ___debug___closed_active_exchange_2rdm_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+
 };
 
 }
