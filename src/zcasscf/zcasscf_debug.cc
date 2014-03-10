@@ -144,6 +144,7 @@ void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const b
 void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
   const bool perturb_active = idata_->get<bool>("perturb_active", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
+  const bool verbose        = idata_->get<bool>("verbose", false);
 
   shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
   shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
@@ -482,7 +483,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool off_diagonal) const {
   // returns Mat(a,i) = (ai|i'a')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -557,11 +558,12 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1)
-      (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
+      if (!off_diagonal)
+        (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
 
       // contribution from G(1,2)
-      if (closed_active) {
-        (*out)(a, i) += (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip); //  (a i|ka ki)
+      if (off_diagonal) {
+        (*out)(a, i)  = (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip); //  (a i|ka ki)
         (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i); // -(a ki|ka i)
       } else {
         (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
@@ -732,6 +734,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,t) = (a'a|t't) = (a'a|uv)G(uv,t't), where t is an active index and a is an index of coeffa
+  // for closed_active : M(a,t) = (a a'|t t') = (a a'|v u)G(v u,t t')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be able to eliminate completely after hessian is confirmed
   assert(coeffi->mdim() == nact_*2);
@@ -1549,12 +1552,15 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_exchange_2rdm_kramers(shar
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool verbose) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool verbose) const {
   /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = cfock(tt) + afock(tt) - cfock(ii) - afock(ii) - cfockd(tt) + D(tt)*cfock(ii)
                                           - Q^{*}_{tt} + [ (ii|vu) - (iu|vi) ] G(ttvu)
                                           + ([ (ii|tu) - (iu|ti) ] D(tu) + c.c. )
                                           + [ (ti|it) - (ii|tt) ]
   for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
+  assert(coefft->mdim() == nact_*2);
+  if (verbose)
+    cout << "<<<<<<<<<<<< debug : G(1,1)(ti,ti) <<<<<<<<<<<<" << endl;
 
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   shared_ptr<ZMatrix> cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
@@ -1562,24 +1568,24 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_pt
   if (verbose)
     rdm1->print("1rdm");
 
-  shared_ptr<ZMatrix> miitt = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
-  shared_ptr<ZMatrix> mitti = ___debug___diagonal_integrals_exchange(coeffa, coeffi);
+  shared_ptr<ZMatrix> miitt = ___debug___diagonal_integrals_coulomb(coeffi, coefft);
+  shared_ptr<ZMatrix> mitti = ___debug___diagonal_integrals_exchange(coeffi, coefft);
   if (verbose) {
     miitt->get_submatrix(morbital,norbital,1,1)->print("(ii|tt)");
     mitti->get_submatrix(morbital,norbital,1,1)->print("(it|ti)");
   }
   *mitti -= *miitt;
 
-  shared_ptr<ZMatrix> miitt2rdm = ___debug___diagonal_2rdm_contraction_coulomb(coeffa);
-  shared_ptr<ZMatrix> mitti2rdm = ___debug___diagonal_2rdm_contraction_exchange(coeffa);
+  shared_ptr<ZMatrix> miitt2rdm = ___debug___diagonal_2rdm_contraction_coulomb(coeffi);
+  shared_ptr<ZMatrix> mitti2rdm = ___debug___diagonal_2rdm_contraction_exchange(coeffi);
   if (verbose) {
     miitt2rdm->get_submatrix(morbital,norbital,1,1)->print("(ii|vu) * G(ttvu)");
     mitti2rdm->get_submatrix(morbital,norbital,1,1)->print("(iu|vi) * G(ttvu)");
   }
   *miitt2rdm -= *mitti2rdm;
 
-  shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffa, coeffi);
-  shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffa, coeffi);
+  shared_ptr<ZMatrix> miitt1rdm = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft);
+  shared_ptr<ZMatrix> mitti1rdm = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft);
   if (verbose) {
     miitt1rdm->get_submatrix(morbital,norbital,1,1)->print("(ii|tu) * D(tu)");
     mitti1rdm->get_submatrix(morbital,norbital,1,1)->print("(iu|ti) * D(tu)");
@@ -1605,8 +1611,43 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_pt
     }                   
   } 
 
-  if (verbose)
+  if (verbose) {
     mitti->get_submatrix(morbital, norbital, 1, 1)->print("G(1,1)_{ti,ti}");
+    cout << ">>>>>>>>>>>> debug : G(1,1)(ti,ti) >>>>>>>>>>>>" << endl << endl;
+  }
 
   return mitti;
+}
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
+  /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = [ (i ki|kt u) - (iu|kt i) ] D(t u) - [ (i ki|u t) - (u ki|i t) ] D(u kt) // CHECK SIGNS
+                                          + [ (i ki|v u) - (i u|v ki) ] G(vu,t kt)
+                                          + [ (kt ki|i t) - (i ki|kt t) ]
+  for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
+  assert(coefft->mdim() == nact_*2);
+  if (verbose)
+    cout << ">>>>>>>>>>>> debug : G(1,1)(kt ki,t i) >>>>>>>>>>>>" << endl;
+
+  shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft); // (i t|kt ki)
+  shared_ptr<ZMatrix> kmiitt = ___debug___diagonal_integrals_coulomb_kramers(coeffi, coefft);  // (i ki|kt t) ; appears to be 0
+  if (verbose) {
+   kmitti->get_submatrix(morbital, norbital, 1, 1)->print("(i t|kt ki)");
+   kmiitt->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt t)");
+   kmitti->print("(i t|kt ki)");
+  }
+  *kmitti -= *kmiitt;
+
+  shared_ptr<ZMatrix> krdm2coulomb = ___debug___diagonal_integrals_coulomb_active_kramers(coeffi, coefft, true); // appears 0
+  shared_ptr<ZMatrix> krdm2exch    = ___debug___closed_active_exchange_2rdm_kramers(coeffi, coefft);
+  if (verbose) {
+    krdm2exch->print("krdm2exch",16);
+    krdm2exch->get_submatrix(morbital, norbital, 1, 1)->print("(i u|v ki)*G(v u,t kt)");
+    krdm2coulomb->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|v u)*G(v u,t kt)");
+  }
+
+  if (verbose)
+    cout << "<<<<<<<<<<<< debug : G(1,1)(kt ki,t i) <<<<<<<<<<<<" << endl << endl;
+
+  return kmitti;
 }
