@@ -52,34 +52,31 @@ void NEVPT2::compute_kmat() {
     kmatp_ = kmatp;
   }
   {
-    auto compute_kmat = [](const int nact_, shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock,
-                           shared_ptr<const Matrix> ints, const double sign) {
+    auto compute_kmat = [this](shared_ptr<const Matrix> rdm2, shared_ptr<const Matrix> rdm3, shared_ptr<const Matrix> fock, const double sign) {
       auto out = rdm2->clone();
       // temp area
-      shared_ptr<Matrix> four  = rdm2->clone();
-      shared_ptr<Matrix> four2 = rdm2->clone();
-      shared_ptr<Matrix> six   = rdm3->clone();
-
-      // + (h)rdm2(i,j,k,m) * fockact_h_(m,l)
-      dgemm_("N", "N", nact_*nact_*nact_, nact_, nact_, 1.0, rdm2->data(), nact_*nact_*nact_, fock->data(), nact_, 1.0, out->data(), nact_*nact_*nact_);
-      // + (h)rdm2(i,j,m,k) * fockact_h_(m,l)
-      SMITH::sort_indices<0,1,3,2,0,1,1,1>(rdm2->data(), four->data(), nact_, nact_, nact_, nact_);
-      dgemm_("N", "N", nact_*nact_*nact_, nact_, nact_, 1.0, four->data(), nact_*nact_*nact_, fock->data(), nact_, 0.0, four2->data(), nact_*nact_*nact_);
-      SMITH::sort_indices<0,1,3,2,1,1,1,1>(four2->data(), out->data(), nact_, nact_, nact_, nact_);
-      // +/- (h)rdm2(i,j,m,n) * <mn|kl>
-      dgemm_("N", "N", nact_*nact_, nact_*nact_, nact_*nact_, sign, rdm2->data(), nact_*nact_, ints->data(), nact_*nact_, 1.0, out->data(), nact_*nact_);
-      // +/- (h)rdm3(i,j,x,y,l,z) * (<kx|yz>*)
-      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm3->data(), six->data(), nact_*nact_, nact_*nact_, nact_, nact_); // (i,j,l,x,y,w)
-      dgemm_("N", "T", nact_*nact_*nact_, nact_, nact_*nact_*nact_, sign, six->data(), nact_*nact_*nact_, ints->data(), nact_, 0.0, four->data(), nact_*nact_*nact_);
-      SMITH::sort_indices<0,1,3,2,1,1,1,1>(four->data(), out->data(), nact_, nact_, nact_, nact_);
-      // +/- (h)rdm3(i,j,x,k,y,z) * (<lx|yz>*)
-      SMITH::sort_indices<0,2,1,3,0,1,1,1>(rdm3->data(), six->data(), nact_*nact_, nact_, nact_, nact_*nact_); // (i,j,k,x,y,w)
-      dgemm_("N", "T", nact_*nact_*nact_, nact_, nact_*nact_*nact_, sign, six->data(), nact_*nact_*nact_, ints->data(), nact_, 1.0, out->data(), nact_*nact_*nact_);
+      for (int b = 0; b != nact_; ++b)
+        for (int a = 0; a != nact_; ++a)
+          for (int bp = 0; bp != nact_; ++bp)
+            for (int ap = 0; ap != nact_; ++ap)
+              for (int c = 0; c != nact_; ++c) {
+                 out->element(ap+nact_*bp, a+nact_*b) += rdm2->element(ap+nact_*bp, c+nact_*b) * fock->element(c, a)
+                                                       + rdm2->element(ap+nact_*bp, a+nact_*c) * fock->element(c, b);
+              for (int d = 0; d != nact_; ++d)
+                for (int e = 0; e != nact_; ++e) {
+                  out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(c+nact_*d, e+nact_*a)
+                                                         * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
+                                                           +sign*(b == e ? rdm2->element(ap+nact_*bp, d+nact_*c) : 0.0))
+                                                        +  0.5 * ints2_->element(c+nact_*d, e+nact_*b)
+                                                         * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
+                                                           +sign*(a == e ? rdm2->element(ap+nact_*bp, c+nact_*d) : 0.0));
+                }
+            }
       return out;
     };
 
-    kmat2_  = compute_kmat(nact_,  rdm2_,  rdm3_, fockact_c_, ints2_,  1.0);
-    kmatp2_ = compute_kmat(nact_, hrdm2_, hrdm3_, fockact_h_, ints2_, -1.0);
+    kmat2_  = compute_kmat( rdm2_,  rdm3_, fockact_c_,  1.0);
+    kmatp2_ = compute_kmat(hrdm2_, hrdm3_, fockact_h_, -1.0);
   }
 }
 

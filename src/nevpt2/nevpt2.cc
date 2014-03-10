@@ -54,7 +54,7 @@ NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geome
 
   // if three is a aux_basis keyword, we use that basis
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
-  norm_thresh_ = idata_->get<double>("norm_thresh", 1.0e-10);
+  norm_thresh_ = idata_->get<double>("norm_thresh", 1.0e-13);
 
 }
 
@@ -71,6 +71,7 @@ void NEVPT2::compute() {
   Timer timer;
 
   // coefficients -- will be updated later
+  shared_ptr<Matrix> ocoeff = ref_->coeff()->slice(0, ncore_+nclosed_);
   shared_ptr<Matrix> ccoeff = ref_->coeff()->slice(ncore_, ncore_+nclosed_);
   shared_ptr<Matrix> acoeff = ref_->coeff()->slice(ncore_+nclosed_, ncore_+nclosed_+nact_);
   shared_ptr<Matrix> vcoeff = ref_->coeff()->slice(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_);
@@ -101,7 +102,7 @@ void NEVPT2::compute() {
   shared_ptr<const Matrix> fock_h;
   {
     // * core Fock operator
-    shared_ptr<const Matrix> ofockao = nclosed_+ncore_ ? make_shared<const Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
+    shared_ptr<const Matrix> ofockao = nclosed_+ncore_ ? make_shared<Fock<1>>(geom_, hcore, nullptr, ocoeff, /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> rdm1_mat = rdm1_->copy();
@@ -119,13 +120,13 @@ void NEVPT2::compute() {
       *vcoeff *= vmofock;
     }
     coeffall = make_shared<Matrix>(ccoeff->ndim(), nclosed_+nact_+nvirt_);
-    coeffall->copy_block(0, 0           , ccoeff->ndim(), nclosed_, ccoeff);
-    coeffall->copy_block(0, nclosed_     , acoeff->ndim(), nact_   , acoeff);
+    coeffall->copy_block(0, 0             , ccoeff->ndim(), nclosed_, ccoeff);
+    coeffall->copy_block(0, nclosed_      , acoeff->ndim(), nact_   , acoeff);
     coeffall->copy_block(0, nclosed_+nact_, vcoeff->ndim(), nvirt_  , vcoeff);
 
     fockact_   = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
     fockact_c_ = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
-    fock   = make_shared<Matrix>(*coeffall % *fockao * *coeffall);
+    fock   = make_shared<Matrix>(*coeffall % *fockao  * *coeffall);
     fock_c = make_shared<Matrix>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only 1/2 exchange in the active space)
