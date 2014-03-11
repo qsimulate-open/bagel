@@ -140,7 +140,8 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
     // returns M(a,i) = (a u|v ka) * G(v u,i ki) ; where a is index of coeffa and i is active
     std::shared_ptr<ZMatrix> ___debug___closed_active_exchange_2rdm_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-
+    // returns M(a,i) = G^(1,2)_(kt i, kt i) (i is an index of coeffi, and t is active)
+    std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
 };
 
 }

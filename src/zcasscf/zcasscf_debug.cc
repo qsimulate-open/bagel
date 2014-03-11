@@ -183,12 +183,14 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
     cfockd->hermite();
 
-    // (1) G(1,1)_{ti,ti}
+    // (1) G(1,1)_(ti,ti)
     shared_ptr<ZMatrix> mitti = ___debug___closed_active_diagonal_hessian(coeffi, coefft, cfock, afock, qxr, verbose);
 
-    // (1.333) G(1,1)_{kt ki,ti}
+    // (1.333) G(1,1)_(kt ki,ti)
     shared_ptr<ZMatrix> kmitti = ___debug___closed_active_diagonal_hessian_kramers(coeffi, coefft, verbose);
 
+    // (1.667) G(1,2)_(kt i,kt i)
+    shared_ptr<ZMatrix> kmitit = ___debug___closed_active_offdiagonal_hessian_kramers(coeffi, coefft, verbose);
 
     shared_ptr<ZMatrix> offd1rdmx = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
     shared_ptr<ZMatrix> mititG12 = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
@@ -1666,4 +1668,35 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
     cout << "<<<<<<<<<<<< debug : G(1,1)(kt ki,t i) <<<<<<<<<<<<" << endl << endl;
 
   return kmitti;
+}
+
+
+shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
+  /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = [ (t ki|v k) - (t i|v ki) ] D(v kt) + [ (kt i|v ki) - (kt ki|v i) ] D(v t)
+                                          -   (i ki|v u)  G(t kt,v u)   + [ (t i|kt ki) - (t ki|kt i) ]
+  for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
+  assert(coefft->mdim() == nact_*2);
+
+  if (verbose)
+    cout << "<<<<<<<<<<<< debug : G(1,2)(kt i,kt i) <<<<<<<<<<<<" << endl;
+
+  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+  if (verbose)
+    rdm1->print("1rdm");
+  shared_ptr<ZMatrix> kmitit     = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft); 
+  shared_ptr<ZMatrix> offd1rdmx  = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
+  shared_ptr<ZMatrix> kmitit2rdm = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
+  if (verbose) {
+    kmitit->get_submatrix(morbital, norbital, 1, 1)->print("(t i|kt ki) - (t ki|kt i)");
+    kmitit2rdm->get_submatrix(morbital, norbital, 1, 1)->print("(v i| u ki) * G(u t, v kt)");
+    offd1rdmx->get_submatrix(morbital, norbital, 1, 1)->print("(t ki|v i) D(v kt) + ...");
+  }
+  *kmitit += (*offd1rdmx - *kmitit2rdm);
+
+  if (verbose) {
+    kmitit->get_submatrix(morbital, norbital, 1, 1)->print("G(1,2)_{kt i,kt i}");
+    cout << ">>>>>>>>>>>> debug : G(1,2)(kt i,kt i) >>>>>>>>>>>>" << endl << endl;
+  }
+
+  return kmitit2rdm;
 }
