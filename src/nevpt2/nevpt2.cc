@@ -434,8 +434,8 @@ void NEVPT2::compute() {
       shared_ptr<const Matrix> iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
       shared_ptr<const Matrix> jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
       Matrix mat_aa(*iablock % *jablock);
-      Matrix mat_aaR(nact_*nact_, nact_*nact_);
-      Matrix mat_aaK(nact_*nact_, nact_*nact_);
+      Matrix mat_aaR(nact_, nact_, true);
+      Matrix mat_aaK(nact_, nact_, true);
       dgemv_("N", nact_*nact_, nact_*nact_, 1.0,  rdm2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
       dgemv_("N", nact_*nact_, nact_*nact_, 1.0, kmat2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaK.data(), 1);
       const double norm  = (iv == jv ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
