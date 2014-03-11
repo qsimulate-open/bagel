@@ -893,14 +893,14 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
 
   // (5) form (aw|vb) where a runs fastest ; sort indices and contract with 2RDM
   shared_ptr<const ZMatrix> awvb = fullai->form_4index(fullia, 1.0);
-  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(coeffa->mdim()*coeffa->mdim(),coeffi->mdim()*coeffi->mdim());
   SMITH::sort_indices<0,3,2,1,0,1,1,1>(awvb->data(), intermed1->data(), coeffa->mdim(), coeffi->mdim(), coeffi->mdim(), coeffa->mdim());
   *intermed1 *= *(fci_->rdm2_av()); // stored as abtu
 
   // need to include metric for (aw|bv) ; contract with 2 RDM
   auto fullai_j = fullai->apply_J();
   shared_ptr<const ZMatrix> awbv = fullai_j->form_4index(fullai_j, 1.0);
-  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4); // abwv
+  shared_ptr<ZMatrix> intermed2 = make_shared<ZMatrix>(coeffa->mdim()*coeffa->mdim(),coeffi->mdim()*coeffi->mdim()); // abwv
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(awbv->data(), intermed2->data(), coeffa->mdim(), coeffi->mdim(), coeffa->mdim(), coeffi->mdim());
   shared_ptr<ZMatrix> rdmtmp = fci_->rdm2_av()->clone();
   SMITH::sort_indices<1,3,0,2,0,1,1,1>(fci_->rdm2_av()->data(), rdmtmp->data(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim(), coeffi->mdim());
@@ -1534,7 +1534,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_exchange_2rdm_kramers(shar
 
   // (5) compute (aw|vb) and contract
   shared_ptr<const ZMatrix> awvb = fullai->form_4index(fullia, 1.0);
-  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(nvirt_*nvirt_*4,nact_*nact_*4);
+  shared_ptr<ZMatrix> intermed1 = make_shared<ZMatrix>(coeffa->mdim()*coeffa->mdim(),coeffi->mdim()*coeffi->mdim());
   SMITH::sort_indices<0,3,2,1,0,1,1,1>(awvb->data(), intermed1->data(), coeffa->mdim(), coeffi->mdim(), coeffi->mdim(), coeffa->mdim()); // sorted to abvw
   *intermed1 *= *(fci_->rdm2_av()); // stored as abtu
 
