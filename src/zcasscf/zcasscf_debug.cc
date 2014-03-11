@@ -192,7 +192,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     // (1.667) G(1,2)_(kt i,kt i)
     shared_ptr<ZMatrix> kmitit = ___debug___closed_active_offdiagonal_hessian_kramers(coeffi, coefft, verbose);
 
-    *mitti += *kmitit;
+    *mitti += *kmitti + *kmitit;
     *mitti += *mitti->get_conjg(); // from symmetry
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
@@ -484,7 +484,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool off_diagonal) const {
+shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool off_diagonal, const bool diagonal) const {
   // returns Mat(a,i) = (ai|i'a')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -566,7 +566,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
       if (off_diagonal) {
         (*out)(a, i)  = (*aiai->get_conjg())(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip); //  (a i|ka ki)
         (*out)(a, i) -= (*aiai->get_conjg())(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i); // -(a ki|ka i)
-      } else {
+      } else if (!diagonal) {
         (*out)(a, i) += (*aiai)(a+coeffa->mdim()*i, ap+coeffa->mdim()*ip);
         (*out)(a, i) -= (*aiai)(a+coeffa->mdim()*ip, ap+coeffa->mdim()*i);
       }
@@ -1029,6 +1029,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_exchange(share
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (aa|iu) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
+  // for with_kramers Mat(a,i) = (a ka| ki u) * D(iu)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
   shared_ptr<const ZMatrix> rdm1t = (transform_rdm1())->transpose();
@@ -1124,6 +1125,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (au|ia) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
+  // for with_kramers, Mat(a,i) = (a i|u ka) * {^{A}D}_{u ki}
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
   shared_ptr<const ZMatrix> rdm1t = (transform_rdm1())->transpose();
@@ -1193,10 +1195,10 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
   DFock::factorize(dffulla);
   dffulla.front()->scale(dffulla.front()->fac()); // take care of the factor
   assert(dffulla.size() == 1);
-  shared_ptr<const RelDFFull> fullai = dffulla.front();
+  shared_ptr<const RelDFFull> fullardm = dffulla.front();
 
   // (5) form (au|ia) * {^{A}D}_{iu} where a runs fastest
-  shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullia, 1.0);
+  shared_ptr<const ZMatrix> aiia = fullardm->form_4index(fullia, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   if (with_kramers) {
     for (int a = 0; a != coeffa->mdim(); ++a) {
@@ -1381,7 +1383,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_2rdm_exchange(
 
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
-  // returns Mat(a,i) = (u ka|ai) * {^{A}D}_{u ki}  where a is an index of coeffa and i is active
+  // returns Mat(a,i) =  (a i|u ka) * D(u ki) where a is an index of coeffa and i is active (a t|u ka) * {^{A}D}_{u kt}
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
   shared_ptr<const ZMatrix> rdm1t = (transform_rdm1())->transpose();
@@ -1413,19 +1415,19 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_1rdm_contraction_
 
   // (2) half transform ; traditional on 2nd quantities ; J^-1 applied to RDM weighted
   list<shared_ptr<RelDFHalf>> half_complexi  = DFock::make_half_complex(dfdists, rrdmcoeff, irdmcoeff);
-  list<shared_ptr<RelDFHalf>> half_complexi2 = DFock::make_half_complex(dfdists, racoeff, iacoeff);
+  list<shared_ptr<RelDFHalf>> half_complexa = DFock::make_half_complex(dfdists, racoeff, iacoeff);
   for (auto& i : half_complexi)
     i = i->apply_J()->apply_J();
 
   // (3) split and factorize
   list<shared_ptr<RelDFHalf>> half_complex_facti; // density matrix weighted
-  list<shared_ptr<RelDFHalf>> half_complex_facti2; // traditional
-  for (auto& i : half_complexi2) {
+  list<shared_ptr<RelDFHalf>> half_complex_facta; // traditional
+  for (auto& i : half_complexa) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(false);
-    half_complex_facti2.insert(half_complex_facti2.end(), tmp.begin(), tmp.end());
+    half_complex_facta.insert(half_complex_facta.end(), tmp.begin(), tmp.end());
   }
-  half_complexi2.clear();
-  DFock::factorize(half_complex_facti2);
+  half_complexa.clear();
+  DFock::factorize(half_complex_facta);
   for (auto& i : half_complexi) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(false);
     half_complex_facti.insert(half_complex_facti.end(), tmp.begin(), tmp.end());
@@ -1433,7 +1435,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_1rdm_contraction_
   half_complexi.clear();
   DFock::factorize(half_complex_facti);
 
-  // (4) compute density matrix weighted (gamma|xy)
+  // (4) compute  density matrix weighted (gamma|xy)
   list<shared_ptr<RelDFFull>> dffulla;
   for (auto& i : half_complex_facti)
     dffulla.push_back(make_shared<RelDFFull>(i, racoeff, iacoeff));
@@ -1444,21 +1446,21 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_1rdm_contraction_
 
   // (4.5) compute traditional (gamma|xy)
   list<shared_ptr<RelDFFull>> dffulla2;
-  for (auto& i : half_complex_facti2)
+  for (auto& i : half_complex_facta)
     dffulla2.push_back(make_shared<RelDFFull>(i, ricoeff, iicoeff));
   DFock::factorize(dffulla2);
   dffulla2.front()->scale(dffulla2.front()->fac()); // take care of the factor
   assert(dffulla2.size() == 1);
   shared_ptr<const RelDFFull> fullai = dffulla2.front();
 
-  // (5) form (au|ia) * {^{A}D}_{iu} where a runs fastest
-  shared_ptr<const ZMatrix> iaai = fullrdma->form_4index(fullai, 1.0);
+  // (5) form (ai|u ka) * {^{A}D}_{u ki} where a runs fastest
+  shared_ptr<const ZMatrix> aiia = fullai->form_4index(fullrdma, 1.0);
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
   for (int a = 0; a != coeffa->mdim(); ++a) {
     const int ap = (a < coeffa->mdim()/2) ? a+coeffa->mdim()/2 : a-coeffa->mdim()/2;
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
-      (*out)(a, i) = (*iaai)(ip+coeffi->mdim()*ap, a+coeffa->mdim()*i); // <- only difference from the Coulomb version
+      (*out)(a, i) = (*aiia)(a+coeffa->mdim()*i, ip+coeffi->mdim()*ap); // <- only difference from the Coulomb version
     }
   }
 
@@ -1542,7 +1544,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_exchange_2rdm_kramers(shar
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1) kramers
-      (*out)(a, i) = (*intermed1)(a+coeffa->mdim()*ap, i+coeffi->mdim()*ip);
+      (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, i+coeffi->mdim()*ip);
     }
   }
 
