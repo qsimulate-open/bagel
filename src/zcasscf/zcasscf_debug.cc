@@ -192,9 +192,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     // (1.667) G(1,2)_(kt i,kt i)
     shared_ptr<ZMatrix> kmitit = ___debug___closed_active_offdiagonal_hessian_kramers(coeffi, coefft, verbose);
 
-    shared_ptr<ZMatrix> offd1rdmx = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
-    shared_ptr<ZMatrix> mititG12 = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
-    *kmitti += (*offd1rdmx - *mititG12);
+    *mitti += *kmitit;
     *mitti += *mitti->get_conjg(); // from symmetry
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
@@ -914,11 +912,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
     for (int i = 0; i != coeffi->mdim(); ++i) {
       const int ip = (i < coeffi->mdim()/2) ? i+coeffi->mdim()/2 : i-coeffi->mdim()/2;
       // contribution from G(1,1)
-      if (closed_active) {
-        (*out)(a, i) = (*intermed1->get_conjg())(a+coeffa->mdim()*ap, i+coeffi->mdim()*ip);
-      } else {
+      if (!closed_active) 
         (*out)(a, i) = (*intermed1)(ap+coeffa->mdim()*a, ip+coeffi->mdim()*i);
-      }
 
       // contribution from G(1,2)
       if (closed_active) {
@@ -1698,5 +1693,5 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramer
     cout << ">>>>>>>>>>>> debug : G(1,2)(kt i,kt i) >>>>>>>>>>>>" << endl << endl;
   }
 
-  return kmitit2rdm;
+  return kmitit;
 }
