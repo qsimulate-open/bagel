@@ -184,15 +184,16 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
     cfockd->hermite();
 
     // (1) G(1,1)_{ti,ti}
-    shared_ptr<ZMatrix> mitti = ___debug___closed_active_diagonal_hessian(coeffi, coefft, cfock, afock, qxr);
+    shared_ptr<ZMatrix> mitti = ___debug___closed_active_diagonal_hessian(coeffi, coefft, cfock, afock, qxr, verbose);
+
+    // (1.333) G(1,1)_{kt ki,ti}
+    shared_ptr<ZMatrix> kmitti = ___debug___closed_active_diagonal_hessian_kramers(coeffi, coefft, verbose);
 
 
-
-    //  (tb ib|t i) - (tb i|t ib)
-    shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true);
     shared_ptr<ZMatrix> offd1rdmx = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
     shared_ptr<ZMatrix> mititG12 = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
     *kmitti += (*offd1rdmx - *mititG12);
+    *mitti += *mitti->get_conjg(); // from symmetry
 
     cout << ">>>>>>>>>>>>>>> debug >>>>>>>>>>>>>>" << endl;
     cout << "closed-active diagonal hessian value" << endl;
@@ -1629,6 +1630,18 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
   if (verbose)
     cout << ">>>>>>>>>>>> debug : G(1,1)(kt ki,t i) >>>>>>>>>>>>" << endl;
 
+  shared_ptr<ZMatrix> kmitti1rdm  = ___debug___closed_active_diagonal_1rdm_contraction_exchange(coeffi, coefft); // (i t|u ki) * D(u kt)
+  shared_ptr<ZMatrix> kmiitt1rdm  = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // (i ki| kt u) * D(tu) ; apears to be 0
+  shared_ptr<ZMatrix> kmitti1rdmb = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true); // (i u|kt ki) * D(t u) ; appears to be 0
+  if(verbose) {
+    kmitti1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(u ki|i t) * D(u kt)");
+    kmitti1rdmb->get_submatrix(morbital, norbital, 1, 1)->print("(i t|u ki) * D(u kt)");
+    kmiitt1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt u) * D(tu)");
+    kmitti1rdm->print("(u ki|i t) * D(u kt)");
+    kmitti1rdmb->print("(i t|u ki) * D(u kt)");
+    kmiitt1rdm->print("(i ki|kt u) * D(tu)");
+  }
+
   shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft); // (i t|kt ki)
   shared_ptr<ZMatrix> kmiitt = ___debug___diagonal_integrals_coulomb_kramers(coeffi, coefft);  // (i ki|kt t) ; appears to be 0
   if (verbose) {
@@ -1637,6 +1650,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
    kmitti->print("(i t|kt ki)");
   }
   *kmitti -= *kmiitt;
+  *kmitti += (*kmitti1rdm - *kmitti1rdmb + *kmiitt1rdm); // TODO : still short one coulomb term, but it is probably 0 DOUBLE CHECK!
 
   shared_ptr<ZMatrix> krdm2coulomb = ___debug___diagonal_integrals_coulomb_active_kramers(coeffi, coefft, true); // appears 0
   shared_ptr<ZMatrix> krdm2exch    = ___debug___closed_active_exchange_2rdm_kramers(coeffi, coefft);
@@ -1645,8 +1659,10 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
     krdm2exch->get_submatrix(morbital, norbital, 1, 1)->print("(i u|v ki)*G(v u,t kt)");
     krdm2coulomb->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|v u)*G(v u,t kt)");
   }
+  *kmitti += (*krdm2coulomb - *krdm2exch);
 
   if (verbose)
+    kmitti->get_submatrix(morbital, norbital, 1, 1)->print("G(1,1)_{kt ki,t i}");
     cout << "<<<<<<<<<<<< debug : G(1,1)(kt ki,t i) <<<<<<<<<<<<" << endl << endl;
 
   return kmitti;
