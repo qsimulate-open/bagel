@@ -29,8 +29,8 @@
 using namespace std;
 using namespace bagel;
 
-static const int morbital = 2;
-static const int norbital = 3;
+static const int morbital = 1;
+static const int norbital = 0;
 
 void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   // currently transforming n and mth orbitals;
