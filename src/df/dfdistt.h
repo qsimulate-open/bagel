@@ -32,8 +32,7 @@
 namespace bagel {
 
 /*
-    DFDistT is a slice of 3-index DF integrals. Distributed by the second and third index.
-    Note that the date is tranposed!
+    DFDistT is a 3-index DF integral object, which is distributed by the second and third indeices.
 */
 
 class DFDistT {
