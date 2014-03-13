@@ -1636,17 +1636,13 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
     kmitti1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(u ki|i t) * D(u kt)");
     kmitti1rdmb->get_submatrix(morbital, norbital, 1, 1)->print("(i t|u ki) * D(u kt)");
     kmiitt1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt u) * D(tu)");
-    kmitti1rdm->print("(u ki|i t) * D(u kt)");
-    kmitti1rdmb->print("(i t|u ki) * D(u kt)");
-    kmiitt1rdm->print("(i ki|kt u) * D(tu)");
   }
 
-  shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft); // (i t|kt ki)
+  shared_ptr<ZMatrix> kmitti = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, false, true); // (i t|kt ki)
   shared_ptr<ZMatrix> kmiitt = ___debug___diagonal_integrals_coulomb_kramers(coeffi, coefft);  // (i ki|kt t) ; appears to be 0
   if (verbose) {
    kmitti->get_submatrix(morbital, norbital, 1, 1)->print("(i t|kt ki)");
    kmiitt->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt t)");
-   kmitti->print("(i t|kt ki)");
   }
   *kmitti -= *kmiitt;
   *kmitti += (*kmitti1rdm - *kmitti1rdmb + *kmiitt1rdm); // TODO : still short one coulomb term, but it is probably 0 DOUBLE CHECK!
@@ -1654,7 +1650,6 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
   shared_ptr<ZMatrix> krdm2coulomb = ___debug___diagonal_integrals_coulomb_active_kramers(coeffi, coefft, true); // appears 0
   shared_ptr<ZMatrix> krdm2exch    = ___debug___closed_active_exchange_2rdm_kramers(coeffi, coefft);
   if (verbose) {
-    krdm2exch->print("krdm2exch",16);
     krdm2exch->get_submatrix(morbital, norbital, 1, 1)->print("(i u|v ki)*G(v u,t kt)");
     krdm2coulomb->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|v u)*G(v u,t kt)");
   }
@@ -1680,7 +1675,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramer
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   if (verbose)
     rdm1->print("1rdm");
-  shared_ptr<ZMatrix> kmitit     = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft); 
+  shared_ptr<ZMatrix> kmitit     = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true); 
   shared_ptr<ZMatrix> offd1rdmx  = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
   shared_ptr<ZMatrix> kmitit2rdm = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
   if (verbose) {
