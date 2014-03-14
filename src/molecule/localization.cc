@@ -247,15 +247,41 @@ void PMLocalization::common_init() {
   max_iter_ = input_->get<int>("max_iter", 50);
   thresh_ = input_->get<double>("thresh", 1.0e-6);
 
+  cout << endl << "  Localization threshold: " << setprecision(2) << setw(6) << scientific << thresh_ << endl << endl;
+
   S_ = make_shared<Overlap>(geom_);
 
-  vector<vector<int>> offsets = geom_->offsets();
+  string localization_type = input_->get<string>("type", "atomic");
+
   int nbasis = 0;
-  for(auto& atom : geom_->atoms()) {
-    const int start = nbasis;
-    nbasis +=  atom->nbasis();
-    if (start != nbasis)
-      atom_bounds_.emplace_back(start, nbasis);
+
+  if (localization_type == "atomic") {
+    for(auto& atom : geom_->atoms()) {
+      const int start = nbasis;
+      nbasis +=  atom->nbasis();
+      if (start != nbasis)
+        atom_bounds_.emplace_back(start, nbasis);
+    }
+  }
+  else if (localization_type == "region") {
+    vector<int> sizes = input_->get_vector<int>("region_sizes");
+    int natoms = 0;
+    for (int& region : sizes) {
+      const int atomstart = natoms;
+      const int basisstart = nbasis;
+      for (int atom = atomstart; atom < atomstart + region; ++atom)
+        nbasis += geom_->atoms()[atom]->nbasis();
+
+      natoms += region;
+      if (basisstart != nbasis)
+        atom_bounds_.emplace_back(basisstart, nbasis);
+    }
+    if (natoms != geom_->natom()) {
+      throw logic_error("All atoms must be assigned to regions");
+    }
+  }
+  else {
+    throw logic_error("Unrecognized PM localization type");
   }
   assert(nbasis == geom_->nbasis());
 }
@@ -266,20 +292,20 @@ shared_ptr<Matrix> PMLocalization::localize_space(shared_ptr<const Matrix> coeff
 
   auto jacobi = make_shared<JacobiPM>(input_, out, 0, norb, S_, atom_bounds_);
 
-  cout << "iter               P                    dP" << endl;
-  cout << "------------------------------------------------------" << endl;
+  cout << "iteration            P_A^2                delta P_A^2" << endl;
+  cout << "---------------------------------------------------------" << endl;
 
   double P = calc_P(out, 0, norb);
 
-  cout << setw(3) << 0 << setw(22) << setprecision(10) << P << endl;
+  cout << setw(6) << 0 << fixed << setw(24) << setprecision(10) << P << endl;
 
   for(int i = 0; i < max_iter_; ++i) {
     jacobi->sweep();
 
     double tmp_P = calc_P(out, 0, norb);
     double dP = tmp_P - P;
-    cout << setw(3) << i+1 << setw(22) << setprecision(10) << tmp_P
-                           << setw(22) << setprecision(10) << dP << endl;
+    cout << setw(6) << i+1 << fixed << setw(24) << setprecision(10) << tmp_P
+                           << fixed << setw(24) << setprecision(10) << dP << endl;
     P = tmp_P;
     if (fabs(dP) < thresh_) {
       cout << "Converged!" << endl;
