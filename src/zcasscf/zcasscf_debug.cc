@@ -1573,7 +1573,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
    kmiitt->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt t)");
   }
   *kmitti -= *kmiitt;
-  *kmitti += (*kmitti1rdm - *kmitti1rdmb + *kmiitt1rdm); // TODO : still short one coulomb term, but it is probably 0 DOUBLE CHECK!
+  *kmitti += (*kmiitt1rdm - *kmitti1rdmb - *kmitti1rdm); // TODO : still short one coulomb term, but it is probably 0 DOUBLE CHECK!
 
   shared_ptr<ZMatrix> krdm2coulomb = ___debug___diagonal_integrals_coulomb_active_kramers(coeffi, coefft, true); // appears 0
   shared_ptr<ZMatrix> krdm2exch    = ___debug___diagonal_2rdm_contraction_exchange(coeffi, true);
