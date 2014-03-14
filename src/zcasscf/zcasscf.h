@@ -111,13 +111,13 @@ class ZCASSCF : public Method {
     // returns [x,t,u] = (xx|tu) (x is an index of coeffa, and coeffi should be active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [x,t,u] = (xu|tx) (x is an index of coeffa, and coeffi should be active)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool with_kramers = false) const;
     // returns [s,t,u,v] = (st|uv) (stuv are indicies of coeffi and coeffi should be active)
     std::shared_ptr<ZMatrix> ___debug___all_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffi) const;
     // returns [a,t] = (aa|vw) * G(vw,tt) (a is index of coeffa, and t is active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_coulomb(std::shared_ptr<const ZMatrix> coeffa) const;
     // returns [a,t] = (aw|va) * G(vw,tt) (a is index of coeffa, and t is active)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa) const;
+    std::shared_ptr<ZMatrix> ___debug___diagonal_2rdm_contraction_exchange(std::shared_ptr<const ZMatrix> coeffa, const bool with_kramers = false) const;
     // returns [a,t] = (ka a|vw) * G(vw,kt t) (a is index of coeffa, and t is active)
     std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi, const bool closed_active = false) const;
     // returns [a,t] = (ka w|v a) * G(vw,kt t) (a is index of coeffa, and t is active)
@@ -138,8 +138,6 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, const bool verbose = false) const;
     // returns M(i,t) = G^(1,2)_{kt ki, ti) (i is an index of coeffi, and t is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
-    // returns M(a,i) = (a u|v ka) * G(v u,i ki) ; where a is index of coeffa and i is active
-    std::shared_ptr<ZMatrix> ___debug___closed_active_exchange_2rdm_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // returns M(a,i) = G^(1,2)_(kt i, kt i) (i is an index of coeffi, and t is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
 };
