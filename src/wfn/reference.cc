@@ -38,12 +38,14 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const double en,
                      const vector<shared_ptr<RDM<1>>>& _rdm1, const vector<shared_ptr<RDM<2>>>& _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av)
- : geom_(g), coeff_(c), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
+ : geom_(g), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
-  if (coeff_)
-    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
+  if (c) {
+    mpi__->broadcast(const_pointer_cast<Coeff>(c)->data(), c->size(), 0);
+    coeff_ = c;
+  }
 
   for (auto& i : rdm1_)
     mpi__->broadcast(i->data(), i->size(), 0);

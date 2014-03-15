@@ -31,18 +31,22 @@ using namespace bagel;
 
 void NEVPT2::compute_rdm() {
   // rdm 1
-  rdm1_ = casscf_->fci()->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
+  {
+    auto tmp = casscf_->fci()->rdm1(istate_)->rdm1_mat(/*nclosed_*/0);
+    tmp->localize();
+    rdm1_ = tmp;
+  }
   // rdm 2
   {
-    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_);
+    auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
     shared_ptr<const RDM<2>> r2 = ref_->rdm2(istate_);
     SMITH::sort_indices<0,2,1,3,0,1,1,1>(r2->data(), tmp->data(), nact_, nact_, nact_, nact_);
     rdm2_ = tmp;
   }
   // rdm 3 and 4
   {
-    shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_);
-    shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_);
+    shared_ptr<Matrix> tmp3 = make_shared<Matrix>(nact_*nact_*nact_, nact_*nact_*nact_, true);
+    shared_ptr<Matrix> tmp4 = make_shared<Matrix>(nact_*nact_*nact_*nact_, nact_*nact_*nact_*nact_, true);
     shared_ptr<const RDM<3>> r3;
     shared_ptr<const RDM<4>> r4;
     tie(r3, r4) = casscf_->fci()->compute_rdm34(istate_);

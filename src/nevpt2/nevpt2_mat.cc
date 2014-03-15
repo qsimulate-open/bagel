@@ -34,7 +34,7 @@ void NEVPT2::compute_ints() {
   shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff_)->apply_J();
   // integrals (ij|kl) and <ik|jl>
   shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
-  auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_);
+  auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(ints->data(), tmp->data(), nact_, nact_, nact_, nact_);
   ints2_ = tmp;
 }
@@ -44,9 +44,11 @@ void NEVPT2::compute_kmat() {
   {
     auto kmat = make_shared<Matrix>(*fockact_c_ * *rdm1_);
     *kmat += Qvec(nact_, nact_, acoeff_, /*nclosed_*/0, casscf_->fci(), casscf_->fci()->rdm2(istate_));
+    kmat->localize();
 
     auto kmatp = make_shared<Matrix>(*kmat * (-1.0));
     *kmatp += *fockact_ * 2.0;
+    kmatp->localize();
 
     kmat_ = kmat;
     kmatp_ = kmatp;
@@ -60,18 +62,18 @@ void NEVPT2::compute_kmat() {
           for (int bp = 0; bp != nact_; ++bp)
             for (int ap = 0; ap != nact_; ++ap)
               for (int c = 0; c != nact_; ++c) {
-                 out->element(ap+nact_*bp, a+nact_*b) += rdm2->element(ap+nact_*bp, c+nact_*b) * fock->element(c, a)
-                                                       + rdm2->element(ap+nact_*bp, a+nact_*c) * fock->element(c, b);
-              for (int d = 0; d != nact_; ++d)
-                for (int e = 0; e != nact_; ++e) {
-                  out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(c+nact_*d, e+nact_*a)
-                                                         * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
-                                                           +sign*(b == e ? rdm2->element(ap+nact_*bp, d+nact_*c) : 0.0))
-                                                        +  0.5 * ints2_->element(c+nact_*d, e+nact_*b)
-                                                         * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
-                                                           +sign*(a == e ? rdm2->element(ap+nact_*bp, c+nact_*d) : 0.0));
-                }
-            }
+                out->element(ap+nact_*bp, a+nact_*b) += rdm2->element(ap+nact_*bp, c+nact_*b) * fock->element(c, a)
+                                                      + rdm2->element(ap+nact_*bp, a+nact_*c) * fock->element(c, b);
+                for (int d = 0; d != nact_; ++d)
+                  for (int e = 0; e != nact_; ++e) {
+                    out->element(ap+nact_*bp, a+nact_*b) += 0.5 * ints2_->element(c+nact_*d, e+nact_*a)
+                                                           * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), d+nact_*(b+nact_*c))
+                                                             +sign*(b == e ? rdm2->element(ap+nact_*bp, d+nact_*c) : 0.0))
+                                                          +  0.5 * ints2_->element(c+nact_*d, e+nact_*b)
+                                                           * (sign* 2.0* rdm3->element(ap+nact_*(bp+nact_*e), a+nact_*(d+nact_*c))
+                                                             +sign*(a == e ? rdm2->element(ap+nact_*bp, c+nact_*d) : 0.0));
+                  }
+              }
       return out;
     };
 
@@ -151,8 +153,8 @@ void NEVPT2::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // B matrices
   {
-    shared_ptr<Matrix> bmat2 = make_shared<Matrix>(nact_*nact_*nact_, nact_);
-    shared_ptr<Matrix> bmat2t = make_shared<Matrix>(nact_*nact_*nact_, nact_);
+    shared_ptr<Matrix> bmat2 = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
+    shared_ptr<Matrix> bmat2t = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
     for (int a = 0; a != nact_; ++a)
       for (int cp = 0; cp != nact_; ++cp)
         for (int bp = 0; bp != nact_; ++bp)
@@ -172,8 +174,8 @@ void NEVPT2::compute_abcd() {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // C matrices
   {
-    shared_ptr<Matrix> cmat2 = make_shared<Matrix>(nact_, nact_*nact_*nact_);
-    shared_ptr<Matrix> cmat2t = make_shared<Matrix>(nact_, nact_*nact_*nact_);
+    shared_ptr<Matrix> cmat2 = make_shared<Matrix>(nact_, nact_*nact_*nact_, true);
+    shared_ptr<Matrix> cmat2t = make_shared<Matrix>(nact_, nact_*nact_*nact_, true);
     // <d c+ b+ a>
     shared_ptr<Matrix> s2rdm2 = ardm2_->clone();
     for (int a = 0; a != nact_; ++a)
