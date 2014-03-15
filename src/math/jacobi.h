@@ -49,7 +49,7 @@ class Jacobi_base {
     const int nstart_;
     const int norb_;
 
-    virtual void subsweep(std::vector<std::pair<int, int>> pairlist) = 0;
+    virtual void subsweep(std::vector<std::pair<int, int>>& pairlist) = 0;
 
   public:
     Jacobi_base(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {
@@ -76,7 +76,7 @@ class JacobiDiag : public Jacobi_base {
   protected:
     std::shared_ptr<Matrix> A_; // The matrix to be diagonalized
 
-    void subsweep(std::vector<std::pair<int,int>> pairlist) override;
+    void subsweep(std::vector<std::pair<int,int>>& pairlist) override;
 
   public:
     JacobiDiag(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> A, std::shared_ptr<Matrix> Q) : Jacobi_base(input, Q), A_(A) {};
@@ -89,7 +89,7 @@ class JacobiPM : public Jacobi_base {
     std::shared_ptr<Matrix> S_;
     std::vector<std::pair<int, int>> atom_bounds_;
 
-    void subsweep(std::vector<std::pair<int,int>> pairlist) override;
+    void subsweep(std::vector<std::pair<int,int>>& pairlist) override;
 
   public:
     JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds) :

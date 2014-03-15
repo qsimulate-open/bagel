@@ -42,7 +42,7 @@ void Jacobi_base::sweep() {
   }
 }
 
-void JacobiDiag::subsweep(vector<pair<int,int>> pairlist) {
+void JacobiDiag::subsweep(vector<pair<int,int>>& pairlist) {
   for (auto& ipair : pairlist) rotate(ipair.first, ipair.second);
 }
 
@@ -89,7 +89,7 @@ void JacobiDiag::rotate(const int k, const int l) {
   Q_->rotate(k, l, acos(c));
 }
 
-void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
+void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   auto mos = make_shared<Matrix>(nbasis_, norb_);
   auto P_A = make_shared<Matrix>(norb_, norb_);
 
@@ -106,8 +106,8 @@ void JacobiPM::subsweep(vector<pair<int,int>> pairlist) {
                               Q_->element_ptr(ibounds.first, nstart_), nbasis_, 0.0, P_A->data(), norb_);
 
     for (int ipair = 0; ipair < npairs; ++ipair) {
-      const int& kk = pairlist[ipair].first - nstart_;
-      const int& ll = pairlist[ipair].second - nstart_;
+      const int kk = pairlist[ipair].first - nstart_;
+      const int ll = pairlist[ipair].second - nstart_;
       const double Qkl_A = 0.5 * (P_A->element( kk, ll ) + P_A->element( ll, kk ));
       const double Qkminusl_A = P_A->element(kk, kk) - P_A->element(ll, ll);
 
