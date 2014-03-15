@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <type_traits>
+#include <src/parallel/scalapack.h>
 
 namespace ryan {
 
@@ -97,13 +98,52 @@ std::complex<bagel::Matrix> multiply (std::complex<bagel::Matrix> A, std::comple
 }
 
 std::complex<bagel::Matrix> inverse (std::complex<bagel::Matrix> S) {
-  bagel::Matrix S_Ri = S.real();
-  S_Ri.inverse();
-  bagel::Matrix Si_R = S.real() + (S.imag() * S_Ri * S.imag());
-  Si_R.inverse();
-  bagel::Matrix Si_I = S_Ri * S.imag() * Si_R;
-  Si_I.scale(-1.0);
-  std::complex<bagel::Matrix> out (Si_R, Si_I);
+  bagel::Matrix Sr = S.real();
+  bagel::Matrix Si = S.imag();
+  const double* sr = Sr.begin();
+  const double* si = Si.begin();
+
+  assert(Sr.ndim() == Sr.mdim());
+  const int n = Sr.ndim();
+  const int size = n*n;
+  assert(size == Sr.size());
+
+  std::complex<double>* data = (std::complex<double>*) std::malloc(size*sizeof(std::complex<double>));
+  std::complex<double>* I = (std::complex<double>*) std::malloc(size*sizeof(std::complex<double>));
+  int* ipiv = (int*) std::malloc(n*sizeof(int));
+  int info;
+
+  for (int i=0; i!=n; i++) {
+    for (int j=0; j!=n; j++) {
+      data[i*n+j].real(sr[i*n+j]);
+      data[i*n+j].imag(si[i*n+j]);
+      if (i==j) {
+        I[i*n+j] = 1.0;
+      } else {
+        I[i*n+j] = 0.0;
+      }
+    }
+  }
+
+  zgesv_( n, n, data, n, ipiv, I, n, info );
+
+  double* Ir = (double*) std::malloc(size*sizeof(double));
+  double* Ii = (double*) std::malloc(size*sizeof(double));
+  for (int i=0; i!=size; i++) {
+    Ir[i] = I[i].real();
+    Ii[i] = I[i].imag();
+  }
+  bagel::Matrix outr (n,n);
+  bagel::Matrix outi (n,n);
+  outr.copy_block(0,0,n,n,Ir);
+  outi.copy_block(0,0,n,n,Ii);
+  const std::complex<bagel::Matrix> out (outr, outi);
+
+  free(data);
+  free(I);
+  free(ipiv);
+  free(Ir);
+  free(Ii);
   return out;
 }
 
