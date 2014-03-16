@@ -8,16 +8,12 @@
 #define __SRC_INTEGRAL_ECP_ANG_PROJ_PROJ_H
 
 #include <iostream>
-#include <iomanip>
-#include <list>
 #include <cmath>
 #include <vector>
-#include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/bessel.hpp>
-#include <cassert>
+#include <complex>
 #include "mpreal.h"
 #include "src/math/comb.h"
-#include <complex>
 #include "src/integral/ecp/wigner3j_gen/wigner3j.h"
 #include "src/integral/carsphlist.h"
 
@@ -264,9 +260,9 @@ class SH {
     if (m == 0) {
       return coef * plm;
     } else if (m > 0) {
-      return std::pow(-1, m) * std::sqrt(2.0) * coef * plm * cos(am*phi);
+      return std::sqrt(2.0) * coef * plm * cos(am*phi);
     } else {
-      return std::pow(-1, m) * std::sqrt(2.0) * coef * plm * sin(am*phi);
+      return std::sqrt(2.0) * coef * plm * sin(am*phi);
     }
   }
 
@@ -363,7 +359,7 @@ class CartesianGauss {
 
 };
 
-class AngularProj {
+class ProjectionInt {
   protected:
 
     std::shared_ptr<const CartesianGauss> gauss_;
@@ -371,8 +367,8 @@ class AngularProj {
 
   public:
 
-    AngularProj(std::shared_ptr<const CartesianGauss> gauss, std::shared_ptr<const RealSH> sh) : gauss_(gauss), sh_(sh) {}
-    ~AngularProj() {}
+    ProjectionInt(std::shared_ptr<const CartesianGauss> gauss, std::shared_ptr<const RealSH> sh) : gauss_(gauss), sh_(sh) {}
+    ~ProjectionInt() {}
 
     double integrate3SHs(const int l1, const int m1, const int l2, const int m2, const int l3, const int m3) const {
       const double pi = static_cast<double>(atan(1.0) * 4.0);
@@ -398,10 +394,10 @@ class AngularProj {
 
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const {
       std::vector<std::pair<double, int>> usp;
-      std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
+//    std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
       std::array<int, 2> lm = {lm1.first, lm1.second};
       std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
-      std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
+//    std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       int cnt = 0;
       int nonzero = 0;
       for (int lz = 0; lz <= lm1.first; ++lz) {
@@ -420,7 +416,7 @@ class AngularProj {
 
       lm = {lm2.first, lm2.second};
       sphusp = std::make_shared<SphUSP>(lm);
-      std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
+//    std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       cnt = 0;
       nonzero = 0;
       for (int lz = 0; lz <= lm2.first; ++lz) {
@@ -430,7 +426,7 @@ class AngularProj {
           if (coeff != 0.0) {
             nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
-            std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
+//          std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
           ++cnt;
@@ -483,12 +479,11 @@ class AngularProj {
 
     }
 
-    double integrate(const double r) const {
+    double compute(const double r) const {
       const double pi = static_cast<double>(atan(1.0) * 4.0);
       std::array<double, 3> AB;
       for (int i = 0; i != 3; ++i) AB[i] = sh_->centre(i) - gauss_->centre(i);
       const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
-      std::cout << "Distance between centres A and B =   " << dAB << std::endl;
       if (dAB == 0) {
         const std::pair<int, int> lm1 = std::make_pair<int, int>(0, 0);
         const std::pair<int, int> lm2 = std::make_pair<int, int>(sh_->angular_momentum(0), sh_->angular_momentum(1));
@@ -507,18 +502,18 @@ class AngularProj {
         Comb comb;
         double ans = 0.0;
         for (int kx = 0; kx != nx+1; ++kx) {
-          std::cout << "kx = " << kx << std::endl;
+//        std::cout << "kx = " << kx << std::endl;
           const double ckx = comb.c(nx, kx);
           for (int ky = 0; ky != ny+1; ++ky) {
-            std::cout << "ky = " << ky << std::endl;
+//          std::cout << "ky = " << ky << std::endl;
             const double cky = comb.c(ny, ky);
             for (int kz = 0; kz != nz+1; ++kz) {
-              std::cout << "kz = " << kz << std::endl;
+//            std::cout << "kz = " << kz << std::endl;
               const double ckz = comb.c(nz, kz);
               const int lk = kx + ky + kz;
               double sld = 0.0;
               for (int ld = 0; ld != lnu+1; ++ld) {
-                std::cout << "lambda =  " << ld << std::endl;
+//              std::cout << "lambda =  " << ld << std::endl;
                 double smu = 0.0;
                 for (int m = 0; m != 2 * ld + 1; ++m) {
                   const int mu = m - ld;
@@ -530,8 +525,8 @@ class AngularProj {
                 }
                 const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
                 const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-                std::cout << "sbessel  = " << sbessel << std::endl;
-                std::cout << "exponential = " << exponential.toDouble() << std::endl;
+//              std::cout << "sbessel  = " << sbessel << std::endl;
+//              std::cout << "exponential = " << exponential.toDouble() << std::endl;
                 sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
               }
               ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
@@ -540,73 +535,6 @@ class AngularProj {
         }
         return ans * 4.0 * pi;
       }
-    }
-
-};
-
-class GaussOntoSph {
-  protected:
-
-  public:
-    GaussOntoSph() {}
-    ~GaussOntoSph() {}
-
-    double compute_c(const int l, const int m, const int lx, const int ly, const int lz) {
-      const int am = fabs(m);
-      const int j = static_cast<int>(0.5*(lx + ly - am));
-      if (lx + ly - am - 2*j != 0) {
-        return 0.0;
-      } else {
-        Factorial fact;
-        mpreal t1, t2, t3;
-        const int lmam = l - am;
-        t1 = fact.compute(2*lx) * fact.compute(2*ly) * fact.compute(2*lz) * fact.compute(l) * fact.compute(lmam);
-        t1 /= (fact.compute(2*l) * fact.compute(lx) * fact.compute(ly) * fact.compute(lz) * fact.compute(l + am));
-        t1 = sqrt(t1) / pow(2, l) / fact.compute(l);
-        Comb comb;
-        const mpreal zero = "0.0";
-        mpreal c = zero;
-        for (int i = 0; i != lmam/2 + 1; ++i) {
-          if (j < 0 || j > i || i > l) {
-            t2 = zero;
-          } else {
-            t2 = static_cast<mpreal>(comb.c(l, i) * comb.c(i, j) * pow(-1, i) * fact.compute(2*l - 2*i)/ fact.compute(lmam - 2*i));
-          }
-          for (int k = 0; k != j+1; ++k) {
-            if (k < j || lx - 2*k < 0 || lx - 2*k < am) {
-              t3 = zero;
-            } else {
-              t3 = static_cast<mpreal>(comb.c(j, k) * comb.c(am, lx - 2*k) * pow(-1, 0.5*(am - lx + 2*k)));
-            }
-            c += t1 * t2 * t3;
-          }
-        }
-        return c.toDouble();
-      }
-    }
-
-    std::list<std::shared_ptr<CartesianGauss>> sphcar(std::array<double, 3> centre, const int l, const int m) {
-      std::list<std::shared_ptr<CartesianGauss>> gauss;
-      for (int i = 0; i != l+1; ++i) {
-        for (int j = 0; j != l+1; ++j) {
-          const int k = l - i - j;
-          if (k >= 0) {
-            const double c = compute_c(l, m, i, j, k);
-//          std::cout << "(lm)(ijk) = (" << l << m << ") (" << i << j << k << ")    c = " << c << std::endl;
-            if (c > 1e-13) {
-              std::array<int, 3> ang = {i, j, k};
-              gauss.push_back(std::make_shared<CartesianGauss>(0.0, ang, centre));
-            }
-          }
-        }
-      }
-      return gauss;
-    }
-
-    void angular_integral(const int a, const int b, const int c, const int ld, const int l, const int m) {
-       // int{ylm * ypq * x^a * y^b * z^c} = C * int{x^(r+u+a) * y^(s+v+b) * z^(t+w+c)}
-       // int{x^i * y^j * z^k} = 0 if i, j, or k odd
-       //                      = (i-1)!!(j-1)!!(k-1)!!(i+j+k+1)!! if i, j, or k even
     }
 
 };

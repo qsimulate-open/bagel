@@ -10,7 +10,6 @@
 #include "proj.h"
 
 using namespace mpfr;
-using namespace boost;
 
 template<typename T, typename... Value>
 class Radial_Int {
@@ -37,8 +36,8 @@ class Radial_Int {
     void integrate() {
       double ans = 0.0;
       double previous = 0.0;
+      int ngrid = 31;
       for (int iter = 0; iter != max_iter_; ++iter) {
-        int ngrid = 31;
         GaussChebyshev2nd(ngrid);
         vector<mpreal> r;
         transform_Becke(r);
@@ -48,29 +47,31 @@ class Radial_Int {
           ans += (function_.compute(it) * w_[cnt]).toDouble();
           ++cnt;
         }
-        if (iter != 0) {
-          const double error = ans - previous;
-          if (error < thresh_int_) {
-            break;
-            std::cout << "Integration converged..." << std::endl;
-            std::cout << "Radial integral = " << ans << std::endl;
-          } else if (iter == max_iter_-1) {
-            std::cout << "Max iteration exceeded..." << std::endl;
-            break;
-          }
-          previous = ans;
-          x_.clear();
-          w_.clear();
-          ngrid += 30;
+        const double error = ans - previous;
+        std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
+        if (error < thresh_int_ && iter != 0) {
+          std::cout << "Integration converged..." << std::endl;
+          std::cout << "Radial integral = " << ans << std::endl;
+          break;
+        } else if (iter == max_iter_-1) {
+          std::cout << "Max iteration exceeded..." << std::endl;
         }
+        previous = ans;
+        x_.clear();
+        w_.clear();
+        ngrid *= 2;
       }
     }
 
+    void transform_Log3(vector<mpreal>& r) {
+
+    }
+
     void transform_Becke(vector<mpreal>& r) {
-      const double BSradius = 5.0;
+      const double alpha = 1.8;
       const mpreal one = "1.0";
       for (auto& it : x_) {
-        r.push_back(static_cast<mpreal>(BSradius * (one + it) / (one - it)));
+        r.push_back(static_cast<mpreal>(alpha * (one + it) / (one - it)));
       }
     }
 
@@ -78,7 +79,7 @@ class Radial_Int {
       const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       for (int i = 1; i != ngrid; ++i) {
         x_.push_back(static_cast<mpreal>(cos(i*pi/(ngrid+1))));
-        w_.push_back(static_cast<mpreal>(pi * pow(sin(i*pi/(ngrid+1)), 2) / (ngrid+1)));
+        w_.push_back(static_cast<mpreal>(pi * sin(i*pi/(ngrid+1)) * sin(i*pi/(ngrid+1)) / (ngrid+1)));
       }
     }
 

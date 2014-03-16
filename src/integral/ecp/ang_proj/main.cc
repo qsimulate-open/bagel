@@ -4,7 +4,8 @@
 //
 
 
-#include "proj.h"
+#include "radial.h"
+#include "test.h"
 //#include "src/integral/carsphlist.h"
 
 using namespace std;
@@ -64,24 +65,39 @@ for (int iz = 0; iz <= maxl; ++iz) {
 #endif
 
 #if 1
-  std::array<double, 3> centreB = {0.0, 0.0, 0.0};
-  std::array<int, 2> lm = {1, 0};
+  std::array<double, 3> centreB = {0.0, 0.0, 1.420616};
+  std::array<int, 2> lm = {0, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
 
-  std::array<double, 3> centreA = {0.0, 0.0, 0.0};
-  std::array<int, 3> angular_momentum = {0, 0, 1};
-  const double alpha = 0.0;
-  std::shared_ptr<CartesianGauss> cargauss = std::make_shared<CartesianGauss>(alpha, angular_momentum, centreA);
-  cargauss->print();
+  std::array<double, 3> centreA = {0.0, 0.0, 0.305956};
+  std::array<int, 3> angular_momentumA = {0, 0, 0};
+  const double alphaA = 1.0;
+  std::shared_ptr<CartesianGauss> cargaussA = std::make_shared<CartesianGauss>(alphaA, angular_momentumA, centreA);
+  cargaussA->print();
 
-  AngularProj proj(cargauss, rsh);
-  cout << "Now integrate... " << endl;
-  const double integral = proj.integrate(1.0);
-  cout << " Ans = " << integral << endl;
+  std::array<double, 3> centreC = {0.0, 0.0, 0.305956};
+  std::array<int, 3> angular_momentumC = {0, 0, 0};
+  const double alphaC = 1.0;
+  std::shared_ptr<CartesianGauss> cargaussC = std::make_shared<CartesianGauss>(alphaC, angular_momentumC, centreC);
+  cargaussC->print();
+
+  const double r = 1.0;
+  cout << " r  = " << r << endl;
+
+  std::shared_ptr<ProjectionInt> projAB = std::make_shared<ProjectionInt>(cargaussA, rsh);
+  const double int1 = projAB->compute(r);
+  cout << " < phi_A | lm_B >(r)  =  " << int1 << endl;
+
+  std::shared_ptr<ProjectionInt> projCB = std::make_shared<ProjectionInt>(cargaussA, rsh);
+  const double int2 = projCB->compute(r);
+  cout << " < phi_C | lm_B >(r)  =  " << int2 << endl;
 
   cout << endl;
+  cout << " < phi_A | lm_B > < lm_B | phi_C >(r) =  " << int1 * int2 << endl;
+#endif
 
+#if 0
   const int lp = 3;
   for (int i = 0; i <= 2*lp; ++i) {
     const int mp = i - lp;
@@ -91,14 +107,25 @@ for (int iz = 0; iz <= maxl; ++iz) {
 //  sphusp->print();
 
   }
-#endif
   cout << "***  TEST INTEGRATION ***" << endl;
   std::array<int, 3> ijk = {1, 4, 2};
   std::pair<int, int> lm1 = std::make_pair(4, 2);
   std::pair<int, int> lm2 = std::make_pair(3, 1);
-  const double ans = proj.integrate2SH1USP(lm1, lm2, ijk);
+  const double ans = projAB.integrate2SH1USP(lm1, lm2, ijk);
   cout << "int_(lm1 * lm2 * xyz) = " << ans << endl;
+#endif
 
+  cout << " Test Radial Integration " << endl;
+  const int max_iter = 100;
+  const double thresh_int = 10e-12;
+  const double exp = 100000;
+  Radial_Int<Gaussian_Int, const double> radial(max_iter, thresh_int, exp);
+  const double pi = static_cast<double>(atan(1.0) * 4.0);
+  cout << "Analytic = " << std::sqrt(pi / exp) / 2.0 << endl;
+
+  cout << " --- " << endl;
+  std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projs(projAB, projCB);
+  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(max_iter, thresh_int, projs);
 
   return 0;
 
