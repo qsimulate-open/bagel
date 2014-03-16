@@ -172,7 +172,6 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
   // form natural orbitals
-  // JEB :  cout << "presently forming natural orbitals via diagonalization" << endl;
   unique_ptr<double[]> eig(new double[nact_*2]);
   auto tmp = make_shared<ZMatrix>(*rdm1);
   tmp->diagonalize(eig.get());

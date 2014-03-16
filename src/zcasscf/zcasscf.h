@@ -140,6 +140,12 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
     // returns M(a,i) = G^(1,2)_(kt i, kt i) (i is an index of coeffi, and t is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
+    // returns M(a,a) = [ (t u|a a) - (t a|a u) ] D(t u) (a is an index of coeffa and tu are active)
+    std::shared_ptr<ZMatrix> ___debug___active_fock(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> rdm1) const;
+    // returns M(t,t) = G(t u,v w) (a u|v w) (tuvw are active)
+    std::shared_ptr<ZMatrix> ___debug___active_qvec_byhand(std::shared_ptr<const ZMatrix> coefft) const;
+    // returns M(a,i) = (a i|a i) (where a is an index of coeffa and i is an index of coeffi)
+    std::shared_ptr<ZMatrix> ___debug___offdiagonal_exchange_integrals(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
 };
 
 }
