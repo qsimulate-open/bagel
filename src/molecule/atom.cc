@@ -34,7 +34,8 @@ using namespace bagel;
 
 static const AtomMap atommap_;
 
-Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux)
+Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
+           std::shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
 
@@ -48,6 +49,10 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   position_ = inp->get_array<double,3>("xyz");
 
   for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
+
+  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
 
   if (name_ == "q") {
     atom_charge_ = inp->get<double>("charge");
@@ -276,7 +281,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
         vector<vector<double>> cont(1, *iter);
         vector<pair<int, int>> cran(1, *citer);
-        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
+        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran, vector_potential_);
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
@@ -284,7 +289,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto& d : *iter) d *= scal;
       }
 
-      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges));
+      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges, vector_potential_));
       lmax_ = i;
     }
 

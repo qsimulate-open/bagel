@@ -70,6 +70,9 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
   }
   const bool angstrom = geominfo->get<bool>("angstrom", false);
 
+  // static external magnetic field
+  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
+
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
   if (basisfile_ == "") {
@@ -89,7 +92,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
     }
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
@@ -115,7 +118,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
     } else {
       auto atoms = geominfo->get_child("geometry");
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_, true));
     }
   }
 
@@ -126,8 +129,6 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
   print_atoms();
 
-  // static external magnetic field
-  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   if (magnetic_field())
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
@@ -345,6 +346,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   external_ = o.external_;
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
+  magnetic_field_ = o.magnetic_field_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -365,7 +367,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
     } else {
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
@@ -380,7 +382,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_));
     } else {
       for (auto& a : o.atoms_)
         aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem));
@@ -496,7 +498,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (atomlist) {
       for (auto& i : *atomlist)
-        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
+        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_, true));
     } else {
       // in the molden case
       for (auto& i : atoms_)

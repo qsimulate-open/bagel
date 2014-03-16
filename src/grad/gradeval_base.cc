@@ -209,7 +209,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const array<sha
     if (!af->finite_nucleus()) continue;
     // construct nuclear shell
     const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
-    auto b2 = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+    auto b2 = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, af->vector_potential());
 
     // dummy shell
     auto b3 = make_shared<Shell>(af->spherical());
@@ -348,7 +348,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_pt
 
     // construct nuclear shell
     const double fac = - af->atom_charge()*pow(af->atom_exponent()/pi__, 1.5);
-    auto nshell = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)});
+    auto nshell = make_shared<Shell>(af->spherical(), af->position(), 0, vector<double>{af->atom_exponent()}, vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, af->vector_potential());
 
     // construct dummy shell
     auto dummy = make_shared<const Shell>(af->spherical());
