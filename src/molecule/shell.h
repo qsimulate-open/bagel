@@ -62,7 +62,6 @@ class Shell {
 
     // magnetism
     std::array<double,3> vector_potential_;
-    std::array<double,3> magnetic_field_;
 
   private:
     // serialization
@@ -131,8 +130,6 @@ class Shell {
 
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; };
-    double magnetic_field(const unsigned int i) const { return magnetic_field_[i]; }
-    const std::array<double,3>& magnetic_field() const { return magnetic_field_; };
 
     void init_relativistic();
 

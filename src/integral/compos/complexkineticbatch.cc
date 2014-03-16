@@ -80,12 +80,6 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
   const double A_Bx = basisinfo_[1]->vector_potential(0);
   const double A_By = basisinfo_[1]->vector_potential(1);
   const double A_Bz = basisinfo_[1]->vector_potential(2);
-  const double field_x = basisinfo_[0]->magnetic_field(0);
-  const double field_y = basisinfo_[0]->magnetic_field(1);
-  const double field_z = basisinfo_[0]->magnetic_field(2);
-  assert (basisinfo_[1]->magnetic_field(0)==field_x);
-  assert (basisinfo_[1]->magnetic_field(1)==field_y);
-  assert (basisinfo_[1]->magnetic_field(2)==field_z);
 
   for (int ii = 0; ii != prim0_ * prim1_; ++ii) {
     // Perform VRR
@@ -202,18 +196,18 @@ void ComplexKineticBatch::perform_VRR(complex<double>* intermediate) {
                 current_data[cnt] = -Tx * Sy * Sz;
                 current_data[cnt] -= Sx * Ty * Sz;
                 current_data[cnt] -= Sx * Sy * Tz;
-                current_data[cnt] += 0.25 * (field_y * field_y + field_z * field_z) * tx * Sy * Sz;
-                current_data[cnt] += 0.25 * (field_z * field_z + field_x * field_x) * Sx * ty * Sz;
-                current_data[cnt] += 0.25 * (field_x * field_x + field_y * field_y) * Sx * Sy * tz;
-                current_data[cnt] -= 0.5 * field_x * field_y * ox * oy * Sz;
-                current_data[cnt] -= 0.5 * field_y * field_z * Sx * oy * oz;
-                current_data[cnt] -= 0.5 * field_z * field_x * ox * Sy * oz;
-                current_data[cnt] += imag * field_z * dx * oy * Sz;
-                current_data[cnt] -= imag * field_y * dx * Sy * oz;
-                current_data[cnt] += imag * field_x * Sx * dy * oz;
-                current_data[cnt] -= imag * field_z * ox * dy * Sz;
-                current_data[cnt] += imag * field_y * ox * Sy * dz;
-                current_data[cnt] -= imag * field_x * Sx * oy * dz;
+                current_data[cnt] += 0.25 * (magnetic_field_[1] * magnetic_field_[1] + magnetic_field_[2] * magnetic_field_[2]) * tx * Sy * Sz;
+                current_data[cnt] += 0.25 * (magnetic_field_[2] * magnetic_field_[2] + magnetic_field_[0] * magnetic_field_[0]) * Sx * ty * Sz;
+                current_data[cnt] += 0.25 * (magnetic_field_[0] * magnetic_field_[0] + magnetic_field_[1] * magnetic_field_[1]) * Sx * Sy * tz;
+                current_data[cnt] -= 0.5 * magnetic_field_[0] * magnetic_field_[1] * ox * oy * Sz;
+                current_data[cnt] -= 0.5 * magnetic_field_[1] * magnetic_field_[2] * Sx * oy * oz;
+                current_data[cnt] -= 0.5 * magnetic_field_[2] * magnetic_field_[0] * ox * Sy * oz;
+                current_data[cnt] += imag * magnetic_field_[2] * dx * oy * Sz;
+                current_data[cnt] -= imag * magnetic_field_[1] * dx * Sy * oz;
+                current_data[cnt] += imag * magnetic_field_[0] * Sx * dy * oz;
+                current_data[cnt] -= imag * magnetic_field_[2] * ox * dy * Sz;
+                current_data[cnt] += imag * magnetic_field_[1] * ox * Sy * dz;
+                current_data[cnt] -= imag * magnetic_field_[0] * Sx * oy * dz;
                 current_data[cnt] *= 0.5;
                 ++cnt;
               }

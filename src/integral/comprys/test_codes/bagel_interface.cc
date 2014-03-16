@@ -130,13 +130,13 @@ vector<vector<double>> spherical_combinations (const int L, const bool convert) 
 }
 
 
-vector<pair<vector<int>,complex<double>>> get_comparison_ERI (const array<shared_ptr<const bagel::Shell>,4>& basisinfo) {
+vector<pair<vector<int>,complex<double>>> get_comparison_ERI (const array<shared_ptr<const bagel::Shell>,4>& basisinfo, const array<double,3> magnetic_field) {
 
   const bool normalize_basis = 0;
   const bool scale_input = 0;
   const bool orthogonalize = 0;
 
-  const vector<double> field = { basisinfo[0]->magnetic_field(0),  basisinfo[0]->magnetic_field(1), basisinfo[0]->magnetic_field(2) };
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
 #if 0
   cout << "Magnetic field:  { ";
   for (int i=0; i!=3; i++) {
@@ -145,12 +145,6 @@ vector<pair<vector<int>,complex<double>>> get_comparison_ERI (const array<shared
     else cout << " }" << endl;
   }
 #endif
-
-  for (int i=0; i!=3; i++) {
-    for (int j=0; j!=3; j++) {
-      assert (basisinfo[i]->magnetic_field(j) == basisinfo[i+1]->magnetic_field(j));
-    }
-  }
 
   // Declare vectors to be used below
   vector<double> positions = {};
@@ -321,18 +315,13 @@ vector<pair<vector<int>,complex<double>>> get_comparison_ERI (const array<shared
 
 }
 
-vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol) {
+vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol, const array<double,3> magnetic_field) {
 
   const bool normalize_basis = 0;
   const bool scale_input = 0;
   const bool orthogonalize = 0;
 
-  const vector<double> field = { basisinfo[0]->magnetic_field(0),  basisinfo[0]->magnetic_field(1), basisinfo[0]->magnetic_field(2) };
-
-  for (int j=0; j!=3; j++) {
-    assert (basisinfo[0]->magnetic_field(j) == basisinfo[1]->magnetic_field(j));
-  }
-
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
 
   // Declare vectors to be used below
   vector<double> positions = {};
@@ -506,18 +495,13 @@ vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared
   return out;
 }
 
-vector<pair<vector<int>,complex<double>>> get_comparison_overlap (const array<shared_ptr<const bagel::Shell>,2>& basisinfo) {
+vector<pair<vector<int>,complex<double>>> get_comparison_overlap (const array<shared_ptr<const bagel::Shell>,2>& basisinfo, const array<double,3> magnetic_field) {
 
   const bool normalize_basis = 0;
   const bool scale_input = 0;
   const bool orthogonalize = 0;
 
-  const vector<double> field = { basisinfo[0]->magnetic_field(0),  basisinfo[0]->magnetic_field(1), basisinfo[0]->magnetic_field(2) };
-
-  for (int j=0; j!=3; j++) {
-    assert (basisinfo[0]->magnetic_field(j) == basisinfo[1]->magnetic_field(j));
-  }
-
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
 
   // Declare vectors to be used below
   vector<double> positions = {};
@@ -673,18 +657,13 @@ vector<pair<vector<int>,complex<double>>> get_comparison_overlap (const array<sh
   return out;
 }
 
-vector<pair<vector<int>,complex<double>>> get_comparison_kinetic (const array<shared_ptr<const bagel::Shell>,2>& basisinfo) {
+vector<pair<vector<int>,complex<double>>> get_comparison_kinetic (const array<shared_ptr<const bagel::Shell>,2>& basisinfo, const array<double,3> magnetic_field) {
 
   const bool normalize_basis = 0;
   const bool scale_input = 0;
   const bool orthogonalize = 0;
 
-  const vector<double> field = { basisinfo[0]->magnetic_field(0),  basisinfo[0]->magnetic_field(1), basisinfo[0]->magnetic_field(2) };
-
-  for (int j=0; j!=3; j++) {
-    assert (basisinfo[0]->magnetic_field(j) == basisinfo[1]->magnetic_field(j));
-  }
-
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
 
   // Declare vectors to be used below
   vector<double> positions = {};
@@ -840,18 +819,13 @@ vector<pair<vector<int>,complex<double>>> get_comparison_kinetic (const array<sh
   return out;
 }
 
-vector<pair<vector<int>,complex<double>>> get_comparison_momentum (const array<shared_ptr<const bagel::Shell>,2>& basisinfo) {
+vector<pair<vector<int>,complex<double>>> get_comparison_momentum (const array<shared_ptr<const bagel::Shell>,2>& basisinfo, const array<double,3> magnetic_field) {
 
   const bool normalize_basis = 0;
   const bool scale_input = 0;
   const bool orthogonalize = 0;
 
-  const vector<double> field = { basisinfo[0]->magnetic_field(0),  basisinfo[0]->magnetic_field(1), basisinfo[0]->magnetic_field(2) };
-
-  for (int j=0; j!=3; j++) {
-    assert (basisinfo[0]->magnetic_field(j) == basisinfo[1]->magnetic_field(j));
-  }
-
+  const vector<double> field = { magnetic_field[0], magnetic_field[1], magnetic_field[2] };
 
   // Declare vectors to be used below
   vector<double> positions = {};

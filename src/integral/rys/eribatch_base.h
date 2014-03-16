@@ -29,7 +29,6 @@
 
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/rysintegral.h>
-#include <iomanip>  // Only for testing
 
 
 namespace bagel {

@@ -27,11 +27,16 @@ class RealLondon {
     int size_block_;
 
   public:
-    RealLondon(const std::array<std::shared_ptr<const bagel::Shell>,2>& input, const bool ReIm, const int nblocks, const int block) {
+    RealLondon(const std::array<std::shared_ptr<const bagel::Shell>,2>& input, const bool _ReIm, const int _nblocks, const int _block)
+      : ReIm_(_ReIm), nblocks_(_nblocks), block_(_block) {
       batch_ = std::make_shared<Batch>(input);
-      ReIm_ = ReIm;
-      nblocks_ = nblocks;
-      block_ = block;
+      if (block_ > nblocks_ || block_ < 1) throw std::runtime_error ("You're asking for a block of data that does not exist - ??");
+      size_block_ = batch_->size_block();
+    }
+
+    RealLondon(const std::array<std::shared_ptr<const bagel::Shell>,2>& input, const std::array<double,3> magnetic_field, const bool _ReIm, const int _nblocks, const int _block)
+      : ReIm_(_ReIm), nblocks_(_nblocks), block_(_block) {
+      batch_ = std::make_shared<Batch>(input, magnetic_field);
       if (block_ > nblocks_ || block_ < 1) throw std::runtime_error ("You're asking for a block of data that does not exist - ??");
       size_block_ = batch_->size_block();
     }

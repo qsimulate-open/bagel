@@ -39,16 +39,6 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
  : spherical_(sph), position_(_position), angular_number_(_ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
 
-  // TODO Set these values to those of the applied magnetic field vector ultimately coming from an input file.
-  // Probably the best approach is to pass it as an argument of the constructor.
-#if 0
-  magnetic_field_[0] =  0.0032;
-  magnetic_field_[1] =  0.0006;
-  magnetic_field_[2] = -0.0051;
-#else
-  fill(magnetic_field_.begin(), magnetic_field_.end(), 0.0);
-#endif
-
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
   for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
