@@ -18,7 +18,7 @@
 #include "mpreal.h"
 #include "src/math/comb.h"
 #include <complex>
-#include "wigner3j.h"
+#include "src/integral/ecp/wigner3j_gen/wigner3j.h"
 #include "src/integral/carsphlist.h"
 
 using namespace mpfr;
