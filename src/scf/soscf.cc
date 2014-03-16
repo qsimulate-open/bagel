@@ -49,6 +49,39 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 
+  /**** Test Projection Integrals ****/
+
+  auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
+  vector<shared_ptr<const Atom>> auxatom;
+  auxatom.push_back(mol->atoms(1));
+  auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
+  //auxmol->print_atoms();
+
+  vector<shared_ptr<const Atom>> refatom;
+  refatom.push_back(geom_->atoms(0));
+  auto refgeom = make_shared<const Geometry>(refatom, make_shared<const PTree>());
+  refgeom->print_atoms();
+
+  vector<shared_ptr<const Atom>> refatom2;
+  refatom2.push_back(geom_->atoms(2));
+  auto refgeom2 = make_shared<const Geometry>(refatom2, make_shared<const PTree>());
+  refgeom2->print_atoms();
+
+  auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
+  MixedBasis<OverlapBatch> mixedSra(auxgeom, refgeom);
+  mixedSra.print("< r | a >", 21);
+  cout << "ndim = " << mixedSra.ndim() << " mdim = " << mixedSra.mdim() << endl;
+  MixedBasis<OverlapBatch> mixedSsa(refgeom2, auxgeom);
+  mixedSsa.print("< s | a >", 21);
+  cout << "ndim = " << mixedSsa.ndim() << " mdim = " << mixedSsa.mdim() << endl;
+  MixedBasis<OverlapBatch> S(auxgeom, auxgeom);
+//S.print("< a | a >", 21);
+//cout << "ndim = " << S.ndim() << " mdim = " << S.mdim() << endl;
+  S.inverse();
+#if 1
+  (mixedSra * S * mixedSsa).print(" < r | a > S^{-1} < a | s > ", 21);
+#endif
+
 }
 
 void SOSCF::initial_guess() {
