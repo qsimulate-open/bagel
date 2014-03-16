@@ -76,7 +76,7 @@ void CASSCF::common_init() {
   // get istate from the input (for geometry optimization)
   istate_ = idata_->get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-10);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
 

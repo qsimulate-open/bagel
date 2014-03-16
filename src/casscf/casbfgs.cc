@@ -71,7 +71,7 @@ void CASBFGS::compute() {
       natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb);
     }
 
-    auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_, false);
+    auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
     sigma->zero();
 
     // compute one-boedy operators
@@ -162,7 +162,7 @@ void CASBFGS::compute() {
 
 
 shared_ptr<const RotFile> CASBFGS::compute_denom(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr) const {
-  auto out = make_shared<RotFile>(nclosed_, nact_, nvirt_, false);
+  auto out = make_shared<RotFile>(nclosed_, nact_, nvirt_);
   const double tiny = 1.0e-15;
 
   // ia part (4.7a)

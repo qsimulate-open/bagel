@@ -25,6 +25,7 @@
 
 
 #include <src/casscf/superci.h>
+#include <src/casscf/supercimicro.h>
 #include <iostream>
 #include <src/fci/fci.h>
 #include <src/casscf/rotfile.h>
@@ -37,8 +38,6 @@
 
 using namespace std;
 using namespace bagel;
-
-#define DF 1
 
 void SuperCI::compute() {
 
@@ -58,7 +57,7 @@ void SuperCI::compute() {
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    if (iter >= diis_start_ && gradient < 1.0e-4 && diis == nullptr) {
+    if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
       shared_ptr<Matrix> tmp = coeff_->copy();
       shared_ptr<Matrix> unit = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
       unit->unit();
@@ -75,101 +74,35 @@ void SuperCI::compute() {
     // here make a natural orbitals and update the coefficients
     shared_ptr<Matrix> natorb = form_natural_orbs();
 
-    auto cc_ = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-
-    // Davidson utility. We diagonalize a super CI matrix every macro iteration
-    DavidsonDiag<RotFile> davidson(1, max_micro_iter_);
-    auto sigma_ = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-
+    auto grad = make_shared<RotFile>(nclosed_, nact_, nvirt_);
 
     // compute one-boedy operators
     shared_ptr<Matrix> f, fact, factp, gaa;
-    shared_ptr<RotFile> denom_;
-    one_body_operators(f, fact, factp, gaa, denom_);
-
-    // BFGS initialization
-    auto mbfgs = make_shared<BFGS<RotFile>>(denom_);
+    shared_ptr<RotFile> denom;
+    one_body_operators(f, fact, factp, gaa, denom);
 
     // first, <proj|H|0> is computed
-    sigma_->zero();
-    cc_->zero();
-    cc_->ele_ref() = 1.0;
-
+    grad->zero();
     // <a/i|H|0> = 2f_ai
-    grad_vc(f, sigma_);
+    grad_vc(f, grad);
     // <a/r|H|0> = h_as d_sr + (as|tu)D_rs,tu = fact_ar
-    grad_va(fact, sigma_);
+    grad_va(fact, grad);
     // <r/i|H|0> = 2f_ri - f^inact_is d_sr - 2(is|tu)P_rs,tu = 2f_ri - fact_ri
-    grad_ca(f, fact, sigma_);
-    sigma_->ele_ref() = 0.0;
+    grad_ca(f, fact, grad);
 
     // setting error of macro iteration
-    gradient = sigma_->dot_product(*sigma_) / sigma_->size();
-
+    gradient = grad->rms();
     if (gradient < thresh_) break;
 
-    auto init_sigma = make_shared<RotFile>(*sigma_);
-
-    // ---------------------------------------
-    // then microiteration for diagonalization
-    // ---------------------------------------
-    for (int miter = 0; miter != max_micro_iter_; ++miter) {
-      Timer mtimer;
-
-      if (miter != 0) {
-        sigma_->zero();
-
-        // equation 21d
-        sigma_ai_ai_(cc_, sigma_, f);
-        // equation 21e
-        sigma_at_ai_(cc_, sigma_, fact);
-        // equation 21f // note a typo!
-        sigma_at_at_(cc_, sigma_, gaa, f);
-        // equation 21b
-        sigma_ai_ti_(cc_, sigma_, fact);
-        // equation 21a
-        sigma_ti_ti_(cc_, sigma_, gaa, f, factp);
-
-        // projection to reference
-        cc_->ele_ref()=0.0;
-        sigma_->ele_ref() = init_sigma->dot_product(*cc_);
-      }
-
-      // enters davidson iteration
-      auto ccp = make_shared<RotFile>(*cc_);
-      auto sigmap = make_shared<RotFile>(*sigma_);
-      ccp->synchronize();
-      sigmap->synchronize();
-      const double mic_energy = davidson.compute(ccp, sigmap);
-
-      // residual vector and error
-      shared_ptr<RotFile> residual = davidson.residual().front();
-      const double error = residual->dot_product(*residual) / residual->size();
-
-      if (miter == 0) cout << endl << "     == micro iteration == " << endl;
-      cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-           << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
-
-      if (error < thresh_micro_) { cout << endl; break; }
-      if (miter+1 == max_micro_iter_) throw runtime_error("max_micro_iter_ is reached in CASSCF");
-
-
-      // update cc_
-      residual = mbfgs->extrapolate(residual, davidson.civec().front());
-      residual->ele_ref() = 0.0;
-      residual->normalize();
-      cc_ = residual;
+    shared_ptr<const RotFile> cc;
+    {
+      SuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
+      micro.compute();
+      cc = micro.cc();
     }
-    // ---------------------------------------
-    // micro iteration to here
-    // ---------------------------------------
 
-
-    // rotation parameters
-    cc_ = davidson.civec().front();
-    blas::scale_n(1.0/cc_->ele_ref(), cc_->data(), cc_->size()-1);
     // unitary matrix
-    shared_ptr<Matrix> rot = cc_->unpack<Matrix>()->exp();
+    shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
@@ -185,16 +118,7 @@ void SuperCI::compute() {
       coeff_ = make_shared<const Coeff>(*mcc);
     }
 
-#ifndef NDEBUG
-    // checking orthonormaligy of orbitals.
-    auto o = make_shared<Overlap>(geom_);
-    auto m = make_shared<Matrix>(*coeff_ % *o * *coeff_);
-    if (fabs(m->trace() - m->dot_product(m)) > 1.0e-10) {
-      stringstream ss; ss << "orbitals are not orthogonal with each other " << scientific << setprecision(3) << fabs(m->trace() - m->dot_product(m));
-      throw logic_error(ss.str());
-    }
-#endif
-
+    // synchronization
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
