@@ -30,8 +30,6 @@
 #include <tuple>
 #include <memory>
 
-#define DEBUG_ORBITAL
-
 template<class T, class U>
 class PairFile {
   protected:
@@ -76,11 +74,7 @@ class PairFile {
 
     // lapack functions
     void ax_plus_y(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->ax_plus_y(a, o->first()); second()->ax_plus_y(a, o->second()); };
-#ifndef DEBUG_ORBITAL
     double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()) + second()->dot_product(*o.second()); };
-#else
-    double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()); };
-#endif
     double dot_product(const std::shared_ptr<const PairFile<T, U>> o) const { return dot_product(*o); };
     double norm() const { return std::sqrt(dot_product(*this)); };
     void scale(const double a) { first()->scale(a); second()->scale(a); };
