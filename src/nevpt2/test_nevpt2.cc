@@ -59,7 +59,7 @@ double nevpt2_energy(const std::string job) {
 BOOST_AUTO_TEST_SUITE(TEST_NEVPT2)
 
 BOOST_AUTO_TEST_CASE(NEVPT2) {
-    BOOST_CHECK(compare(nevpt2_energy("h2o_svp_nevpt2"),      -76.0205258180));
+    BOOST_CHECK(compare(nevpt2_energy("h2o_svp_nevpt2"),      -76.0205257825));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

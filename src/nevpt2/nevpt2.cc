@@ -27,7 +27,7 @@
 #include <src/smith/prim_op.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/df/dfdistt.h>
-#include <src/casscf/casbfgs.h>
+#include <src/casscf/superci.h>
 #include <src/casscf/qvec.h>
 #include <src/parallel/resources.h>
 
@@ -40,7 +40,7 @@ using namespace bagel;
 
 NEVPT2::NEVPT2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
-  casscf_ = make_shared<CASBFGS>(input, g, ref);
+  casscf_ = make_shared<SuperCI>(input, g, ref);
   casscf_->compute();
   ref_ = casscf_->conv_to_ref();
 
