@@ -44,9 +44,9 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
 
   // currently ++ and -- blocks
-  const bool perturb_active = idata_->get<bool>("perturb_active", false);
+  const bool perturb_va = idata_->get<bool>("perturb_va", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
-  if (perturb_active) {
+  if (perturb_va) {
     cout << "perturbing virtual active block" << endl;
     atmp->ele_va(morbital, norbital) = angle;
     if (kramers)
@@ -113,11 +113,11 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 
 
 void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
-  const bool perturb_active = idata_->get<bool>("perturb_active", false);
+  const bool perturb_va = idata_->get<bool>("perturb_va", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
 
-  if (perturb_active) {
+  if (perturb_va) {
     cout << "virtual-active orbital gradient" << endl;
     // currently ++ and -- blocks
     const complex<double> gradient = grad->ele_va(morbital, norbital)
@@ -142,7 +142,7 @@ void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const b
 
 
 void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
-  const bool perturb_active = idata_->get<bool>("perturb_active", false);
+  const bool perturb_va = idata_->get<bool>("perturb_va", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
   const bool verbose        = idata_->get<bool>("verbose", false);
 
@@ -151,7 +151,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
   shared_ptr<const ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
 
   shared_ptr<ZMatrix> cfockd;
-  if (perturb_active) { // virtual-active block
+  if (perturb_va) { // virtual-active block
     shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
     cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
     cfockd->hermite();
@@ -321,8 +321,8 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_pt
 
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
-  /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = [ (i ki|kt u) - (iu|kt i) ] D(t u) - [ (i ki|u t) - (u ki|i t) ] D(u kt) // CHECK SIGNS
-                                          + [ (i ki|v u) - (i u|v ki) ] G(vu,t kt)
+  /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = [ (i ki|kt u) - (i u|kt i) ] D(t u) + [ (i ki|u t) - (u ki|i t) ] D(u kt)
+                                          + [ (i ki|v u) - (i u|v ki) ] G(v u,t kt)
                                           + [ (kt ki|i t) - (i ki|kt t) ]
   for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
   assert(coefft->mdim() == nact_*2);
