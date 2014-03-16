@@ -129,7 +129,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo)
 
   print_atoms();
 
-  if (magnetic_field())
+  if (nonzero_magnetic_field())
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
                                                             << setw(7) << magnetic_field_[2] << ") a.u." << endl << endl;

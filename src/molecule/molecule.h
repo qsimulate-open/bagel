@@ -94,7 +94,8 @@ class Molecule {
     double external(const int i) const { return external_[i]; }
 
     // external magnetic field
-    bool magnetic_field() const { return magnetic_field(0) != 0.0 || magnetic_field(1) != 0.0 || magnetic_field(2) != 0.0; }
+    bool nonzero_magnetic_field() const { return magnetic_field(0) != 0.0 || magnetic_field(1) != 0.0 || magnetic_field(2) != 0.0; }
+    std::array<double,3> magnetic_field() const { return magnetic_field_; }
     double magnetic_field(const int i) const { return magnetic_field_[i]; }
 
     virtual size_t nbasis() const { return std::accumulate(atoms_.begin(), atoms_.end(), 0,
