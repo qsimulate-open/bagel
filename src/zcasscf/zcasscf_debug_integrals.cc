@@ -117,12 +117,14 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___active_fock(shared_ptr<const ZMatrix> co
 
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(),coeffa->mdim());
   // (6) contract with 1RDM and accumulate
-  for (int a = 0; a != coeffa->mdim(); ++a) {
-    for (int u = 0; u != coefft->mdim(); ++u) {
-      for (int t = 0; t != coefft->mdim(); ++t) {
-      // contribution from G(1,1) kramers
-      (*out)(a,a) += ((*tuab)(t+coefft->mdim()*u, a+coeffa->mdim()*a) 
-                     - (*tbau)(t+coeffa->mdim()*a, a+coefft->mdim()*u)) * (*rdm1)(t,u);
+  for (int b = 0; b != coeffa->mdim(); ++b) {
+    for (int a = 0; a != coeffa->mdim(); ++a) {
+      for (int u = 0; u != coefft->mdim(); ++u) {
+        for (int t = 0; t != coefft->mdim(); ++t) {
+        // contribution from G(1,1) kramers
+        (*out)(a,b) += ((*tuab)(t+coefft->mdim()*u, a+coeffa->mdim()*b) 
+                       - (*tbau)(t+coefft->mdim()*b, a+coeffa->mdim()*u)) * (*rdm1)(t,u);
+        }
       }
     }
   }
