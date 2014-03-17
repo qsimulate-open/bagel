@@ -68,10 +68,13 @@ class Radial_Int {
     }
 
     void transform_Becke(vector<mpreal>& r) {
-      const double alpha = 1.8;
+      const double alpha = 1.0;
       const mpreal one = "1.0";
+      int cnt = 0;
       for (auto& it : x_) {
         r.push_back(static_cast<mpreal>(alpha * (one + it) / (one - it)));
+        w_[cnt] *= 2.0 / (one - it) / (one - it);
+        ++cnt;
       }
     }
 
@@ -79,7 +82,7 @@ class Radial_Int {
       const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       for (int i = 1; i != ngrid; ++i) {
         x_.push_back(static_cast<mpreal>(cos(i*pi/(ngrid+1))));
-        w_.push_back(static_cast<mpreal>(pi * sin(i*pi/(ngrid+1)) * sin(i*pi/(ngrid+1)) / (ngrid+1)));
+        w_.push_back(static_cast<mpreal>(pi * sin(i*pi/(ngrid+1)) / (ngrid+1)));
       }
     }
 
