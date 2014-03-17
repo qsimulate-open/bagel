@@ -218,6 +218,7 @@ class DistCivector {
     }
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / (lena_*lenb_); }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) {
       for (size_t i = 0; i != asize(); ++i) {
@@ -522,6 +523,7 @@ class Civector {
 
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / size(); }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) {
       std::for_each(cc(), cc()+size(), [&a](DataType& p){ p *= a; });

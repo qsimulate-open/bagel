@@ -102,6 +102,7 @@ class RelDvector {
     size_t size() const { return std::accumulate(dvecs_.begin(), dvecs_.end(), 0ull, [](size_t i, MapType o) { return i+o.second->size(); }); }
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / size(); }
+    double rms() const { return std::sqrt(variance()); }
 
     DataType dot_product(const RelDvector<DataType>& o) const {
       return std::inner_product(dvecs_.begin(), dvecs_.end(), o.dvecs_.begin(), DataType(0.0), std::plus<DataType>(),

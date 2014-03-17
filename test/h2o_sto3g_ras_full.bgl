@@ -20,6 +20,6 @@ ras = {
   max_holes = 4;
   max_particles = 4;
   maxiter = 20;
-  thresh = 1.0e-14;
+  thresh = 1.0e-7;
   sparse = true;
 };
