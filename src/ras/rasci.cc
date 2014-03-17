@@ -44,7 +44,7 @@ void RASCI::common_init() {
 //const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
-  thresh_ = idata_->get<double>("thresh", 1.0e-16);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
 
   batchsize_ = idata_->get<int>("batchsize", 512);
@@ -298,7 +298,7 @@ void RASCI::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
-      errors.push_back(errvec[i]->variance());
+      errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
     pdebug.tick_print("error");

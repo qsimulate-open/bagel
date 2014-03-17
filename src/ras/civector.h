@@ -273,6 +273,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / global_size_; }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) {
       this->for_each_block( [&a] (std::shared_ptr<RBlock> b) { std::for_each(b->local(), b->local()+b->size(), [&a] (DataType& p) { p*= a; }); });
@@ -495,6 +496,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / size_; }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }

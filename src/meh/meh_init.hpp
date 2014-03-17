@@ -39,7 +39,7 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   davidson_subspace_ = input->get<int>("davidson_subspace", 10);
   nguess_ = input->get<int>("nguess", 10*nstates_);
   dipoles_ = input->get<bool>("dipoles", false);
-  thresh_ = input->get<double>("thresh", 1.0e-14);
+  thresh_ = input->get<double>("thresh", 1.0e-7);
   print_thresh_ = input->get<double>("print_thresh", 0.01);
   store_matrix_ = input->get<bool>("store_matrix", false);
   nspin_ = 0; // TODO hardcoded to singlets for now

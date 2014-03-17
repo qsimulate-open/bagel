@@ -24,7 +24,7 @@ ras = {
   ];
   max_holes = 2;
   max_particles = 3;
-  thresh = 1.0e-14;
+  thresh = 1.0e-7;
   maxiter = 20;
   sparse = false;
 };

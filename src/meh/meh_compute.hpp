@@ -170,7 +170,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
     std::vector<std::shared_ptr<Matrix>> errvec = davidson.residual();
     std::vector<double> errors;
     for (int i = 0; i != nstates_; ++i) {
-      errors.push_back(errvec.at(i)->variance());
+      errors.push_back(errvec.at(i)->rms());
       conv.at(i) = static_cast<int>(errors.at(i) < thresh_);
     }
 

@@ -20,7 +20,7 @@
   "frozen" : true,
   "thresh" : 1.0e-8,
   "thresh_scf" : 1.0e-8,
-  "thresh_fci" : 1.0e-20
+  "thresh_fci" : 1.0e-10
 }
 
 ]}
