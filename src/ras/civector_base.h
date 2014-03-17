@@ -67,7 +67,7 @@ class RASCivector_base {
         const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
         return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
       }
-      else return std::shared_ptr<BlockType>();
+      else return nullptr;
     }
     std::shared_ptr<BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );
@@ -81,7 +81,7 @@ class RASCivector_base {
         const int lp = (det_->max_particles()+1) * (det_->max_particles()+2) / 2;
         return blocks_[ hpaddress(npa, npb) + lp * hpaddress(nha, nhb) ];
       }
-      else return std::shared_ptr<const BlockType>();
+      else return nullptr;
     }
     std::shared_ptr<const BlockType> block(const std::bitset<nbit__> bstring, const std::bitset<nbit__> astring) const {
       return block( det_->nholes(astring), det_->nholes(bstring), det_->nparticles(astring), det_->nparticles(bstring) );

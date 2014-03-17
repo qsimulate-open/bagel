@@ -88,7 +88,7 @@ class Determinants_base {
     template<int spin>
     int sign(const std::bitset<nbit__>& bit, const size_t pos) const {
       auto iter = std::find_if(blockinfo_.begin(), blockinfo_.end(), [](const std::shared_ptr<const CIBlockInfo<StringType>>& o){ return !o->empty(); });
-      return (*iter)->sign<spin>(bit, pos);
+      return (*iter)->template sign<spin>(bit, pos);
     }
 
     static int sign(const std::bitset<nbit__>& bit, const size_t pos0, const size_t pos1) {

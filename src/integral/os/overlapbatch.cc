@@ -37,8 +37,6 @@ const static CarSphList carsphlist;
 
 void OverlapBatch::compute() {
 
-  const SortList sort_ (spherical_);
-
   double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
   perform_VRR(intermediate_p);
 
@@ -63,12 +61,14 @@ void OverlapBatch::compute() {
     const int nloops = cont0_ * cont1_;
     carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i);
 
+    const static SortList sort(true);
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
     stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
+    const static SortList sort(false);
     const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort_.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
+    sort.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
   stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);

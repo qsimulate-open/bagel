@@ -39,7 +39,7 @@ class ROHF : public UHF {
   public:
     ROHF() { }
     ROHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-         const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>()) : UHF(idata, geom, re) {
+         const std::shared_ptr<const Reference> re = nullptr) : UHF(idata, geom, re) {
     }
 
     void compute() override;

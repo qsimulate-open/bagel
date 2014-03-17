@@ -114,7 +114,7 @@ ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -172,7 +172,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -198,7 +198,7 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK

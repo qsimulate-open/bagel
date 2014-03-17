@@ -264,8 +264,8 @@ void DistRASCI::compute() {
         sigman.push_back(make_shared<const DistRASCivec>(*sigma->data(i)));
       }
       else {
-        ccn.push_back(shared_ptr<const DistRASCivec>());
-        sigman.push_back(shared_ptr<const DistRASCivec>());
+        ccn.push_back(nullptr);
+        sigman.push_back(nullptr);
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);

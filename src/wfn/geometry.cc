@@ -891,6 +891,6 @@ void Geometry::compute_relativistic_integrals(const bool do_gaunt) {
 
 
 void Geometry::discard_relativistic() const {
-  dfs_ = shared_ptr<DFDist>();
-  dfsl_ = shared_ptr<DFDist>();
+  dfs_.reset();
+  dfsl_.reset();
 }

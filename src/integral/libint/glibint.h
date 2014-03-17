@@ -39,7 +39,7 @@ class GLibint : public RysInt {
     void compute_ssss(double) override {}
 
   public:
-    GLibint(const std::array<std::shared_ptr<const Shell>,4>&, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
+    GLibint(const std::array<std::shared_ptr<const Shell>,4>&, std::shared_ptr<StackMem> stack = nullptr);
 
     void compute() override {}
 

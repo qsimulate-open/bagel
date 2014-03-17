@@ -441,7 +441,7 @@ void DistFCI::compute() {
           c->normalize();
           cc.push_back(c);
         } else {
-          cc.push_back(shared_ptr<DistCivec>());
+          cc.push_back(nullptr);
         }
       }
     }

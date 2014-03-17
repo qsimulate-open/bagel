@@ -47,6 +47,9 @@ class RASCI : public Method {
     double thresh_;
     double print_thresh_;
 
+    // algorithmic options
+    int batchsize_;
+
     // numbers of electrons
     int nelea_;
     int neleb_;
@@ -140,8 +143,7 @@ class RASCI : public Method {
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const RASCivec>, std::shared_ptr<const RASCivec>) const;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const RASDvec>, std::shared_ptr<const RASDvec>,
-                                 std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
+      compute_rdm12_av_from_dvec(std::shared_ptr<const RASDvec>, std::shared_ptr<const RASDvec>, std::shared_ptr<const Determinants> o = nullptr) const;
 
     std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
     std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; }
@@ -179,7 +181,7 @@ class RASCI : public Method {
     // returns CI vectors
     std::shared_ptr<RASDvec> civectors() const { return cc_; }
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }

@@ -41,7 +41,7 @@ class ComplexMomentumBatch : public OSIntegral<std::complex<double>,Int_t::Londo
     int nrank() const override { return 0; }
 
   public:
-    ComplexMomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    ComplexMomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
      : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
 
     void compute() override;

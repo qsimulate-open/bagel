@@ -169,3 +169,23 @@ vector<shared_ptr<Matrix>> DFDistT::get_slice(const int start, const int end) co
   return out;
 }
 
+
+shared_ptr<Matrix> DFDistT::replicate(const int n) const {
+  auto out = make_shared<Matrix>(naux_, nindex1_*nindex2_, true);
+  vector<int> rq;
+  for (int i = 0; i != mpi__->size(); ++i) {
+    const int start = dist_->start(i);
+    const int size = dist_->size(i);
+    if (i == mpi__->rank()) {
+      assert(start == bstart_ && size == bsize_ && data_[n]->size() == naux_*size);
+      copy_n(data_[n]->data(), data_[n]->size(), out->element_ptr(0, start));
+    } else {
+      // issue send request to all the nodes
+      rq.push_back(mpi__->request_send(data_[n]->data(), data_[n]->size(), i, mpi__->rank()*mpi__->size()+i));
+      rq.push_back(mpi__->request_recv(out->element_ptr(0, start), naux_*size, i, i*mpi__->size()+mpi__->rank()));
+    }
+  }
+  for (auto& i : rq)
+    mpi__->wait(i);
+  return out;
+}

@@ -69,8 +69,7 @@ class SCF : public SCF_base {
 
   public:
     SCF() { }
-    SCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+    SCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
     virtual ~SCF() { }
 
     void compute() override;

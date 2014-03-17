@@ -74,6 +74,8 @@ bool compare(const T a, const T b, const double thr = THRESH) {
 
 #include <src/ras/test_ras.cc>
 
+#include <src/nevpt2/test_nevpt2.cc>
+
 #include <src/opt/test_opt.cc>
 
 #include <src/io/test_molden.cc>

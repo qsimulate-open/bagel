@@ -171,8 +171,7 @@ class FCI : public Method {
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>,
-                                 std::shared_ptr<const Determinants> o = std::shared_ptr<const Determinants>()) const;
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const;
 
     std::vector<std::shared_ptr<RDM<1>>> rdm1() { return rdm1_; }
     std::vector<std::shared_ptr<RDM<2>>> rdm2() { return rdm2_; }
@@ -216,7 +215,7 @@ class FCI : public Method {
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const;
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }

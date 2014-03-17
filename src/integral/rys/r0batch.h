@@ -39,7 +39,7 @@ class R0Batch: public RnBatch {
 
   public:
     R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
-            std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+            std::shared_ptr<StackMem> stack = nullptr)
       : RnBatch (_info, mol, stack) {
       rank_ = 1;
       const double integral_thresh = PRIM_SCREEN_THRESH;

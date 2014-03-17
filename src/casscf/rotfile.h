@@ -37,24 +37,23 @@ class RotationMatrix {
     const int nclosed_;
     const int nact_;
     const int nvirt_;
-    const bool superci_;
     const int size_;
     std::unique_ptr<DataType[]> data_;
 
   public:
-    RotationMatrix(const int iclos, const int iact, const int ivirt, const bool superci = true)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new DataType[size_]) {
+    RotationMatrix(const int iclos, const int iact, const int ivirt)
+     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
       zero();
     }
-    RotationMatrix(const RotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), superci_(o.superci_), size_(o.size_), data_(new DataType[o.size_]) {
+    RotationMatrix(const RotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), size_(o.size_), data_(new DataType[o.size_]) {
       *this = o;
     }
     RotationMatrix(std::shared_ptr<const RotationMatrix> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), superci_(o->superci_), size_(o->size_), data_(new DataType[o->size_]) {
+      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), size_(o->size_), data_(new DataType[o->size_]) {
       *this = *o;
     }
-    RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt, const bool superci = true)
-      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), superci_(superci), size_(iclos*iact+iclos*ivirt+iact*ivirt+(superci ? 1 : 0)), data_(new DataType[size_]) {
+    RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt)
+      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
       const int nocc = nclosed_ + nact_;
       for (int i = 0; i != nact_; ++i) {
         for (int j = 0; j != nvirt_;   ++j) {
@@ -72,7 +71,7 @@ class RotationMatrix {
     }
 
     std::shared_ptr<RotationMatrix<DataType>> clone() const {
-      return std::make_shared<RotationMatrix<DataType>>(nclosed_, nact_, nvirt_, superci_);
+      return std::make_shared<RotationMatrix<DataType>>(nclosed_, nact_, nvirt_);
     }
     std::shared_ptr<RotationMatrix<DataType>> copy() const {
       return std::make_shared<RotationMatrix<DataType>>(*this);
@@ -100,6 +99,8 @@ class RotationMatrix {
     void scale(const DataType& a) { std::for_each(data(), data()+size_, [&a](DataType& p) { p *= a; }); }
     // returns norm of the vector
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    // returns a root mean square
+    double rms() const { return norm() / std::sqrt(static_cast<double>(size())); }
     // daxpy added to self
     void ax_plus_y(const DataType& a, const RotationMatrix& o) { std::transform(o.data(), o.data()+size_, data(), data(), [&a](DataType p, DataType q) { return p*a+q; }); }
     void ax_plus_y(const DataType& a, const std::shared_ptr<const RotationMatrix> o) { ax_plus_y(a, *o); }
@@ -142,13 +143,13 @@ class RotationMatrix {
     // closed-virtual block. virtual runs first
     DataType* ptr_vc() { return data() + (nclosed_+nvirt_)*nact_; }
     DataType& ele_vc(const int iv, const int ic) { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    // reference config.
-    DataType& ele_ref() { assert(superci_); return data_[size_-1]; }
-    // const references
+    // const references and pointers
     const DataType& ele_ca(const int ic, const int ia) const { return data_[ic + ia*nclosed_]; }
     const DataType& ele_va(const int iv, const int ia) const { return data_[nclosed_*nact_ + iv + ia*nvirt_]; }
     const DataType& ele_vc(const int iv, const int ic) const { return data_[(nclosed_+nvirt_)*nact_ + iv + ic*nvirt_]; }
-    const DataType& ele_ref() const { assert(superci_); return data_[size_-1]; }
+    const DataType* ptr_ca() const { return data(); }
+    const DataType* ptr_va() const { return data() + nclosed_*nact_; }
+    const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
 
     // unpack to Matrix
     template<class MatType>
@@ -234,9 +235,6 @@ class RotationMatrix {
           }
           std::cout << std::endl;
         }
-      }
-      if (superci_) {
-        std::cout << "reference weight " << ele_ref() << std::endl;
       }
     }
 };

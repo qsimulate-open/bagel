@@ -32,8 +32,7 @@
 namespace bagel {
 
 /*
-    DFDistT is a slice of 3-index DF integrals. Distributed by the second and third index.
-    Note that the date is tranposed!
+    DFDistT is a 3-index DF integral object, which is distributed by the second and third indeices.
 */
 
 class DFDistT {
@@ -57,7 +56,7 @@ class DFDistT {
 
   public:
     // CAUTION this constructor should be called **COLLECTIVELY**!! Otherwise the program hangs.
-    DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const StaticDist> dist = std::shared_ptr<const StaticDist>());
+    DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const StaticDist> dist = nullptr);
 
     DFDistT(const size_t naux, std::shared_ptr<const StaticDist> dist, const size_t n1, const size_t n2,
             const std::shared_ptr<const ParallelDF>);
@@ -86,6 +85,8 @@ class DFDistT {
 
     std::shared_ptr<const ParallelDF> df() const { return df_; }
     void discard_df() { df_.reset(); }
+
+    std::shared_ptr<Matrix> replicate(const int i = 0) const;
 };
 
 }

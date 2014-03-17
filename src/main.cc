@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
       if (title == "molecule") {
         geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false))
-          ref = shared_ptr<const Reference>();
+          ref.reset();
         if (ref) ref = ref->project_coeff(geom);
       } else {
         if (!geom) throw runtime_error("molecule block is missing");

@@ -40,11 +40,11 @@ class CoulombBatch_energy : public CoulombBatch_Base<double> {
 
   public:
 
-    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
       :  CoulombBatch_Base<double>(_info, mol, 0, stack, 0, 0.0) {};
 
     CoulombBatch_energy(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      :  CoulombBatch_Base<double>(_info, mol, 0, std::shared_ptr<StackMem>(), L, A) {};
+      :  CoulombBatch_Base<double>(_info, mol, 0, nullptr, L, A) {};
 
      ~CoulombBatch_energy() {};
 
