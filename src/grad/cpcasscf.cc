@@ -294,5 +294,17 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   shared_ptr<const Matrix> jd = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nmobasis, nact, naobasis, prefactor, coeff, naobasis, jd->data(), naobasis, 1.0, amat->element_ptr(0,nclosed), nmobasis);
 
+  // additing f^z_ri contribution
+  if (nclosed) {
+    auto rdm1mat = make_shared<Matrix>(nact, nact);
+    copy_n(rdm1->data(), rdm1->size(), rdm1mat->data());
+    shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
+    shared_ptr<const Matrix> fockz = make_shared<Fock<1>>(geom_, make_shared<Matrix>(naobasis, naobasis), aden, vector<double>());
+
+    shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nclosed);
+    Matrix fockzmo(*ref_->coeff() % *fockz * *ocoeff);
+    amat->add_block(4.0, 0, 0, nmobasis, nclosed, fockzmo);
+  }
+
   return amat;
 }
