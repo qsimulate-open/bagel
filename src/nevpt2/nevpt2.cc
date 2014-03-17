@@ -106,6 +106,7 @@ void NEVPT2::compute() {
     // first make a weighted coefficient
     shared_ptr<Matrix> rdm1_mat = rdm1_->copy();
     rdm1_mat->sqrt();
+    rdm1_mat->delocalize();
     auto acoeffw = make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0)) * *rdm1_mat);
     auto fockao = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeffw, /*store*/false, /*rhf*/true);
     // MO Fock
@@ -128,17 +129,22 @@ void NEVPT2::compute() {
 
     fockact_   = make_shared<Matrix>(*acoeff % *fockao  * *acoeff);
     fockact_c_ = make_shared<Matrix>(*acoeff % *ofockao * *acoeff);
+    fockact_->localize();
+    fockact_c_->localize();
+
     fock   = make_shared<Matrix>(*coeffall % *fockao  * *coeffall);
     fock_c = make_shared<Matrix>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only 1/2 exchange in the active space)
     auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0))), /*store*/false, /*rhf*/false);
     fockact_p_ = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
+    fockact_p_->localize();
     fock_p = make_shared<Matrix>(*coeffall % *fockao_p * *coeffall);
 
     // h''eff (treat active orbitals as closed)
     auto fockao_h = make_shared<Fock<1>>(geom_, ofockao, nullptr, acoeff, /*store*/false, /*rhf*/true);
     fockact_h_ = make_shared<Matrix>(*acoeff % *fockao_h * *acoeff);
+    fockact_h_->localize();
     fock_h = make_shared<Matrix>(*coeffall % *fockao_h * *coeffall);
   }
 

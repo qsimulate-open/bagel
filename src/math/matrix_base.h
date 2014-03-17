@@ -311,6 +311,7 @@ class Matrix_base {
     }
 
     // if we use this matrix within node, or in parallel
+    void delocalize() { localized_ = false; }
     void localize() { localized_ = true; }
     bool localized() const { return localized_; }
 

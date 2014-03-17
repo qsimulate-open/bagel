@@ -72,10 +72,10 @@ class NEVPT2 : public Method {
 
     // integrals in physicists notation
     std::shared_ptr<const Matrix> ints2_;
-    std::shared_ptr<const Matrix> fockact_;
-    std::shared_ptr<const Matrix> fockact_c_;
-    std::shared_ptr<const Matrix> fockact_h_;
-    std::shared_ptr<const Matrix> fockact_p_;
+    std::shared_ptr<      Matrix> fockact_;
+    std::shared_ptr<      Matrix> fockact_c_;
+    std::shared_ptr<      Matrix> fockact_h_;
+    std::shared_ptr<      Matrix> fockact_p_;
 
     // K and K'mat
     std::shared_ptr<const Matrix> kmat_;

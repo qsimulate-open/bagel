@@ -109,7 +109,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
@@ -165,7 +165,7 @@ Matrix Matrix::operator%(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
@@ -192,7 +192,7 @@ Matrix Matrix::operator^(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
