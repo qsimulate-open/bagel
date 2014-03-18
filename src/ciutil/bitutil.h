@@ -69,13 +69,13 @@ namespace bagel {
       // masking irrelevant bits
       int min, max;
       std::tie(min,max) = std::minmax(i,j);
-      bit &= ~((1ull << (min+1)) - 1ull);
-      bit &= (1ull << max) - 1ull;
+      bit &= ((~std::bitset<nbit__>(0ull)) << min+1);
+      bit &= ((~std::bitset<nbit__>(0ull)) >> (nbit__ - max));
       return 1 - ((bit.count() & 1) << 1);
     }
 
     int sign(std::bitset<nbit__> bit, int i) {
-      bit &= (1ull << i) - 1ull;
+      bit &= ((~std::bitset<nbit__>(0ull)) >> (nbit__ - i));
       return 1 - ((bit.count() & 1 ) << 1);
     }
 

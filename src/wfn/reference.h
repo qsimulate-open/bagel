@@ -87,8 +87,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
               const double en = 0.0,
               const std::vector<std::shared_ptr<RDM<1>>>& rdm1 = std::vector<std::shared_ptr<RDM<1>>>(),
               const std::vector<std::shared_ptr<RDM<2>>>& rdm2 = std::vector<std::shared_ptr<RDM<2>>>(),
-              std::shared_ptr<const RDM<1>> rdm1_av = std::shared_ptr<RDM<1>>(),
-              std::shared_ptr<const RDM<2>> rdm2_av = std::shared_ptr<RDM<2>>());
+              std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
+              std::shared_ptr<const RDM<2>> rdm2_av = nullptr);
     // new Reference from old one with transformed coeff
     Reference(std::shared_ptr<const Reference> o, std::shared_ptr<const Coeff> c) :
       Reference( o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(),

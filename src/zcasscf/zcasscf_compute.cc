@@ -74,7 +74,7 @@ void ZCASSCF::compute() {
     }
 
     // calculate 1RDM in an original basis set
-    shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : shared_ptr<const ZMatrix>();
+    shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
     // closed Fock operator
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
@@ -114,7 +114,7 @@ void ZCASSCF::compute() {
     }
 
     // compute orbital gradients
-    shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
+    shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
     grad_vc(cfock, afock, grad);
     grad_va(cfock, qvec, rdm1, grad);
     grad_ca(cfock, afock, qvec, rdm1, grad);
@@ -127,7 +127,7 @@ void ZCASSCF::compute() {
       ___debug___compute_hessian(cfock, afock, ___debug___with_kramers);
     }
 
-    auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2, /*superci*/ false);
+    auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2);
     shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
     if (!___debug___break_kramers)
       kramers_adapt(a);

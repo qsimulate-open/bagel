@@ -17,8 +17,7 @@
   "nact" : 0,
   "nact_cas" : 2,
   "nclosed" : 5,
-  "thresh_fci" : 1.0e-15,
-  "thresh" : 1.0e-15
+  "thresh" : 1.0e-8
 }
 
 ]}

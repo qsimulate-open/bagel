@@ -32,8 +32,11 @@
 namespace bagel {
 
 class FormSigmaRAS {
+  protected:
+    int batchsize_;
+
   public:
-    FormSigmaRAS() {}
+    FormSigmaRAS(const int b = 512) : batchsize_(b) {}
 
     // This is really all this class is
     std::shared_ptr<RASDvec> operator()(std::shared_ptr<const RASDvec> cc, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const;

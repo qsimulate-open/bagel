@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-class CASSCF : public Method {
+class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
   protected:
     // some internal information
@@ -76,8 +76,7 @@ class CASSCF : public Method {
     std::vector<double> energy_;
 
   public:
-    CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom,
-           const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
     virtual ~CASSCF();
 
     virtual void compute() override = 0;
@@ -88,8 +87,23 @@ class CASSCF : public Method {
     std::shared_ptr<FCI> fci() { return fci_; };
     std::shared_ptr<const FCI> fci() const { return fci_; };
 
-    void set_occup(const std::vector<double>& o) { occup_ = o; };
+    // functions to retrieve protected members
+    int nocc() const { return nocc_; }
+    int nclosed() const { return nclosed_; }
+    int nact() const { return nact_; }
+    int nvirt() const { return nvirt_; }
+    int nbasis() const { return nbasis_; }
+    int nstate() const { return nstate_; }
+    int istate() const { return istate_; }
+    int max_iter() const { return max_iter_; }
+    int max_micro_iter() const { return max_micro_iter_; }
+    double thresh() const { return thresh_; }
+    double thresh_micro() const { return thresh_micro_; }
 
+    void set_occup(const std::vector<double>& o) { occup_ = o; };
+    double occup(const int i) const { return occup_[i]; }
+
+    double energy(const int i) const { return energy_[i]; };
     double energy() const { return energy_[istate_]; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.

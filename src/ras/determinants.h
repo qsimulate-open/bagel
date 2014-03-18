@@ -64,8 +64,8 @@ class RASDeterminants : public Determinants_base<RASString>,
     bool operator==(const RASDeterminants& o) const
       { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
 
-    const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & std::bitset<nbit__>((1ull << ras_[0]) - 1ull)).count(); }
-    const int nparticles(const std::bitset<nbit__> bit) const { return (bit & std::bitset<nbit__>(((1ull << ras_[2]) - 1ull) << (ras_[0] + ras_[1]))).count(); }
+    const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & (~std::bitset<nbit__>(0ull) >> (nbit__ - ras_[0]))).count(); }
+    const int nparticles(const std::bitset<nbit__> bit) const { return (bit & (~(~std::bitset<nbit__>(0ull) << ras_[2]) << ras_[0] + ras_[1])).count(); }
 
     const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
@@ -134,9 +134,9 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
   phi_ij.resize(nij);
   for (auto& iphi : phi_ij) iphi.reserve(stringsize);
 
-  std::unordered_map<size_t, size_t> lexmap;
+  std::unordered_map<std::bitset<nbit__>, size_t> lexmap;
   for (size_t i = 0; i < stringsize; ++i)
-    lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i)).to_ullong()] = i;
+    lexmap[(spin == 0 ? this->string_bits_a(i) : this->string_bits_b(i))] = i;
 
   std::vector<size_t> offsets(nij, 0);
 
@@ -153,7 +153,7 @@ void RASDeterminants::construct_phis_(std::shared_ptr<const CIStringSet<RASStrin
           if ( intermediatebit[i] ) continue;
           std::bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
           if ( allowed(sourcebit) ) {
-            const size_t source_lex = lexmap[sourcebit.to_ullong()];
+            const size_t source_lex = lexmap[sourcebit];
             int minij, maxij;
             std::tie(minij, maxij) = std::minmax(i,j);
             pij[minij+((maxij*(maxij+1))>>1)].emplace_back(source_lex, sign(targetbit, i, j), tindex, j+i*norb());

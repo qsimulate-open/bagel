@@ -37,7 +37,7 @@ namespace bagel {
 template<int DF>
 class Fock : public Fock_base {
   protected:
-    void fock_two_electron_part(std::shared_ptr<const Matrix> den = std::shared_ptr<Matrix>());
+    void fock_two_electron_part(std::shared_ptr<const Matrix> den = nullptr);
     void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested

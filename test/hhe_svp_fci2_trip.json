@@ -23,7 +23,7 @@
   "nspin" : 1,
   "nstate" : 2,
   "frozen" : false,
-  "thresh" : 1.0e-13
+  "thresh" : 1.0e-7
 }
 
 ]}

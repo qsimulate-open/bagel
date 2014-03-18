@@ -42,8 +42,7 @@ class KS : public SCF_base {
     std::shared_ptr<DFTGrid_base> grid_;
 
   public:
-    KS(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+    KS(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr)
       : SCF_base(idata, geom, re) {
 
       std::cout << indent << "*** Kohn-Sham DFT ***" << std::endl << std::endl;

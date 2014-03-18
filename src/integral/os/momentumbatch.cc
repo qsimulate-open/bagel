@@ -23,7 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/momentumbatch.h>
 
@@ -35,7 +34,7 @@ const static CarSphList carsphlist;
 
 void MomentumBatch::compute() {
 
-  const SortList sort_ (spherical_);
+  const SortList sort(spherical_);
 
   double* const intermediate_p = stack_->get(size_block_*3);
   perform_VRR(intermediate_p);
@@ -57,18 +56,18 @@ void MomentumBatch::compute() {
       carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
 
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
       stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
     }
 
     stack_->release(cont0_ * cont1_ * asize_intermediate_, intermediate_c);
   }
   stack_->release(size_block_*3, intermediate_p);
 
-  if (swap01_) dscal_(size_block_*3, -1.0, data_, 1);
+  if (swap01_) blas::scale_n(-1.0, data_, size_block_*3);
 
 }
 

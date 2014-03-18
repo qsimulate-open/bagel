@@ -39,7 +39,7 @@ class MomentumBatch : public OSInt {
     int nrank() const override { return 0; } 
 
   public:
-    MomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    MomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
      : OSInt(basis, stack) { common_init(); }
 
     void compute() override;

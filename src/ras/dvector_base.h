@@ -105,17 +105,17 @@ class Dvector_base {
       return form_from_each([] (std::shared_ptr<const CiType> cc) { return cc->spin(); }, det(), typename CiType::LocalizedType());
     }
 
-    std::shared_ptr<Dvector_base<CiType>> transpose(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
+    std::shared_ptr<Dvector_base<CiType>> transpose(std::shared_ptr<const DetType> det = nullptr) const {
       if (!det) det = det_->transpose();
       return transpose_impl(det, typename CiType::LocalizedType());
     }
 
-    std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
+    std::shared_ptr<Dvector_base<CiType>> spin_lower(std::shared_ptr<const DetType> det = nullptr) const {
       if (!det) det = det_->clone(det_->nelea() - 1, det_->neleb() + 1);
       return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_lower(det); }, det, typename CiType::LocalizedType());
     }
 
-    std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = std::shared_ptr<DetType>()) const {
+    std::shared_ptr<Dvector_base<CiType>> spin_raise(std::shared_ptr<const DetType> det = nullptr) const {
       if (!det) det = det_->clone(det_->nelea() + 1, det_->neleb() - 1);
       return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
     }

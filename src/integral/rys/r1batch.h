@@ -41,7 +41,7 @@ class R1Batch: public RnBatch {
 
   public:
     R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
-            std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+            std::shared_ptr<StackMem> stack = nullptr)
       : RnBatch (_info, mol, stack) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);

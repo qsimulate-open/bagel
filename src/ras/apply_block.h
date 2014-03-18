@@ -50,9 +50,7 @@ class Apply_block {
     }
 
     int sign(std::bitset<nbit__> bit) const {
-      static_assert(nbit__ <= sizeof(unsigned long long)*8, "verify Determinants::sign (and other functions)");
-      bit &= (1ull << orbital_) - 1ull;
-      return (1 - (( bit.count() & 1 ) << 1));
+      return bagel::sign(bit, orbital_);
     }
 
   public:

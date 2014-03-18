@@ -36,8 +36,6 @@ const static CarSphList carsphlist;
 
 void GOverlapBatch::compute() {
 
-  const SortList sort_(spherical_);
-
   fill_n(data_, size_alloc_, 0.0);
 
   const int a = basisinfo_[0]->angular_number();
@@ -57,9 +55,9 @@ void GOverlapBatch::compute() {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
-        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
-        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
-        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
+        transx[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
+        transy[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
+        transz[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
       }
     }
   }
@@ -144,6 +142,7 @@ void GOverlapBatch::compute() {
   const size_t acpsize = acsize*cont0_*cont1_;
   double* const bkup = stack_->get(acpsize);
   double* cdata = data_;
+  const SortList sort(spherical_);
   for (int i = 0; i != 3; ++i, cdata += size_block_) {
     // first, contraction.
     const double* source = cdata;
@@ -162,19 +161,18 @@ void GOverlapBatch::compute() {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       source = cdata;
       target = bkup;
-      sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
       copy_n(bkup, acpsize, cdata);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       source = bkup;
       target = cdata;
-      sort_.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
     }
   }
 
-  for (int i = 0; i != 3; ++i) {
-    daxpy_(cont0_*cont1_*acsize, -1.0, data_+i*size_block_, 1, data_+(i+3)*size_block_, 1); 
-  }
+  for (int i = 0; i != 3; ++i)
+    blas::ax_plus_y_n(-1.0, data_+i*size_block_, cont0_*cont1_*acsize, data_+(i+3)*size_block_);
 
   stack_->release(acpsize, bkup);
 

@@ -34,6 +34,7 @@
 
 namespace bagel {
 
+
 class SuperCI : public CASSCF {
 
   protected:
@@ -50,19 +51,12 @@ class SuperCI : public CASSCF {
     void grad_va(const std::shared_ptr<Matrix> fact, std::shared_ptr<RotFile> sigma);
     void grad_ca(const std::shared_ptr<Matrix> fock, const std::shared_ptr<Matrix> fact, std::shared_ptr<RotFile> sigma);
 
-    void sigma_at_at_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<Matrix> gaa, const std::shared_ptr<Matrix> f);
-    void sigma_ai_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> f);
-    void sigma_at_ai_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> fact);
-    void sigma_ai_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma, const std::shared_ptr<Matrix> fact);
-    void sigma_ti_ti_(const std::shared_ptr<RotFile> cc, std::shared_ptr<RotFile> sigma,
-                      const std::shared_ptr<Matrix> gaa, const std::shared_ptr<Matrix> f, const std::shared_ptr<Matrix> factp);
 
     void update_orbitals(std::shared_ptr<RotFile> rot);
     std::shared_ptr<Matrix> tailor_rotation(const std::shared_ptr<Matrix> seed);
 
   public:
-    SuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+    SuperCI(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;

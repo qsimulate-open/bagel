@@ -61,6 +61,7 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 
 
 Matrix Matrix::operator+(const Matrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   Matrix out(*this);
   out.ax_plus_y(1.0, o);
   return out;
@@ -68,12 +69,14 @@ Matrix Matrix::operator+(const Matrix& o) const {
 
 
 Matrix& Matrix::operator+=(const Matrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(1.0, o);
   return *this;
 }
 
 
 Matrix& Matrix::operator-=(const Matrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(-1.0, o);
   return *this;
 }
@@ -94,6 +97,7 @@ Matrix& Matrix::operator=(Matrix&& o) {
 
 
 Matrix Matrix::operator-(const Matrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   Matrix out(*this);
   out.ax_plus_y(-1.0, o);
   return out;
@@ -109,7 +113,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
@@ -165,7 +169,7 @@ Matrix Matrix::operator%(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
@@ -192,7 +196,7 @@ Matrix Matrix::operator^(const Matrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
 #ifdef HAVE_SCALAPACK
@@ -301,7 +305,7 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
   for (int i = deg; i != 1; --i) {
     const double inv = 1.0/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf;
     if (i != 1) buf = *out;
   }
@@ -313,13 +317,13 @@ shared_ptr<Matrix> Matrix::exp(const int deg) const {
 shared_ptr<Matrix> Matrix::log(const int deg) const {
   auto out = make_shared<Matrix>(ndim_, mdim_);
   Matrix buf(*this);
-  for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
+  for (int j = 0; j != ndim_; ++j) buf(j,j) -= 1.0;
   assert(ndim_ == mdim_);
 
   for (int i = deg; i != 1; --i) {
     const double inv = -static_cast<double>(i-1)/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf - buf;
     if (i != 1) buf = *out;
   }

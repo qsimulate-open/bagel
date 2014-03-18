@@ -69,9 +69,9 @@ void GradBatch::perform_VRR() {
     for (int ia = 0; ia <= a+1; ++ia, ++k) {
       if (ia == a+1 && ib == b+1) continue;
       for (int i = ia; i <= ia+ib; ++i) {
-        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
-        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
-        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
+        transx[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
+        transy[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
+        transz[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
       }   
     }   
   }
@@ -79,9 +79,9 @@ void GradBatch::perform_VRR() {
     for (int ic = 0; ic <= c+1; ++ic, ++k) {
       if (ic == c+1 && id == d+1) continue;
       for (int i = ic; i <= ic+id; ++i) {
-        trans2x[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[0], ic+id-i);
-        trans2y[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[1], ic+id-i);
-        trans2z[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[2], ic+id-i);
+        trans2x[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[0], ic+id-i);
+        trans2y[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[1], ic+id-i);
+        trans2z[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[2], ic+id-i);
       }   
     }   
   }

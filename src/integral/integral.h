@@ -31,9 +31,7 @@
 
 namespace bagel {
 
-namespace {
-  enum class Int_t { Standard, London };
-}
+enum class Int_t { Standard, London };
 
 template <typename DataType>
 class Integral_base {

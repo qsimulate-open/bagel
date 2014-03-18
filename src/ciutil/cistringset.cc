@@ -71,9 +71,9 @@ void CIStringSet<RASString>::construct_phi() {
   phi_ = make_shared<StringMap>(size_);
   phi_->reserve(norb_*norb_);
 
-  unordered_map<size_t, size_t> lexmap;
+  unordered_map<bitset<nbit__>, size_t> lexmap;
   for (size_t i = 0; i < size_; ++i)
-    lexmap[strings_[i].to_ullong()] = i;
+    lexmap[strings_[i]] = i;
 
   size_t tindex = 0;
   for (auto& istring : strings_) {
@@ -84,8 +84,8 @@ void CIStringSet<RASString>::construct_phi() {
         if (intermediatebit[i]) continue;
         bitset<nbit__> sourcebit = intermediatebit; sourcebit.set(i);
         if (allowed(sourcebit)) {
-          assert(lexmap.find(sourcebit.to_ullong()) != lexmap.end());
-          (*phi_)[tindex].emplace_back(tindex, sign(istring, i, j), lexmap[sourcebit.to_ullong()], j+i*norb_);
+          assert(lexmap.find(sourcebit) != lexmap.end());
+          (*phi_)[tindex].emplace_back(tindex, sign(istring, i, j), lexmap[sourcebit], j+i*norb_);
         }
       }
     }

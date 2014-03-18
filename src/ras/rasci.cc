@@ -44,8 +44,10 @@ void RASCI::common_init() {
 //const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   davidson_subspace_ = idata_->get<int>("davidson_subspace", 20);
-  thresh_ = idata_->get<double>("thresh", 1.0e-16);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
+
+  batchsize_ = idata_->get<int>("batchsize", 512);
 
   nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
@@ -261,7 +263,7 @@ void RASCI::compute() {
   DavidsonDiag<RASCivec> davidson(nstate_, davidson_subspace_);
 
   // Object in charge of forming sigma vector
-  FormSigmaRAS form_sigma;
+  FormSigmaRAS form_sigma(batchsize_);
 
   // main iteration starts here
   cout << "  === RAS-CI iteration ===" << endl << endl;
@@ -283,8 +285,8 @@ void RASCI::compute() {
         sigman.push_back(make_shared<const RASCivec>(*sigma->data(i)));
       }
       else {
-        ccn.push_back(shared_ptr<const RASCivec>());
-        sigman.push_back(shared_ptr<const RASCivec>());
+        ccn.push_back(nullptr);
+        sigman.push_back(nullptr);
       }
     }
     const vector<double> energies = davidson.compute(ccn, sigman);
@@ -296,7 +298,7 @@ void RASCI::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
-      errors.push_back(errvec[i]->variance());
+      errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
     pdebug.tick_print("error");

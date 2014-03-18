@@ -39,7 +39,7 @@ class OverlapBatch : public OSInt {
     int nrank() const override { return 0; }
 
   public:
-    OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+    OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
     : OSInt(basis, stack) { common_init(); }
 
     void compute() override;

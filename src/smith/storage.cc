@@ -26,6 +26,7 @@
 
 #include <src/util/f77.h>
 #include <src/smith/storage.h>
+#include <src/math/algo.h>
 #include <stdexcept>
 #include <iostream>
 #include <algorithm>
@@ -131,7 +132,7 @@ void Storage_Incore::scale(const double a) {
   for (auto& i : hashtable_) {
     const size_t bn = i.second.first;
     const size_t ln = i.second.second;
-    dscal_(ln, a, data_[bn], 1);
+    blas::scale_n(a, data_[bn].get(), ln);
   }
 }
 

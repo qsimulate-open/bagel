@@ -105,7 +105,7 @@ class DistFCI : public Method {
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }

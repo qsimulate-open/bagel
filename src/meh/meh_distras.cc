@@ -47,5 +47,5 @@ shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma(shared_ptr<const DistRASDvec> cc
 
 // TODO function not yet written
 shared_ptr<DistRASDvec> MEH_DistRAS::form_sigma_1e(shared_ptr<const DistRASDvec> ccvec, const double* modata) const {
-  return shared_ptr<DistRASDvec>();
+  return nullptr;
 }

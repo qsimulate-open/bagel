@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<const ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 
   shared_ptr<ZMatrix> cfockd;
   if (nact_) {
