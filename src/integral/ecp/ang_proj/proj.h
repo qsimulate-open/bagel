@@ -320,12 +320,12 @@ class CartesianGauss {
 
     double normalise() {
       Factorial fact;
-      mpreal pi = static_cast<mpreal>(atan(1) * 4);
-      mpreal mexp = static_cast<mpreal>(exponent_);
-      mpreal mnorm = fact.compute(2 * angular_momentum_[0]) * fact.compute(2 * angular_momentum_[1]) * fact.compute(2 * angular_momentum_[2]) * pow(pi, 1.5);
-      int l = angular_momentum_[0] + angular_momentum_[1] + angular_momentum_[2];
-      mnorm /= (pow(2, 2*l) * fact.compute(angular_momentum_[0]) * fact.compute(angular_momentum_[1]) * fact.compute(angular_momentum_[2]) * pow(mexp, l+1.5));
-      mnorm = static_cast<mpreal>(1.0 / sqrt(mnorm));
+      const mpreal pi = static_cast<mpreal>(atan(1) * 4);
+      const mpreal mexp = static_cast<mpreal>(exponent_);
+      const int l = angular_momentum_[0] + angular_momentum_[1] + angular_momentum_[2];
+      const mpreal fact1 = fact.compute(angular_momentum_[0]) * fact.compute(angular_momentum_[1]) * fact.compute(angular_momentum_[2]);
+      const mpreal fact2 = fact.compute(2*angular_momentum_[0]) * fact.compute(2*angular_momentum_[1]) * fact.compute(2*angular_momentum_[2]);
+      const mpreal mnorm = static_cast<mpreal>(pow(2 * mexp / pi, 0.75) * sqrt(pow(4 * mexp, l) * pow(2, l) * fact1 / fact2));
       return mnorm.toDouble();
     }
 
@@ -338,8 +338,10 @@ class CartesianGauss {
     void set_weight(const double wt) { weight_ = wt; }
 
     double compute(const std::array<double, 3> centre) {
-      double rsq = centre[0] * centre[0] + centre[1] * centre[1] + centre[2] * centre[2];
-      return norm_ * std::pow(centre[0], angular_momentum_[0]) * std::pow(centre[1], angular_momentum_[1]) * std::pow(centre[2], angular_momentum_[2]) * std::exp(-exponent_ * rsq);
+      std::array<double, 3> RA;
+      for (int i = 0; i != 3; ++i) RA[i] = centre[i] - centre_[i];
+      double rsq = RA[0] * RA[0] + RA[1] * RA[1] + RA[2] * RA[2];
+      return norm_ * std::pow(RA[0], angular_momentum_[0]) * std::pow(RA[1], angular_momentum_[1]) * std::pow(RA[2], angular_momentum_[2]) * std::exp(-exponent_ * rsq);
     }
 
     void print() {

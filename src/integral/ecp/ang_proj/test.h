@@ -48,4 +48,37 @@ class Projection2 {
     }
 };
 
+class GaussianProduct {
+
+  protected:
+    std::shared_ptr<CartesianGauss> gA_;
+    std::shared_ptr<CartesianGauss> gB_;
+
+  public:
+    GaussianProduct(std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct) :
+      gA_(gproduct.first),
+      gB_(gproduct.second)
+    {}
+    ~GaussianProduct() {}
+
+    mpreal compute(const mpreal r) {
+      if (r.toDouble() > 15.0) {
+        return static_cast<mpreal>(0.0);
+      } else {
+        const double rd = r.toDouble();
+        std::array<double, 3> centre;
+        centre[0] = rd + gA_->centre(0);
+        centre[1] = gA_->centre(1);
+        centre[2] = gA_->centre(2);
+        const double g1 = gA_->compute(centre);
+        centre[0] = rd + gB_->centre(0);
+        centre[1] = gB_->centre(1);
+        centre[2] = gB_->centre(2);
+        const double g2 = gB_->compute(centre);
+        return static_cast<mpreal>(g1 * g2);
+      }
+    }
+
+};
+
 #endif

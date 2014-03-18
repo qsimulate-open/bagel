@@ -117,16 +117,26 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
   cout << " Test Radial Integration " << endl;
   const int max_iter = 100;
-  const double thresh_int = 10e-12;
-  const double exp = 100000;
-  Radial_Int<Gaussian_Int, const double> radial(max_iter, thresh_int, exp);
+  const double thresh_int = 10e-10;
+  const double exp = 2.0;
   const double pi = static_cast<double>(atan(1.0) * 4.0);
+
+  Radial_Int<Gaussian_Int, const double> radial(max_iter, thresh_int, exp);
   cout << "Analytic = " << std::sqrt(pi / exp) / 2.0 << endl;
 
+#if 0
   cout << " --- " << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projs(projAB, projCB);
   Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(max_iter, thresh_int, projs);
+#endif
+
+  // check normalization ss
+  cout << endl;
+  std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct(cargaussA, cargaussA);
+  Radial_Int<GaussianProduct, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> norm(max_iter, thresh_int, gproduct);
+  cout << "Should be " << std::pow(2.0 / pi, 1.5) * std::pow(std::sqrt(pi / 2.0) / 2.0, 3.0) << endl;
 
   return 0;
 
 }
+
