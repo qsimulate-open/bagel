@@ -52,8 +52,10 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nocc = ref_->nocc();
   const int nvirt = ref_->nvirt();
 
+  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0,nocc);
+
   // related to denominators
-  const int nmobasis = coeff->mdim(); 
+  const int nmobasis = coeff->mdim();
   assert(nmobasis == nclosed+nact+nvirt);
   auto eig = make_shared<Matrix>(nmobasis, nmobasis);
   {
@@ -93,7 +95,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ref_->coeff()->slice(0,nocc))->apply_J();
+  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
@@ -101,15 +103,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
-  auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ref_->coeff());
+  auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ocoeff);
   shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
-  dgemm_("N", "N", nmobasis, nocc, nocc, 2.0, hmo->data(), nmobasis, rdm1->data(), nocc, 0.0, g0->data(), nmobasis);
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
   // 2) two-electron contribution
-  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ref_->coeff()->slice(0,nocc));
+  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-  shared_ptr<const Matrix> buf = half->form_2index(fulld, 2.0);
-  g0->add_block(1.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+  shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
 
   // Recalculate the CI vectors (which can be avoided... TODO)
   shared_ptr<const Dvec> civ = task_->fci()->civectors();
