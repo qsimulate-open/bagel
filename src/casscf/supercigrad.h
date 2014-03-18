@@ -38,7 +38,7 @@ class SuperCIGrad : public SuperCI {
 
   public:
     SuperCIGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-      : SuperCI(idat, geom, ref),  target_state_(idat->get<int>("target", 1)) { };
+      : SuperCI(idat, geom, ref),  target_state_(idat->get<int>("target", 0)) { }
 
     void compute() {
       // compute CASSCF fist
