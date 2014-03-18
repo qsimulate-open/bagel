@@ -28,7 +28,8 @@ class Factorial {
 
     Factorial() {}
     ~Factorial() {}
-    const mpreal compute(const int n) {
+    mpreal operator()(const int n) const {
+      assert (n >= 0);
       mpreal fact = "1.0";
       for (int i = 0; i != n; ++i) {
         const mpreal imp = i;
@@ -60,9 +61,9 @@ class SphUSP {
         const int lz = angular_momentum_[0] - lx - ly;
         Factorial fact;
         const int lmam = angular_momentum_[0] - am;
-        const mpreal lmamf = fact.compute(lmam);
-        const mpreal lpamf = fact.compute(angular_momentum_[0] + am);
-        const mpreal lf = fact.compute(angular_momentum_[0]);
+        const mpreal lmamf = fact(lmam);
+        const mpreal lpamf = fact(angular_momentum_[0] + am);
+        const mpreal lf = fact(angular_momentum_[0]);
         const mpreal prefactor = sqrt(0.5 * (2*angular_momentum_[0]+1) * lmamf / lpamf / pi) / std::pow(2, angular_momentum_[0]) / lf;
         const int parity = (am - lx) % 2;
         double factor;
@@ -81,8 +82,8 @@ class SphUSP {
         const int jp = lmam / 2;
         for (int i = j; i <= jp; ++i) {
           si += comb(angular_momentum_[0], i) * comb(i, j) * std::pow(-1.0, i)
-              * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact.compute(2 * angular_momentum_[0] - 2 * i) : zero)
-              / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact.compute(angular_momentum_[0] - am - 2 * i) : zero);
+              * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact(2 * angular_momentum_[0] - 2 * i) : zero)
+              / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact(angular_momentum_[0] - am - 2 * i) : zero);
         }
         mpreal sk = zero;
         for (int k = 0; k <= j; ++k) {
@@ -235,7 +236,7 @@ class SH {
 
     const int am = fabs(m);
     const double plm = alegendre(l, am, cth);
-    mpreal f = fact.compute(l-am)/fact.compute(l+am);
+    mpreal f = fact(l-am)/fact(l+am);
     const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());
     double real = coef * plm * cos(am * phi);
     double imag = coef * plm * sin(am * phi);
@@ -255,7 +256,7 @@ class SH {
 
     const int am = fabs(m);
     const double plm = alegendre(l, am, cth);
-    mpreal f = fact.compute(l-am) / fact.compute(l+am);
+    mpreal f = fact(l-am) / fact(l+am);
     const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());
     if (m == 0) {
       return coef * plm;
@@ -323,8 +324,8 @@ class CartesianGauss {
       const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       const mpreal mexp = static_cast<mpreal>(exponent_);
       const int l = angular_momentum_[0] + angular_momentum_[1] + angular_momentum_[2];
-      const mpreal fact1 = fact.compute(angular_momentum_[0]) * fact.compute(angular_momentum_[1]) * fact.compute(angular_momentum_[2]);
-      const mpreal fact2 = fact.compute(2*angular_momentum_[0]) * fact.compute(2*angular_momentum_[1]) * fact.compute(2*angular_momentum_[2]);
+      const mpreal fact1 = fact(angular_momentum_[0]) * fact(angular_momentum_[1]) * fact(angular_momentum_[2]);
+      const mpreal fact2 = fact(2*angular_momentum_[0]) * fact(2*angular_momentum_[1]) * fact(2*angular_momentum_[2]);
       const mpreal mnorm = static_cast<mpreal>(pow(2 * mexp / pi, 0.75) * sqrt(pow(4 * mexp, l) * pow(2, l) * fact1 / fact2));
       return mnorm.toDouble();
     }
@@ -386,8 +387,8 @@ class ProjectionInt {
       const mpreal pi = static_cast<mpreal>(atan(1.0) * 4.0);
       if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
         Factorial fact;
-        mpreal num = "2.0" * fact.compute(i) * fact.compute(j) * fact.compute(k) * fact.compute((i+j+k+2)/2);
-        mpreal denom = fact.compute(i/2) * fact.compute(j/2) * fact.compute(k/2) * fact.compute(i+j+k+2);
+        mpreal num = "2.0" * fact(i) * fact(j) * fact(k) * fact((i+j+k+2)/2);
+        mpreal denom = fact(i/2) * fact(j/2) * fact(k/2) * fact(i+j+k+2);
         return ("4.0" * pi * num / denom).toDouble();
       } else {
         return 0.0;
@@ -589,7 +590,7 @@ class BesselI {
       const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       mpreal mbessi = "0.0";
       Factorial fact;
-      const mpreal mfact = fact.compute(l);
+      const mpreal mfact = fact(l);
       const mpreal half = "0.5";
       if (l == 0) {
         return bessel0(x);
