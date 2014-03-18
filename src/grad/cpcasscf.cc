@@ -204,7 +204,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     *Htilde1 *= 2.0;
     *Htilde2 *= 2.0;
 
-    auto top = make_shared<Htilde>(ref_, nclosed, nocca, Htilde1, Htilde2);
+    auto top = make_shared<Htilde>(ref_, 0, nact, Htilde1, Htilde2);
     vector<int> tmp(z1->ij(), 0);
     shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
 

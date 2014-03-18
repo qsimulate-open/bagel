@@ -63,8 +63,8 @@ void MOFile::init(const int nstart, const int nfence) {
 
   // core energy is set here
   if (nstart != 0) {
+    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/false, /*rhf*/true);
     shared_ptr<const Matrix> den = coeff_->form_density_rhf(nstart);
-    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), den, ref_->schwarz());
     core_energy_ = (*den * (*ref_->hcore()+*core_fock_)).trace() * 0.5;
   } else {
     core_fock_ = ref_->hcore();
