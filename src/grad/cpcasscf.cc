@@ -45,7 +45,7 @@ CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const sh
 }
 
 
-shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
+tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>> CPCASSCF::solve() const {
 
   // RI determinant space
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
@@ -76,10 +76,6 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     auto d1 = make_shared<Dvec>(d1_tmp, ref_->nstate());
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
-#if 1
-    // TODO understand this factor of 2
-    *d1 *= 2;
-#endif
     denom = make_shared<PairFile<Matrix, Dvec>>(d0, d1);
   }
 
@@ -119,6 +115,8 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   // during the iteration, we need to
   //  (i) antisymmetrize Z, as well as
   //  (ii) project out c from z
+
+  shared_ptr<Matrix> xmat;
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
@@ -162,6 +160,8 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     htilde->symmetrize();
     *htilde *= 2.0;
     *sigmaorb += *htilde * *dsa * 2.0; // Factor of 2
+
+    xmat = sigmaorb->copy();
 
     sigmaorb->antisymmetrize();
 
@@ -227,8 +227,9 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
 
   }
 
-solver->civec()->second()->print(-1);
-  return solver->civec();
+  shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
+  xmat->symmetrize(); // Eq. 53 of Celani 2003.
+  return make_tuple(result->first(), result->second(), xmat);
 
 }
 

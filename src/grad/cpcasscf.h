@@ -54,7 +54,8 @@ class CPCASSCF {
              const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const DFHalfDist> halfjj,
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
 
-    std::shared_ptr<PairFile<Matrix, Dvec>> solve() const;
+    // tuple of Z, z, and X.
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>> solve() const;
 
 };
 
