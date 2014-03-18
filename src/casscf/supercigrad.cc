@@ -132,6 +132,10 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // compute dipole...
   shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
+  auto dur_ao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
+  Dipole dipole_ur(geom_, dur_ao, "Unrelaxed");
+  dipole_ur.compute();
+
   dtot->ax_plus_y(1.0, dm);
 
   // form zdensity
@@ -144,9 +148,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   zrdm1_mat->symmetrize();
   dtot->ax_plus_y(1.0, zrdm1_mat);
 
-  // computes dipole moments
+  // compute relaxed dipole moment
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
-  Dipole dipole(geom_, dtotao);
+  Dipole dipole(geom_, dtotao, "Relaxed");
   dipole.compute();
 
   return make_shared<GradFile>(geom_->natom());
