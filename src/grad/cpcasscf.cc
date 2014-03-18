@@ -161,12 +161,12 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     auto htilde = make_shared<Matrix>(*cz0 % *ref_->hcore() * *ref_->coeff());
     htilde->symmetrize();
     *htilde *= 2.0;
-    dgemm_("N", "N", nmobasis, nocca, nocca, 2.0, htilde->data(), nmobasis, dsa->data(), nmobasis, 1.0, sigmaorb->data(), nmobasis);
+    *sigmaorb += *htilde * *dsa * 2.0; // Factor of 2
 
     sigmaorb->antisymmetrize();
 
     // At this point
-    // htilde = Zh + hZ^dagger
+    // htilde = Z^daggerh + hZ
     // fullb  = (D|ij)
     // fullz  = (D|ir)Z_rj + (D|rj)Z_ri
 
@@ -261,9 +261,6 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k)
         for (int l = 0; l != nact; ++l)
-//        rdm2->element(l,k,j,i) = 0.125*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j)
-//                                      + rdm2t->element(j,i,l,k)+rdm2t->element(j,i,k,l)+rdm2t->element(i,j,l,k)+rdm2t->element(i,j,k,l));
-//        rdm2->element(l,k,j,i) = 0.25*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i)+rdm2t->element(l,k,i,j)+rdm2t->element(k,l,i,j));
           rdm2->element(l,k,j,i) = 0.5*(rdm2t->element(l,k,j,i)+rdm2t->element(k,l,j,i));
 
   // prefactor
