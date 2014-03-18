@@ -51,13 +51,15 @@ class Projection2 {
 class GaussianProduct {
 
   protected:
+    int iX_;
     std::shared_ptr<CartesianGauss> gA_;
     std::shared_ptr<CartesianGauss> gB_;
 
   public:
-    GaussianProduct(std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct) :
-      gA_(gproduct.first),
-      gB_(gproduct.second)
+    GaussianProduct(std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct) :
+      iX_(std::get<0>(gproduct)),
+      gA_(std::get<1>(gproduct)),
+      gB_(std::get<2>(gproduct))
     {}
     ~GaussianProduct() {}
 
@@ -66,15 +68,8 @@ class GaussianProduct {
         return static_cast<mpreal>(0.0);
       } else {
         const double rd = r.toDouble();
-        std::array<double, 3> centre;
-        centre[0] = rd + gA_->centre(0);
-        centre[1] = gA_->centre(1);
-        centre[2] = gA_->centre(2);
-        const double g1 = gA_->compute(centre);
-        centre[0] = rd + gB_->centre(0);
-        centre[1] = gB_->centre(1);
-        centre[2] = gB_->centre(2);
-        const double g2 = gB_->compute(centre);
+        const double g1 = gA_->compute1D(iX_, rd + gA_->centre(iX_));
+        const double g2 = gB_->compute1D(iX_, rd + gB_->centre(iX_));
         return static_cast<mpreal>(g1 * g2);
       }
     }

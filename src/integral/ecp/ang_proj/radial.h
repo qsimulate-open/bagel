@@ -21,6 +21,7 @@ class Radial_Int {
     vector<mpreal> x_;
     vector<mpreal> w_;
     T function_;
+    double integral_;
 
   public:
     Radial_Int(const int max_iter, const double thresh_int, Value... tail) :
@@ -52,6 +53,7 @@ class Radial_Int {
         if (error < thresh_int_ && iter != 0) {
           std::cout << "Integration converged..." << std::endl;
           std::cout << "Radial integral = " << ans << std::endl;
+          integral_ = ans;
           break;
         } else if (iter == max_iter_-1) {
           std::cout << "Max iteration exceeded..." << std::endl;
@@ -62,6 +64,8 @@ class Radial_Int {
         ngrid *= 2;
       }
     }
+
+    double integral() { return integral_; }
 
     void transform_Log3(vector<mpreal>& r) {
 

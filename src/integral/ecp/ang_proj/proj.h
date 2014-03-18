@@ -345,6 +345,16 @@ class CartesianGauss {
       return norm_ * std::pow(RA[0], angular_momentum_[0]) * std::pow(RA[1], angular_momentum_[1]) * std::pow(RA[2], angular_momentum_[2]) * std::exp(-exponent_ * rsq);
     }
 
+    double compute1D(const int iX, const double centreX) {
+      Factorial fact;
+      const mpreal pi = static_cast<mpreal>(atan(1) * 4);
+      const mpreal mexp = static_cast<mpreal>(exponent_);
+      const int lx = angular_momentum_[iX];
+      const mpreal mnormX = static_cast<mpreal>(pow(2 * mexp / pi, 0.25) * sqrt(pow(4 * mexp, lx) * pow(2, lx) * fact(lx) / fact(2*lx)));
+      double r = centreX - centre_[iX];
+      return mnormX.toDouble() * std::pow(r, lx) * std::exp(-exponent_ * r * r);
+    }
+
     void print() {
       std::cout << "** Cartesian Gaussian **" << std::endl;
       std::cout << "Angular momentum (lx, ly, lz) = (" << angular_momentum_[0] << ", "

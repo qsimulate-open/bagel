@@ -8,6 +8,22 @@
 #include "test.h"
 //#include "src/integral/carsphlist.h"
 
+double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_ptr<CartesianGauss> gB) {
+
+  const int max_iter = 100;
+  const double thresh_int = 10e-10;
+  double overlapss;
+
+  for (int i = 0; i != 3; ++i) {
+    std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gP(i, gA, gB);
+    Radial_Int<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> overlap(max_iter, thresh_int, gP);
+    ((i == 0) ? overlapss = 2.0 * overlap.integral() : overlapss *= 2.0 * overlap.integral());
+  }
+
+  return overlapss;
+
+}
+
 using namespace std;
 
 int main() {
@@ -131,10 +147,14 @@ for (int iz = 0; iz <= maxl; ++iz) {
 #endif
 
   // check normalization ss
-  cout << endl;
-  std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct(cargaussA, cargaussA);
-  Radial_Int<GaussianProduct, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> norm(max_iter, thresh_int, gproduct);
-  cout << "Should be " << std::pow(2.0 / pi, 1.5) * std::pow(std::sqrt(pi / 2.0) / 2.0, 3.0) << endl;
+#if 0
+  std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct(0, cargaussA, cargaussA);
+  Radial_Int<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> norm(max_iter, thresh_int, gproduct);
+  cout << "Should be " << std::pow(2.0 / pi, 1.5) * std::pow(std::sqrt(pi / 2.0), 3.0) << endl;
+#endif
+
+  const double overlap = overlap_ss(cargaussA, cargaussA);
+  cout << "Overlap Integral < phi_A | phi_A > = " << overlap << endl;
 
   return 0;
 
