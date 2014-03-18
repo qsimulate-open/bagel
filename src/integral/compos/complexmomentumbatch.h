@@ -44,7 +44,7 @@ class ComplexMomentumBatch : public OSIntegral<std::complex<double>,Int_t::Londo
 
   public:
     ComplexMomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _magnetic_field,
-                         std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>())
+                         std::shared_ptr<StackMem> stack = nullptr)
      : OSIntegral<std::complex<double>,Int_t::London>(basis, stack), magnetic_field_(_magnetic_field) { common_init(); }
 
     void compute() override;

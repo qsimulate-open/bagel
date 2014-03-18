@@ -32,9 +32,7 @@ namespace bagel {
 
 class NAIBatch : public CoulombBatch_energy {
   public:
-    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
-             std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
-
+    NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr);
     NAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0);
 };
 

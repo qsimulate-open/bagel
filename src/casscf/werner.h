@@ -51,7 +51,7 @@ class WernerKnowles : public CASSCF {
     int max_mmicro_iter_;
 
   public:
-    WernerKnowles(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = std::shared_ptr<const Reference>())
+    WernerKnowles(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
       : CASSCF(idat, geom, ref) {common_init();
       // get thresh (for micro iteration) from the input
       thresh_mmicro_ = idat->get<double>("thresh_mmicro", thresh_micro_);

@@ -50,8 +50,7 @@ class UHF : public SCF_base {
 
   public:
     UHF() { }
-    UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-        const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>())
+    UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr)
       : SCF_base(idata, geom, re) {
 
       std::cout << indent << "*** Open-shell HF ***" << std::endl << std::endl;

@@ -30,6 +30,8 @@
 #include <vector>
 #include <tuple>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <cassert>
 
@@ -77,6 +79,13 @@ class StaticDist {
       }
       throw std::runtime_error("wrong call to StaticDist::iproc");
       return std::make_tuple(0,0);
+    }
+
+    void print() const {
+      std::cout << "  === StaticDist Information ===" << std::endl;
+      for (int i = 0; i != nproc_; ++i)
+        std::cout << "   " << std::setw(5) << i << std::setw(8) << start_[i] << "--"
+                                                << std::setw(8) << start_[i+1]-1 << std::endl;
     }
 
 };

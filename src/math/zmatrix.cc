@@ -66,6 +66,7 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 
 
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ZMatrix out(*this);
   out += o;
   return out;
@@ -73,6 +74,7 @@ ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
 
 
 ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ZMatrix out(*this);
   out -= o;
   return out;
@@ -80,12 +82,14 @@ ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
 
 
 ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(1.0, o);
   return *this;
 }
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(-1.0, o);
   return *this;
 }
@@ -114,7 +118,7 @@ ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -172,7 +176,7 @@ ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -198,7 +202,7 @@ ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
 
 #ifdef HAVE_SCALAPACK
   assert(localized_ == o.localized_);
-  if (localized_) {
+  if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
     zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -326,7 +330,7 @@ shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
   for (int i = deg; i != 1; --i) {
     const complex<double> inv = 1.0/static_cast<complex<double>>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf;
     if (i != 1) buf = *out;
   }
@@ -338,13 +342,13 @@ shared_ptr<ZMatrix> ZMatrix::exp(const int deg) const {
 shared_ptr<ZMatrix> ZMatrix::log(const int deg) const {
   auto out = make_shared<ZMatrix>(ndim_, mdim_, localized_);
   ZMatrix buf(*this);
-  for (int j = 0; j != ndim_; ++j) buf.element(j,j) -= 1.0;
+  for (int j = 0; j != ndim_; ++j) buf(j,j) -= 1.0;
   assert(ndim_ == mdim_);
 
   for (int i = deg; i != 1; --i) {
     const complex<double> inv = -static_cast<complex<double>>(i-1)/static_cast<complex<double>>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf.element(j,j) += 1.0;
+    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
     *out = (*this)*buf - buf;
     if (i != 1) buf = *out;
   }

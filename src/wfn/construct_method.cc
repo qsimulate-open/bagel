@@ -33,8 +33,11 @@
 #include <src/ras/distrasci.h>
 #include <src/zfci/zharrison.h>
 #include <src/casscf/superci.h>
+#if 0
 #include <src/casscf/werner.h>
 #include <src/casscf/casbfgs.h>
+#endif
+#include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
@@ -91,13 +94,16 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     string algorithm = itree->get<string>("algorithm", "");
     if (algorithm == "superci" || algorithm == "")
       out = make_shared<SuperCI>(itree, geom, ref);
+#if 0
     else if (algorithm == "werner" || algorithm == "knowles")
       out = make_shared<WernerKnowles>(itree, geom, ref);
     else if (algorithm == "bfgs")
       out = make_shared<CASBFGS>(itree, geom, ref);
+#endif
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
   }
+  else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
   else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
 
   return out;

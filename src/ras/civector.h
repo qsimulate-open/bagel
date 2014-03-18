@@ -77,7 +77,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         if (!ipair->empty())
           blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), block_offset));
         else
-          blocks_.push_back(std::shared_ptr<RBlock>());
+          blocks_.push_back(nullptr);
         ++block_offset;
       }
     }
@@ -198,7 +198,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
 
     std::shared_ptr<DistRASCivector<DataType>> clone() const { return std::make_shared<DistRASCivector<DataType>>(det_); }
     std::shared_ptr<DistRASCivector<DataType>> copy() const  { return std::make_shared<DistRASCivector<DataType>>(*this); }
-    std::shared_ptr<DistRASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
+    std::shared_ptr<DistRASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<DistRASCivector<DataType>>(det);
       const int myrank = mpi__->rank();
@@ -273,6 +273,7 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / global_size_; }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) {
       this->for_each_block( [&a] (std::shared_ptr<RBlock> b) { std::for_each(b->local(), b->local()+b->size(), [&a] (DataType& p) { p*= a; }); });
@@ -292,18 +293,15 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
       std::shared_ptr<const DistRASCivector<DataType>> S2 = spin();
       return this->dot_product(*S2);
     }
-    std::shared_ptr<DistRASCivector<DataType>> spin() const { assert(false); return std::shared_ptr<DistRASCivector<DataType>>();} // returns S^2 | civec >
-    std::shared_ptr<DistRASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
-      { assert(false); return std::shared_ptr<DistRASCivector<DataType>>(); } // S_-
-    std::shared_ptr<DistRASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
-      { assert(false); return std::shared_ptr<DistRASCivector<DataType>>(); } // S_+
+    std::shared_ptr<DistRASCivector<DataType>> spin() const { assert(false); return nullptr;} // returns S^2 | civec >
+    std::shared_ptr<DistRASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_-
+    std::shared_ptr<DistRASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_+
     void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
 
     std::shared_ptr<DistRASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {
       // action: true -> create; false -> annihilate
       // spin: true -> alpha; false -> beta
-      auto out = std::shared_ptr<DistRASCivector<DataType>>();
-
+      auto out = nullptr;
       return out;
     }
 
@@ -421,7 +419,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
           sz += blocks_.back()->size();
         }
         else {
-          blocks_.push_back(std::shared_ptr<RBlock>());
+          blocks_.push_back(nullptr);
         }
       }
     }
@@ -474,7 +472,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     std::shared_ptr<RASCivector<DataType>> clone() const { return std::make_shared<RASCivector<DataType>>(det_); }
     std::shared_ptr<RASCivector<DataType>> copy() const  { return std::make_shared<RASCivector<DataType>>(*this); }
-    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = std::shared_ptr<const RASDeterminants>()) const {
+    std::shared_ptr<RASCivector<DataType>> transpose(std::shared_ptr<const RASDeterminants> det = nullptr) const {
       if (!det) det = det_->transpose();
       auto out = std::make_shared<RASCivector<DataType>>(det);
       this->for_each_block( [&out]
@@ -498,6 +496,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this) / size_; }
+    double rms() const { return std::sqrt(variance()); }
 
     void scale(const DataType a) { std::for_each( data(), data() + size_, [&a] (DataType& p) { p *= a; } ); }
     void ax_plus_y(const DataType a, const RASCivector<DataType>& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }
@@ -505,11 +504,9 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     double spin_expectation() const { assert(false); return 0.0; } // returns < S^2 >
-    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return std::shared_ptr<RASCivector<DataType>>();} // returns S^2 | civec >
-    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
-      { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_-
-    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = std::shared_ptr<RASDeterminants>()) const
-      { assert(false); return std::shared_ptr<RASCivector<DataType>>(); } // S_+
+    std::shared_ptr<RASCivector<DataType>> spin() const { assert(false); return nullptr;} // returns S^2 | civec >
+    std::shared_ptr<RASCivector<DataType>> spin_lower(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_-
+    std::shared_ptr<RASCivector<DataType>> spin_raise(std::shared_ptr<const RASDeterminants> target_det = nullptr) const { assert(false); return nullptr; } // S_+
     void spin_decontaminate(const double thresh = 1.0e-8) { assert(false); }
 
     std::shared_ptr<RASCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const {

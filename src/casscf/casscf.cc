@@ -42,7 +42,7 @@ CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometr
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
   // TODO coefficient projection is not working properly.
-  ref_ = shared_ptr<const Reference>();
+  ref_ = nullptr;
 
   if (!ref_) {
     auto scf = make_shared<SCF>(idat, geom);
@@ -76,7 +76,7 @@ void CASSCF::common_init() {
   // get istate from the input (for geometry optimization)
   istate_ = idata_->get<int>("istate", 0);
   // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-10);
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", thresh_);
 
@@ -186,7 +186,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
   // note: this should be after natorb transformation.
-  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, geom_->df(), coeff_, nclosed_, fci_, fci_->rdm2_av());
+  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
 
   {
     // Fock operators

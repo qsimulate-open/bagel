@@ -142,6 +142,20 @@ namespace {
     return zdotc_(n, p, 1, q, 1);
   }
 
+  // SCAL
+  template<class T, class U,
+           // U has to be either raw pointers or random access iterators
+           class = typename std::enable_if<std::is_pointer<U>::value>::type >
+  void scale_n(const T p, U q, const size_t n) {
+    std::for_each(q, q+n, [&p](decltype(*q) j) { j *= p; });
+  }
+  template<>
+  void scale_n(const double p, double* q, const size_t n) { dscal_(n, p, q, 1); }
+  template<>
+  void scale_n(const double p, std::complex<double>* q, const size_t n) { zscal_(n, p, q, 1); }
+  template<>
+  void scale_n(const std::complex<double> p, std::complex<double>* q, const size_t n) { zscal_(n, p, q, 1); }
+
 }}
 
 }

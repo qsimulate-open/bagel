@@ -46,7 +46,7 @@ class SOSCF : public SCF_base {
   public:
     SOSCF() { }
     SOSCF(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom,
-          const std::shared_ptr<const Reference> re = std::shared_ptr<const Reference>());
+          const std::shared_ptr<const Reference> re = nullptr);
 
     void initial_guess();
 
@@ -55,7 +55,7 @@ class SOSCF : public SCF_base {
     std::shared_ptr<const Matrix> sooverlap();
     std::shared_ptr<const Matrix> sotildex();
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 
 }

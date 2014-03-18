@@ -52,7 +52,6 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   assert(fci_->norb() == ref_->nact());
 
   const size_t nmobasis = ref_->coeff()->mdim();
-  const size_t naobasis = geom_->nbasis();
   const size_t nocca = ref_->nocc();
 
   const int nclosed = ref_->nclosed();
@@ -85,12 +84,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   }
 
   // BFGS update of the denominator above
-#if 0
-  shared_ptr<BFGS<PairFile<Matrix, Dvec>>> bfgs(new BFGS<PairFile<Matrix, Dvec>>(denom, false));
-#else
-  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom);
-#endif
-
+  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, true);
 
   // CI vector
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
@@ -110,11 +104,10 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   z->zero();
 
   z = bfgs->extrapolate(source, z);
-// not needed as z->xecond() is zero
-//z->second()->project_out(civector_);
+  // not needed as z->xecond() is zero
+  //z->second()->project_out(civector_);
 
   // inverse matrix of C
-//shared_ptr<Matrix> cinv(new Matrix(*ref_->coeff())); cinv->inverse();
   auto ovl = make_shared<const Overlap>(geom_);
   auto cinv = make_shared<const Matrix>(*ref_->coeff() % *ovl);
 
@@ -152,7 +145,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
       tmp0->ax_plus_y(1.0, tmp1);
       shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
-      dgemm_("T", "N", nmobasis, nocca, naobasis, 1.0, ocoeff->data(), naobasis, buf->data(), naobasis, 1.0, sigmaorb->data(), nmobasis);
+      sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
     }
     // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
     shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->slice(0,nocca));
@@ -161,7 +154,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
       shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
       shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
       // mo transformation of s
-      dgemm_("T", "N", nmobasis, nocca, naobasis, 1.0, ocoeff->data(), naobasis, buf->data(), naobasis, 1.0, sigmaorb->data(), nmobasis);
+      sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
     }
 
     // one electron part...
@@ -211,7 +204,7 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
     *Htilde1 *= 2.0;
     *Htilde2 *= 2.0;
 
-    auto top = make_shared<Htilde>(ref_, nclosed, nocca, Htilde1, Htilde2);
+    auto top = make_shared<Htilde>(ref_, 0, nact, Htilde1, Htilde2);
     vector<int> tmp(z1->ij(), 0);
     shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
 
@@ -285,15 +278,29 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   dgemm_("T", "N", nmobasis, nact, naobasis, prefactor, coeff, naobasis, buf2.get(), naobasis, 0.0, amat->element_ptr(0,nclosed), nmobasis);
 
   // Half transformed DF vector
-#if 0
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
-#else
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(acoeff);
-#endif
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
   shared_ptr<const Matrix> jd = half->form_2index(fulld, 1.0);
   dgemm_("T", "N", nmobasis, nact, naobasis, prefactor, coeff, naobasis, jd->data(), naobasis, 1.0, amat->element_ptr(0,nclosed), nmobasis);
+
+  // additing f^z_ri contribution
+  if (nclosed) {
+    auto rdm1mat = make_shared<Matrix>(nact, nact);
+    copy_n(rdm1->data(), rdm1->size(), rdm1mat->data());
+    shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
+    shared_ptr<const Matrix> adenj = make_shared<Matrix>(*rdm1mat ^ *acoeff);
+
+    shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nclosed);
+    // coulomb
+    Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * *ocoeff);
+    // exchange
+    shared_ptr<DFFullDist> halfd = half->compute_second_transform(ocoeff);
+    halfd->rotate_occ1(rdm1mat);
+    fockz += *half->form_2index(halfd->apply_JJ(), -0.5);
+    // add to amat
+    amat->add_block(4.0, 0, 0, nmobasis, nclosed, *ref_->coeff() % fockz);
+  }
 
   return amat;
 }

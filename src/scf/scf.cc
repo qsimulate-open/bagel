@@ -77,7 +77,7 @@ void SCF::compute() {
         aodensity_ = coeff_->form_density_rhf(nocc_);
         focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
       } else {
-        focka = make_shared<const Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        focka = make_shared<const Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -120,7 +120,7 @@ void SCF::compute() {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock<1>>(geom_, hcore_, shared_ptr<const Matrix>(), coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 

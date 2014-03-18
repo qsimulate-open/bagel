@@ -35,28 +35,24 @@ namespace bagel {
 
 class OrbitalLocalization {
   protected:
-    std::shared_ptr<const PTree> input_; // Hang on to the input for convenience
+    // Hang on to the input for convenience
+    std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const DistMatrix> coeff_;
+    std::shared_ptr<const Matrix> coeff_;
 
-    // These are set when the method is constructed
-    const int nclosed_;
-    const int nact_;
-    const int nvirt_;
+    std::vector<std::pair<int, int>> subspaces_;
 
-    // Can be toggled from the input
-    bool localize_closed_;
-    bool localize_active_;
-    bool localize_virtual_;
+    // used to reorder subspaces only
+    std::vector<double> diagonals_;
 
-    int max_iter_;
-    double thresh_;
+    virtual std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> coeff) = 0;
 
   public:
     OrbitalLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> coeff,
-      const int nclosed, const int nact, const int nvirt);
+      std::vector<std::pair<int, int>> subspaces);
+    OrbitalLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref);
 
-    virtual std::shared_ptr<const Matrix> localize() = 0;
+    std::shared_ptr<Matrix> localize();
     virtual double metric() const = 0;
 };
 
@@ -64,54 +60,46 @@ class RegionLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int>> bounds_;
     std::vector<int> sizes_;
-    std::shared_ptr<DistMatrix> sqrt_S_;
-    std::shared_ptr<DistMatrix> S_inverse_half_;
+    std::shared_ptr<Matrix> sqrt_S_;
+    std::shared_ptr<Matrix> S_inverse_half_;
     std::vector<std::vector<int>> region_orbitals_;
+
+    std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> coeff) override;
 
   public:
     RegionLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> coeff,
-      std::vector<int> region_sizes, const int nclosed, const int nact = 0, const int nvirt = 0);
-    RegionLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> coeff,
-      const int nclosed, const int nact = 0, const int nvirt = 0);
-    RegionLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref, std::vector<int> region_sizes) :
-      RegionLocalization(input, ref->geom(), ref->coeff(), region_sizes, ref->nclosed(), ref->nact(), ref->nvirt()) {}
-    RegionLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref) :
-      RegionLocalization(input, ref->geom(), ref->coeff(), ref->nclosed(), ref->nact(), ref->nvirt()) {}
+      std::vector<std::pair<int, int>> subspaces, std::vector<int> region_sizes = std::vector<int>());
+    RegionLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref, std::vector<int> region_sizes = std::vector<int>());
 
-    // TODO get rid of these or clean them up
-    std::vector<std::vector<int>> region_orbitals() const { return region_orbitals_; }
-    std::vector<int> region_orbitals(const int i) const { return region_orbitals_.at(i); }
-
-    std::shared_ptr<const Matrix> localize() override;
+    std::shared_ptr<Matrix> localize();
 
     double metric() const override {return 0.0;} // Until we can think of a good metric
 
   private:
     void common_init(std::vector<int> sizes);
-    std::shared_ptr<DistMatrix> localize_space(std::shared_ptr<const DistMatrix> density);
 };
 
 // Pipek-Mezey
 class PMLocalization : public OrbitalLocalization {
   protected:
     std::vector<std::pair<int, int>> atom_bounds_;
-    std::shared_ptr<DistMatrix> S_;
+    std::shared_ptr<Matrix> S_;
+
+    int max_iter_;
+    double thresh_;
+
+    std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> coeff) override;
 
   public:
     PMLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> coeff,
-      const int nclosed, const int nact = 0, const int nvirt = 0);
-    PMLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref) :
-      PMLocalization(input, ref->geom(), ref->coeff(), ref->nclosed(), ref->nact(), ref->nvirt()) {}
-
-    std::shared_ptr<const Matrix> localize() override;
+      std::vector<std::pair<int, int>> subspaces);
+    PMLocalization(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref);
 
     double metric() const override;
 
   private:
-    double calc_P(std::shared_ptr<const DistMatrix> coeff, const int nstart, const int norb) const;
+    double calc_P(std::shared_ptr<const Matrix> coeff, const int nstart, const int norb) const;
     void common_init();
-
-    void localize_space(std::shared_ptr<DistMatrix> coeff, const int nstart, const int norb);
 };
 
 }

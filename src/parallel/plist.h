@@ -122,7 +122,7 @@ class ParallelList {
           lock = std::move(next_lock);
         }
       }
-      return std::shared_ptr<T>();
+      return nullptr;
     }
 
     template <typename Predicate>

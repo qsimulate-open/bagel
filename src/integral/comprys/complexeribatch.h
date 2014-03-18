@@ -42,7 +42,7 @@ class ComplexERIBatch : public ERIBatch_Base<std::complex<double>,Int_t::London>
 
     // dummy will never be used.
     ComplexERIBatch(const std::array<std::shared_ptr<const Shell>,4>&, const double max_density, const std::complex<double> dummy = std::complex<double>(0.0,0.0),
-             const bool dum = true, std::shared_ptr<StackMem> stack = std::shared_ptr<StackMem>());
+             const bool dum = true, std::shared_ptr<StackMem> stack = nullptr);
 
     /// compute a batch of integrals
     void compute() override;

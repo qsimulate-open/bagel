@@ -41,7 +41,7 @@ namespace bagel {
 
 class Jacobi_base {
   protected:
-    std::shared_ptr<DistMatrix> Q_; // Stores the eigenvectors
+    std::shared_ptr<Matrix> Q_; // Stores the eigenvectors
 
     JacobiPairs sweeper_;
 
@@ -49,10 +49,10 @@ class Jacobi_base {
     const int nstart_;
     const int norb_;
 
-    virtual void subsweep(std::vector<std::pair<int, int>> pairlist) = 0;
+    virtual void subsweep(std::vector<std::pair<int, int>>& pairlist) = 0;
 
   public:
-    Jacobi_base(std::shared_ptr<const PTree> input, std::shared_ptr<DistMatrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {
+    Jacobi_base(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> Q, const int nstart = 0, const int norb = 0) : Q_(Q), nbasis_(Q->ndim()), nstart_(nstart), norb_(norb) {
       if (norb != 0 ) {
         std::string pair_generator = input->get<std::string>("pairs", "roundrobin");
         if ( pair_generator == "roundrobin" || pair_generator == "rr" ) sweeper_ = JacobiRoundRobin(nstart, nstart + norb);
@@ -74,25 +74,25 @@ class Jacobi_base {
 
 class JacobiDiag : public Jacobi_base {
   protected:
-    std::shared_ptr<DistMatrix> A_; // The matrix to be diagonalized
+    std::shared_ptr<Matrix> A_; // The matrix to be diagonalized
 
-    void subsweep(std::vector<std::pair<int,int>> pairlist) override;
+    void subsweep(std::vector<std::pair<int,int>>& pairlist) override;
 
   public:
-    JacobiDiag(std::shared_ptr<const PTree> input, std::shared_ptr<DistMatrix> A, std::shared_ptr<DistMatrix> Q) : Jacobi_base(input, Q), A_(A) {};
+    JacobiDiag(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> A, std::shared_ptr<Matrix> Q) : Jacobi_base(input, Q), A_(A) {};
 
     void rotate(const int k, const int l);
 };
 
 class JacobiPM : public Jacobi_base {
   protected:
-    std::shared_ptr<DistMatrix> S_;
+    std::shared_ptr<Matrix> S_;
     std::vector<std::pair<int, int>> atom_bounds_;
 
-    void subsweep(std::vector<std::pair<int,int>> pairlist) override;
+    void subsweep(std::vector<std::pair<int,int>>& pairlist) override;
 
   public:
-    JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<DistMatrix> coeff, const int nstart, const int norb, std::shared_ptr<DistMatrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
+    JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
       Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {}
 };
 

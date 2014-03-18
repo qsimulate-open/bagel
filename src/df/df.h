@@ -56,8 +56,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     bool serial_;
 
   public:
-    ParallelDF(const size_t, const size_t, const size_t,
-               std::shared_ptr<const ParallelDF> = std::shared_ptr<const ParallelDF>(), std::shared_ptr<Matrix> = std::shared_ptr<Matrix>());
+    ParallelDF(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF> = nullptr, std::shared_ptr<Matrix> = nullptr);
 
     size_t naux() const { return naux_; }
     size_t nindex1() const { return nindex1_; }
@@ -90,8 +89,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den, const bool onlyonce = false) const;
     std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const Matrix> cd) const;
 
-    std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = std::shared_ptr<const Matrix>(),
-                                       const bool onlyonce = false) const;
+    std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {
       Timer time;
@@ -121,8 +119,7 @@ class DFDist : public ParallelDF {
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
-    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = std::shared_ptr<DFBlock>(),
-           std::shared_ptr<const ParallelDF> df = std::shared_ptr<const ParallelDF>(), std::shared_ptr<Matrix> data2 = std::shared_ptr<Matrix>())
+    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = nullptr, std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr)
       : ParallelDF(naux, nbas, nbas, df, data2) {
       if (block)
         block_.push_back(block);
@@ -282,6 +279,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     void symmetrize();
+    void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
     // 2RDM contractions
     // special function for RHF
@@ -304,6 +302,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const ParallelDF> d) const { return apply_J(d->data2()); }
     std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
 
+    std::shared_ptr<DFFullDist> swap() const;
 };
 
 }

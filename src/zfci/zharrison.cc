@@ -43,7 +43,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_fci", max_iter_);
-  thresh_ = idata_->get<double>("thresh", 1.0e-20);
+  thresh_ = idata_->get<double>("thresh", 1.0e-10);
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
@@ -228,7 +228,7 @@ void ZHarrison::compute() {
     // compute errors
     vector<double> errors;
     for (int i = 0; i != nstate_; ++i) {
-      errors.push_back(errvec[i]->variance());
+      errors.push_back(errvec[i]->rms());
       conv[i] = static_cast<int>(errors[i] < thresh_);
     }
     pdebug.tick_print("error");

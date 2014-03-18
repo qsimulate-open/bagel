@@ -39,7 +39,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_p
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) {
-      sigmavec.push_back(shared_ptr<DistCivec>());
+      sigmavec.push_back(nullptr);
       continue;
     }
     shared_ptr<const DistCivec> cc = ccvec[istate];
@@ -194,7 +194,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   const size_t neleb = base_det->neleb();
 
   const static Comb comb;
-  const size_t lengb = comb.c(norb, neleb-2);
+  const size_t lengb = comb(norb, neleb-2);
   vector<bitset<nbit__>> intb(lengb, bitset<nbit__>(0));
   vector<int> data(norb);
   iota(data.begin(), data.end(), 0);

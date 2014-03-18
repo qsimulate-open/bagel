@@ -155,7 +155,7 @@ class RDM : public RDM_base<DataType> {
 
     std::shared_ptr<Matrix> rdm1_mat(const int nclosed, const bool all = true) const {
       throw std::logic_error("RDM<N>::rdm1_mat() should not be called with N>1");
-      return std::shared_ptr<Matrix>();
+      return nullptr;
     }
 
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {

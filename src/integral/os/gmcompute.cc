@@ -36,7 +36,7 @@ const static CarSphList carsphlist;
 // Reused most of the KineticBatch functions
 void GMomentBatch::compute() {
 
-  const SortList sort_ (spherical_);
+  const SortList sort(spherical_);
 
   double* const intermediate_p = stack_->get(6*size_block_);
   perform_VRR(intermediate_p);
@@ -58,11 +58,11 @@ void GMomentBatch::compute() {
       carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_c, intermediate_i);
 
       const unsigned int sort_index = basisinfo_[1]->angular_number()*ANG_HRR_END+basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_i, cont1_, cont0_, 1, swap01_);
       stack_->release(cont0_*cont1_*asize_final_, intermediate_i);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number()*ANG_HRR_END+basisinfo_[0]->angular_number();
-      sort_.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
+      sort.sortfunc_call(sort_index, cdata, intermediate_c, cont1_, cont0_, 1, swap01_);
     }
   }
   stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_c);
@@ -83,8 +83,8 @@ void GMomentBatch::compute() {
   // derivative with respect to the second center
   fill_n(data_+size_block_*9, size_block_*9, 0.0);
 
-  if (swap01_) dscal_(size_block_*9, -1.0, data_, 1);
-  daxpy_(size_block_*9, -1.0, data_, 1, data_+size_block_*9, 1); 
+  if (swap01_) blas::scale_n(-1.0, data_, size_block_*9);
+  blas::ax_plus_y_n(-1.0, data_, size_block_*9, data_+size_block_*9);
 }
 
 

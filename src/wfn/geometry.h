@@ -163,7 +163,7 @@ class Geometry : public Molecule {
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
     const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
     // TODO resolve "mutable" issues
-    void discard_df() const { df_ = dfs_ = dfsl_ = std::shared_ptr<DFDist>(); }
+    void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
@@ -179,7 +179,7 @@ class Geometry : public Molecule {
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = std::shared_ptr<const Matrix>()) const;
+    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;

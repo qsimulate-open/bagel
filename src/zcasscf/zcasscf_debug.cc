@@ -40,7 +40,7 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   cout << "perturbing an orbital by : " << setprecision(5) << angle << endl;
   cout << "kramers adaptation       : " << (kramers ? "on" : "off") << endl;
 
-  shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2, /*superci*/false);
+  shared_ptr<ZRotFile> atmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 
   // currently ++ and -- blocks
   atmp->ele_vc(morbital, norbital) = angle;

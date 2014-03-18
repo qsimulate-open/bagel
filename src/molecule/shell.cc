@@ -167,7 +167,7 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     conts.push_back(cont);
     ranges.push_back(make_pair(i,i+1));
   }
-  return angular_number_+increment < 0 ? shared_ptr<const Shell>() : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
+  return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
 }
 
 

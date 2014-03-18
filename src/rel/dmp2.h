@@ -42,8 +42,7 @@ class DMP2 : public Method {
     double energy_;
 
   public:
-    DMP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>,
-         const std::shared_ptr<const Reference> = std::shared_ptr<const Reference>());
+    DMP2(const std::shared_ptr<const PTree>, const std::shared_ptr<const Geometry>, const std::shared_ptr<const Reference> = nullptr);
 
     virtual void compute() override;
     virtual std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; } 

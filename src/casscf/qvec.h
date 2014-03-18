@@ -36,7 +36,7 @@ class Qvec : public Matrix {
   protected:
 
   public:
-    Qvec(const int n, const int m, std::shared_ptr<const DFDist> df, std::shared_ptr<const Coeff> c, const size_t nclosed,
+    Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed,
          std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm);
     Qvec(const Matrix& a) : Matrix(a) {}
 

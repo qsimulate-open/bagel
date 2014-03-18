@@ -38,5 +38,5 @@ shared_ptr<DistDvec> MEH_DistCAS::form_sigma(shared_ptr<const DistDvec> ccvec, s
 shared_ptr<DistDvec> MEH_DistCAS::form_sigma_1e(shared_ptr<const DistDvec> ccvec, const double* modata) const {
   throw logic_error("1e properties not yet implemented in MEH_DistCAS");
 
-  return shared_ptr<DistDvec>();
+  return nullptr;
 }

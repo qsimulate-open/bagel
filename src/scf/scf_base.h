@@ -101,7 +101,7 @@ class SCF_base : public Method {
     double* eig() { return eig_.data(); };
 
     std::shared_ptr<DFHalfDist> half() const { return half_; }
-    void discard_half() { half_ = std::shared_ptr<DFHalfDist>(); }
+    void discard_half() { half_.reset(); }
 };
 
 }

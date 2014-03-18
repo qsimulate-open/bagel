@@ -78,7 +78,7 @@ class OSIntegral : public Integral_base<DataType> {
 
   public:
     // deriv rank negative means multipole integrals
-    OSIntegral(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = std::shared_ptr<StackMem>());
+    OSIntegral(const std::array<std::shared_ptr<const Shell>,2>&, std::shared_ptr<StackMem> = nullptr);
     ~OSIntegral();
 
     DataType* data(const int i) override { assert(i < nblocks()); return data_+i*size_block_; }

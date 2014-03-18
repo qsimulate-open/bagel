@@ -354,7 +354,7 @@ class RASTask {
 
       // make sure it is a valid result
       for (int i = 0; i < 6; ++i)
-        if (info[i] < 0 || info[i] > ras[i/2]) return std::shared_ptr<RASBlock<double>>();
+        if (info[i] < 0 || info[i] > ras[i/2]) return nullptr;
 
       // is it out of space?
       const int nholes = 2*ras[0] - (info[0] + info[1]);
@@ -396,12 +396,12 @@ class RASTask {
         }
         else {
           // impossible to contribute
-          return std::shared_ptr<RASBlock<double>>();
+          return nullptr;
         }
 
         // search down branch for active branches with needed operations
         if (!branch->if_contributes(needed))
-          return std::shared_ptr<RASBlock<double>>();
+          return nullptr;
       }
 
       std::shared_ptr<const RASString> ta = spin ? stringspace(info[0], ras[0], info[2], ras[1], info[4], ras[2]) : sa;

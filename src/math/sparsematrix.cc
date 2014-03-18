@@ -121,7 +121,7 @@ Matrix SparseMatrix::operator+(const Matrix& o) const {
 
   for (int i = 0; i < ndim_; ++i) {
     for (int rowdata = rind_[i] - 1; rowdata < rind_[i+1] - 1; ++rowdata) {
-      out.element(i, cols_[rowdata] - 1) += data_[rowdata];
+      out(i, cols_[rowdata] - 1) += data_[rowdata];
     }
   }
 

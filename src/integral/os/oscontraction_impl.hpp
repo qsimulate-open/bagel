@@ -50,7 +50,7 @@ void OSIntegral<DataType, IntType>::perform_contraction(const int asize, const D
       const int begin1 = ranges1[k].first;
       const int end1   = ranges1[k].second;
       for (int j = begin1; j != end1; ++j) {
-        for (int n=0; n!=asize; n++) cont[n] += coeff1[k][j]*work[j*asize+n];
+        blas::ax_plus_y_n(coeff1[k][j], work+j*asize, asize, cont);
       }
     }
   }

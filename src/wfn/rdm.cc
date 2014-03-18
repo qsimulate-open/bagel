@@ -74,7 +74,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
   // fix the phase
   for (int i = 0; i != dim_; ++i) {
     if (buf2->element(i,i) < 0.0)
-      dscal_(dim_, -1.0, buf2->element_ptr(0,i), 1);
+      blas::scale_n(-1.0, buf2->element_ptr(0,i), dim_);
   }
 
   return make_pair(buf2, vec2);
