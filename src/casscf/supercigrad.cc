@@ -46,7 +46,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);
 
-  const int target = 0;
+  const int target = task_->target_state();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
@@ -102,8 +102,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
   auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ref_->coeff());
-  shared_ptr<const Matrix> rdm1 = task_->fci()->rdm1(target)->rdm1_mat(nclosed);
-//shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
   dgemm_("N", "N", nmobasis, nocc, nocc, 2.0, hmo->data(), nmobasis, rdm1->data(), nocc, 0.0, g0->data(), nmobasis);
   // 2) two-electron contribution
@@ -143,7 +142,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   zrdm1_mat->symmetrize();
   dtot->ax_plus_y(1.0, zrdm1_mat);
 
-  // computes dipole mements
+  // computes dipole moments
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
   Dipole dipole(geom_, dtotao);
   dipole.compute();

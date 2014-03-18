@@ -104,6 +104,8 @@ void Optimize::compute() {
     // in case of SA-CASSCF
     } else {
       if (algorithm == "superci" || algorithm == "") {
+        const string target = lastmethod->get<string>("target", "");
+        assert(!target.empty()); // make sure target state is specified in input
         auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_);
         opt->compute();
         geom_ = opt->geometry();
