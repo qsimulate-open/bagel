@@ -80,14 +80,14 @@ class SphUSP {
         Comb comb;
         const int jp = lmam / 2;
         for (int i = j; i <= jp; ++i) {
-          si += comb.c(angular_momentum_[0], i) * comb.c(i, j) * std::pow(-1.0, i)
+          si += comb(angular_momentum_[0], i) * comb(i, j) * std::pow(-1.0, i)
               * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact.compute(2 * angular_momentum_[0] - 2 * i) : zero)
               / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact.compute(angular_momentum_[0] - am - 2 * i) : zero);
         }
         mpreal sk = zero;
         for (int k = 0; k <= j; ++k) {
           if (lx - 2*k >= 0 && lx - 2*k <= am) {
-            sk += (k <= j ? comb.c(j, k) : zero) * comb.c(am, lx - 2*k) * std::pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
+            sk += (k <= j ? comb(j, k) : zero) * comb(am, lx - 2*k) * std::pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
           }
         }
 //      std::cout << "(xyz) = (" << lx << ", " << ly << ", " << lz << ")" << " prefactor = " << prefactor << " si = " << si << " sk = " << sk << " factor = " << factor << " ans = " << (prefactor * si * sk * factor).toDouble() << std::endl;
@@ -505,13 +505,13 @@ class ProjectionInt {
         double ans = 0.0;
         for (int kx = 0; kx != nx+1; ++kx) {
 //        std::cout << "kx = " << kx << std::endl;
-          const double ckx = comb.c(nx, kx);
+          const double ckx = comb(nx, kx);
           for (int ky = 0; ky != ny+1; ++ky) {
 //          std::cout << "ky = " << ky << std::endl;
-            const double cky = comb.c(ny, ky);
+            const double cky = comb(ny, ky);
             for (int kz = 0; kz != nz+1; ++kz) {
 //            std::cout << "kz = " << kz << std::endl;
-              const double ckz = comb.c(nz, kz);
+              const double ckz = comb(nz, kz);
               const int lk = kx + ky + kz;
               double sld = 0.0;
               for (int ld = 0; ld != lnu+1; ++ld) {
