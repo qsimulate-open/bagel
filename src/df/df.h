@@ -279,6 +279,7 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     void symmetrize();
+    void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
     // 2RDM contractions
     // special function for RHF

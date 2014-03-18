@@ -373,6 +373,13 @@ void DFFullDist::symmetrize() {
 }
 
 
+void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
+  assert(nindex1_ == d->mdim());
+  for (auto& i : block_)
+    i = i->transform_second(d);
+}
+
+
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
 shared_ptr<DFHalfDist> DFFullDist::back_transform(const std::shared_ptr<const Matrix> c) const {
   assert(c->ndim() == df_->nindex2());

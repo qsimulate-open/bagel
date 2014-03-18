@@ -290,16 +290,16 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     copy_n(rdm1->data(), rdm1->size(), rdm1mat->data());
     shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
     shared_ptr<const Matrix> adenj = make_shared<Matrix>(*rdm1mat ^ *acoeff);
-    // coulomb
-    shared_ptr<Matrix> fockz = geom_->df()->compute_Jop(half, adenj, /*only once*/false);
-    // exchange
-    shared_ptr<DFHalfDist> halfd = half->copy();
-    halfd->rotate_occ(rdm1mat);
-    *fockz += *half->form_2index(halfd->apply_JJ(), -0.5);
 
     shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nclosed);
-    Matrix fockzmo(*ref_->coeff() % *fockz * *ocoeff);
-    amat->add_block(4.0, 0, 0, nmobasis, nclosed, fockzmo);
+    // coulomb
+    Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * *ocoeff);
+    // exchange
+    shared_ptr<DFFullDist> halfd = half->compute_second_transform(ocoeff);
+    halfd->rotate_occ1(rdm1mat);
+    fockz += *half->form_2index(halfd->apply_JJ(), -0.5);
+    // add to amat
+    amat->add_block(4.0, 0, 0, nmobasis, nclosed, *ref_->coeff() % fockz);
   }
 
   return amat;
