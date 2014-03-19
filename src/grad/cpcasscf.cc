@@ -27,6 +27,7 @@
 #include <src/grad/cpcasscf.h>
 #include <src/math/linearRM.h>
 #include <src/math/bfgs.h>
+#include <src/casscf/qvec.h>
 
 #define CPHF_MAX_ITER 100
 #define CPHF_THRESH 1.0e-10
@@ -34,14 +35,60 @@
 using namespace std;
 using namespace bagel;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ,
-                   const shared_ptr<const Matrix> eig, const shared_ptr<const DFHalfDist> h,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ, const shared_ptr<const DFHalfDist> h,
                    const shared_ptr<const DFHalfDist> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
+: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
+#if 0
   cout << "   CI vectors:" << endl;
   civector_->print(-1);
+#endif
+}
 
+shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
+  const int nvirt = ref_->nvirt();
+  const int nmobasis = ref_->coeff()->mdim();
+  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
+  shared_ptr<const Matrix> coeff = ref_->coeff();
+
+  auto denom = make_shared<Matrix>(nmobasis, nmobasis);
+  {
+    denom->fill(1.0e30);
+    // as in Theor Chem Acc (1997) 97:88-95
+    vector<double> occup = ref_->rdm1_av()->diag();
+
+    // inactive fock in MO basis
+    auto finact = make_shared<Matrix>(*coeff % *fci_->jop()->core_fock() * *coeff);
+
+    shared_ptr<Matrix> rdm1av = make_shared<Matrix>(nact, nact);
+    copy_n(ref_->rdm1_av()->data(), rdm1av->size(), rdm1av->data());
+    rdm1av->sqrt();
+    rdm1av->scale(1.0/sqrt(2.0));
+
+    auto fact_ao = make_shared<Fock<1>>(geom_, fci_->jop()->core_fock()->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1av), /*grad*/false, /*rhf*/true);
+    auto f = make_shared<Matrix>(*finact + *coeff% *fact_ao * *coeff);
+
+    auto fact = make_shared<Qvec>(nmobasis, nact, ref_->coeff(), nclosed, fci_, ref_->rdm2_av());
+    for (int i = 0; i != nact; ++i)
+      daxpy_(nmobasis, occup[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nvirt; ++j)
+        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i,i) + 2.0*occup[i]*f->element(j+nocc, j+nocc);
+
+    for (int i = 0; i != nclosed; ++i)
+      for (int j = 0; j != nvirt; ++j)
+         denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*f->element(j+nocc, j+nocc) - 4.0*f->element(i, i);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nclosed; ++j)
+         denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
+                                     = (f->element(nclosed+i,nclosed+i)*4.0-2.0*fact->element(i+nclosed,i)) - f->element(j, j)*(4.0 - 2.0*occup[i]);
+  }
+  return denom;
 }
 
 
@@ -64,7 +111,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<PairFile<Matrix, Dvec>> denom;
   const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
   {
-    shared_ptr<Matrix> d0 = eig_->copy();
+    shared_ptr<Matrix> d0 = compute_orb_denom();
     for (auto& i : *d0)
       if (fabs(i) < 1.0e-10) i = 1.0;
     auto d1_tmp = make_shared<const Civec>(*fci_->denom());
