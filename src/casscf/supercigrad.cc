@@ -97,7 +97,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
+  shared_ptr<DFHalfDist> half  = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
@@ -168,7 +168,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   //- TWO ELECTRON PART -//
   // half is computed long before
 //shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
-  shared_ptr<const DFFullDist> qij  = half->compute_second_transform(ocoeff);
+  shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
 
   shared_ptr<DFHalfDist> qri;
 
@@ -176,24 +176,24 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   {
     shared_ptr<RDM<2>> D = ref_->rdm2(target)->copy();
     D->ax_plus_y(0.5, *zrdm2);
-    shared_ptr<Matrix> dd = dtot->copy();
-    blas::ax_plus_y_n(1.0, zrdm1->data(), zrdm1->size(), dd->data());
+    shared_ptr<RDM<1>> dd = ref_->rdm1(target)->copy();
+    dd->ax_plus_y(1.0, *zrdm1);
     shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(D->data(), dd->data(), nclosed, nact);
     qri = qijd->back_transform(ocoeff);
   }
 
-  // term with Q and Z (part 1)
+  // term with Q and Z
   {
     shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * *zmat->slice(0,nocc));
-    qri->ax_plus_y(1.0, qijd2->back_transform(ztrans));
+    qri->ax_plus_y(+1.0, qijd2->back_transform(ztrans));
 
-    shared_ptr<const DFFullDist> qijd3 = half->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
-    qri->ax_plus_y(1.0, qijd3->back_transform(ocoeff));
+    shared_ptr<DFFullDist> qijd3 = halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+    qri->ax_plus_y(+1.0, qijd3->back_transform(ocoeff));
   }
 
-  shared_ptr<const Matrix> qq  = qri->form_aux_2index(half, 1.0);
-  shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
+  shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
+  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
 
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();

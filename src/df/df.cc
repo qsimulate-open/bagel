@@ -89,6 +89,12 @@ void ParallelDF::scale(const double a) {
 }
 
 
+void ParallelDF::symmetrize() {
+  for (auto& i : block_)
+    i->symmetrize();
+}
+
+
 void ParallelDF::add_block(shared_ptr<DFBlock> o) {
   block_.push_back(o);
 }
@@ -364,12 +370,6 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
   for (auto& i : block_)
     out->add_block(i->clone());
   return out;
-}
-
-
-void DFFullDist::symmetrize() {
-  for (auto& i : block_)
-    i->symmetrize();
 }
 
 
