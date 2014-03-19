@@ -50,7 +50,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  const int nvirt = ref_->nvirt();
 
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0,nocc);
 
