@@ -27,6 +27,7 @@
 #include <src/grad/cpcasscf.h>
 #include <src/math/linearRM.h>
 #include <src/math/bfgs.h>
+#include <src/casscf/qvec.h>
 
 #define CPHF_MAX_ITER 100
 #define CPHF_THRESH 1.0e-10
@@ -34,52 +35,89 @@
 using namespace std;
 using namespace bagel;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ,
-                   const shared_ptr<const Matrix> eig, const shared_ptr<const DFHalfDist> h,
+CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ, const shared_ptr<const DFHalfDist> h,
                    const shared_ptr<const DFHalfDist> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: grad_(grad), civector_(civ), eig_(eig), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
+: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
 
+#if 0
   cout << "   CI vectors:" << endl;
   civector_->print(-1);
+#endif
+}
 
+shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
+  const int nvirt = ref_->nvirt();
+  const int nmobasis = ref_->coeff()->mdim();
+  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
+  shared_ptr<const Matrix> coeff = ref_->coeff();
+
+  auto denom = make_shared<Matrix>(nmobasis, nmobasis);
+  {
+    denom->fill(1.0e30);
+    // as in Theor Chem Acc (1997) 97:88-95
+    vector<double> occup = ref_->rdm1_av()->diag();
+
+    // inactive fock in MO basis
+    auto finact = make_shared<Matrix>(*coeff % *fci_->jop()->core_fock() * *coeff);
+
+    shared_ptr<Matrix> rdm1av = make_shared<Matrix>(nact, nact);
+    copy_n(ref_->rdm1_av()->data(), rdm1av->size(), rdm1av->data());
+    rdm1av->sqrt();
+    rdm1av->scale(1.0/sqrt(2.0));
+
+    auto fact_ao = make_shared<Fock<1>>(geom_, fci_->jop()->core_fock()->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1av), /*grad*/false, /*rhf*/true);
+    auto f = make_shared<Matrix>(*finact + *coeff% *fact_ao * *coeff);
+
+    auto fact = make_shared<Qvec>(nmobasis, nact, ref_->coeff(), nclosed, fci_, ref_->rdm2_av());
+    for (int i = 0; i != nact; ++i)
+      daxpy_(nmobasis, occup[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nvirt; ++j)
+        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i,i) + 2.0*occup[i]*f->element(j+nocc, j+nocc);
+
+    for (int i = 0; i != nclosed; ++i)
+      for (int j = 0; j != nvirt; ++j)
+         denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*f->element(j+nocc, j+nocc) - 4.0*f->element(i, i);
+
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nclosed; ++j)
+         denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
+                                     = (f->element(nclosed+i,nclosed+i)*4.0-2.0*fact->element(i+nclosed,i)) - f->element(j, j)*(4.0 - 2.0*occup[i]);
+  }
+  return denom;
 }
 
 
-shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
+tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>> CPCASSCF::solve() const {
 
   // RI determinant space
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
   assert(fci_->norb() == ref_->nact());
 
-  const size_t nmobasis = ref_->coeff()->mdim();
   const size_t nocca = ref_->nocc();
-
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  assert(nact + nclosed == nocca);
+  assert(ref_->nact() + ref_->nclosed() == nocca);
 
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
 
   // some DF vectors
-  shared_ptr<const DFDist> df = geom_->df();
-  shared_ptr<const DFHalfDist> half = df->compute_half_transform(ocoeff)->apply_J();
+  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff);
 
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec>> denom;
   const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
   {
-    shared_ptr<Matrix> d0 = eig_->copy();
+    shared_ptr<Matrix> d0 = compute_orb_denom();
     for (auto& i : *d0)
       if (fabs(i) < 1.0e-10) i = 1.0;
     auto d1_tmp = make_shared<const Civec>(*fci_->denom());
     auto d1 = make_shared<Dvec>(d1_tmp, ref_->nstate());
     for (int i = 0; i != ref_->nstate(); ++i)
       *d1->data(i) -= fci_->energy(i) - core_energy;
-#if 1
-    // TODO understand this factor of 2
-    *d1 *= 2;
-#endif
     denom = make_shared<PairFile<Matrix, Dvec>>(d0, d1);
   }
 
@@ -111,126 +149,136 @@ shared_ptr<PairFile<Matrix, Dvec>> CPCASSCF::solve() const {
   auto ovl = make_shared<const Overlap>(geom_);
   auto cinv = make_shared<const Matrix>(*ref_->coeff() % *ovl);
 
-  // State averaged density matrix
-  shared_ptr<const Matrix> dsa = ref_->rdm1_mat()->resize(nmobasis, nmobasis); // TODO resize is just a waste of time..
-
   cout << "  === CPCASSCF iteration ===" << endl << endl;
-
-  // during the iteration, we need to
-  //  (i) antisymmetrize Z, as well as
-  //  (ii) project out c from z
 
   // TODO Max iter to be controlled by the input
   for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
-    const double norm = sqrt(z->dot_product(*z));
-    cout << setw(4) <<  iter << " " << setprecision(14) << norm << endl;
+    cout << setw(4) <<  iter << " " << setprecision(14) << z->rms() << endl;
 
-    shared_ptr<const Matrix> z0 = z->first();
-    shared_ptr<const Dvec>     z1 = z->second();
-
-    // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
-    // only here we need to have det_ instead of detex
-    shared_ptr<Matrix> sigmaorb = compute_amat(z1, civector_, detex);
-
-    // computation of Atilde. Will be separated.
-    // TODO index transformation can be skipped by doing so at the very end...
-    auto cz0 = make_shared<Matrix>(*ref_->coeff() * *z0);
-    auto cz0cinv = make_shared<Matrix>(*ref_->coeff() * *z0 * *cinv);
-
-    // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
-    // (D|jx) -> (D|jS)
-    {
-      shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
-      shared_ptr<const DFHalfDist> tmp1 = df->compute_half_transform(cz0->slice(0,nocca))->apply_J();
-      tmp0->ax_plus_y(1.0, tmp1);
-      shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-      shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
-      sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
-    }
-    // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
-    shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->slice(0,nocca));
-    fullz->symmetrize();
-    {
-      shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
-      shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
-      // mo transformation of s
-      sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
-    }
-
-    // one electron part...
-    auto htilde = make_shared<Matrix>(*cz0 % *ref_->hcore() * *ref_->coeff());
-    htilde->symmetrize();
-    *htilde *= 2.0;
-    *sigmaorb += *htilde * *dsa * 2.0; // Factor of 2
-
-    sigmaorb->antisymmetrize();
-
-    // At this point
-    // htilde = Z^daggerh + hZ
-    // fullb  = (D|ij)
-    // fullz  = (D|ir)Z_rj + (D|rj)Z_ri
-
-    // internal core fock operator...
-    // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
-
-    // TODO this is a reference implementation
-    // first form 4 index
-    shared_ptr<Matrix> buf = fullz->form_4index(fullb, 1.0);
-    // TODO Awful code. To be updated. making the code that works in the quickest possible way
-    // index swap
-    unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
-
-    // bra ket symmetrization
-    for (int i = 0; i != nocca*nocca; ++i)
-      for (int j = 0; j != nocca*nocca; ++j)
-        buf2[j+nocca*nocca*i] = buf->element(j, i) + buf->element(i, j);
-
-    auto Htilde2 = make_shared<Matrix>(nact*nact, nact*nact);
-    for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii)
-      for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
-        for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
-          for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
-            Htilde2->element(ll+nact*kk, jj+nact*ii) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
-
-    auto Htilde1 = make_shared<Matrix>(nact,nact, true);
-    for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
-      for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
-        (*Htilde1)(jj, ii) = htilde->element(j,i);
-        for (int k = 0; k != nclosed; ++k)
-          (*Htilde1)(jj, ii) += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
-      }
-    }
-    // factor of 2 in the equation
-    *Htilde1 *= 2.0;
-    *Htilde2 *= 2.0;
-
-    auto top = make_shared<Htilde>(ref_, 0, nact, Htilde1, Htilde2);
-    vector<int> tmp(z1->ij(), 0);
-    shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
-
-    *sigmaci += *fci_->form_sigma(z1, fci_->jop(), tmp);
-
-    for (int i = 0; i != z1->ij(); ++i)
-      for (int j = 0; j != z1->data(i)->size(); ++j)
-        sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
-
-    sigmaci->project_out(civector_);
-
-    auto sigma = make_shared<PairFile<Matrix, Dvec>>(sigmaorb, sigmaci);
+    // given z, computes sigma (before anti-symmetrization)
+    shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv);
+    sigma->first()->antisymmetrize();
 
     z = solver->compute_residual(z, sigma);
 
     z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
-    if (sqrt(z->dot_product(*z)) < CPHF_THRESH) break;
+    if (z->norm() < CPHF_THRESH) break;
 
   }
 
-solver->civec()->second()->print(-1);
-  return solver->civec();
-
+  shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
+  shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(result, half, fullb, detex, cinv);
+  shared_ptr<Matrix> xmat = make_shared<Matrix>(*sigma->first() + *grad_->first());
+  xmat->symmetrize();
+  xmat->scale(0.5); // due to convention
+  return make_tuple(result->first(), result->second(), xmat);
 }
+
+
+shared_ptr<PairFile<Matrix,Dvec>> CPCASSCF::form_sigma(shared_ptr<const PairFile<Matrix,Dvec>> z, shared_ptr<const DFHalfDist> half,
+                                                          shared_ptr<const DFFullDist> fullb, shared_ptr<const Determinants> detex,
+                                                          shared_ptr<const Matrix> cinv) const {
+  const size_t nmobasis = ref_->coeff()->mdim();
+  const size_t nocca = ref_->nocc();
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+
+  shared_ptr<const Matrix> z0 = z->first();
+  shared_ptr<const Dvec>   z1 = z->second();
+
+  // TODO duplicated operation of <I|H|z>. Should be resolved at the end.
+  // only here we need to have det_ instead of detex
+  shared_ptr<Matrix> sigmaorb = compute_amat(z1, civector_, detex);
+
+  // computation of Atilde. Will be separated.
+  // TODO index transformation can be skipped by doing so at the very end...
+  auto cz0 = make_shared<Matrix>(*ref_->coeff() * *z0);
+  auto cz0cinv = make_shared<Matrix>(*ref_->coeff() * *z0 * *cinv);
+
+  // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
+  // (D|jx) -> (D|jS)
+  {
+    shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
+    shared_ptr<const DFHalfDist> tmp1 = geom_->df()->compute_half_transform(cz0->slice(0,nocca))->apply_J();
+    tmp0->ax_plus_y(1.0, tmp1);
+    shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+    shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
+    sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
+  }
+  // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
+  shared_ptr<DFFullDist> fullz = half->compute_second_transform(cz0->slice(0,nocca));
+  fullz->symmetrize();
+  {
+    shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(ref_->rdm2_av()->data(), ref_->rdm1_av()->data(), nclosed, nact);
+    shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
+    // mo transformation of s
+    sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *ref_->coeff() % *buf);
+  }
+
+  // one electron part...
+  auto htilde = make_shared<Matrix>(*cz0 % *ref_->hcore() * *ref_->coeff());
+  htilde->symmetrize();
+  *htilde *= 2.0;
+  // TODO avoid resize
+  shared_ptr<const Matrix> dsa = ref_->rdm1_mat()->resize(nmobasis, nmobasis);
+  *sigmaorb += *htilde * *dsa * 2.0; // Factor of 2
+
+  // At this point
+  // htilde = Z^daggerh + hZ
+  // fullb  = (D|ij)
+  // fullz  = (D|ir)Z_rj + (D|rj)Z_ri
+
+  // internal core fock operator...
+  // [htilde + (kl|D)(D|ij) (2delta_ij - delta_ik)]_active
+
+  // first form 4 index
+  shared_ptr<Matrix> buf = fullz->form_4index(fullb, 1.0);
+  // TODO Awful code. To be updated. making the code that works in the quickest possible way
+  // index swap
+  unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
+
+  // bra ket symmetrization
+  for (int i = 0; i != nocca*nocca; ++i)
+    for (int j = 0; j != nocca*nocca; ++j)
+      buf2[j+nocca*nocca*i] = buf->element(j, i) + buf->element(i, j);
+
+  auto Htilde2 = make_shared<Matrix>(nact*nact, nact*nact);
+  for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii)
+    for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
+      for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
+        for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
+          Htilde2->element(ll+nact*kk, jj+nact*ii) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
+
+  auto Htilde1 = make_shared<Matrix>(nact,nact, true);
+  for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
+    for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
+      (*Htilde1)(jj, ii) = htilde->element(j,i);
+      for (int k = 0; k != nclosed; ++k)
+        (*Htilde1)(jj, ii) += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
+    }
+  }
+  // factor of 2 in the equation
+  *Htilde1 *= 2.0;
+  *Htilde2 *= 2.0;
+
+  auto top = make_shared<Htilde>(ref_, 0, nact, Htilde1, Htilde2);
+  vector<int> tmp(z1->ij(), 0);
+  shared_ptr<Dvec> sigmaci = fci_->form_sigma(civector_, top, tmp);
+
+  *sigmaci += *fci_->form_sigma(z1, fci_->jop(), tmp);
+
+  const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
+  for (int i = 0; i != z1->ij(); ++i)
+    for (int j = 0; j != z1->data(i)->size(); ++j)
+      sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
+
+  sigmaci->project_out(civector_);
+
+  return make_shared<PairFile<Matrix, Dvec>>(sigmaorb, sigmaci);
+}
+
 
 
 // computes A matrix (scaled by 2 here)

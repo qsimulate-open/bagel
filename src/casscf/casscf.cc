@@ -161,7 +161,7 @@ void CASSCF::resume_stdcout() {
 }
 
 
-shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_only) const {
+shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
   const size_t nmobasis = coeff_->mdim();
   auto mo_rdm1 = make_shared<Matrix>(nmobasis, nmobasis);
