@@ -46,12 +46,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   ref_ = cas->conv_to_ref();
 
   fci_ = cas->fci();
-  // todo can remove when have task
-  deninact_ = cas->ao_rdm1(fci_->rdm1(0), true);
-  denall_ = cas->ao_rdm1(fci_->rdm1(0));
 
-  // for denominator
-  eig_ = assemble_eig(ref_->coeff(), ref_->hcore());
 
 }
 
@@ -156,59 +151,6 @@ bool CASPT2Grad::check_blocks(shared_ptr<Matrix> grad) {
   }
 
   return out;
-}
-
-shared_ptr<Matrix> CASPT2Grad::assemble_eig(shared_ptr<const Coeff> coeff, shared_ptr<const Matrix> hcore) {
-  const int target = 0;
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
-  const int nvirt = ref_->nvirt();
-
-  // related to denominators
-  const int nmobasis = coeff->mdim();
-  assert(nmobasis == nclosed+nact+nvirt);
-  auto eig = make_shared<Matrix>(nmobasis, nmobasis);
-  {
-    // as in Theor Chem Acc (1997) 97:88-95
-    vector<double> occup_ = fci_->rdm1(target)->diag();
-
-    auto finact = make_shared<Matrix>(*coeff % *(fci_->jop()->core_fock()) * *coeff);
-
-    auto denact = make_shared<Matrix>(*denall_-*deninact_);
-    auto fact_ao = make_shared<Fock<1>>(geom_, hcore, denact, ref_->schwarz());
-    auto f = make_shared<Matrix>(*finact+ *coeff%(*fact_ao-*hcore)**coeff);
-
-
-#if 1 // TODO determine proper rdm
-    auto fact = make_shared<Qvec>(nmobasis, nact, coeff, nclosed, fci_, fci_->rdm2(target));
-#else
-    auto fact = make_shared<Qvec>(nmobasis, nact, coeff, nclosed, fci_, fci_->rdm2_av());
-#endif
-    for (int i = 0; i != nact; ++i)
-      daxpy_(nmobasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
-
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nvirt; ++j)
-        eig->element(j+nocc,i+nclosed) = eig->element(i+nclosed,j+nocc) = -fact->element(i,i) + occup_[i]*f->element(j+nocc, j+nocc);
-
-    for (int i = 0; i != nclosed; ++i)
-      for (int j = 0; j != nvirt; ++j)
-         eig->element(j+nocc,i) = eig->element(i,j+nocc) = 2.0*f->element(j+nocc, j+nocc) - 2.0*f->element(i, i);
-
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nclosed; ++j) {
-         eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
-#if 1 // original
-                                   = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
-#else // this converges cpcasscf A11
-                                   = (f->element(nclosed+i,nclosed+i)*1.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
-#endif
-      }
-
-  }
-
-  return eig;
 }
 
 

@@ -39,16 +39,8 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> yrs_;
 
     std::shared_ptr<FCI> fci_;
-    // for denominator
-    std::shared_ptr<Matrix> eig_;
-
-    // todo can remove once gradient has task
-    std::shared_ptr<Matrix> deninact_;
-    std::shared_ptr<Matrix> denall_;
 
     void compute_y(std::shared_ptr<const Matrix> dm1, double correction, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider, std::shared_ptr<const Coeff> coeff);
-
-    std::shared_ptr<Matrix> assemble_eig(std::shared_ptr<const Coeff> coeff, std::shared_ptr<const Matrix> hcore);
 
     // this assumes matrix is in mo basis
     bool check_blocks(std::shared_ptr<Matrix>);
