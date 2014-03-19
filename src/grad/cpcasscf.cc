@@ -127,6 +127,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(result, half, fullb, detex, cinv);
   shared_ptr<Matrix> xmat = make_shared<Matrix>(*sigma->first() + *grad_->first());
   xmat->symmetrize();
+  xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat);
 }
 
