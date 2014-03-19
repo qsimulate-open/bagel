@@ -39,6 +39,12 @@
 #include <src/grad/cphf.h>
 #include <chrono>
 
+// temp. todo relocate gradient
+#include <src/math/pairfile.h>
+#include <src/grad/cpcasscf.h>
+
+
+
 namespace bagel {
 namespace SMITH {
 
@@ -61,6 +67,7 @@ class SpinFreeMethod {
     std::shared_ptr<const Reference> ref_;
 
     std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const Civec> civec_;
     double e0_;
 
     std::shared_ptr<Tensor<T>> v2_;
@@ -533,8 +540,8 @@ class SpinFreeMethod {
 
       std::shared_ptr<const Dvec> dci0 = r->civectors();
       // TODO this should be updated when reference has civec
-      std::shared_ptr<const Civec> bagel_civec = dci0->data(0);
-      det_ = bagel_civec->det();
+      civec_ = dci0->data(0);
+      det_ = civec_->det();
 
       // length of the ci expansion
       const size_t ci_size = r->civectors()->data(0)->size();
@@ -571,7 +578,7 @@ class SpinFreeMethod {
       {
         std::vector<IndexRange> o = {ci_};
         // TODO fix later when referece has civec
-        Ci<T> dci(ref_, o, bagel_civec);
+        Ci<T> dci(ref_, o, civec_);
         rdm0deriv_ = dci.tensor();
       }
 
@@ -824,13 +831,18 @@ class SpinFreeMethod {
 
     std::shared_ptr<const Reference>& ref() { return ref_; };
 
+    std::shared_ptr<const Civec> civec() const { return civec_; }
+
+    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+
     double e0() const { return e0_; }
 
     virtual void solve() = 0;
 
-    std::shared_ptr<const Civec> civec() const {
+    std::shared_ptr<const Civec> rdm0deriv() const {
       return rdm0deriv_->civec(det_);
     }
+
 
     Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction) const {
       const size_t nclo = ref_->nclosed();
@@ -842,7 +854,6 @@ class SpinFreeMethod {
 
       // add correction to active space
       for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correction*2.0;
-      dtot->print("dm1 post correction", 20);
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
@@ -855,10 +866,29 @@ class SpinFreeMethod {
     }
 
 
+    Dipole dipole(std::shared_ptr<const Matrix> dm1) const {
+      const size_t nclo = ref_->nclosed();
+      const size_t nact = ref_->nact();
+
+      // compute relaxed dipole moment
+      // total density matrix
+      auto dtot = std::make_shared<Matrix>(*dm1);
+
+      for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
+      // add to active space
+      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
+      // convert to ao basis
+      auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
+      Dipole dipole(ref_->geom(), dtotao);
+      return dipole;
+
+    }
+
+
+
 };
 
 }
 }
 
 #endif
-

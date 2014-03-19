@@ -120,6 +120,90 @@ shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
   return out;
 }
 
+template<>
+shared_ptr<Matrix> RDM<2>::rdm2_mat_1gen(const int nclosed, const int nvirt, const bool all) const {
+  const int nocc = nclosed + norb_;
+  const int nall = nocc + nvirt;
+
+  auto out = make_shared<Matrix>(nocc*nall, nocc*nocc);
+  shared_ptr<Matrix> rdm2mat = this->rdm2_mat(nclosed);
+  for (int i = 0; i != nocc; ++i)
+    for (int j = 0; j != nall; ++j)
+      for (int k = 0; k != nocc; ++k)
+        for (int l = 0; l != nocc; ++l) {
+          if (j < nocc) {
+            out->element(i+nocc*j,k+nocc*l) = rdm2mat->element(i+nocc*j,k+nocc*l);
+          }
+        }
+
+  return out;
+}
+
+
+template<>
+shared_ptr<Matrix> RDM<2>::rdm2_mat_2gen(const int nclosed, const int nvirt, const bool all) const {
+  const int nocc = nclosed + norb_;
+  const int nall = nocc + nvirt;
+
+  auto out = make_shared<Matrix>(nocc*nall, nocc*nall);
+  shared_ptr<Matrix> rdm2mat = this->rdm2_mat(nclosed);
+  for (int l = 0; l != nall; ++l) {
+    for (int k = 0; k != nocc; ++k)
+      for (int j = 0; j != nall; ++j)
+        for (int i = 0; i != nocc; ++i)
+          if (j < nocc && l < nocc) {
+            out->element(i+nocc*j,k+nocc*l) = rdm2mat->element(i+nocc*j,k+nocc*l);
+          }
+        }
+
+  return out;
+}
+
+
+template<>
+shared_ptr<Matrix> RDM<2>::rdm2_mat(const int nclosed, const bool all) const {
+
+  // todo: clean up...take if statements out of loops
+  // note data_ contains info only for active space
+  shared_ptr<Matrix> out;
+  const int nocc = nclosed + norb_;
+  if (all) {
+    out = make_shared<Matrix>(nocc*nocc, nocc*nocc);
+    for (int l = 0; l != nclosed; ++l) {
+      for (int k = 0; k != nclosed; ++k) {
+        for (int j = 0; j != nclosed; ++j) {
+          for (int i = 0; i != nclosed; ++i) {
+            if (i == j && l == k && l == j) {
+              out->element((i+nocc*j),(k+nocc*l)) = 2.0;
+            } else if (i == j && l == k && l != j) {
+              out->element((i+nocc*j),(k+nocc*l)) = 4.0;
+            } else if (i == l && j == k && i != j) {
+              out->element((i+nocc*j),(k+nocc*l)) = -2.0;
+            }
+          }
+        }
+      }
+    }
+    // now map active space in
+    for (int l = 0; l != norb_; ++l)
+      for (int k = 0; k != norb_; ++k)
+        for (int j = 0; j != norb_; ++j)
+          for (int i = 0; i != norb_; ++i)
+            out->element(((i+nclosed)+nocc*((j+nclosed))),((k+nclosed)+nocc*((l+nclosed)))) = data_[i+norb_*(j+norb_*(k+norb_*(l)))];
+
+  } else {
+    out = make_shared<Matrix>(norb_*norb_, norb_*norb_);
+    // only return active space contribution
+    for (int l = 0; l != norb_; ++l)
+      for (int k = 0; k != norb_; ++k)
+        for (int j = 0; j != norb_; ++j)
+          for (int i = 0; i != norb_; ++i)
+            out->element(i+norb_*(j),k+norb_*(l)) = data_[i+norb_*(j+norb_*(k+norb_*(l)))];
+  }
+
+  return out;
+}
+
 
 template<>
 void RDM<1>::print(const double thresh) const {
