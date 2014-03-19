@@ -310,6 +310,10 @@ class Matrix_base {
       mpi__->broadcast(data_.get(), size(), root);
     }
 
+    void synchronize() {
+      broadcast();
+    }
+
     // if we use this matrix within node, or in parallel
     void delocalize() { localized_ = false; }
     void localize() { localized_ = true; }
