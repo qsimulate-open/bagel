@@ -33,7 +33,7 @@
 using namespace std;
 using namespace bagel;
 
-CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) : Method(inp, geom, ref) {
+CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) : Method(inp, geom, ref),  target_state_(inp->get<int>("target", 0)) {
 
   // compute CASSCF first
   auto cas = make_shared<SuperCI>(inp, geom, ref);
@@ -89,22 +89,18 @@ void CASPT2Grad::compute() {
 
 #if 0
   assert(check_blocks(g0));
-  // TODO check proper cp input may need to pass coeff
-#if 0
-  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), eig_, halfj, halfjj, ref_, fci_, coeff);
-#else
-  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), eig_, halfj, halfjj, ref_, fci_);
-#endif
-  shared_ptr<PairFile<Matrix, Dvec>> zvec = cp->solve();
+  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_);
+  shared_ptr<const Matrix> zmat, xmat;
+  shared_ptr<const Dvec> zvec;
+  tie(zmat, zvec, xmat) = cp->solve();
 
   // form relaxed 1RDM
   // form Zd + dZ^+
-  const int target = 0;
+  const int target = target_state_;
   const int nclosed = ref_->nclosed();
   const int nmobasis = coeff->mdim();
-  shared_ptr<Matrix> dsa = ref_->rdm1_mat()->resize(nmobasis, nmobasis);
-  shared_ptr<Matrix> zslice = zvec->first();
-  auto dm = make_shared<Matrix>(*zslice * *dsa + (*dsa ^ *zslice));
+  shared_ptr<Matrix> dsa = fci_->rdm1_av()->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
+  auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
   shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
   dtot->ax_plus_y(1.0, dm);
@@ -113,7 +109,7 @@ void CASPT2Grad::compute() {
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
   shared_ptr<const RDM<1>> zrdm1;
   shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = fci_->compute_rdm12_av_from_dvec(fci_->civectors(), zvec->second(), detex);
+  tie(zrdm1, zrdm2) = fci_->compute_rdm12_av_from_dvec(fci_->civectors(), zvec, detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
   zrdm1_mat->symmetrize();

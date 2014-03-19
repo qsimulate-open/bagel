@@ -53,6 +53,9 @@ class CASPT2Grad : public Method {
     // this assumes matrix is in mo basis
     bool check_blocks(std::shared_ptr<Matrix>);
 
+    // for gradient
+    int target_state_;
+
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
