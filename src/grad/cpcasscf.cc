@@ -52,9 +52,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   assert(fci_->norb() == ref_->nact());
 
   const size_t nocca = ref_->nocc();
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  assert(nact + nclosed == nocca);
+  assert(ref_->nact() + ref_->nclosed() == nocca);
 
   shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
 
