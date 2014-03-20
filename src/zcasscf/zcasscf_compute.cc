@@ -60,7 +60,7 @@ void ZCASSCF::compute() {
   if (nact_)
     fci_->update(coeff_);
 
-  cout << " See casscf.log file for further information on FCI output " << endl;
+  cout << " See casscf.log for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -109,7 +109,7 @@ void ZCASSCF::compute() {
     }
 
     if (iter == 0) {
-      shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
+      shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
       bfgs = make_shared<BFGS<ZRotFile>>(denom);
     }
 

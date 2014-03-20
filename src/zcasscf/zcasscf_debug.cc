@@ -158,10 +158,25 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 
     shared_ptr<ZMatrix> maatt = ___debug___diagonal_2rdm_contraction_coulomb(coeffa);
     shared_ptr<ZMatrix> matta = ___debug___diagonal_2rdm_contraction_exchange(coeffa);
+    if (verbose) {
+      rdm1->print("rdm1");
+      cout << setprecision(10) << "cfockaa * 1rdmtt  = " << endl << (*cfock)(nocc_*2+morbital,nocc_*2+morbital) * (*rdm1)(norbital,norbital) << endl;
+      maatt->get_submatrix(morbital, norbital, 1, 1)->print("(aa|vu) * G(vu,tt)");
+      matta->get_submatrix(morbital, norbital, 1, 1)->print("(au|va) * G(vu,tt)");
+      cfockd->get_submatrix(norbital, norbital, 1, 1)->print("cfockdtt");
+      cfock->get_submatrix(nocc_*2 + morbital, nocc_*2 + morbital, 1, 1)->print("cfockaa");
+      qxr->get_submatrix(nclosed_*2 + norbital, norbital, 1, 1)->print("qvectt");
+      qxr->get_submatrix(nclosed_*2, 0, nact_*2, nact_*2)->print("qvectt");
+      rdm1->get_submatrix(norbital, norbital, 1, 1)->print("1rdmtt");
+    }
     *maatt -= *matta;
 
-    shared_ptr<ZMatrix> mapattp = ___debug___diagonal_integrals_coulomb_active_kramers(coeffa, coefft); // 0 by symmetry
-    shared_ptr<ZMatrix> maptpta = ___debug___diagonal_integrals_exchange_active_kramers(coeffa, coefft);
+    shared_ptr<ZMatrix> mapattp = ___debug___diagonal_integrals_coulomb_active_kramers(coeffa, coefft); // 0 by symmetry ; (a'a|uv)G(uv,t't)
+    shared_ptr<ZMatrix> maptpta = ___debug___diagonal_integrals_exchange_active_kramers(coeffa, coefft); // (a'w|va) * G(vw,tt')
+    if (verbose) {
+      mapattp->get_submatrix(morbital, norbital, 1, 1)->print("(a'a|uv) * G(uv,t't)");
+      maptpta->get_submatrix(morbital, norbital, 1, 1)->print("(a'w|va) * G(vw,tt') + (a'w|av) * G(tw,t'v)");
+    }
     *mapattp -= *maptpta; // <- need - sign for ++/-- debug ; + sign for +-/-+
 
     for (int t = 0; t != nact_*2; ++t) {
@@ -330,11 +345,11 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
     cout << ">>>>>>>>>>>> debug : G(1,1)(kt ki,t i) >>>>>>>>>>>>" << endl;
 
   shared_ptr<ZMatrix> kmitti1rdm  = ___debug___closed_active_diagonal_1rdm_contraction_exchange(coeffi, coefft); // (i t|u ki) * D(u kt)
-  shared_ptr<ZMatrix> kmiitt1rdm  = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // (i ki| kt u) * D(tu) ; apears to be 0
-  shared_ptr<ZMatrix> kmitti1rdmb = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true); // (i u|kt ki) * D(t u) ; appears to be 0
+  shared_ptr<ZMatrix> kmiitt1rdm  = ___debug___diagonal_1rdm_contraction_coulomb(coeffi, coefft, true); // (i ki| kt u) * D(tu) ;
+  shared_ptr<ZMatrix> kmitti1rdmb = ___debug___diagonal_1rdm_contraction_exchange(coeffi, coefft, true); // (i u|kt ki) * D(t u) ;
   if(verbose) {
     kmitti1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(u ki|i t) * D(u kt)");
-    kmitti1rdmb->get_submatrix(morbital, norbital, 1, 1)->print("(i t|u ki) * D(u kt)");
+    kmitti1rdmb->get_submatrix(morbital, norbital, 1, 1)->print("(i u|kt ki) * D(t u)");
     kmiitt1rdm->get_submatrix(morbital, norbital, 1, 1)->print("(i ki|kt u) * D(tu)");
   }
 
@@ -392,4 +407,25 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramer
   }
 
   return kmitit;
+}
+
+
+complex<double> ZCASSCF::find_level_shift(shared_ptr<ZRotFile> rotmat) const {
+  // returns the smallest value that is not at below -mc^2 to be used as a level shift
+  double csq = 137.00 * 137.00;
+  complex<double> l0 = rotmat->data(0);
+
+  for (int j = 1; j != rotmat->size(); ++j) {
+    if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
+      l0 = rotmat->data(j);
+  }
+  // IMPROVISED LEVEL SHIFT : TODO possibly move to BFGS class once machinery works
+  double scale = idata_->get<double>("scalefac", 1.05);
+  complex<double> level_shift = l0*scale;
+  cout << " " << endl;
+  cout << setprecision(8) << "Smallest Hessian Element (excluding positrons) = " << l0 << endl;
+  cout << setprecision(4) << "Scaling Factor                                 = " << scale << endl;
+  cout << setprecision(8) << "Level Shift                                    = " << level_shift << endl << endl;
+
+  return level_shift;
 }

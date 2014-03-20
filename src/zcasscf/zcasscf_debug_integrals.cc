@@ -619,6 +619,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active(shared
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,j,i) = (ai|ja), where i is an active index
+  // with_kramers : Mat(a,j,i) = (a i|j ka) where a is an index of coeffa and i is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == 2*nact_);
 
@@ -793,7 +794,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
 
 
 shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
-  // returns Mat(a,t) = (a'w|va) * G(vw,tt') = (a't'|ta) where a is an index of coeffa, and t is active
+  // returns Mat(a,t) = (a'w|va) * G(vw,t't) + (a'w|av) * G(tw,t'v) where a is an index of coeffa, and t is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be possible to eliminate after Hessian has been confirmed
   assert(coeffi->mdim() == nact_*2);

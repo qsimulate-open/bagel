@@ -79,8 +79,8 @@ class ZCASSCF : public Method {
     void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
                  std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
 
-    std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
-                                                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
+                 std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
     void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
@@ -139,12 +139,14 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> ___debug___closed_active_diagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
     // returns M(a,i) = G^(1,2)_(kt i, kt i) (i is an index of coeffi, and t is active)
     std::shared_ptr<ZMatrix> ___debug___closed_active_offdiagonal_hessian_kramers(std::shared_ptr<const ZMatrix> coeffi, std::shared_ptr<const ZMatrix> coefft, const bool verbose) const;
-    // returns M(a,a) = [ (t u|a a) - (t a|a u) ] D(t u) (a is an index of coeffa and tu are active)
+    // returns M(a,b) = [ (t u|a b) - (t b|a u) ] D(t u) (ab are indices of coeffa and tu are active)
     std::shared_ptr<ZMatrix> ___debug___active_fock(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> rdm1) const;
-    // returns M(t,t) = G(t u,v w) (a u|v w) (tuvw are active)
+    // returns M(t,t) = G(t u,v w) (t u|v w) (tuvw are active)
     std::shared_ptr<ZMatrix> ___debug___active_qvec_byhand(std::shared_ptr<const ZMatrix> coefft) const;
     // returns M(a,i) = (a i|a i) (where a is an index of coeffa and i is an index of coeffi)
     std::shared_ptr<ZMatrix> ___debug___offdiagonal_exchange_integrals(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    // returns "optimal" level shift
+    std::complex<double> find_level_shift(std::shared_ptr<ZRotFile> rotmat) const;
 };
 
 }
