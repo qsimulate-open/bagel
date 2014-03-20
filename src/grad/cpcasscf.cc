@@ -56,7 +56,7 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
 
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
   {
-    denom->fill(1.0e30);
+    denom->fill(1.0e10);
     // as in Theor Chem Acc (1997) 97:88-95
     vector<double> occup = ref_->rdm1_av()->diag();
 
@@ -128,6 +128,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
   // antisymmetrize
   source->first()->antisymmetrize();
+  source->first()->purify_redrotation(ref_->nclosed(), ref_->nact(), ref_->nvirt());
 
   // divide by weight
   for (int ij = 0; ij != source->second()->ij(); ++ij) {
@@ -158,13 +159,14 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     // given z, computes sigma (before anti-symmetrization)
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv);
     sigma->first()->antisymmetrize();
+    sigma->first()->purify_redrotation(ref_->nclosed(), ref_->nact(), ref_->nvirt());
 
     z = solver->compute_residual(z, sigma);
 
     z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
-    if (z->norm() < CPHF_THRESH) break;
+    if (z->rms() < CPHF_THRESH) break;
 
   }
 
@@ -172,6 +174,9 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(result, half, fullb, detex, cinv);
   shared_ptr<Matrix> xmat = make_shared<Matrix>(*sigma->first() + *grad_->first());
   xmat->symmetrize();
+  // testing if asymmetric part is zero
+  assert((*sigma->first() + *grad_->first() - *xmat).rms() < CPHF_THRESH*10.0);
+
   xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat);
 }
