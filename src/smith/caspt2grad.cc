@@ -190,9 +190,9 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     // 2 Y1 = h(d0 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
+    auto d0 = make_shared<Matrix>(*fci_->rdm1(target)->rdm1_mat(nclosed)->resize(nmobasis,nmobasis));
     auto dtot = make_shared<Matrix>(*dmr);
-    for (int i = 0; i != nclosed; ++i) dtot->element(i, i) += 2.0;
-    dtot->add_block(1.0, nclosed, nclosed, nact, nact, ref_->rdm1(target)->data());
+    *dtot += *d0;
     *y1 = *hmo * *dtot * 2.0;
   }
 
