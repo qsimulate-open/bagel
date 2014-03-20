@@ -304,7 +304,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   const int nact = ref_->nact();
 
   shared_ptr<const Matrix> coeff = ref_->coeff();
-  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
+  shared_ptr<const Matrix> acoeff = coeff->slice(nclosed, nclosed+nact);
 
   // compute RDMs
   shared_ptr<const RDM<1>> rdm1t;
@@ -343,7 +343,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
     shared_ptr<const Matrix> adenj = make_shared<Matrix>(*rdm1mat ^ *acoeff);
 
-    shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nclosed);
+    shared_ptr<const Matrix> ocoeff = coeff->slice(0, nclosed);
     // coulomb
     Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * *ocoeff);
     // exchange
@@ -351,7 +351,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     halfd->rotate_occ1(rdm1mat);
     fockz += *half->form_2index(halfd->apply_JJ(), -0.5);
     // add to amat
-    amat->add_block(4.0, 0, 0, nmobasis, nclosed, *ref_->coeff() % fockz);
+    amat->add_block(4.0, 0, 0, nmobasis, nclosed, *coeff % fockz);
   }
 
   return amat;
