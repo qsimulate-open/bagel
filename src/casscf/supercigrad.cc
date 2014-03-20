@@ -131,7 +131,6 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   //- TWO ELECTRON PART -//
   // half is computed long before
-//shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
 
   shared_ptr<DFHalfDist> qri;
