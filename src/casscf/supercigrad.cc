@@ -59,7 +59,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // related to denominators
   const int nmobasis = coeff->mdim();
-  assert(nmobasis == nclosed+nact+nvirt);
+  assert(nmobasis == nclosed+nact+ref_->nvirt());
 
   // TODO they are redundant, though...
   shared_ptr<DFHalfDist> half  = geom_->df()->compute_half_transform(ocoeff)->apply_J();
