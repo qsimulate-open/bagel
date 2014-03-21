@@ -43,6 +43,7 @@ class BFGS {
     std::vector<std::shared_ptr<const T>> delta;
     std::vector<std::shared_ptr<const T>> y;
     std::vector<std::shared_ptr<const T>> D;
+    std::vector<std::shared_ptr<const T>> Y;
 
     std::shared_ptr<const T> prev_grad;
     std::shared_ptr<const T> prev_value;
@@ -54,6 +55,7 @@ class BFGS {
 
   public:
     BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
+    std::shared_ptr<const T> denom() const { return denom_; }
 
     // returns a displacement
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
@@ -116,6 +118,60 @@ class BFGS {
       return out;
     }
 
+    // returns Hessian * kappa as part of the trust radius procedure ; should be called after extrapolate
+    std::shared_ptr<T> interpolate(std::shared_ptr<const T> _value) {
+      // to make sure, inputs are copied.
+      auto value = std::make_shared<const T>(*_value);
+
+      auto out = std::make_shared<T>(*value);
+      // (1)
+      *out *= *denom_;
+
+      if (!delta.empty() && !debug_) {
+        // (3)
+        std::shared_ptr<T> yy = value->clone(); // used to accumulate Y
+        {
+          // D and delta available from extrapolation
+          auto DD = delta.back();
+
+          *yy = *DD * *denom_;
+
+        }
+        const int n = delta.size()-1;
+        assert(delta.size() == Y.size()+1 && Y.size()+1 == D.size());
+
+        // (4)
+        for (int i = 0; i < n; ++i) {
+          auto s1 = detail::real(1.0 / D[i]->dot_product(delta[i]));
+          auto s2 = detail::real(1.0 / Y[i]->dot_product(delta[i]));
+          auto s3 = D[i]->dot_product(delta[n]);
+          auto s4 = Y[i]->dot_product(delta[n]);
+          auto s5 = D[i]->dot_product(value);
+          auto s6 = Y[i]->dot_product(value);
+          auto t1 = s1 * s5; // updating w
+          auto t2 = s2 * s6; // updating w
+          auto t3 = s1 * s3; // updating Y
+          auto t4 = s2 * s4; // updating Y
+          out->ax_plus_y(t1, D[i]);
+          out->ax_plus_y(-t2, Y[i]);
+          yy->ax_plus_y(t3, D[i]);
+          yy->ax_plus_y(-t4, Y[i]);
+        }
+        { // (5)
+          auto s1 = detail::real(1.0 / D[n]->dot_product(delta[n]));
+          auto s2 = detail::real(1.0 / delta[n]->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = D[n]->dot_product(value);
+          auto s4 =   yy->dot_product(value);
+          auto t1 = s1 * s3;
+          auto t2 = s2 * s4;
+          out->ax_plus_y(t1, D[n]);
+          out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
+        }
+        Y.push_back(yy);
+        assert(Y.size() == n+1);
+      }
+      return out;
+    }
 };
 
 }
