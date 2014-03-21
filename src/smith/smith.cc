@@ -54,9 +54,9 @@ void Smith::compute() {
   dm1_ = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1();
   dm2_ = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm2();
 
-  // calculate unrelaxed dipole moment from dm
+  // calculate unrelaxed dipole moment from correlated dm
   correction_ = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1_correction();
-  algo_->dipole(dm1_,correction_).compute();
+  algo_->dipole(dm1_,correction_,"CASPT2 Unrelaxed").compute();
 
   // convert ci derivative tensor to civec
   cider_ = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->ci_deriv();

@@ -82,8 +82,8 @@ void CASPT2Grad::compute() {
   shared_ptr<DFHalfDist> halfjj = halfj->apply_J();
 
 
-#if 0
-  assert(check_blocks(g0));
+#if 1
+  //assert(check_blocks(g0));
   auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_);
   shared_ptr<const Matrix> zmat, xmat;
   shared_ptr<const Dvec> zvec;
@@ -190,7 +190,7 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     // 2 Y1 = h(d0 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
-    auto d0 = make_shared<Matrix>(*fci_->rdm1(target)->rdm1_mat(nclosed)->resize(nmobasis,nmobasis));
+    auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target)->resize(nmobasis,nmobasis));
     auto dtot = make_shared<Matrix>(*dmr);
     *dtot += *d0;
     *y1 = *hmo * *dtot * 2.0;
@@ -223,18 +223,19 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     dmrao->print("printing dmr2ao caspt2", 20);
     //  2 Jrj = 2 (rj|st)d2_st
     auto jrj = make_shared<const Matrix>(*coeff_ % *(ref_->geom())->df()->compute_Jop(dmrao) * *ocmat);
-    *y3ri = *jrj * *(ref_->rdm1_mat(0)) * 2.0;
+    *y3ri = *jrj * *(ref_->rdm1_mat(target)) * 2.0;
     // -1 K_jr  = -(rs|jt)d2_st
     auto kjr = make_shared<const Matrix>(*(halfjj->compute_Kop_1occ(dmrao, -1.0)) * *coeff_);
-    *y3ri += *kjr % *(ref_->rdm1_mat(0));
+    *y3ri += *kjr % *(ref_->rdm1_mat(target));
   }
 
+  // construct Dtot, to be used in Y4 and Y5
+  auto Dtot = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
-    // make 2 Y4 = 2 y4_rs = 2[y4ri + y4ra] = 2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lt) D_(lt,ks) = 2 (kr|lt)[D0_(lt,ks) + D1_(lt,ks)]
-    auto Dtot = make_shared<Matrix>(nocc*nall, nocc*nall);
+    // Dtot = D0 + D1
+    shared_ptr<const Matrix> D0 = ref_->rdm2_mat_2gen(target);
     auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
     // extend 2rdm dimensions from D0(lj,ki) -> D0(lt,ks)
-    shared_ptr<const Matrix> D0 = ref_->rdm2_mat_2gen(0);
     // resizing dm2_(le,kf) to dm2_(ls,kt) and saving as D1_(lt,ks)
     for (int s = 0; s != nall; ++s) // extend
       for (int k = 0; k != nocc; ++k)
@@ -245,37 +246,21 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
             }
           }
 
-    *Dtot+=*D0;
-    *Dtot+=*D1;
-    // form (G'|ks)
-    // todo check transpose
+    *Dtot += *D0;
+    *Dtot += *D1;
+  }
+
+  {
+    // 2 Y4 = 2 y4_rs = 2[y4ri + y4ra] = 2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lt) D_(lt,ks) = 2 (kr|lt)[D0_(lt,ks) + D1_(lt,ks)]
+    // form (G'|ks). Note transpose not necessary due to Dtot symmetry.
     shared_ptr<const DFFullDist> fullks = full->apply_2rdm(Dtot->data());
     y4 = full->form_2index(fullks, 2.0);
   }
 
   {
-    // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rs|jt) [D0(is,jt) + D1(is,jt)]
-    // D0 needs to be extended from D0(il,jk) to D0(is,jt)
-    shared_ptr<const Matrix> D0st = ref_->rdm2_mat_2gen(0);
-
-    // need to make Dtot_st
-    auto Dtot_st = make_shared<Matrix>(nocc*nall, nocc*nall);
-    auto D1st = make_shared<Matrix>(nocc*nall, nocc*nall);
-    // resize dm2_(le,kf) to lt,ks then save as ls,kt
-    for (int i = 0; i != nall; ++i) // extending
-      for (int k = 0; k != nocc; ++k)
-        for (int s = 0; s != nall; ++s) // extending
-          for (int l = 0; l != nocc; ++l) {
-            if (s >= nclosed &&  i >= nclosed) {
-              D1st->element(l+nocc*i, k+nocc*s) = dm2->element(l+nocc*(s-nclosed), k+nocc*(i-nclosed));
-            }
-          }
-
-    *Dtot_st += *D0st;
-    *Dtot_st += *D1st;
-
-    // todo check transpose
-    shared_ptr<const DFFullDist> fullis = full->apply_2rdm(Dtot_st->data());
+    // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rs|jt) [D0_(is,jt) + D1_(is,jt)]
+    // Note transpose not necessary due to Dtot symmetry
+    shared_ptr<const DFFullDist> fullis = full->apply_2rdm(Dtot->data());
     shared_ptr<const DFHalfDist> dfback = fullis->back_transform(coeff_)->apply_J();
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 2.0);
     *y5ri = *coeff_ % *y5ri_ao;

@@ -844,7 +844,7 @@ class SpinFreeMethod {
     }
 
 
-    Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction) const {
+    Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction, std::string dipole_name="") const {
       const size_t nclo = ref_->nclosed();
       const size_t nact = ref_->nact();
 
@@ -860,7 +860,7 @@ class SpinFreeMethod {
       dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
       // convert to ao basis
       auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
-      Dipole dipole(ref_->geom(), dtotao);
+      Dipole dipole(ref_->geom(), dtotao, dipole_name);
       return dipole;
 
     }
