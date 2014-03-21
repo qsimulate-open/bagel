@@ -98,14 +98,14 @@ void ZCASSCF::compute() {
 
     // get energy
     if (nact_) {
-      energy_ = fci_->energy();
+      energy_.push_back((fci_->energy())[0]);
     } else {
       assert(nstate_ == 1);
-      energy_.resize(1);
-      energy_[0] = geom_->nuclear_repulsion();
+      energy_.resize(iter+1);
+      energy_[iter] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
-        energy_[0] += 0.5*mo->element(i,i).real();
+        energy_[iter] += 0.5*mo->element(i,i).real();
     }
 
     if (iter == 0) {
