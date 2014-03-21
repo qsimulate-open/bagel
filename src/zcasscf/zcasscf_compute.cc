@@ -110,6 +110,14 @@ void ZCASSCF::compute() {
 
     if (iter == 0) {
       shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
+      // IMPROVISED LEVEL SHIFT 
+      const bool shift = idata_->get<bool>("shift", false);
+      if (shift) {
+        complex<double> level_shift = find_level_shift(denom);
+        shared_ptr<ZRotFile> diagonal_shift = denom->clone();
+        diagonal_shift->fill(level_shift);
+        denom->ax_plus_y(-1.0, diagonal_shift);
+      }
       bfgs = make_shared<BFGS<ZRotFile>>(denom);
     }
 
