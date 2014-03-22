@@ -233,7 +233,6 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
   // construct D1 be used in Y4 and Y5
   auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
-    auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
     // resizing dm2_(le,kf) to dm2_(ls,kt) and saving as D1_(lt,ks)
     for (int s = 0; s != nall; ++s) // extend
       for (int k = 0; k != nocc; ++k)
