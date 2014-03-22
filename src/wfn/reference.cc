@@ -72,23 +72,6 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   }
 }
 
-shared_ptr<Matrix> Reference::rdm2_mat_2gen(shared_ptr<const RDM<2>> active) const {
-  assert(nact_);
-  return active->rdm2_mat_2gen(nclosed_, nvirt_);
-}
-
-
-shared_ptr<Matrix> Reference::rdm2_mat_1gen(shared_ptr<const RDM<2>> active) const {
-  assert(nact_);
-  return active->rdm2_mat_1gen(nclosed_, nvirt_);
-}
-
-
-shared_ptr<Matrix> Reference::rdm2_mat(shared_ptr<const RDM<2>> active) const {
-  assert(nact_);
-  return active->rdm2_mat(nclosed_);
-}
-
 
 // TODO should be updated to remove redundant FCI iterations
 shared_ptr<Dvec> Reference::civectors() const {

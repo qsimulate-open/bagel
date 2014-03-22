@@ -172,10 +172,11 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
   for (int i = nclosed; i != nclosed+nact; ++i) dmr->element(i, i) -=  correction * 2.0;
 
   // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half   = ref_->geom()->df()->compute_half_transform(coeff_->slice(0, nocc));
+  shared_ptr<DFHalfDist> half   = ref_->geom()->df()->compute_half_transform(ocmat);
   shared_ptr<DFHalfDist> halfj  = half->apply_J();
   shared_ptr<DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<const DFFullDist> full = halfj->compute_second_transform(coeff_);
+  shared_ptr<const DFFullDist> fullo = halfj->compute_second_transform(ocmat);
 
   // Y_rs = 2[Y1 + Y2 + Y3(ri) + Y4 + Y5(ri)]
   shared_ptr<Matrix> out = make_shared<Matrix>(nmobasis, nmobasis);
@@ -229,13 +230,10 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     *y3ri += *kjr % *(ref_->rdm1_mat(target));
   }
 
-  // construct Dtot, to be used in Y4 and Y5
-  auto Dtot = make_shared<Matrix>(nocc*nall, nocc*nall);
+  // construct D1 be used in Y4 and Y5
+  auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
-    // Dtot = D0 + D1
-    shared_ptr<const Matrix> D0 = ref_->rdm2_mat_2gen(target);
     auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
-    // extend 2rdm dimensions from D0(lj,ki) -> D0(lt,ks)
     // resizing dm2_(le,kf) to dm2_(ls,kt) and saving as D1_(lt,ks)
     for (int s = 0; s != nall; ++s) // extend
       for (int k = 0; k != nocc; ++k)
@@ -245,25 +243,30 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
               D1->element(l+nocc*s, k+nocc*t) = dm2->element(l+nocc*(t-nclosed), k+nocc*(s-nclosed));
             }
           }
-
-    *Dtot += *D0;
-    *Dtot += *D1;
   }
 
   {
-    // 2 Y4 = 2 y4_rs = 2[y4ri + y4ra] = 2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lt) D_(lt,ks) = 2 (kr|lt)[D0_(lt,ks) + D1_(lt,ks)]
-    // form (G'|ks). Note transpose not necessary due to Dtot symmetry.
-    shared_ptr<const DFFullDist> fullks = full->apply_2rdm(Dtot->data());
+    // 2 Y4 =  2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lj) D0_(lj,ki) +  2 (kr|lt) D1_(lt,ks)
+    // construct stepwise, D1 part
+    shared_ptr<const DFFullDist> fullks = full->apply_2rdm(D1->data());
     y4 = full->form_2index(fullks, 2.0);
+    // D0 part
+    auto y4ri = make_shared<Matrix>(nmobasis, nocc);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+    y4ri = full->form_2index(fulld, 2.0);
+    y4->add_block(1.0, 0, 0, nmobasis, nocc, y4ri);
   }
 
   {
-    // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rs|jt) [D0_(is,jt) + D1_(is,jt)]
-    // Note transpose not necessary due to Dtot symmetry
-    shared_ptr<const DFFullDist> fullis = full->apply_2rdm(Dtot->data());
+    // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rl|jk) D0_(il,jk) + 2 (rs|tj) D1_(is,jt)]
+    // construct stepwise, D1 part
+    shared_ptr<const DFFullDist> fullis = full->apply_2rdm(D1->data());
     shared_ptr<const DFHalfDist> dfback = fullis->back_transform(coeff_)->apply_J();
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 2.0);
     *y5ri = *coeff_ % *y5ri_ao;
+    // D0 part
+    shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+    *y5ri += *(full->form_2index(fulljk, 2.0));
   }
 
   // make Yrs in mo basis

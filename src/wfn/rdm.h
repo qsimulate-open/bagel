@@ -158,21 +158,6 @@ class RDM : public RDM_base<DataType> {
       return nullptr;
     }
 
-    std::shared_ptr<Matrix> rdm2_mat(const int nclosed, const bool all = true) const {
-      throw std::logic_error("RDM<N>::rdm2_mat() should not be called with N>2");
-      return std::shared_ptr<Matrix>();
-    }
-
-    std::shared_ptr<Matrix> rdm2_mat_2gen(const int nclosed, const int nvirt, const bool all = true) const {
-      throw std::logic_error("RDM<N>::rdm2_mat_2gen() should not be called with N>2");
-      return std::shared_ptr<Matrix>();
-    }
-
-    std::shared_ptr<Matrix> rdm2_mat_1gen(const int nclosed, const int nvirt, const bool all = true) const {
-      throw std::logic_error("RDM<N>::rdm2_mat_1gen() should not be called with N>2");
-      return std::shared_ptr<Matrix>();
-    }
-
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {
       throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
       return std::pair<std::shared_ptr<Matrix>, std::vector<double>>();
@@ -200,12 +185,6 @@ template<> void RDM<1,double>::transform(const std::shared_ptr<Matrix>& coeff);
 template<> void RDM<2,double>::transform(const std::shared_ptr<Matrix>& coeff);
 
 template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, const bool all) const;
-// careful, true returns rdm2 for internal space ie all occupied orbitals. false will return active portion of 2rdm
-template<> std::shared_ptr<Matrix> RDM<2>::rdm2_mat(const int nclosed, const bool all) const;
-// give 2rdm with one general index space
-template<> std::shared_ptr<Matrix> RDM<2>::rdm2_mat_1gen(const int nclosed, const int nvirt, const bool all) const;
-// give 2rdm with two general indices
-template<> std::shared_ptr<Matrix> RDM<2>::rdm2_mat_2gen(const int nclosed, const int nvirt, const bool all) const;
 
 template<> void RDM<1,double>::print(const double thresh) const;
 template<> void RDM<2,double>::print(const double thresh) const;

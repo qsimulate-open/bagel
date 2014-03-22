@@ -142,14 +142,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_[irdm]); }
     std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 
-    // todo make more general
-    std::shared_ptr<Matrix> rdm2_mat(std::shared_ptr<const RDM<2>> o) const;
-    std::shared_ptr<Matrix> rdm2_mat(const int irdm) const { return rdm2_mat(rdm2_[irdm]); }
-    std::shared_ptr<Matrix> rdm2_mat_1gen(std::shared_ptr<const RDM<2>> o) const;
-    std::shared_ptr<Matrix> rdm2_mat_1gen(const int irdm) const { return rdm2_mat_1gen(rdm2_[irdm]); }
-    std::shared_ptr<Matrix> rdm2_mat_2gen(std::shared_ptr<const RDM<2>> o) const;
-    std::shared_ptr<Matrix> rdm2_mat_2gen(const int irdm) const { return rdm2_mat_2gen(rdm2_[irdm]); }
-
     std::shared_ptr<const RDM<2>> rdm2(const int irdm) const { return rdm2_.at(irdm); }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
