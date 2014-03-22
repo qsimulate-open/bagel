@@ -61,6 +61,7 @@ void ZCASSCF::compute() {
     fci_->update(coeff_);
 
   cout << " See casscf.log for further information on FCI output " << endl;
+  double trust_radius = 0.5; // set initial trust radius as recommended in Jensen&Jorgensen JCP 80 1204 (1984)
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -108,6 +109,7 @@ void ZCASSCF::compute() {
         energy_[iter] += 0.5*mo->element(i,i).real();
     }
 
+    // compute approximate diagonal hessian
     if (iter == 0) {
       shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
       // IMPROVISED LEVEL SHIFT 
@@ -142,6 +144,33 @@ void ZCASSCF::compute() {
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
 
     const double gradient = amat->rms();
+    const double rmin = 0.6; const double rgood = 0.85; const double alpha = 1.2;
+    auto acopy = a->copy();
+    const int max_micro_iter = idata_->get<int>("microiter", 30);
+    for (int mi = 0; mi!= max_micro_iter; ++mi) {
+      shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy); // H_n * a
+      double rk = trust_radius_energy_ratio(iter, energy_, acopy, v, grad);
+//      cout << setprecision(8) << "energy ratio rk = " << rk << endl;
+//      cout << " trust radius before ifs = " << trust_radius << endl;
+      if (((rmin < rk) && (rk < rgood)) || ((2.0 - rgood < rk) && (rk < 2.0 - rmin))) {
+        trust_radius = trust_radius;
+        cout << "condition (i) satisfied in microiteration " << mi << endl;
+        cout << " end microiteration " << mi << endl;
+        break;
+      } else if ((rgood < rk) && (rk < 2 - rgood) ) {
+        trust_radius = min(alpha * trust_radius, 0.75);
+        cout << "condition (ii) satisfied in microiteration " << mi << endl;
+        cout << " end microiteration " << mi << endl;
+        break;
+      } else if (rk < rmin || rk > 2 - rmin ) {
+        trust_radius = trust_radius / alpha;
+        cout << "condition (iii) : scaling down the displacement vector by " << alpha << endl;
+        acopy->scale(1.0/alpha);
+        cout << " end microiteration " << mi << endl;
+      }
+    }
+    shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy, true); // update Y vector
+    amat = acopy->unpack<ZMatrix>();
 
     // multiply -1 from the formula. multiply -i to make amat hermite (will be compensated)
     *amat *= -1.0 * complex<double>(0.0, -1.0);

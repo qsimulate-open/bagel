@@ -119,7 +119,7 @@ class BFGS {
     }
 
     // returns Hessian * kappa as part of the trust radius procedure ; should be called after extrapolate
-    std::shared_ptr<T> interpolate_hessian(std::shared_ptr<const T> _value) {
+    std::shared_ptr<T> interpolate_hessian(std::shared_ptr<const T> _value, const bool update = false) {
       // to make sure, inputs are copied.
       auto value = std::make_shared<const T>(*_value);
 
@@ -167,8 +167,10 @@ class BFGS {
           out->ax_plus_y(t1, D[n]);
           out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }
-        Y.push_back(yy);
-        assert(Y.size() == n+1);
+        if (update) {
+          Y.push_back(yy);
+          assert(Y.size() == n+1);
+       }
       }
       return out;
     }
