@@ -32,7 +32,7 @@ using namespace std;
 
 OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
   vector<pair<int,int>> subspaces) :
-  input_(input), geom_(geom), coeff_(coeff), subspaces_(subspaces)
+  input_(input), geom_(geom), coeff_(coeff), orbital_subspaces_(subspaces)
 {
   // extra subspaces defined as a list of 2-member lists: [ [first, last], [first, last], ... ]
   //   the entire range will be localized (from first to last, including last)
@@ -41,7 +41,7 @@ OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_p
     for (auto& sp : *subs) {
       array<int,2> tmp = sp->get_array<int,2>("");
       // accept orbital numbers with 1-based numbering
-      subspaces_.emplace_back(tmp[0]-1, tmp[1]);
+      orbital_subspaces_.emplace_back(tmp[0]-1, tmp[1]);
     }
   }
 }
@@ -49,11 +49,11 @@ OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_p
 OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_ptr<const Reference> ref) :
   OrbitalLocalization(input, ref->geom(), ref->coeff(), vector<pair<int,int>>()) {
   if (input->get<bool>("occupied",true))
-    subspaces_.emplace_back(0,ref->nclosed());
+    orbital_subspaces_.emplace_back(0,ref->nclosed());
   if (ref->nact() != 0 && input->get<bool>("active",true))
-    subspaces_.emplace_back(ref->nclosed(), ref->nclosed()+ref->nact());
+    orbital_subspaces_.emplace_back(ref->nclosed(), ref->nclosed()+ref->nact());
   if (input->get<bool>("virtual", false))
-    subspaces_.emplace_back(ref->nclosed()+ref->nact(),ref->nclosed()+ref->nact()+ref->nvirt());
+    orbital_subspaces_.emplace_back(ref->nclosed()+ref->nact(),ref->nclosed()+ref->nact()+ref->nvirt());
 
   // if there, take eigenvalues out of Reference to reorder subspaces later on
   // TODO: would more flexibility in defining the reordering criterion be helpful?
@@ -78,7 +78,7 @@ shared_ptr<Matrix> OrbitalLocalization::localize() {
   }
 
   // localize within each subspace
-  for (auto& sp : subspaces_) {
+  for (auto& sp : orbital_subspaces_) {
     const int start = sp.first;
     const int fence = sp.second;
 
@@ -132,7 +132,7 @@ void RegionLocalization::common_init(vector<int> sizes) {
     int start = geom_->offset(natom).front();
     int end = (((natom + isize) >= (geom_->natom())) ? geom_->nbasis() : geom_->offset(natom + isize).front() );
     sizes_.push_back(end - start);
-    bounds_.push_back(make_pair(start, end));
+    region_bounds_.emplace_back(start, end);
 
     natom += isize;
   }
@@ -230,26 +230,28 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> c
 * Pipek-Mezey Localization                                                          *
 ************************************************************************************/
 PMLocalization::PMLocalization(shared_ptr<const PTree> input, shared_ptr<const Geometry> geom, shared_ptr<const Matrix> coeff,
-  vector<pair<int, int>> subspaces) : OrbitalLocalization(input, geom, coeff, subspaces)
+  vector<pair<int, int>> subspaces, vector<int> sizes) : OrbitalLocalization(input, geom, coeff, subspaces)
 {
-  common_init();
+  common_init(sizes);
 }
 
-PMLocalization::PMLocalization(shared_ptr<const PTree> input, shared_ptr<const Reference> ref)
+PMLocalization::PMLocalization(shared_ptr<const PTree> input, shared_ptr<const Reference> ref, vector<int> sizes)
   : OrbitalLocalization(input, ref)
 {
-  common_init();
+  common_init(sizes);
 }
 
-void PMLocalization::common_init() {
+void PMLocalization::common_init(vector<int> sizes) {
   cout << " ======    Pipek-Mezey Localization    ======" << endl;
 
   max_iter_ = input_->get<int>("max_iter", 50);
   thresh_ = input_->get<double>("thresh", 1.0e-6);
+  lowdin_ = input_->get<bool>("lowdin", true);
 
   cout << endl << "  Localization threshold: " << setprecision(2) << setw(6) << scientific << thresh_ << endl << endl;
 
   S_ = make_shared<Overlap>(geom_);
+  if (lowdin_) S_->sqrt();
 
   string localization_type = input_->get<string>("type", "atomic");
 
@@ -260,11 +262,14 @@ void PMLocalization::common_init() {
       const int start = nbasis;
       nbasis +=  atom->nbasis();
       if (start != nbasis)
-        atom_bounds_.emplace_back(start, nbasis);
+        region_bounds_.emplace_back(start, nbasis);
     }
   }
   else if (localization_type == "region") {
-    vector<int> sizes = input_->get_vector<int>("region_sizes");
+    if (input_->get_child_optional("region_sizes")) {
+      vector<int> input_sizes = input_->get_vector<int>("region_sizes");
+      sizes.insert(sizes.end(), input_sizes.begin(), input_sizes.end());
+    }
     int natoms = 0;
     for (int& region : sizes) {
       const int atomstart = natoms;
@@ -274,7 +279,7 @@ void PMLocalization::common_init() {
 
       natoms += region;
       if (basisstart != nbasis)
-        atom_bounds_.emplace_back(basisstart, nbasis);
+        region_bounds_.emplace_back(basisstart, nbasis);
     }
     if (natoms != geom_->natom()) {
       throw logic_error("All atoms must be assigned to regions");
@@ -290,7 +295,7 @@ shared_ptr<Matrix> PMLocalization::localize_space(shared_ptr<const Matrix> coeff
   auto out = make_shared<Matrix>(*coeff);
   const int norb = out->mdim();
 
-  auto jacobi = make_shared<JacobiPM>(input_, out, 0, norb, S_, atom_bounds_);
+  auto jacobi = make_shared<JacobiPM>(input_, out, 0, norb, S_, region_bounds_, lowdin_);
 
   cout << "iteration            P_A^2                delta P_A^2" << endl;
   cout << "---------------------------------------------------------" << endl;
@@ -327,10 +332,14 @@ double PMLocalization::calc_P(shared_ptr<const Matrix> coeff, const int nstart, 
 
   auto P_A = make_shared<Matrix>(norb, norb);
 
-  for (auto& ibounds : atom_bounds_) {
+  for (auto& ibounds : region_bounds_) {
     const int natombasis = ibounds.second - ibounds.first;
 
-    dgemm_("T", "N", norb, norb, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis,
+    if (lowdin_)
+      dgemm_("T", "N", norb, norb, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis,
+                              mos->element_ptr(ibounds.first, 0), nbasis, 0.0, P_A->data(), norb);
+    else
+      dgemm_("T", "N", norb, norb, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis,
                               coeff->element_ptr(ibounds.first, nstart), nbasis, 0.0, P_A->data(), norb);
 
     for (int imo = 0; imo < norb; ++imo)

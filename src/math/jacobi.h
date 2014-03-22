@@ -89,11 +89,13 @@ class JacobiPM : public Jacobi_base {
     std::shared_ptr<Matrix> S_;
     std::vector<std::pair<int, int>> atom_bounds_;
 
+    bool lowdin_;
+
     void subsweep(std::vector<std::pair<int,int>>& pairlist) override;
 
   public:
-    JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds) :
-      Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds) {}
+    JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds, const bool lowdin) :
+      Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds), lowdin_(lowdin) {}
 };
 
 }
