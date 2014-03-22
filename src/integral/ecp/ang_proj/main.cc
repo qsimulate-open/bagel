@@ -81,7 +81,7 @@ for (int iz = 0; iz <= maxl; ++iz) {
 #endif
 
 #if 1
-  std::array<double, 3> centreB = {0.0, 0.0, 1.420616};
+  std::array<double, 3> centreB = {0.0, 0.0, 0.305956};
   std::array<int, 2> lm = {0, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
@@ -105,7 +105,7 @@ for (int iz = 0; iz <= maxl; ++iz) {
   const double int1 = projAB->compute(r);
   cout << " < phi_A | lm_B >(r)  =  " << int1 << endl;
 
-  std::shared_ptr<ProjectionInt> projCB = std::make_shared<ProjectionInt>(cargaussA, rsh);
+  std::shared_ptr<ProjectionInt> projCB = std::make_shared<ProjectionInt>(cargaussC, rsh);
   const double int2 = projCB->compute(r);
   cout << " < phi_C | lm_B >(r)  =  " << int2 << endl;
 
@@ -133,17 +133,20 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
   cout << " Test Radial Integration " << endl;
   const int max_iter = 100;
-  const double thresh_int = 10e-10;
+  const double thresh_int = 10e-5;
   const double exp = 2.0;
   const double pi = static_cast<double>(atan(1.0) * 4.0);
 
+#if 0
   Radial_Int<Gaussian_Int, const double> radial(max_iter, thresh_int, exp);
   cout << "Analytic = " << std::sqrt(pi / exp) / 2.0 << endl;
+#endif
 
-#if 0
-  cout << " --- " << endl;
+#if 1
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projs(projAB, projCB);
   Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(max_iter, thresh_int, projs);
+  const double bagelfactor = 1.0;
+  cout << "Integral = " << ecp.integral() / bagelfactor << endl;
 #endif
 
   // check normalization ss
@@ -153,8 +156,10 @@ for (int iz = 0; iz <= maxl; ++iz) {
   cout << "Should be " << std::pow(2.0 / pi, 1.5) * std::pow(std::sqrt(pi / 2.0), 3.0) << endl;
 #endif
 
+#if 0
   const double overlap = overlap_ss(cargaussA, cargaussA);
   cout << "Overlap Integral < phi_A | phi_A > = " << overlap << endl;
+#endif
 
   return 0;
 

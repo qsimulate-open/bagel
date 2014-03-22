@@ -319,7 +319,7 @@ class CartesianGauss {
       { norm_ = normalise(); }
     ~CartesianGauss() {}
 
-    double normalise() {
+    double normalise() const {
       Factorial fact;
       const mpreal pi = static_cast<mpreal>(atan(1) * 4);
       const mpreal mexp = static_cast<mpreal>(exponent_);
@@ -408,6 +408,7 @@ class ProjectionInt {
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const {
       std::vector<std::pair<double, int>> usp;
 //    std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
+
       std::array<int, 2> lm = {lm1.first, lm1.second};
       std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
 //    std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
@@ -439,7 +440,7 @@ class ProjectionInt {
           if (coeff != 0.0) {
             nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
-//          std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
+ //         std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
           ++cnt;
@@ -497,14 +498,6 @@ class ProjectionInt {
       std::array<double, 3> AB;
       for (int i = 0; i != 3; ++i) AB[i] = sh_->centre(i) - gauss_->centre(i);
       const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
-      if (dAB == 0) {
-        const std::pair<int, int> lm1 = std::make_pair<int, int>(0, 0);
-        const std::pair<int, int> lm2 = std::make_pair<int, int>(sh_->angular_momentum(0), sh_->angular_momentum(1));
-        const std::array<int, 3> ijk = {gauss_->angular_momentum(0), gauss_->angular_momentum(1), gauss_->angular_momentum(2)};
-        const double rAsq = gauss_->centre(0) * gauss_->centre(0) + gauss_->centre(1) * gauss_->centre(1)
-                                                                  + gauss_->centre(2) * gauss_->centre(2);
-        return std::exp(-gauss_->exponent() * rAsq) * integrate2SH1USP(lm1, lm2, ijk);
-      } else {
         const double thAB = acos(AB[2]/dAB);
         const double phAB = atan2(AB[1], AB[0]);
         const int nx = gauss_->angular_momentum(0);
@@ -515,22 +508,19 @@ class ProjectionInt {
         Comb comb;
         double ans = 0.0;
         for (int kx = 0; kx != nx+1; ++kx) {
-//        std::cout << "kx = " << kx << std::endl;
           const double ckx = comb(nx, kx);
           for (int ky = 0; ky != ny+1; ++ky) {
-//          std::cout << "ky = " << ky << std::endl;
             const double cky = comb(ny, ky);
             for (int kz = 0; kz != nz+1; ++kz) {
-//            std::cout << "kz = " << kz << std::endl;
               const double ckz = comb(nz, kz);
               const int lk = kx + ky + kz;
               double sld = 0.0;
               for (int ld = 0; ld != lnu+1; ++ld) {
-//              std::cout << "lambda =  " << ld << std::endl;
                 double smu = 0.0;
                 for (int m = 0; m != 2 * ld + 1; ++m) {
                   const int mu = m - ld;
-                  const double Z_AB = sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB);
+                  const double Z_AB = (dAB == 0 ? (1.0/std::sqrt(4.0*pi)) : sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB));
+
                   const std::array<int, 3> exp = {kx, ky, kz};
                   const std::pair<int, int> lm1(ld, mu);
                   const std::pair<int, int> lm2(sh_->angular_momentum(0), sh_->angular_momentum(1));
@@ -538,16 +528,13 @@ class ProjectionInt {
                 }
                 const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
                 const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-//              std::cout << "sbessel  = " << sbessel << std::endl;
-//              std::cout << "exponential = " << exponential.toDouble() << std::endl;
-                sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
+                sld += smu * static_cast<double>(std::pow(r, lk + 1)) * (exponential.toDouble() * sbessel);
               }
               ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
             }
           }
         }
-        return ans * 4.0 * pi;
-      }
+        return ans * 4.0 * pi * gauss_->normalise();
     }
 
 };
