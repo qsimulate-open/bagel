@@ -23,23 +23,21 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
 #include <src/grad/cphf.h>
-
-#define CPHF_MAX_ITER 100
-#define CPHF_THRESH 1.0e-8
 
 using namespace std;
 using namespace bagel;
 
 CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const shared_ptr<const DFHalfDist> h,
            const shared_ptr<const Reference> r)
-: solver_(make_shared<LinearRM<Matrix>>(CPHF_MAX_ITER, grad)), grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
+: grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
 }
 
 
-shared_ptr<Matrix> CPHF::solve() const {
+shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
+
+  solver_ = make_shared<LinearRM<Matrix>>(zmaxiter, grad_);
 
   const size_t nmobasis = ref_->coeff()->mdim();
   const size_t nocca = ref_->nocc();
@@ -53,10 +51,10 @@ shared_ptr<Matrix> CPHF::solve() const {
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
 
-  cout << "  === CPHF iteration ===" << endl << endl;
+  cout << "  === Z-vector iteration ===" << endl << endl;
 
-  // TODO Max iter to be controlled by the input
-  for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
+  Timer timer;
+  for (int iter = 0; iter != zmaxiter; ++iter) {
     solver_->orthog(t);
 
     auto sigma = make_shared<Matrix>(nmobasis, nmobasis);
@@ -83,15 +81,12 @@ shared_ptr<Matrix> CPHF::solve() const {
 
     t = solver_->compute_residual(t, sigma);
 
-    // TODO to be controlled by the input
-    if (t->norm() < CPHF_THRESH) break;
+    cout << setw(7) << iter << " " << setw(20) << setprecision(14) << t->rms() << setw(15) << setprecision(2) << timer.tick() << endl;
+    if (t->rms() < zthresh) break;
 
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nvirt+nocca; ++a)
         t->element(a,i) /= (eig_[a]-eig_[i]);
-
-    cout << setw(6) << iter << setw(20) << setprecision(10) << t->norm() << endl;
-
   }
 
   cout << endl;

@@ -29,9 +29,6 @@
 #include <src/math/bfgs.h>
 #include <src/casscf/qvec.h>
 
-#define CPHF_MAX_ITER 100
-#define CPHF_THRESH 1.0e-10
-
 using namespace std;
 using namespace bagel;
 
@@ -92,7 +89,8 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
 }
 
 
-tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>> CPCASSCF::solve() const {
+tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>>
+  CPCASSCF::solve(const double zthresh, const int zmaxiter) {
 
   // RI determinant space
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
@@ -136,7 +134,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
-  auto solver = make_shared<LinearRM<PairFile<Matrix, Dvec>>>(CPHF_MAX_ITER, source);
+  auto solver = make_shared<LinearRM<PairFile<Matrix, Dvec>>>(zmaxiter, source);
 
   // initial guess
   shared_ptr<PairFile<Matrix, Dvec>> z = source->clone();
@@ -150,13 +148,10 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   auto ovl = make_shared<const Overlap>(geom_);
   auto cinv = make_shared<const Matrix>(*ref_->coeff() % *ovl);
 
-  cout << "  === CPCASSCF iteration ===" << endl << endl;
+  cout << "  === CASSCF Z-vector iteration ===" << endl << endl;
 
-  // TODO Max iter to be controlled by the input
   Timer timer;
-  for (int iter = 0; iter != CPHF_MAX_ITER; ++iter) {
-    cout << setw(7) <<  iter << " " << setw(20) << setprecision(14) << z->rms() << setw(15) << setprecision(2) << timer.tick() << endl;
-
+  for (int iter = 0; iter != zmaxiter; ++iter) {
     // given z, computes sigma (before anti-symmetrization)
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv);
     sigma->first()->antisymmetrize();
@@ -167,8 +162,8 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     z = bfgs->extrapolate(z, solver->civec());
     z->second()->project_out(civector_);
 
-    if (z->rms() < CPHF_THRESH) break;
-
+    cout << setw(7) <<  iter << " " << setw(20) << setprecision(14) << z->rms() << setw(15) << setprecision(2) << timer.tick() << endl;
+    if (z->rms() < zthresh) break;
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
@@ -176,9 +171,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   *xmat += *grad_->first();
   xmat->symmetrize();
-  // testing if asymmetric part is zero
-//assert((*sigma->first() + *grad_->first() - *xmat).rms() < CPHF_THRESH*10.0);
-
   xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat);
 }
