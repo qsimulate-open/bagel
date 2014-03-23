@@ -47,8 +47,9 @@ class CPCASSCF {
 
 
     std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
-                                                      std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>,
-                                                      const bool onlyorb = false) const;
+                                                      std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<Matrix> form_sigma_sym(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
+                                           std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
     std::shared_ptr<Matrix> compute_orb_denom() const;
 

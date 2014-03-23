@@ -76,7 +76,7 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 
 
 void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o) {
-  assert(block_.size() == o->block_.size());
+  assert(block_.size() == o->block_.size() && nindex1_ == o->nindex1_ && nindex2_ == o->nindex2_);
   auto j = o->block_.begin();
   for (auto& i : block_)
     i->ax_plus_y(a, *j++);
