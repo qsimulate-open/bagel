@@ -292,25 +292,28 @@ void PMLocalization::common_init(vector<int> sizes) {
 }
 
 shared_ptr<Matrix> PMLocalization::localize_space(shared_ptr<const Matrix> coeff) {
+  Timer pmtime;
   auto out = make_shared<Matrix>(*coeff);
   const int norb = out->mdim();
 
   auto jacobi = make_shared<JacobiPM>(input_, out, 0, norb, S_, region_bounds_, lowdin_);
 
-  cout << "iteration            P_A^2                delta P_A^2" << endl;
-  cout << "---------------------------------------------------------" << endl;
+  //cout << "iteration            P_A^2                delta P_A^2" << endl;
+  cout << setw(6) << "iter" << setw(20) << "P_A^2" << setw(27) << "delta P_A^2" << setw(22) << "time" << endl;
+  cout << "----------------------------------------------------------------------------------------------" << endl;
 
   double P = calc_P(out, 0, norb);
 
-  cout << setw(6) << 0 << fixed << setw(24) << setprecision(10) << P << endl;
+  cout << setw(5) << 0 << fixed << setw(24) << setprecision(10) << P << endl;
 
   for(int i = 0; i < max_iter_; ++i) {
     jacobi->sweep();
 
     double tmp_P = calc_P(out, 0, norb);
     double dP = tmp_P - P;
-    cout << setw(6) << i+1 << fixed << setw(24) << setprecision(10) << tmp_P
-                           << fixed << setw(24) << setprecision(10) << dP << endl;
+    cout << setw(5) << i+1 << fixed << setw(24) << setprecision(10) << tmp_P
+                           << fixed << setw(24) << setprecision(10) << dP
+                           << fixed << setw(24) << setprecision(6)  << pmtime.tick() << endl;
     P = tmp_P;
     if (fabs(dP) < thresh_) {
       cout << "Converged!" << endl;
