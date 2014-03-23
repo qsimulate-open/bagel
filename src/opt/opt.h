@@ -84,7 +84,7 @@ class Opt {
       maxstep_ = idat->get<double>("maxstep", 0.1);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
-      thresh_ = idat->get<double>("thresh", 1.0e-5);
+      thresh_ = idat->get<double>("thresh", 5.0e-5);
       algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
     }
 
