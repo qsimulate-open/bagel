@@ -48,6 +48,8 @@ class CPCASSCF {
 
     std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
                                                       std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<Matrix> form_sigma_sym(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
+                                           std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
     std::shared_ptr<Matrix> compute_orb_denom() const;
 
@@ -57,7 +59,8 @@ class CPCASSCF {
              const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
 
     // tuple of Z, z, and X.
-    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>> solve() const;
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>>
+      solve(const double thresh, const int maxiter = 100);
 
 };
 

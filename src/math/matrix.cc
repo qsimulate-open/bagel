@@ -360,8 +360,7 @@ void Matrix::purify_unitary() {
 
 
 void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
-
-#if 1
+  assert(ndim_ == mdim_ && nclosed + nact + nvirt == ndim_);
   for (int g = 0; g != nclosed; ++g)
     for (int h = 0; h != nclosed; ++h)
       element(h,g)=0.0;
@@ -378,8 +377,6 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
       element(i,j) = -ele;
     }
   }
-#endif
-
 }
 
 

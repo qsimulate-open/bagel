@@ -34,18 +34,18 @@ namespace bagel {
 
 class CPHF {
   protected:
-    const std::shared_ptr<LinearRM<Matrix>> solver_;
-    const std::shared_ptr<const Matrix> grad_;
-    const std::vector<double> eig_;
-    const std::shared_ptr<const DFHalfDist> halfjj_;
-    const std::shared_ptr<const Reference> ref_;
-    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<LinearRM<Matrix>> solver_;
+    std::shared_ptr<const Matrix> grad_;
+    std::vector<double> eig_;
+    std::shared_ptr<const DFHalfDist> halfjj_;
+    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Geometry> geom_;
 
   public:
     CPHF(const std::shared_ptr<const Matrix> grad, const std::vector<double>& eig,
          const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const Reference> g);
 
-    std::shared_ptr<Matrix> solve() const;
+    std::shared_ptr<Matrix> solve(const double thresh, const int maxiter = 100);
 
 };
 

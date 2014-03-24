@@ -99,7 +99,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civ, half, halfjj, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat) = cp->solve();
+  tie(zmat, zvec, xmat) = cp->solve(task_->thresh());
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
@@ -111,7 +111,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   auto detex = make_shared<Determinants>(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false, /*mute=*/true);
   shared_ptr<const RDM<1>> zrdm1;
   shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec, detex);
+  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec, civ, detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
   zrdm1_mat->symmetrize();
@@ -129,36 +129,30 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // xmat in the AO basis
   auto xmatao = make_shared<Matrix>(*ref_->coeff() * *xmat ^ *ref_->coeff());
 
-
   //- TWO ELECTRON PART -//
   // half is computed long before
-//shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
 
   shared_ptr<DFHalfDist> qri;
 
-  // term with D and Qbar
   {
-    shared_ptr<RDM<2>> D = ref_->rdm2(target)->copy();
-    D->ax_plus_y(0.5, *zrdm2);
-    shared_ptr<RDM<1>> dd = ref_->rdm1(target)->copy();
-    dd->ax_plus_y(1.0, *zrdm1);
-    shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(D->data(), dd->data(), nclosed, nact);
-    qri = qijd->back_transform(ocoeff);
-  }
-
-  // term with Q and Z
-  {
-    shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * *zmat->slice(0,nocc));
-    qri->ax_plus_y(+1.0, qijd2->back_transform(ztrans));
+    {
+      const RDM<2> D(*ref_->rdm2(target)+*zrdm2);
+      const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
 
-    shared_ptr<DFFullDist> qijd3 = halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
-    qri->ax_plus_y(+1.0, qijd3->back_transform(ocoeff));
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D.data(), dd.data(), nclosed, nact);
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact));
+      qri = qijd->back_transform(ocoeff);
+    }
+    {
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
+    }
   }
 
   shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
+  shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();

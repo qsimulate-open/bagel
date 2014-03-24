@@ -28,7 +28,8 @@
   "title" : "localize",
   "algorithm" : "pm",
   "type" : "region",
-  "region_sizes" : [3, 3, 3]
+  "region_sizes" : [3, 3, 3],
+  "lowdin" : true
 }
 
 ]}

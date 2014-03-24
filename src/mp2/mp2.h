@@ -51,6 +51,7 @@ class MP2 : public Method {
     double energy() const { return energy_; }
     int ncore() const { return ncore_; }
     std::string abasis() const { return abasis_; }
+    std::shared_ptr<const SCF> scf() const { return scf_; }
 };
 
 }

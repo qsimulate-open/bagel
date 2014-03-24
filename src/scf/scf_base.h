@@ -96,6 +96,9 @@ class SCF_base : public Method {
     int noccB() const { return noccB_; };
     double energy() const { return energy_; };
 
+    double thresh_overlap() const { return thresh_overlap_; }
+    double thresh_scf() const { return thresh_scf_; }
+
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     double* eig() { return eig_.data(); };
