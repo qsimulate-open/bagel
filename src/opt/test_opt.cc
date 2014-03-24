@@ -97,6 +97,12 @@ std::vector<double> reference_cas_act_opt() {
   out[5] =-0.003832;
   return out;
 }
+std::vector<double> reference_sacas_act_opt() {
+  std::vector<double> out(6);
+  out[2] = 1.702357;
+  out[5] =-0.000262;
+  return out;
+}
 std::vector<double> reference_mp2_opt() {
   std::vector<double> out(6);
   out[2] = 1.932841;
@@ -144,6 +150,7 @@ BOOST_AUTO_TEST_CASE(MP2_Opt) {
 }
 BOOST_AUTO_TEST_CASE(CASSCF_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_act_opt"),    reference_cas_act_opt(),      1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_sacas_act_opt"),  reference_sacas_act_opt(),    1.0e-4));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
