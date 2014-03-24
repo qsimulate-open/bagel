@@ -147,7 +147,7 @@ class FCI : public Method {
 
     virtual void compute() override;
 
-    virtual void update(std::shared_ptr<const Coeff> ) = 0;
+    virtual void update(std::shared_ptr<const Matrix> ) = 0;
 
     // returns members
     int norb() const { return norb_; }

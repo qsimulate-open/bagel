@@ -77,6 +77,9 @@ void CASPT2Grad::compute() {
 
   // solve CPCASSCF
   auto g0 = yrs;
+auto tmp = yrs->copy();
+tmp->antisymmetrize();
+tmp->print();
   auto g1 = make_shared<Dvec>(cider, ref_->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 

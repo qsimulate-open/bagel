@@ -46,7 +46,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
 }
 
 
-MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Coeff> c, const string method)
+MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Matrix> c, const string method)
 : hz_(false), geom_(ref->geom()), ref_(ref), coeff_(c) {
 
   const bool do_df = geom_->df().get();
