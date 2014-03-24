@@ -87,7 +87,7 @@ void CASPT2Grad::compute() {
   auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_);
   shared_ptr<const Matrix> zmat, xmat;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat) = cp->solve();
+  tie(zmat, zvec, xmat) = cp->solve(1.0e-10);
 
   // form relaxed 1RDM
   // form Zd + dZ^+
