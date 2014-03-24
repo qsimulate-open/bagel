@@ -286,11 +286,14 @@ class Tensor {
       for (auto& i0 : o[0].range()) dim0 += i0.size();
 
       // closed orbitals todo cleanup this
-      int nclosed;
-      for (auto& i1 : o[1].range()) {
+// TODO The following code looks very wrong
+/*    for (auto& i1 : o[1].range()) {
         nclosed = i1.offset();
         break;
       }
+*/
+// TODO this still does not look right
+      int nclosed = o[1].range().begin()->offset();
 
       std::unique_ptr<double[]> data (new double[dim0*dim1*dim2*dim3]);
       for (auto& i3 : o[3].range()) {
