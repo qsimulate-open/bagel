@@ -62,11 +62,7 @@ void CASPT2Grad::compute() {
   shared_ptr<const Matrix> d2 = smith->dm2();
   double correction = smith->correction();
   shared_ptr<const Civec> cider = smith->cider();
-#if 0 // TODO check
   shared_ptr<const Coeff> coeff = smith->coeff();
-#else
-  shared_ptr<const Coeff> coeff = ref_->coeff();
-#endif
 
   // compute Yrs
   compute_y(d1, correction, d2, cider, coeff);
@@ -187,47 +183,33 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
   auto y4   = make_shared<Matrix>(nmobasis, nmobasis);
   auto y5ri = make_shared<Matrix>(nmobasis, nocc);
 
+  auto ocoeff = coeff_->slice(0, nocc);
+
   {
-    // 2 Y1 = h(d0 + d2) * 2
+    // 2 Y1 = h(d0 + d1 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
     auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target)->resize(nmobasis,nmobasis));
-    auto dtot = make_shared<Matrix>(*dmr);
-    *dtot += *d0;
-    *y1 = *hmo * *dtot * 2.0;
+    *y1 = *hmo * (*dmr + *d0) * 2.0;
   }
 
   {
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
-    // 2 Y2_rs = 2[[(rt|kl) -1/2(rk|tl)]d^(0)_{kl}]*dm1_ts
-    shared_ptr<const Matrix> dkl = ref_->rdm1_mat(target);
-    auto ocoeff = coeff_->slice(0, nocc);
-    auto dklao = make_shared<const Matrix>(*ocoeff * *dkl ^ *ocoeff);
-    // J_rt = (rt|delta) (gamma|kl)*d_kl
-    auto jrt = make_shared<const Matrix>(*coeff_ % *(ref_->geom())->df()->compute_Jop(dklao) * *coeff_);
-    // 2 Y2_rs += 2*J_rt*d2_ts
-    *y2 = *jrt * *dmr * 2.0;
-    //  -1 K_tr  = -(rk|lt)d_kl
-    // make (G'|kt)
-    auto halfj_kt = halfj->copy();
-    halfj_kt->rotate_occ(dkl);
-    shared_ptr<const Matrix> mat = halfj->form_2index(halfj_kt, -1.0);
-    auto krt = make_shared<const Matrix>(*coeff_ % *mat * *coeff_);
-    // Y2_rs += Krt*d2_ts
-    *y2 += *krt * *dmr;
+    shared_ptr<Matrix> dkl = ref_->rdm1_mat(target);
+    dkl->sqrt();
+    dkl->scale(1.0/sqrt(2.0));
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, make_shared<Matrix>(*ocoeff * *dkl), /*grad*/false, /*rhf*/true);
+    *y2 += *coeff_ % fock * *coeff_ * *dmr * 2.0;
   }
 
   {
-    // 2 Y3 = 2 Y3_ri = 2[sum_st [(rj|st) -1/2(rs|tj)]d^(2)_{st}]*dm0_ji, where st can be cc,xx,aa
-    // convert d2 to ao basis
-    auto dmrao = make_shared<const Matrix>(*coeff_ * *dmr ^ *coeff_);
-    dmrao->print("printing dmr2ao caspt2", 20);
-    //  2 Jrj = 2 (rj|st)d2_st
-    auto jrj = make_shared<const Matrix>(*coeff_ % *(ref_->geom())->df()->compute_Jop(dmrao) * *ocmat);
-    *y3ri = *jrj * *(ref_->rdm1_mat(target)) * 2.0;
-    // -1 K_jr  = -(rs|jt)d2_st
-    auto kjr = make_shared<const Matrix>(*(halfjj->compute_Kop_1occ(dmrao, -1.0)) * *coeff_);
-    *y3ri += *kjr % *(ref_->rdm1_mat(target));
+    // 2 Y3 = 2 Y3_ri*dm0_ji
+    // coulomb
+    auto dmrao = make_shared<Matrix>(*coeff_ * *dmr ^ *coeff_);
+    auto jop = geom_->df()->compute_Jop(dmrao);
+    // exchange
+    auto kopi = geom_->df()->form_2index(halfjj->compute_second_transform(dmrao)->swap(), -0.5);
+    *y3ri += *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target) * 2.0;
   }
 
   // construct D1 be used in Y4 and Y5
@@ -239,7 +221,7 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
         for (int t = 0; t != nall; ++t) // extend
           for (int l = 0; l != nocc; ++l) {
             if (t >= nclosed && s >= nclosed) {
-              D1->element(l+nocc*s, k+nocc*t) = dm2->element(l+nocc*(t-nclosed), k+nocc*(s-nclosed));
+              D1->element(l+nocc*t, k+nocc*s) = dm2->element(l+nocc*(t-nclosed), k+nocc*(s-nclosed));
             }
           }
   }
@@ -250,9 +232,8 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     shared_ptr<const DFFullDist> fullks = full->apply_2rdm(D1->data());
     y4 = full->form_2index(fullks, 2.0);
     // D0 part
-    auto y4ri = make_shared<Matrix>(nmobasis, nocc);
     shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-    y4ri = full->form_2index(fulld, 2.0);
+    auto y4ri = full->form_2index(fulld, 2.0);
     y4->add_block(1.0, 0, 0, nmobasis, nocc, y4ri);
   }
 
