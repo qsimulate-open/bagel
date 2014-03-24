@@ -168,7 +168,7 @@ shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double co
   shared_ptr<const Matrix> vcmat = coeff_->slice(nocc, nmobasis);
 
   auto dmr = make_shared<Matrix>(*dm1);
-  // add correction to active space
+  // add correction to active part of the correlated one-body density
   for (int i = nclosed; i != nclosed+nact; ++i) dmr->element(i, i) -=  correction * 2.0;
 
   // TODO they are redundant, though...
@@ -210,10 +210,10 @@ shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double co
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target_state_));
   }
 
-  // construct D1 be used in Y4 and Y5
+  // construct D1 to be used in Y4 and Y5
   auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
-    // resizing dm2_(le,kf) to dm2_(ls,kt) and saving as D1_(lt,ks)
+    // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
       for (int k = 0; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
