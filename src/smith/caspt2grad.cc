@@ -71,11 +71,12 @@ void CASPT2Grad::compute() {
   }
 
   // compute Yrs
-  compute_y(d1, correction, d2, cider, coeff);
-  yrs_->print("Yrs in IN GRAD mo basis", 20);
+  auto yrs = compute_y(d1, correction, d2, cider, coeff);
+  yrs->antisymmetrize();
+  yrs->print("Yrs in IN GRAD mo basis");
 
   // solve CPCASSCF
-  auto g0 = make_shared<Matrix>(*yrs_);
+  auto g0 = yrs;
   auto g1 = make_shared<Dvec>(cider, ref_->nstate());
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
@@ -154,8 +155,7 @@ bool CASPT2Grad::check_blocks(shared_ptr<Matrix> grad) {
 }
 
 
-void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider, shared_ptr<const Coeff> coeff_) {
-  const int target = 0;
+shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider, shared_ptr<const Coeff> coeff_) {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
@@ -186,13 +186,13 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     // 2 Y1 = h(d0 + d1 + d2) * 2
     // one-electron contributions
     auto hmo = make_shared<const Matrix>(*coeff_ % *ref_->hcore() * *coeff_);
-    auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target)->resize(nmobasis,nmobasis));
+    auto d0 = make_shared<Matrix>(*ref_->rdm1_mat(target_state_)->resize(nmobasis,nmobasis));
     *out += *hmo * (*dmr + *d0) * 2.0;
   }
 
   {
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
-    shared_ptr<Matrix> dkl = ref_->rdm1_mat(target);
+    shared_ptr<Matrix> dkl = ref_->rdm1_mat(target_state_);
     dkl->sqrt();
     dkl->scale(1.0/sqrt(2.0));
     Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, make_shared<Matrix>(*ocoeff * *dkl), /*grad*/false, /*rhf*/true);
@@ -207,7 +207,7 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     // exchange
     auto kopi = halfjj->compute_Kop_1occ(dmrao, -0.5)->transpose();
 
-    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target));
+    out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target_state_));
   }
 
   // construct D1 be used in Y4 and Y5
@@ -230,7 +230,7 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     shared_ptr<const DFFullDist> fullks = full->apply_2rdm(D1->data());
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target_state_)->data(), ref_->rdm1(target_state_)->data(), nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
   }
 
@@ -242,11 +242,11 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % *y5ri_ao);
     // D0 part
-    shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target_state_)->data(), ref_->rdm1(target_state_)->data(), nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulljk, 1.0));
   }
 
-  yrs_ = out;
+  return out;
 }
 
 
