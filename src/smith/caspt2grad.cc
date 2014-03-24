@@ -168,7 +168,7 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
   shared_ptr<const Matrix> vcmat = coeff_->slice(nocc, nmobasis);
 
   auto dmr = make_shared<Matrix>(*dm1);
-  // add correction to active space
+  // add correction to active part of the correlated one-body density
   for (int i = nclosed; i != nclosed+nact; ++i) dmr->element(i, i) -=  correction * 2.0;
 
   // TODO they are redundant, though...
@@ -216,10 +216,10 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
     *y3ri += *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target) * 2.0;
   }
 
-  // construct D1 be used in Y4 and Y5
+  // construct D1 to be used in Y4 and Y5
   auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
-    // resizing dm2_(le,kf) to dm2_(ls,kt) and saving as D1_(lt,ks)
+    // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
       for (int k = 0; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
@@ -232,25 +232,27 @@ void CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shar
 
   {
     // 2 Y4 =  2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lj) D0_(lj,ki) +  2 (kr|lt) D1_(lt,ks)
+    // Note factors of 2 are reduced to 1 since Dtot = 1/2 [D0+D1]
     // construct stepwise, D1 part
     shared_ptr<const DFFullDist> fullks = full->apply_2rdm(D1->data());
-    y4 = full->form_2index(fullks, 2.0);
+    y4 = full->form_2index(fullks, 1.0);
     // D0 part
     shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-    auto y4ri = full->form_2index(fulld, 2.0);
+    auto y4ri = full->form_2index(fulld, 1.0);
     y4->add_block(1.0, 0, 0, nmobasis, nocc, y4ri);
   }
 
   {
     // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rl|jk) D0_(il,jk) + 2 (rs|tj) D1_(is,jt)]
+    // Note factors of 2 are reduced to 1 since Dtot = 1/2 [D0+D1]
     // construct stepwise, D1 part
     shared_ptr<const DFFullDist> fullis = full->apply_2rdm(D1->data());
     shared_ptr<const DFHalfDist> dfback = fullis->back_transform(coeff_)->apply_J();
-    auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 2.0);
+    auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     *y5ri = *coeff_ % *y5ri_ao;
     // D0 part
     shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-    *y5ri += *(full->form_2index(fulljk, 2.0));
+    *y5ri += *(full->form_2index(fulljk, 1.0));
   }
 
   // make Yrs in mo basis
