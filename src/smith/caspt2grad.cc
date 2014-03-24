@@ -64,19 +64,23 @@ void CASPT2Grad::compute() {
   shared_ptr<const Civec> cider = smith->cider();
   shared_ptr<const Coeff> coeff = smith->coeff();
 
+  {
+    const int nmobasis = coeff->mdim();
+    auto dtotao = make_shared<Matrix>(*coeff * *ref_->rdm1_mat(target_state_)->resize(nmobasis,nmobasis) ^ *coeff);
+    Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
+  }
+
   // compute Yrs
   compute_y(d1, correction, d2, cider, coeff);
   yrs_->print("Yrs in IN GRAD mo basis", 20);
 
   // solve CPCASSCF
   auto g0 = make_shared<Matrix>(*yrs_);
-  auto g1 = make_shared<Dvec>(cider,1);
+  auto g1 = make_shared<Dvec>(cider, ref_->nstate());
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   shared_ptr<DFHalfDist> half   = ref_->geom()->df()->compute_half_transform(coeff->slice(0, ref_->nocc()));
-  shared_ptr<DFHalfDist> halfj  = half->apply_J();
-  shared_ptr<DFHalfDist> halfjj = halfj->apply_J();
-
+  shared_ptr<DFHalfDist> halfjj = half->apply_JJ();
 
 #if 1
   //assert(check_blocks(g0));
