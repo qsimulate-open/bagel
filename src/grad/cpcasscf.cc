@@ -32,14 +32,10 @@
 using namespace std;
 using namespace bagel;
 
-CPCASSCF::CPCASSCF(const shared_ptr<const PairFile<Matrix, Dvec>> grad, const shared_ptr<const Dvec> civ, const shared_ptr<const DFHalfDist> h,
-                   const shared_ptr<const DFHalfDist> h2, const shared_ptr<const Reference> r, const shared_ptr<const FCI> f)
-: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f) {
+CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
+                   shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<const FCI> f, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f), coeff_(coeff ? coeff : ref_->coeff()) {
 
-#if 0
-  cout << "   CI vectors:" << endl;
-  civector_->print(-1);
-#endif
 }
 
 shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
@@ -47,9 +43,9 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
   const int nvirt = ref_->nvirt();
-  const int nmobasis = ref_->coeff()->mdim();
-  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
-  shared_ptr<const Matrix> coeff = ref_->coeff();
+  const int nmobasis = coeff_->mdim();
+  shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
+  shared_ptr<const Matrix> coeff = coeff_;
 
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
   {
@@ -68,7 +64,7 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
     auto fact_ao = make_shared<Fock<1>>(geom_, fci_->jop()->core_fock()->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1av), /*grad*/false, /*rhf*/true);
     auto f = make_shared<Matrix>(*finact + *coeff% *fact_ao * *coeff);
 
-    auto fact = make_shared<Qvec>(nmobasis, nact, ref_->coeff(), nclosed, fci_, ref_->rdm2_av());
+    auto fact = make_shared<Qvec>(nmobasis, nact, coeff_, nclosed, fci_, ref_->rdm2_av());
     for (int i = 0; i != nact; ++i)
       daxpy_(nmobasis, occup[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
 
@@ -99,7 +95,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   const size_t nocca = ref_->nocc();
   assert(ref_->nact() + ref_->nclosed() == nocca);
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
+  shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocca);
 
   // some DF vectors
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
@@ -146,7 +142,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // inverse matrix of C
   auto ovl = make_shared<const Overlap>(geom_);
-  auto cinv = make_shared<const Matrix>(*ref_->coeff() % *ovl);
+  auto cinv = make_shared<const Matrix>(*coeff_ % *ovl);
 
   cout << "  === CASSCF Z-vector iteration ===" << endl << endl;
 
@@ -179,14 +175,14 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 shared_ptr<PairFile<Matrix,Dvec>>
   CPCASSCF::form_sigma(shared_ptr<const PairFile<Matrix,Dvec>> z, shared_ptr<const DFHalfDist> half,
                        shared_ptr<const DFFullDist> fullb, shared_ptr<const Determinants> detex, shared_ptr<const Matrix> cinv) const {
-  const size_t nmobasis = ref_->coeff()->mdim();
+  const size_t nmobasis = coeff_->mdim();
   const size_t nocca = ref_->nocc();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
   shared_ptr<const Matrix> z0 = z->first();
   shared_ptr<const Dvec>   z1 = z->second();
-  shared_ptr<const Matrix> coeff = ref_->coeff();
+  shared_ptr<const Matrix> coeff = coeff_;
   shared_ptr<RDM<1>> rdm1_av = ref_->rdm1_av()->copy();
   shared_ptr<RDM<2>> rdm2_av = ref_->rdm2_av()->copy();
 
@@ -288,13 +284,13 @@ shared_ptr<PairFile<Matrix,Dvec>>
 // computes A matrix (scaled by 2 here)
 shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_ptr<const Dvec> dvec, shared_ptr<const Determinants> o) const {
 
-  const size_t nmobasis = ref_->coeff()->mdim();
+  const size_t nmobasis = coeff_->mdim();
 
   auto amat = make_shared<Matrix>(nmobasis, nmobasis);
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
-  shared_ptr<const Matrix> coeff = ref_->coeff();
+  shared_ptr<const Matrix> coeff = coeff_;
   shared_ptr<const Matrix> acoeff = coeff->slice(nclosed, nclosed+nact);
 
   // compute RDMs
@@ -353,17 +349,17 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 // form sigma for calculating X (makes symmetric part correct)
 shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dvec>> z, shared_ptr<const DFHalfDist> half,
                                             shared_ptr<const DFFullDist> fullb, shared_ptr<const Determinants> detex, shared_ptr<const Matrix> cinv) const {
-  const size_t nmobasis = ref_->coeff()->mdim();
+  const size_t nmobasis = coeff_->mdim();
   const size_t nocca = ref_->nocc();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
   shared_ptr<const Matrix> z0 = z->first();
   shared_ptr<const Dvec>   z1 = z->second();
-  shared_ptr<const Matrix> coeff = ref_->coeff();
-  shared_ptr<const Matrix> ccoeff = nclosed ? ref_->coeff()->slice(0, nclosed) : nullptr;
-  shared_ptr<const Matrix> acoeff = ref_->coeff()->slice(nclosed, nclosed+nact);
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(      0, nclosed+nact);
+  shared_ptr<const Matrix> coeff = coeff_;
+  shared_ptr<const Matrix> ccoeff = nclosed ? coeff_->slice(0, nclosed) : nullptr;
+  shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
+  shared_ptr<const Matrix> ocoeff = coeff_->slice(      0, nclosed+nact);
 
   shared_ptr<const Matrix> az0 = z0->slice(nclosed, nocca);
   shared_ptr<const Matrix> oz0 = z0->slice(0, nocca);
@@ -399,7 +395,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     qone.add_block(2.0, 0, 0, nocca, nclosed, (fockinact + fockact).get_submatrix(0, 0, nocca, nclosed));
 
   // TODO qvec should be stored in somewhere
-  const Qvec qvec(nmobasis, nact, ref_->coeff(), nclosed, fci_, rdm2_av);
+  const Qvec qvec(nmobasis, nact, coeff_, nclosed, fci_, rdm2_av);
   qone.add_block(1.0, 0, nclosed, nocca, nact, qvec.get_submatrix(0, 0, nocca, nact));
   qone.add_block(1.0, 0, nclosed, nocca, nact, (*fockinact.get_submatrix(0,nclosed,nocca,nact) * *rdm1av_mat));
   qone.symmetrize();

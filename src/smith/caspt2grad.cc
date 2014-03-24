@@ -77,7 +77,7 @@ void CASPT2Grad::compute() {
 
   // solve CPCASSCF
   auto g0 = yrs;
-  auto g1 = make_shared<Dvec>(cider, ref_->nstate());
+  auto g1 = make_shared<Dvec>(cider, ref_->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   shared_ptr<DFHalfDist> half   = ref_->geom()->df()->compute_half_transform(coeff->slice(0, ref_->nocc()));
@@ -85,7 +85,7 @@ void CASPT2Grad::compute() {
 
 #if 1
   //assert(check_blocks(g0));
-  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_);
+  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_, coeff);
   shared_ptr<const Matrix> zmat, xmat;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat) = cp->solve(1.0e-10);
