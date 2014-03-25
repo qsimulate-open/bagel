@@ -91,7 +91,6 @@ class SphUSP {
             sk += (k <= j ? comb(j, k) : zero) * comb(am, lx - 2*k) * std::pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
           }
         }
-//      std::cout << "(xyz) = (" << lx << ", " << ly << ", " << lz << ")" << " prefactor = " << prefactor << " si = " << si << " sk = " << sk << " factor = " << factor << " ans = " << (prefactor * si * sk * factor).toDouble() << std::endl;
         return (prefactor * si * sk * factor).toDouble();
       }
     }
@@ -407,11 +406,9 @@ class ProjectionInt {
 
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const {
       std::vector<std::pair<double, int>> usp;
-//    std::cout << "(x, y, z) = (" << ijk[0] << ", " << ijk[1] << ", " << ijk[2] << ")" << std::endl;
 
       std::array<int, 2> lm = {lm1.first, lm1.second};
       std::shared_ptr<SphUSP> sphusp = std::make_shared<SphUSP>(lm);
-//    std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       int cnt = 0;
       int nonzero = 0;
       for (int lz = 0; lz <= lm1.first; ++lz) {
@@ -430,7 +427,6 @@ class ProjectionInt {
 
       lm = {lm2.first, lm2.second};
       sphusp = std::make_shared<SphUSP>(lm);
-//    std::cout << "(l, m) = (" << sphusp->angular_momentum(0) << ", " << sphusp->angular_momentum(1) << ")" << std::endl;
       cnt = 0;
       nonzero = 0;
       for (int lz = 0; lz <= lm2.first; ++lz) {
@@ -440,7 +436,6 @@ class ProjectionInt {
           if (coeff != 0.0) {
             nonzero ++;
             std::pair<double, int> c_usp(coeff, cnt);
- //         std::cout << "(lx, ly, lz) = (" << lx << ", " << ly << ", " << lz << ") " << setw(17) << setprecision(9) << coeff << std::endl;
             usp.push_back(c_usp);
           }
           ++cnt;
@@ -467,7 +462,6 @@ class ProjectionInt {
               id -= lp1;
             }
           }
-//        std::cout << "ki[0] = " << ki[0] << " ki[1] = " << ki[1] << " ki[2] = " << ki[2] << std::endl;
           std::array<int, 3> kj;
           id = usp[j].second;
           kz = 0;
@@ -535,6 +529,33 @@ class ProjectionInt {
           }
         }
         return ans * 4.0 * pi * gauss_->normalise();
+    }
+
+};
+
+class ECP_Type2 {
+
+  protected:
+    std::shared_ptr<ProjectionInt> projAB_;
+    std::shared_ptr<ProjectionInt> projCB_;
+    int nkl_; // 0, -1, -2
+    double zetakl_;
+
+  public:
+
+    ECP_Type2(std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> ang) :
+      nkl_(std::get<0>(ang)),
+      zetakl_(std::get<1>(ang)),
+      projAB_(std::get<2>(ang)),
+      projCB_(std::get<3>(ang))
+    {}
+
+    ~ECP_Type2() {}
+
+    mpreal compute(const mpreal r) {
+      const double projABr = projAB_->compute(r.toDouble());
+      const double projCBr = projCB_->compute(r.toDouble());
+      return static_cast<mpreal>(projABr * pow(r, nkl_ + 2) * exp(-zetakl_ * r * r) * projCBr);
     }
 
 };
