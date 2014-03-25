@@ -36,7 +36,7 @@ CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<con
                    shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<FCI> f, shared_ptr<const Matrix> coeff)
 : grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f), coeff_(coeff ? coeff : ref_->coeff()) {
 
-  if (coeff_ == ref_->coeff())
+  if (coeff_ != ref_->coeff())
     fci_->update(coeff_);
 
 }
