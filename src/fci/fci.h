@@ -230,7 +230,7 @@ class FCI_bare : public FCI {
 
     void compute() override { assert(false); }
     void update(std::shared_ptr<const Matrix>) override { assert(false); }
-    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec>, std::shared_ptr<const MOFile>, const std::vector<int>&) const override { assert(false); }
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec>, std::shared_ptr<const MOFile>, const std::vector<int>&) const override { assert(false); return nullptr; }
 };
 
 }
