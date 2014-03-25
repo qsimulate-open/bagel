@@ -40,10 +40,10 @@ namespace bagel {
 template<typename T>
 class BFGS {
   protected:
-    std::vector<std::shared_ptr<const T>> delta;
-    std::vector<std::shared_ptr<const T>> y;
-    std::vector<std::shared_ptr<const T>> D;
-    std::vector<std::shared_ptr<const T>> Y;
+    std::vector<std::shared_ptr<const T>> delta_;
+    std::vector<std::shared_ptr<const T>> y_;
+    std::vector<std::shared_ptr<const T>> D_;
+    std::vector<std::shared_ptr<const T>> Y_;
 
     std::shared_ptr<const T> prev_grad;
     std::shared_ptr<const T> prev_value;
@@ -55,7 +55,12 @@ class BFGS {
 
   public:
     BFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
+
     std::shared_ptr<const T> denom() const { return denom_; }
+    std::vector<std::shared_ptr<const T>> delta() { return delta_; }
+    std::vector<std::shared_ptr<const T>> Y() const { return Y_; }
+    std::vector<std::shared_ptr<const T>> D() const { return D_; }
+    std::vector<std::shared_ptr<const T>> y() const { return y_; }
 
     // returns a displacement
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
@@ -72,46 +77,46 @@ class BFGS {
         std::shared_ptr<T> yy = grad->clone();
         {
           auto DD = std::make_shared<T>(*grad - *prev_grad);
-          D.push_back(DD);
+          D_.push_back(DD);
 
           *yy = *DD / *denom_;
 
           auto vv = std::make_shared<T>(*value - *prev_value);
-          delta.push_back(vv);
+          delta_.push_back(vv);
 
         }
-        const int n = delta.size()-1;
-        assert(delta.size() == y.size()+1 && y.size()+1 == D.size());
+        const int n = delta_.size()-1;
+        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
 
         // (4)
         for (int i = 0; i < n; ++i) {
-          auto s1 = detail::real(1.0 / D[i]->dot_product(delta[i]));
-          auto s2 = detail::real(1.0 / D[i]->dot_product(y[i]));
-          auto s3 = delta[i]->dot_product(grad);
-          auto s4 = y[i]->dot_product(grad);
-          auto s5 = delta[i]->dot_product(D[n]);
-          auto s6 = y[i]->dot_product(D[n]);
+          auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
+          auto s2 = detail::real(1.0 / D_[i]->dot_product(y_[i]));
+          auto s3 = delta_[i]->dot_product(grad);
+          auto s4 = y_[i]->dot_product(grad);
+          auto s5 = delta_[i]->dot_product(D_[n]);
+          auto s6 = y_[i]->dot_product(D_[n]);
           auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           auto t2 = s1 * s3;
           auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
           auto t4 = s1 * s5;
-          out->ax_plus_y(t1, delta[i]);
-          out->ax_plus_y(-t2, y[i]);
-          yy->ax_plus_y(t3, delta[i]);
-          yy->ax_plus_y(-t4, y[i]);
+          out->ax_plus_y(t1, delta_[i]);
+          out->ax_plus_y(-t2, y_[i]);
+          yy->ax_plus_y(t3, delta_[i]);
+          yy->ax_plus_y(-t4, y_[i]);
         }
         { // (5)
-          auto s1 = detail::real(1.0 / D[n]->dot_product(delta[n]));
-          auto s2 = detail::real(1.0 / D[n]->dot_product(std::shared_ptr<const T>(yy)));
-          auto s3 = delta[n]->dot_product(grad);
-          auto s4 =       yy->dot_product(grad);
+          auto s1 = detail::real(1.0 / D_[n]->dot_product(delta_[n]));
+          auto s2 = detail::real(1.0 / D_[n]->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = delta_[n]->dot_product(grad);
+          auto s4 = yy->dot_product(grad);
           auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
           auto t2 = s1 * s3;
-          out->ax_plus_y(t1, delta[n]);
+          out->ax_plus_y(t1, delta_[n]);
           out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }
-        y.push_back(yy);
-        assert(y.size() == n+1);
+        y_.push_back(yy);
+        assert(y_.size() == n+1);
       }
       prev_grad = grad;
       prev_value = value;
@@ -127,52 +132,130 @@ class BFGS {
       // (1)
       *out *= *denom_;
 
-      if (!delta.empty() && !debug_) {
+      if (!delta_.empty() && !debug_) {
         // (3)
         std::shared_ptr<T> yy = value->clone(); // used to accumulate Y
         {
-          // D and delta available from extrapolation
-          auto DD = delta.back();
+          // D and delta_ available from extrapolation
+          auto DD = delta_.back();
 
           *yy = *DD * *denom_;
 
         }
-        const int n = delta.size()-1;
-        assert(delta.size() == Y.size()+1 && Y.size()+1 == D.size());
+        const int n = delta_.size()-1;
+        assert(delta_.size() == Y_.size()+1 && Y_.size()+1 == D_.size());
 
         // (4)
         for (int i = 0; i < n; ++i) {
-          auto s1 = detail::real(1.0 / D[i]->dot_product(delta[i]));
-          auto s2 = detail::real(1.0 / Y[i]->dot_product(delta[i]));
-          auto s3 = D[i]->dot_product(delta[n]);
-          auto s4 = Y[i]->dot_product(delta[n]);
-          auto s5 = D[i]->dot_product(value);
-          auto s6 = Y[i]->dot_product(value);
+          auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
+          auto s2 = detail::real(1.0 / Y_[i]->dot_product(delta_[i]));
+          auto s3 = D_[i]->dot_product(delta_[n]);
+          auto s4 = Y_[i]->dot_product(delta_[n]);
+          auto s5 = D_[i]->dot_product(value);
+          auto s6 = Y_[i]->dot_product(value);
           auto t1 = s1 * s5; // updating w
           auto t2 = s2 * s6; // updating w
           auto t3 = s1 * s3; // updating Y
           auto t4 = s2 * s4; // updating Y
-          out->ax_plus_y(t1, D[i]);
-          out->ax_plus_y(-t2, Y[i]);
-          yy->ax_plus_y(t3, D[i]);
-          yy->ax_plus_y(-t4, Y[i]);
+          out->ax_plus_y(t1, D_[i]);
+          out->ax_plus_y(-t2, Y_[i]);
+          yy->ax_plus_y(t3, D_[i]);
+          yy->ax_plus_y(-t4, Y_[i]);
         }
         { // (5)
-          auto s1 = detail::real(1.0 / D[n]->dot_product(delta[n]));
-          auto s2 = detail::real(1.0 / delta[n]->dot_product(std::shared_ptr<const T>(yy)));
-          auto s3 = D[n]->dot_product(value);
+          auto s1 = detail::real(1.0 / D_[n]->dot_product(delta_[n]));
+          auto s2 = detail::real(1.0 / delta_[n]->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = D_[n]->dot_product(value);
           auto s4 =   yy->dot_product(value);
           auto t1 = s1 * s3;
           auto t2 = s2 * s4;
-          out->ax_plus_y(t1, D[n]);
+          out->ax_plus_y(t1, D_[n]);
           out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }
         if (update) {
-          Y.push_back(yy);
-          assert(Y.size() == n+1);
+          Y_.push_back(yy);
+          assert(Y_.size() == n+1);
        }
       }
       return out;
+    }
+
+
+    // return search direction for given level shift
+    std::shared_ptr<T> extrapolate_micro(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift, const bool update = false) {
+      // to make sure, inputs are copied.
+      auto grad = std::make_shared<const T>(*_grad);
+      auto value = std::make_shared<const T>(*_value);
+      auto shift = std::make_shared<const T>(*_shift);
+
+      auto out = std::make_shared<T>(*grad);
+      // (1)
+      *out /= (*denom_ - *shift);
+
+      if (prev_value != nullptr && !debug_) {
+        // (3)
+        std::shared_ptr<T> yy = grad->clone();
+        {
+          auto DD = std::make_shared<T>(*grad - *prev_grad);
+          D_.push_back(DD);
+
+          *yy = *DD / (*denom_ - *shift);
+
+          auto vv = std::make_shared<T>(*value - *prev_value);
+          delta_.push_back(vv);
+
+        }
+        const int n = delta_.size()-1;
+        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
+
+        // (4)
+        for (int i = 0; i < n; ++i) {
+          auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
+          auto s2 = detail::real(1.0 / D_[i]->dot_product(y_[i]));
+          auto s3 = delta_[i]->dot_product(grad);
+          auto s4 = y_[i]->dot_product(grad);
+          auto s5 = delta_[i]->dot_product(D_[n]);
+          auto s6 = y_[i]->dot_product(D_[n]);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
+          auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
+          auto t4 = s1 * s5;
+          out->ax_plus_y(t1, delta_[i]);
+          out->ax_plus_y(-t2, y_[i]);
+          yy->ax_plus_y(t3, delta_[i]);
+          yy->ax_plus_y(-t4, y_[i]);
+        }
+        { // (5)
+          auto s1 = detail::real(1.0 / D_[n]->dot_product(delta_[n]));
+          auto s2 = detail::real(1.0 / D_[n]->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = delta_[n]->dot_product(grad);
+          auto s4 = yy->dot_product(grad);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
+          out->ax_plus_y(t1, delta_[n]);
+          out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
+        }
+        y_.push_back(yy);
+        assert(y_.size() == n+1);
+      }
+      if (update) {
+        prev_grad = grad;
+        prev_value = value;
+      }
+      return out;
+    }
+
+
+    // decrement intermediates
+    void decrement_y() { y_.pop_back(); }
+    void decrement_delta() { delta_.pop_back(); }
+    void decrement_D() { D_.pop_back(); }
+    void decrement_Y() { Y_.pop_back(); }
+
+    void decrement_intermediates() {
+      decrement_y();
+      decrement_delta();
+      decrement_D();
     }
 };
 
