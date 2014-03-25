@@ -82,24 +82,23 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
 #if 1
   std::array<double, 3> centreB = {0.0, 0.0, 0.305956};
-  std::array<int, 2> lm = {0, 0};
+  std::array<int, 2> lm = {2, 2};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
 
   std::array<double, 3> centreA = {0.0, 0.0, 0.305956};
-  std::array<int, 3> angular_momentumA = {0, 0, 0};
+  std::array<int, 3> angular_momentumA = {2, 0, 0};
   const double alphaA = 1.0;
   std::shared_ptr<CartesianGauss> cargaussA = std::make_shared<CartesianGauss>(alphaA, angular_momentumA, centreA);
   cargaussA->print();
 
   std::array<double, 3> centreC = {0.0, 0.0, 0.305956};
-  std::array<int, 3> angular_momentumC = {0, 0, 0};
+  std::array<int, 3> angular_momentumC = {2, 0, 0};
   const double alphaC = 1.0;
   std::shared_ptr<CartesianGauss> cargaussC = std::make_shared<CartesianGauss>(alphaC, angular_momentumC, centreC);
   cargaussC->print();
 
   const double r = 1.0;
-  cout << " r  = " << r << endl;
 
   std::shared_ptr<ProjectionInt> projAB = std::make_shared<ProjectionInt>(cargaussA, rsh);
   const double int1 = projAB->compute(r);
@@ -147,6 +146,30 @@ for (int iz = 0; iz <= maxl; ++iz) {
   Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(max_iter, thresh_int, projs);
   const double bagelfactor = 1.0;
   cout << "Integral = " << ecp.integral() / bagelfactor << endl;
+#endif
+
+  cout << "TEST int <200 - 020 | 22><22 | 200 - 020 >(r)" << endl;
+  std::array<int, 3> angular_momentumAp = {0, 2, 0};
+  std::shared_ptr<CartesianGauss> cargaussAp = std::make_shared<CartesianGauss>(alphaA, angular_momentumAp, centreA);
+  std::shared_ptr<ProjectionInt> projApB = std::make_shared<ProjectionInt>(cargaussAp, rsh);
+  std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projApBAp(projApB, projApB);
+  std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABA(projAB, projAB);
+  std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projApBA(projApB, projAB);
+  std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABAp(projAB, projApB);
+  cout << "int <200 | 22><22 | 200>(r) dr" << endl;
+  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABA(max_iter, thresh_int, projABA);
+  cout << "int <020 | 22><22 | 020>(r) dr" << endl;
+  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBAp(max_iter, thresh_int, projApBAp);
+  cout << "int <020 | 22><22 | 200>(r) dr" << endl;
+  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBA(max_iter, thresh_int, projApBA);
+  cout << "int <200 | 22><22 | 020>(r) dr" << endl;
+  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABAp(max_iter, thresh_int, projABAp);
+  cout << " Answer = " << endl;
+  cout << ecpABA.integral() - ecpApBA.integral() - ecpABAp.integral() + ecpApBAp.integral() << endl;
+
+#if 0
+  std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>> gsh(cargaussA, rsh);
+  Radial_Int<angular_Int_ss, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>>> test_ss(max_iter, thresh_int, gsh);
 #endif
 
   // check normalization ss
