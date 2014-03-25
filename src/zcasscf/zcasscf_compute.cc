@@ -52,7 +52,7 @@ void ZCASSCF::compute() {
   init_kramers_coeff(hcore, overlap);
 
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
-  const bool ___debug___break_kramers = true;
+  const bool ___debug___break_kramers = false;
   const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", true);
   if (___debug___break_kramers)
     ___debug___orbital_rotation(___debug___with_kramers);
@@ -140,7 +140,14 @@ void ZCASSCF::compute() {
     trust_radius = make_shared<ZRotFile>(*grad / *bfgs->denom())->norm();
 
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2);
-    shared_ptr<ZRotFile> a = bfgs->extrapolate(grad, xlog);
+    mute_stdcout(/*fci*/false);
+    cout << " " << endl;
+    cout << " ++++++++++++++++++++++++ " << endl;
+    cout << " Starting microiterations " << endl;
+    cout << " ++++++++++++++++++++++++ " << endl;
+    cout << " " << endl;
+    shared_ptr<ZRotFile> a = ___debug___microiterations(xlog, grad, bfgs, trust_radius, iter);
+    resume_stdcout();
     if (!___debug___break_kramers)
       kramers_adapt(a);
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();

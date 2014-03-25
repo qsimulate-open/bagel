@@ -151,6 +151,8 @@ class ZCASSCF : public Method {
     std::complex<double> find_level_shift(std::shared_ptr<const ZRotFile> rotmat) const;
     // returns energy ratio needed for trust radius updates
     double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
+    // returns matrix of orbital rotation parameters
+    std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<BFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
 };
 
 }
