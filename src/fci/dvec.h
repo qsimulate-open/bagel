@@ -104,11 +104,16 @@ class Dvector {
     }
 
     Dvector(const Dvector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij_]);
-      DataType* tmp = data_.get();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-      std::copy_n(o.data(), lena_*lenb_*ij_, data());
+      if (o.data_.get()) {
+        data_ = std::unique_ptr<DataType[]>(new DataType[lena_*lenb_*ij_]);
+        DataType* tmp = data_.get();
+        for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
+        std::copy_n(o.data(), lena_*lenb_*ij_, data());
+      } else {
+        for (auto& i : o.dvec_)
+          dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
+      }
     }
 
     Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
