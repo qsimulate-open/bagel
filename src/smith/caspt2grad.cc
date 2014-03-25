@@ -81,9 +81,6 @@ void CASPT2Grad::compute() {
 
   // solve CPCASSCF
   auto g0 = yrs;
-auto tmp = yrs->copy();
-tmp->antisymmetrize();
-tmp->print();
   auto g1 = make_shared<Dvec>(cider, ref_->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
@@ -107,6 +104,7 @@ tmp->print();
 
   shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
   dtot->ax_plus_y(1.0, dm);
+  dtot->ax_plus_y(1.0, d1);
 
   // form zdensity
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
@@ -246,9 +244,6 @@ shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double co
     shared_ptr<const DFHalfDist> dfback = fullis->back_transform(coeff_)->apply_J();
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % *y5ri_ao);
-    // D0 part
-//  shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target_state_)->data(), ref_->rdm1(target_state_)->data(), nclosed, nact);
-//  out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulljk, 1.0));
   }
 
   return out;
