@@ -269,6 +269,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // set proper energy_
   energy_ = ref_->energy() + ecorr;
 
+  gradf->print();
   return gradf;
 
 }

@@ -29,6 +29,7 @@
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/grad/gradeval_base.h>
+#include <src/math/algo.h>
 
 
 using namespace std;
@@ -46,17 +47,14 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 
   // update reference
   ref_ = cas->conv_to_ref();
-
   fci_ = cas->fci();
-
-
 }
+
 
 void CASPT2Grad::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-//const int nvirt = ref_->nvirt();
 
   // construct SMITH here
   shared_ptr<const PTree> smithinput = idata_->get_child("smith");
@@ -96,9 +94,6 @@ void CASPT2Grad::compute() {
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
   tie(yrs, fulld1) = compute_y(d1, correction, d2, cider, half, halfj, halfjj);
-
-  yrs->antisymmetrize();
-  yrs->print("Yrs in IN GRAD mo basis");
 
   // solve CPCASSCF
   auto g0 = yrs;
@@ -158,7 +153,9 @@ void CASPT2Grad::compute() {
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
-  qri->ax_plus_y(1.0, fulld1->back_transform(coeff_));
+
+  // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
+  qri->ax_plus_y(2.0, fulld1->apply_J()->back_transform(coeff_));
 
   // contributions from non-separable part
   shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
@@ -177,15 +174,13 @@ void CASPT2Grad::compute() {
     vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
-    sepd->rotate_occ(ref_->rdm1_mat(target_));
-    sepd->scale(-1.0);
+    sepd->rotate_occ(ref_->rdm1_mat(target_)); // d0 in occ-occ size
 
-    auto sep3 = sepd->back_transform(ocoeff);
-    qrs->ax_plus_y(1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
+    qrs->ax_plus_y(-1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
     qrs->add_direct_product(cd, dd, 1.0);
 
     *qq += (*cd0 ^ *cd1) * 2.0;
-    *qq += *halfjj->form_aux_2index(sepd, 2.0);
+    *qq += *halfjj->form_aux_2index(sepd, -1.0);
   }
 
   // compute gradients
@@ -277,13 +272,11 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rl|jk) D0_(il,jk) + 2 (rs|tj) D1_(is,jt)]
     // construct stepwise, D1 part
-    shared_ptr<const DFFullDist> fullis = full->apply_2rdm(D1->data());
-    shared_ptr<const DFHalfDist> dfback = fullis->back_transform(coeff_)->apply_J();
+    shared_ptr<const DFHalfDist> dfback = fullks->apply_J()->back_transform(coeff_);
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % *y5ri_ao);
   }
 
   return make_tuple(out, fullks);
 }
-
 
