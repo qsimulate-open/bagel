@@ -43,11 +43,31 @@ class Smith : public Method {
   protected:
     std::shared_ptr<SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo_;
 
+    // correlated density matrices
+    std::shared_ptr<const Matrix> dm1_;
+    std::shared_ptr<const Matrix> dm2_;
+    // correction e0<1|1>
+    double correction_;
+    // ci derivative
+    std::shared_ptr<const Civec> cider_;
+
+    std::shared_ptr<const Coeff> coeff_;
+
+
+
   public:
     Smith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
+
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+
+    std::shared_ptr<const Matrix> dm1() { return dm1_; }
+    std::shared_ptr<const Matrix> dm2() { return dm2_; }
+    double correction() { return correction_; }
+    std::shared_ptr<const Civec> cider() { return cider_; }
+    std::shared_ptr<const Coeff> coeff() { return coeff_; }
+
 
 };
 

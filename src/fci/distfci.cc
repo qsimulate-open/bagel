@@ -317,7 +317,7 @@ void DistFCI::print_header() const {
 
 
 
-void DistFCI::update(shared_ptr<const Coeff> c) {
+void DistFCI::update(shared_ptr<const Matrix> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;

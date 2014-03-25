@@ -43,6 +43,7 @@
 #include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
+#include <src/smith/caspt2grad.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -102,6 +103,10 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 #endif
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+  }
+  else if (title == "caspt2grad") {
+    // TODO to be called from optimizer
+    out = make_shared<CASPT2Grad>(itree, geom, ref);
   }
   else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
   else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
