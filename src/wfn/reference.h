@@ -32,6 +32,7 @@
 #include <src/molecule/hcore.h>
 #include <src/wfn/geometry.h>
 #include <src/fci/dvec.h>
+#include <src/wfn/ciwfn.h>
 #include <src/wfn/rdm.h>
 
 // all the info to construct wave functions
@@ -62,6 +63,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     int nstate_;
 
+    std::shared_ptr<const CIWfn> ciwfn_;
     std::vector<std::shared_ptr<RDM<1>>>  rdm1_;
     std::vector<std::shared_ptr<RDM<2>>>  rdm2_;
     std::shared_ptr<const RDM<1>> rdm1_av_;
@@ -77,7 +79,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
-         & ncore_ & nclosed_ & nact_ & nvirt_ & nstate_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
+         & ncore_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
     }
 
   public:
@@ -85,14 +87,15 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
               const double en = 0.0,
-              const std::vector<std::shared_ptr<RDM<1>>>& rdm1 = std::vector<std::shared_ptr<RDM<1>>>(),
-              const std::vector<std::shared_ptr<RDM<2>>>& rdm2 = std::vector<std::shared_ptr<RDM<2>>>(),
+              std::vector<std::shared_ptr<RDM<1>>> rdm1 = std::vector<std::shared_ptr<RDM<1>>>(),
+              std::vector<std::shared_ptr<RDM<2>>> rdm2 = std::vector<std::shared_ptr<RDM<2>>>(),
               std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
-              std::shared_ptr<const RDM<2>> rdm2_av = nullptr);
+              std::shared_ptr<const RDM<2>> rdm2_av = nullptr,
+              std::shared_ptr<const CIWfn> ci = nullptr);
     // new Reference from old one with transformed coeff
     Reference(std::shared_ptr<const Reference> o, std::shared_ptr<const Coeff> c) :
-      Reference( o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(),
-      o->rdm1(), o->rdm2(), o->rdm1_av(), o->rdm2_av() ) {};
+      Reference(o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(), o->rdm1(), o->rdm2(), o->rdm1_av(), o->rdm2_av(), o->ciwfn()) { }
+
     virtual ~Reference() { }
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }
@@ -131,6 +134,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     double energy() const { return energy_; }
 
+    std::shared_ptr<const CIWfn> ciwfn() const { return ciwfn_; }
+
     const std::vector<std::shared_ptr<RDM<1>>>& rdm1() const { return rdm1_; }
     const std::vector<std::shared_ptr<RDM<2>>>& rdm2() const { return rdm2_; }
 
@@ -148,7 +153,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> compute_rdm34(const int i) const;
 
     // function to return a CI vectors from orbital info
-    std::shared_ptr<Dvec> civectors() const;
+    std::shared_ptr<const Dvec> civectors() const;
     std::shared_ptr<Dvec> rdm1deriv() const;
     std::shared_ptr<Dvec> rdm2deriv() const;
     std::shared_ptr<Dvec> rdm3deriv() const;

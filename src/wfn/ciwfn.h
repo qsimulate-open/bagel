@@ -32,7 +32,6 @@
 #include <src/fci/dvec.h>
 
 // Stores the result of some CI type wavefunction (FCI, CASSCF, etc.)
-// Right now only contains the bare minimum needed in the Dimer class
 
 namespace bagel {
 
@@ -40,20 +39,28 @@ class CIWfn {
 
   protected:
     // Geometry which this wave function is belonging to
-    const std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Geometry> geom_;
     // MO coefficients
-    const std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const Coeff> coeff_;
 
-    const int ncore_;
-    const int nact_;
-    const int nvirt_;
+    int ncore_;
+    int nact_;
+    int nvirt_;
 
-    const int nstates_;
+    int nstates_;
     std::shared_ptr<const Determinants> det_;
     std::shared_ptr<const Dvec> ccvec_;
     std::vector<double> energies_;
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & geom_ & coeff_ & ncore_ & nact_ & nvirt_ & nstates_ & det_ & ccvec_ & energies_;
+    }
+
   public:
+    CIWfn() { }
     CIWfn(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int ncore, const int nact, const int nvirt,
               std::vector<double> en, std::shared_ptr<const Dvec> ccvec)

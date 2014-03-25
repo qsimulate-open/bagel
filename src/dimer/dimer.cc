@@ -384,7 +384,13 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     ambiguous_subsets.emplace_back(move(ambiguous));
   }
 
-  auto out_coeff = scoeff_->copy();
+  // explicitly assuming that there are only closed and virtual spaces and no ambiguous orbitals.
+  nvirt_ = make_pair(
+    accumulate(subsets_B.begin(), subsets_B.end(), local_coeff->mdim() - ncore_.first, [](int o, const set<int>& s) {return o - s.size();}),
+    accumulate(subsets_A.begin(), subsets_A.end(), local_coeff->mdim() - ncore_.second, [](int o, const set<int>& s) {return o - s.size();})
+  );
+
+  auto out_coeff = local_coeff->copy();
 
   const int nsubspaces = orbital_subspaces.size();
   for (int sub = 0; sub < nsubspaces; ++sub) {
@@ -456,10 +462,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   nact_ = make_pair(nactA, nactB);
   const int nact = nactA + nactB;
 
-  const int nvirtA = active_refs.first->nvirt();
-  const int nvirtB = active_refs.second->nvirt();
-  const int nvirt = nvirtA + nvirtB;
-  nvirt_ = make_pair(nvirtA, nvirtB);
+  const int nactvirtA = refs_.first->nvirt() - active_refs.first->nvirt();
+  const int nactvirtB = refs_.second->nvirt() - active_refs.second->nvirt();
 
   const int nbasisA = nbasis_.first;
   const int nbasisB = nbasis_.second;
@@ -479,12 +483,12 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     auto activeA = make_shared<Matrix>(dimerbasis_, nactA);
     activeA->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
     svd_info.emplace_back(activeA, make_pair(0, noccA), noccA - nclosedA, "A", true);
-    svd_info.emplace_back(activeA, make_pair(noccA+noccB, noccA+noccB+nexternA), nexternA - nvirtA, "A", false);
+    svd_info.emplace_back(activeA, make_pair(noccA+noccB, noccA+noccB+nexternA), nactvirtA, "A", false);
 
     auto activeB = make_shared<Matrix>(dimerbasis_, nactB);
     activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
     svd_info.emplace_back(activeB, make_pair(noccA, noccA+noccB), noccB - nclosedB, "B", true);
-    svd_info.emplace_back(activeB, make_pair(noccA+noccB+nexternA, noccA+noccB+nexternA+nexternB), nexternB - nvirtB, "B", false);
+    svd_info.emplace_back(activeB, make_pair(noccA+noccB+nexternA, noccA+noccB+nexternA+nexternB), nactvirtB, "B", false);
   }
   else {
     auto active = make_shared<Matrix>(dimerbasis_, nact);
@@ -493,7 +497,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
 
     svd_info.emplace_back(active, make_pair(0, noccA + noccB), noccA + noccB - (nclosedA + nclosedB), "dimer", true);
-    svd_info.emplace_back(active, make_pair(noccA + noccB, nbasisA + nbasisB), nexternA + nexternB - (nvirtA + nvirtB), "dimer", false);
+    svd_info.emplace_back(active, make_pair(noccA + noccB, nbasisA + nbasisB), nactvirtA + nactvirtB, "dimer", false);
   }
 
   Overlap S(sgeom_);
@@ -579,7 +583,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     }
   }
 
-  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed_, nact, nvirt);
+  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed_, nact, nexternA+nexternB - (nclosed_+nact));
 
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
@@ -622,7 +626,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
       auto fock  = make_shared<const Fock<1>>(sgeom_, sref_->hcore(), dimerdensity, dimercoeff);
       dimertime.tick_print("Dimer Fock matrix formation");
 
-      localize(localize_data, fock, /*localize_first*/false);
+      localize(localize_data, fock, /*localize_first*/ false);
       dimertime.tick_print("Dimer localization");
     }
   }
