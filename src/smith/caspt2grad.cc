@@ -66,7 +66,6 @@ void CASPT2Grad::compute() {
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
   coeff_ = smith->coeff();
   shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc);
-//shared_ptr<const Matrix> vcoeff = coeff_->slice(nocc, coeff_->mdim());
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = fci_->rdm1_av();
@@ -221,6 +220,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % (*jop * *ocoeff + *kopi) * *ref_->rdm1_mat(target_));
   }
 
+  // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
   auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
   {
