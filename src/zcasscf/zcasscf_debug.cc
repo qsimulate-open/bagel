@@ -410,8 +410,10 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramer
 }
 
 
-complex<double> ZCASSCF::find_level_shift(shared_ptr<ZRotFile> rotmat) const {
-  // returns the smallest value that is not at below -mc^2 to be used as a level shift
+complex<double> ZCASSCF::find_level_shift(shared_ptr<const ZRotFile> rotmat) const {
+  /* returns the smallest Hessian value that is not below -mc^2 to be used as a level shift
+     This particular choice of level shift parameter ensures that the initial diagonal guess has Np negative values
+     where Np is the number of positronic orbitals */
   double csq = 137.00 * 137.00;
   complex<double> l0 = rotmat->data(0);
 
@@ -428,4 +430,20 @@ complex<double> ZCASSCF::find_level_shift(shared_ptr<ZRotFile> rotmat) const {
   cout << setprecision(8) << "Level Shift                                    = " << level_shift << endl << endl;
 
   return level_shift;
+}
+
+
+double ZCASSCF::trust_radius_energy_ratio(const int iter, const vector<double> energy, shared_ptr<ZRotFile> a, shared_ptr<ZRotFile> v, shared_ptr<ZRotFile> grad) const {
+  // Following Jensen and Jorgensen JCP 80 1204 (1984)
+  // Returns r_k = ( E(a_k) - E(a_(k-1)) )/( E^(2)(a_k) - E(a_(k-1)) ) (Eq 64)
+  assert(energy.size() > 0);
+
+  double DeltaE = energy[iter] - energy[iter-1];
+
+  double e2 = 0.5*((a->dot_product(v)).real());
+  double e1 = (a->dot_product(grad)).real();
+  double e0 = energy[iter] + e1 + e2;
+  e0 -= energy[iter-1];
+  DeltaE /= e0;
+  return DeltaE;
 }

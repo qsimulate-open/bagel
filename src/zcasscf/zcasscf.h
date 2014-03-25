@@ -30,6 +30,7 @@
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
 #include <src/rel/reloverlap.h>
+#include <src/math/bfgs.h>
 
 namespace bagel {
 
@@ -49,6 +50,7 @@ class ZCASSCF : public Method {
 
     double thresh_;
     double thresh_micro_;
+    std::complex<double> level_shift_;
 
     int nstate_;
 
@@ -63,7 +65,7 @@ class ZCASSCF : public Method {
     void init();
     void init_kramers_coeff(std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<const RelOverlap> overlap);
 
-    void mute_stdcout() const;
+    void mute_stdcout(const bool fci) const;
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
@@ -146,7 +148,9 @@ class ZCASSCF : public Method {
     // returns M(a,i) = (a i|a i) (where a is an index of coeffa and i is an index of coeffi)
     std::shared_ptr<ZMatrix> ___debug___offdiagonal_exchange_integrals(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
     // returns "optimal" level shift
-    std::complex<double> find_level_shift(std::shared_ptr<ZRotFile> rotmat) const;
+    std::complex<double> find_level_shift(std::shared_ptr<const ZRotFile> rotmat) const;
+    // returns energy ratio needed for trust radius updates
+    double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
 };
 
 }
