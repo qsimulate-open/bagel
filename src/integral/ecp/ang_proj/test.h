@@ -76,4 +76,29 @@ class GaussianProduct {
 
 };
 
+class angular_Int_ss {
+
+  protected:
+    std::shared_ptr<CartesianGauss> gA_;
+    std::shared_ptr<RealSH> shB_;
+
+  public:
+     angular_Int_ss(std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>> gsh) :
+       gA_(gsh.first),
+       shB_(gsh.second)
+     {}
+     ~angular_Int_ss() {}
+
+     mpreal compute(const mpreal r) {
+       const double pi = static_cast<double>(atan(1.0) * 4.0);
+       std::array<double, 3> AB;
+       for (int i = 0; i != 3; ++i) AB[i] = shB_->centre(i) - gA_->centre(i);
+       const double dABsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
+       const double sbessel = boost::math::sph_bessel(0, 2.0 * gA_->exponent() * std::sqrt(dABsq) * r.toDouble());
+       const double prefactor = 4.0 * pi * std::pow(2.0 * gA_->exponent() / pi, 1.5) * std::exp(-2.0 * gA_->exponent() * dABsq);
+       return static_cast<mpreal>(prefactor * sbessel * sbessel * r * r * exp(-2.0 * gA_->exponent() * r * r));
+     }
+
+};
+
 #endif
