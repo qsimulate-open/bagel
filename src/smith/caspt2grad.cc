@@ -28,6 +28,7 @@
 #include <src/casscf/superci.h>
 #include <src/casscf/qvec.h>
 #include <src/smith/smith.h>
+#include <src/grad/gradeval_base.h>
 
 
 using namespace std;
@@ -66,6 +67,7 @@ void CASPT2Grad::compute() {
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
   coeff_ = smith->coeff();
   shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc);
+  const int nmobasis = coeff_->mdim();
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = fci_->rdm1_av();
@@ -78,12 +80,12 @@ void CASPT2Grad::compute() {
   for (int i = nclosed; i != nclosed+nact; ++i)
     d1->element(i, i) -=  correction * 2.0;
 
+  shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
   shared_ptr<const Matrix> d2 = smith->dm2();
   shared_ptr<const Civec> cider = smith->cider();
 
   {
-    const int nmobasis = coeff_->mdim();
-    auto dtotao = make_shared<Matrix>(*coeff_ * (*ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis) + *d1) ^ *coeff_);
+    auto dtotao = make_shared<Matrix>(*coeff_ * (*d0 + *d1) ^ *coeff_);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
   }
 
@@ -110,11 +112,10 @@ void CASPT2Grad::compute() {
 
   // form relaxed 1RDM
   // form Zd + dZ^+
-  const int nmobasis = coeff_->mdim();
   shared_ptr<Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
   auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
-  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target_)->resize(nmobasis, nmobasis);
+  shared_ptr<Matrix> dtot = d0->copy();
   dtot->ax_plus_y(1.0, dm);
   dtot->ax_plus_y(1.0, d1);
 
@@ -129,8 +130,8 @@ void CASPT2Grad::compute() {
   dtot->ax_plus_y(1.0, zrdm1_mat);
 
   // compute relaxed dipole to check
+  auto dtotao = make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
   {
-    auto dtotao = make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
     Dipole dipole(geom_, dtotao, "CASPT2 relaxed");
     dipole.compute();
   }
@@ -159,12 +160,38 @@ void CASPT2Grad::compute() {
   }
   qri->ax_plus_y(1.0, fulld1->back_transform(coeff_));
 
-  shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-  shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
+  // contributions from non-separable part
+  shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
+  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
 
+  // separable part
+  // size of naux
+  {
+    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(*coeff_ * *d0 ^ *coeff_);
+    shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff_ * *d1 ^ *coeff_);
+    shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
+    shared_ptr<const Matrix> cd1 = geom_->df()->compute_cd(d1ao);
+
+    // three-index derivatives (seperable part)...
+    vector<shared_ptr<const Matrix>> cd {cd0, cd1};
+    vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
+
+    shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
+    sepd->rotate_occ(ref_->rdm1_mat(target_));
+    sepd->scale(-1.0);
+
+    auto sep3 = sepd->back_transform(ocoeff);
+    qrs->ax_plus_y(1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
+    qrs->add_direct_product(cd, dd, 1.0);
+
+    *qq += (*cd0 ^ *cd1) * 2.0;
+    *qq += *halfjj->form_aux_2index(sepd, 2.0);
+  }
 
   // compute gradients
-
+  GradEval_base g(geom_);
+  shared_ptr<GradFile> gradient = g.contract_gradient(dtotao, xmatao, qrs, qq);
+  gradient->print();
 }
 
 
