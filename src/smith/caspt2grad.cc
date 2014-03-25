@@ -58,15 +58,19 @@ void CASPT2Grad::compute() {
   smith->compute();
 
   // save correlated density matrices d(1), d(2), and ci derivatives
-  shared_ptr<const Matrix> d1 = smith->dm1();
+  shared_ptr<Matrix> d1 = make_shared<Matrix>(*smith->dm1());
+  const double correction = smith->correction();
+  // add correction to active part of the correlated one-body density
+  for (int i = ref_->nclosed(); i != ref_->nclosed()+ref_->nact(); ++i)
+    d1->element(i, i) -=  correction * 2.0;
+
   shared_ptr<const Matrix> d2 = smith->dm2();
-  double correction = smith->correction();
   shared_ptr<const Civec> cider = smith->cider();
   shared_ptr<const Coeff> coeff = smith->coeff();
 
   {
     const int nmobasis = coeff->mdim();
-    auto dtotao = make_shared<Matrix>(*coeff * *ref_->rdm1_mat(target_state_)->resize(nmobasis,nmobasis) ^ *coeff);
+    auto dtotao = make_shared<Matrix>(*coeff * (*ref_->rdm1_mat(target_state_)->resize(nmobasis,nmobasis) + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
   }
 
@@ -171,8 +175,6 @@ shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double co
   shared_ptr<const Matrix> vcmat = coeff_->slice(nocc, nmobasis);
 
   auto dmr = make_shared<Matrix>(*dm1);
-  // add correction to active part of the correlated one-body density
-  for (int i = nclosed; i != nclosed+nact; ++i) dmr->element(i, i) -=  correction * 2.0;
 
   // TODO they are redundant, though...
   shared_ptr<DFHalfDist> half   = ref_->geom()->df()->compute_half_transform(ocmat);
@@ -245,8 +247,8 @@ shared_ptr<Matrix> CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double co
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % *y5ri_ao);
     // D0 part
-    shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target_state_)->data(), ref_->rdm1(target_state_)->data(), nclosed, nact);
-    out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulljk, 1.0));
+//  shared_ptr<const DFFullDist> fulljk = fullo->apply_2rdm(ref_->rdm2(target_state_)->data(), ref_->rdm1(target_state_)->data(), nclosed, nact);
+//  out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulljk, 1.0));
   }
 
   return out;

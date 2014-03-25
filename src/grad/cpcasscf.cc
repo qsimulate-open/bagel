@@ -109,7 +109,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   {
     shared_ptr<Matrix> d0 = compute_orb_denom();
     for (auto& i : *d0)
-      if (fabs(i) < 1.0e-6) i = 1.0;
+      if (fabs(i) < 1.0e-8) i = 1.0e10;
     auto d1_tmp = make_shared<const Civec>(*fci_->denom());
     auto d1 = make_shared<Dvec>(d1_tmp, ref_->nstate());
     for (int i = 0; i != ref_->nstate(); ++i)
@@ -394,8 +394,8 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     qone.add_block(2.0, 0, 0, nocca, nclosed, (fockinact + fockact).get_submatrix(0, 0, nocca, nclosed));
 
   // TODO qvec should be stored in somewhere
-#if 0
-  const Qvec qvec(nmobasis, nact, coeff_, nclosed, fci_, rdm2_av);
+#if 1
+  auto qvec = make_shared<Qvec>(nmobasis, nact, coeff_, nclosed, fci_, rdm2_av);
 #else
   // TODO unnesessary transformation
   shared_ptr<const Matrix> qvec;
