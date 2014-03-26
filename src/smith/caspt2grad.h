@@ -37,17 +37,16 @@ namespace bagel {
 class CASPT2Grad : public Method {
   protected:
     std::shared_ptr<const Matrix> yrs_;
+    std::shared_ptr<const Matrix> coeff_;
 
     std::shared_ptr<FCI> fci_;
 
-    std::shared_ptr<Matrix> compute_y(std::shared_ptr<const Matrix> dm1, double correction, std::shared_ptr<const Matrix> dm2,
-                                      std::shared_ptr<const Civec> cider, std::shared_ptr<const Coeff> coeff);
-
-    // this assumes matrix is in mo basis
-    bool check_blocks(std::shared_ptr<Matrix>);
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
+      compute_y(std::shared_ptr<const Matrix> dm1, const double correction, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
+                std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 
     // for gradient
-    int target_state_;
+    int target_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

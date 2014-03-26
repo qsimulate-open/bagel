@@ -541,11 +541,9 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 #endif
 
 
-#ifndef HAVE_SCALAPACK
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
   shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;
 }
-#endif

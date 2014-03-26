@@ -32,6 +32,21 @@
 using namespace std;
 using namespace bagel;
 
+FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
+  print_thresh_ = 1.0e-8;
+  nelea_ = ci->det()->nelea();
+  neleb_ = ci->det()->neleb();
+  ncore_ = ci->ncore();
+  norb_  = ci->nact();
+  nstate_ = ci->nstates();
+  energy_ = ci->energies();
+  cc_ = ci->civectors()->copy();
+  det_ = ci->det();
+  rdm1_.resize(nstate_);
+  rdm2_.resize(nstate_);
+}
+
+
 void FCI::compute_rdm12() {
   // Needs initialization here because we use daxpy.
   // For nstate_ == 1, rdm1_av_ = rdm1_[0].
