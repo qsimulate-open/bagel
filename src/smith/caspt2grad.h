@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: cphf.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: caspt2grad.h
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -24,32 +24,39 @@
 //
 
 
-#ifndef __SRC_GRAD_CPHF_H
-#define __SRC_GRAD_CPHF_H
+#ifndef __SRC_SMITH_CASPT2GRAD_H
+#define __SRC_SMITH_CASPT2GRAD_H
 
-#include <src/math/linearRM.h>
 #include <src/wfn/reference.h>
+#include <src/wfn/method.h>
+#include <src/input/input.h>
+#include <src/casscf/casscf.h>
 
 namespace bagel {
 
-class CPHF {
+class CASPT2Grad : public Method {
   protected:
-    std::shared_ptr<LinearRM<Matrix>> solver_;
-    std::shared_ptr<const Matrix> grad_;
-    std::vector<double> eig_;
-    std::shared_ptr<const DFHalfDist> halfjj_;
-    std::shared_ptr<const Reference> ref_;
-    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Matrix> yrs_;
+    std::shared_ptr<const Matrix> coeff_;
+
+    std::shared_ptr<FCI> fci_;
+
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
+      compute_y(std::shared_ptr<const Matrix> dm1, const double correction, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
+                std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    // for gradient
+    int target_;
 
   public:
-    CPHF(const std::shared_ptr<const Matrix> grad, const std::vector<double>& eig,
-         const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const Reference> g);
+    CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    std::shared_ptr<Matrix> solve(const double thresh, const int maxiter = 100);
+    void compute() override;
+
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
 };
 
 }
 
 #endif
-

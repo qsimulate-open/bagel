@@ -179,9 +179,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   time.tick_print("Right hand side of CPHF");
   cout << endl;
 
-  // solving CPHF
+  // solving CPHF (or Z-vector equation)
   auto cphf = make_shared<CPHF>(grad, ref_->eig(), halfjj, ref_);
-  shared_ptr<Matrix> dia = cphf->solve();
+  shared_ptr<Matrix> dia = cphf->solve(task_->scf()->thresh_scf());
   *dmp2 += *dia;
 
   // total density matrix
@@ -269,6 +269,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // set proper energy_
   energy_ = ref_->energy() + ecorr;
 
+  gradf->print();
   return gradf;
 
 }

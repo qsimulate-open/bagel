@@ -59,13 +59,13 @@ class KnowlesHandy : public FCI {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<FCI>(*this);
-      std::shared_ptr<const Coeff> coeff = jop_->coeff();
+      std::shared_ptr<const Matrix> coeff = jop_->coeff();
       ar << coeff;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<FCI>(*this);
-      std::shared_ptr<const Coeff> coeff;
+      std::shared_ptr<const Matrix> coeff;
       ar >> coeff;
       update(coeff);
     }
@@ -79,7 +79,7 @@ class KnowlesHandy : public FCI {
       update(ref_->coeff());
     }
 
-    void update(std::shared_ptr<const Coeff>) override;
+    void update(std::shared_ptr<const Matrix>) override;
 };
 
 }

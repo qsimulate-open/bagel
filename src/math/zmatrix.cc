@@ -66,6 +66,7 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 
 
 ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ZMatrix out(*this);
   out += o;
   return out;
@@ -73,6 +74,7 @@ ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
 
 
 ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ZMatrix out(*this);
   out -= o;
   return out;
@@ -80,12 +82,14 @@ ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
 
 
 ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(1.0, o);
   return *this;
 }
 
 
 ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(-1.0, o);
   return *this;
 }

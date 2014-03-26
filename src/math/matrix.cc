@@ -61,6 +61,7 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 
 
 Matrix Matrix::operator+(const Matrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   Matrix out(*this);
   out.ax_plus_y(1.0, o);
   return out;
@@ -68,12 +69,14 @@ Matrix Matrix::operator+(const Matrix& o) const {
 
 
 Matrix& Matrix::operator+=(const Matrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(1.0, o);
   return *this;
 }
 
 
 Matrix& Matrix::operator-=(const Matrix& o) {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   ax_plus_y(-1.0, o);
   return *this;
 }
@@ -94,6 +97,7 @@ Matrix& Matrix::operator=(Matrix&& o) {
 
 
 Matrix Matrix::operator-(const Matrix& o) const {
+  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   Matrix out(*this);
   out.ax_plus_y(-1.0, o);
   return out;
@@ -356,8 +360,7 @@ void Matrix::purify_unitary() {
 
 
 void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
-
-#if 1
+  assert(ndim_ == mdim_ && nclosed + nact + nvirt == ndim_);
   for (int g = 0; g != nclosed; ++g)
     for (int h = 0; h != nclosed; ++h)
       element(h,g)=0.0;
@@ -374,8 +377,6 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
       element(i,j) = -ele;
     }
   }
-#endif
-
 }
 
 
@@ -540,11 +541,9 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 #endif
 
 
-#ifndef HAVE_SCALAPACK
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
   shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;
 }
-#endif

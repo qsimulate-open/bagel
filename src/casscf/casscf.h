@@ -68,6 +68,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     const std::shared_ptr<const Matrix> hcore_;
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
+    std::shared_ptr<const Coeff> semi_canonical_orb() const;
     std::shared_ptr<Matrix> form_natural_orbs();
 
     std::vector<double> schwarz_;
@@ -109,7 +110,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,
                             std::shared_ptr<RotFile>&, const bool superci=true) const;
-    std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<RDM<1>> rdm1, const bool inactive_only = false) const;
+    std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<const RDM<1>> rdm1, const bool inactive_only = false) const;
     std::shared_ptr<const Matrix> hcore() const { return hcore_; };
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; };

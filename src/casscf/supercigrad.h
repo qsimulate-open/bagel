@@ -34,10 +34,11 @@ namespace bagel {
 class SuperCIGrad : public SuperCI {
 
   protected:
+     int target_state_;
 
   public:
     SuperCIGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-      : SuperCI(idat, geom, ref) { };
+      : SuperCI(idat, geom, ref),  target_state_(idat->get<int>("target", 0)) { }
 
     void compute() {
       // compute CASSCF fist
@@ -45,19 +46,12 @@ class SuperCIGrad : public SuperCI {
 
       // then make sure that the orbitals are natural orbitals
       // in the worst case, coeff and RDMs are not consistent and coeff is not natural orbital...
-      fci_->update(coeff_);
-      fci_->compute();
-      fci_->compute_rdm12();
-// TODO form_naturla_orbs might have a bug...
-      form_natural_orbs();
-      fci_->update(coeff_);
       fci_->compute();
       fci_->compute_rdm12();
       form_natural_orbs();
-      fci_->update(coeff_);
-      fci_->compute();
-      fci_->compute_rdm12();
-    };
+    }
+
+    int target_state() const { return target_state_; }
 
 };
 

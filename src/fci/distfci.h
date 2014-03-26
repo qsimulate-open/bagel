@@ -95,7 +95,7 @@ class DistFCI : public Method {
 
     int nij() const { return (norb_*(norb_+1))/2; }
 
-    void update(std::shared_ptr<const Coeff>);
+    void update(std::shared_ptr<const Matrix>);
 
     std::shared_ptr<const Determinants> det() const { return det_; }
     std::shared_ptr<const MOFile> jop() const { return jop_; }

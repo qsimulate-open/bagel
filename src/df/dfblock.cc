@@ -354,18 +354,16 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const double* amat, const double* bm
 }
 
 
-
 shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const {
   assert(nclosed+nact == b1size_ && b1size_ == b2size_);
   // checking if natural orbitals...
+  bool natural = true;
   {
     const double a = ddot_(nact*nact, rdm1, 1, rdm1, 1);
     double sum = 0.0;
     for (int i = 0; i != nact; ++i) sum += rdm1[i+nact*i]*rdm1[i+nact*i];
-    if (fabs(a-sum) > numerical_zero__*100) {
-      stringstream ss; ss << "DFFullDist::apply_2rdm should be called with natural orbitals " << scientific << setprecision(3) << fabs(a-sum) - numerical_zero__;
-      throw logic_error(ss.str());
-    }
+    if (fabs(a-sum) > numerical_zero__*100)
+      natural = false;
   }
   shared_ptr<DFBlock> out = clone();
   out->zero();
@@ -373,14 +371,14 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   // exchange contribution
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nclosed; ++j)
-      blas::ax_plus_y_n(-2.0, data_.get()+asize_*(j+b1size_*i), asize_, out->get()+asize_*(j+b1size_*i));
+      daxpy_(asize_, -2.0, data_.get()+asize_*(j+b1size_*i), 1, out->get()+asize_*(j+b1size_*i), 1);
   // coulomb contribution
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nclosed; ++i)
-    blas::ax_plus_y_n(1.0, data_.get()+asize_*(i+b1size_*i), asize_, diagsum.get());
+    daxpy_(asize_, 1.0, data_.get()+asize_*(i+b1size_*i), 1, diagsum.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    blas::ax_plus_y_n(4.0, diagsum.get(), asize_, out->get()+asize_*(i+b1size_*i));
+    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
 
   // act-act part
   // compress
@@ -399,18 +397,32 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab
   // ASSUMING natural orbitals
-  for (int i = 0; i != nact; ++i)
-    blas::ax_plus_y_n(2.0*rdm1[i+nact*i], diagsum.get(), asize_, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)));
+  if (natural) {
+    for (int i = 0; i != nact; ++i)
+      daxpy_(asize_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)), 1);
+  } else {
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nact; ++j)
+        daxpy_(asize_, 2.0*rdm1[j+nact*i], diagsum.get(), 1, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1);
+  }
   unique_ptr<double[]> diagsum2(new double[asize_]);
   dgemv_("N", asize_, nact*nact, 1.0, buf.get(), asize_, rdm1, 1, 0.0, diagsum2.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    blas::ax_plus_y_n(2.0, diagsum2.get(), asize_, out->get()+asize_*(i+b1size_*i));
+    daxpy_(asize_, 2.0, diagsum2.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
   // exchange contribution
-  for (int i = 0; i != nact; ++i) {
-    for (int j = 0; j != nclosed; ++j) {
-      blas::ax_plus_y_n(-rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), asize_, out->get()+asize_*(j+b1size_*(i+nclosed)));
-      blas::ax_plus_y_n(-rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), asize_, out->get()+asize_*(i+nclosed+b1size_*j));
-    }
+  if (natural) {
+    for (int i = 0; i != nact; ++i)
+      for (int j = 0; j != nclosed; ++j) {
+        daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), 1, out->get()+asize_*(j+b1size_*(i+nclosed)), 1);
+        daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), 1, out->get()+asize_*(i+nclosed+b1size_*j), 1);
+      }
+  } else {
+    for (int i0 = 0; i0 != nact; ++i0)
+      for (int i1 = 0; i1 != nact; ++i1)
+        for (int j = 0; j != nclosed; ++j) { // TODO be careful when rdm1 is not symmetric (e.g., transition density matrices)
+          daxpy_(asize_, -rdm1[i1+nact*i0], data_.get()+asize_*(j+b1size_*(i0+nclosed)), 1, out->get()+asize_*(j+b1size_*(i1+nclosed)), 1);
+          daxpy_(asize_, -rdm1[i1+nact*i0], data_.get()+asize_*(i0+nclosed+b1size_*j), 1, out->get()+asize_*(i1+nclosed+b1size_*j), 1);
+        }
   }
   return out;
 }

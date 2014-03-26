@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_SUITE(TEST_MEH)
 
 BOOST_AUTO_TEST_CASE(CAS) {
     BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_stack"), -459.40037137, 1.0e-6));
-    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.35640265, 1.0e-6));
+    BOOST_CHECK(compare(meh_energy("benzene_sto3g_meh_T"), -459.36294726, 1.0e-6));
 }
 
 BOOST_AUTO_TEST_CASE(RAS) {
