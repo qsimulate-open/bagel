@@ -2025,11 +2025,11 @@ class Task31 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
     };
-    ~Task33() {};
+    ~Task31() {};
 };
 
 template <typename T>
-class Task34 : public DedciTask<T> {
+class Task32 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2087,7 +2087,7 @@ class Task34 : public DedciTask<T> {
     }
 
   public:
-    Task34(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task32(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2098,11 +2098,11 @@ class Task34 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task34() {};
+    ~Task32() {};
 };
 
 template <typename T>
-class Task35 : public DedciTask<T> {
+class Task33 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2173,11 +2173,11 @@ class Task35 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a3}}, in, t[0], range)));
     };
-    ~Task35() {};
+    ~Task33() {};
 };
 
 template <typename T>
-class Task36 : public DedciTask<T> {
+class Task34 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -2220,7 +2220,7 @@ class Task36 : public DedciTask<T> {
     }
 
   public:
-    Task36(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task34(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2231,11 +2231,11 @@ class Task36 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task36() {};
+    ~Task34() {};
 };
 
 template <typename T>
-class Task37 : public DedciTask<T> {
+class Task35 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2295,7 +2295,7 @@ class Task37 : public DedciTask<T> {
     }
 
   public:
-    Task37(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task35(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2306,11 +2306,11 @@ class Task37 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task37() {};
+    ~Task35() {};
 };
 
 template <typename T>
-class Task38 : public DedciTask<T> {
+class Task36 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -2367,11 +2367,11 @@ class Task38 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range, e)));
     };
-    ~Task38() {};
+    ~Task36() {};
 };
 
 template <typename T>
-class Task39 : public DedciTask<T> {
+class Task37 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2431,7 +2431,7 @@ class Task39 : public DedciTask<T> {
     }
 
   public:
-    Task39(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task37(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2442,11 +2442,11 @@ class Task39 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x0, x1, a1, a2}}, in, t[0], range)));
     };
-    ~Task39() {};
+    ~Task37() {};
 };
 
 template <typename T>
-class Task40 : public DedciTask<T> {
+class Task38 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -2500,11 +2500,11 @@ class Task40 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range)));
     };
-    ~Task40() {};
+    ~Task38() {};
 };
 
 template <typename T>
-class Task41 : public DedciTask<T> {
+class Task39 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -2571,11 +2571,11 @@ class Task41 : public DedciTask<T> {
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task41() {};
+    ~Task39() {};
 };
 
 template <typename T>
-class Task42 : public DedciTask<T> {
+class Task40 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2635,7 +2635,7 @@ class Task42 : public DedciTask<T> {
     }
 
   public:
-    Task42(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task40(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2646,11 +2646,11 @@ class Task42 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x4, a1, a2}}, in, t[0], range)));
     };
-    ~Task42() {};
+    ~Task40() {};
 };
 
 template <typename T>
-class Task43 : public DedciTask<T> {
+class Task41 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -2693,7 +2693,7 @@ class Task43 : public DedciTask<T> {
     }
 
   public:
-    Task43(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task41(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2704,11 +2704,11 @@ class Task43 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x5, x0, x4, x1}}, in, t[0], range)));
     };
-    ~Task43() {};
+    ~Task41() {};
 };
 
 template <typename T>
-class Task44 : public DedciTask<T> {
+class Task42 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<1,2,T> {
       protected:
@@ -2768,18 +2768,18 @@ class Task44 : public DedciTask<T> {
     }
 
   public:
-    Task44(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task42(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[3]->nblock());
       for (auto& ci0 : *range[3])
         subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,1>{{ci0}}, in, t[0], range)));
     };
-    ~Task44() {};
+    ~Task42() {};
 };
 
 template <typename T>
-class Task45 : public DedciTask<T> {
+class Task43 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2848,11 +2848,11 @@ class Task45 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a2}}, in, t[0], range)));
     };
-    ~Task45() {};
+    ~Task43() {};
 };
 
 template <typename T>
-class Task46 : public DedciTask<T> {
+class Task44 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,2,T> {
       protected:
@@ -2912,7 +2912,7 @@ class Task46 : public DedciTask<T> {
     }
 
   public:
-    Task46(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task44(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,2> in = {{t[1], t[2]}};
 
       subtasks_.reserve(range[2]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -2923,11 +2923,11 @@ class Task46 : public DedciTask<T> {
               for (auto& ci0 : *range[3])
                 subtasks_.push_back(std::shared_ptr<Task_local>(new Task_local(std::array<const Index,5>{{ci0, x3, x2, a1, a3}}, in, t[0], range)));
     };
-    ~Task46() {};
+    ~Task44() {};
 };
 
 template <typename T>
-class Task47 : public DedciTask<T> {
+class Task45 : public DedciTask<T> {
   protected:
     class Task_local : public SubTask<5,1,T> {
       protected:
@@ -2970,7 +2970,7 @@ class Task47 : public DedciTask<T> {
     }
 
   public:
-    Task47(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
+    Task45(std::vector<std::shared_ptr<Tensor<T>>> t, std::array<std::shared_ptr<const IndexRange>,4> range) : DedciTask<T>() {
       std::array<std::shared_ptr<const Tensor<T>>,1> in = {{t[1]}};
 
       subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
@@ -4198,4 +4198,5 @@ class Task65 : public Density2Task<T> {
 }
 }
 #endif
+
 

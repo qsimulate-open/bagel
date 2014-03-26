@@ -49,10 +49,9 @@ class CAS_test : public SpinFreeMethod<T> {
     std::shared_ptr<Tensor<T>> t2;
     std::shared_ptr<Tensor<T>> r;
     double e0_;
-    std::shared_ptr<Tensor<T>> sigma_;
     std::shared_ptr<Tensor<T>> den1;
     std::shared_ptr<Tensor<T>> den2;
-    double correlated_norm;
+    double correct_den1;
     std::shared_ptr<Tensor<T>> deci;
 
     std::tuple<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> make_queue_() {
@@ -326,8 +325,6 @@ class CAS_test : public SpinFreeMethod<T> {
       task33->add_dep(task27);
       dedci_->add_task(task33);
 
-      task33->add_dep(task2);
-      task33->add_dep(task2);
 
       std::vector<std::shared_ptr<Tensor<T>>> tensor34 = {I28, Gamma9};
       std::shared_ptr<Task34<T>> task34(new Task34<T>(tensor34, cindex));
@@ -602,7 +599,6 @@ class CAS_test : public SpinFreeMethod<T> {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
       e0_ = this->e0();
-      sigma_ = this->sigma();
       this->update_amplitude(t2, this->v2_, true);
       t2->scale(2.0);
       r = t2->clone();
@@ -631,11 +627,9 @@ class CAS_test : public SpinFreeMethod<T> {
       std::cout << " === Calculating CI derivative dE/dcI ===" << std::endl;
       while (!dec->done())
         dec->next_compute();
-      deci->correct_cI_derivative(correlated_norm,sigma_);
-      deci->print1("cI derivative tensor: ", 1.0e-15);
+      deci->print1("CI derivative tensor: ", 1.0e-15);
       std::cout << std::endl;
-      std::cout << "cI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
-      std::cout << "Expecting E - N*E0  = " << std::setprecision(10) <<  e2-correlated_norm*e0_ << std::endl;
+      std::cout << "CI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
       std::cout << std::endl;
 
       std::cout << " === Computing unrelaxed density matrix, dm1, <1|E_pq|1> + 2<0|E_pq|1> ===" << std::endl;
@@ -644,6 +638,8 @@ class CAS_test : public SpinFreeMethod<T> {
 #if 0
       den1->print2("smith d1 correlated one-body density matrix", 1.0e-5);
 #endif
+      correct_den1 = correction(correct);
+      std::cout << "Unlinked correction term, <1|1>*rdm1 = " << std::setprecision(10) << correct_den1 << "*rdm1" << std::endl;
       std::cout << " === Computing unrelaxed density matrix, dm2, <0|E_pqrs|1>  ===" << std::endl;
       while (!dens2->done())
         dens2->next_compute();
@@ -673,7 +669,7 @@ class CAS_test : public SpinFreeMethod<T> {
     std::shared_ptr<const Matrix> rdm1() const { return den1->matrix(); }
     std::shared_ptr<const Matrix> rdm2() const { return den2->matrix2(); }
 
-    double rdm1_correction() const { return correlated_norm; }
+    double rdm1_correction() const { return correct_den1; }
 
     std::shared_ptr<const Civec> ci_deriv() const { return deci->civec(this->det_); }
 
@@ -683,4 +679,5 @@ class CAS_test : public SpinFreeMethod<T> {
 }
 }
 #endif
+
 
