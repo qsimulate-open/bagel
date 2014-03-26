@@ -33,15 +33,15 @@ using namespace std;
 using namespace bagel;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<FCI> f, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
 
   if (coeff_ != ref_->coeff())
     fci_->update(coeff_);
 
 }
 
-shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_fock() const {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
@@ -50,6 +50,7 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
   shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
+  shared_ptr<Matrix> fock;
   {
     denom->fill(1.0e10);
     // as in Theor Chem Acc (1997) 97:88-95
@@ -64,7 +65,7 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
     rdm1av->scale(1.0/sqrt(2.0));
 
     auto fact_ao = make_shared<Fock<1>>(geom_, fci_->jop()->core_fock()->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1av), /*grad*/false, /*rhf*/true);
-    auto f = make_shared<Matrix>(*finact + *coeff_ % *fact_ao * *coeff_);
+    fock = make_shared<Matrix>(*finact + *coeff_ % *fact_ao * *coeff_);
 
     auto fact = make_shared<Qvec>(nmobasis, nact, coeff_, nclosed, fci_, ref_->rdm2_av());
     for (int i = 0; i != nact; ++i)
@@ -72,18 +73,18 @@ shared_ptr<Matrix> CPCASSCF::compute_orb_denom() const {
 
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nvirt; ++j)
-        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i,i) + 2.0*occup[i]*f->element(j+nocc, j+nocc);
+        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i,i) + 2.0*occup[i]*fock->element(j+nocc, j+nocc);
 
     for (int i = 0; i != nclosed; ++i)
       for (int j = 0; j != nvirt; ++j)
-         denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*f->element(j+nocc, j+nocc) - 4.0*f->element(i, i);
+         denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*fock->element(j+nocc, j+nocc) - 4.0*fock->element(i, i);
 
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nclosed; ++j)
          denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
-                                     = (f->element(nclosed+i,nclosed+i)*4.0-2.0*fact->element(i+nclosed,i)) - f->element(j, j)*(4.0 - 2.0*occup[i]);
+                                     = (fock->element(nclosed+i,nclosed+i)*4.0-2.0*fact->element(i+nclosed,i)) - fock->element(j, j)*(4.0 - 2.0*occup[i]);
   }
-  return denom;
+  return make_tuple(denom, fock);
 }
 
 
@@ -95,7 +96,9 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   assert(fci_->norb() == ref_->nact());
 
   const size_t nocca = ref_->nocc();
-  assert(ref_->nact() + ref_->nclosed() == nocca);
+  const int nmobasis = coeff_->mdim();
+  const int nclosed = ref_->nclosed();
+  assert(ref_->nact() + nclosed == nocca);
 
   shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocca);
 
@@ -106,8 +109,10 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec>> denom;
   const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
+  shared_ptr<const Matrix> fock;
   {
-    shared_ptr<Matrix> d0 = compute_orb_denom();
+    shared_ptr<Matrix> d0;
+    tie(d0, fock) = compute_orb_denom_and_fock();
     for (auto& i : *d0)
       if (fabs(i) < 1.0e-8) i = 1.0e10;
     auto d1_tmp = make_shared<const Civec>(*fci_->denom());
@@ -117,11 +122,40 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     denom = make_shared<PairFile<Matrix, Dvec>>(d0, d1);
   }
 
+  // frozen core contributions
+  shared_ptr<const Matrix> zcore, gzcore;
+  if (ncore_) {
+    auto zc = make_shared<Matrix>(nocca, nocca);
+    for (int i = 0; i != ncore_; ++i)
+      for (int j = 0; j != nclosed; ++j) {
+        zc->element(j+ncore_, i) = (grad_->first()->element(j+ncore_,i) - grad_->first()->element(i,j+ncore_)) / (fock->element(j+ncore_,j+ncore_) - fock->element(i,i));
+        assert(abs(fock->element(i, j+ncore_)) < 1.0e-8);
+      }
+    zc->symmetrize();
+    zcore = zc;
+    Matrix rot(*zcore + *ref_->rdm1_mat());
+    rot.sqrt();
+    rot.scale(1.0/sqrt(2.0));
+    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, make_shared<Matrix>(*coeff_->slice(0, nocca) * rot), false, true);
+    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock);
+  }
+
   // BFGS update of the denominator above
   auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, true);
 
-  // CI vector
+  // gradient Y and y
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
+  if (ncore_)
+    // add frozen core contributions to Y
+    source->first()->ax_plus_y(2.0, *fock * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
+    // add frozen core contributions times weight to y
+     if (int istate = 0; istate != ref_->nstate(); ++istate) {
+       shared_ptr<Dvec> rdm1deriv = fci_->rdm1deriv(istate);
+       for (int i = 0; i != ref_->nact(); ++i)
+         for (int j = 0; j != ref_->nact(); ++j)
+           source->second()->data(j+ref_->nact()*i)->ax_plus_y(fci_->weight(istate)*gzcore->element(j+nclosed, i+nclosed), rdm1deriv);
+     }
+  }
   // antisymmetrize
   source->first()->antisymmetrize();
   source->first()->purify_redrotation(ref_->nclosed(), ref_->nact(), ref_->nvirt());
@@ -394,18 +428,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     qone.add_block(2.0, 0, 0, nocca, nclosed, (fockinact + fockact).get_submatrix(0, 0, nocca, nclosed));
 
   // TODO qvec should be stored in somewhere
-#if 1
   auto qvec = make_shared<Qvec>(nmobasis, nact, coeff_, nclosed, fci_, rdm2_av);
-#else
-  // TODO unnesessary transformation
-  shared_ptr<const Matrix> qvec;
-  {
-    shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_->slice(nclosed, nocca));
-    shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff_->slice(nclosed, nocca))->apply_JJ();
-    shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm2_av->data());
-    qvec = make_shared<Matrix>(*coeff_ % *half->form_2index(prdm, 1.0));
-  }
-#endif
   qone.add_block(1.0, 0, nclosed, nocca, nact, qvec->get_submatrix(0, 0, nocca, nact));
   qone.add_block(1.0, 0, nclosed, nocca, nact, (*fockinact.get_submatrix(0,nclosed,nocca,nact) * *rdm1av_mat));
   qone.symmetrize();

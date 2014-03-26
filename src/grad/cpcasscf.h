@@ -44,6 +44,8 @@ class CPCASSCF {
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<FCI> fci_;
+
+    int ncore_;
     std::shared_ptr<const Matrix> coeff_;
 
     std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
@@ -51,12 +53,12 @@ class CPCASSCF {
     std::shared_ptr<Matrix> form_sigma_sym(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
                                            std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
-    std::shared_ptr<Matrix> compute_orb_denom() const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>> compute_orb_denom_and_fock() const;
 
   public:
     CPCASSCF(std::shared_ptr<const PairFile<Matrix, Dvec>> grad, std::shared_ptr<const Dvec> c,
              std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfjj,
-             std::shared_ptr<const Reference> g, std::shared_ptr<FCI> f, std::shared_ptr<const Matrix> coeff = nullptr);
+             std::shared_ptr<const Reference> g, std::shared_ptr<FCI> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
 
     // tuple of Z, z, and X.
     std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>>

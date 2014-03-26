@@ -54,7 +54,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 void CASPT2Grad::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
+  const int nocca = ref_->nocc();
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = fci_->rdm1_av();
@@ -77,13 +77,23 @@ void CASPT2Grad::compute() {
     // add correction to active part of the correlated one-body density
     for (int i = nclosed; i != nclosed+nact; ++i)
       d1tmp->element(i, i) -=  correction * 2.0;
-    d1 = d1tmp;
-    d2 = smith->dm2();
     cider = smith->cider();
     target_ = smith->algo()->ref()->target();
+    ncore_ = smith->algo()->ref()->ncore();
+    if (!ncore_) {
+      d1 = d1tmp;
+    } else {
+      auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
+      d1 = d1tmp2;
+    }
+    d2 = smith->dm2();
   }
 
+  const int nocc  = ref_->nocc() - ncore_;
   const int nmobasis = coeff_->mdim();
+
+  // d0 including core
   shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
   shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc);
 
@@ -105,7 +115,7 @@ void CASPT2Grad::compute() {
   auto g1 = make_shared<Dvec>(cider, ref_->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
-  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_, coeff_);
+  auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_, ncore_, coeff_);
   shared_ptr<const Matrix> zmat, xmat;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat) = cp->solve(1.0e-10);
