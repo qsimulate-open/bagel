@@ -144,44 +144,49 @@ class MOFock {
     std::shared_ptr<Tensor<T>> hcore_;
 
   public:
-    MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
+    MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b) : ref_(r), coeff_(std::make_shared<Coeff>(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
+      const int ncore   = ref_->ncore();
+      const int nclosed = ref_->nclosed() - ncore;
+      const int nocc    = ref_->nocc();
+      const int nact    = ref_->nact();
+      const int nvirt   = ref_->nvirt();
+      const int nbasis  = coeff_->ndim();
 
       data_  = std::make_shared<Tensor<T>>(blocks_, false);
       hcore_ = std::make_shared<Tensor<T>>(blocks_, false);
 
       std::shared_ptr<const Matrix> hcore = ref_->hcore();
+      // if frozen core orbitals are present, hcore is replaced by core-fock matrix
+      if (ncore)
+        hcore = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, coeff_->slice(0, ncore), false, true);
 
       std::shared_ptr<const Matrix> fock1;
       {
-        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice(0, r->nocc());
-        if (r->nact()) {
-          Matrix tmp(r->nact(), r->nact());
+        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice(ncore, nocc);
+        if (nact) {
+          Matrix tmp(nact, nact);
           std::copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
           tmp.sqrt();
           tmp.scale(1.0/std::sqrt(2.0));
-          weighted_coeff->copy_block(0, r->nclosed(), coeff_->ndim(), r->nact(), *coeff_->slice(r->nclosed(), r->nocc()) * tmp);
+          weighted_coeff->copy_block(0, nclosed, nbasis, nact, *weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
         }
         fock1 = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
       }
-      const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
+      const Matrix forig = *coeff_ % *fock1 * *coeff_;
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
-      const int nclosed = ref_->nclosed();
-      const int nocc    = ref_->nocc();
-      const int nvirt   = ref_->nvirt();
-      const int nbasis  = ref_->geom()->nbasis();
       std::unique_ptr<double[]> eig(new double[nbasis]);
       if (nclosed > 1) {
-        std::shared_ptr<Matrix> fcl = forig.get_submatrix(0, 0, nclosed, nclosed);
+        std::shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
         fcl->diagonalize(eig.get());
-        dgemm_("N", "N", nbasis, nclosed, nclosed, 1.0, ref_->coeff()->data(), nbasis, fcl->data(), nclosed, 0.0, coeff_->data(), nbasis);
+        coeff_->copy_block(0, ncore, nbasis, nclosed, *coeff_->slice(ncore, ncore+nclosed) * *fcl);
       }
       if (nvirt > 1) {
         std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
         fvirt->diagonalize(eig.get());
-        dgemm_("N", "N", nbasis, nvirt, nvirt, 1.0, ref_->coeff()->element_ptr(0,nocc), nbasis, fvirt->data(), nvirt, 0.0, coeff_->element_ptr(0,nocc), nbasis);
+        coeff_->copy_block(0, nocc, nbasis, nvirt, *coeff_->slice(nocc, nocc+nvirt) * *fvirt);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
       const Matrix hc = *coeff_ % *hcore * *coeff_;
