@@ -536,12 +536,11 @@ class SpinFreeMethod {
       all_ = a;
 
       std::shared_ptr<const Dvec> dci0 = r->civectors();
-      // TODO this should be updated when reference has civec
-      civec_ = dci0->data(0);
+      civec_ = dci0->data(ref_->target());
       det_ = civec_->det();
 
       // length of the ci expansion
-      const size_t ci_size = r->civectors()->data(0)->size();
+      const size_t ci_size = r->civectors()->data(ref_->target())->size();
       ci_ = IndexRange(ci_size, max);
 
       rclosed_ = std::make_shared<const IndexRange>(c);
@@ -716,8 +715,7 @@ class SpinFreeMethod {
             int iall = 0;
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element(j0-nclo, j1-nclo);
+                data[iall] = ref_->rdm1(ref_->target())->element(j0-nclo, j1-nclo);
             rdm1_->put_block(data, i0, i1);
           }
         }
@@ -737,8 +735,7 @@ class SpinFreeMethod {
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                        // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
+                        data[iall] = ref_->rdm2(ref_->target())->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
                  rdm2_->put_block(data, i0, i1, i2, i3);
               }
             }
@@ -754,10 +751,9 @@ class SpinFreeMethod {
           rdm4_ = std::make_shared<Tensor<T>>(p, false);
         }
 
-        // TODO for the time being we hardwire "0" here (but this should be fixed)
         std::shared_ptr<RDM<3>> rdm3;
         std::shared_ptr<RDM<4>> rdm4;
-        std::tie(rdm3, rdm4) = ref_->compute_rdm34(0);
+        std::tie(rdm3, rdm4) = ref_->compute_rdm34(ref_->target());
 
         const int nclo = ref_->nclosed();
         for (auto& i5 : active_)
@@ -809,9 +805,8 @@ class SpinFreeMethod {
           for (auto& i0 : active_)
             fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
-        // TODO hardwired 0
-        auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(0));
-        auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(0));
+        auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
+        auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));
 
         // construct denominator
         denom_ = std::make_shared<const Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact);
@@ -854,7 +849,7 @@ class SpinFreeMethod {
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
-      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
+      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(ref_->target())->data());
       // convert to ao basis
       auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
       Dipole dipole(ref_->geom(), dtotao, dipole_name);
@@ -873,7 +868,7 @@ class SpinFreeMethod {
 
       for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
       // add to active space
-      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
+      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(ref_->target())->data());
       // convert to ao basis
       auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
       Dipole dipole(ref_->geom(), dtotao);

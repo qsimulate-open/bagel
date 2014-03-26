@@ -36,7 +36,7 @@ using namespace std;
 using namespace bagel;
 
 CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
-  : Method(inp, geom, ref),  target_(inp->get<int>("target_", 0)) {
+  : Method(inp, geom, ref) {
 
   // compute CASSCF first
   auto cas = make_shared<SuperCI>(inp, geom, ref);
@@ -56,31 +56,36 @@ void CASPT2Grad::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  // construct SMITH here
-  shared_ptr<const PTree> smithinput = idata_->get_child("smith");
-  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
-
-  smith->compute();
-
-  // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
-  coeff_ = smith->coeff();
-  shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc);
-  const int nmobasis = coeff_->mdim();
-
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = fci_->rdm1_av();
   shared_ptr<const RDM<2>> rdm2_av = fci_->rdm2_av();
 
-  // save correlated density matrices d(1), d(2), and ci derivatives
-  shared_ptr<Matrix> d1 = make_shared<Matrix>(*smith->dm1());
-  const double correction = smith->correction();
-  // add correction to active part of the correlated one-body density
-  for (int i = nclosed; i != nclosed+nact; ++i)
-    d1->element(i, i) -=  correction * 2.0;
+  shared_ptr<const Matrix> d1, d2;
+  shared_ptr<const Civec> cider;
+  {
+    // construct SMITH here
+    shared_ptr<const PTree> smithinput = idata_->get_child("smith");
+    auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+    smith->compute();
 
+    // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
+    coeff_ = smith->coeff();
+
+    // save correlated density matrices d(1), d(2), and ci derivatives
+    shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
+    const double correction = smith->correction();
+    // add correction to active part of the correlated one-body density
+    for (int i = nclosed; i != nclosed+nact; ++i)
+      d1tmp->element(i, i) -=  correction * 2.0;
+    d1 = d1tmp;
+    d2 = smith->dm2();
+    cider = smith->cider();
+    target_ = smith->algo()->ref()->target();
+  }
+
+  const int nmobasis = coeff_->mdim();
   shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
-  shared_ptr<const Matrix> d2 = smith->dm2();
-  shared_ptr<const Civec> cider = smith->cider();
+  shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc);
 
   {
     auto dtotao = make_shared<Matrix>(*coeff_ * (*d0 + *d1) ^ *coeff_);
@@ -93,7 +98,7 @@ void CASPT2Grad::compute() {
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = compute_y(d1, correction, d2, cider, half, halfj, halfjj);
+  tie(yrs, fulld1) = compute_y(d1, d2, cider, half, halfj, halfjj);
 
   // solve CPCASSCF
   auto g0 = yrs;
@@ -191,7 +196,7 @@ void CASPT2Grad::compute() {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
-  CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, double correction, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider,
+  CASPT2Grad::compute_y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm2, shared_ptr<const Civec> cider,
                         shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();

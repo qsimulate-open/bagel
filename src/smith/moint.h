@@ -35,7 +35,7 @@
 #include <memory>
 #include <stdexcept>
 #include <src/math/algo.h>
-#include <src/wfn/reference.h>
+#include <src/smith/smith_info.h>
 #include <src/smith/tensor.h>
 #include <src/scf/fock.h>
 
@@ -47,7 +47,7 @@ namespace SMITH {
 template <typename T>
 class K2ext {
   protected:
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const SMITH_Info> ref_;
     std::shared_ptr<const Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T>> data_;
@@ -118,7 +118,7 @@ class K2ext {
     }
 
   public:
-    K2ext(std::shared_ptr<const Reference> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b) : ref_(r), coeff_(c), blocks_(b) {
+    K2ext(std::shared_ptr<const SMITH_Info> r, std::shared_ptr<const Coeff> c, std::vector<IndexRange> b) : ref_(r), coeff_(c), blocks_(b) {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
@@ -137,14 +137,14 @@ class K2ext {
 template <typename T>
 class MOFock {
   protected:
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const SMITH_Info> ref_;
     std::shared_ptr<Coeff> coeff_;
     std::vector<IndexRange> blocks_;
     std::shared_ptr<Tensor<T>> data_;
     std::shared_ptr<Tensor<T>> hcore_;
 
   public:
-    MOFock(std::shared_ptr<const Reference> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
+    MOFock(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b) : ref_(r), coeff_(new Coeff(*ref_->coeff())), blocks_(b) {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
@@ -157,8 +157,7 @@ class MOFock {
       if (ref_->nact() == 0) {
         den = ref_->coeff()->form_density_rhf(ref_->nclosed());
       } else {
-        // TODO NOTE THAT RDM 0 IS HARDWIRED should be fixed later on
-        std::shared_ptr<const Matrix> tmp = ref_->rdm1(0)->rdm1_mat(ref_->nclosed(), true);
+        std::shared_ptr<const Matrix> tmp = ref_->rdm1(r->target())->rdm1_mat(ref_->nclosed(), true);
         // slice of coeff
         std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
         // transforming to AO basis
@@ -211,14 +210,14 @@ class MOFock {
 template <typename T>
 class Ci {
   protected:
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const SMITH_Info> ref_;
     std::vector<IndexRange> blocks_;
     std::size_t ci_size_;
     std::shared_ptr<Tensor<T>>  rdm0deriv_;
 
 
   public:
-    Ci(std::shared_ptr<const Reference> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), ci_size_(c->size()) {
+    Ci(std::shared_ptr<const SMITH_Info> r, std::vector<IndexRange> b, std::shared_ptr<const Civec> c) : ref_(r), blocks_(b), ci_size_(c->size()) {
       assert(b.size() == 1);
 
       // form ci coefficient tensor
