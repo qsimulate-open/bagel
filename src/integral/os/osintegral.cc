@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: rysintegral.cc
+// Filename: osintegral.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/rys/rysintegral.h>
+#include <src/integral/os/osintegral.h>
 
-template class bagel::RysIntegral<double,bagel::Int_t::Standard>;
-template class bagel::RysIntegral<std::complex<double>,bagel::Int_t::London>;
+template class bagel::OSIntegral<double,bagel::Int_t::Standard>;
+template class bagel::OSIntegral<std::complex<double>,bagel::Int_t::London>;

@@ -124,4 +124,7 @@ using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;
 #include <src/integral/rys/eribatch_base_impl.hpp>
 #undef ERIBATCH_BASE_HEADERS
 
+extern template class bagel::ERIBatch_Base<double,bagel::Int_t::Standard>;
+extern template class bagel::ERIBatch_Base<std::complex<double>,bagel::Int_t::London>;
+
 #endif

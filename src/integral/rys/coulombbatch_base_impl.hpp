@@ -37,7 +37,7 @@ static constexpr double T_thresh__ = 1.0e-8;
 template <typename DataType, Int_t IntType>
 CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int deriv,
                              std::shared_ptr<StackMem> stack, const int L, const double A)
- : RysIntegral<DataType>(_info, stack), mol_(mol), L_(L), A_(A) {
+ : RysIntegral<DataType, IntType>(_info, stack), mol_(mol), L_(L), A_(A) {
 
   deriv_rank_ = deriv;
 

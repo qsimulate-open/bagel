@@ -48,6 +48,24 @@ struct CopyBlockTask {
     }
 };
 
+struct CopyBlockTask_complex {
+  private:
+    const std::complex<double>* const a_;
+    const size_t astride_;
+    std::complex<double>* const b_;
+    const size_t bstride_;
+    const size_t n_;
+    const size_t m_;
+  public:
+    CopyBlockTask_complex(const std::complex<double>* const a, const size_t& ast, std::complex<double>* const b, const size_t& bst, const size_t& n, const size_t& m)
+      : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
+
+    void compute() {
+      for (size_t j = 0; j != m_; ++j)
+        std::copy_n(a_+j*astride_, n_, b_+j*bstride_);
+    }
+};
+
 }
 
 #endif

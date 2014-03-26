@@ -29,6 +29,10 @@
 
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
+#include <src/df/dfblock.h>
+#include <src/df/dfblock_london.h>
+#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
@@ -107,6 +111,9 @@ using ParallelDF = ParallelDFit<double, Matrix, DFBlock>;
 #define PARALLELDF_HEADERS
 #include <src/df/paralleldf_impl.hpp>
 #undef PARALLELDF_HEADERS
+
+extern template class bagel::ParallelDFit<double, bagel::Matrix, bagel::DFBlock>;
+extern template class bagel::ParallelDFit<std::complex<double>, bagel::ZMatrix, bagel::DFBlock_London>;
 
 #endif
 

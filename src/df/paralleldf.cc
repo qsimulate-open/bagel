@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: rysintegral.cc
+// Filename: paralleldf.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,7 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/rys/rysintegral.h>
+#include <src/df/paralleldf.h>
+#include <src/math/zmatrix.h>
+#include <src/df/dfblock_london.h>
 
-template class bagel::RysIntegral<double,bagel::Int_t::Standard>;
-template class bagel::RysIntegral<std::complex<double>,bagel::Int_t::London>;
+template class bagel::ParallelDFit<double, bagel::Matrix, bagel::DFBlock>;
+template class bagel::ParallelDFit<std::complex<double>, bagel::ZMatrix, bagel::DFBlock_London>;
