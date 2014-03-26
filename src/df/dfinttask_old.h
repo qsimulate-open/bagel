@@ -30,8 +30,8 @@
 
 namespace bagel {
 
-// T is either DFDist or DFDist
-template<typename T>
+// T can be DFDist, DFDist, or DFDist_London
+template <typename T, typename DataType=double, Int_t IntType = Int_t::Standard>
 class DFIntTask_OLD {
   protected:
     std::array<std::shared_ptr<const Shell>,4> shell_;
@@ -45,13 +45,13 @@ class DFIntTask_OLD {
 
     void compute() {
 
-      std::pair<const double*, std::shared_ptr<RysInt>> p = df_->compute_batch(shell_);
-      const double* ppt = p.first;
+      std::pair<const DataType*, std::shared_ptr<RysIntegral<DataType, IntType>>> p = df_->compute_batch(shell_);
+      const DataType* ppt = p.first;
 
       const size_t naux = df_->naux();
       // all slot in
       if (rank_ == 2) {
-        double* const data = df_->data2_->data();
+        DataType* const data = df_->data2_->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0)
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt)
             data[j1+j0*naux] = data[j0+j1*naux] = *ppt;

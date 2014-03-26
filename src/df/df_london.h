@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: df.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: df_london.h
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,12 +23,14 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_DF_DF_H
-#define __SRC_DF_DF_H
+#ifndef __SRC_DF_DF_LONDON_H
+#define __SRC_DF_DF_LONDON_H
 
-#include <src/df/paralleldf.h>
 #include <src/molecule/atom.h>
 #include <src/parallel/resources.h>
+#include <src/math/zmatrix.h>
+#include <src/df/dfblock_london.h>
+#include <src/df/df.h>
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
 #include <src/util/timer.h>
@@ -36,13 +38,14 @@
 
 namespace bagel {
 
-class DFHalfDist;
-class DFFullDist;
+class DFHalfDist_London;
+class DFFullDist_London;
 
-class DFDist : public bagel::ParallelDF {
-  friend class DFIntTask_OLD<DFDist>;
+
+class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
+  friend class DFIntTask_OLD<DFDist_London, std::complex<double>, Int_t::London>;
   protected:
-    std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
+    std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>, Int_t::London>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
     std::shared_ptr<const StaticDist> make_table(const size_t nmax);
     // compute 2-index integrals ERI
@@ -51,43 +54,43 @@ class DFDist : public bagel::ParallelDF {
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
-    DFDist(const int nbas, const int naux, const std::shared_ptr<DFBlock> block = nullptr, std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr)
-      : ParallelDF(naux, nbas, nbas, df, data2) {
+    DFDist_London(const int nbas, const int naux, const std::shared_ptr<DFBlock_London> block = nullptr, std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df = nullptr, std::shared_ptr<ZMatrix> data2 = nullptr)
+      : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(naux, nbas, nbas, df, data2) {
       if (block)
         block_.push_back(block);
     }
 
-    DFDist(const std::shared_ptr<const ParallelDF> df) : ParallelDF(df->naux(), df->nindex1(), df->nindex2(), df) { }
+    DFDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>,ZMatrix,DFBlock_London>> df) : ParallelDFit<std::complex<double>,ZMatrix,DFBlock_London>(df->naux(), df->nindex1(), df->nindex2(), df) { }
 
     bool has_2index() const { return data2_.get() != nullptr; }
     size_t nbasis0() const { return nindex2_; }
     size_t nbasis1() const { return nindex1_; }
     size_t naux() const { return naux_; }
 
-    void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
-       { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
-    void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
+    void add_direct_product(std::shared_ptr<const ZMatrix> a, std::shared_ptr<const ZMatrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const ZMatrix>>{a}, std::vector<std::shared_ptr<const ZMatrix>>{b}, fac); }
+    void add_direct_product(std::vector<std::shared_ptr<const ZMatrix>> a, std::vector<std::shared_ptr<const ZMatrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist_London> compute_half_transform(const std::shared_ptr<const ZMatrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const;
 
-    std::shared_ptr<DFDist> copy() const;
-    std::shared_ptr<DFDist> clone() const;
+    std::shared_ptr<DFDist_London> copy() const;
+    std::shared_ptr<DFDist_London> clone() const;
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<const DFDist>> split_blocks() const {
-      std::vector<std::shared_ptr<const DFDist>> out;
+    std::vector<std::shared_ptr<const DFDist_London>> split_blocks() const {
+      std::vector<std::shared_ptr<const DFDist_London>> out;
       assert(nindex1_ == nindex2_);
       for (auto& i : block_)
-        out.push_back(std::make_shared<const DFDist>(nindex1_, naux_, i, df_, data2_));
+        out.push_back(std::make_shared<const DFDist_London>(nindex1_, naux_, i, df_, data2_));
       return out;
     }
 };
 
-
+/*
 template<class TBatch>
 class DFDist_ints : public DFDist {
   protected:
@@ -164,77 +167,79 @@ class DFDist_ints : public DFDist {
     }
 
 };
+*/
 
-
-class DFHalfDist : public ParallelDF {
+class DFHalfDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
   protected:
 
   public:
-    DFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : ParallelDF(df->naux(), nocc, df->nindex2(), df) { }
+    DFHalfDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df, const int nocc) : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(df->naux(), nocc, df->nindex2(), df) { }
 
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
-    std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
-    std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFFullDist_London> compute_second_transform(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<DFDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
-    std::shared_ptr<DFHalfDist> copy() const;
-    std::shared_ptr<DFHalfDist> clone() const;
+    std::shared_ptr<DFHalfDist_London> copy() const;
+    std::shared_ptr<DFHalfDist_London> clone() const;
 
-    void rotate_occ(const std::shared_ptr<const Matrix> d);
-    std::shared_ptr<DFHalfDist> apply_density(const std::shared_ptr<const Matrix> d) const;
+    void rotate_occ(const std::shared_ptr<const ZMatrix> d);
+    std::shared_ptr<DFHalfDist_London> apply_density(const std::shared_ptr<const ZMatrix> d) const;
 
-    std::shared_ptr<Matrix> compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const;
+    std::shared_ptr<ZMatrix> compute_Kop_1occ(const std::shared_ptr<const ZMatrix> den, const double a) const;
 
-    std::shared_ptr<DFHalfDist> apply_J() const { return apply_J(df_->data2()); }
-    std::shared_ptr<DFHalfDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
-    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const DFDist> d) const { return apply_J(d->data2()); }
-    std::shared_ptr<DFHalfDist> apply_JJ(const std::shared_ptr<const DFDist> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
-    std::shared_ptr<DFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
+    std::shared_ptr<DFHalfDist_London> apply_J() const { return apply_J(df_->data2()); }
+    std::shared_ptr<DFHalfDist_London> apply_JJ() const { return apply_J(std::make_shared<ZMatrix>(*df_->data2()**df_->data2())); }
+    std::shared_ptr<DFHalfDist_London> apply_J(const std::shared_ptr<const DFDist_London> d) const { return apply_J(d->data2()); }
+    std::shared_ptr<DFHalfDist_London> apply_JJ(const std::shared_ptr<const DFDist_London> d) const { return apply_J(std::make_shared<ZMatrix>(*d->data2()**d->data2())); }
+    std::shared_ptr<DFHalfDist_London> apply_J(const std::shared_ptr<const ZMatrix> o) const;
 
 };
 
 
-class DFFullDist : public ParallelDF {
+class DFFullDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
   protected:
-    std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const Matrix> o) const;
+    std::shared_ptr<DFFullDist_London> apply_J(const std::shared_ptr<const ZMatrix> o) const;
 
   public:
-    DFFullDist(const std::shared_ptr<const ParallelDF> df, const int nocc1, const int nocc2) : ParallelDF(df->naux(), nocc1, nocc2, df) { }
+    DFFullDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df, const int nocc1, const int nocc2) : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(df->naux(), nocc1, nocc2, df) { }
 
     int nocc1() const { return nindex1_; }
     int nocc2() const { return nindex2_; }
 
-    std::shared_ptr<DFFullDist> copy() const;
-    std::shared_ptr<DFFullDist> clone() const;
+    std::shared_ptr<DFFullDist_London> copy() const;
+    std::shared_ptr<DFFullDist_London> clone() const;
 
-    std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
+    std::shared_ptr<DFHalfDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
     void symmetrize();
-    void rotate_occ1(const std::shared_ptr<const Matrix> d);
+    void rotate_occ1(const std::shared_ptr<const ZMatrix> d);
 
+/*
     // 2RDM contractions
     // special function for RHF
-    std::shared_ptr<DFFullDist> apply_closed_2RDM(const double scale_ex = 1.0) const;
+    std::shared_ptr<DFFullDist_London> apply_closed_2RDM(const double scale_ex = 1.0) const;
     // special function for UHF
-    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
+    std::shared_ptr<DFFullDist_London> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
     // general case with closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFFullDist_London> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DFFullDist_London> apply_2rdm(const double* rdm) const;
+*/
 
-    std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
+    std::shared_ptr<ZMatrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist_London> o, const double a, const size_t n) const;
 
     // utility functions
-    std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;
-    void add_product(const std::shared_ptr<const DFFullDist>, const std::shared_ptr<const Matrix>, const int jdim, const size_t offset, const double fac = 1.0);
+    std::shared_ptr<ZMatrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist_London> o, const double a) const;
+    void add_product(const std::shared_ptr<const DFFullDist_London>, const std::shared_ptr<const ZMatrix>, const int jdim, const size_t offset, const double fac = 1.0);
 
-    std::shared_ptr<DFFullDist> apply_J() const { return apply_J(df_->data2()); }
-    std::shared_ptr<DFFullDist> apply_JJ() const { return apply_J(std::make_shared<Matrix>(*df_->data2()**df_->data2())); }
-    std::shared_ptr<DFFullDist> apply_J(const std::shared_ptr<const ParallelDF> d) const { return apply_J(d->data2()); }
-    std::shared_ptr<DFFullDist> apply_JJ(const std::shared_ptr<const ParallelDF> d) const { return apply_J(std::make_shared<Matrix>(*d->data2()**d->data2())); }
+    std::shared_ptr<DFFullDist_London> apply_J() const { return apply_J(df_->data2()); }
+    std::shared_ptr<DFFullDist_London> apply_JJ() const { return apply_J(std::make_shared<ZMatrix>(*df_->data2()**df_->data2())); }
+    std::shared_ptr<DFFullDist_London> apply_J(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> d) const { return apply_J(d->data2()); }
+    std::shared_ptr<DFFullDist_London> apply_JJ(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> d) const { return apply_J(std::make_shared<ZMatrix>(*d->data2()**d->data2())); }
 
-    std::shared_ptr<DFFullDist> swap() const;
+    std::shared_ptr<DFFullDist_London> swap() const;
 };
 
 }
