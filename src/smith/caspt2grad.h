@@ -42,7 +42,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<FCI> fci_;
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_y(std::shared_ptr<const Matrix> dm1, const double correction, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
+      compute_y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
                 std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 
     // for gradient

@@ -35,6 +35,7 @@ class SMITH_Info : public Reference {
     int ncore_;
     double thresh_;
     int maxiter_;
+    int target_;
 
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : Reference(*o) {
@@ -45,11 +46,13 @@ class SMITH_Info : public Reference {
 
       thresh_ = idata->get<double>("thresh", 1.0e-8);
       maxiter_ = idata->get<int>("maxiter", 50);
+      target_  = idata->get<int>("target", 0);
     }
 
     int ncore() const { return ncore_; }
     double thresh() const { return thresh_; }
     int maxiter() const { return maxiter_; }
+    int target() const { return target_; }
 };
 
 }
