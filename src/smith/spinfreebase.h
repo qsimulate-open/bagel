@@ -88,7 +88,7 @@ class SpinFreeMethod {
     std::chrono::high_resolution_clock::time_point time_;
 
     // the diagonal denominator
-    std::unique_ptr<double[]> eig_;
+    std::vector<double> eig_;
 
     // printing functions called from the solve function of a derived class
     void print_iteration() {

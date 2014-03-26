@@ -77,7 +77,6 @@ class K2ext {
     void form_4index(const std::map<size_t, std::shared_ptr<DFFullDist>>& dflist) {
       // form four-index integrals
       // TODO this part should be heavily parallelized
-      // TODO i01 < i23 symmetry should be used.
       for (auto& i0 : blocks_[0]) {
         for (auto& i1 : blocks_[1]) {
           // find three-index integrals
