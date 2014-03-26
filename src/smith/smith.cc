@@ -36,12 +36,16 @@ using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   string method = idata_->get<string>("method", "mp2");
+
+  // make a smith_info class
+  auto info = make_shared<SMITH_Info>(r, idata);
+
   if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(r);
+    algo_ = make_shared<MP2::MP2<Storage_Incore>>(info);
   } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(r);
+    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(info);
   } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(r);
+    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(info);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
