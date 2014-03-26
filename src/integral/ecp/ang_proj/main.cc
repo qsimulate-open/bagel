@@ -28,6 +28,14 @@ using namespace std;
 
 int main() {
 
+// Test Bessel function
+  const double x = 2.3;
+  const double sbessel = boost::math::sph_bessel(0, x) * std::exp(-x);
+  Modified_Spherical_Bessel_Iexp msbessel(0);
+  const double test_sbessel = (1.0 - std::exp(-2.0*x)) / (2.0 * x);
+  cout << "test = " << test_sbessel << endl;
+  cout << "boost:sph_bessel = " << sbessel << ";  Modified_Spherical_Bessel_Iexp = " << msbessel.compute(x).toDouble() << endl;
+
 #if 0
   cout << " Expansion of a Gaussian about a different centre " << endl;
   BesselI besselI;
@@ -82,18 +90,18 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
 #if 1
   std::array<double, 3> centreB = {0.0, 0.0, 0.305956};
-  std::array<int, 2> lm = {2, 2};
+  std::array<int, 2> lm = {0, 0};
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
 
   std::array<double, 3> centreA = {0.0, 0.0, 0.305956};
-  std::array<int, 3> angular_momentumA = {2, 0, 0};
+  std::array<int, 3> angular_momentumA = {0, 0, 0};
   const double alphaA = 1.0;
   std::shared_ptr<CartesianGauss> cargaussA = std::make_shared<CartesianGauss>(alphaA, angular_momentumA, centreA);
   cargaussA->print();
 
-  std::array<double, 3> centreC = {0.0, 0.0, 0.305956};
-  std::array<int, 3> angular_momentumC = {2, 0, 0};
+  std::array<double, 3> centreC = {0.0, 0.0, 1.305956};
+  std::array<int, 3> angular_momentumC = {0, 0, 0};
   const double alphaC = 1.0;
   std::shared_ptr<CartesianGauss> cargaussC = std::make_shared<CartesianGauss>(alphaC, angular_momentumC, centreC);
   cargaussC->print();
@@ -148,6 +156,7 @@ for (int iz = 0; iz <= maxl; ++iz) {
   cout << "Integral = " << ecp.integral() / bagelfactor << endl;
 #endif
 
+#if 0
   cout << "TEST int <200 - 020 | 22><22 | 200 - 020 >(r)" << endl;
   std::array<int, 3> angular_momentumAp = {0, 2, 0};
   std::shared_ptr<CartesianGauss> cargaussAp = std::make_shared<CartesianGauss>(alphaA, angular_momentumAp, centreA);
@@ -166,10 +175,11 @@ for (int iz = 0; iz <= maxl; ++iz) {
   Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABAp(max_iter, thresh_int, projABAp);
   cout << " Answer = " << endl;
   cout << ecpABA.integral() - ecpApBA.integral() - ecpABAp.integral() + ecpApBAp.integral() << endl;
+#endif
 
-#if 0
-  std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>> gsh(cargaussA, rsh);
-  Radial_Int<angular_Int_ss, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>>> test_ss(max_iter, thresh_int, gsh);
+#if 1
+  std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>> gsh(cargaussC, rsh);
+  Radial_Int<ABBB_ss, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>>> test_ss(max_iter, thresh_int, gsh);
 #endif
 
   // check normalization ss

@@ -560,6 +560,40 @@ class ECP_Type2 {
 
 };
 
+class Modified_Spherical_Bessel_Iexp {
+
+  protected:
+    int l_;
+
+     mpreal R_l(const double x) const {
+       Factorial f;
+       mpreal sum = 0.0;
+       for (int i = 0; i <= l_; ++i) {
+         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
+       }
+       return sum;
+     }
+
+  public:
+
+     Modified_Spherical_Bessel_Iexp(const int l) : l_(l) {}
+     ~Modified_Spherical_Bessel_Iexp() {}
+
+     mpreal compute(const double x) const {
+       const mpreal half = "0.5";
+       const mpreal one = "1.0";
+       Factorial f;
+       if (x < 1e-7) {
+         return (one - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
+       } else if (x > 16) {
+         return half * R_l(-x) / x;
+       } else {
+         return half * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
+       }
+     }
+
+};
+
 class BesselI {
   protected:
 
