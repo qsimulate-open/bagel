@@ -122,7 +122,7 @@ class K2ext {
       // so far MOInt can be called for 2-external K integral and all-internals.
       if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
         throw std::logic_error("MOInt called with wrong blocks");
-      data_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+      data_ = std::make_shared<Tensor<T>>(blocks_, false);
       form_4index(generate_list());
     }
 
@@ -148,23 +148,23 @@ class MOFock {
       // for simplicity, I assume that the Fock matrix is formed at once (may not be needed).
       assert(b.size() == 2 && b[0] == b[1]);
 
-      data_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
-      hcore_ = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+      data_  = std::make_shared<Tensor<T>>(blocks_, false);
+      hcore_ = std::make_shared<Tensor<T>>(blocks_, false);
 
       std::shared_ptr<const Matrix> hcore = ref_->hcore();
 
-      std::shared_ptr<Matrix> den;
-      if (ref_->nact() == 0) {
-        den = ref_->coeff()->form_density_rhf(ref_->nclosed());
-      } else {
-        std::shared_ptr<const Matrix> tmp = ref_->rdm1(r->target())->rdm1_mat(ref_->nclosed(), true);
-        // slice of coeff
-        std::shared_ptr<const Matrix> c = ref_->coeff()->slice(0, ref_->nocc());
-        // transforming to AO basis
-        den = std::shared_ptr<Matrix>(new Matrix(*c * *tmp ^ *c));
+      std::shared_ptr<const Matrix> fock1;
+      {
+        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice(0, r->nocc());
+        if (r->nact()) {
+          Matrix tmp(r->nact(), r->nact());
+          std::copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
+          tmp.sqrt();
+          tmp.scale(1.0/std::sqrt(2.0));
+          weighted_coeff->copy_block(0, r->nclosed(), coeff_->ndim(), r->nact(), *coeff_->slice(r->nclosed(), r->nocc()) * tmp);
+        }
+        fock1 = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
       }
-
-      std::shared_ptr<const Matrix> fock1(new Fock<1>(ref_->geom(), hcore, den, r->schwarz()));
       const Matrix forig = *r->coeff() % *fock1 * *r->coeff();
 
       // if closed/virtual orbitals are present, we diagonalize the fock operator within this subspace
@@ -221,7 +221,7 @@ class Ci {
       assert(b.size() == 1);
 
       // form ci coefficient tensor
-      rdm0deriv_  = std::shared_ptr<Tensor<T>>(new Tensor<T>(blocks_, false));
+      rdm0deriv_  = std::make_shared<Tensor<T>>(blocks_, false);
 
       for (auto& i0 : blocks_[0]) {
         const size_t size = i0.size();
