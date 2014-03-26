@@ -522,7 +522,7 @@ class ProjectionInt {
                 }
                 const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
                 const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-                sld += smu * static_cast<double>(std::pow(r, lk + 1)) * (exponential.toDouble() * sbessel);
+                sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
               }
               ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
             }
@@ -555,7 +555,7 @@ class ECP_Type2 {
     mpreal compute(const mpreal r) {
       const double projABr = projAB_->compute(r.toDouble());
       const double projCBr = projCB_->compute(r.toDouble());
-      return static_cast<mpreal>(projABr * pow(r, nkl_ + 2) * exp(-zetakl_ * r * r) * projCBr);
+      return static_cast<mpreal>(projABr * pow(r, nkl_ + 2) * exp(-zetakl_ * r * r) * projCBr * r * r);
     }
 
 };
