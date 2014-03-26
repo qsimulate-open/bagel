@@ -580,7 +580,7 @@ class SpinFreeMethod {
 
       // rdm ci derivatives.
       if (ref_->ciwfn()) {
-        std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv();
+        std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_};
         rdm1deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -603,7 +603,7 @@ class SpinFreeMethod {
       }
 
       if (ref_->ciwfn()) {
-        std::shared_ptr<const Dvec> rdm2d = r->rdm2deriv();
+        std::shared_ptr<const Dvec> rdm2d = r->rdm2deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_};
         rdm2deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -631,7 +631,7 @@ class SpinFreeMethod {
       }
 
       if (ref_->ciwfn()) {
-        std::shared_ptr<const Dvec> rdm3d = r->rdm3deriv();
+        std::shared_ptr<const Dvec> rdm3d = r->rdm3deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
         rdm3deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -664,7 +664,7 @@ class SpinFreeMethod {
         }
       }
       if (ref_->ciwfn()) {
-        std::shared_ptr<const Dvec> rdm4d = r->rdm4deriv();
+        std::shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_, active_, active_};
         rdm4deriv_ = std::make_shared<Tensor<T>>(o, false);

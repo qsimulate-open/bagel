@@ -107,11 +107,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 }
 
 
-shared_ptr<Dvec> FCI::rdm1deriv() const {
+shared_ptr<Dvec> FCI::rdm1deriv(const int target) const {
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);
+  shared_ptr<Civec> cbra = cc_->data(target);
 
   // 1RDM ci derivative
   // <I|E_ij|0>
@@ -125,11 +125,11 @@ shared_ptr<Dvec> FCI::rdm1deriv() const {
 }
 
 
-shared_ptr<Dvec> FCI::rdm2deriv() const {
+shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);
+  shared_ptr<Civec> cbra = cc_->data(target);
 
   // make  <I|E_ij|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
@@ -160,10 +160,10 @@ shared_ptr<Dvec> FCI::rdm2deriv() const {
 }
 
 
-shared_ptr<Dvec> FCI::rdm3deriv() const {
+shared_ptr<Dvec> FCI::rdm3deriv(const int target) const {
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);
+  shared_ptr<Civec> cbra = cc_->data(target);
 
   // first make <I|i+j|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
@@ -222,10 +222,10 @@ shared_ptr<Dvec> FCI::rdm3deriv() const {
 }
 
 
-shared_ptr<Dvec> FCI::rdm4deriv() const {
+shared_ptr<Dvec> FCI::rdm4deriv(const int target) const {
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
-  shared_ptr<Civec> cbra = cc_->data(0);
+  shared_ptr<Civec> cbra = cc_->data(target);
 
   // first make <I|i+j|0>
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
