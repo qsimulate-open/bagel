@@ -88,6 +88,8 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor<T>> rdm3deriv_;
     std::shared_ptr<Tensor<T>> rdm4deriv_;
 
+    std::shared_ptr<Tensor<T>> sigma_;
+
     std::chrono::high_resolution_clock::time_point time_;
 
     // the diagonal denominator
@@ -131,6 +133,29 @@ class SpinFreeMethod {
       }
       std::cout << "    - Zeroth order energy: " << std::setw(20) << std::setprecision(10) << sum << std::endl;
       return sum;
+    }
+
+
+    // sigma is defined as Trace(f(x,x), rdm1derivative(x,x))
+    std::shared_ptr<Tensor<T>> compute_sigma() {
+      if (ref_->nact() != 0 && !(static_cast<bool>(f1_) && static_cast<bool>(rdm1deriv_)))
+        throw std::logic_error("SpinFreeMethod::compute_sigma was called before f1_ or rdm1deriv_ was computed. Strange.");
+      std::shared_ptr<Tensor<T>> out = rdm0deriv_->copy();
+      for (auto& i1 : active_) {
+        for (auto& i0 : active_) {
+          for (auto& ci0 : ci_) {
+            const size_t size = ci0.size();
+            std::unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+            std::unique_ptr<double[]> rdata = rdm1deriv_->get_block(i0, i1);
+            std::unique_ptr<double[]> data(new double[size]);
+            dgemm_("T", "N", 1, ci0.size(), i0.size()*i1.size(),
+                    1.0, fdata, i0.size()*i1.size(), rdata, i0.size()*i1.size(), 1.0, data, 1);
+            out->put_block(data, ci0);
+          }
+        }
+      }
+
+      return out;
     }
 
     std::shared_ptr<const Denom> denom_;
@@ -823,6 +848,7 @@ class SpinFreeMethod {
 
       // set e0
       e0_ = compute_e0();
+      sigma_ = compute_sigma();
     }
 
     IndexRange& virt() { return virt_; }
@@ -836,6 +862,7 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
+    std::shared_ptr<Tensor<T>> sigma() const { return sigma_; }
 
     virtual void solve() = 0;
 
