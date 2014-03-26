@@ -41,8 +41,10 @@ namespace SMITH {
 namespace CAS_all_active{
 
 template <typename T>
-class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
+class CAS_all_active : public SpinFreeMethod<T> {
   protected:
+    using SpinFreeMethod<T>::ref_;
+
     std::shared_ptr<Tensor<T>> t2;
     std::shared_ptr<Tensor<T>> r;
     double e0_;
@@ -191,7 +193,7 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
     };
 
   public:
-    CAS_all_active(std::shared_ptr<const Reference> ref) : SpinFreeMethod<T>(ref), SMITH_info() {
+    CAS_all_active(std::shared_ptr<const SMITH_Info> ref) : SpinFreeMethod<T>(ref) {
       this->eig_ = this->f1_->diag();
       t2 = this->v2_->clone();
       e0_ = this->e0();
@@ -206,7 +208,7 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
     void solve() {
       this->print_iteration();
       int iter = 0;
-      for ( ; iter != maxiter_; ++iter) {
+      for ( ; iter != ref_->maxiter(); ++iter) {
         std::pair<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> q = make_queue_();
         std::shared_ptr<Queue<T>> queue = q.first;
         std::shared_ptr<Queue<T>> energ = q.second;
@@ -218,9 +220,9 @@ class CAS_all_active : public SpinFreeMethod<T>, SMITH_info {
         r->zero();
         const double en = energy(energ);
         this->print_iteration(iter, en, err);
-        if (err < thresh_residual()) break;
+        if (err < ref_->thresh()) break;
       }
-      this->print_iteration(iter == maxiter_);
+      this->print_iteration(iter == ref_->maxiter());
     };
 
     double energy(std::shared_ptr<Queue<T>> energ) {

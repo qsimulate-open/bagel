@@ -27,14 +27,11 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
-#include <stddef.h>
 #include <src/smith/prim_op.h>
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/denom.h>
-#include <src/math/matrix.h>
-#include <src/fci/dvec.h>
-#include <src/wfn/reference.h>
+#include <src/smith/smith_info.h>
 #include <src/prop/multipole.h>
 #include <src/grad/cphf.h>
 #include <chrono>
@@ -64,7 +61,7 @@ class SpinFreeMethod {
     std::shared_ptr<const IndexRange> rclosed_;
     std::shared_ptr<const IndexRange> rci_;
 
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const SMITH_Info> ref_;
 
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<const Civec> civec_;
@@ -524,7 +521,7 @@ class SpinFreeMethod {
     }
 
   public:
-    SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
+    SpinFreeMethod(std::shared_ptr<const SMITH_Info> r) : ref_(r) {
       const int max = 10;
       IndexRange c(r->nclosed(), max);
       IndexRange act(r->nact(), max, c.nblock(), c.size());
@@ -829,7 +826,7 @@ class SpinFreeMethod {
     IndexRange& all() { return all_; }
     IndexRange& closed() { return closed_; }
 
-    std::shared_ptr<const Reference>& ref() { return ref_; };
+    std::shared_ptr<const SMITH_Info> ref() const { return ref_; }
 
     std::shared_ptr<const Civec> civec() const { return civec_; }
 

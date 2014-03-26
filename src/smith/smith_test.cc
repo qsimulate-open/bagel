@@ -36,17 +36,17 @@ using namespace std;
 // called from the main function
 void smith_test(shared_ptr<Reference> r) {
   {
-    MP2_Ref<Storage_Incore> mp2(r);
+    MP2_Ref<Storage_Incore> mp2(make_shared<SMITH_Info>(r, make_shared<PTree>()));
     mp2.solve();
   }
 
   {
-    MP2::MP2<Storage_Incore> _mp2(r);
+    MP2::MP2<Storage_Incore> _mp2(make_shared<SMITH_Info>(r, make_shared<PTree>()));
     _mp2.solve();
   }
   // in order to see if it compiles
   if (false) {
-    CAS_all_active::CAS_all_active<Storage_Incore> cas(r);
+    CAS_all_active::CAS_all_active<Storage_Incore> cas(make_shared<SMITH_Info>(r, make_shared<PTree>()));
   }
 }
 

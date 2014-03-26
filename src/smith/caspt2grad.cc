@@ -206,7 +206,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
   auto dmr = make_shared<Matrix>(*dm1);
 
-  // TODO they are redundant, though...
   shared_ptr<const DFFullDist> full = halfj->compute_second_transform(coeff_);
   shared_ptr<const DFFullDist> fullo = halfj->compute_second_transform(ocmat);
 
