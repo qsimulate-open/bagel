@@ -79,27 +79,27 @@ shared_ptr<const Dvec> Reference::civectors() const {
 }
 
 
-shared_ptr<Dvec> Reference::rdm1deriv() const {
+shared_ptr<Dvec> Reference::rdm1deriv(const int istate) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm1deriv();
+  return fci.rdm1deriv(istate);
 }
 
 
-shared_ptr<Dvec> Reference::rdm2deriv() const {
+shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm2deriv();
+  return fci.rdm2deriv(istate);
 }
 
 
-shared_ptr<Dvec> Reference::rdm3deriv() const {
+shared_ptr<Dvec> Reference::rdm3deriv(const int istate) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm3deriv();
+  return fci.rdm3deriv(istate);
 }
 
 
-shared_ptr<Dvec> Reference::rdm4deriv() const {
+shared_ptr<Dvec> Reference::rdm4deriv(const int istate) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm4deriv();
+  return fci.rdm4deriv(istate);
 }
 
 
