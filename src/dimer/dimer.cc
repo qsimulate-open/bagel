@@ -559,7 +559,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       tie(ignore, Vt) = projector.svd(singulars.data());
 
       cout << "    - largest singular value: " << singulars[0] << ", smallest: " << singulars[norb-1] << endl;
-      cout << "    - norb: " << norb << ", sum of highest singular values: " << accumulate(singulars.begin(), singulars.end(), 0.0) << endl;
+      cout << "    - norb: " << norb << ", sum of highest singular values: " << accumulate(singulars.begin(), singulars.begin()+norb, 0.0) << endl;
 
       subspace = subspace ^ *Vt;
 

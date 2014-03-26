@@ -23,6 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <algorithm>
+
 #include <src/molecule/overlap.h>
 #include <src/math/jacobi.h>
 #include <src/molecule/localization.h>
@@ -281,7 +283,7 @@ void PMLocalization::common_init(vector<int> sizes) {
       if (basisstart != nbasis)
         region_bounds_.emplace_back(basisstart, nbasis);
     }
-    if (natoms != geom_->natom()) {
+    if ( natoms != count_if(geom_->atoms().begin(), geom_->atoms().end(), [](const shared_ptr<const Atom> a){return !a->dummy();}) ) {
       throw logic_error("All atoms must be assigned to regions");
     }
   }
