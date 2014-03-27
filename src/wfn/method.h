@@ -57,7 +57,9 @@ class Method {
     virtual void compute() = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
 
-    std::shared_ptr<const Geometry> geom() const { return geom_; };
+    std::shared_ptr<const PTree> idata() const { return idata_; }
+    std::shared_ptr<const Reference> ref() const { return ref_; }
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
 
 };
 

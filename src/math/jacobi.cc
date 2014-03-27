@@ -102,7 +102,11 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   for (auto& ibounds : atom_bounds_) {
     const int natombasis = ibounds.second - ibounds.first;
 
-    dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
+    if (lowdin_)
+      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
+                              mos->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), norb_);
+    else
+      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
                               Q_->element_ptr(ibounds.first, nstart_), nbasis_, 0.0, P_A->data(), norb_);
 
     for (int ipair = 0; ipair < npairs; ++ipair) {

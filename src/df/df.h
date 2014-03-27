@@ -39,7 +39,7 @@ namespace bagel {
 class DFHalfDist;
 class DFFullDist;
 
-class DFDist : public bagel::ParallelDF {
+class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
@@ -210,7 +210,6 @@ class DFFullDist : public ParallelDF {
 
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
-    void symmetrize();
     void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
     // 2RDM contractions

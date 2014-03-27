@@ -77,6 +77,7 @@ class ParallelDFit : public std::enable_shared_from_this<ParallelDFit<DataType,M
 
     void ax_plus_y(const double a, const std::shared_ptr<const ParallelDFit<DataType,MatrixType,BlockType>> o);
     void scale(const double a);
+    void symmetrize();
 
     std::shared_ptr<MatrixType> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 

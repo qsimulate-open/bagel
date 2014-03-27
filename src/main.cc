@@ -184,7 +184,7 @@ throw logic_error("broken!");
         else throw runtime_error("Unrecognized orbital localization method");
 
         shared_ptr<const Coeff> new_coeff = make_shared<const Coeff>(*localization->localize());
-        ref = make_shared<const Reference>(ref, new_coeff);
+        ref = make_shared<const Reference>(*ref, new_coeff);
 
       } else if (title == "print") {
 

@@ -55,7 +55,7 @@ class MOFile {
 
     std::shared_ptr<DFHalfDist> mo2e_1ext_;
 
-    std::shared_ptr<const Coeff> coeff_;
+    std::shared_ptr<const Matrix> coeff_;
 
     int address_(int i, int j) const { assert(i <= j); return i+((j*(j+1))>>1); }
 
@@ -72,7 +72,7 @@ class MOFile {
 
   public:
     MOFile(const std::shared_ptr<const Reference>, const std::string method = std::string("KH"));
-    MOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Coeff>, const std::string method = std::string("KH"));
+    MOFile(const std::shared_ptr<const Reference>, const std::shared_ptr<const Matrix>, const std::string method = std::string("KH"));
     // Shortcut used in MEH
     MOFile(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : nocc_(mo1e->nocc()), mo1e_(mo1e), mo2e_(mo2e) {}
 
@@ -103,7 +103,7 @@ class MOFile {
     const double* mo1e_ptr() const { return mo1e_->data(); }
     const double* mo2e_ptr() const { return mo2e_->data(); }
 
-    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 
     bool hz() const { return hz_; }
     const int nocc() const { return nocc_; }
@@ -123,7 +123,7 @@ class Jop : public MOFile {
     std::shared_ptr<const Matrix> compute_mo1e(const int, const int) override;
     std::shared_ptr<const Matrix> compute_mo2e(const int, const int) override;
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Coeff> e, const std::string f = std::string("KH"))
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> e, const std::string f = std::string("KH"))
       : MOFile(b,e,f) { init(c, d); }
     Jop(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : MOFile(mo1e, mo2e) {}
 };

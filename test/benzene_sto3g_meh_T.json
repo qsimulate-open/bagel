@@ -68,7 +68,8 @@
   "localization" : {
     "max_iter" : 50,
     "thresh" : 1.0e-8
-  }
+  },
+  "scheme" : "localize_first"
 },
 
 {
@@ -83,7 +84,7 @@
   "fci" : {
     "thresh" : 1.0e-14,
     "algorithm" : "hz",
-    "nguess" : 50
+    "nguess" : 400
   },
   "nstates" : 2
 }

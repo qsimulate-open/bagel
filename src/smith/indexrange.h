@@ -103,6 +103,10 @@ class IndexRange {
     std::vector<Index>::iterator end() { return range_.end(); }
     std::vector<Index>::const_iterator begin() const { return range_.begin(); }
     std::vector<Index>::const_iterator end() const { return range_.end(); }
+    Index& front() { return range_.front(); }
+    Index& back() { return range_.back(); }
+    const Index& front() const { return range_.front(); }
+    const Index& back() const { return range_.back(); }
 
     int nblock() const { return range_.size(); }
     int size() const { return size_; }

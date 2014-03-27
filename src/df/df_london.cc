@@ -242,12 +242,6 @@ shared_ptr<DFFullDist_London> DFFullDist_London::clone() const {
 }
 
 
-void DFFullDist_London::symmetrize() {
-  for (auto& i : block_)
-    i->symmetrize();
-}
-
-
 void DFFullDist_London::rotate_occ1(const std::shared_ptr<const ZMatrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)

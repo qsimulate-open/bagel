@@ -71,8 +71,7 @@ static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T
 
 
 template <int i, int j, int an, int ad, int fn, int fd, class T>
-static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
-                         const int b, const int a) { // according to unsorted
+static void sort_indices(const T* unsorted, T* sorted, const int b, const int a) { // according to unsorted
   static_assert(ad != 0 && fd != 0, "sort_indices, prefactor");
   const T afac = static_cast<T>(an) /static_cast<T>(ad);
   const T factor = static_cast<T>(fn) /static_cast<T>(fd);
@@ -93,6 +92,13 @@ static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T
     }
     assert(iall == b*a);
   }
+}
+
+
+template<int i, int j, int an, int ad, int fn, int fd, class T>
+static void sort_indices(const std::unique_ptr<T[]>& unsorted, std::unique_ptr<T[]>& sorted,
+                         const int c,const int b) { // according to unsorted
+  sort_indices<i,j,an,ad,fn,fd>(unsorted.get(), sorted.get(), c, b);
 }
 
 

@@ -161,7 +161,7 @@ void CASSCF::resume_stdcout() {
 }
 
 
-shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<RDM<1>> rdm1, const bool inactive_only) const {
+shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool inactive_only) const {
   // first make 1RDM in MO
   const size_t nmobasis = coeff_->mdim();
   auto mo_rdm1 = make_shared<Matrix>(nmobasis, nmobasis);
@@ -190,21 +190,16 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   {
     // Fock operators
-    if (nclosed_) {
-      shared_ptr<Matrix> deninact = ao_rdm1(fci_->rdm1_av(), true); // true means inactive_only
-      finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
+    // make a matrix that contains rdm1_av
+    auto rdm1mat = make_shared<Matrix>(nact_, nact_);
+    copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+    rdm1mat->sqrt();
+    rdm1mat->scale(1.0/sqrt(2.0));
+    auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
 
-      shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
-      auto denact = make_shared<Matrix>(*denall-*deninact);
-      auto fact_ao = make_shared<Fock<1>>(geom_, hcore_, denact, schwarz_);
-      f = make_shared<Matrix>(*finact + *coeff_%(*fact_ao-*hcore_)**coeff_);
-    } else {
-      shared_ptr<Matrix> denall = ao_rdm1(fci_->rdm1_av());
-      auto f_ao = make_shared<Fock<1>>(geom_, hcore_, denall, schwarz_);
-      f = make_shared<Matrix>(*coeff_ % *f_ao * *coeff_);
-
-      finact = make_shared<Matrix>(*coeff_ % *hcore_ * *coeff_);
-    }
+    finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
+    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+    f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
@@ -293,10 +288,34 @@ shared_ptr<Matrix> CASSCF::form_natural_orbs() {
 }
 
 
+shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
+  auto rdm1mat = make_shared<Matrix>(nact_, nact_);
+  copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+  rdm1mat->sqrt();
+  rdm1mat->scale(1.0/sqrt(2.0));
+  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : nullptr;
+  auto acoeff = coeff_->slice(nclosed_, nocc_);
+  auto vcoeff = coeff_->slice(nocc_, nbasis_);
+
+  unique_ptr<double[]> eig(new double[coeff_->mdim()]);
+  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+  Matrix trans(nbasis_, nbasis_);
+  trans.unit();
+  if (nclosed_) {
+    Matrix ofock = *ocoeff % fock * *ocoeff;
+    ofock.diagonalize(eig.get());
+    trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
+  }
+  Matrix vfock = *vcoeff % fock * *vcoeff;
+  vfock.diagonalize(eig.get());
+  trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
+  return make_shared<Coeff>(*coeff_ * trans);
+}
+
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   auto out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy(),
-                                    fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av());
+                                    fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 
   // TODO
   // compute one-boedy operators

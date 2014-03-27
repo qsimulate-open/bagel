@@ -213,7 +213,6 @@ class DFFullDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFB
 
     std::shared_ptr<DFHalfDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
-    void symmetrize();
     void rotate_occ1(const std::shared_ptr<const ZMatrix> d);
 
 /*

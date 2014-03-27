@@ -245,12 +245,6 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::symmetrize() {
-  for (auto& i : block_)
-    i->symmetrize();
-}
-
-
 void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)

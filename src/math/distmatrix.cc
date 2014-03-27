@@ -119,19 +119,19 @@ void DistMatrix::diagonalize(double* eig) {
   double wsize;
   int liwork = 1;
   int info;
-  pdsyevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), &wsize, -1, &liwork, 1, info);
+  pdsyevd_("V", "L", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), &wsize, -1, &liwork, -1, info);
   unique_ptr<int[]> iwork(new int[liwork]);
   wsize =  max(131072.0, wsize*2.0);
 
   const int lwork = round(wsize);
   unique_ptr<double[]> work(new double[lwork]);
-  pdsyevd_("V", "U", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
+  pdsyevd_("V", "L", n, local_.get(), desc_.data(), eig, tmp.local_.get(), tmp.desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
   if (info) throw runtime_error("pdsyevd failed in DistMatrix");
 
   // seems MKL does not broadcast for tiny matrices..
   if (n <= blocksize__) mpi__->broadcast(eig, n, 0);
 
-  *this = tmp;
+  *this = move(tmp);
 }
 
 struct RotateTask {

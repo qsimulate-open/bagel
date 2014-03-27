@@ -216,11 +216,11 @@ class Tensor {
       data_->zero();
     }
 
-    std::unique_ptr<double[]> diag() {
+    std::vector<double> diag() {
       if (rank_ != 2 || range_[0] != range_[1])
         throw std::logic_error("Tensor::diag can be called only with a square tensor of rank 2");
-      const size_t size = range_[0].size();
-      std::unique_ptr<double[]> buf(new double[size]);
+      const size_t size = range_[0].back().offset() + range_[0].back().size();
+      std::vector<double> buf(size);
       for (auto& i : range_[0]) {
         std::unique_ptr<double[]> data0 = move_block(i, i);
         for (int j = 0; j != i.size(); ++j) {
@@ -228,7 +228,7 @@ class Tensor {
         }
         put_block(data0, i, i);
       }
-      return std::move(buf);
+      return buf;
     }
 
 
@@ -255,17 +255,50 @@ class Tensor {
     std::shared_ptr<Matrix> matrix() const {
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 2);
-      int dim1 = 0;
-      for (auto& i1 : o[1].range()) dim1 += i1.size();
-      int dim0 = 0;
-      for (auto& i0 : o[0].range()) dim0 += i0.size();
+      const int dim0 = o[0].size();
+      const int dim1 = o[1].size();
+      const int off0 = o[0].front().offset();
+      const int off1 = o[1].front().offset();
 
       auto out = std::make_shared<Matrix>(dim0, dim1);
 
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
           std::unique_ptr<double[]> target = get_block(i0, i1);
-          out->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), target);
+          out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target);
+        }
+      }
+      return out;
+    }
+
+
+    // TODO parallelization
+    std::shared_ptr<Matrix> matrix2() const {
+      const std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 4);
+
+      const int dim0 = o[0].size();
+      const int dim1 = o[1].size();
+      const int dim2 = o[2].size();
+      const int dim3 = o[3].size();
+      const int off0 = o[0].front().offset();
+      const int off1 = o[1].front().offset();
+      const int off2 = o[2].front().offset();
+      const int off3 = o[3].front().offset();
+
+      auto out = std::make_shared<Matrix>(dim0*dim1,dim2*dim3);
+      for (auto& i3 : o[3].range()) {
+        for (auto& i2 : o[2].range()) {
+          for (auto& i1 : o[1].range()) {
+            for (auto& i0 : o[0].range()) {
+              std::unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
+              const double* ptr = target.get();
+              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
+                    std::copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
+            }
+          }
         }
       }
       return out;
@@ -385,9 +418,44 @@ class Tensor {
                       if (fabs(data[iall]) > thresh) {
                          std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
                                         " " << std::setw(4) << j2 << " " << std::setw(4) << j3 <<
-                                        " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+                                        " " << std::setprecision(10) << std::setw(15) << std::fixed << data[(j0-i0.offset())+i0.size()*((j1-i1.offset())+i1.size()*((j2-i2.offset())+i2.size()*((j3-i3.offset()))))] << std::endl;  // testing
+                                        //" " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
                       }
                     }
+            }
+          }
+        }
+      }
+      std::cout << "======================================" << std::endl << std::endl;
+    }
+
+    void print5(std::string label, const double thresh = 5.0e-2) {
+      std::cout << std::endl << "======================================" << std::endl;
+      std::cout << " > debug print out " << label << std::endl << std::endl;
+
+      std::vector<IndexRange> o = indexrange();
+      assert(o.size() == 5);
+      for (auto& i4 : o[4].range()) {
+        for (auto& i3 : o[3].range()) {
+          for (auto& i2 : o[2].range()) {
+            for (auto& i1 : o[1].range()) {
+              for (auto& i0 : o[0].range()) {
+                // if this block is not included in the current wave function, skip it
+                if (!this->get_size(i0, i1, i2, i3, i4)) continue;
+                std::unique_ptr<double[]> data = this->get_block(i0, i1, i2, i3, i4);
+                size_t iall = 0;
+                for (int j4 = i4.offset(); j4 != i4.offset()+i4.size(); ++j4)
+                   for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                     for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                       for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                         for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                           if (fabs(data[iall]) > thresh) {
+                              std::cout << "   " << std::setw(4) << j0 << " " << std::setw(4) << j1 <<
+                                             " " << std::setw(4) << j2 << " " << std::setw(4) << j3 << " " << std::setw(4) << j4 <<
+                                             " " << std::setprecision(10) << std::setw(15) << std::fixed << data[iall] << std::endl;
+                           }
+                         }
+              }
             }
           }
         }

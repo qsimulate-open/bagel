@@ -159,8 +159,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<const Matrix> distmatrix() const;
     std::shared_ptr<Matrix> matrix() { return shared_from_this(); }
     std::shared_ptr<const Matrix> matrix() const { return shared_from_this(); }
-    std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
+    std::shared_ptr<const Matrix> form_density_rhf(const int n, const int off = 0) const;
 };
 
 

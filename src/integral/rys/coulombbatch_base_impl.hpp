@@ -111,7 +111,7 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
         const DataType T = cxp * (PCx * PCx + PCy * PCy + PCz * PCz);
         const double sqrtt = sqrt(std::abs(T));
         const double ss = - coeff_real * pow(4.0 * ab * onepi2, 0.75) * (std::abs(T) > 1.0e-15 ? sqrtpi * erf(sqrtt) / sqrtt * 0.5 : 1.0);
-        if (ss > integral_thresh && !(*aiter)->finite_nucleus()) { // TODO reorganize loops
+        if (std::abs(ss) > integral_thresh && !(*aiter)->finite_nucleus()) { // TODO reorganize loops
           T_[index] = T;
           screening_[screening_size_] = index;
           ++screening_size_;

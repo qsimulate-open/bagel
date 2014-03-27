@@ -35,6 +35,7 @@
 #include <src/casscf/supercigrad.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2grad.h>
+#include <src/smith/caspt2grad.h>
 
 // T should have
 // o Constructor with the input and geometry
@@ -82,6 +83,7 @@ template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
 template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
 template<> std::shared_ptr<GradFile> GradEval<DMP2Grad>::compute();
+template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();
 
 }
 

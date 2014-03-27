@@ -29,18 +29,23 @@
 #include <src/smith/CAS_all_active.h>
 #include <src/smith/CAS_test.h>
 
+
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   string method = idata_->get<string>("method", "mp2");
+
+  // make a smith_info class
+  auto info = make_shared<SMITH_Info>(r, idata);
+
   if (method == "mp2") {
-    algo_ = make_shared<MP2::MP2<Storage_Incore>>(ref_);
+    algo_ = make_shared<MP2::MP2<Storage_Incore>>(info);
   } else if (method == "caspt2") {
-    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(ref_);
+    algo_ = make_shared<CAS_all_active::CAS_all_active<Storage_Incore>>(info);
   } else if (method == "caspt2-test") {
-    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(ref_);
+    algo_ = make_shared<CAS_test::CAS_test<Storage_Incore>>(info);
   } else {
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
@@ -50,18 +55,25 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 void Smith::compute() {
   algo_->solve();
 
-  shared_ptr<const Matrix> dm1 = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1();
-  dm1->print("dm1", 20);
-  cout << dm1->ndim() << " " << dm1->mdim() << endl;
+  // TODO toggle by something better than this.
+  auto algop = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_);
+  if (algop) {
+    dm1_ = algop->rdm1();
+    dm2_ = algop->rdm2();
 
-  // calculate unrelaxed dipole moment from dm
-  double correction = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->rdm1_correction();
-  algo_->dipole(dm1,correction).compute();
+    // calculate unrelaxed dipole moment from correlated dm
+    correction_ = algop->rdm1_correction();
 
-  // convert ci derivative tensor to civec
-  shared_ptr<const Civec> cider = dynamic_pointer_cast<CAS_test::CAS_test<Storage_Incore>>(algo_)->ci_deriv();
-  std::cout << "  * Printing ci derivative civec:" << std::endl;
-  cider->print(0.1e-15);
-  std::cout << "  * Printing civec ci derivative * cI =     " <<  std::setprecision(10) << cider->dot_product(*(algo_->civec())) << std::endl;
+    // convert ci derivative tensor to civec
+    cider_ = algop->ci_deriv();
 
+    // todo check
+    coeff_ = algop->coeff();
+
+#if 0
+    cout << "  * Printing ci derivative civec:" << endl;
+    cider_->print(0.1e-15);
+    cout << "  * Printing civec ci derivative * cI =     " <<  setprecision(10) << cider_->dot_product(*(algo_->rdm0deriv())) << endl;
+#endif
+  }
 }

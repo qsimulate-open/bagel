@@ -94,6 +94,13 @@ void ParallelDFit<DataType,MatrixType,BlockType>::scale(const double a) {
 
 
 template <typename DataType, typename MatrixType, typename BlockType>
+void ParallelDFit<DataType,MatrixType,BlockType>::symmetrize() {
+  for (auto& i : block_)
+    i->symmetrize();
+}
+
+
+template <typename DataType, typename MatrixType, typename BlockType>
 void ParallelDFit<DataType,MatrixType,BlockType>::add_block(std::shared_ptr<BlockType> o) {
   block_.push_back(o);
 }
