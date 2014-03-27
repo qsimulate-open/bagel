@@ -126,6 +126,8 @@ void CASPT2Grad::compute() {
   shared_ptr<Matrix> dtot = d0->copy();
   dtot->ax_plus_y(1.0, dm);
   dtot->ax_plus_y(1.0, d1);
+  if (ncore_ && ncore_ < nclosed)
+    dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
   // form zdensity
   auto detex = make_shared<Determinants>(fci_->norb(), fci_->nelea(), fci_->neleb(), false, /*mute=*/true);
@@ -175,10 +177,9 @@ void CASPT2Grad::compute() {
   shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
 
   // separable part
-  // size of naux
-  {
-    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(*coeff_ * *d0 ^ *coeff_);
-    shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff_ * *d1 ^ *coeff_);
+  auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
+    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(*ocoeff * *d0occ ^ *ocoeff);
+    shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff_ * *d1bas ^ *coeff_);
     shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
     shared_ptr<const Matrix> cd1 = geom_->df()->compute_cd(d1ao);
 
@@ -187,14 +188,19 @@ void CASPT2Grad::compute() {
     vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
-    sepd->rotate_occ(ref_->rdm1_mat(target_)); // d0 in occ-occ size
+    sepd->rotate_occ(d0occ);
 
     qrs->ax_plus_y(-1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
     qrs->add_direct_product(cd, dd, 1.0);
 
     *qq += (*cd0 ^ *cd1) * 2.0;
     *qq += *halfjj->form_aux_2index(sepd, -1.0);
-  }
+  };
+
+  separable_pair(ref_->rdm1_mat(target_), d1);
+
+  if (ncore_ && ncore_ < nclosed)
+    separable_pair(smallz, dsa);
 
   // compute gradients
   GradEval_base g(geom_);
