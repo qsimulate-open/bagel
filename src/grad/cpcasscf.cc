@@ -88,7 +88,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
 }
 
 
-tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>>
+tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>, shared_ptr<const Matrix>>
   CPCASSCF::solve(const double zthresh, const int zmaxiter) {
 
   // RI determinant space
@@ -98,7 +98,8 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   const size_t nocca = ref_->nocc();
   const int nmobasis = coeff_->mdim();
   const int nclosed = ref_->nclosed();
-  assert(ref_->nact() + nclosed == nocca);
+  const int nact = ref_->nact();
+  assert(nact + nclosed == nocca);
 
   shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocca);
 
@@ -145,25 +146,25 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // gradient Y and y
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
-  if (ncore_)
-    // add frozen core contributions to Y
+  // divide by weight
+  for (int ij = 0; ij != source->second()->ij(); ++ij)
+    source->second()->data(ij)->scale(1.0/fci_->weight(ij));
+  // patch frozen core contributions
+  if (ncore_) {
+    // contributions to Y
     source->first()->ax_plus_y(2.0, *fock * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
-    // add frozen core contributions times weight to y
-     if (int istate = 0; istate != ref_->nstate(); ++istate) {
-       shared_ptr<Dvec> rdm1deriv = fci_->rdm1deriv(istate);
-       for (int i = 0; i != ref_->nact(); ++i)
-         for (int j = 0; j != ref_->nact(); ++j)
-           source->second()->data(j+ref_->nact()*i)->ax_plus_y(fci_->weight(istate)*gzcore->element(j+nclosed, i+nclosed), rdm1deriv);
-     }
+    // contributions to y
+    for (int istate = 0; istate != ref_->nstate(); ++istate) {
+      shared_ptr<const Dvec> rdm1deriv = fci_->rdm1deriv(istate);
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          source->second()->data(istate)->ax_plus_y(gzcore->element(j+nclosed, i+nclosed), rdm1deriv->data(j+nact*i));
+    }
   }
   // antisymmetrize
   source->first()->antisymmetrize();
   source->first()->purify_redrotation(ref_->nclosed(), ref_->nact(), ref_->nvirt());
 
-  // divide by weight
-  for (int ij = 0; ij != source->second()->ij(); ++ij) {
-    source->second()->data(ij)->scale(1.0/fci_->weight(ij));
-  }
   // project out Civector from the gradient
   source->second()->project_out(civector_);
   auto solver = make_shared<LinearRM<PairFile<Matrix, Dvec>>>(zmaxiter, source);
@@ -204,7 +205,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   *xmat += *grad_->first();
   xmat->symmetrize();
   xmat->scale(0.5); // due to convention
-  return make_tuple(result->first(), result->second(), xmat);
+  return make_tuple(result->first(), result->second(), xmat, zcore);
 }
 
 

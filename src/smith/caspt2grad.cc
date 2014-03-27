@@ -54,7 +54,6 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 void CASPT2Grad::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
-  const int nocca = ref_->nocc();
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = fci_->rdm1_av();
@@ -90,7 +89,7 @@ void CASPT2Grad::compute() {
     d2 = smith->dm2();
   }
 
-  const int nocc  = ref_->nocc() - ncore_;
+  const int nocc  = ref_->nocc();
   const int nmobasis = coeff_->mdim();
 
   // d0 including core
@@ -114,11 +113,10 @@ void CASPT2Grad::compute() {
   auto g0 = yrs;
   auto g1 = make_shared<Dvec>(cider, ref_->nstate()); // FIXME this is wrong for nstate > 1 in CASSCF
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-
   auto cp = make_shared<CPCASSCF>(grad, fci_->civectors(), half, halfjj, ref_, fci_, ncore_, coeff_);
-  shared_ptr<const Matrix> zmat, xmat;
+  shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat) = cp->solve(1.0e-10);
+  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-10);
 
   // form relaxed 1RDM
   // form Zd + dZ^+
@@ -262,11 +260,11 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
-      for (int k = 0; k != nocc; ++k)
+      for (int k = ncore_; k != nocc; ++k)
         for (int t = 0; t != nall; ++t) // extend
-          for (int l = 0; l != nocc; ++l) {
+          for (int l = ncore_; l != nocc; ++l) {
             if (t >= nclosed && s >= nclosed) {
-              D1->element(l+nocc*t, k+nocc*s) = dm2->element(l+nocc*(t-nclosed), k+nocc*(s-nclosed));
+              D1->element(l+nocc*t, k+nocc*s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
             }
           }
   }

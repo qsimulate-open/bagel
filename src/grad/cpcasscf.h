@@ -61,7 +61,7 @@ class CPCASSCF {
              std::shared_ptr<const Reference> g, std::shared_ptr<FCI> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
 
     // tuple of Z, z, and X.
-    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>>
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>
       solve(const double thresh, const int maxiter = 100);
 
 };
