@@ -53,7 +53,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<FCI> fci() const { return fci_; }
     int target() const { return target_; }
-    int ncore() const { return ncore(); }
+    int ncore() const { return ncore_; }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 

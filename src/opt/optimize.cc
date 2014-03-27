@@ -111,6 +111,12 @@ void Optimize::compute() {
         throw runtime_error("unknown CASSCF algorithm specified.");
       }
     }
+  } else if (method == "caspt2") {
+
+    auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_);
+    opt->compute();
+    geom_ = opt->geometry();
+
   }
 
 }
