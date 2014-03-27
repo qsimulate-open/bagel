@@ -605,7 +605,7 @@ class CAS_test : public SpinFreeMethod<T>{
       std::cout << " === Calculating cI derivative dE/dcI ===" << std::endl;
       while (!dec->done())
         dec->next_compute();
-      deci->correct_cI_derivative(correlated_norm,sigma_);
+      deci->ax_plus_y(-1.0*correlated_norm, sigma_);
       deci->print1("cI derivative tensor: ", 1.0e-15);
       std::cout << std::endl;
       std::cout << "cI derivative * cI  = " << std::setprecision(10) <<  deci->dot_product(this->rdm0deriv_) << std::endl;
