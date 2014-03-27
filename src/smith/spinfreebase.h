@@ -144,10 +144,9 @@ class SpinFreeMethod {
           for (auto& ci0 : ci_) {
             std::unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
             std::unique_ptr<double[]> rdata = rdm1deriv_->get_block(ci0, i0, i1);
-            const size_t size = ci0.size();
-            std::unique_ptr<double[]> data(new double[size]);
+            std::unique_ptr<double[]> data(new double[ci0.size()*i0.size()*i1.size()]);
             dgemm_("T", "N", 1, ci0.size(), i0.size()*i1.size(),
-                    1.0, fdata, i0.size()*i1.size(), rdata, ci0.size()*i0.size()*i1.size(), 1.0, data, 1);
+                    1.0, fdata, i0.size()*i1.size(), rdata, ci0.size()*i0.size()*i1.size(), 0.0, data, 1);
             out->put_block(data, ci0);
           }
         }
