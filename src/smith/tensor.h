@@ -325,6 +325,13 @@ class Tensor {
     }
 
 
+    void correct_cI_derivative(double norm, std::shared_ptr<Tensor<T>> sigma) {
+      assert(sigma->size() == this->size());
+      // yI = yI - N sigma
+      this->ax_plus_y(-1.0*norm, sigma);
+    }
+
+
     void print1(std::string label, const double thresh = 5.0e-2) {
       std::cout << std::endl << "======================================" << std::endl;
       std::cout << " > debug print out " << label << std::endl << std::endl;
