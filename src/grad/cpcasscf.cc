@@ -203,6 +203,9 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<Matrix> xmat = form_sigma_sym(result, half, fullb, detex, cinv);
 
   *xmat += *grad_->first();
+  // TODO not sure..
+  if (ncore_ && ncore_ < nclosed)
+    xmat->ax_plus_y(2.0, *fock * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
   xmat->symmetrize();
   xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat, zcore);
