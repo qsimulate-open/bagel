@@ -66,6 +66,7 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<const Civec> civec_;
     double e0_;
+    double energy_;
 
     std::shared_ptr<Tensor<T>> v2_;
     std::shared_ptr<Tensor<T>> f1_;
@@ -853,6 +854,8 @@ class SpinFreeMethod {
 
     double e0() const { return e0_; }
     std::shared_ptr<Tensor<T>> sigma() const { return sigma_; }
+
+    double energy() const { return energy_; }
 
     virtual void solve() = 0;
 
