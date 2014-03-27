@@ -53,12 +53,12 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
   auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
   vector<shared_ptr<const Atom>> auxatom;
-  auxatom.push_back(mol->atoms(1));
+  auxatom.push_back(mol->atoms(0));
   auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
   //auxmol->print_atoms();
 
   vector<shared_ptr<const Atom>> refatom;
-  refatom.push_back(geom_->atoms(0));
+  refatom.push_back(geom_->atoms(1));
   auto refgeom = make_shared<const Geometry>(refatom, make_shared<const PTree>());
   refgeom->print_atoms();
 
@@ -81,6 +81,9 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 #if 1
   (mixedSra * S * mixedSsa).print(" < r | a > S^{-1} < a | s > ", 21);
 #endif
+
+  MixedBasis<OverlapBatch> overlap(refgeom, refgeom2);
+  overlap.print(" < r | s > ", 21);
 
 }
 

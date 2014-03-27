@@ -94,13 +94,13 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<RealSH> rsh = std::make_shared<RealSH>(lm, centreB);
   rsh->print();
 
-  std::array<double, 3> centreA = {0.0, 0.0, 0.305956};
+  std::array<double, 3> centreA = {0.0, 0.0, 1.305956};
   std::array<int, 3> angular_momentumA = {0, 0, 0};
   const double alphaA = 1.0;
   std::shared_ptr<CartesianGauss> cargaussA = std::make_shared<CartesianGauss>(alphaA, angular_momentumA, centreA);
   cargaussA->print();
 
-  std::array<double, 3> centreC = {0.0, 0.0, 1.305956};
+  std::array<double, 3> centreC = {0.0, 0.0, 2.305956};
   std::array<int, 3> angular_momentumC = {0, 0, 0};
   const double alphaC = 1.0;
   std::shared_ptr<CartesianGauss> cargaussC = std::make_shared<CartesianGauss>(alphaC, angular_momentumC, centreC);

@@ -40,6 +40,40 @@ class Factorial {
 
 };
 
+class Modified_Spherical_Bessel_Iexp {
+
+  protected:
+    int l_;
+
+     mpreal R_l(const double x) const {
+       Factorial f;
+       mpreal sum = 0.0;
+       for (int i = 0; i <= l_; ++i) {
+         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
+       }
+       return sum;
+     }
+
+  public:
+
+     Modified_Spherical_Bessel_Iexp(const int l) : l_(l) {}
+     ~Modified_Spherical_Bessel_Iexp() {}
+
+     mpreal compute(const double x) const {
+       const mpreal half = "0.5";
+       const mpreal one = "1.0";
+       Factorial f;
+       if (x < 1e-7) {
+         return (one - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
+       } else if (x > 16) {
+         return half * R_l(-x) / x;
+       } else {
+         return half * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
+       }
+     }
+
+};
+
 class SphUSP {
   protected:
     std::array<int, 2> angular_momentum_;
@@ -520,9 +554,10 @@ class ProjectionInt {
                   const std::pair<int, int> lm2(sh_->angular_momentum(0), sh_->angular_momentum(1));
                   smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
                 }
-                const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
-                const double sbessel = boost::math::sph_bessel(static_cast<double>(ld), 2.0 * gauss_->exponent() * dAB * r);
-                sld += smu * static_cast<double>(std::pow(r, lk)) * (exponential.toDouble() * sbessel);
+                const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB - r) * (dAB - r)));
+                Modified_Spherical_Bessel_Iexp msbessel(ld);
+                const mpreal sbessel = msbessel.compute(2.0 * gauss_->exponent() * dAB * r);
+                sld += smu * (pow(r, lk) * exponential * sbessel).toDouble();
               }
               ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
             }
@@ -557,40 +592,6 @@ class ECP_Type2 {
       const double projCBr = projCB_->compute(r.toDouble());
       return static_cast<mpreal>(projABr * pow(r, nkl_ + 2) * exp(-zetakl_ * r * r) * projCBr * r * r);
     }
-
-};
-
-class Modified_Spherical_Bessel_Iexp {
-
-  protected:
-    int l_;
-
-     mpreal R_l(const double x) const {
-       Factorial f;
-       mpreal sum = 0.0;
-       for (int i = 0; i <= l_; ++i) {
-         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
-       }
-       return sum;
-     }
-
-  public:
-
-     Modified_Spherical_Bessel_Iexp(const int l) : l_(l) {}
-     ~Modified_Spherical_Bessel_Iexp() {}
-
-     mpreal compute(const double x) const {
-       const mpreal half = "0.5";
-       const mpreal one = "1.0";
-       Factorial f;
-       if (x < 1e-7) {
-         return (one - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
-       } else if (x > 16) {
-         return half * R_l(-x) / x;
-       } else {
-         return half * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
-       }
-     }
 
 };
 
