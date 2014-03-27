@@ -49,9 +49,9 @@ class MP2_Ref : public SpinFreeMethod<T> {
     std::shared_ptr<Tensor<T>> t2;
     std::shared_ptr<Tensor<T>> r2;
 
-    std::pair<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> make_queue_() {
-      std::shared_ptr<Queue<T>> queue_(new Queue<T>());
-      std::shared_ptr<Queue<T>> energy_(new Queue<T>());
+    std::pair<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>> make_queue() {
+      std::shared_ptr<Queue<T>> queue(new Queue<T>());
+      std::shared_ptr<Queue<T>> energy(new Queue<T>());
 
       std::vector<std::shared_ptr<Tensor<T>>> tensor0 = {r2, this->f1_, t2};
       std::vector<std::shared_ptr<Tensor<T>>> tensor1 = {r2, this->v2_};
@@ -71,16 +71,16 @@ class MP2_Ref : public SpinFreeMethod<T> {
       t4->add_dep(tt2);
       t4->add_dep(t3);
 
-      queue_->add_task(t3);
-      queue_->add_task(t4);
-      queue_->add_task(tt2);
-      queue_->add_task(t1);
-      queue_->add_task(t0);
+      queue->add_task(t3);
+      queue->add_task(t4);
+      queue->add_task(tt2);
+      queue->add_task(t1);
+      queue->add_task(t0);
 
       std::vector<std::shared_ptr<Tensor<T>>> tensor5 = {t2, this->v2_};
       std::shared_ptr<Task5<T>> t5(new Task5<T>(tensor5, index0));
-      energy_->add_task(t5);
-      return make_pair(queue_, energy_);
+      energy->add_task(t5);
+      return make_pair(queue, energy);
     };
 
   public:
@@ -98,16 +98,16 @@ class MP2_Ref : public SpinFreeMethod<T> {
       int iter;
       for (iter = 0; iter != ref_->maxiter(); ++iter) {
 
-        std::pair<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>>  q = make_queue_();
+        std::pair<std::shared_ptr<Queue<T>>, std::shared_ptr<Queue<T>>>  q = make_queue();
         std::shared_ptr<Queue<T>> queue = q.first;
         std::shared_ptr<Queue<T>> eng = q.second;
         while (!queue->done()) queue->next_compute();
 
         this->update_amplitude(t2, r2);
         const double err = r2->rms();
-        energy_ = energy(eng);
+        this->energy_ = energy(eng);
 
-        this->print_iteration(iter, energy_, err);
+        this->print_iteration(iter, this->energy_, err);
         if (err < ref_->thresh()) break;
       }
       this->print_iteration(iter == ref_->maxiter());
