@@ -125,12 +125,12 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // frozen core contributions
   shared_ptr<const Matrix> zcore, gzcore;
-  if (ncore_) {
+  if (ncore_ && ncore_ < nclosed) {
     auto zc = make_shared<Matrix>(nocca, nocca);
     for (int i = 0; i != ncore_; ++i)
-      for (int j = 0; j != nclosed; ++j) {
-        zc->element(j+ncore_, i) = (grad_->first()->element(j+ncore_,i) - grad_->first()->element(i,j+ncore_)) / (fock->element(j+ncore_,j+ncore_) - fock->element(i,i));
-        assert(abs(fock->element(i, j+ncore_)) < 1.0e-8);
+      for (int j = ncore_; j != nclosed; ++j) {
+        zc->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock->element(j,j) - fock->element(i,i));
+        assert(abs(fock->element(i, j)) < 1.0e-8);
       }
     zc->symmetrize();
     zcore = zc;
@@ -150,7 +150,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   for (int ij = 0; ij != source->second()->ij(); ++ij)
     source->second()->data(ij)->scale(1.0/fci_->weight(ij));
   // patch frozen core contributions
-  if (ncore_) {
+  if (ncore_ && ncore_ < nclosed) {
     // contributions to Y
     source->first()->ax_plus_y(2.0, *fock * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
     // contributions to y
