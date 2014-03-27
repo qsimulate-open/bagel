@@ -86,6 +86,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
       d1 = d1tmp2;
     }
     d2 = smith->dm2();
+    energy_ = smith->algo()->energy();
   }
   return make_tuple(d1, d2, cider);
 }
@@ -225,6 +226,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
   gradient->print();
+  // set energy
+  energy_ = task_->energy();
   return gradient;
 }
 
