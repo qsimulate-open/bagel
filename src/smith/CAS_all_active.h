@@ -218,8 +218,8 @@ class CAS_all_active : public SpinFreeMethod<T> {
         this->update_amplitude(t2, r);
         const double err = r->rms();
         r->zero();
-        const double en = energy(energ);
-        this->print_iteration(iter, en, err);
+        energy_ = energy(energ);
+        this->print_iteration(iter, energy_, err);
         if (err < ref_->thresh()) break;
       }
       this->print_iteration(iter == ref_->maxiter());

@@ -105,9 +105,9 @@ class MP2_Ref : public SpinFreeMethod<T> {
 
         this->update_amplitude(t2, r2);
         const double err = r2->rms();
-        const double en = energy(eng);
+        energy_ = energy(eng);
 
-        this->print_iteration(iter, en, err);
+        this->print_iteration(iter, energy_, err);
         if (err < ref_->thresh()) break;
       }
       this->print_iteration(iter == ref_->maxiter());
