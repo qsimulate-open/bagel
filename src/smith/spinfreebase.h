@@ -66,7 +66,6 @@ class SpinFreeMethod {
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<const Civec> civec_;
     double e0_;
-    double energy_;
 
     std::shared_ptr<Tensor<T>> v2_;
     std::shared_ptr<Tensor<T>> f1_;
@@ -145,8 +144,7 @@ class SpinFreeMethod {
             std::unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
             std::unique_ptr<double[]> rdata = rdm1deriv_->get_block(ci0, i0, i1);
             std::unique_ptr<double[]> data(new double[ci0.size()]);
-            dgemm_("T", "N", 1, ci0.size(), i0.size()*i1.size(),
-                    1.0, fdata, i0.size()*i1.size(), rdata, ci0.size()*i0.size()*i1.size(), 0.0, data, 1);
+            dgemv_("N", ci0.size(), i0.size()*i1.size(), 1.0, rdata, ci0.size(), fdata, 1, 0.0, data, 1);
             out->put_block(data, ci0);
           }
         }
@@ -855,8 +853,6 @@ class SpinFreeMethod {
 
     double e0() const { return e0_; }
     std::shared_ptr<Tensor<T>> sigma() const { return sigma_; }
-
-    double energy() const { return energy_; }
 
     virtual void solve() = 0;
 
