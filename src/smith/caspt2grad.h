@@ -47,6 +47,7 @@ class CASPT2Grad : public Method {
 
     // for gradient
     int target_;
+    int ncore_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

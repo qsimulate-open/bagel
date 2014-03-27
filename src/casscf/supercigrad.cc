@@ -97,9 +97,9 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   // solve CP-CASSCF
   auto cp = make_shared<CPCASSCF>(grad, civ, half, halfjj, ref_, task_->fci());
-  shared_ptr<const Matrix> zmat, xmat;
+  shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);

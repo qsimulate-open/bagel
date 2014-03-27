@@ -255,17 +255,17 @@ class Tensor {
     std::shared_ptr<Matrix> matrix() const {
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 2);
-      int dim1 = 0;
-      for (auto& i1 : o[1].range()) dim1 += i1.size();
-      int dim0 = 0;
-      for (auto& i0 : o[0].range()) dim0 += i0.size();
+      const int dim0 = o[0].size();
+      const int dim1 = o[1].size();
+      const int off0 = o[0].front().offset();
+      const int off1 = o[1].front().offset();
 
       auto out = std::make_shared<Matrix>(dim0, dim1);
 
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
           std::unique_ptr<double[]> target = get_block(i0, i1);
-          out->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), target);
+          out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target);
         }
       }
       return out;
