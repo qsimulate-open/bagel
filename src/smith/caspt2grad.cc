@@ -86,7 +86,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
       d1 = d1tmp2;
     }
     d2 = smith->dm2();
-    energy_ = smith->algo()->energy();
+    energy_ = smith->algo()->energy() + fci_->energy(target_);
   }
   return make_tuple(d1, d2, cider);
 }
