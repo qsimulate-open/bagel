@@ -36,6 +36,25 @@ namespace bagel {
 
 class Molecule {
   protected:
+    bool spherical_;
+
+    bool aux_merged_;
+
+    // Some shared info for basis sets.
+    int nbasis_;
+    int nele_;
+    int nfrc_;
+    int naux_;
+    int lmax_;
+    int aux_lmax_;
+
+    // these two offsets are in principle redundant information (can be derived from Shells);
+    std::vector<std::vector<int>> offsets_;
+    std::vector<std::vector<int>> aux_offsets_;
+
+    std::string basisfile_;
+    std::string auxfile_;
+
     // Atoms, which contains basis-set info also.
     std::vector<std::shared_ptr<const Atom>> atoms_;
     std::vector<std::shared_ptr<const Atom>> aux_atoms_;
@@ -57,6 +76,9 @@ class Molecule {
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
 
+    // Constructor helpers
+    void common_init1();
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -77,11 +99,25 @@ class Molecule {
     std::shared_ptr<const Atom> atoms(const unsigned int i) const { return atoms_[i]; }
 
     // Returns constants and private members
+    bool spherical() const { return spherical_; }
+    size_t nbasis() const { return nbasis_; }
+    size_t nele() const { return nele_; }
+    size_t nfrc() const { return nfrc_; }
+    size_t naux() const { return naux_; }
+    int lmax() const { return lmax_; }
+    int aux_lmax() const { return aux_lmax_; }
     int natom() const { return atoms_.size(); }
-    virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
+    const std::string basisfile() const { return basisfile_; }
+    const std::string auxfile() const { return auxfile_; }
     const std::string symmetry() const { return symmetry_; }
+    virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
+
+    int num_count_ncore_only() const; // also set nfrc_
+    int num_count_full_valence_nocc() const;
 
     void print_atoms() const;
+
+    bool operator==(const Molecule& o) const;
 
     std::array<double,3> charge_center() const;
     std::array<double,6> quadrupole() const;
@@ -98,12 +134,11 @@ class Molecule {
     std::array<double,3> magnetic_field() const { return magnetic_field_; }
     double magnetic_field(const int i) const { return magnetic_field_[i]; }
 
-    virtual size_t nbasis() const { return std::accumulate(atoms_.begin(), atoms_.end(), 0,
-                                    [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
-    virtual size_t naux() const { return std::accumulate(aux_atoms_.begin(), aux_atoms_.end(), 0,
-                                    [](const int& i, const std::shared_ptr<const Atom>& j) { return i+j->nbasis(); }); }
-
     std::shared_ptr<const XYZFile> xyz() const;
+
+    // transformation matrices for the internal coordinate for geometry optimization
+    // ninternal runs fast (and cartsize slower)
+    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
 };
 
