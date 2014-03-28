@@ -50,7 +50,7 @@ class Radial_Int {
         }
         const double error = ans - previous;
         std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
-        if (error < thresh_int_ && iter != 0) {
+        if (fabs(error) < thresh_int_ && iter != 0) {
           std::cout << "Integration converged..." << std::endl;
           std::cout << "Radial integral = " << ans << std::endl;
           integral_ = ans;

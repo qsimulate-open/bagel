@@ -522,10 +522,11 @@ class ProjectionInt {
     }
 
     double compute(const double r) const {
+      Comb comb;
       const double pi = static_cast<double>(atan(1.0) * 4.0);
       std::array<double, 3> AB;
-      for (int i = 0; i != 3; ++i) AB[i] = sh_->centre(i) - gauss_->centre(i);
-      const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
+      for (int i = 0; i != 3; ++i) AB[i] = gauss_->centre(i) - sh_->centre(i);
+        const double dAB = std::sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
         const double thAB = acos(AB[2]/dAB);
         const double phAB = atan2(AB[1], AB[0]);
         const int nx = gauss_->angular_momentum(0);
@@ -533,37 +534,39 @@ class ProjectionInt {
         const int nz = gauss_->angular_momentum(2);
         const int nu = nx + ny + nz;
         const int lnu = sh_->angular_momentum(0) + nu;
-        Comb comb;
+        const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB - r) * (dAB - r)));
         double ans = 0.0;
-        for (int kx = 0; kx != nx+1; ++kx) {
-          const double ckx = comb(nx, kx);
-          for (int ky = 0; ky != ny+1; ++ky) {
-            const double cky = comb(ny, ky);
-            for (int kz = 0; kz != nz+1; ++kz) {
-              const double ckz = comb(nz, kz);
+        for (int kx = 0; kx <= nx; ++kx) {
+          const double ckx = comb(nx, kx) * std::pow(AB[0], nx - kx);
+          for (int ky = 0; ky <= ny; ++ky) {
+            const double cky = comb(ny, ky) * std::pow(AB[1], ny - ky);
+            for (int kz = 0; kz <= nz; ++kz) {
+              const double ckz = comb(nz, kz) * std::pow(AB[2], nz - kz);
               const int lk = kx + ky + kz;
+              const double rxyz = std::pow(r, lk);
+
               double sld = 0.0;
-              for (int ld = 0; ld != lnu+1; ++ld) {
+              for (int ld = 0; ld <= lnu; ++ld) {
                 double smu = 0.0;
-                for (int m = 0; m != 2 * ld + 1; ++m) {
+                for (int m = 0; m <= 2 * ld; ++m) {
                   const int mu = m - ld;
-                  const double Z_AB = (dAB == 0 ? (1.0/std::sqrt(4.0*pi)) : sh_->realSH(sh_->angular_momentum(0), sh_->angular_momentum(1), thAB, phAB));
+                  const double Z_AB = (dAB == 0 ? (1.0/std::sqrt(4.0*pi)) : sh_->realSH(ld, mu, thAB, phAB));
 
                   const std::array<int, 3> exp = {kx, ky, kz};
                   const std::pair<int, int> lm1(ld, mu);
                   const std::pair<int, int> lm2(sh_->angular_momentum(0), sh_->angular_momentum(1));
                   smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
+//                std::cout << "ld = " << ld << " mu = " << mu << " thAB = " << thAB << " phAB = " <<  phAB << " Z_AB = " << Z_AB << " 2SH1USP = " << integrate2SH1USP(lm1, lm2, exp) << std::endl;
                 }
-                const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB - r) * (dAB - r)));
                 Modified_Spherical_Bessel_Iexp msbessel(ld);
                 const mpreal sbessel = msbessel.compute(2.0 * gauss_->exponent() * dAB * r);
-                sld += smu * (pow(r, lk) * exponential * sbessel).toDouble();
+                sld += smu * sbessel.toDouble();
               }
-              ans += sld * ckx * cky * ckz * std::pow(-1.0, nu - lk) * std::pow(AB[0], nx - kx) * std::pow(AB[1], ny - ky) * std::pow(AB[2], nz - kz);
+              ans += sld * ckx * cky * ckz * rxyz * std::pow(-1.0, lk - nu);
             }
           }
         }
-        return ans * 4.0 * pi * gauss_->normalise();
+        return ans * 4.0 * pi * gauss_->normalise() * exponential.toDouble();
     }
 
 };
