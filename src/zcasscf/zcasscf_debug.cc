@@ -421,7 +421,7 @@ complex<double> ZCASSCF::find_level_shift(shared_ptr<const ZRotFile> rotmat) con
     if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
       l0 = rotmat->data(j);
   }
-  // IMPROVISED LEVEL SHIFT : TODO possibly move to BFGS class once machinery works
+  // IMPROVISED LEVEL SHIFT : TODO possibly move to SRBFGS class if you can generalize to non-rel hessians
   double scale = idata_->get<double>("scalefac", 1.05);
   complex<double> level_shift = l0*scale;
   cout << " " << endl;
@@ -449,23 +449,24 @@ double ZCASSCF::trust_radius_energy_ratio(const int iter, const vector<double> e
 }
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xlog, shared_ptr<ZRotFile> grad, shared_ptr<BFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const {
+shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xlog, shared_ptr<ZRotFile> grad, shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const {
     // Returns an appropriate step vector
-    const double rmin = 0.6; const double rgood = 0.85; const double alpha = 1.3;
+    const double rmin = 0.6; const double rgood = 0.85; double alpha = 1.3;
+    alpha = alpha + static_cast<double>(iter) * .25;
     const int max_micro_iter = idata_->get<int>("microiter", 30);
-    auto tls = level_shift_;
+    auto tls = level_shift_.real();
     auto shift = xlog->clone();
     shift->fill(tls);
     shared_ptr<ZRotFile> acopy = bfgs->extrapolate_micro(grad, xlog, shift, false);
     for (int mi = 0; mi!= max_micro_iter; ++mi) {
-      shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy, false); // H_n * a
-      double rk = trust_radius_energy_ratio(iter, energy_, acopy, v, grad);
+      shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy, shift, false); // H_n * a
+      double rk = bfgs->taylor_series_validity_ratio(energy_, grad, acopy, v);
       cout << setprecision(4) << " Taylor expansion validity parameter, rk  = " << rk << endl;
       if (((rmin < rk) && (rk < rgood)) || ((2.0 - rgood < rk) && (rk < 2.0 - rmin))) {
           if (bfgs->delta().size() != 0)
             bfgs->decrement_intermediates();
           auto tmp1 = bfgs->extrapolate_micro(grad, acopy, shift, true);
-          auto v = bfgs->interpolate_hessian(acopy, true);
+          auto v = bfgs->interpolate_hessian(acopy, shift, true);
           trust_radius = trust_radius;
           cout << " condition (i) satisfied in microiteration " << mi << endl;
           cout << " trust radius from previous macroiteration will be used " << endl;
@@ -479,7 +480,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
           if (bfgs->delta().size() != 0)
             bfgs->decrement_intermediates();
           auto tmp1 = bfgs->extrapolate_micro(grad, acopy, shift, true);
-          auto v = bfgs->interpolate_hessian(acopy, true);
+          auto v = bfgs->interpolate_hessian(acopy, shift, true);
           break;
       } else if (rk < rmin || rk > 2 - rmin ) {
           if (bfgs->delta().size() == bfgs->Y().size())

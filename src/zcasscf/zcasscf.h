@@ -31,6 +31,7 @@
 #include <src/wfn/method.h>
 #include <src/rel/reloverlap.h>
 #include <src/math/bfgs.h>
+#include <src/math/step_restrict_bfgs.h>
 
 namespace bagel {
 
@@ -152,7 +153,7 @@ class ZCASSCF : public Method {
     // returns energy ratio needed for trust radius updates
     double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
     // returns matrix of orbital rotation parameters
-    std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<BFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
+    std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
 };
 
 }

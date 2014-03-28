@@ -24,7 +24,7 @@
 //
 
 #include <src/zcasscf/zqvec.h>
-#include <src/math/bfgs.h>
+#include <src/math/step_restrict_bfgs.h>
 #include <src/rel/dfock.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/rel/reloverlap.h>
@@ -35,7 +35,7 @@ using namespace bagel;
 
 void ZCASSCF::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
-  shared_ptr<BFGS<ZRotFile>> bfgs;
+  shared_ptr<SRBFGS<ZRotFile>> srbfgs;
 
   // ============================
   // macro iteration from here
@@ -61,7 +61,7 @@ void ZCASSCF::compute() {
     fci_->update(coeff_);
 
   cout << " See casscf.log for further information on FCI output " << endl;
-  double trust_radius = 0.001;
+//  double trust_radius = 0.001;
   for (int iter = 0; iter != max_iter_; ++iter) {
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -120,7 +120,7 @@ void ZCASSCF::compute() {
         diagonal_shift->fill(level_shift_);
         denom->ax_plus_y(-1.0, diagonal_shift);
       }
-      bfgs = make_shared<BFGS<ZRotFile>>(denom);
+      srbfgs = make_shared<SRBFGS<ZRotFile>>(denom, level_shift_.real());
     }
 
     // compute orbital gradients
@@ -137,16 +137,17 @@ void ZCASSCF::compute() {
       ___debug___compute_hessian(cfock, afock, qvec, ___debug___with_kramers);
     }
 
-    trust_radius = make_shared<ZRotFile>(*grad / *bfgs->denom())->norm();
-
     auto xlog = make_shared<ZRotFile>(x->log(4), nclosed_*2, nact_*2, nvirt_*2);
     mute_stdcout(/*fci*/false);
     cout << " " << endl;
     cout << " ++++++++++++++++++++++++ " << endl;
     cout << " Starting microiterations " << endl;
     cout << " ++++++++++++++++++++++++ " << endl;
+    cout << setprecision(6) << " gradient norm      = " << grad->norm() << endl;
     cout << " " << endl;
-    shared_ptr<ZRotFile> a = ___debug___microiterations(xlog, grad, bfgs, trust_radius, iter);
+    auto shift = xlog->clone();
+    shift->fill(level_shift_.real());
+    shared_ptr<ZRotFile> a = srbfgs->step_restricted_extrapolate(energy_, grad, xlog, shift, /*tight*/true);
     resume_stdcout();
     if (!___debug___break_kramers)
       kramers_adapt(a);
