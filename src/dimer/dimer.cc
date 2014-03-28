@@ -597,7 +597,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
 
   // SCF
-  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : nullptr;
+  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
   shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
   set_sref(rhf->conv_to_ref());
