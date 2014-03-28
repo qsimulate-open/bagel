@@ -213,7 +213,7 @@ void Dimer::construct_coeff() {
   }
   else {
     // Round nele up for number of orbitals
-    ncore_ = make_pair( (nele_.first + 1)/2, (nele_.second + 1)/2 );
+    ncore_ = make_pair( (nele_.first - 1)/2 + 1, (nele_.second - 1)/2 + 1);
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
@@ -641,6 +641,13 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     dimertime.tick_print("Dimer localization");
 
     set_active(idata, /*localize_first*/ true);
+
+    Matrix active_mos = *scoeff_->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
+    Matrix fock_mo(active_mos % *fock * active_mos);
+    vector<double> eigs(active_mos.mdim(), 0.0);
+    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
+    active_mos *= *active_transformation;
+    scoeff_->copy_block(0, nclosed_, scoeff_->ndim(), active_mos.mdim(), active_mos);
   }
 }
 
