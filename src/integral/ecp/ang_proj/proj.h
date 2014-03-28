@@ -294,9 +294,9 @@ class SH {
     if (m == 0) {
       return coef * plm;
     } else if (m > 0) {
-      return std::sqrt(2.0) * coef * plm * cos(am*phi);
+      return std::sqrt(2.0) * std::pow(-1.0, m) * coef * plm * cos(am*phi);
     } else {
-      return std::sqrt(2.0) * coef * plm * sin(am*phi);
+      return std::sqrt(2.0) * std::pow(-1.0, m) * coef * plm * sin(am*phi);
     }
   }
 
