@@ -216,11 +216,11 @@ class Tensor {
       data_->zero();
     }
 
-    std::unique_ptr<double[]> diag() {
+    std::vector<double> diag() {
       if (rank_ != 2 || range_[0] != range_[1])
         throw std::logic_error("Tensor::diag can be called only with a square tensor of rank 2");
-      const size_t size = range_[0].size();
-      std::unique_ptr<double[]> buf(new double[size]);
+      const size_t size = range_[0].back().offset() + range_[0].back().size();
+      std::vector<double> buf(size);
       for (auto& i : range_[0]) {
         std::unique_ptr<double[]> data0 = move_block(i, i);
         for (int j = 0; j != i.size(); ++j) {
@@ -228,7 +228,7 @@ class Tensor {
         }
         put_block(data0, i, i);
       }
-      return std::move(buf);
+      return buf;
     }
 
 
@@ -255,71 +255,52 @@ class Tensor {
     std::shared_ptr<Matrix> matrix() const {
       std::vector<IndexRange> o = indexrange();
       assert(o.size() == 2);
-      int dim1 = 0;
-      for (auto& i1 : o[1].range()) dim1 += i1.size();
-      int dim0 = 0;
-      for (auto& i0 : o[0].range()) dim0 += i0.size();
+      const int dim0 = o[0].size();
+      const int dim1 = o[1].size();
+      const int off0 = o[0].front().offset();
+      const int off1 = o[1].front().offset();
 
       auto out = std::make_shared<Matrix>(dim0, dim1);
 
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
           std::unique_ptr<double[]> target = get_block(i0, i1);
-          out->copy_block(i0.offset(), i1.offset(), i0.size(), i1.size(), target);
+          out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target);
         }
       }
       return out;
     }
 
 
+    // TODO parallelization
     std::shared_ptr<Matrix> matrix2() const {
-      std::vector<IndexRange> o = indexrange();
+      const std::vector<IndexRange> o = indexrange();
       assert(o.size() == 4);
 
-      int dim3 = 0;
-      for (auto& i3 : o[3].range()) dim3 += i3.size();
-      int dim2 = 0;
-      for (auto& i2 : o[2].range()) dim2 += i2.size();
-      int dim1 = 0;
-      for (auto& i1 : o[1].range()) dim1 += i1.size();
-      int dim0 = 0;
-      for (auto& i0 : o[0].range()) dim0 += i0.size();
+      const int dim0 = o[0].size();
+      const int dim1 = o[1].size();
+      const int dim2 = o[2].size();
+      const int dim3 = o[3].size();
+      const int off0 = o[0].front().offset();
+      const int off1 = o[1].front().offset();
+      const int off2 = o[2].front().offset();
+      const int off3 = o[3].front().offset();
 
-      // closed orbitals todo cleanup this
-// TODO The following code looks very wrong
-/*    for (auto& i1 : o[1].range()) {
-        nclosed = i1.offset();
-        break;
-      }
-*/
-// TODO this still does not look right
-      int nclosed = o[1].range().begin()->offset();
-
-      std::unique_ptr<double[]> data (new double[dim0*dim1*dim2*dim3]);
+      auto out = std::make_shared<Matrix>(dim0*dim1,dim2*dim3);
       for (auto& i3 : o[3].range()) {
         for (auto& i2 : o[2].range()) {
           for (auto& i1 : o[1].range()) {
             for (auto& i0 : o[0].range()) {
               std::unique_ptr<double[]> target = get_block(i0, i1, i2, i3);
+              const double* ptr = target.get();
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0) {
-                      data[j0+dim0*((j1-nclosed)+dim1*(j2+dim2*(j3-nclosed)))] = target[(j0-i0.offset())+i0.size()*((j1-i1.offset())+i1.size()*((j2-i2.offset())+i2.size()*((j3-i3.offset()))))];
-                    }
-
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
+                    std::copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
             }
           }
         }
       }
-
-      auto out = std::make_shared<Matrix>(dim0*dim1,dim2*dim3);
-      for (int l = 0; l < dim3; ++l)
-        for (int k = 0; k < dim2; ++k)
-          for (int j = 0; j < dim1; ++j)
-            for (int i = 0; i < dim0; ++i)
-              out->element(i+dim0*(j),k+dim2*(l)) = data[i+dim0*(j+dim1*(k+dim2*(l)))];
-
       return out;
     }
 

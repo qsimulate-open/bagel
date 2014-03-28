@@ -559,7 +559,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       tie(ignore, Vt) = projector.svd(singulars.data());
 
       cout << "    - largest singular value: " << singulars[0] << ", smallest: " << singulars[norb-1] << endl;
-      cout << "    - norb: " << norb << ", sum of highest singular values: " << accumulate(singulars.begin(), singulars.end(), 0.0) << endl;
+      cout << "    - norb: " << norb << ", sum of highest singular values: " << accumulate(singulars.begin(), singulars.begin()+norb, 0.0) << endl;
 
       subspace = subspace ^ *Vt;
 
@@ -597,7 +597,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
 
   // SCF
-  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : nullptr;
+  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
   shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
   set_sref(rhf->conv_to_ref());

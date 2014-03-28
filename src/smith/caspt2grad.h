@@ -41,20 +41,29 @@ class CASPT2Grad : public Method {
 
     std::shared_ptr<FCI> fci_;
 
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_y(std::shared_ptr<const Matrix> dm1, const double correction, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
-                std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
-
     // for gradient
     int target_;
+    int ncore_;
+    double energy_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
 
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<FCI> fci() const { return fci_; }
+    int target() const { return target_; }
+    int ncore() const { return ncore_; }
+    double energy() const { return energy_; }
+
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
+      compute_y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
+                std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Civec>> process_smith();
 };
 
 }

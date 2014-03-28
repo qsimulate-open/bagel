@@ -68,6 +68,7 @@ class Smith : public Method {
     std::shared_ptr<const Civec> cider() { return cider_; }
     std::shared_ptr<const Coeff> coeff() { return coeff_; }
 
+    std::shared_ptr<const SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo() const { return algo_; }
 
 };
 

@@ -56,7 +56,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Hcore> hcore_;
     std::vector<double> eig_;
 
-    int ncore_;
     int nclosed_;
     int nact_;
     int nvirt_;
@@ -79,7 +78,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
-         & ncore_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
+         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
     }
 
   public:
@@ -92,9 +91,10 @@ class Reference : public std::enable_shared_from_this<Reference> {
               std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
               std::shared_ptr<const RDM<2>> rdm2_av = nullptr,
               std::shared_ptr<const CIWfn> ci = nullptr);
-    // new Reference from old one with transformed coeff
-    Reference(std::shared_ptr<const Reference> o, std::shared_ptr<const Coeff> c) :
-      Reference(o->geom(), c, o->nclosed(), o->nact(), o->nvirt(), o->energy(), o->rdm1(), o->rdm2(), o->rdm1_av(), o->rdm2_av(), o->ciwfn()) { }
+
+    // copy construct with optionally updating coeff
+    Reference(const Reference& o, std::shared_ptr<const Coeff> c = nullptr) :
+      Reference(o.geom(), c ? c : o.coeff(), o.nclosed(), o.nact(), o.nvirt(), o.energy(), o.rdm1(), o.rdm2(), o.rdm1_av(), o.rdm2_av(), o.ciwfn()) { }
 
     virtual ~Reference() { }
 
@@ -115,7 +115,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nact() const { return nact_; }
     int nvirt() const { return nvirt_; }
     int nocc() const { return nclosed_ + nact_; }
-    int ncore() const { return ncore_; }
 
     int noccA() const { return noccA_; }
     int noccB() const { return noccB_; }
@@ -154,10 +153,10 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<const Dvec> civectors() const;
-    std::shared_ptr<Dvec> rdm1deriv() const;
-    std::shared_ptr<Dvec> rdm2deriv() const;
-    std::shared_ptr<Dvec> rdm3deriv() const;
-    std::shared_ptr<Dvec> rdm4deriv() const;
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm3deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm4deriv(const int istate) const;
 
     // basis-set projection based on SVD
     virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>) const;

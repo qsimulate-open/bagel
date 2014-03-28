@@ -186,10 +186,10 @@ class FCI : public Method {
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
     // rdm ci derivatives
-    std::shared_ptr<Dvec> rdm1deriv() const;
-    std::shared_ptr<Dvec> rdm2deriv() const;
-    std::shared_ptr<Dvec> rdm3deriv() const;
-    std::shared_ptr<Dvec> rdm4deriv() const;
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm3deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm4deriv(const int istate) const;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();

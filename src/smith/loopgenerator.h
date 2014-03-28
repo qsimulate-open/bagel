@@ -38,7 +38,7 @@ class LoopGenerator {
     std::vector<IndexRange> loop_;
   public:
     LoopGenerator(const std::vector<IndexRange>& o) : loop_(o) {};
-    ~LoopGenerator() {};
+    ~LoopGenerator() {}
 
     std::vector<std::vector<Index>> block_loop() const;
 };

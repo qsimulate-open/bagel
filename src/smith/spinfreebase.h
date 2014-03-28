@@ -27,14 +27,11 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
-#include <stddef.h>
 #include <src/smith/prim_op.h>
 #include <src/smith/tensor.h>
 #include <src/smith/moint.h>
 #include <src/smith/denom.h>
-#include <src/math/matrix.h>
-#include <src/fci/dvec.h>
-#include <src/wfn/reference.h>
+#include <src/smith/smith_info.h>
 #include <src/prop/multipole.h>
 #include <src/grad/cphf.h>
 #include <chrono>
@@ -64,11 +61,12 @@ class SpinFreeMethod {
     std::shared_ptr<const IndexRange> rclosed_;
     std::shared_ptr<const IndexRange> rci_;
 
-    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const SMITH_Info> ref_;
 
     std::shared_ptr<const Coeff> coeff_;
     std::shared_ptr<const Civec> civec_;
     double e0_;
+    double energy_;
 
     std::shared_ptr<Tensor<T>> v2_;
     std::shared_ptr<Tensor<T>> f1_;
@@ -91,7 +89,7 @@ class SpinFreeMethod {
     std::chrono::high_resolution_clock::time_point time_;
 
     // the diagonal denominator
-    std::unique_ptr<double[]> eig_;
+    std::vector<double> eig_;
 
     // printing functions called from the solve function of a derived class
     void print_iteration() {
@@ -524,33 +522,32 @@ class SpinFreeMethod {
     }
 
   public:
-    SpinFreeMethod(std::shared_ptr<const Reference> r) : ref_(r) {
-      const int max = 10;
-      IndexRange c(r->nclosed(), max);
-      IndexRange act(r->nact(), max, c.nblock(), c.size());
-      IndexRange v(r->nvirt(), max, c.nblock()+act.nblock(), c.size()+act.size());
-      IndexRange a(c); a.merge(act); a.merge(v);
-      assert(c.size() == r->nclosed());
-      assert(act.size() == r->nact());
-      assert(v.size() == r->nvirt());
-      closed_ = c;
-      active_ = act;
-      virt_ = v;
-      all_ = a;
+    SpinFreeMethod(std::shared_ptr<const SMITH_Info> r) : ref_(r) {
+      const int max = r->maxtile();
+      if (r->ncore() > r->nclosed())
+        throw std::runtime_error("frozen core has been specified but there are not enough closed orbitals");
+      closed_ = IndexRange(r->nclosed()-r->ncore(), max, 0, r->ncore());
+      active_ = IndexRange(r->nact(),    max, closed_.nblock(),                  r->ncore()+closed_.size());
+      virt_   = IndexRange(r->nvirt(),   max, closed_.nblock()+active_.nblock(), r->ncore()+closed_.size()+active_.size());
+      all_    = closed_; all_.merge(active_); all_.merge(virt_);
+      assert(closed_.size() == r->nclosed() - r->ncore());
+      assert(active_.size() == r->nact());
+      assert(virt_.size() == r->nvirt());
 
-      std::shared_ptr<const Dvec> dci0 = r->civectors();
-      // TODO this should be updated when reference has civec
-      civec_ = dci0->data(0);
-      det_ = civec_->det();
+      rclosed_ = std::make_shared<const IndexRange>(closed_);
+      ractive_ = std::make_shared<const IndexRange>(active_);
+      rvirt_   = std::make_shared<const IndexRange>(virt_);
 
-      // length of the ci expansion
-      const size_t ci_size = r->civectors()->data(0)->size();
-      ci_ = IndexRange(ci_size, max);
+      if (ref_->ciwfn()) {
+        std::shared_ptr<const Dvec> dci0 = r->civectors();
+        civec_ = dci0->data(ref_->target());
+        det_ = civec_->det();
 
-      rclosed_ = std::make_shared<const IndexRange>(c);
-      ractive_ = std::make_shared<const IndexRange>(act);
-      rvirt_   = std::make_shared<const IndexRange>(v);
-      rci_     = std::make_shared<const IndexRange>(ci_);
+        // length of the ci expansion
+        const size_t ci_size = r->civectors()->data(ref_->target())->size();
+        ci_ = IndexRange(ci_size, max);
+        rci_ = std::make_shared<const IndexRange>(ci_);
+      }
 
       // f1 tensor.
       {
@@ -575,7 +572,7 @@ class SpinFreeMethod {
       }
 
       // make a ci tensor.
-      {
+      if (ref_->ciwfn()) {
         std::vector<IndexRange> o = {ci_};
         // TODO fix later when referece has civec
         Ci<T> dci(ref_, o, civec_);
@@ -583,8 +580,8 @@ class SpinFreeMethod {
       }
 
       // rdm ci derivatives.
-      {
-        std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv();
+      if (ref_->ciwfn()) {
+        std::shared_ptr<const Dvec> rdm1d = r->rdm1deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_};
         rdm1deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -606,8 +603,8 @@ class SpinFreeMethod {
         }
       }
 
-      {
-        std::shared_ptr<const Dvec> rdm2d = r->rdm2deriv();
+      if (ref_->ciwfn()) {
+        std::shared_ptr<const Dvec> rdm2d = r->rdm2deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_};
         rdm2deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -634,8 +631,8 @@ class SpinFreeMethod {
         }
       }
 
-      {
-        std::shared_ptr<const Dvec> rdm3d = r->rdm3deriv();
+      if (ref_->ciwfn()) {
+        std::shared_ptr<const Dvec> rdm3d = r->rdm3deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_};
         rdm3deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -667,8 +664,8 @@ class SpinFreeMethod {
           }
         }
       }
-      {
-        std::shared_ptr<const Dvec> rdm4d = r->rdm4deriv();
+      if (ref_->ciwfn()) {
+        std::shared_ptr<const Dvec> rdm4d = r->rdm4deriv(ref_->target());
 
         std::vector<IndexRange> o = {ci_, active_, active_, active_, active_, active_, active_, active_, active_};
         rdm4deriv_ = std::make_shared<Tensor<T>>(o, false);
@@ -708,7 +705,7 @@ class SpinFreeMethod {
       }
 
       // rdms.
-      if (!ref_->rdm1().empty()) {
+      if (ref_->ciwfn()) {
         std::vector<IndexRange> o = {active_, active_};
         rdm1_ = std::make_shared<Tensor<T>>(o, false);
         const int nclo = ref_->nclosed();
@@ -719,13 +716,12 @@ class SpinFreeMethod {
             int iall = 0;
             for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
               for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                // TODO for the time being we hardwire "0" here (but this should be fixed)
-                data[iall] = ref_->rdm1(0)->element(j0-nclo, j1-nclo);
+                data[iall] = ref_->rdm1(ref_->target())->element(j0-nclo, j1-nclo);
             rdm1_->put_block(data, i0, i1);
           }
         }
       }
-      if (!ref_->rdm2().empty()) {
+      if (ref_->ciwfn()) {
         std::vector<IndexRange> o = {active_, active_, active_, active_};
         rdm2_ = std::make_shared<Tensor<T>>(o, false);
         const int nclo = ref_->nclosed();
@@ -740,8 +736,7 @@ class SpinFreeMethod {
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                        // TODO for the time being we hardwire "0" here (but this should be fixed)
-                        data[iall] = ref_->rdm2(0)->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
+                        data[iall] = ref_->rdm2(ref_->target())->element(j0-nclo, j1-nclo, j2-nclo, j3-nclo);
                  rdm2_->put_block(data, i0, i1, i2, i3);
               }
             }
@@ -749,7 +744,7 @@ class SpinFreeMethod {
         }
       }
       // TODO generic function??
-      if (!ref_->rdm1().empty() && !ref_->rdm2().empty()) {
+      if (ref_->ciwfn()) {
         {
           std::vector<IndexRange> o = {active_, active_, active_, active_, active_, active_};
           rdm3_ = std::make_shared<Tensor<T>>(o, false);
@@ -757,10 +752,9 @@ class SpinFreeMethod {
           rdm4_ = std::make_shared<Tensor<T>>(p, false);
         }
 
-        // TODO for the time being we hardwire "0" here (but this should be fixed)
         std::shared_ptr<RDM<3>> rdm3;
         std::shared_ptr<RDM<4>> rdm4;
-        std::tie(rdm3, rdm4) = ref_->compute_rdm34(0);
+        std::tie(rdm3, rdm4) = ref_->compute_rdm34(ref_->target());
 
         const int nclo = ref_->nclosed();
         for (auto& i5 : active_)
@@ -812,9 +806,8 @@ class SpinFreeMethod {
           for (auto& i0 : active_)
             fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
 
-        // TODO hardwired 0
-        auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(0));
-        auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(0));
+        auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
+        auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));
 
         // construct denominator
         denom_ = std::make_shared<const Denom>(*rdm1, *rdm2, *rdm3, *rdm4, *fockact);
@@ -829,7 +822,7 @@ class SpinFreeMethod {
     IndexRange& all() { return all_; }
     IndexRange& closed() { return closed_; }
 
-    std::shared_ptr<const Reference>& ref() { return ref_; };
+    std::shared_ptr<const SMITH_Info> ref() const { return ref_; }
 
     std::shared_ptr<const Civec> civec() const { return civec_; }
 
@@ -837,55 +830,13 @@ class SpinFreeMethod {
 
     double e0() const { return e0_; }
 
+    double energy() const { return energy_; }
+
     virtual void solve() = 0;
 
     std::shared_ptr<const Civec> rdm0deriv() const {
       return rdm0deriv_->civec(det_);
     }
-
-
-    Dipole dipole(std::shared_ptr<const Matrix> dm1, double correction, std::string dipole_name="") const {
-      const size_t nclo = ref_->nclosed();
-      const size_t nact = ref_->nact();
-
-      // compute unrelaxed dipole moment
-      // total density matrix
-      auto dtot = std::make_shared<Matrix>(*dm1);
-
-      // add correction to active space
-      for (int i = nclo; i != nclo+nact; ++i) dtot->element(i,i) -=  correction*2.0;
-
-      for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
-      // add to active space
-      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
-      // convert to ao basis
-      auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
-      Dipole dipole(ref_->geom(), dtotao, dipole_name);
-      return dipole;
-
-    }
-
-
-    Dipole dipole(std::shared_ptr<const Matrix> dm1) const {
-      const size_t nclo = ref_->nclosed();
-      const size_t nact = ref_->nact();
-
-      // compute relaxed dipole moment
-      // total density matrix
-      auto dtot = std::make_shared<Matrix>(*dm1);
-
-      for (int i = 0; i != nclo; ++i) dtot->element(i,i) += 2.0;
-      // add to active space
-      dtot->add_block(1.0, nclo, nclo, nact, nact, ref_->rdm1(0)->data());
-      // convert to ao basis
-      auto dtotao = std::make_shared<Matrix>(*coeff_ * *dtot ^ *coeff_);
-      Dipole dipole(ref_->geom(), dtotao);
-      return dipole;
-
-    }
-
-
-
 };
 
 }
