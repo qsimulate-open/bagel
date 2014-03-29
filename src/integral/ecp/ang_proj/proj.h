@@ -238,7 +238,7 @@ class SH {
     if (m > 0) {
       double somx2 = std::sqrt((1.0 - x)*(1.0 + x));
       double fact = 1.0;
-      for (int i = 0; i != m; ++i) {
+      for (int i = 1; i <= m; ++i) {
         pmm *= -fact * somx2;
         fact += 2.0;
       }
@@ -251,7 +251,7 @@ class SH {
         return pmmp1;
       } else {
         double plm = 0.0;
-        for (int i = m + 2; i != l; ++i) {
+        for (int i = m + 2; i <= l; ++i) {
           plm = (x * (2 * i -1) * pmmp1 - (i + m - 1) * pmm) / (i - m);
           pmm = pmmp1;
           pmmp1 = plm;
