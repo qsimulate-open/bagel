@@ -90,9 +90,9 @@ class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock
     }
 };
 
-/*
+
 template<class TBatch>
-class DFDist_ints : public DFDist {
+class DFDist_London_ints : public DFDist_London {
   protected:
     void compute_3index(const std::vector<std::shared_ptr<const Shell>>& ashell,
                         const std::vector<std::shared_ptr<const Shell>>& b1shell,
@@ -102,12 +102,12 @@ class DFDist_ints : public DFDist {
       Timer time;
 
       // making a task list
-      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks()>> tasks(b1shell.size()*b2shell.size()*ashell.size());
+      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks(),std::complex<double>,DFBlock_London>> tasks(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
       // due to performance issue, we need to reshape it to array
-      std::array<std::shared_ptr<DFBlock>,TBatch::Nblocks()> blk;
+      std::array<std::shared_ptr<DFBlock_London>,TBatch::Nblocks()> blk;
       for (int i = 0; i != TBatch::Nblocks(); ++i) blk[i] = block_[i];
 
       int j2 = 0;
@@ -133,8 +133,8 @@ class DFDist_ints : public DFDist {
     }
 
   public:
-    DFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum, const bool average = false) : DFDist(nbas, naux) {
+    DFDist_London_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
+                const double thr, const bool inverse, const double dum, const bool average = false) : DFDist_London(nbas, naux) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
@@ -155,7 +155,7 @@ class DFDist_ints : public DFDist {
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       for (int i = 0; i != TBatch::Nblocks(); ++i)
-        block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
+        block_.push_back(std::make_shared<DFBlock_London>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
 
       // 3-index integrals
       compute_3index(myashell, b1shell, b2shell, asize, b1size, b2size, astart, thr, inverse);
@@ -167,7 +167,7 @@ class DFDist_ints : public DFDist {
     }
 
 };
-*/
+
 
 class DFHalfDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
   protected:
