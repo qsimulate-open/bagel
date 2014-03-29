@@ -27,6 +27,7 @@
 #include <src/io/moldenout.h>
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
+#include <src/wfn/geometry_london.h>
 #include <src/molecule/localization.h>
 #include <src/meh/meh_cas.h>
 #include <src/meh/meh_distcas.h>
@@ -59,6 +60,7 @@ int main(int argc, char** argv) {
     auto idata = make_shared<const PTree>(input);
 
     shared_ptr<Geometry> geom;
+    shared_ptr<Geometry_London> cgeom;
     shared_ptr<Method> method;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
@@ -76,12 +78,19 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
-        if (itree->get<bool>("restart", false))
-          ref.reset();
-        if (ref) ref = ref->project_coeff(geom);
+        const string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
+        if (basis_type == "gaussian") {
+          geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+          if (itree->get<bool>("restart", false))
+            ref.reset();
+          if (ref) ref = ref->project_coeff(geom);
+        } else if (basis_type == "london") {
+          cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
+          if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
+          if (ref) throw runtime_error("Reference use not set up for London orbitals");
+        } else throw runtime_error("basis type not understood - should be gaussian or london");
       } else {
-        if (!geom) throw runtime_error("molecule block is missing");
+        if (!geom && !cgeom) throw runtime_error("molecule block is missing");
       }
 
       // TODO we are checking this for non-DF method...

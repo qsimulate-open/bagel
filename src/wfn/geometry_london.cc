@@ -146,6 +146,8 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
 
 void Geometry_London::common_init2(const bool print, const double thresh, const bool nodf) {
+  if (!nonzero_magnetic_field()) cout << "  Zero magnetic field - This computation should be more efficient with a Gaussian basis set." << endl << endl;
+
   // symmetry set-up
   plist_ = make_shared<Petite>(atoms_, symmetry_);
   nirrep_ = plist_->nirrep();
@@ -162,7 +164,7 @@ void Geometry_London::common_init2(const bool print, const double thresh, const 
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     cout << "    o Being stored without compression. Storage requirement is "
-         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*1.6e-8 << " GB" << endl;
     Timer timer;
     compute_integrals(thresh, nodf);
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
@@ -298,7 +300,6 @@ Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3>
 */
 
 
-#if 0
 Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTree> geominfo, const bool discard)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
 
@@ -368,7 +369,6 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
   }
   external_ = o.external_;
 }
-#endif
 
 
 #if 0

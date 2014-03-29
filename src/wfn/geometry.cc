@@ -146,6 +146,8 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) {
 
 
 void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
+  if (nonzero_magnetic_field()) throw runtime_error("Nonzero magnetic field - use London orbitals to account for this effect.  (set \"basis_type\" to \"london\")");
+
   // symmetry set-up
   plist_ = make_shared<Petite>(atoms_, symmetry_);
   nirrep_ = plist_->nirrep();
