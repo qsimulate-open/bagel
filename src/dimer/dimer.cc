@@ -213,7 +213,7 @@ void Dimer::construct_coeff() {
   }
   else {
     // Round nele up for number of orbitals
-    ncore_ = make_pair( (nele_.first + 1)/2, (nele_.second + 1)/2 );
+    ncore_ = make_pair( (nele_.first - 1)/2 + 1, (nele_.second - 1)/2 + 1);
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
@@ -570,7 +570,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       copy_n(subspace.data(), dimerbasis_ * norb, out_coeff->element_ptr(0, active_position));
       active_position += norb;
 
-      for (size_t i = nact; i < active_size; ++i)
+      for (size_t i = norb; i < active_size; ++i)
         copy_n(subspace.element_ptr(0, i), dimerbasis_, out_coeff->element_ptr(0, ( closed ? closed_position++ : virt_position++ )));
     }
     else {
@@ -597,7 +597,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   Timer dimertime;
 
   // SCF
-  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : nullptr;
+  auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
   shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
   set_sref(rhf->conv_to_ref());
@@ -641,6 +641,13 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     dimertime.tick_print("Dimer localization");
 
     set_active(idata, /*localize_first*/ true);
+
+    Matrix active_mos = *scoeff_->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
+    Matrix fock_mo(active_mos % *fock * active_mos);
+    vector<double> eigs(active_mos.mdim(), 0.0);
+    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
+    active_mos *= *active_transformation;
+    scoeff_->copy_block(0, nclosed_, scoeff_->ndim(), active_mos.mdim(), active_mos);
   }
 }
 
