@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: construct_method.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: scf_london.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,19 +23,21 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/london/scf_london.h>
 
-#ifndef __SRC_WFN_CONSTRUCT_METHOD_H
-#define __SRC_WFN_CONSTRUCT_METHOD_H
+using namespace bagel;
+using namespace std;
 
-#include <src/wfn/method.h>
-#include <src/wfn/reference.h>
-#include <src/input/input.h>
+BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
-namespace bagel {
-  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
-                                                  std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
-  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
-                                                  std::shared_ptr<const Geometry_London> geom, std::shared_ptr<const Reference> ref);
+void SCF_London::compute() {
+  cout << "  HF method with London orbitals to be implemented soon!" << endl;
 }
 
-#endif
+
+shared_ptr<const Reference> SCF_London::conv_to_ref() const {
+//  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+//  out->set_eig(eig_);
+//  return out;
+  return nullptr;
+}

@@ -44,6 +44,8 @@
 #include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
+#include <src/london/scf_london.h>
+#include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;
@@ -111,6 +113,20 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
   else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
 
+  return out;
+}
+
+shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_London> cgeom,
+                                                  shared_ptr<const Reference> ref) {
+  shared_ptr<Method> out;
+  if (title == "hf")          out = make_shared<SCF_London>(itree, cgeom, ref);
+  else if (title == "ks")     throw runtime_error("KS method only available with Gaussian orbitals");    //out = make_shared<KS_London>(itree, cgeom, ref);
+  else if (title == "uhf")    throw runtime_error("UHF method only available with Gaussian orbitals");   //out = make_shared<UHF_London>(itree, cgeom, ref);
+  else if (title == "rohf")   throw runtime_error("ROHF method only available with Gaussian orbitals");  //out = make_shared<ROHF_London>(itree, cgeom, ref);
+  else if (title == "soscf")  throw runtime_error("SOSCF method only available with Gaussian orbitals"); //out = make_shared<SOSCF_London>(itree, cgeom, ref);
+  else if (title == "mp2")    throw runtime_error("MP2 method only available with Gaussian orbitals");   //out = make_shared<MP2_London>(itree, cgeom, ref);
+  else if (title == "dhf")    out = make_shared<Dirac_London>(itree, cgeom, ref);
+  else if (title == "dmp2")   throw runtime_error("DMP2 method only available with Gaussian orbitals");  //out = make_shared<DMP2_London>(itree, cgeom, ref);
   return out;
 }
 

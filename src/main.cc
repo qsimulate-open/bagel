@@ -94,14 +94,18 @@ int main(int argc, char** argv) {
       }
 
       // TODO we are checking this for non-DF method...
-      if (geom->df() == nullptr)
+      if (geom) if (geom->df() == nullptr)
         throw runtime_error("It seems that DF basis was not specified in Geometry");
+      if (cgeom) if (cgeom->df() == nullptr)
+        throw runtime_error("It seems that DF basis was not specified in Geometry_London");
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
+      assert (!geom || !cgeom);
       // most methods are constructed here
-      shared_ptr<Method> method = construct_method(title, itree, geom, ref);
+      if (geom) method = construct_method(title, itree, geom, ref);
+      if (cgeom) method = construct_method(title, itree, cgeom, ref);
 
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));

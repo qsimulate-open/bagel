@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: construct_method.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: scf_london.h
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,18 +24,30 @@
 //
 
 
-#ifndef __SRC_WFN_CONSTRUCT_METHOD_H
-#define __SRC_WFN_CONSTRUCT_METHOD_H
+#ifndef __BAGEL_SRC_LONDON_SCF_LONDON_H
+#define __BAGEL_SRC_LONDON_SCF_LONDON_H
 
 #include <src/wfn/method.h>
-#include <src/wfn/reference.h>
-#include <src/input/input.h>
 
 namespace bagel {
-  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
-                                                  std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
-  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
-                                                  std::shared_ptr<const Geometry_London> geom, std::shared_ptr<const Reference> ref);
+
+class SCF_London : public Method {
+
+  protected:
+
+  public:
+    SCF_London() { }
+    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re = nullptr) { };
+    virtual ~SCF_London() { }
+
+    void compute() override;
+    std::shared_ptr<const Reference> conv_to_ref() const override;
+
+};
+
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SCF_London)
 
 #endif
