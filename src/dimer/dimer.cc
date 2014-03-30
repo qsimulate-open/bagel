@@ -570,7 +570,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       copy_n(subspace.data(), dimerbasis_ * norb, out_coeff->element_ptr(0, active_position));
       active_position += norb;
 
-      for (size_t i = nact; i < active_size; ++i)
+      for (size_t i = norb; i < active_size; ++i)
         copy_n(subspace.element_ptr(0, i), dimerbasis_, out_coeff->element_ptr(0, ( closed ? closed_position++ : virt_position++ )));
     }
     else {
