@@ -73,8 +73,10 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
     shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
     const double correction = smith->correction();
     // add correction to active part of the correlated one-body density
+    shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
     for (int i = nclosed; i != nclosed+nact; ++i)
-      d1tmp->element(i, i) -=  correction * 2.0;
+      for (int j = nclosed; j != nclosed+nact; ++j)
+        d1tmp->element(j, i) -=  correction * d0->element(j, i);
     cider = smith->cider();
     target_ = smith->algo()->ref()->target();
     ncore_ = smith->algo()->ref()->ncore();
