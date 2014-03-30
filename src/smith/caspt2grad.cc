@@ -69,6 +69,10 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
+    cider = smith->cider();
+    target_ = smith->algo()->ref()->target();
+    ncore_ = smith->algo()->ref()->ncore();
+
     // save correlated density matrices d(1), d(2), and ci derivatives
     shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
     const double correction = smith->correction();
@@ -76,10 +80,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
     shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
     for (int i = nclosed; i != nclosed+nact; ++i)
       for (int j = nclosed; j != nclosed+nact; ++j)
-        d1tmp->element(j, i) -=  correction * d0->element(j, i);
-    cider = smith->cider();
-    target_ = smith->algo()->ref()->target();
-    ncore_ = smith->algo()->ref()->ncore();
+        d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
     if (!ncore_) {
       d1 = d1tmp;
     } else {
