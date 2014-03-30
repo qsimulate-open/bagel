@@ -74,6 +74,7 @@ class SRBFGS {
     std::vector<std::shared_ptr<const T>> y() const { return y_; }
     std::shared_ptr<const T> prev_grad() const { return prev_grad_; }
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
+    std::shared_ptr<const T> level_shift() const { return level_shift_; }
 
     // sets initial trust radius ; presently not used
     void initiate_trust_radius(std::shared_ptr<const T> _grad) {
@@ -210,57 +211,57 @@ class SRBFGS {
 
     // apply inverse hessian according to BFGS recursion without updating intermediate quantities
     std::shared_ptr<T> apply_inverse_hessian(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift) {
-    // applies hessian inverse without updating intermediates
-    // to make sure, inputs are copied.
-    auto grad = std::make_shared<const T>(*_grad);
-    auto value = std::make_shared<const T>(*_value);
-    auto shift = std::make_shared<const T>(*_shift);
-    auto vector = std::make_shared<const T>(*_vector);
-    auto out = std::make_shared<T>(*grad);
-    // (1)
-    *out /= (*denom_ + *shift);
-    if (prev_value_ != nullptr && !debug_) {
-      // (3)
-      std::shared_ptr<T> yy = grad->clone();
+      // applies hessian inverse without updating intermediates
+      // to make sure, inputs are copied.
+      auto grad = std::make_shared<const T>(*_grad);
+      auto value = std::make_shared<const T>(*_value);
+      auto shift = std::make_shared<const T>(*_shift);
+      auto vector = std::make_shared<const T>(*_vector);
+      auto out = std::make_shared<T>(*vector);
+      // (1)
+      *out /= (*denom_ + *shift);
+      if (prev_value_ != nullptr && !debug_) {
+        // (3)
+        std::shared_ptr<T> yy = grad->clone();
 
-      auto DD = std::make_shared<T>(*grad - *prev_grad_);
+        auto DD = std::make_shared<T>(*grad - *prev_grad_);
 
-      *yy = *DD / (*denom_ + *shift);
+        *yy = *DD / (*denom_ + *shift);
 
-      auto vv = std::make_shared<T>(*value - *prev_value_);
+        auto vv = std::make_shared<T>(*value - *prev_value_);
 
-      const int n = delta_.size()-1;
-      assert(delta_.size() == y_.size() && y_.size() == D_.size()); // must have been updated prior ; no updates here
+        const int n = delta_.size()-1;
+//        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
   
-      // (4)
-      for (int i = 0; i < n; ++i) {
-        auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
-        auto s2 = detail::real(1.0 / D_[i]->dot_product(y_[i]));
-        auto s3 = delta_[i]->dot_product(vector);
-        auto s4 = y_[i]->dot_product(vector);
-        auto s5 = delta_[i]->dot_product(DD);
-        auto s6 = y_[i]->dot_product(DD);
-        auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
-        auto t2 = s1 * s3;
-        auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
-        auto t4 = s1 * s5;
-        out->ax_plus_y(t1, delta_[i]);
-        out->ax_plus_y(-t2, y_[i]);
-        yy->ax_plus_y(t3, delta_[i]);
-        yy->ax_plus_y(-t4, y_[i]);
+        // (4)
+        for (int i = 0; i < n; ++i) {
+          auto s1 = detail::real(1.0 / D_[i]->dot_product(delta_[i]));
+          auto s2 = detail::real(1.0 / D_[i]->dot_product(y_[i]));
+          auto s3 = delta_[i]->dot_product(vector);
+          auto s4 = y_[i]->dot_product(vector);
+          auto s5 = delta_[i]->dot_product(DD);
+          auto s6 = y_[i]->dot_product(DD);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
+          auto t3 = (1.0 + s1/s2) * s1 * s5 - s1 * s6;
+          auto t4 = s1 * s5;
+          out->ax_plus_y(t1, delta_[i]);
+          out->ax_plus_y(-t2, y_[i]);
+          yy->ax_plus_y(t3, delta_[i]);
+          yy->ax_plus_y(-t4, y_[i]);
+        }
+        { // (5)
+          auto s1 = detail::real(1.0 / DD->dot_product(vv));
+          auto s2 = detail::real(1.0 / DD->dot_product(std::shared_ptr<const T>(yy)));
+          auto s3 = vv->dot_product(vector);
+          auto s4 = yy->dot_product(vector);
+          auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
+          auto t2 = s1 * s3;
+          out->ax_plus_y(t1, vv);
+          out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
+        }
       }
-      { // (5)
-        auto s1 = detail::real(1.0 / DD->dot_product(vv));
-        auto s2 = detail::real(1.0 / DD->dot_product(std::shared_ptr<const T>(yy)));
-        auto s3 = vv->dot_product(vector);
-        auto s4 = yy->dot_product(vector);
-        auto t1 = (1.0 + s1/s2) * s1 * s3 - s1 * s4;
-        auto t2 = s1 * s3;
-        out->ax_plus_y(t1, vv);
-        out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
-      }
-    }
-    return out;
+      return out;
     }
 
 
@@ -301,6 +302,9 @@ class SRBFGS {
       if (tight) {
         alpha = alpha + static_cast<double>(f.size()-1) * 0.25;
       }
+
+      std::shared_ptr<T> acopy = extrapolate_micro(grad, value, shift, true);
+#if 0
       std::shared_ptr<T> acopy = extrapolate_micro(grad, value, shift, false);
       for (int mi = 0; mi!= maxiter_; ++mi) {
         std::shared_ptr<T> V = interpolate_hessian(acopy, shift, false); // H_n * a
@@ -337,8 +341,6 @@ class SRBFGS {
           } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
             std::cout << " scaling down the step vector " << std::endl;
-            if (delta().size() == Y().size() && delta().size() != 0)
-              decrement_intermediates();
             acopy->scale(1.0/alpha);
             trust_radius_ = trust_radius_ * 2.0/3.0;
             std::cout << " end microiteration " << mi << std::endl;
@@ -370,14 +372,54 @@ class SRBFGS {
               decrement_intermediates();
             acopy->scale(1.0/alpha);
             trust_radius_ = trust_radius_ / alpha;
+            std::cout << " pk * grad    = " << acopy->dot_product(grad) << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
           }
         }
       }
+#endif
       return acopy;
     }
 
 
+   double newton_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
+     // iteratively finds an appropriate level shift according to Newton-Raphson algorithm
+     // that satisfies     fn(v)  = h_k^2 ; hk is the trust radius and fn(v) = gn^+ (Hn + vI)^-2 gn
+     // exact gradient and hessian 
+     // TODO: need a way to guess intial value from denom
+     
+     // to make sure, inputs are copied
+     auto grad  = std::make_shared<const T>(*_grad);
+     auto value = std::make_shared<const T>(*_value);
+     if (delta().size() == 0) 
+       initiate_trust_radius(grad);
+     std::cout << " trust radius    = " << trust_radius_ << std::endl;
+     
+     double shift = fabs(level_shift_);
+     std::cout << "shift = " << shift << std::endl;
+     auto shift_vec = value->clone();
+     shift_vec->fill(level_shift_);
+     for (int k = 0; k != 20; ++k) {
+       auto dl  = apply_inverse_hessian(grad, value, grad, shift_vec); // Hn^-1 * gn
+       std::cout << std::setprecision(6) << " dl norm     = " << 
+            std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
+       auto dl2 = apply_inverse_hessian(grad, value, dl, shift_vec);   // Hn^-2 * gn
+       auto dl3 = detail::real(dl2->dot_product(dl));                  // gn * Hn^-3 * gn
+       auto dl4 = detail::real(dl2->dot_product(dl2));                 // gn * Hn^-4 * gn
+       auto dshift = dl3 / dl4 / 3.0;                                  // factor comes from derivatives
+       std::cout << " dshift  = " << dshift << std::endl;
+       shift += dshift;
+       shift_vec->fill(shift);
+       dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
+       auto dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
+       std::cout << " step norm with new shift    = " << 
+          std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
+       if (dl_norm <= trust_radius_) break;
+       std::cout << "shift end loop = " << shift << std::endl;
+     }
+     level_shift_ = shift;
+     return shift;
+   }
     // decrement intermediates
     void decrement_y() { y_.pop_back(); }
     void decrement_delta() { delta_.pop_back(); }
