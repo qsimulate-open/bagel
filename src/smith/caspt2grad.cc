@@ -48,6 +48,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   // update reference
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
+  thresh_ = cas->thresh();
 }
 
 
@@ -140,7 +141,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, fci->civectors(), half, halfjj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(1.0e-10);
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
 
   // form relaxed 1RDM
   // form Zd + dZ^+

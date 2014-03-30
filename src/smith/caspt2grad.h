@@ -45,6 +45,7 @@ class CASPT2Grad : public Method {
     int target_;
     int ncore_;
     double energy_;
+    double thresh_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -56,6 +57,7 @@ class CASPT2Grad : public Method {
     int target() const { return target_; }
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }
+    double thresh() const { return thresh_; }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
