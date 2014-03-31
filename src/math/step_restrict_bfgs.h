@@ -420,6 +420,44 @@ class SRBFGS {
      level_shift_ = shift;
      return shift;
    }
+
+   double hebden_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
+     // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
+     // TODO: need a way to guess intial value from denom
+     
+     // to make sure, inputs are copied
+     auto grad  = std::make_shared<const T>(*_grad);
+     auto value = std::make_shared<const T>(*_value);
+     if (prev_value_ == nullptr) 
+       initiate_trust_radius(grad);
+     std::cout << " trust radius    = " << trust_radius_ << std::endl;
+     
+     double shift = 0.0; // level_shift_;
+     std::cout << "shift = " << shift << std::endl;
+     auto shift_vec = value->clone();
+     shift_vec->fill(shift);
+     double dl_norm;
+     for (int k = 0; k != 1; ++k) {
+       auto dl  = apply_inverse_hessian(grad, value, grad, shift_vec); // Hn^-1 * gn
+       dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
+       if (dl_norm <= trust_radius_) break;
+       auto dl2 = apply_inverse_hessian(grad, value, dl, shift_vec);   // Hn^-2 * gn
+       auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
+       auto t1  =  dl_norm / dl2_norm;
+       auto t2  =  dl_norm / trust_radius_;
+       auto t3  =  (t2 - 1.0) * t1;
+       auto dshift = t3;
+       shift += dshift;
+       shift_vec->fill(shift);
+       dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
+       dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
+          std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
+     }
+     level_shift_ = shift;
+     return shift;
+   }
+
+
     // decrement intermediates
     void decrement_y() { y_.pop_back(); }
     void decrement_delta() { delta_.pop_back(); }
