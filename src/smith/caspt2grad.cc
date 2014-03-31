@@ -52,15 +52,10 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 }
 
 
-void CASPT2Grad::compute() { }
-
-tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec>>
-  CASPT2Grad::process_smith() {
-
+// compute smith and set rdms and ci deriv to a member
+void CASPT2Grad::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
-  shared_ptr<const Matrix> d1, d2;
-  shared_ptr<const Civec> cider;
   {
     // construct SMITH here
     shared_ptr<const PTree> smithinput = idata_->get_child("smith");
@@ -70,9 +65,9 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
-    cider = smith->cider();
+    cideriv_ = smith->cideriv();
     target_ = smith->algo()->ref()->target();
-    ncore_ = smith->algo()->ref()->ncore();
+    ncore_  = smith->algo()->ref()->ncore();
 
     // save correlated density matrices d(1), d(2), and ci derivatives
     shared_ptr<Matrix> d1tmp = make_shared<Matrix>(*smith->dm1());
@@ -83,16 +78,15 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Civec
       for (int j = nclosed; j != nclosed+nact; ++j)
         d1tmp->element(j-ncore_, i-ncore_) -=  correction * d0->element(j, i);
     if (!ncore_) {
-      d1 = d1tmp;
+      d1_ = d1tmp;
     } else {
       auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
       d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
-      d1 = d1tmp2;
+      d1_ = d1tmp2;
     }
-    d2 = smith->dm2();
+    d2_ = smith->dm2();
     energy_ = smith->algo()->energy() + fci_->energy(target_);
   }
-  return make_tuple(d1, d2, cider);
 }
 
 
@@ -107,9 +101,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const RDM<1>> rdm1_av = fci->rdm1_av();
   shared_ptr<const RDM<2>> rdm2_av = fci->rdm2_av();
 
-  shared_ptr<const Matrix> d1, d2;
-  shared_ptr<const Civec> cider;
-  tie(d1, d2, cider) = task_->process_smith();
+  shared_ptr<const Matrix> d1 = task_->d1();
+  shared_ptr<const Matrix> d2 = task_->d2();
+  shared_ptr<const Civec> cider = task_->cideriv();
 
   shared_ptr<const Matrix> coeff = task_->coeff();
 
@@ -151,7 +145,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<Matrix> dtot = d0->copy();
   dtot->ax_plus_y(1.0, dm);
   dtot->ax_plus_y(1.0, d1);
-  if (ncore && ncore < nclosed)
+  if (smallz)
     dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
 
   // form zdensity

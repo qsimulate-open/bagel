@@ -65,7 +65,7 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> dm1() { return dm1_; }
     std::shared_ptr<const Matrix> dm2() { return dm2_; }
     double correction() { return correction_; }
-    std::shared_ptr<const Civec> cider() { return cider_; }
+    std::shared_ptr<const Civec> cideriv() { return cider_; }
     std::shared_ptr<const Coeff> coeff() { return coeff_; }
 
     std::shared_ptr<const SMITH::SpinFreeMethod<SMITH::Storage_Incore>> algo() const { return algo_; }

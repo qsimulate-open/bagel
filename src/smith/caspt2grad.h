@@ -36,8 +36,10 @@ namespace bagel {
 
 class CASPT2Grad : public Method {
   protected:
-    std::shared_ptr<const Matrix> yrs_;
     std::shared_ptr<const Matrix> coeff_;
+    std::shared_ptr<const Matrix> d1_;
+    std::shared_ptr<const Matrix> d2_;
+    std::shared_ptr<const Civec> cideriv_;
 
     std::shared_ptr<FCI> fci_;
 
@@ -53,6 +55,10 @@ class CASPT2Grad : public Method {
     void compute() override;
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> d2() const { return d2_; }
+    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
+
     std::shared_ptr<FCI> fci() const { return fci_; }
     int target() const { return target_; }
     int ncore() const { return ncore_; }
