@@ -70,8 +70,6 @@ class CASPT2Grad : public Method {
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
                 std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
-
-    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Civec>> process_smith();
 };
 
 }
