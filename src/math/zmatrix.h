@@ -61,6 +61,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(double* vec);
+    void diagonalize_nonhermitian(std::complex<double>* eig, std::complex<double>* left, std::complex<double>* right);
 
     std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 
@@ -69,6 +70,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     bool inverse_half(const double thresh = 1.0e-8);
+    bool inverse_half_nonhermitian(const double thresh = 1.0e-8);
     std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;
@@ -138,7 +140,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void ax_plus_y(const std::complex<double> a, const ZMatrix& o) { this->ax_plus_y_impl(a, o); }
     std::complex<double> dot_product(const ZMatrix& o) const { return this->dot_product_impl(o); }
 
-    double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); } 
+    double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); }
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
       assert(ndim_ == mdim_);
@@ -197,7 +199,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     using DistMatrix_base<std::complex<double>>::ax_plus_y;
     using DistMatrix_base<std::complex<double>>::dot_product;
 
-    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { this->ax_plus_y_impl(a, o); } 
+    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { this->ax_plus_y_impl(a, o); }
     std::complex<double> dot_product(const DistZMatrix& o) const { return this->dot_product_impl(o); }
 
     std::shared_ptr<ZMatrix> matrix() const;

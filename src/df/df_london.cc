@@ -121,7 +121,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   time.tick_print("2-index ints");
 
   if (compute_inverse) {
-    data2_->inverse_half(throverlap);
+    data2_->inverse_half_nonhermitian(throverlap);
     // will use data2_ within node
     data2_->localize();
     time.tick_print("computing inverse");
