@@ -106,7 +106,7 @@ class SRBFGS {
 
         }
         const int n = delta_.size()-1;
-        assert(delta_.size() == Y_.size()+1 && Y_.size()+1 == D_.size());
+        assert(delta_.size() == Y_.size()+1 && Y_.size()+1 == D_.size()); // NOT SURE ABOUT THIS
 
         // (4)
         for (int i = 0; i < n; ++i) {
@@ -138,7 +138,7 @@ class SRBFGS {
         if (update) {
           Y_.push_back(yy);
           assert(Y_.size() == n+1);
-       }
+        }
       }
       return out;
     }
@@ -391,7 +391,7 @@ class SRBFGS {
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
      auto value = std::make_shared<const T>(*_value);
-     if (delta().size() == 0) 
+     if (prev_value_ == nullptr) 
        initiate_trust_radius(grad);
      std::cout << " trust radius    = " << trust_radius_ << std::endl;
      
@@ -401,8 +401,10 @@ class SRBFGS {
      shift_vec->fill(level_shift_);
      for (int k = 0; k != 20; ++k) {
        auto dl  = apply_inverse_hessian(grad, value, grad, shift_vec); // Hn^-1 * gn
+       auto dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
        std::cout << std::setprecision(6) << " dl norm     = " << 
             std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
+       if (dl_norm <= trust_radius_) break;
        auto dl2 = apply_inverse_hessian(grad, value, dl, shift_vec);   // Hn^-2 * gn
        auto dl3 = detail::real(dl2->dot_product(dl));                  // gn * Hn^-3 * gn
        auto dl4 = detail::real(dl2->dot_product(dl2));                 // gn * Hn^-4 * gn
@@ -411,7 +413,7 @@ class SRBFGS {
        shift += dshift;
        shift_vec->fill(shift);
        dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
-       auto dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
+       dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
        std::cout << " step norm with new shift    = " << 
           std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
        if (dl_norm <= trust_radius_) break;
@@ -451,7 +453,6 @@ class SRBFGS {
        shift_vec->fill(shift);
        dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
        dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
-          std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
      }
      level_shift_ = shift;
      return shift;
