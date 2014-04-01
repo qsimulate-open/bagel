@@ -459,17 +459,81 @@ class SRBFGS {
    }
 
 
-    // decrement intermediates
-    void decrement_y() { y_.pop_back(); }
-    void decrement_delta() { delta_.pop_back(); }
-    void decrement_D() { D_.pop_back(); }
-    void decrement_Y() { Y_.pop_back(); }
+   // returns a level-shifted displacement according to Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
+    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift) {
+      // to make sure, inputs are copied.
+      auto grad = std::make_shared<const T>(*_grad);
+      auto value = std::make_shared<const T>(*_value);
+      auto shift = std::make_shared<const T>(*_shift);
+      auto out = std::make_shared<T>(*value);
+      *out /= (*denom_ + *shift);
 
-    void decrement_intermediates() {
-      decrement_y();
-      decrement_delta();
-      decrement_D();
-    }
+      if (prev_value_ != nullptr && !debug_) {
+        std::shared_ptr<T> yy = grad->clone();
+        {
+          auto DD = std::make_shared<T>(*grad - *prev_grad_);
+          D_.push_back(DD); 
+
+          auto vv = std::make_shared<T>(*value - *prev_value_);
+
+          // interpolate_hessian : H * vv ? ; must be called before delta_ is updated due to size expectations.
+          auto zero = grad->clone();
+          auto xx = interpolate_hessian(vv, zero, true);
+          avec_.push_back(xx);
+
+          delta_.push_back(vv);
+        } 
+        const int n = delta_.size();
+// need new assert statement than before
+
+        auto ptmp = value->clone();
+        std::vector<std::shared_ptr<const T>> pvec;
+        std::vector<double> vcoeff;
+        double vtmp;
+        for (int j = 0; j < n; ++j) {
+          auto ctmp = value->clone();
+          if (j%2 == 0) {
+            ctmp = avec_.at(j/2);
+            auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
+            ctmp->scale(s1);
+          } else {
+            ctmp = D_.at((j-1)/2);
+            auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
+            ctmp->scale(s1);
+          }
+          *ptmp = *ctmp / (*denom + *shift);
+          for (int i = 0; i != j; ++i) {
+            auto s1 = detail::real(pvec.at(i)->dot_product(ctmp)); // double check for complex case
+            auto s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
+            ptmp->ax_plus_y(s2, pvec[i]);
+          }
+          auto s1   = detail::real(ptmp->dot_product(ctmp)); // double check for complex case
+          auto s2   = 1.0 + pow(-1.0, j%2) * s1;
+          vtmp      = 1.0 / s2;
+          s1        = ptmp->dot_product(value);
+          s2        = pow(-1.0, j%2) * vtmp * s1;
+          out->ax_plus_y(s2, ptmp);
+          vcoeff.push_back(vtmp);
+          pvec.push_back(ptmp);
+        }
+      }
+      prev_grad_ = grad;
+      prev_value_ = value;
+      return out;
+   }
+
+
+   // decrement intermediates
+   void decrement_y() { y_.pop_back(); }
+   void decrement_delta() { delta_.pop_back(); }
+   void decrement_D() { D_.pop_back(); }
+   void decrement_Y() { Y_.pop_back(); }
+
+   void decrement_intermediates() {
+     decrement_y();
+     decrement_delta();
+     decrement_D();
+   }
 
 };
 
