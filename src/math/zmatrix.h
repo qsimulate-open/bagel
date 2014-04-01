@@ -61,7 +61,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(double* vec);
-    void diagonalize_nonhermitian(std::complex<double>* eig, std::complex<double>* left, std::complex<double>* right);
 
     std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 
@@ -70,7 +69,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void inverse();
     // compute S^-1/2. If an eigenvalue of S is smaller than thresh, the root will be discarded.
     bool inverse_half(const double thresh = 1.0e-8);
-    bool inverse_half_nonhermitian(const double thresh = 1.0e-8);
     std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;
