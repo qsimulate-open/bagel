@@ -43,6 +43,7 @@ template<typename T>
 class SRBFGS {
   protected:
     std::vector<std::shared_ptr<const T>> delta_;
+    std::vector<std::shared_ptr<const T>> avec_;
     std::vector<std::shared_ptr<const T>> y_;
     std::vector<std::shared_ptr<const T>> D_;
     std::vector<std::shared_ptr<const T>> Y_;
@@ -72,6 +73,7 @@ class SRBFGS {
     std::vector<std::shared_ptr<const T>> Y() const { return Y_; }
     std::vector<std::shared_ptr<const T>> D() const { return D_; }
     std::vector<std::shared_ptr<const T>> y() const { return y_; }
+    std::vector<std::shared_ptr<const T>> avec() const { return avec_; }
     std::shared_ptr<const T> prev_grad() const { return prev_grad_; }
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
     std::shared_ptr<const T> level_shift() const { return level_shift_; }
@@ -488,19 +490,19 @@ class SRBFGS {
         const int n = delta_.size();
 // need new assert statement than before
 
-        auto ptmp = value->clone();
         std::vector<std::shared_ptr<T>> pvec;
         std::vector<double> vcoeff;
         double vtmp;
-        for (int j = 0; j < n; ++j) {
+        for (int j = 0; j != 2*n; ++j) {
+          auto ptmp = value->clone();
           auto ctmp = value->clone();
           if (j%2 == 0) {
             ctmp = std::make_shared<T>(*avec_.at(j/2));
-            auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
+            auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
             ctmp->scale(s1);
           } else {
             ctmp = std::make_shared<T>(*D_.at((j-1)/2));
-            auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
+            auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
             ctmp->scale(s1);
           }
           *ptmp = *ctmp / (*denom_ + *shift);
@@ -510,10 +512,10 @@ class SRBFGS {
             ptmp->ax_plus_y(s2, pvec[i]);
           }
           auto s1   = detail::real(ptmp->dot_product(ctmp)); // double check for complex case
-          auto s2   = 1.0 + pow(-1.0, j%2) * s1;
+          auto s2   = 1.0 + pow(-1.0, j%2+1) * s1;
           vtmp      = 1.0 / s2;
-          s1        = detail::real(ptmp->dot_product(value));
-          s2        = pow(-1.0, j%2) * vtmp * s1;
+          s1        = detail::real(ptmp->dot_product(vector));
+          s2        = pow(-1.0, j%2+1) * vtmp * s1;
           out->ax_plus_y(s2, ptmp);
           vcoeff.push_back(vtmp);
           pvec.push_back(ptmp);
