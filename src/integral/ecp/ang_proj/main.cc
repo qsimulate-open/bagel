@@ -11,7 +11,7 @@
 double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_ptr<CartesianGauss> gB) {
 
   const int max_iter = 100;
-  const double thresh_int = 10e-10;
+  const double thresh_int = 10e-5;
   double overlapss;
 
   for (int i = 0; i != 3; ++i) {
@@ -262,20 +262,41 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
 #if 1
   cout << "TEST int <d| (|22><22| + |21><21| + |20><20| + |2-1><2-1| + |2-2><2-2|) d>(r) dr" << endl;
-  std::array<int, 2> lmd = {2, 0};
-  double int_dd = 0.0;
-  for (int i = 0; i <= 4; ++i) {
-    lmd[1] = i - 2;
-    std::shared_ptr<RealSH> rshd = std::make_shared<RealSH>(lmd, centreB);
-    std::shared_ptr<ProjectionInt> projABd = std::make_shared<ProjectionInt>(cargaussA, rshd);
-    std::shared_ptr<ProjectionInt> projCBd = std::make_shared<ProjectionInt>(cargaussC, rshd);
-    std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABdC(projABd, projCBd);
-    Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(max_iter, thresh_int, projABdC);
-    cout << " (l, m) = (" << lmd[0] << ", " << lmd[1] << ")   ecpABdC = " << ecpABdC.integral() << endl;
-    int_dd += ecpABdC.integral();
+
+  for (int lxA = 0; lxA <= 2; ++lxA) {
+    for (int lyA = 2 - lxA; lyA >= 0; --lyA) {
+      for (int lxC = 0; lxC <= 2; ++lxC) {
+        for (int lyC = 2 - lxC; lyC >= 0; --lyC) {
+          int lzC = 2 - lxC - lyC;
+          int lzA = 2 - lxA - lyA;
+//        cout << " dA = (" << lxA << ", " << lyA << ", " << lzA << "); dC = (" << lxC << ", " << lyC << ", " << lzC << ")" << endl;
+          std::array<int, 3> lA = {lxA, lyA, lzA};
+          std::array<int, 3> lC = {lxC, lyC, lzC};
+          std::shared_ptr<CartesianGauss> gA = std::make_shared<CartesianGauss>(alphaA, lA, centreA);
+          std::shared_ptr<CartesianGauss> gC = std::make_shared<CartesianGauss>(alphaC, lC, centreC);
+          double int_dd = 0.0;
+          std::array<int, 2> lmd = {2, 0};
+          for (int i = 0; i <= 4; ++i) {
+            lmd[1] = i - 2;
+            std::shared_ptr<RealSH> rshd = std::make_shared<RealSH>(lmd, centreB);
+            std::shared_ptr<ProjectionInt> projABd = std::make_shared<ProjectionInt>(gA, rshd);
+            std::shared_ptr<ProjectionInt> projCBd = std::make_shared<ProjectionInt>(gC, rshd);
+            std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABdC(projABd, projCBd);
+            Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(max_iter, thresh_int, projABdC);
+//          cout << "<" << lxA << lyA << lzA << "|" << lmd[0] << lmd[1] << "><" << lmd[0] << lmd[1] << "|" << lxC << lyC << lzC << "> = " << ecpABdC.integral() << endl;
+            int_dd += ecpABdC.integral();
+          }
+//        cout << "<d_A|2m_B><2m_B|d_C> = " << int_dd << endl;
+          cout << "\\\\  \\braket{" << lxA << lyA << lzA << "_A | 2m_B}\\braket{2m_B | " << lxC << lyC << lzC << "_C} &= " << int_dd << endl;
+
+          const double overlapdd = overlap_ss(gA, gC);
+//        cout << "NA NC <dA|dC> = " << overlapdd << endl;
+//        cout << "\\\\  \\braket{" << lxA << lyA << lzA << " | " << lxC << lyC << lzC << "} &= " << overlapdd << endl;
+        }
+      }
+    }
   }
 
-  cout << "Answer = " << int_dd << endl;
 #endif
 
 #if 0
