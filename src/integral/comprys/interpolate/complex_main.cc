@@ -581,7 +581,7 @@ void ComplexERIRootList::" << func << nroot << "(const complex<double>* ta, comp
 // These next two sections print the ax and aw vectors we generated based on
 // the output of the "dsyev" function.  
 ofs << "\n\
-  constexpr double ax["<<nroot<<"] = {";
+  static constexpr double ax["<<nroot<<"] = {";
     for (int j=0; j!=nroot; ++j) {
       ofs << scientific << setprecision(15) << setw(20) << aroot[j];
       if (j!=nroot-1) ofs << ",";
@@ -589,7 +589,7 @@ ofs << "\n\
     }
     ofs << "};" << endl;
     ofs << "\
-  constexpr double aw["<<nroot<<"] = {";
+  static constexpr double aw["<<nroot<<"] = {";
     for (int j=0; j!=nroot; ++j) {
       ofs << scientific << setprecision(15) << setw(20) << aweight[j];
       if (j!=nroot-1) ofs << ",";
@@ -659,19 +659,19 @@ ofs << "\n\
   // This next little chunk prints all the x and w values from their strings into the generated files
   // Note that I have removed a line that is unneded due to exclusion of BREIT & SPIN2:  string tafactor = "t";
     ofs << "\
-  constexpr double xr[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
+  static constexpr double xr[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
     ofs << listxr.str() << "\
   };" << endl;
     ofs << "\
-  constexpr double xi[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
+  static constexpr double xi[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
     ofs << listxi.str() << "\
   };" << endl;
     ofs << "\
-  constexpr double wr[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
+  static constexpr double wr[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
     ofs << listwr.str() << "\
   };" << endl;
     ofs << "\
-  constexpr double wi[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
+  static constexpr double wi[" << ibox*(rbox*nval2+CUTOFF*(nval1-nval2)) << "] = {";
     ofs << listwi.str() << "\
   };" << endl;
     ofs << "\
