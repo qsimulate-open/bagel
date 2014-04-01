@@ -55,7 +55,7 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 
 Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_{0.0},
-                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)}, dummy_(true) {
+                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }

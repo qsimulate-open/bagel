@@ -98,6 +98,17 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
+  std::array<double,3> magnetic_field_aux;
+#if 0
+  magnetic_field_aux[0] = magnetic_field_[0];
+  magnetic_field_aux[1] = magnetic_field_[1];
+  magnetic_field_aux[2] = magnetic_field_[2];
+#else
+  magnetic_field_aux[0] = 0.0;
+  magnetic_field_aux[1] = 0.0;
+  magnetic_field_aux[2] = 0.0;
+#endif
+
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
     // read the default aux basis file
@@ -106,7 +117,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
-          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem));
+          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
         } else {
           // we need a dummy atom here to be consistent in gradient computations
           aux_atoms_.push_back(iatom);
@@ -115,7 +126,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
     } else {
       auto atoms = geominfo->get_child("geometry");
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_, true));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux, true));
     }
   }
 
@@ -130,7 +141,10 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
                                                             << setw(7) << magnetic_field_[2] << ") a.u." << endl << endl;
-  // TODO throw runtime error if magnetic field is specified with a method that doesn't use it?
+  if (nonzero_magnetic_field())
+  cout << "  Auxiliary magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_aux[0] << ", "
+                                                            << setw(7) << magnetic_field_aux[1] << ", "
+                                                            << setw(7) << magnetic_field_aux[2] << ") a.u." << endl << endl;
 
   common_init2(true, overlap_thresh_);
 
@@ -591,9 +605,9 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   return geom;
 }
 
+// TODO Need to make ComplexSmallERIBatch and ComplexMixedERIBatch?
 void Geometry_London::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
-// TODO Need to make ComplexSmallERIBatch and ComplexMixedERIBatch?
 //  dfs_  = form_fit<DFDist_London_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
 //  if (do_gaunt)
 //    dfsl_ = form_fit<DFDist_London_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);

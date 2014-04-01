@@ -151,8 +151,12 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const array<double,3> mag_field)
  : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+
+  vector_potential_[0] = 0.5*(mag_field[1]*position_[2] - mag_field[2]*position_[1]);
+  vector_potential_[1] = 0.5*(mag_field[2]*position_[0] - mag_field[0]*position_[2]);
+  vector_potential_[2] = 0.5*(mag_field[0]*position_[1] - mag_field[1]*position_[0]);
 
   if (elem)
     for (auto& i : *elem) {

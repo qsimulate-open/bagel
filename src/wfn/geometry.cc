@@ -106,7 +106,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) {
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
-          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem));
+          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_));
         } else {
           // we need a dummy atom here to be consistent in gradient computations
           aux_atoms_.push_back(iatom);
@@ -130,7 +130,6 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) {
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
                                                             << setw(7) << magnetic_field_[2] << ") a.u." << endl << endl;
-  // TODO throw runtime error if magnetic field is specified with a method that doesn't use it?
 
   common_init2(true, overlap_thresh_);
 
@@ -472,7 +471,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
     } else {
       // in the molden case
       for (auto& i : atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_));
     }
   }
   // symmetry
