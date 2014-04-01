@@ -460,12 +460,14 @@ class SRBFGS {
 
 
    // returns a level-shifted displacement according to Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
-    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift) {
+    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift) {
       // to make sure, inputs are copied.
       auto grad = std::make_shared<const T>(*_grad);
       auto value = std::make_shared<const T>(*_value);
+      auto vector = std::make_shared<const T>(*_vector);
       auto shift = std::make_shared<const T>(*_shift);
-      auto out = std::make_shared<T>(*value);
+      auto out = std::make_shared<T>(*vector);
+
       *out /= (*denom_ + *shift);
 
       if (prev_value_ != nullptr && !debug_) {
@@ -487,21 +489,21 @@ class SRBFGS {
 // need new assert statement than before
 
         auto ptmp = value->clone();
-        std::vector<std::shared_ptr<const T>> pvec;
+        std::vector<std::shared_ptr<T>> pvec;
         std::vector<double> vcoeff;
         double vtmp;
         for (int j = 0; j < n; ++j) {
           auto ctmp = value->clone();
           if (j%2 == 0) {
-            ctmp = avec_.at(j/2);
+            ctmp = std::make_shared<T>(*avec_.at(j/2));
             auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
             ctmp->scale(s1);
           } else {
-            ctmp = D_.at((j-1)/2);
+            ctmp = std::make_shared<T>(*D_.at((j-1)/2));
             auto s1 = std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
             ctmp->scale(s1);
           }
-          *ptmp = *ctmp / (*denom + *shift);
+          *ptmp = *ctmp / (*denom_ + *shift);
           for (int i = 0; i != j; ++i) {
             auto s1 = detail::real(pvec.at(i)->dot_product(ctmp)); // double check for complex case
             auto s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
@@ -510,7 +512,7 @@ class SRBFGS {
           auto s1   = detail::real(ptmp->dot_product(ctmp)); // double check for complex case
           auto s2   = 1.0 + pow(-1.0, j%2) * s1;
           vtmp      = 1.0 / s2;
-          s1        = ptmp->dot_product(value);
+          s1        = detail::real(ptmp->dot_product(value));
           s2        = pow(-1.0, j%2) * vtmp * s1;
           out->ax_plus_y(s2, ptmp);
           vcoeff.push_back(vtmp);
