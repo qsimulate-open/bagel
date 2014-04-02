@@ -68,22 +68,27 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   refgeom2->print_atoms();
 
   auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
-  MixedBasis<OverlapBatch> mixedSra(auxgeom, refgeom);
-  mixedSra.print("< r | a >", 21);
-  cout << "ndim = " << mixedSra.ndim() << " mdim = " << mixedSra.mdim() << endl;
-  MixedBasis<OverlapBatch> mixedSsa(refgeom2, auxgeom);
-  mixedSsa.print("< s | a >", 21);
-  cout << "ndim = " << mixedSsa.ndim() << " mdim = " << mixedSsa.mdim() << endl;
-  MixedBasis<OverlapBatch> S(auxgeom, auxgeom);
-//S.print("< a | a >", 21);
-//cout << "ndim = " << S.ndim() << " mdim = " << S.mdim() << endl;
-  S.inverse();
-#if 1
-  (mixedSra * S * mixedSsa).print(" < r | a > S^{-1} < a | s > ", 21);
-#endif
 
-  MixedBasis<OverlapBatch> overlap(refgeom, refgeom2);
-  overlap.print(" < r | s > ", 21);
+#if 1
+  // Test < r | a >< a | s>
+  MixedBasis<OverlapBatch> mixedSra(auxgeom, refgeom);
+  mixedSra.print("< r | a >", 25);
+  MixedBasis<OverlapBatch> mixedSsa(refgeom2, auxgeom);
+  mixedSsa.print("< s | a >", 25);
+  MixedBasis<OverlapBatch> S(auxgeom, auxgeom);
+  S.inverse();
+//(mixedSra * S * mixedSsa).print(" < r | a > S^{-1} < a | s > ", 25);
+
+//MixedBasis<OverlapBatch> overlap(refgeom, refgeom2);
+//overlap.print(" < r | s > ", 21);
+
+  // Test <r | a >< a | Rn | s>
+  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0(auxmol, refgeom2, refgeom2);
+  (mixedSra * S ^ mixedR0).print(" < r | a > S^{-1} < a | R0 | s >", 25);
+  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0rs(refgeom, refgeom2, refgeom2);
+  mixedR0rs.print(" < r | R0 | s >", 25);
+
+#endif
 
 }
 

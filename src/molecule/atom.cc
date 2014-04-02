@@ -114,7 +114,7 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
   // ECP initialization
   // FIXME - for mulitple zeta's
   // zeta
-  ecp_[0] = 10.0;
+  ecp_[0] = 1.0;
   // weight
   ecp_[1] = 1.0;
 #else
