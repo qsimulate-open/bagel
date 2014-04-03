@@ -321,6 +321,8 @@ class SRBFGS {
             auto tmp1 = extrapolate_micro(grad, value, shift, true);
             auto v    = interpolate_hessian(value, shift, true);
             trust_radius_ = trust_radius_ * 2.0/3.0;
+            prev_grad_ = grad;
+            prev_value_ = value;
             break;
           } else if ((rk > 0.25) && (rk < 0.75)) {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
@@ -330,6 +332,8 @@ class SRBFGS {
               decrement_intermediates();
             auto tmp1 = extrapolate_micro(grad, value, shift, true);
             auto v    = interpolate_hessian(value, shift, true);
+            prev_grad_ = grad;
+            prev_value_ = value;
             break;
           } else if (rk > 0.75) {
             std::cout << " condition (iii) satisfied in microiteration " << mi << std::endl;
@@ -339,6 +343,8 @@ class SRBFGS {
               decrement_intermediates();
             auto tmp1 = extrapolate_micro(grad, value, shift, true);
             auto v    = interpolate_hessian(value, shift, true);
+            prev_grad_ = grad;
+            prev_value_ = value;
             break;
           } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
@@ -384,8 +390,8 @@ class SRBFGS {
     }
 
 
+   // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
    double hebden_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
-     // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
      // No shift is preferred when steps are within the trust radius
      
      // to make sure, inputs are copied
@@ -402,6 +408,7 @@ class SRBFGS {
      for (int k = 0; k != hebden_iter_; ++k) {
        auto dl  = level_shift_extrapolate(grad, value, grad, shift_vec, false); // Hn^-1 * gn
        dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
+       std::cout << " dl norm in hebden     = " << dl_norm << std::endl;
        if (dl_norm <= trust_radius_) break;
        auto dl2 = level_shift_extrapolate(grad, value, dl, shift_vec, false);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
@@ -489,10 +496,7 @@ class SRBFGS {
           vvec.push_back(vtild);
         }
       }
-      if (update) {
-        prev_grad_ = grad;
-        prev_value_ = value;
-      } else if (!delta().empty()) {
+      if (!update && !delta().empty()) {
         decrement_delta();
         decrement_D();
         decrement_avec();
@@ -526,7 +530,7 @@ class SRBFGS {
       *out *= *denom_;
 
       // get size of intermediate 
-      const int nd = delta_.size()-1;
+      const int nd = delta().empty() ? 0 : delta_.size()-1;
       for (int i = 0; i != nd; ++i) {
         auto yy =  std::make_shared<T>(*delta_.back());
         *yy *= *denom_;
@@ -542,7 +546,7 @@ class SRBFGS {
           yy->ax_plus_y(s3/s1, t1);
           yy->ax_plus_y(-s4/s2, t3);
         }
-        if (update && i == nd-1) 
+        if (i == nd-1) 
           Y_.push_back(yy);
       }
       for (int i = 0; i != nd; ++i) {
@@ -556,7 +560,9 @@ class SRBFGS {
         out->ax_plus_y(s3/s1, t1);
         out->ax_plus_y(-s4/s2, t3);
       }
-
+      if (!update && !Y().empty()) {
+        decrement_Y();
+      }
       return out;
     }
 };
