@@ -298,28 +298,30 @@ class SRBFGS {
       auto f     = std::vector<double>(_f);
       auto grad  = std::make_shared<const T>(*_grad);
       auto value = std::make_shared<const T>(*_value);
-      auto shift = std::make_shared<const T>(*_shift);
+      auto shift = std::make_shared<T>(*_shift);
 
       double alpha = alpha_;
       if (tight) {
         alpha = alpha + static_cast<double>(f.size()-1) * 0.25;
       }
 
-      std::shared_ptr<T> acopy = extrapolate_micro(grad, value, shift, true);
-#if 0
-      std::shared_ptr<T> acopy = extrapolate_micro(grad, value, shift, false);
-      for (int mi = 0; mi!= maxiter_; ++mi) {
-        std::shared_ptr<T> V = interpolate_hessian(acopy, shift, false); // H_n * a
+      std::shared_ptr<T> acopy;
+      for (int mi = 0; mi!= 10; ++mi) {
+
+        std::cout << " +++ hebden algorithm used to determine level shift +++ " << std::endl;
+        auto tshift = hebden_levelshift(grad, value);
+        std::cout << " shift in step_restricted_extrap = " << tshift << std::endl;
+        shift->fill(tshift);
+        acopy = level_shift_extrapolate(grad, value, grad, shift);
+
+        std::shared_ptr<T> V = unrolled_hessian(acopy, false); // H_n * a
         double rk = taylor_series_validity_ratio(f, grad, acopy, V);
         std::cout << std::setprecision(4) << " Taylor expansion validity parameter  = " << rk << std::endl;
+#if 1
         if (!tight) {
           if (rk < 0.25 && rk > 0) {
             std::cout << " condition (i) satisfied in microiteration " << mi << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
-            if (delta().size() != 0)
-              decrement_intermediates();
-            auto tmp1 = extrapolate_micro(grad, value, shift, true);
-            auto v    = interpolate_hessian(value, shift, true);
             trust_radius_ = trust_radius_ * 2.0/3.0;
             prev_grad_ = grad;
             prev_value_ = value;
@@ -328,21 +330,12 @@ class SRBFGS {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
             trust_radius_ = trust_radius_;
-            if (delta().size() != 0)
-              decrement_intermediates();
-            auto tmp1 = extrapolate_micro(grad, value, shift, true);
-            auto v    = interpolate_hessian(value, shift, true);
             prev_grad_ = grad;
             prev_value_ = value;
             break;
           } else if (rk > 0.75) {
             std::cout << " condition (iii) satisfied in microiteration " << mi << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
-            trust_radius_ = std::min(1.2 * trust_radius_, 0.75);
-            if (delta().size() != 0)
-              decrement_intermediates();
-            auto tmp1 = extrapolate_micro(grad, value, shift, true);
-            auto v    = interpolate_hessian(value, shift, true);
             prev_grad_ = grad;
             prev_value_ = value;
             break;
@@ -351,6 +344,13 @@ class SRBFGS {
             std::cout << " scaling down the step vector " << std::endl;
             acopy->scale(1.0/alpha);
             trust_radius_ = trust_radius_ * 2.0/3.0;
+            if (!delta().empty()) {
+              decrement_delta();
+              decrement_D();
+              decrement_avec();
+              if (!Y().empty())
+                decrement_Y();
+            }
             std::cout << " end microiteration " << mi << std::endl;
           }
         } else { // conditions for tighter optimization
@@ -399,7 +399,7 @@ class SRBFGS {
      auto value = std::make_shared<const T>(*_value);
      if (prev_value_ == nullptr) 
        initiate_trust_radius(grad);
-     std::cout << " trust radius    = " << trust_radius_ << std::endl;
+     std::cout << std::setprecision(8) << " trust radius    = " << trust_radius_ << std::endl;
      
      double shift = 1e-12; // shift must be finite to avoid divergence in apply_inverse_level_shifted_hessian
      auto shift_vec = value->clone();
