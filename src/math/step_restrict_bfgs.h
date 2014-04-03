@@ -473,20 +473,18 @@ class SRBFGS {
       *out /= (*denom_ + *shift);
 
       if (prev_value_ != nullptr && !debug_) {
-        std::shared_ptr<T> yy = grad->clone();
         {
           auto DD = std::make_shared<T>(*grad - *prev_grad_);
           D_.push_back(DD); 
 
           auto vv = std::make_shared<T>(*value - *prev_value_);
+          delta_.push_back(vv);
 
           // interpolate_hessian : H * vv ? ; must be called before delta_ is updated due to size expectations.
-          auto zero = grad->clone();
-          auto xx = interpolate_hessian(vv, zero, true);
+          auto xx = unrolled_hessian(vv);
           avec_.push_back(xx);
 
-          delta_.push_back(vv);
-        } 
+        }
         const int n = delta_.size();
 // need new assert statement than before
 
@@ -499,10 +497,12 @@ class SRBFGS {
           if (j%2 == 0) {
             ctmp = std::make_shared<T>(*avec_.at(j/2));
             auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
+            assert(fabs(s1) > 1e-12);
             ctmp->scale(s1);
           } else {
             ctmp = std::make_shared<T>(*D_.at((j-1)/2));
             auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
+            assert(fabs(s1) > 1e-12);
             ctmp->scale(s1);
           }
           *ptmp = *ctmp / (*denom_ + *shift);
@@ -513,9 +513,10 @@ class SRBFGS {
           }
           auto s1   = detail::real(ptmp->dot_product(ctmp)); // double check for complex case
           auto s2   = 1.0 + pow(-1.0, j%2+1) * s1;
+          assert(fabs(s2) > 1e-12);
           vtmp      = 1.0 / s2;
           s1        = detail::real(ptmp->dot_product(vector));
-          s2        = pow(-1.0, j%2+1) * vtmp * s1;
+          s2        = pow(-1.0, j%2) * vtmp * s1;
           out->ax_plus_y(s2, ptmp);
           vcoeff.push_back(vtmp);
           pvec.push_back(ptmp);
