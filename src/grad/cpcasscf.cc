@@ -173,8 +173,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   z->zero();
 
   z = bfgs->extrapolate(source, z);
-  // not needed as z->xecond() is zero
-  //z->second()->project_out(civector_);
+  z->second()->project_out(civector_);
 
   // inverse matrix of C
   auto ovl = make_shared<const Overlap>(geom_);
