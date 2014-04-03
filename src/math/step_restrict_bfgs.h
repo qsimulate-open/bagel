@@ -488,37 +488,46 @@ class SRBFGS {
 // need new assert statement than before
 
         std::vector<std::shared_ptr<T>> pvec;
+        std::vector<std::shared_ptr<T>> vvec;
         std::vector<double> vcoeff;
-        double vtmp;
         for (int j = 0; j != 2*n; ++j) {
           auto ptmp = value->clone();
-          auto ctmp = value->clone();
+          auto utmp = value->clone();
+          auto vtmp = value->clone();
+          auto vtild = value->clone();
           if (j%2 == 0) {
-            ctmp = std::make_shared<T>(*avec_.at(j/2));
-            auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at(j/2))));
-            assert(fabs(s1) > 1e-12);
-            ctmp->scale(s1);
+            vtmp = std::make_shared<T>(*avec_.at(j/2));
+            utmp = vtmp->copy();
+            auto s1 = 1.0 / detail::real(utmp->dot_product(delta_.at(j/2)));
+            assert(fabs(s1) > 1e-20);
+            utmp->scale(s1);
           } else {
-            ctmp = std::make_shared<T>(*D_.at((j-1)/2));
-            auto s1 = 1.0 / std::sqrt(detail::real(ctmp->dot_product(delta_.at((j-1)/2))));
-            assert(fabs(s1) > 1e-12);
-            ctmp->scale(s1);
+            vtmp = std::make_shared<T>(*D_.at((j-1)/2));
+            utmp = vtmp->copy();
+            auto s1 = 1.0 / detail::real(utmp->dot_product(delta_.at((j-1)/2)));
+            assert(fabs(s1) > 1e-20);
+            utmp->scale(s1);
           }
-          *ptmp = *ctmp / (*denom_ + *shift);
+          *ptmp  = *utmp / (*denom_ + *shift);
+          *vtild = *vtmp / (*denom_ + *shift);
           for (int i = 0; i != j; ++i) {
-            auto s1 = detail::real(pvec.at(i)->dot_product(ctmp)); // double check for complex case
+            auto s1 = detail::real(vvec.at(i)->dot_product(utmp)); // double check for complex case
             auto s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
-            ptmp->ax_plus_y(s2, pvec[i]);
+            ptmp->ax_plus_y(s2, pvec.at(i));
+                 s1 = detail::real(vvec.at(i)->dot_product(vtmp)); // double check for complex case
+                 s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
+            vtild->ax_plus_y(s2, pvec.at(i));
           }
-          auto s1   = detail::real(ptmp->dot_product(ctmp)); // double check for complex case
+          auto s1   = detail::real(vtmp->dot_product(ptmp)); // double check for complex case
           auto s2   = 1.0 + pow(-1.0, j%2+1) * s1;
-          assert(fabs(s2) > 1e-12);
-          vtmp      = 1.0 / s2;
-          s1        = detail::real(ptmp->dot_product(vector));
-          s2        = pow(-1.0, j%2) * vtmp * s1;
+          assert(fabs(s2) > 1e-20);
+          auto tau  = 1.0 / s2;
+          s1        = detail::real(vtild->dot_product(vector));
+          s2        = pow(-1.0, j%2) * tau * s1;
           out->ax_plus_y(s2, ptmp);
-          vcoeff.push_back(vtmp);
+          vcoeff.push_back(tau);
           pvec.push_back(ptmp);
+          vvec.push_back(vtild);
         }
       }
       prev_grad_ = grad;
@@ -542,15 +551,11 @@ class SRBFGS {
     std::shared_ptr<T> unrolled_hessian(std::shared_ptr<const T> _value, const bool update = true) {
       // TODO : reorganize loop structure ; first double loop can probably be replaced
       // to make sure, inputs are copied.
-
-    std::cout << " delta size in unrolled   = " << delta_.size() << std::endl;
       auto value = std::make_shared<const T>(*_value);
       auto out = std::make_shared<T>(*_value);
 
       // apply H0 * v
       *out *= *denom_;
-     std::cout << " value * denom at top unrolled " << std::endl;
-     out->print();
 
       // get size of intermediate 
       const int nd = delta_.size()-1;
