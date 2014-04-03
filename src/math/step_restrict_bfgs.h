@@ -427,7 +427,7 @@ class SRBFGS {
 
    double hebden_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
      // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
-     // TODO: need a way to guess intial value from denom
+     // No shift is preferred when steps are within the trust radius
      
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
@@ -436,16 +436,15 @@ class SRBFGS {
        initiate_trust_radius(grad);
      std::cout << " trust radius    = " << trust_radius_ << std::endl;
      
-     double shift = 0.0; // level_shift_;
-     std::cout << "shift = " << shift << std::endl;
+     double shift = 1e-12; // shift must be finite to avoid divergence in apply_inverse_level_shifted_hessian
      auto shift_vec = value->clone();
      shift_vec->fill(shift);
      double dl_norm;
-     for (int k = 0; k != 1; ++k) {
-       auto dl  = apply_inverse_hessian(grad, value, grad, shift_vec); // Hn^-1 * gn
+     for (int k = 0; k != hebden_iter_; ++k) {
+       auto dl  = level_shift_extrapolate(grad, value, grad, shift_vec, false); // Hn^-1 * gn
        dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
        if (dl_norm <= trust_radius_) break;
-       auto dl2 = apply_inverse_hessian(grad, value, dl, shift_vec);   // Hn^-2 * gn
+       auto dl2 = level_shift_extrapolate(grad, value, dl, shift_vec, false);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
        auto t1  =  dl_norm / dl2_norm;
        auto t2  =  dl_norm / trust_radius_;
@@ -453,6 +452,9 @@ class SRBFGS {
        auto dshift = t3;
        shift += dshift;
        shift_vec->fill(shift);
+       if (k == hebden_iter_ - 1) {
+         std::cout << " Hebden algorithm did not converge to appropriate level shift within " << k << " iterations " << std::endl;
+       }
      }
      level_shift_ = shift;
      return shift;
