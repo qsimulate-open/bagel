@@ -480,7 +480,6 @@ class SRBFGS {
           auto vv = std::make_shared<T>(*value - *prev_value_);
           delta_.push_back(vv);
 
-          // interpolate_hessian : H * vv ? ; must be called before delta_ is updated due to size expectations.
           auto xx = unrolled_hessian(vv);
           avec_.push_back(xx);
 
