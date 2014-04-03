@@ -539,6 +539,54 @@ class SRBFGS {
      decrement_D();
    }
 
+    std::shared_ptr<T> unrolled_hessian(std::shared_ptr<const T> _value, const bool update = true) {
+      // TODO : reorganize loop structure ; first double loop can probably be replaced
+      // to make sure, inputs are copied.
+
+    std::cout << " delta size in unrolled   = " << delta_.size() << std::endl;
+      auto value = std::make_shared<const T>(*_value);
+      auto out = std::make_shared<T>(*_value);
+
+      // apply H0 * v
+      *out *= *denom_;
+     std::cout << " value * denom at top unrolled " << std::endl;
+     out->print();
+
+      // get size of intermediate 
+      const int nd = delta_.size()-1;
+      std::cout << " nd  =  " << nd << std::endl;
+      for (int i = 0; i != nd; ++i) {
+        auto yy =  std::make_shared<T>(*delta_.back());
+        *yy *= *denom_;
+        for (int j = 0; j != i; ++j) {
+          auto t1 = D_.at(j);
+          auto t2 = delta_.at(j);
+          auto t3 = Y_.at(j);
+          auto t4 = delta_.at(i);
+          auto s1 = detail::real(t1->dot_product(t2)); // Delta_j * delta_j  ; real part is suspicious for now
+          auto s2 = detail::real(t3->dot_product(t2)); // y_j     * delta_j
+          auto s3 = t1->dot_product(t4);               // Delta_j * delta_i
+          auto s4 = t3->dot_product(t4);               // y_j     * delta_i
+          yy->ax_plus_y(s3/s1, t1);
+          yy->ax_plus_y(-s4/s2, t3);
+        }
+        if (update && i == nd-1) 
+          Y_.push_back(yy);
+      }
+      for (int i = 0; i != nd; ++i) {
+        auto t1 = D_.at(i);
+        auto t2 = delta_.at(i);
+        auto t3 = Y_.at(i);
+        auto s1 = detail::real(t1->dot_product(t2)); // Delta_i * delta_i
+        auto s2 = detail::real(t3->dot_product(t2)); // Y_i     * delta_i
+        auto s3 = t1->dot_product(value);            // Delta_i * v
+        auto s4 = t3->dot_product(value);            // Y_i     * v
+        out->ax_plus_y(s3/s1, t1);
+        out->ax_plus_y(-s4/s2, t3);
+      }
+
+      return out;
+    }
 };
 
 }
