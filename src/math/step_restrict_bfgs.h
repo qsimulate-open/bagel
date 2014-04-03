@@ -453,8 +453,6 @@ class SRBFGS {
        auto dshift = t3;
        shift += dshift;
        shift_vec->fill(shift);
-       dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
-       dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
      }
      level_shift_ = shift;
      return shift;
@@ -462,7 +460,7 @@ class SRBFGS {
 
 
    // returns a level-shifted displacement according to Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
-    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift) {
+    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift, const bool update = true) {
       // to make sure, inputs are copied.
       auto grad = std::make_shared<const T>(*_grad);
       auto value = std::make_shared<const T>(*_value);
@@ -530,8 +528,16 @@ class SRBFGS {
           vvec.push_back(vtild);
         }
       }
-      prev_grad_ = grad;
-      prev_value_ = value;
+      if (update) {
+        prev_grad_ = grad;
+        prev_value_ = value;
+      } else if (!delta().empty()) {
+        decrement_delta();
+        decrement_D();
+        decrement_avec();
+        if (!Y().empty())
+          decrement_Y();
+      }
       return out;
    }
 
@@ -541,6 +547,7 @@ class SRBFGS {
    void decrement_delta() { delta_.pop_back(); }
    void decrement_D() { D_.pop_back(); }
    void decrement_Y() { Y_.pop_back(); }
+   void decrement_avec() { avec_.pop_back(); }
 
    void decrement_intermediates() {
      decrement_y();
@@ -559,7 +566,6 @@ class SRBFGS {
 
       // get size of intermediate 
       const int nd = delta_.size()-1;
-      std::cout << " nd  =  " << nd << std::endl;
       for (int i = 0; i != nd; ++i) {
         auto yy =  std::make_shared<T>(*delta_.back());
         *yy *= *denom_;
