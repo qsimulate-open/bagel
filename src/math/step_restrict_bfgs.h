@@ -384,47 +384,6 @@ class SRBFGS {
     }
 
 
-   double newton_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
-     // iteratively finds an appropriate level shift according to Newton-Raphson algorithm
-     // that satisfies     fn(v)  = h_k^2 ; hk is the trust radius and fn(v) = gn^+ (Hn + vI)^-2 gn
-     // exact gradient and hessian 
-     // TODO: need a way to guess intial value from denom
-     
-     // to make sure, inputs are copied
-     auto grad  = std::make_shared<const T>(*_grad);
-     auto value = std::make_shared<const T>(*_value);
-     if (prev_value_ == nullptr) 
-       initiate_trust_radius(grad);
-     std::cout << " trust radius    = " << trust_radius_ << std::endl;
-     
-     double shift = fabs(level_shift_);
-     std::cout << "shift = " << shift << std::endl;
-     auto shift_vec = value->clone();
-     shift_vec->fill(level_shift_);
-     for (int k = 0; k != 20; ++k) {
-       auto dl  = apply_inverse_hessian(grad, value, grad, shift_vec); // Hn^-1 * gn
-       auto dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
-       std::cout << std::setprecision(6) << " dl norm     = " << 
-            std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
-       if (dl_norm <= trust_radius_) break;
-       auto dl2 = apply_inverse_hessian(grad, value, dl, shift_vec);   // Hn^-2 * gn
-       auto dl3 = detail::real(dl2->dot_product(dl));                  // gn * Hn^-3 * gn
-       auto dl4 = detail::real(dl2->dot_product(dl2));                 // gn * Hn^-4 * gn
-       auto dshift = dl3 / dl4 / 3.0;                                  // factor comes from derivatives
-       std::cout << " dshift  = " << dshift << std::endl;
-       shift += dshift;
-       shift_vec->fill(shift);
-       dl       = apply_inverse_hessian(grad, value, grad, shift_vec); 
-       dl_norm  = std::sqrt(detail::real(dl->dot_product(dl)));
-       std::cout << " step norm with new shift    = " << 
-          std::sqrt(detail::real(dl->dot_product(dl))) << std::endl;
-       if (dl_norm <= trust_radius_) break;
-       std::cout << "shift end loop = " << shift << std::endl;
-     }
-     level_shift_ = shift;
-     return shift;
-   }
-
    double hebden_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
      // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
      // No shift is preferred when steps are within the trust radius
