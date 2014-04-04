@@ -425,39 +425,26 @@ class SRBFGS {
 
 
    // returns a level-shifted displacement according to Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
-    std::shared_ptr<T> level_shift_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift, const bool update = true) {
+    std::shared_ptr<T> level_shift_inverse_hessian(std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift, const bool update = true) {
       // to make sure, inputs are copied.
-      auto grad = std::make_shared<const T>(*_grad);
-      auto value = std::make_shared<const T>(*_value);
       auto vector = std::make_shared<const T>(*_vector);
       auto shift = std::make_shared<const T>(*_shift);
       auto out = std::make_shared<T>(*vector);
 
       *out /= (*denom_ + *shift);
 
-      if (prev_value_ != nullptr && !debug_) {
-        {
-          auto DD = std::make_shared<T>(*grad - *prev_grad_);
-          D_.push_back(DD); 
-
-          auto vv = std::make_shared<T>(*value - *prev_value_);
-          delta_.push_back(vv);
-
-          auto xx = unrolled_hessian(vv);
-          avec_.push_back(xx);
-
-        }
-        const int n = delta_.size();
-// need new assert statement than before
+      if (prev_value() != nullptr) {
+        const int n = delta.size();
+        assert(delta().size() == avec().size() && delta().size == D().size());
 
         std::vector<std::shared_ptr<T>> pvec;
         std::vector<std::shared_ptr<T>> vvec;
         std::vector<double> vcoeff;
         for (int j = 0; j != 2*n; ++j) {
-          auto ptmp = value->clone();
-          auto utmp = value->clone();
-          auto vtmp = value->clone();
-          auto vtild = value->clone();
+          auto ptmp  = vector->clone();
+          auto utmp  = vector->clone();
+          auto vtmp  = vector->clone();
+          auto vtild = vector->clone();
           if (j%2 == 0) {
             vtmp = std::make_shared<T>(*avec_.at(j/2));
             utmp = vtmp->copy();
@@ -492,13 +479,6 @@ class SRBFGS {
           pvec.push_back(ptmp);
           vvec.push_back(vtild);
         }
-      }
-      if (!update && !delta().empty()) {
-        decrement_delta();
-        decrement_D();
-        decrement_avec();
-        if (!Y().empty())
-          decrement_Y();
       }
       return out;
    }
