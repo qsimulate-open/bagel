@@ -96,18 +96,18 @@ class SRBFGS {
       // (1)
       *out *= (*denom_ + *shift);
 
-      if (!delta_.empty() && !debug_) {
+      if (!delta().empty() && !debug_) {
         // (3)
         std::shared_ptr<T> yy = value->clone(); // used to accumulate Y
         {
           // D and delta_ available from extrapolation
-          auto DD = delta_.back();
+          auto DD = delta().back();
 
           *yy = *DD * (*denom_ + *shift);
 
         }
-        const int n = delta_.size()-1;
-        assert(delta_.size() == Y_.size()+1 && Y_.size()+1 == D_.size()); // NOT SURE ABOUT THIS
+        const int n = delta().size()-1;
+        assert(delta().size() == Y().size()+1 && Y().size()+1 == D().size()); // NOT SURE ABOUT THIS
 
         // (4)
         for (int i = 0; i < n; ++i) {
@@ -227,7 +227,7 @@ class SRBFGS {
 
         auto vv = delta().back();
 
-        const int n = delta_.size()-1;
+        const int n = delta().size()-1;
 //        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
   
         // (4)
@@ -388,31 +388,27 @@ class SRBFGS {
 
 
    // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
-   double hebden_levelshift(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
+   double hebden_levelshift(std::shared_ptr<const T> _grad) {
      // No shift is preferred when steps are within the trust radius
      
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
-     auto value = std::make_shared<const T>(*_value);
-     if (prev_value_ == nullptr) 
-       initiate_trust_radius(grad);
      std::cout << std::setprecision(8) << " trust radius    = " << trust_radius_ << std::endl;
      
-     double shift = 1e-12; // shift must be finite to avoid divergence in apply_inverse_level_shifted_hessian
-     auto shift_vec = value->clone();
+     double shift = prev_value() == nullptr ? 1e-20 : level_shift_; // shift must be finite to avoid divergence in apply_inverse_level_shifted_hessian
+     auto shift_vec = grad->clone();
      shift_vec->fill(shift);
      double dl_norm;
      for (int k = 0; k != hebden_iter_; ++k) {
-       auto dl  = level_shift_extrapolate(grad, value, grad, shift_vec, false); // Hn^-1 * gn
+       auto dl  = level_shift_inverse_hessian(grad, shift_vec, false); // Hn^-1 * gn
        dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
        std::cout << " dl norm in hebden     = " << dl_norm << std::endl;
        if (dl_norm <= trust_radius_) break;
-       auto dl2 = level_shift_extrapolate(grad, value, dl, shift_vec, false);   // Hn^-2 * gn
+       auto dl2 = level_shift_inverse_hessian(dl, shift_vec, false);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
        auto t1  =  dl_norm / dl2_norm;
        auto t2  =  dl_norm / trust_radius_;
-       auto t3  =  (t2 - 1.0) * t1;
-       auto dshift = t3;
+       auto dshift = (t2 - 1.0) * t1;
        shift += dshift;
        shift_vec->fill(shift);
        if (k == hebden_iter_ - 1) {
@@ -446,15 +442,15 @@ class SRBFGS {
           auto vtmp  = vector->clone();
           auto vtild = vector->clone();
           if (j%2 == 0) {
-            vtmp = std::make_shared<T>(*avec_.at(j/2));
+            vtmp = std::make_shared<T>(*avec().at(j/2));
             utmp = vtmp->copy();
-            auto s1 = 1.0 / detail::real(utmp->dot_product(delta_.at(j/2)));
+            auto s1 = 1.0 / detail::real(utmp->dot_product(delta().at(j/2)));
             assert(fabs(s1) > 1e-20);
             utmp->scale(s1);
           } else {
-            vtmp = std::make_shared<T>(*D_.at((j-1)/2));
+            vtmp = std::make_shared<T>(*D().at((j-1)/2));
             utmp = vtmp->copy();
-            auto s1 = 1.0 / detail::real(utmp->dot_product(delta_.at((j-1)/2)));
+            auto s1 = 1.0 / detail::real(utmp->dot_product(delta().at((j-1)/2)));
             assert(fabs(s1) > 1e-20);
             utmp->scale(s1);
           }
@@ -507,15 +503,15 @@ class SRBFGS {
       *out *= *denom_;
 
       // get size of intermediate 
-      const int nd = delta().empty() ? 0 : delta_.size()-1;
+      const int nd = delta().empty() ? 0 : delta().size()-1;
       for (int i = 0; i != nd; ++i) {
-        auto yy =  std::make_shared<T>(*delta_.back());
+        auto yy =  std::make_shared<T>(*delta().back());
         *yy *= *denom_;
         for (int j = 0; j != i; ++j) {
-          auto t1 = D_.at(j);
-          auto t2 = delta_.at(j);
-          auto t3 = Y_.at(j);
-          auto t4 = delta_.at(i);
+          auto t1 = D().at(j)->copy();
+          auto t2 = delta().at(j)->copy();
+          auto t3 = Y().at(j)->copy();
+          auto t4 = delta().at(i)->copy();
           auto s1 = detail::real(t1->dot_product(t2)); // Delta_j * delta_j  ; real part is suspicious for now
           auto s2 = detail::real(t3->dot_product(t2)); // y_j     * delta_j
           auto s3 = t1->dot_product(t4);               // Delta_j * delta_i
@@ -527,9 +523,9 @@ class SRBFGS {
           Y_.push_back(yy);
       }
       for (int i = 0; i != nd; ++i) {
-        auto t1 = D_.at(i);
-        auto t2 = delta_.at(i);
-        auto t3 = Y_.at(i);
+        auto t1 = D().at(i)->copy();
+        auto t2 = delta().at(i)->copy();
+        auto t3 = Y().at(i)->copy();
         auto s1 = detail::real(t1->dot_product(t2)); // Delta_i * delta_i
         auto s2 = detail::real(t3->dot_product(t2)); // Y_i     * delta_i
         auto s3 = t1->dot_product(value);            // Delta_i * v
