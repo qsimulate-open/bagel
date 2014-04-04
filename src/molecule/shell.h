@@ -27,30 +27,18 @@
 #ifndef __SRC_MOLECULE_SHELL_H
 #define __SRC_MOLECULE_SHELL_H
 
-#include <array>
-#include <src/math/matrix.h>
+#include <src/molecule/shell_base.h>
 #include <src/util/serialization.h>
 
 namespace bagel {
 
-class Shell {
+class Shell : public Shell_base {
 
   protected:
-    bool spherical_;
-
-    std::array<double,3> position_;
     std::array<double,3> vector_potential_;
     std::array<double,3> magnetic_field_;
-    int angular_number_;
-    std::vector<double> exponents_;     // length of primitive basis function
-    std::vector<std::vector<double>> contractions_;  // length of contracted basis function
-    std::vector<std::pair<int, int>> contraction_ranges_;
 
     bool dummy_;
-    std::vector<int> contraction_upper_;
-    std::vector<int> contraction_lower_;
-
-    int nbasis_;
 
     // whether a relativistic part is initialized
     bool relativistic_;
@@ -93,30 +81,11 @@ class Shell {
     Shell(const bool sph);
 
     bool dummy() const { return dummy_; };
-    bool spherical() const { return spherical_; };
-    int num_primitive() const { return exponents_.size(); };
-    int num_contracted() const { return contractions_.size(); };
 
-    double position(const int i) const { return position_[i]; };
-    const std::array<double,3>& position() const { return position_; };
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; };
     double magnetic_field(const unsigned int i) const { return magnetic_field_[i]; }
     const std::array<double,3>& magnetic_field() const { return magnetic_field_; };
-    int angular_number() const { return angular_number_; };
-    double exponents(const int i) const { return exponents_[i]; };
-    const std::vector<double>& exponents() const { return exponents_; };
-    const double* exponents_pointer() const { return &(exponents_[0]); };
-    const std::vector<double> contractions(const int i) const { return contractions_[i]; };
-    const std::vector<std::vector<double>>& contractions() const { return contractions_; };
-    const std::pair<int, int>& contraction_ranges(const int i) const { return contraction_ranges_[i]; };
-    const std::vector<std::pair<int, int>>& contraction_ranges() const { return contraction_ranges_; };
-
-    const std::vector<int>& contraction_upper() const { return contraction_upper_; };
-    const std::vector<int>& contraction_lower() const { return contraction_lower_; };
-
-    const std::string show() const;
-    int nbasis() const { return nbasis_; };
 
     std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
     std::shared_ptr<const Shell> move_atom(const double*) const;
