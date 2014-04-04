@@ -210,26 +210,22 @@ class SRBFGS {
     }
 
 
-    // apply inverse hessian according to BFGS recursion without updating intermediate quantities
-    std::shared_ptr<T> apply_inverse_hessian(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift) {
-      // applies hessian inverse without updating intermediates
+    // apply inverse hessian according to Fischer and Almlof BFGS recursion ; y_ is updated
+    std::shared_ptr<T> apply_inverse_hessian(std::shared_ptr<const T> _vector) {
       // to make sure, inputs are copied.
-      auto grad = std::make_shared<const T>(*_grad);
-      auto value = std::make_shared<const T>(*_value);
-      auto shift = std::make_shared<const T>(*_shift);
       auto vector = std::make_shared<const T>(*_vector);
       auto out = std::make_shared<T>(*vector);
       // (1)
-      *out /= (*denom_ + *shift);
+      *out /= *denom_;
       if (prev_value_ != nullptr && !debug_) {
         // (3)
-        std::shared_ptr<T> yy = grad->clone();
+        std::shared_ptr<T> yy = vector->clone();
 
-        auto DD = std::make_shared<T>(*grad - *prev_grad_);
+        auto DD = D().back();
 
-        *yy = *DD / (*denom_ + *shift);
+        *yy = *DD / *denom_;
 
-        auto vv = std::make_shared<T>(*value - *prev_value_);
+        auto vv = delta().back();
 
         const int n = delta_.size()-1;
 //        assert(delta_.size() == y_.size()+1 && y_.size()+1 == D_.size());
@@ -261,6 +257,8 @@ class SRBFGS {
           out->ax_plus_y(t1, vv);
           out->ax_plus_y(-t2, std::shared_ptr<const T>(yy));
         }
+        y_.push_back(yy);
+        assert(y_.size() == n+1);
       }
       return out;
     }
@@ -282,8 +280,8 @@ class SRBFGS {
       auto f1     = ( f.size() > 1 ? *(f.end()-2) : 0.0 );
       auto DeltaE = f.back() - f1;
     
-      auto e2 = 0.5 * (detail::real(a->dot_product(Ha)));
       auto e1 = detail::real(a->dot_product(grad));
+      auto e2 = 0.5 * (detail::real(a->dot_product(Ha)));
       auto e0 = f.back() + e1 + e2;
       e0 -= f1;
       DeltaE /= e0;
