@@ -50,44 +50,6 @@ shared_ptr<DFDist_London> DFDist_London::clone() const {
 }
 
 
-// TODO Set up a parallel version using Scalapack modeled after ZMatrix::diagonalize
-void diagonalize_nonhermitian(shared_ptr<ZMatrix> in, complex<double>* eig, complex<double>* left, complex<double>* right) {
-
-  const int n = in->ndim();
-  if (n != in->mdim()) throw logic_error("trying to diagonalize a non-square ZMatrix");
-  int info;
-  unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
-  unique_ptr<double[]> rwork(new double[3*n]);
-  zgeev_("V", "V", n, in->data(), n, eig, left, n, right, n, work.get(), n*6, rwork.get(), info);
-//  mpi__->broadcast(data(), n*n, 0);
-}
-
-
-bool inverse_half_nonhermitian(shared_ptr<ZMatrix> in, const double thresh) {
-  assert(in->ndim() == in->mdim());
-  const int n = in->ndim();
-  unique_ptr<complex<double>[]> vec(new complex<double>[n]);
-  shared_ptr<ZMatrix> left = in->copy();
-  shared_ptr<ZMatrix> right = in->copy();
-  diagonalize_nonhermitian(in, vec.get(), left->data(), right->data());
-
-  for (int i = 0; i != n; ++i) {
-    complex<double> s = abs(vec[i]) > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
-    for_each(left->element_ptr(0,i), left->element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
-    for_each(right->element_ptr(0,i), right->element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
-  }
-
-#ifndef NDEBUG
-  for (int i = 0; i != n; ++i)
-    if (abs(vec[i]) < thresh) cout << " throwing out " << setprecision(20) << vec[i] << endl;
-#endif
-
-  *in = *left ^ *right;
-
-  return std::any_of(vec.get(), vec.get() + n, [&thresh] (const complex<double>& e) { return abs(e) < thresh; });
-}
-
-
 void DFDist_London::add_direct_product(const vector<shared_ptr<const ZMatrix>> cd, const vector<shared_ptr<const ZMatrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist_London::DFDist_London");
@@ -159,7 +121,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   time.tick_print("2-index ints");
 
   if (compute_inverse) {
-    inverse_half_nonhermitian(data2_, throverlap);
+    data2_->inverse_half(throverlap);
     // will use data2_ within node
     data2_->localize();
     time.tick_print("computing inverse");
