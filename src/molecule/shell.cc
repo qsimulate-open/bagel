@@ -69,8 +69,8 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 }
 
-Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0},
-                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)} {
+Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
+                               contraction_ranges_{make_pair(0,1)}, dummy_(true) {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
