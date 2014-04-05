@@ -28,6 +28,7 @@
 #define __SRC_MOLECULE_ATOM_H
 
 #include <src/molecule/shell.h>
+#include <src/molecule/shell_ECP.h>
 #include <src/input/input.h>
 
 namespace bagel {
@@ -39,6 +40,7 @@ class Atom {
     std::string name_;
     std::array<double,3> position_;
     std::vector<std::shared_ptr<const Shell>> shells_;
+    std::vector<std::shared_ptr<const Shell_ECP>> shells_ECP_;
     int atom_number_;
     double atom_charge_;
     double atom_exponent_;
@@ -50,14 +52,19 @@ class Atom {
 
     // effective core potential (0 = zeta, 1 = coef)
     std::array<double,2> ecp_;
+    bool use_ecp_basis_;
 
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
+    // in : angular momentum (l), exponents (zeta_kl), coefficients (A_kl), powers of r (n_kl)
+    void construct_shells_ECP(std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>, std::vector<int>>> in);
+
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
     void split_shells(const size_t batchsize);
 
     void basis_init(std::shared_ptr<const PTree>);
+    void basis_init_ECP(std::shared_ptr<const PTree>);
     void common_init();
 
   private:

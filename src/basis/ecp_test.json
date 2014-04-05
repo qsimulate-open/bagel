@@ -1,0 +1,83 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: ecp.json
+// Copyright (C) 2013 Toru Shiozaki
+//
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+{
+  "H" : [
+    {
+      "valence" : [
+        {
+          "angular" : "s",
+          "prim" : [3.42525091, 0.62391373, 0.16885540],
+          "cont" : [[0.15432897, 0.53532814, 0.44463454]]
+        }
+      ],
+      "core" : [
+        {
+          "ecp_angular" : "s",
+          "ecp_exp" : [1.0],
+          "ecp_coef" : [1.0],
+          "ecp_r" : [1]
+        }, {
+          "ecp_angular" : "p",
+          "ecp_exp" : [2.0],
+          "ecp_coef" : [2.0],
+          "ecp_r" : [2]
+        }
+      ]
+    }
+  ],
+  "F" : [
+    {
+      "valence" : [
+        {
+          "angular" : "s",
+          "prim" : [166.6791300, 30.3608120, 8.2168207],
+          "cont" : [[0.15432897, 0.53532814, 0.44463454]]
+        }, {
+          "angular" : "s",
+          "prim" : [6.4648032, 1.5022812, 0.4885885],
+          "cont" : [[-0.09996723, 0.39951283, 0.70011547]]
+        }, {
+          "angular" : "p",
+          "prim" : [6.4648032, 1.5022812, 0.4885885],
+          "cont" : [[0.15591627, 0.60768372, 0.39195739]]
+        }
+      ],
+      "core" : [
+        {
+          "ecp_angular" : "s",
+          "ecp_exp" : [3.0],
+          "ecp_coef" : [3.0],
+          "ecp_r" : [3]
+        }, {
+          "ecp_angular" : "p",
+          "ecp_exp" : [4.0],
+          "ecp_coef" : [4.0],
+          "ecp_r" : [4]
+        }
+      ]
+    }
+  ]
+}
