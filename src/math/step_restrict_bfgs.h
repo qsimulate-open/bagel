@@ -28,10 +28,12 @@
 #define __SRC_UTIL_SRBFGS_H
 
 // implements BFGS updates based on Fischer & Almlof JPC 1992.
-// step restriction loosely based on Jorgensen, Swanstrom, & Yeager (JSY) JCP 78 347 (1983).
-// TODO : implement level shift and trust radius procedures
+// step restriction based on Jorgensen, Swanstrom, & Yeager (JSY) JCP 78 347 (1983).
+// level shifted BFGS based on Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
+//      and Erway, Jain, Marcia, arXiv:1209.5141.
+// Hebden algorithm : Hebden, AERE Harwell Report TP515 (1973).
 // T needs clone, ddot and daxpy, along with overloaded operators, a copy constructor
-//         data(const size_t)
+//         data(const size_t), norm
 
 #include <stddef.h>
 #include <vector>
@@ -536,6 +538,46 @@ class SRBFGS {
       if (!update && !Y().empty()) {
         decrement_Y();
       }
+      return out;
+    }
+
+
+    // returns displacement using two-loop formula : no y_ intermediate just requires delta and Delta and vector to apply on
+    std::shared_ptr<T> two_loop_inverse_hessian(std::shared_ptr<const T> _vector) {
+      // to make sure, inputs are copied.
+      auto vector = std::make_shared<const T>(*_vector);
+      auto out = std::make_shared<T>(*vector);
+
+      // set dimension
+      const int n = delta().size();
+      // first loop
+      std::vector<double> alpha;
+      if (n > 0) {
+        const int np = n-1;
+        for (int i = np; i > -1; --i) {
+          auto deltai = delta().at(i)->copy();
+          auto yi     = D().at(i)->copy();
+          auto s1     = deltai->dot_product(out);
+          auto s2     = detail::real(deltai->dot_product(yi)); // double check for complex case
+          auto alphai = detail::real(s1/s2); // TODO: REMOVE DETAIL::REAL FOR COMPLEX CASE
+          out->ax_plus_y(-alphai, yi);
+          alpha.insert(alpha.begin(), alphai);
+        }
+      }
+
+      // apply h0^-1
+      *out /= *denom();
+
+      // second loop
+      for (int i = 0; i != n; ++i) {
+        auto deltai = delta().at(i)->copy();
+        auto yi = D().at(i)->copy();
+        auto s1 = yi->dot_product(out);
+        auto s2 = detail::real(yi->dot_product(deltai)); // double check for complex case
+        auto b  = alpha.at(i) - s1/s2;
+        out->ax_plus_y(b, deltai);
+      }
+      
       return out;
     }
 };
