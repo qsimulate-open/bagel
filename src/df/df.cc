@@ -76,7 +76,7 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 
 
 void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o) {
-  assert(block_.size() == o->block_.size());
+  assert(block_.size() == o->block_.size() && nindex1_ == o->nindex1_ && nindex2_ == o->nindex2_);
   auto j = o->block_.begin();
   for (auto& i : block_)
     i->ax_plus_y(a, *j++);
@@ -86,6 +86,12 @@ void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o)
 void ParallelDF::scale(const double a) {
   for (auto& i : block_)
     i->scale(a);
+}
+
+
+void ParallelDF::symmetrize() {
+  for (auto& i : block_)
+    i->symmetrize();
 }
 
 
@@ -367,9 +373,10 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::symmetrize() {
+void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
+  assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i->symmetrize();
+    i = i->transform_second(d);
 }
 
 

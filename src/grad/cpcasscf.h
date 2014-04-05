@@ -37,24 +37,32 @@ namespace bagel {
 
 class CPCASSCF {
   protected:
-    const std::shared_ptr<const PairFile<Matrix, Dvec>> grad_;
-    const std::shared_ptr<const Dvec> civector_;
-    const std::shared_ptr<const Matrix> eig_;
-    const std::shared_ptr<const DFHalfDist> half_;
-    const std::shared_ptr<const DFHalfDist> halfjj_;
-    const std::shared_ptr<const Reference> ref_;
-    const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const FCI> fci_;
+    std::shared_ptr<const PairFile<Matrix, Dvec>> grad_;
+    std::shared_ptr<const Dvec> civector_;
+    std::shared_ptr<const DFHalfDist> half_;
+    std::shared_ptr<const DFHalfDist> halfjj_;
+    std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<FCI> fci_;
 
+    int ncore_;
+    std::shared_ptr<const Matrix> coeff_;
 
+    std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
+                                                      std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<Matrix> form_sigma_sym(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFHalfDist>,
+                                           std::shared_ptr<const DFFullDist>, std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>) const;
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>> compute_orb_denom_and_fock() const;
 
   public:
-    CPCASSCF(const std::shared_ptr<const PairFile<Matrix, Dvec>> grad, const std::shared_ptr<const Dvec> c, const std::shared_ptr<const Matrix> eig,
-             const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const DFHalfDist> halfjj,
-             const std::shared_ptr<const Reference> g, const std::shared_ptr<const FCI> f);
+    CPCASSCF(std::shared_ptr<const PairFile<Matrix, Dvec>> grad, std::shared_ptr<const Dvec> c,
+             std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfjj,
+             std::shared_ptr<const Reference> g, std::shared_ptr<FCI> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
 
-    std::shared_ptr<PairFile<Matrix, Dvec>> solve() const;
+    // tuple of Z, z, and X.
+    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>
+      solve(const double thresh, const int maxiter = 100);
 
 };
 

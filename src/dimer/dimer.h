@@ -99,8 +99,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       int dimerbasis() const { return dimerbasis_; }
 
       // Utility
-      void set_active(std::shared_ptr<const PTree> idata);
-      void localize(std::shared_ptr<const PTree> idata);
+      void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
+      void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
 
       // Calculations
       void scf(std::shared_ptr<const PTree> idata); // SCF on dimer and then localize

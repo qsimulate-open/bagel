@@ -83,6 +83,7 @@ class PairFile {
     double rms() const { return std::sqrt(dot_product(*this)/size()); }
     size_t size() const { return file0_->size() + file1_->size(); }
     void scale(const double a) { first()->scale(a); second()->scale(a); }
+    void synchronize() { first()->synchronize(); second()->synchronize(); }
 
     void zero() { first()->zero(); second()->zero(); }
 

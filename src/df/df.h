@@ -78,6 +78,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
     void ax_plus_y(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
+    void symmetrize();
 
     std::shared_ptr<Matrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
@@ -278,7 +279,7 @@ class DFFullDist : public ParallelDF {
 
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
-    void symmetrize();
+    void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
     // 2RDM contractions
     // special function for RHF

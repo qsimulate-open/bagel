@@ -31,7 +31,8 @@
   "title" : "localize",
   "algorithm" : "pm",
   "thresh" : 1.0e-6,
-  "max_iter" : 10
+  "max_iter" : 10,
+  "lowdin" : false
 }
 
 ]}

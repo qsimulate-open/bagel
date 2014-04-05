@@ -88,7 +88,7 @@ void KnowlesHandy::const_denom() {
   }
 }
 
-void KnowlesHandy::update(shared_ptr<const Coeff> c) {
+void KnowlesHandy::update(shared_ptr<const Matrix> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;

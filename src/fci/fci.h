@@ -143,11 +143,12 @@ class FCI : public Method {
     // this constructor is ugly... to be fixed some day...
     FCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
         const int ncore = -1, const int nocc = -1, const int nstate = -1);
+
     virtual ~FCI() { }
 
     virtual void compute() override;
 
-    virtual void update(std::shared_ptr<const Coeff> ) = 0;
+    virtual void update(std::shared_ptr<const Matrix>) = 0;
 
     // returns members
     int norb() const { return norb_; }
@@ -185,10 +186,10 @@ class FCI : public Method {
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
     // rdm ci derivatives
-    std::shared_ptr<Dvec> rdm1deriv() const;
-    std::shared_ptr<Dvec> rdm2deriv() const;
-    std::shared_ptr<Dvec> rdm3deriv() const;
-    std::shared_ptr<Dvec> rdm4deriv() const;
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm3deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm4deriv(const int istate) const;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
@@ -216,6 +217,20 @@ class FCI : public Method {
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+};
+
+
+// only for RDM computation.
+class FCI_bare : public FCI {
+  protected:
+    void const_denom() override { assert(false); }
+
+  public:
+    FCI_bare(std::shared_ptr<const CIWfn> ci);
+
+    void compute() override { assert(false); }
+    void update(std::shared_ptr<const Matrix>) override { assert(false); }
+    std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec>, std::shared_ptr<const MOFile>, const std::vector<int>&) const override { assert(false); return nullptr; }
 };
 
 }

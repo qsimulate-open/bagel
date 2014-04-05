@@ -24,9 +24,9 @@
 //
 
 #include <src/wfn/reference.h>
-#include <src/fci/knowles.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/molecule/mixedbasis.h>
+#include <src/fci/fci.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
 
@@ -36,9 +36,10 @@ using namespace bagel;
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
                      const double en,
-                     const vector<shared_ptr<RDM<1>>>& _rdm1, const vector<shared_ptr<RDM<2>>>& _rdm2,
-                     shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av)
- : geom_(g), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), rdm1_(_rdm1), rdm2_(_rdm2),
+                     vector<shared_ptr<RDM<1>>> _rdm1, vector<shared_ptr<RDM<2>>> _rdm2,
+                     shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
+                     shared_ptr<const CIWfn> ci)
+ : geom_(g), energy_(en), hcore_(make_shared<Hcore>(geom_)), nclosed_(_nclosed), nact_(_nact), nvirt_(_nvirt), nstate_(1), ciwfn_(ci), rdm1_(_rdm1), rdm2_(_rdm2),
    rdm1_av_(_rdm1_av), rdm2_av_(_rdm2_av) {
 
   // we need to make sure that all the quantities are consistent in every MPI process
@@ -73,58 +74,39 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
 }
 
 
-// TODO should be updated to remove redundant FCI iterations
-shared_ptr<Dvec> Reference::civectors() const {
-  // Default to HarrisonZarrabian method
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  return fci->civectors();
+shared_ptr<const Dvec> Reference::civectors() const {
+  return ciwfn_->civectors();
 }
 
 
-// TODO should be updated to remove redundant FCI iterations
-shared_ptr<Dvec> Reference::rdm1deriv() const {
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  shared_ptr<Dvec> out = fci->rdm1deriv();
-  return out;
+shared_ptr<Dvec> Reference::rdm1deriv(const int istate) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm1deriv(istate);
 }
 
 
-// TODO should be updated to remove redundant FCI iterations
-shared_ptr<Dvec> Reference::rdm2deriv() const {
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  shared_ptr<Dvec> out = fci->rdm2deriv();
-  return out;
+shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm2deriv(istate);
 }
 
 
-// TODO should be updated to remove redundant FCI iterations
-shared_ptr<Dvec> Reference::rdm3deriv() const {
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  shared_ptr<Dvec> out = fci->rdm3deriv();
-  return out;
+shared_ptr<Dvec> Reference::rdm3deriv(const int istate) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm3deriv(istate);
 }
 
 
-// TODO should be updated to remove redundant FCI iterations
-shared_ptr<Dvec> Reference::rdm4deriv() const {
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  shared_ptr<Dvec> out = fci->rdm4deriv();
-  return out;
+shared_ptr<Dvec> Reference::rdm4deriv(const int istate) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm4deriv(istate);
 }
 
 
-// TODO this is a very bad implementation, since it recomputes FCI; should be replaced in somewhere.
 tuple<shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> Reference::compute_rdm34(const int i) const {
-  // Default to HarrisonZarrabian method
-  shared_ptr<FCI> fci = make_shared<KnowlesHandy>(make_shared<const PTree>(), geom_, shared_from_this(), nclosed_, nact_, nstate_);
-  fci->compute();
-  fci->compute_rdm12();
-  return fci->compute_rdm34(i);
+  FCI_bare fci(ciwfn_);
+  fci.compute_rdm12();
+  return fci.compute_rdm34(i);
 }
 
 

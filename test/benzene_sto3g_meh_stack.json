@@ -53,7 +53,7 @@
   "fci" : {
     "thresh" : 1.0e-12,
     "algorithm" : "kh",
-    "nguess" : 50
+    "nguess" : 400
   },
   "nstates" : 2
 }

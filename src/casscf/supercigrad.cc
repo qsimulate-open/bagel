@@ -46,54 +46,23 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);
 
-  const int target = 0;
+  const int target = task_->target_state();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  const int nvirt = ref_->nvirt();
+
+  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0,nocc);
+
+  // state-averaged density matrices
+  shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
+  shared_ptr<const RDM<2>> rdm2_av = task_->fci()->rdm2_av();
 
   // related to denominators
-  const int nmobasis = coeff->mdim(); 
-  assert(nmobasis == nclosed+nact+nvirt);
-  auto eig = make_shared<Matrix>(nmobasis, nmobasis);
-  {
-    // as in Theor Chem Acc (1997) 97:88-95
-    vector<double> occup_ = task_->fci()->rdm1_av()->diag();
-
-    shared_ptr<Matrix> deninact = task_->ao_rdm1(nullptr, true); // true means inactive_only
-    auto finact = make_shared<Matrix>(*coeff % *task_->fci()->jop()->core_fock() * *coeff);
-
-    shared_ptr<Matrix> denall = task_->ao_rdm1(task_->fci()->rdm1_av());
-    auto denact = make_shared<Matrix>(*denall-*deninact);
-    auto fact_ao = make_shared<Fock<1>>(geom_, task_->hcore(), denact, ref_->schwarz());
-    auto f = make_shared<Matrix>(*finact+ *coeff%(*fact_ao-*task_->hcore())**coeff);
-
-    auto fact = make_shared<Qvec>(nmobasis, nact, ref_->coeff(), nclosed, task_->fci(), task_->fci()->rdm2_av());
-    for (int i = 0; i != nact; ++i)
-      daxpy_(nmobasis, occup_[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
-
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nvirt; ++j)
-        eig->element(j+nocc,i+nclosed) = eig->element(i+nclosed,j+nocc) = -fact->element(i,i) + occup_[i]*f->element(j+nocc, j+nocc);
-
-    for (int i = 0; i != nclosed; ++i)
-      for (int j = 0; j != nvirt; ++j)
-         eig->element(j+nocc,i) = eig->element(i,j+nocc) = 2.0*f->element(j+nocc, j+nocc) - 2.0*f->element(i, i);
-
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nclosed; ++j)
-         eig->element(j,i+nclosed) = eig->element(i+nclosed,j)
-                                   = (f->element(nclosed+i,nclosed+i)*2.0-fact->element(i+nclosed,i)) - f->element(j, j)*(2.0 - occup_[i]);
-#if 1
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nact; ++j)
-        eig->element(j+nclosed,i+nclosed) = eig->element(i+nclosed,j+nclosed) = 1.0e0;
-#endif
-
-  }
+  const int nmobasis = coeff->mdim();
+  assert(nmobasis == nclosed+nact+ref_->nvirt());
 
   // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(ref_->coeff()->slice(0,nocc))->apply_J();
+  shared_ptr<DFHalfDist> half  = geom_->df()->compute_half_transform(ocoeff)->apply_J();
   shared_ptr<DFHalfDist> halfjj = half->apply_J();
 
   // orbital derivative is nonzero
@@ -101,16 +70,15 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
-  auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ref_->coeff());
-  shared_ptr<const Matrix> rdm1 = task_->fci()->rdm1(target)->rdm1_mat(nclosed);
-//shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
+  auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * *ocoeff);
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
-  dgemm_("N", "N", nmobasis, nocc, nocc, 2.0, hmo->data(), nmobasis, rdm1->data(), nocc, 0.0, g0->data(), nmobasis);
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
   // 2) two-electron contribution
-  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ref_->coeff()->slice(0,nocc));
+  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
-  shared_ptr<const Matrix> buf = half->form_2index(fulld, 2.0);
-  g0->add_block(1.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+  shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
 
   // Recalculate the CI vectors (which can be avoided... TODO)
   shared_ptr<const Dvec> civ = task_->fci()->civectors();
@@ -120,34 +88,72 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   // combine gradient file
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
+  // compute unrelaxed dipole...
+  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
+  {
+    Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), "Unrelaxed");
+    dipole.compute();
+  }
+
   // solve CP-CASSCF
-  auto cp = make_shared<CPCASSCF>(grad, civ, eig, half, halfjj, ref_, task_->fci());
-  shared_ptr<PairFile<Matrix, Dvec>> zvec = cp->solve();
+  auto cp = make_shared<CPCASSCF>(grad, civ, half, halfjj, ref_, task_->fci());
+  shared_ptr<const Matrix> zmat, xmat, dummy;
+  shared_ptr<const Dvec> zvec;
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
 
   // form Zd + dZ^+
-  shared_ptr<Matrix> dsa = task_->fci()->rdm1_av()->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
-  shared_ptr<Matrix> zslice = zvec->first();
-  auto dm = make_shared<Matrix>(*zslice * *dsa + (*dsa ^ *zslice));
+  shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
+  auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
 
-  // compute dipole...
-  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
   dtot->ax_plus_y(1.0, dm);
 
   // form zdensity
   auto detex = make_shared<Determinants>(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false, /*mute=*/true);
   shared_ptr<const RDM<1>> zrdm1;
   shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(civ, zvec->second(), detex);
+  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec, civ, detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
   zrdm1_mat->symmetrize();
   dtot->ax_plus_y(1.0, zrdm1_mat);
 
-  // computes dipole mements
+  // here dtot is the relaxed 1RDM in the MO basis
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
-  Dipole dipole(geom_, dtotao);
-  dipole.compute();
 
-  return make_shared<GradFile>(geom_->natom());
+  // compute relaxed dipole moment
+  {
+    Dipole dipole(geom_, dtotao, "Relaxed");
+    dipole.compute();
+  }
+
+  // xmat in the AO basis
+  auto xmatao = make_shared<Matrix>(*ref_->coeff() * *xmat ^ *ref_->coeff());
+
+  //- TWO ELECTRON PART -//
+  // half is computed long before
+  shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
+  shared_ptr<DFHalfDist> qri;
+  {
+    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * *zmat->slice(0,nocc));
+    {
+      const RDM<2> D(*ref_->rdm2(target)+*zrdm2);
+      const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
+
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D.data(), dd.data(), nclosed, nact);
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact));
+      qri = qijd->back_transform(ocoeff);
+    }
+    {
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
+    }
+  }
+
+  shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
+  shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
+
+  shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
+  gradient->print();
+
+  return gradient;
 }
-
