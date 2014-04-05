@@ -292,17 +292,14 @@ class SRBFGS {
 
 
     // returns restricted step displacement
-    std::shared_ptr<T> step_restricted_extrapolate(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift, const bool tight = false) {
+    std::shared_ptr<T> step_restricted_extrapolate(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, const bool tight = false) {
       // to make sure, inputs are copied
       auto f     = std::vector<double>(_f);
       auto grad  = std::make_shared<const T>(*_grad);
       auto value = std::make_shared<const T>(*_value);
-      auto shift = std::make_shared<T>(*_shift);
+      auto shift = grad->clone();
 
       double alpha = alpha_;
-      if (tight) {
-        alpha = alpha + static_cast<double>(f.size()-1) * 0.25;
-      }
       if (prev_value() != nullptr) {
         auto DD = std::make_shared<T>(*grad - *prev_grad());
         D_.push_back(DD);
