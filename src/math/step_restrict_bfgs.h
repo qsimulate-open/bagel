@@ -68,7 +68,7 @@ class SRBFGS {
     const double alpha_ = 1.3;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom, double level_shift = 0.0, bool debug = false) : denom_(denom), level_shift_(level_shift), debug_(debug) {}
+    SRBFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
 
     std::shared_ptr<const T> denom() const { return denom_; }
     std::vector<std::shared_ptr<const T>> delta() { return delta_; }
