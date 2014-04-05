@@ -316,7 +316,7 @@ class SRBFGS {
         if (prev_value() != nullptr && !reset) {
           auto gnorm  = grad->norm();
           auto pnorm = delta().size() > 0 ? prev_grad()->norm() : 0.0;
-          if (fabs(gnorm - pnorm) < 1.0e-6 ||trust_radius_ / gnorm < 1.0e-6)
+          if (trust_radius_ * gnorm < 1.0e-5 || fabs(gnorm - pnorm) < 1.0e-5)
             initiate_trust_radius(grad);
           std::cout << " present level shift = " << level_shift_ << std::endl;
           reset = true;
@@ -390,7 +390,7 @@ class SRBFGS {
         }
         if (mi == maxmi-1) {
           std::cout << " MICROITERATIONS DID NOT CONVERGE " << std::endl;
-          assert(false); // TODO : convert to stringstream output and throw
+//          assert(false); // TODO : convert to stringstream output and throw
         }
       }
       return acopy;
