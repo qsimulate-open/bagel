@@ -29,10 +29,32 @@
 using namespace std;
 using namespace bagel;
 
-Shell_ECP::Shell_ECP(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                     const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range,
-                     const std::vector<double>& _ecp_expo, const std::vector<double>& _ecp_coef,
-                     const std::vector<int>& _ecp_r)
- : Shell_base(sph, _position, _ang, _expo, _contr, _range),
+Shell_ECP::Shell_ECP(const array<double,3>& _position, int _ang, const std::vector<double>& _ecp_expo,
+                     const std::vector<double>& _ecp_coef, const std::vector<int>& _ecp_r)
+ : Shell_base(false, _position, _ang),
    ecp_exponents_(_ecp_expo), ecp_coefficients_(_ecp_coef), ecp_r_power_(_ecp_r) {}
+
+string Shell_ECP::show() const {
+  stringstream ss;
+  ss << "position: ";
+  ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
+  ss << "ecp_angular: "  << angular_number_ << endl;
+  ss << "ecp_exponents: ";
+  for (int i = 0; i != ecp_exponents_.size(); ++i) {
+    ss << " " << ecp_exponents_[i];
+  }
+  ss << endl;
+  ss << "ecp_coefficients: ";
+  for (int i = 0; i != ecp_coefficients_.size(); ++i) {
+      ss << " " << ecp_coefficients_[i];
+  }
+  ss << endl;
+  ss << "ecp_r_power: ";
+  for (int i = 0; i != ecp_r_power_.size(); ++i) {
+      ss << " " << ecp_r_power_[i];
+  }
+  ss << endl;
+
+  return ss.str();
+}
 

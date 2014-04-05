@@ -29,47 +29,15 @@
 using namespace std;
 using namespace bagel;
 
-Shell_base::Shell_base(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
- : spherical_(sph), position_(_position), angular_number_(_ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range) {
+Shell_base::Shell_base(const bool sph, const array<double,3>& _position, int _ang)
+ : spherical_(sph), position_(_position), angular_number_(_ang) {}
 
-  contraction_lower_.reserve(_range.size());
-  contraction_upper_.reserve(_range.size());
-  for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
-    contraction_lower_.push_back(piter->first);
-    contraction_upper_.push_back(piter->second);
-  }
+Shell_base::Shell_base(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0) {}
 
-  if (spherical_)
-    nbasis_ = (angular_number_*2+1) * num_contracted();
-  else
-    nbasis_ = (angular_number_+1) * (angular_number_+2) / 2 * num_contracted();
-
-}
-
-Shell_base::Shell_base(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_{0.0},
-                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)} {
-  contraction_lower_.push_back(0);
-  contraction_upper_.push_back(1);
-}
-
-const string Shell_base::show() const {
+std::string Shell_base::show() const {
   stringstream ss;
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
-  ss << "angular: "  << angular_number_ << endl;
-  ss << "exponents: ";
-  for (int i = 0; i != exponents_.size(); ++i) {
-    ss << " " << exponents_[i];
-  }
-  ss << endl;
-  for (int i = 0; i != contractions_.size(); ++i) {
-    ss << " (" << contraction_ranges_[i].first << "," << contraction_ranges_[i].second << ") ";
-    for (int j = contraction_ranges_[i].first; j != contraction_ranges_[i].second; ++j)
-      ss << contractions_[i][j] << " ";
-  }
 
   return ss.str();
 }
-

@@ -36,7 +36,8 @@ static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
- : Shell_base(sph, _position, _ang, _expo, _contr, _range), dummy_(false), relativistic_(false) {
+ : Shell_base(sph, _position, _ang),
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range),dummy_(false), relativistic_(false) {
 
   // TODO Set these values to those of the applied magnetic field vector ultimately coming from an input file.
   // Probably the best approach is to pass it as an argument of the constructor.
@@ -54,9 +55,26 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
   vector_potential_[1] = 0.5*(magnetic_field_[2]*position_[0] - magnetic_field_[0]*position_[2]);
   vector_potential_[2] = 0.5*(magnetic_field_[0]*position_[1] - magnetic_field_[1]*position_[0]);
 
+  contraction_lower_.reserve(_range.size());
+  contraction_upper_.reserve(_range.size());
+  for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
+    contraction_lower_.push_back(piter->first);
+    contraction_upper_.push_back(piter->second);
+  }
+
+  if (spherical_)
+    nbasis_ = (angular_number_*2+1) * num_contracted();
+  else
+    nbasis_ = (angular_number_+1) * (angular_number_+2) / 2 * num_contracted();
+
 }
 
-Shell::Shell(const bool sph) : Shell_base(sph) {}
+Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0},
+                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)} {
+  contraction_lower_.push_back(0);
+  contraction_upper_.push_back(1);
+}
+
 
 std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   auto out = make_shared<Shell>(*this);
@@ -75,6 +93,25 @@ std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const 
   return out;
 }
 
+string Shell::show() const {
+  stringstream ss;
+  ss << "position: ";
+  ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
+  ss << "angular: "  << angular_number_ << endl;
+  ss << "exponents: ";
+  for (int i = 0; i != exponents_.size(); ++i) {
+    ss << " " << exponents_[i];
+  }
+  ss << endl;
+  for (int i = 0; i != contractions_.size(); ++i) {
+    ss << " (" << contraction_ranges_[i].first << "," << contraction_ranges_[i].second << ") ";
+    for (int j = contraction_ranges_[i].first; j != contraction_ranges_[i].second; ++j)
+      ss << contractions_[i][j] << " ";
+  }
+
+  return ss.str();
+}
+
 bool Shell::operator==(const Shell& o) const {
   bool out = true;
   out &= spherical_ == o.spherical_;
@@ -87,11 +124,6 @@ bool Shell::operator==(const Shell& o) const {
   out &= contraction_upper_ == o.contraction_upper_;
   out &= contraction_lower_ == o.contraction_lower_;
   out &= nbasis_ == o.nbasis_;
-  return out;
-}
-
-shared_ptr<const Shell> Shell::cartesian_shell() const {
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
   return out;
 }
 
@@ -148,6 +180,11 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     ranges.push_back(make_pair(i,i+1));
   }
   return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
+}
+
+shared_ptr<const Shell> Shell::cartesian_shell() const {
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
+  return out;
 }
 
 void Shell::init_relativistic() {

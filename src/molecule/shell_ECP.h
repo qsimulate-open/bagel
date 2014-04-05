@@ -41,9 +41,8 @@ class Shell_ECP : public Shell_base {
   public:
     Shell_ECP() { }
 
-    Shell_ECP(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
-          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range,
-          const std::vector<double>& ecp_exponents, const std::vector<double>& ecp_coefficients, const std::vector<int>& ecp_r_power);
+    Shell_ECP(const std::array<double,3>& position, int angular_num, const std::vector<double>& ecp_exponents,
+              const std::vector<double>& ecp_coefficients, const std::vector<int>& ecp_r_power);
 
     double ecp_exponents(const int i) const { return ecp_exponents_[i]; };
     const std::vector<double>& ecp_exponents() const { return ecp_exponents_; };
@@ -52,6 +51,8 @@ class Shell_ECP : public Shell_base {
     double ecp_coefficients(const int i) const { return ecp_coefficients_[i]; };
     const std::vector<double>& ecp_coefficients() const { return ecp_coefficients_; };
     const double* ecp_coefficients_pointer() const { return &(ecp_coefficients_[0]); };
+
+    std::string show() const override;
 
 };
 
