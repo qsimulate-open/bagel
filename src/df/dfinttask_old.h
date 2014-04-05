@@ -52,7 +52,7 @@ class DFIntTask_OLD {
       // all slot in
       if (rank_ == 2) {
         DataType* const data = df_->data2_->data();
-        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
+        for (int j0 = offset_[0]; j0 != offset_[0] + shell_[2]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
             //data[j1+j0*naux] = data[j0+j1*naux] = *ppt;
             data[j1+j0*naux] = *ppt;

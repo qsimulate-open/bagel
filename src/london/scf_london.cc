@@ -24,14 +24,68 @@
 //
 
 #include <src/london/scf_london.h>
+#include <src/london/fock_london.h>
 
 using namespace bagel;
 using namespace std;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
+SCF_London::SCF_London(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re)
+        : Method (idata, cgeom, re) { }
+
 void SCF_London::compute() {
   cout << "  HF method with London orbitals to be implemented soon!" << endl;
+
+  {
+    shared_ptr<const DFDist_London> df = cgeom_->df();
+    shared_ptr<const ZMatrix> ij = df->data2();
+
+    const int asize = df->block(0)->asize();
+    const int b1size = df->block(0)->b1size();
+    const int b2size = df->block(0)->b2size();
+    shared_ptr<const ZMatrix> jcd = df->get_block(0,asize,0,b1size,0,b2size);
+
+    shared_ptr<const ZMatrix> jcds = make_shared<const ZMatrix>(*ij * *jcd);
+    shared_ptr<const ZMatrix> abi = jcd->transpose_conjg();
+    shared_ptr<const ZMatrix> abis = jcds->transpose_conjg();
+
+    ij->print("half-inverted 2-index matrix", 20);
+//    abi->print("3-index matrix (ab|i)", 20);
+    jcd->print("3-index matrix (j|cd)", 20);
+
+    const shared_ptr<ZMatrix> ERI = get_ERI(cgeom_);
+    ZMatrix DFERI = *abi * *ij * *ij * *jcd;
+
+    DFERI.print("ERI, by density fitting (expected to work only at zero-field)", 20);
+    ERI->print("Analytical London ERI Matrix!", 20);
+    (*ERI - DFERI).print("Errors of density fitting", 20);
+  }
+
+  {
+    shared_ptr<const DFDist> df = cgeom_->form_fit<DFDist_ints<ERIBatch>>(1.0e-10, true);
+
+    const int asize = df->block(0)->asize();
+    const int b1size = df->block(0)->b1size();
+    const int b2size = df->block(0)->b2size();
+    shared_ptr<const Matrix> jcd = df->get_block(0,asize,0,b1size,0,b2size);
+    shared_ptr<const Matrix> ij = df->data2();
+
+    shared_ptr<const Matrix> jcds = make_shared<const Matrix>(*ij * *jcd);
+    shared_ptr<const Matrix> abi = jcd->transpose();
+    shared_ptr<const Matrix> abis = jcds->transpose();
+
+    ij->print("half-inverted 2-index matrix", 20);
+    //abi->print("3-index matrix (ab|i)", 20);
+    jcd->print("3-index matrix (j|cd)", 20);
+
+    const shared_ptr<Matrix> ERI = get_ERI_original(cgeom_);
+    Matrix DFERI = *abi * *ij * *ij * *jcd;
+
+    DFERI.print("4-index matrix by density fitting", 20);
+    ERI->print("Analytical London ERI Matrix!", 20);
+    (*ERI - DFERI).print("Errors of density fitting", 20);
+  }
 }
 
 
