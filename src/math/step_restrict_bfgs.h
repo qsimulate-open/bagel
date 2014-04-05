@@ -303,88 +303,99 @@ class SRBFGS {
       if (tight) {
         alpha = alpha + static_cast<double>(f.size()-1) * 0.25;
       }
+      if (prev_value() != nullptr) {
+        auto DD = std::make_shared<T>(*grad - *prev_grad());
+        D_.push_back(DD);
+        auto yy = std::make_shared<T>(*value - *prev_value());
+        delta_.push_back(yy);
+        auto xx = unrolled_hessian(yy); // unrolled hessian updates Y_ ; BEWARE!
+        avec_.push_back(xx);
+      }
 
       std::shared_ptr<T> acopy;
-      for (int mi = 0; mi!= 10; ++mi) {
+      bool reset = false;
+      const int maxmi = 20;
+      for (int mi = 0; mi != maxmi; ++mi) {
+        if (prev_value() != nullptr && !reset) {
+          auto gnorm  = grad->norm();
+          auto pnorm = delta().size() > 0 ? prev_grad()->norm() : 0.0;
+          if (fabs(gnorm - pnorm) < 1.0e-6 ||trust_radius_ / gnorm < 1.0e-6)
+            initiate_trust_radius(grad);
+          std::cout << " present level shift = " << level_shift_ << std::endl;
+          reset = true;
+        }
 
-        std::cout << " +++ hebden algorithm used to determine level shift +++ " << std::endl;
-        auto tshift = hebden_levelshift(grad, value);
-        std::cout << " shift in step_restricted_extrap = " << tshift << std::endl;
-        shift->fill(tshift);
-        acopy = level_shift_extrapolate(grad, value, grad, shift);
+        acopy = extrapolate(grad);
+        acopy->scale(-1.0);
 
-        std::shared_ptr<T> V = unrolled_hessian(acopy, false); // H_n * a
+        std::shared_ptr<T> V = unrolled_hessian(acopy, false); // TODO : could be replaced by vector inner products
         double rk = taylor_series_validity_ratio(f, grad, acopy, V);
         std::cout << std::setprecision(4) << " Taylor expansion validity parameter  = " << rk << std::endl;
-#if 1
+        if (tight)
+          std::cout << " Tight optimization specified " << std::endl;
+
         if (!tight) {
           if (rk < 0.25 && rk > 0) {
             std::cout << " condition (i) satisfied in microiteration " << mi << std::endl;
-            std::cout << " end microiteration " << mi << std::endl;
             trust_radius_ = trust_radius_ * 2.0/3.0;
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
             prev_grad_ = grad;
             prev_value_ = value;
+            std::cout << " end microiteration " << mi << std::endl;
             break;
           } else if ((rk > 0.25) && (rk < 0.75)) {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
-            std::cout << " end microiteration " << mi << std::endl;
             trust_radius_ = trust_radius_;
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
             prev_grad_ = grad;
             prev_value_ = value;
-            break;
-          } else if (rk > 0.75) {
-            std::cout << " condition (iii) satisfied in microiteration " << mi << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
+            break;
+          } else if (rk > 0.75) { // && (rk < 2.0-rmin_/2.0)) {
+            std::cout << " condition (iii) satisfied in microiteration " << mi << std::endl;
+            trust_radius_ = std::min(1.2 * trust_radius_, 0.75);
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
             prev_grad_ = grad;
             prev_value_ = value;
+            std::cout << " end microiteration " << mi << std::endl;
             break;
-          } else if (rk < 0) {
+          } else if (rk < 0) { //|| rk > 2.0-rmin_/2.0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
-            std::cout << " scaling down the step vector " << std::endl;
-            acopy->scale(1.0/alpha);
+            std::cout << " scaling down the trust radius and step vector " << std::endl;
             trust_radius_ = trust_radius_ * 2.0/3.0;
-            if (!delta().empty()) {
-              decrement_delta();
-              decrement_D();
-              decrement_avec();
-              if (!Y().empty())
-                decrement_Y();
-            }
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
+            std::cout << " trust radius at end of microiteration " << trust_radius_ << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
           }
         } else { // conditions for tighter optimization
           if (((rmin_ < rk) && (rk < rgood_)) || ((2.0 - rgood_ < rk) && (rk < 2.0 - rmin_))) {
             std::cout << " condition (i) satisfied in microiteration " << mi << std::endl;
-            std::cout << " end microiteration " << mi << std::endl;
-            if (delta().size() != 0)
-              decrement_intermediates();
-            auto tmp1 = extrapolate_micro(grad, value, shift, true);
-            auto v    = interpolate_hessian(value, shift, true);
             trust_radius_ = trust_radius_;
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
+            prev_grad_ = grad;
+            prev_value_ = value;
+            std::cout << " end microiteration " << mi << std::endl;
             break;
           } else if ((rgood_ < rk) && (rk < 2 - rgood_) ) {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
             trust_radius_ = std::min(alpha * trust_radius_, 0.75);
-            std::cout << " new trust radius   = " << trust_radius_ << std::endl;
-            if (delta().size() != 0)
-              decrement_intermediates();
-            auto tmp1 = extrapolate_micro(grad, value, shift, true);
-            auto v    = interpolate_hessian(value, shift, true);
+            std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
+            prev_grad_ = grad;
+            prev_value_ = value;
             std::cout << " end microiteration " << mi << std::endl;
             break;
           } else if (rk < rmin_ || rk > 2 - rmin_ ) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
-            std::cout << " scaling down the step vector " << std::endl;
-            if (delta().size() == Y().size() && delta().size() != 0)
-              decrement_intermediates();
-            acopy->scale(1.0/alpha);
+            std::cout << " scaling down the trust radius " << std::endl;
             trust_radius_ = trust_radius_ / alpha;
-            std::cout << " pk * grad    = " << acopy->dot_product(grad) << std::endl;
             std::cout << " end microiteration " << mi << std::endl;
           }
         }
+        if (mi == maxmi-1) {
+          std::cout << " MICROITERATIONS DID NOT CONVERGE " << std::endl;
+          assert(false); // TODO : convert to stringstream output and throw
+        }
       }
-#endif
       return acopy;
     }
 
