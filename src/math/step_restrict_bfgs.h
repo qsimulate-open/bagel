@@ -29,7 +29,7 @@
 
 // implements BFGS updates based on Fischer & Almlof JPC 1992.
 // step restriction based on Jorgensen, Swanstrom, & Yeager (JSY) JCP 78 347 (1983).
-// level shifted BFGS based on Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
+// level shifted BFGS based on Erway, Marcia (EM) Linear Algebra and its Applications 473 333 (2012)
 //      and Erway, Jain, Marcia, arXiv:1209.5141.
 // Hebden algorithm : Hebden, AERE Harwell Report TP515 (1973).
 // T needs clone, ddot and daxpy, along with overloaded operators, a copy constructor
@@ -56,14 +56,14 @@ class SRBFGS {
     // initial guess for hessian in a diagonal form
     std::shared_ptr<const T> denom_;
 
-    double trust_radius_;
+    double trust_radius_ = 0.0;
     double rk_;
     double level_shift_;
     const bool debug_;
     const int hebden_iter_ = 10;
     const int maxiter_ = 300;
     // default convergence parameters taken from JSY
-    const double rmin_ = 0.6;
+    const double rmin_ = 0.5;
     const double rgood_ = 0.85;
     const double alpha_ = 1.3;
 
@@ -397,7 +397,7 @@ class SRBFGS {
      auto grad  = std::make_shared<const T>(*_grad);
      std::cout << std::setprecision(8) << " trust radius    = " << trust_radius_ << std::endl;
      
-     double shift = prev_value() == nullptr ? 1e-20 : level_shift_; // shift must be finite to avoid divergence in apply_inverse_level_shifted_hessian
+     double shift = 1e-12;
      auto shift_vec = grad->clone();
      shift_vec->fill(shift);
      double dl_norm;
@@ -422,7 +422,7 @@ class SRBFGS {
    }
 
 
-   // returns a level-shifted displacement according to Erway, Marcia, Linear Algebra and its Applications 473 333 (2012)
+   // returns a level-shifted displacement according to EM12
     std::shared_ptr<T> level_shift_inverse_hessian(std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift, const bool update = true) {
       // to make sure, inputs are copied.
       auto vector = std::make_shared<const T>(*_vector);
@@ -432,8 +432,8 @@ class SRBFGS {
       *out /= (*denom_ + *shift);
 
       if (prev_value() != nullptr) {
-        const int n = delta.size();
-        assert(delta().size() == avec().size() && delta().size == D().size());
+        const int n = delta().size();
+        assert(delta().size() == avec().size() && delta().size() == D().size());
 
         std::vector<std::shared_ptr<T>> pvec;
         std::vector<std::shared_ptr<T>> vvec;
@@ -579,6 +579,37 @@ class SRBFGS {
       }
       
       return out;
+    }
+
+
+    // returns restricted step displacement
+    std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad) {
+      bool with_shift = false;
+      // to make sure, inputs are copied
+      auto grad  = std::make_shared<const T>(*_grad);
+
+      // initialize trust radius
+      if (prev_value() == nullptr && trust_radius_ == 0.0) {
+        initiate_trust_radius(grad);
+      }
+
+      // compute Newton step and compare norm to trust radius
+      auto acopy = two_loop_inverse_hessian(grad);
+      auto anorm = acopy->norm();
+      if (anorm  > trust_radius_) {
+        std::cout << " step norm = " << anorm << " | trust_radius = " << trust_radius_ << std::endl;
+        std::cout << " NEWTON STEP NORM EXCEEDS THE TRUST RADIUS : Level shifting will be used " << std::endl;
+        with_shift = true;
+      }
+      if (with_shift) {
+        std::cout << " +++ Hebden algorithm used to determine level shift +++ " << std::endl;
+        auto tshift = hebden_levelshift(grad);
+        auto shift = grad->clone();
+        shift->fill(tshift);
+        acopy = level_shift_inverse_hessian(grad, shift);
+      }
+
+      return acopy;
     }
 };
 
