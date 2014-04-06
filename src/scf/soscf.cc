@@ -49,6 +49,7 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 
+#if 0
   /**** Test Projection Integrals ****/
 
   auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
@@ -69,7 +70,6 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 
   auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
 
-#if 1
   // Test < r | a >< a | s>
   MixedBasis<OverlapBatch> mixedSra(auxgeom, refgeom);
   mixedSra.print("< r | a >", 25);
