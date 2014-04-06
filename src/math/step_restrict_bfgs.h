@@ -49,6 +49,7 @@ class SRBFGS {
     std::vector<std::shared_ptr<const T>> y_;
     std::vector<std::shared_ptr<const T>> D_;
     std::vector<std::shared_ptr<const T>> Y_;
+    std::vector<double> rho_;
 
     std::shared_ptr<const T> prev_grad_;
     std::shared_ptr<const T> prev_value_;
@@ -76,6 +77,7 @@ class SRBFGS {
     std::vector<std::shared_ptr<const T>> D() const { return D_; }
     std::vector<std::shared_ptr<const T>> y() const { return y_; }
     std::vector<std::shared_ptr<const T>> avec() const { return avec_; }
+    std::vector<double> rho() const { return rho_; }
     std::shared_ptr<const T> prev_grad() const { return prev_grad_; }
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
     std::shared_ptr<const T> level_shift() const { return level_shift_; }
@@ -307,16 +309,18 @@ class SRBFGS {
         delta_.push_back(yy);
         auto xx = unrolled_hessian(yy); // unrolled hessian updates Y_ ; BEWARE!
         avec_.push_back(xx);
+        auto rr = 1.0 / detail::real(DD->dot_product(yy));
+        rho_.push_back(rr);
       }
 
       std::shared_ptr<T> acopy;
       bool reset = false;
-      const int maxmi = 20;
+      const int maxmi = 30;
       for (int mi = 0; mi != maxmi; ++mi) {
         if (prev_value() != nullptr && !reset) {
           auto gnorm  = grad->norm();
           auto pnorm = delta().size() > 0 ? prev_grad()->norm() : 0.0;
-          if (trust_radius_ * gnorm < 1.0e-5 || fabs(gnorm - pnorm) < 1.0e-5)
+          if (trust_radius_ * gnorm < 5.0e-6 || fabs(gnorm - pnorm) < 1.0e-6)
             initiate_trust_radius(grad);
           std::cout << " present level shift = " << level_shift_ << std::endl;
           reset = true;
@@ -403,7 +407,6 @@ class SRBFGS {
      
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
-     std::cout << std::setprecision(8) << " trust radius    = " << trust_radius_ << std::endl;
      
      double shift = 1e-12;
      auto shift_vec = grad->clone();
@@ -412,7 +415,6 @@ class SRBFGS {
      for (int k = 0; k != hebden_iter_; ++k) {
        auto dl  = level_shift_inverse_hessian(grad, shift_vec, false); // Hn^-1 * gn
        dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
-       std::cout << " dl norm in hebden     = " << dl_norm << std::endl;
        if (dl_norm <= trust_radius_) break;
        auto dl2 = level_shift_inverse_hessian(dl, shift_vec, false);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
@@ -460,7 +462,7 @@ class SRBFGS {
           } else {
             vtmp = std::make_shared<T>(*D().at((j-1)/2));
             utmp = vtmp->copy();
-            auto s1 = 1.0 / detail::real(utmp->dot_product(delta().at((j-1)/2)));
+            auto s1 = rho().at((j-1)/2);
             assert(fabs(s1) > 1e-20);
             utmp->scale(s1);
           }
@@ -522,12 +524,12 @@ class SRBFGS {
           auto t2 = delta().at(j)->copy();
           auto t3 = Y().at(j)->copy();
           auto t4 = delta().at(i)->copy();
-          auto s1 = detail::real(t1->dot_product(t2)); // Delta_j * delta_j  ; real part is suspicious for now
+          auto s1 = rho().at(j);                       // Delta_j * delta_j
           auto s2 = detail::real(t3->dot_product(t2)); // y_j     * delta_j
           auto s3 = t1->dot_product(t4);               // Delta_j * delta_i
           auto s4 = t3->dot_product(t4);               // y_j     * delta_i
-          yy->ax_plus_y(s3/s1, t1);
-          yy->ax_plus_y(-s4/s2, t3);
+          yy->ax_plus_y( s3 * s1, t1);
+          yy->ax_plus_y(-s4 / s2, t3);
         }
         if (i == nd-1) 
           Y_.push_back(yy);
@@ -536,12 +538,12 @@ class SRBFGS {
         auto t1 = D().at(i)->copy();
         auto t2 = delta().at(i)->copy();
         auto t3 = Y().at(i)->copy();
-        auto s1 = detail::real(t1->dot_product(t2)); // Delta_i * delta_i
+        auto s1 = rho().at(i);                       // Delta_i * delta_i
         auto s2 = detail::real(t3->dot_product(t2)); // Y_i     * delta_i
         auto s3 = t1->dot_product(value);            // Delta_i * v
         auto s4 = t3->dot_product(value);            // Y_i     * v
-        out->ax_plus_y(s3/s1, t1);
-        out->ax_plus_y(-s4/s2, t3);
+        out->ax_plus_y( s3 * s1, t1);
+        out->ax_plus_y(-s4 / s2, t3);
       }
       if (!update && !Y().empty()) {
         decrement_Y();
@@ -551,6 +553,7 @@ class SRBFGS {
 
 
     // returns displacement using two-loop formula : no y_ intermediate just requires delta and Delta and vector to apply on
+    // complex generalization : Sorber, van Barel, de Lathauwer, SIAM J. Optim. 22 (3) 379 (2012)
     std::shared_ptr<T> two_loop_inverse_hessian(std::shared_ptr<const T> _vector) {
       // to make sure, inputs are copied.
       auto vector = std::make_shared<const T>(*_vector);
@@ -565,9 +568,9 @@ class SRBFGS {
         for (int i = np; i > -1; --i) {
           auto deltai = delta().at(i)->copy();
           auto yi     = D().at(i)->copy();
-          auto s1     = deltai->dot_product(out);
-          auto s2     = detail::real(deltai->dot_product(yi)); // double check for complex case
-          auto alphai = detail::real(s1/s2); // TODO: REMOVE DETAIL::REAL FOR COMPLEX CASE
+          auto s1     = detail::real(deltai->dot_product(out));
+          auto s2     = rho().at(i);
+          auto alphai = s1 * s2;
           out->ax_plus_y(-alphai, yi);
           alpha.insert(alpha.begin(), alphai);
         }
@@ -581,7 +584,7 @@ class SRBFGS {
         auto deltai = delta().at(i)->copy();
         auto yi = D().at(i)->copy();
         auto s1 = yi->dot_product(out);
-        auto s2 = detail::real(yi->dot_product(deltai)); // double check for complex case
+        auto s2 = detail::real(yi->dot_product(deltai));
         auto b  = alpha.at(i) - s1/s2;
         out->ax_plus_y(b, deltai);
       }
