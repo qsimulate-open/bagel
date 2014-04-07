@@ -433,6 +433,7 @@ class SRBFGS {
        shift_vec->fill(shift);
        if (k == hebden_iter_ - 1) {
          std::cout << " Hebden algorithm did not converge to appropriate level shift within " << k << " iterations " << std::endl;
+         std::cout << " step norm with shift   = " << dl_norm << std::endl;
        }
      }
      level_shift_ = shift;
@@ -525,7 +526,7 @@ class SRBFGS {
       // get size of intermediate 
       const int nd = delta().empty() ? 0 : delta().size()-1;
       for (int i = 0; i != nd; ++i) {
-        auto yy =  std::make_shared<T>(*delta().back());
+        auto yy =  std::make_shared<T>(*delta().at(nd-1));
         *yy *= *denom_;
         for (int j = 0; j != i; ++j) {
           auto t1 = D().at(j)->copy();
@@ -627,6 +628,10 @@ class SRBFGS {
         shift->fill(tshift);
         acopy = level_shift_inverse_hessian(grad, shift);
       }
+      if (!with_shift) {
+        level_shift_ = 0.0;
+      }
+      prev_level_shift_ = level_shift_;
 
       return acopy;
     }
