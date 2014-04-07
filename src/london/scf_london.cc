@@ -44,22 +44,22 @@ void SCF_London::compute() {
     const int asize = df->block(0)->asize();
     const int b1size = df->block(0)->b1size();
     const int b2size = df->block(0)->b2size();
-    shared_ptr<const ZMatrix> jcd = df->get_block(0,asize,0,b1size,0,b2size);
-
+    shared_ptr<const ZMatrix> jcd   = df->block(0)->get_block(0,asize,0,b1size,0,b2size);
+    shared_ptr<const ZMatrix> abit  = df->block(0)->get_block_conj(0,asize,0,b1size,0,b2size);
     shared_ptr<const ZMatrix> jcds = make_shared<const ZMatrix>(*ij * *jcd);
-    shared_ptr<const ZMatrix> abi = jcd->transpose_conjg();
-    shared_ptr<const ZMatrix> abis = jcds->transpose_conjg();
+    shared_ptr<const ZMatrix> abits = make_shared<const ZMatrix>(*(ij->transpose()) * *abit);
+    shared_ptr<const ZMatrix> abis  = abits->transpose();
 
-    ij->print("half-inverted 2-index matrix", 20);
-//    abi->print("3-index matrix (ab|i)", 20);
-    jcd->print("3-index matrix (j|cd)", 20);
+//    ij->print("half-inverted 2-index matrix", 40);
+//    jcd->transpose()->print("3-index matrix (ab|i)", 40);
+//    abit->transpose()->print("3-index matrix (ab|i*)", 40);
 
     const shared_ptr<ZMatrix> ERI = get_ERI(cgeom_);
-    ZMatrix DFERI = *abi * *ij * *ij * *jcd;
+    ZMatrix DFERI = *abis * *jcds;
 
-    DFERI.print("ERI, by density fitting (expected to work only at zero-field)", 20);
-    ERI->print("Analytical London ERI Matrix!", 20);
-    (*ERI - DFERI).print("Errors of density fitting", 20);
+    DFERI.print("ERI, by density fitting (expected to work only at zero-field)", 40);
+    ERI->print("Analytical London ERI Matrix!", 40);
+    (*ERI - DFERI).print("Errors of density fitting", 40);
   }
 
   {
@@ -75,16 +75,15 @@ void SCF_London::compute() {
     shared_ptr<const Matrix> abi = jcd->transpose();
     shared_ptr<const Matrix> abis = jcds->transpose();
 
-    ij->print("half-inverted 2-index matrix", 20);
-    //abi->print("3-index matrix (ab|i)", 20);
-    jcd->print("3-index matrix (j|cd)", 20);
+//    ij->print("half-inverted 2-index matrix", 20);
+//    abi->print("3-index matrix (ab|i)", 20);
 
     const shared_ptr<Matrix> ERI = get_ERI_original(cgeom_);
     Matrix DFERI = *abi * *ij * *ij * *jcd;
 
-    DFERI.print("4-index matrix by density fitting", 20);
-    ERI->print("Analytical London ERI Matrix!", 20);
-    (*ERI - DFERI).print("Errors of density fitting", 20);
+    DFERI.print("4-index matrix by density fitting", 40);
+    ERI->print("Analytical London ERI Matrix!", 40);
+    (*ERI - DFERI).print("Errors of density fitting", 40);
   }
 }
 

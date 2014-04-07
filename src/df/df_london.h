@@ -30,9 +30,8 @@
 #include <src/parallel/resources.h>
 #include <src/math/zmatrix.h>
 #include <src/df/dfblock_london.h>
+#include <src/df/dfinttask_london.h>
 #include <src/df/df.h>
-#include <src/df/dfinttask_old.h>
-#include <src/df/dfinttask.h>
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
 
@@ -43,7 +42,7 @@ class DFFullDist_London;
 
 
 class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
-  friend class DFIntTask_OLD<DFDist_London, std::complex<double>, Int_t::London>;
+  friend class DFIntTask_OLD_London;
   protected:
     std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>, Int_t::London>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
@@ -102,7 +101,7 @@ class DFDist_London_ints : public DFDist_London {
       Timer time;
 
       // making a task list
-      TaskQueue<DFIntTask<TBatch,TBatch::Nblocks(),std::complex<double>,DFBlock_London>> tasks(b1shell.size()*b2shell.size()*ashell.size());
+      TaskQueue<DFIntTask_London> tasks(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
@@ -115,13 +114,13 @@ class DFDist_London_ints : public DFDist_London {
         int j1 = 0;
         for (auto& i1 : b1shell) {
           // TODO careful
-          if (TBatch::Nblocks() > 1 || j1 <= j2) {
+          //if (TBatch::Nblocks() > 1 || j1 <= j2) { // This shortcut only works if we use a real auxiliary basis set
             int j0 = 0;
             for (auto& i0 : ashell) {
               tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);
               j0 += i0->nbasis();
             }
-          }
+          //}
           j1 += i1->nbasis();
         }
         j2 += i2->nbasis();

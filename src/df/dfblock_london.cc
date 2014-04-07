@@ -545,3 +545,30 @@ shared_ptr<ZMatrix> DFBlock_London::get_block(const int ist, const int i, const 
 
   return out;
 }
+
+
+shared_ptr<ZMatrix> DFBlock_London::get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+  if (ist != 0 || jst != 0 || kst != 0 || astart_ != 0 || b1start_ != 0 || b2start_ != 0) throw logic_error("DFBlock_London::get_block_conj currently is not designed to work with >1 block");
+  if (b1size_ != b2size_) throw logic_error ("DFBLock_London::get_block_conj assumes b1 and b2 contain the same set of basis functions");
+
+  const int ista = ist - astart_;
+  const int jsta = jst - b1start_;
+  const int ksta = kst - b2start_;
+  const int ifen = ist + i - astart_;
+  const int jfen = jst + j - b1start_;
+  const int kfen = kst + k - b2start_;
+  if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize_ || jfen > b1size_ || kfen > b2size_)
+    throw logic_error("illegal call of DFBlock_London::get_block");
+
+  // TODO we need 3-index tensor class here!
+  auto out = make_shared<ZMatrix>(i, j*k);
+  complex<double>* d = out->data();
+
+  for (int ii=ista; ii!=ifen; ii++) {
+    for (int jj=jsta; jj!=jfen; jj++) {
+      for (int kk=ksta; kk!=kfen; kk++) d[kk*b1size_*asize_ + jj*asize_ + ii] = conj(data_[kk*asize_ + jj*b1size_*asize_ + ii]);
+    }
+  }
+
+  return out;
+}
