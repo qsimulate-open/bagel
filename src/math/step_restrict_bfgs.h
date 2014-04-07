@@ -352,7 +352,7 @@ class SRBFGS {
             prev_value_ = value;
             std::cout << " end microiteration " << mi << std::endl;
             break;
-          } else if (rk > 0.75) { // && (rk < 2.0-rmin_/2.0)) {
+          } else if (rk > 0.75) {
             std::cout << " condition (iii) satisfied in microiteration " << mi << std::endl;
             trust_radius_ = std::min(1.2 * trust_radius_, 0.75);
             std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
@@ -360,7 +360,7 @@ class SRBFGS {
             prev_value_ = value;
             std::cout << " end microiteration " << mi << std::endl;
             break;
-          } else if (rk < 0) { //|| rk > 2.0-rmin_/2.0) {
+          } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
             std::cout << " scaling down the trust radius and step vector " << std::endl;
             trust_radius_ = trust_radius_ * 2.0/3.0;
