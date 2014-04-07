@@ -60,6 +60,7 @@ class SRBFGS {
     double trust_radius_ = 0.0;
     double rk_;
     double level_shift_;
+    double prev_level_shift_;
     const bool debug_;
     const int hebden_iter_ = 10;
     const int maxiter_ = 300;
@@ -80,7 +81,8 @@ class SRBFGS {
     std::vector<double> rho() const { return rho_; }
     std::shared_ptr<const T> prev_grad() const { return prev_grad_; }
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
-    std::shared_ptr<const T> level_shift() const { return level_shift_; }
+    double level_shift() const { return level_shift_; }
+    double prev_level_shift() const { return prev_level_shift_; }
 
     // sets initial trust radius ; presently not used
     void initiate_trust_radius(std::shared_ptr<const T> _grad) {
@@ -268,24 +270,25 @@ class SRBFGS {
     }
 
 
-    double taylor_series_validity_ratio(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _a, std::shared_ptr<const T> _Ha) const {
+    double taylor_series_validity_ratio(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _a) const {
     // Following JSY and Jensen and Jorgensen (JCP 80 1204 1984)
     // Returns r_k = ( f(a_k) - f(a_(k-1)) )/( f^(2)(a_k) - f(a_(k-1)) ) (Eq 64) 
     //   where f^(2) is the second order Taylor expansion, f^(2)(a) = f(0) + g*a + 1/2 * a^T H a
-    // TODO : remove dependency on iter, should be able to use back, etc to refernce the proper elements
 
       // to make sure, inputs are copied.
       auto f    = std::vector<double>(_f);
       auto a    = std::make_shared<const T>(*_a);
-      auto Ha   = std::make_shared<const T>(*_Ha);
       auto grad = std::make_shared<const T>(*_grad);
       assert(!f.empty());
     
       auto f1     = ( f.size() > 1 ? *(f.end()-2) : 0.0 );
       auto DeltaE = f.back() - f1;
+
+      auto dg = -1.0 * detail::real(a->dot_product(grad));
+      auto dd = detail::real(a->dot_product(a));
     
       auto e1 = detail::real(a->dot_product(grad));
-      auto e2 = 0.5 * (detail::real(a->dot_product(Ha)));
+      auto e2 = 0.5 * ( dg - level_shift_ * dd );
       auto e0 = f.back() + e1 + e2;
       e0 -= f1;
       DeltaE /= e0;
@@ -307,8 +310,14 @@ class SRBFGS {
         D_.push_back(DD);
         auto yy = std::make_shared<T>(*value - *prev_value());
         delta_.push_back(yy);
-        auto xx = unrolled_hessian(yy); // unrolled hessian updates Y_ ; BEWARE!
-        avec_.push_back(xx);
+        { 
+          auto xx = std::make_shared<T>(*prev_grad());
+          xx->scale(-1.0);
+          auto xx2 = std::make_shared<T>(*yy);
+          xx2->scale(prev_level_shift());
+          *xx -= *xx2;
+          avec_.push_back(xx);
+        }
         auto rr = 1.0 / detail::real(DD->dot_product(yy));
         rho_.push_back(rr);
       }
@@ -329,8 +338,7 @@ class SRBFGS {
         acopy = extrapolate(grad);
         acopy->scale(-1.0);
 
-        std::shared_ptr<T> V = unrolled_hessian(acopy, false); // TODO : could be replaced by vector inner products
-        double rk = taylor_series_validity_ratio(f, grad, acopy, V);
+        double rk = taylor_series_validity_ratio(f, grad, acopy);
         std::cout << std::setprecision(4) << " Taylor expansion validity parameter  = " << rk << std::endl;
         if (tight)
           std::cout << " Tight optimization specified " << std::endl;
