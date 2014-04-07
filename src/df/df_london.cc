@@ -28,7 +28,6 @@
 #include <src/df/dfdistt.h>
 #include <src/df/paralleldf.h>
 #include <src/integral/rys/eribatch.h>
-#include <src/integral/comprys/complexeribatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -96,7 +95,8 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   // generates a task of integral evaluations
   TaskQueue<DFIntTask_OLD_London> tasks(ashell.size()*ashell.size());
 
-  data2_ = make_shared<ZMatrix>(naux_, naux_, serial_);
+  //data2_ = make_shared<Matrix>(naux_, naux_, serial_);
+  shared_ptr<Matrix> data2_real = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
 
   // naive static distribution
@@ -106,7 +106,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
     int o1 = 0;
     for (auto& b1 : ashell) {
       if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
-        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b3, b0}}, array<int,2>{{o0, o1}}, this);
+        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b3, b0}}, array<int,2>{{o0, o1}}, this, data2_real);
       o1 += b1->nbasis();
     }
     o0 += b0->nbasis();
@@ -116,16 +116,19 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   tasks.compute();
 
   if (!serial_)
-    data2_->allreduce();
+    data2_real->allreduce();
 
   time.tick_print("2-index ints");
 
   if (compute_inverse) {
-    data2_->inverse_half(throverlap);
+    data2_real->inverse_half(throverlap);
     // will use data2_ within node
-    data2_->localize();
+    data2_real->localize();
     time.tick_print("computing inverse");
   }
+
+  data2_ = make_shared<ZMatrix> (*data2_real, 1.0);
+
 }
 
 
@@ -140,8 +143,8 @@ shared_ptr<const StaticDist> DFDist_London::make_table(const size_t astart) {
 }
 
 
-pair<const complex<double>*, shared_ptr<RysIntegral<complex<double>, Int_t::London>>> DFDist_London::compute_batch(array<shared_ptr<const Shell>,4>& input) {
-  shared_ptr<RysIntegral<complex<double>, Int_t::London>> londoneribatch = make_shared<ComplexERIBatch>(input, 2.0);
+pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> DFDist_London::compute_batch(array<shared_ptr<const Shell>,4>& input) {
+  shared_ptr<RysIntegral<double, Int_t::Standard>> londoneribatch = make_shared<ERIBatch>(input, 2.0);
   londoneribatch->compute();
   return make_pair(londoneribatch->data(), londoneribatch);
 }

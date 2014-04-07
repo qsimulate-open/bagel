@@ -44,7 +44,7 @@ class DFFullDist_London;
 class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
   friend class DFIntTask_OLD_London;
   protected:
-    std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>, Int_t::London>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
+    std::pair<const double*, std::shared_ptr<RysIntegral<double, Int_t::Standard>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
     std::shared_ptr<const StaticDist> make_table(const size_t nmax);
     // compute 2-index integrals ERI

@@ -45,21 +45,23 @@ void SCF_London::compute() {
     const int b1size = df->block(0)->b1size();
     const int b2size = df->block(0)->b2size();
     shared_ptr<const ZMatrix> jcd   = df->block(0)->get_block(0,asize,0,b1size,0,b2size);
-    shared_ptr<const ZMatrix> abit  = df->block(0)->get_block_conj(0,asize,0,b1size,0,b2size);
+    //shared_ptr<const ZMatrix> abit  = df->block(0)->get_block_conj(0,asize,0,b1size,0,b2size);
     shared_ptr<const ZMatrix> jcds = make_shared<const ZMatrix>(*ij * *jcd);
-    shared_ptr<const ZMatrix> abits = make_shared<const ZMatrix>(*(ij->transpose()) * *abit);
-    shared_ptr<const ZMatrix> abis  = abits->transpose();
+    //shared_ptr<const ZMatrix> abits = make_shared<const ZMatrix>(*(ij->transpose()) * *abit);
+    //shared_ptr<const ZMatrix> abis  = abits->transpose();
+    shared_ptr<const ZMatrix> abis  = jcds->transpose();
 
 //    ij->print("half-inverted 2-index matrix", 40);
 //    jcd->transpose()->print("3-index matrix (ab|i)", 40);
 //    abit->transpose()->print("3-index matrix (ab|i*)", 40);
 
     const shared_ptr<ZMatrix> ERI = get_ERI(cgeom_);
-    ZMatrix DFERI = *abis * *jcds;
+    const shared_ptr<ZMatrix> DFERI = make_shared<ZMatrix>(*abis * *jcds);
+    const shared_ptr<ZMatrix> DFERROR = make_shared<ZMatrix>(*ERI - *DFERI);
 
-    DFERI.print("ERI, by density fitting (expected to work only at zero-field)", 40);
-    ERI->print("Analytical London ERI Matrix!", 40);
-    (*ERI - DFERI).print("Errors of density fitting", 40);
+    DFERI->print("4-index matrix by density fitting", 6);
+    ERI->print("Analytical London ERI Matrix!", 6);
+    DFERROR->print("Errors of density fitting", 6);
   }
 
   {
@@ -79,11 +81,12 @@ void SCF_London::compute() {
 //    abi->print("3-index matrix (ab|i)", 20);
 
     const shared_ptr<Matrix> ERI = get_ERI_original(cgeom_);
-    Matrix DFERI = *abi * *ij * *ij * *jcd;
+    const shared_ptr<Matrix> DFERI = make_shared<Matrix>(*abis * *jcds);
+    const shared_ptr<Matrix> DFERROR = make_shared<Matrix>(*ERI - *DFERI);
 
-    DFERI.print("4-index matrix by density fitting", 40);
-    ERI->print("Analytical London ERI Matrix!", 40);
-    (*ERI - DFERI).print("Errors of density fitting", 40);
+    DFERI->print("4-index matrix by density fitting", 6);
+    ERI->print("Analytical London ERI Matrix!", 6);
+    DFERROR->print("Errors of density fitting", 6);
   }
 }
 

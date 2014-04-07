@@ -98,16 +98,19 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-  std::array<double,3> magnetic_field_aux;
-#if 0
-  magnetic_field_aux[0] = magnetic_field_[0];
-  magnetic_field_aux[1] = magnetic_field_[1];
-  magnetic_field_aux[2] = magnetic_field_[2];
+
+  std::array<double,3> magnetic_field_aux = {0.0, 0.0, 0.0};
+/*
+#if 1
+  magnetic_field_aux[0] = magnetic_field_[1];
+  magnetic_field_aux[1] = magnetic_field_[2];
+  magnetic_field_aux[2] = magnetic_field_[0];
 #else
   magnetic_field_aux[0] = 0.0;
   magnetic_field_aux[1] = 0.0;
   magnetic_field_aux[2] = 0.0;
 #endif
+*/
 
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
@@ -141,10 +144,6 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   cout << "  Applied magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_[0] << ", "
                                                             << setw(7) << magnetic_field_[1] << ", "
                                                             << setw(7) << magnetic_field_[2] << ") a.u." << endl << endl;
-  if (nonzero_magnetic_field())
-  cout << "  Auxiliary magnetic field:  (" << setprecision(3) << setw(7) << magnetic_field_aux[0] << ", "
-                                                            << setw(7) << magnetic_field_aux[1] << ", "
-                                                            << setw(7) << magnetic_field_aux[2] << ") a.u." << endl << endl;
 
   common_init2(true, overlap_thresh_);
 

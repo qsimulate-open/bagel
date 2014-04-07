@@ -65,11 +65,13 @@ class DFIntTask_OLD_London {
     std::array<std::shared_ptr<const Shell>,4> shell_;
     std::array<int,2> offset_; // at most 3 elements
     int rank_;
+
     DFDist_London* df_;
+    std::shared_ptr<Matrix> data_;
 
   public:
-    DFIntTask_OLD_London(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,2>&& b, DFDist_London* df)
-     : shell_(a), offset_(b), rank_(offset_.size()), df_(df) { }
+    DFIntTask_OLD_London(std::array<std::shared_ptr<const Shell>,4>&& a, std::array<int,2>&& b, DFDist_London* df, std::shared_ptr<Matrix> _data)
+     : shell_(a), offset_(b), rank_(offset_.size()), df_(df), data_(_data) { }
 
     void compute();
 

@@ -56,18 +56,18 @@ void DFIntTask_London::compute() {
 
 void DFIntTask_OLD_London::compute() {
 
-  std::pair<const std::complex<double>*, std::shared_ptr<RysIntegral<std::complex<double>, Int_t::London>>> p = df_->compute_batch(shell_);
-  const std::complex<double>* ppt = p.first;
+  std::pair<const double*, std::shared_ptr<RysIntegral<double, Int_t::Standard>>> p = df_->compute_batch(shell_);
+  const double* ppt = p.first;
 
   const size_t naux = df_->naux();
   // all slot in
   if (rank_ == 2) {
-    std::complex<double>* const data = df_->data2_->data();
+    double* const data = data_->data();
     for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
       for (int j1 = offset_[1]; j1 != offset_[1] + shell_[0]->nbasis(); ++j1, ++ppt) {
-        //data[j1+j0*naux] = data[j0+j1*naux] = *ppt; // Equivalent for a real auxiliary basis
-        data[j0+j1*naux] = *ppt;
-        data[j1+j0*naux] = std::conj(*ppt);
+        data[j1+j0*naux] = data[j0+j1*naux] = *ppt; // Equivalent for a real auxiliary basis
+        //data[j0+j1*naux] = *ppt;
+        //data[j1+j0*naux] = std::conj(*ppt);
       }
     }
   } else {
