@@ -36,8 +36,10 @@ namespace bagel {
 
 class CASPT2Grad : public Method {
   protected:
-    std::shared_ptr<const Matrix> yrs_;
     std::shared_ptr<const Matrix> coeff_;
+    std::shared_ptr<const Matrix> d1_;
+    std::shared_ptr<const Matrix> d2_;
+    std::shared_ptr<const Civec> cideriv_;
 
     std::shared_ptr<FCI> fci_;
 
@@ -45,6 +47,7 @@ class CASPT2Grad : public Method {
     int target_;
     int ncore_;
     double energy_;
+    double thresh_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -52,18 +55,21 @@ class CASPT2Grad : public Method {
     void compute() override;
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> d2() const { return d2_; }
+    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
+
     std::shared_ptr<FCI> fci() const { return fci_; }
     int target() const { return target_; }
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }
+    double thresh() const { return thresh_; }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_y(std::shared_ptr<const Matrix> dm1, std::shared_ptr<const Matrix> dm2, std::shared_ptr<const Civec> cider,
                 std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
-
-    std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Civec>> process_smith();
 };
 
 }
