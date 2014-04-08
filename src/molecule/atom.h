@@ -58,7 +58,8 @@ class Atom {
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
     // in : angular momentum (l), exponents (zeta_kl), coefficients (A_kl), powers of r (n_kl)
-    void construct_shells_ECP(std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>, std::vector<int>>> in);
+    void construct_shells_ECP(std::vector<std::tuple<std::string, int, std::vector<double>,
+                              std::vector<double>, std::vector<int>>> in);
 
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
     void split_shells(const size_t batchsize);

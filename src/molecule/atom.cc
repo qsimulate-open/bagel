@@ -129,8 +129,9 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
   for (auto& ibas : *basis) {
     basis_init(ibas->get_child("valence"));
+    const int ncore = ibas->get<int>("ncore");
     const shared_ptr<const PTree> core = ibas->get_child("core");
-    vector<tuple<string, vector<double>, vector<double>, vector<int>>> basis_info;
+    vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> basis_info;
 
     for (auto& ibcore : *core) {
 
@@ -153,7 +154,7 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
       for (auto& r : *r_p)
           r_power.push_back(lexical_cast<int>(r->data()));
 
-      basis_info.push_back(make_tuple(ang, exponents, coefficients, r_power));
+      basis_info.push_back(make_tuple(ang, ncore, exponents, coefficients, r_power));
     }
 
     construct_shells_ECP(basis_info);
@@ -353,15 +354,16 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
 }
 
-void Atom::construct_shells_ECP(vector<tuple<string, vector<double>, vector<double>, vector<int>>> in) {
+void Atom::construct_shells_ECP(vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> in) {
 
   for (auto& biter : in) {
     const int l = atommap_.angular_number(get<0>(biter));
-    const vector<double> exponents = get<1>(biter);
-    const vector<double> coefficients = get<2>(biter);
-    const vector<int> r_power = get<3>(biter);
+    const int ncore = get<1>(biter);
+    const vector<double> exponents = get<2>(biter);
+    const vector<double> coefficients = get<3>(biter);
+    const vector<int> r_power = get<4>(biter);
 
-    shells_ECP_.push_back(make_shared<const Shell_ECP>(position_, l , exponents, coefficients, r_power));
+    shells_ECP_.push_back(make_shared<const Shell_ECP>(position_, l , ncore, exponents, coefficients, r_power));
 
   }
 

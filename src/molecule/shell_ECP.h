@@ -42,16 +42,18 @@ class Shell_ECP : public Shell_base {
   public:
     Shell_ECP() { }
 
-    Shell_ECP(const std::array<double,3>& position, int angular_num, const std::vector<double>& ecp_exponents,
+    Shell_ECP(const std::array<double,3>& position, const int ncore, const int angular_num, const std::vector<double>& ecp_exponents,
               const std::vector<double>& ecp_coefficients, const std::vector<int>& ecp_r_power);
 
-    double ecp_exponents(const int i) const { return ecp_exponents_[i]; };
-    const std::vector<double>& ecp_exponents() const { return ecp_exponents_; };
-    const double* ecp_exponents_pointer() const { return &(ecp_exponents_[0]); };
+    int ncore_electrons() const { return ncore_electrons_; }
 
-    double ecp_coefficients(const int i) const { return ecp_coefficients_[i]; };
-    const std::vector<double>& ecp_coefficients() const { return ecp_coefficients_; };
-    const double* ecp_coefficients_pointer() const { return &(ecp_coefficients_[0]); };
+    double ecp_exponents(const int i) const { return ecp_exponents_[i]; }
+    const std::vector<double>& ecp_exponents() const { return ecp_exponents_; }
+    const double* ecp_exponents_pointer() const { return &(ecp_exponents_[0]); }
+
+    double ecp_coefficients(const int i) const { return ecp_coefficients_[i]; }
+    const std::vector<double>& ecp_coefficients() const { return ecp_coefficients_; }
+    const double* ecp_coefficients_pointer() const { return &(ecp_coefficients_[0]); }
 
     std::string show() const override;
 
