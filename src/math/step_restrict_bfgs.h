@@ -297,7 +297,7 @@ class SRBFGS {
 
 
     // returns restricted step displacement
-    std::shared_ptr<T> step_restricted_extrapolate(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, const bool tight = false) {
+    std::shared_ptr<T> step_restricted_extrapolate(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, const bool tight = false, const int limited_memory = 0) {
       // to make sure, inputs are copied
       auto f     = std::vector<double>(_f);
       auto grad  = std::make_shared<const T>(*_grad);
@@ -320,6 +320,14 @@ class SRBFGS {
         }
         auto rr = 1.0 / detail::real(DD->dot_product(yy));
         rho_.push_back(rr);
+        if (limited_memory > 0 && delta().size() > limited_memory) {
+          std::cout << " Limited Memory : keeping the " << limited_memory << " most recent vectors " << std::endl;
+          assert(limited_memory >= 1);
+          D_.erase(D_.begin());
+          delta_.erase(delta_.begin());
+          avec_.erase(avec_.begin());
+          rho_.erase(rho_.begin());
+        }
       }
 
       std::shared_ptr<T> acopy;
