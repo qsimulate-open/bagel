@@ -114,13 +114,13 @@ class DFDist_London_ints : public DFDist_London {
         int j1 = 0;
         for (auto& i1 : b1shell) {
           // TODO careful
-          //if (TBatch::Nblocks() > 1 || j1 <= j2) { // This shortcut only works if we use a real auxiliary basis set
+          if (TBatch::Nblocks() > 1 || j1 <= j2) { // This shortcut only works if we use a real auxiliary basis set
             int j0 = 0;
             for (auto& i0 : ashell) {
               tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);
               j0 += i0->nbasis();
             }
-          //}
+          }
           j1 += i1->nbasis();
         }
         j2 += i2->nbasis();

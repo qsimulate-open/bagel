@@ -46,7 +46,7 @@ void DFIntTask_London::compute() {
       for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
         for (int n=0; n!=shell_[1]->nbasis(); n++) {
           data[offset_[2]+naux*(j1+nbin*j0)+n] = ppt[n];
-          //if (N == 1) data[offset_[2]+naux*(j0+nbin*j1)+n] = std::(ppt[n]); // This shortcut only works with a real auxiliary basis
+          if (N == 1) data[offset_[2]+naux*(j0+nbin*j1)+n] = conj(ppt[n]); // This shortcut only works with a real auxiliary basis
         }
       }
     }

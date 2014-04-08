@@ -99,7 +99,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
   /* Set up aux_atoms_ */
 
-  std::array<double,3> magnetic_field_aux = {0.0, 0.0, 0.0};
+  std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
 /*
 #if 1
   magnetic_field_aux[0] = magnetic_field_[1];
