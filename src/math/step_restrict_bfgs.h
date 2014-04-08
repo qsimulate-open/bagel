@@ -323,17 +323,8 @@ class SRBFGS {
       }
 
       std::shared_ptr<T> acopy;
-      bool reset = false;
       const int maxmi = 30;
       for (int mi = 0; mi != maxmi; ++mi) {
-        if (prev_value() != nullptr && !reset) {
-          auto gnorm  = grad->norm();
-          auto pnorm = delta().size() > 0 ? prev_grad()->norm() : 0.0;
-          if (trust_radius_ * gnorm < 5.0e-6 || fabs(gnorm - pnorm) < 1.0e-6)
-            initiate_trust_radius(grad);
-          std::cout << " present level shift = " << level_shift_ << std::endl;
-          reset = true;
-        }
 
         acopy = extrapolate(grad);
         acopy->scale(-1.0);
@@ -507,6 +498,7 @@ class SRBFGS {
    void decrement_D() { D_.pop_back(); }
    void decrement_Y() { Y_.pop_back(); }
    void decrement_avec() { avec_.pop_back(); }
+   void decrement_rho() { rho_.pop_back(); }
 
    void decrement_intermediates() {
      decrement_y();
@@ -617,7 +609,7 @@ class SRBFGS {
       auto acopy = two_loop_inverse_hessian(grad);
       auto anorm = acopy->norm();
       if (anorm  > trust_radius_) {
-        std::cout << " step norm = " << anorm << " | trust_radius = " << trust_radius_ << std::endl;
+        std::cout << std::setprecision(6) << " step norm = " << anorm << " | trust_radius = " << trust_radius_ << std::endl;
         std::cout << " NEWTON STEP NORM EXCEEDS THE TRUST RADIUS : Level shifting will be used " << std::endl;
         with_shift = true;
       }
