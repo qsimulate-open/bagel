@@ -26,7 +26,7 @@
 
 #include <src/df/df_london.h>
 #include <src/df/dfdistt.h>
-#include <src/df/paralleldf.h>
+#include <src/df/paralleldf_london.h>
 #include <src/integral/rys/eribatch.h>
 
 using namespace std;
@@ -296,7 +296,7 @@ shared_ptr<DFFullDist_London> DFFullDist_London::apply_2rdm(const double* rdm) c
 */
 
 shared_ptr<ZMatrix> DFFullDist_London::form_aux_2index_apply_J(const shared_ptr<const DFFullDist_London> o, const double a) const {
-  shared_ptr<ZMatrix> tmp = ParallelDFit<std::complex<double>,ZMatrix,DFBlock_London>::form_aux_2index(o, a);
+  shared_ptr<ZMatrix> tmp = ParallelDF_London::form_aux_2index(o, a);
   return make_shared<ZMatrix>(*tmp * *df_->data2());
 }
 

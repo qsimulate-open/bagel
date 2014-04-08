@@ -29,9 +29,9 @@
 #include <src/molecule/atom.h>
 #include <src/parallel/resources.h>
 #include <src/math/zmatrix.h>
+#include <src/df/paralleldf_london.h>
 #include <src/df/dfblock_london.h>
 #include <src/df/dfinttask_london.h>
-#include <src/df/df.h>
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
 
@@ -41,7 +41,7 @@ class DFHalfDist_London;
 class DFFullDist_London;
 
 
-class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
+class DFDist_London : public ParallelDF_London {
   friend class DFIntTask_OLD_London;
   protected:
     std::pair<const double*, std::shared_ptr<RysIntegral<double, Int_t::Standard>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
@@ -53,13 +53,13 @@ class DFDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
-    DFDist_London(const int nbas, const int naux, const std::shared_ptr<DFBlock_London> block = nullptr, std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df = nullptr, std::shared_ptr<ZMatrix> data2 = nullptr)
-      : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(naux, nbas, nbas, df, data2) {
+    DFDist_London(const int nbas, const int naux, const std::shared_ptr<DFBlock_London> block = nullptr, std::shared_ptr<const ParallelDF_London> df = nullptr, std::shared_ptr<ZMatrix> data2 = nullptr)
+      : ParallelDF_London(naux, nbas, nbas, df, data2) {
       if (block)
         block_.push_back(block);
     }
 
-    DFDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>,ZMatrix,DFBlock_London>> df) : ParallelDFit<std::complex<double>,ZMatrix,DFBlock_London>(df->naux(), df->nindex1(), df->nindex2(), df) { }
+    DFDist_London(const std::shared_ptr<const ParallelDF_London> df) : ParallelDF_London(df->naux(), df->nindex1(), df->nindex2(), df) { }
 
     bool has_2index() const { return data2_.get() != nullptr; }
     size_t nbasis0() const { return nindex2_; }
@@ -168,11 +168,11 @@ class DFDist_London_ints : public DFDist_London {
 };
 
 
-class DFHalfDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
+class DFHalfDist_London : public ParallelDF_London {
   protected:
 
   public:
-    DFHalfDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df, const int nocc) : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(df->naux(), nocc, df->nindex2(), df) { }
+    DFHalfDist_London(const std::shared_ptr<const ParallelDF_London> df, const int nocc) : ParallelDF_London(df->naux(), nocc, df->nindex2(), df) { }
 
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
@@ -197,12 +197,12 @@ class DFHalfDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFB
 };
 
 
-class DFFullDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London> {
+class DFFullDist_London : public ParallelDF_London {
   protected:
     std::shared_ptr<DFFullDist_London> apply_J(const std::shared_ptr<const ZMatrix> o) const;
 
   public:
-    DFFullDist_London(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> df, const int nocc1, const int nocc2) : ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>(df->naux(), nocc1, nocc2, df) { }
+    DFFullDist_London(const std::shared_ptr<const ParallelDF_London> df, const int nocc1, const int nocc2) : ParallelDF_London(df->naux(), nocc1, nocc2, df) { }
 
     int nocc1() const { return nindex1_; }
     int nocc2() const { return nindex2_; }
@@ -234,8 +234,8 @@ class DFFullDist_London : public ParallelDFit<std::complex<double>, ZMatrix, DFB
 
     std::shared_ptr<DFFullDist_London> apply_J() const { return apply_J(df_->data2()); }
     std::shared_ptr<DFFullDist_London> apply_JJ() const { return apply_J(std::make_shared<ZMatrix>(*df_->data2()**df_->data2())); }
-    std::shared_ptr<DFFullDist_London> apply_J(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> d) const { return apply_J(d->data2()); }
-    std::shared_ptr<DFFullDist_London> apply_JJ(const std::shared_ptr<const ParallelDFit<std::complex<double>, ZMatrix, DFBlock_London>> d) const { return apply_J(std::make_shared<ZMatrix>(*d->data2()**d->data2())); }
+    std::shared_ptr<DFFullDist_London> apply_J(const std::shared_ptr<const ParallelDF_London> d) const { return apply_J(d->data2()); }
+    std::shared_ptr<DFFullDist_London> apply_JJ(const std::shared_ptr<const ParallelDF_London> d) const { return apply_J(std::make_shared<ZMatrix>(*d->data2()**d->data2())); }
 
     std::shared_ptr<DFFullDist_London> swap() const;
 };
