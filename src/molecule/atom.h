@@ -85,6 +85,8 @@ class Atom {
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
+    Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
+                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP);
 
     Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem);
     Atom(const Atom&, const std::array<double,3>& displ);
@@ -101,6 +103,7 @@ class Atom {
     const std::array<double,3>& position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
+    const std::vector<std::shared_ptr<const Shell_ECP>>& shells_ECP() const { return shells_ECP_; }
     int nshell() const { return shells_.size(); }
 
     bool dummy() const { return atom_number_ == 0; }

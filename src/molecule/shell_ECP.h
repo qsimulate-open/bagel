@@ -34,6 +34,7 @@ namespace bagel {
 class Shell_ECP : public Shell_base {
 
   protected:
+    int ncore_electrons_;
     std::vector<double> ecp_exponents_;
     std::vector<double> ecp_coefficients_;
     std::vector<int> ecp_r_power_;

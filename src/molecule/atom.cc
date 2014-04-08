@@ -128,7 +128,6 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
 void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
   for (auto& ibas : *basis) {
-    basis->print();
     basis_init(ibas->get_child("valence"));
     const shared_ptr<const PTree> core = ibas->get_child("core");
     vector<tuple<string, vector<double>, vector<double>, vector<int>>> basis_info;
@@ -174,6 +173,15 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
   const vector<shared_ptr<const Shell>> old_shells = old.shells();
   for(auto& s : old_shells)
     shells_.push_back(s->move_atom(displacement));
+}
+
+Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell, vector<shared_ptr<const Shell_ECP>> shell_ECP)
+: name_(nm), shells_(shell), shells_ECP_(shell_ECP), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+  spherical_ = shells_.front()->spherical();
+  position_ = shells_.front()->position();
+
+  common_init();
+  atom_exponent_ = 0.0;
 }
 
 
