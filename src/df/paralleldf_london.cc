@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 
-ParallelDF_London::ParallelDF_London(const size_t naux, const size_t nb1, const size_t nb2, shared_ptr<const ParallelDF_London> df, shared_ptr<ZMatrix> dat)
+ParallelDF_London::ParallelDF_London(const size_t naux, const size_t nb1, const size_t nb2, shared_ptr<const ParallelDF_London> df, shared_ptr<Matrix> dat)
  : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat), serial_(df ? df->serial_ : false) { }
 
 
@@ -121,7 +121,7 @@ shared_ptr<ZMatrix> ParallelDF_London::compute_Jop_from_cd(shared_ptr<const ZMat
 
 shared_ptr<ZMatrix> ParallelDF_London::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const ZMatrix> dat2, const bool onlyonce) const {
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
-  if (!dat2) dat2 = data2_;
+  if (!dat2) dat2 = data2();
 
   auto tmp0 = make_shared<ZMatrix>(naux_, 1, true);
 
@@ -147,7 +147,7 @@ shared_ptr<ZMatrix> ParallelDF_London::compute_Jop(const shared_ptr<const ZMatri
 
 shared_ptr<ZMatrix> ParallelDF_London::compute_Jop(const shared_ptr<const ParallelDF_London> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZMatrix> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const ZMatrix> tmp0 = o->compute_cd(den, data2(), onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }

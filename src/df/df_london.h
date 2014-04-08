@@ -53,7 +53,7 @@ class DFDist_London : public ParallelDF_London {
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
 
   public:
-    DFDist_London(const int nbas, const int naux, const std::shared_ptr<DFBlock_London> block = nullptr, std::shared_ptr<const ParallelDF_London> df = nullptr, std::shared_ptr<ZMatrix> data2 = nullptr)
+    DFDist_London(const int nbas, const int naux, const std::shared_ptr<DFBlock_London> block = nullptr, std::shared_ptr<const ParallelDF_London> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr)
       : ParallelDF_London(naux, nbas, nbas, df, data2) {
       if (block)
         block_.push_back(block);

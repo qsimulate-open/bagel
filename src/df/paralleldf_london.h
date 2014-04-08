@@ -46,12 +46,12 @@ class ParallelDF_London : public std::enable_shared_from_this<ParallelDF_London>
     std::shared_ptr<const ParallelDF_London> df_;
     // data2_ is usually empty (except for the original DFDist)
     // AO two-index integrals ^ -1/2
-    std::shared_ptr<ZMatrix> data2_;
+    std::shared_ptr<Matrix> data2_;
 
     bool serial_;
 
   public:
-    ParallelDF_London(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF_London> = nullptr, std::shared_ptr<ZMatrix> = nullptr);
+    ParallelDF_London(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF_London> = nullptr, std::shared_ptr<Matrix> = nullptr);
 
     size_t naux() const { return naux_; }
     size_t nindex1() const { return nindex1_; }
@@ -78,7 +78,8 @@ class ParallelDF_London : public std::enable_shared_from_this<ParallelDF_London>
     std::shared_ptr<ZMatrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF_London> df() const { return df_; }
-    std::shared_ptr<const ZMatrix> data2() const { return data2_; }
+    std::shared_ptr<const Matrix> data2_real() const { return data2_; }
+    std::shared_ptr<const ZMatrix> data2() const { return std::make_shared<ZMatrix>(*data2_, 1.0); }
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const;

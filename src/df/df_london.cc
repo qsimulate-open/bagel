@@ -95,8 +95,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   // generates a task of integral evaluations
   TaskQueue<DFIntTask_OLD_London> tasks(ashell.size()*ashell.size());
 
-  //data2_ = make_shared<Matrix>(naux_, naux_, serial_);
-  shared_ptr<Matrix> data2_real = make_shared<Matrix>(naux_, naux_, serial_);
+  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
 
   // naive static distribution
@@ -106,7 +105,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
     int o1 = 0;
     for (auto& b1 : ashell) {
       if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
-        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b3, b0}}, array<int,2>{{o0, o1}}, this, data2_real);
+        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b3, b0}}, array<int,2>{{o0, o1}}, this, data2_);
       o1 += b1->nbasis();
     }
     o0 += b0->nbasis();
@@ -116,18 +115,16 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   tasks.compute();
 
   if (!serial_)
-    data2_real->allreduce();
+    data2_->allreduce();
 
   time.tick_print("2-index ints");
 
   if (compute_inverse) {
-    data2_real->inverse_half(throverlap);
+    data2_->inverse_half(throverlap);
     // will use data2_ within node
-    data2_real->localize();
+    data2_->localize();
     time.tick_print("computing inverse");
   }
-
-  data2_ = make_shared<ZMatrix> (*data2_real, 1.0);
 
 }
 
