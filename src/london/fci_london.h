@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf_london.cc
+// Filename: fci_london.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
@@ -23,21 +23,31 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/london/scf_london.h>
 
-using namespace bagel;
-using namespace std;
+#ifndef __BAGEL_SRC_LONDON_FCI_LONDON_H
+#define __BAGEL_SRC_LONDON_FCI_LONDON_H
 
-BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
+#include <src/wfn/method.h>
 
-void SCF_London::compute() {
-  cout << "  Hartree-Fock method with London orbitals to be implemented soon!" << endl;
+namespace bagel {
+
+class FCI_London : public Method {
+
+  protected:
+
+  public:
+    FCI_London() { }
+    FCI_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re = nullptr) { };
+    virtual ~FCI_London() { }
+
+    void compute() override;
+    std::shared_ptr<const Reference> conv_to_ref() const override;
+
+};
+
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::FCI_London)
 
-shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-//  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
-//  out->set_eig(eig_);
-//  return out;
-  return nullptr;
-}
+#endif

@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: scf_london.cc
+// Filename: fci_london.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
@@ -23,19 +23,19 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/london/scf_london.h>
+#include <src/london/fci_london.h>
 
 using namespace bagel;
 using namespace std;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
+BOOST_CLASS_EXPORT_IMPLEMENT(FCI_London)
 
-void SCF_London::compute() {
-  cout << "  Hartree-Fock method with London orbitals to be implemented soon!" << endl;
+void FCI_London::compute() {
+  cout << "  Full Configuration Interaction method with London orbitals to be implemented soon!" << endl;
 }
 
 
-shared_ptr<const Reference> SCF_London::conv_to_ref() const {
+shared_ptr<const Reference> FCI_London::conv_to_ref() const {
 //  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
 //  out->set_eig(eig_);
 //  return out;

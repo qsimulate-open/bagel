@@ -93,7 +93,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
   Timer time;
 
   // generates a task of integral evaluations
-  TaskQueue<DFIntTask_OLD_London> tasks(ashell.size()*ashell.size());
+  TaskQueue<DFIntTask_OLD<DFDist_London>> tasks(ashell.size()*ashell.size());
 
   data2_ = make_shared<Matrix>(naux_, naux_, serial_);
   auto b3 = make_shared<const Shell>(ashell.front()->spherical());
@@ -105,7 +105,7 @@ void DFDist_London::compute_2index(const vector<shared_ptr<const Shell>>& ashell
     int o1 = 0;
     for (auto& b1 : ashell) {
       if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
-        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b3, b0}}, array<int,2>{{o0, o1}}, this, data2_);
+        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this);
       o1 += b1->nbasis();
     }
     o0 += b0->nbasis();

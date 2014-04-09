@@ -31,7 +31,9 @@
 #include <src/math/zmatrix.h>
 #include <src/df/paralleldf_london.h>
 #include <src/df/dfblock_london.h>
-#include <src/df/dfinttask_london.h>
+#include <src/df/dfinttask.h>
+#include <src/df/dfinttask_old.h>
+#include <src/integral/comprys/complexeribatch.h>
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
 
@@ -42,7 +44,7 @@ class DFFullDist_London;
 
 
 class DFDist_London : public ParallelDF_London {
-  friend class DFIntTask_OLD_London;
+  friend class DFIntTask_OLD<DFDist_London>;
   protected:
     std::pair<const double*, std::shared_ptr<RysIntegral<double, Int_t::Standard>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
@@ -101,7 +103,7 @@ class DFDist_London_ints : public DFDist_London {
       Timer time;
 
       // making a task list
-      TaskQueue<DFIntTask_London> tasks(b1shell.size()*b2shell.size()*ashell.size());
+      TaskQueue<DFIntTask<TBatch, TBatch::Nblocks(), DFBlock_London, std::complex<double>>> tasks(b1shell.size()*b2shell.size()*ashell.size());
 
       auto i3 = std::make_shared<const Shell>(ashell.front()->spherical());
 
@@ -114,7 +116,8 @@ class DFDist_London_ints : public DFDist_London {
         int j1 = 0;
         for (auto& i1 : b1shell) {
           // TODO careful
-          if (TBatch::Nblocks() > 1 || j1 <= j2) { // This shortcut only works if we use a real auxiliary basis set
+          // Since we use a real auxiliary basis set, half the 3-index integrals will be complex conjugates of the other half
+          if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
               tasks.emplace_back((std::array<std::shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}), (std::array<int,3>{{j2, j1, j0}}), blk);

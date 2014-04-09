@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
           if (itree->get<bool>("restart", false))
             ref.reset();
           if (ref) ref = ref->project_coeff(geom);
-        } else if (basis_type == "london") {
+        } else if (basis_type == "london" || basis_type == "giao") {
           cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
           if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
           if (ref) throw runtime_error("Reference use not set up for London orbitals");

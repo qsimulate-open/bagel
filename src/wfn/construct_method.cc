@@ -45,6 +45,8 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/london/scf_london.h>
+#include <src/london/fci_london.h>
+#include <src/london/debug_london.h>
 #include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
 
@@ -119,14 +121,22 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_London> cgeom,
                                                   shared_ptr<const Reference> ref) {
   shared_ptr<Method> out;
-  if (title == "hf")          out = make_shared<SCF_London>(itree, cgeom, ref);
-  else if (title == "ks")     throw runtime_error("KS method only available with Gaussian orbitals");    //out = make_shared<KS_London>(itree, cgeom, ref);
-  else if (title == "uhf")    throw runtime_error("UHF method only available with Gaussian orbitals");   //out = make_shared<UHF_London>(itree, cgeom, ref);
-  else if (title == "rohf")   throw runtime_error("ROHF method only available with Gaussian orbitals");  //out = make_shared<ROHF_London>(itree, cgeom, ref);
-  else if (title == "soscf")  throw runtime_error("SOSCF method only available with Gaussian orbitals"); //out = make_shared<SOSCF_London>(itree, cgeom, ref);
-  else if (title == "mp2")    throw runtime_error("MP2 method only available with Gaussian orbitals");   //out = make_shared<MP2_London>(itree, cgeom, ref);
-  else if (title == "dhf")    out = make_shared<Dirac_London>(itree, cgeom, ref);
-  else if (title == "dmp2")   throw runtime_error("DMP2 method only available with Gaussian orbitals");  //out = make_shared<DMP2_London>(itree, cgeom, ref);
+  if (title == "hf")              out = make_shared<SCF_London>(itree, cgeom, ref);
+  else if (title == "fci")        out = make_shared<FCI_London>(itree, cgeom, ref);
+  else if (title == "dhf")        out = make_shared<Dirac_London>(itree, cgeom, ref);
+  else if (title == "debug")      out = make_shared<Debug_London>(itree, cgeom, ref);
+  else if (title == "ks")         throw runtime_error("KS method has not been implemented with a London orbital basis set.");
+  else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with a London orbital basis set.");
+  else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with a London orbital basis set.");
+  else if (title == "soscf")      throw runtime_error("SOSCF method has not been implemented with a London orbital basis set.");
+  else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with a London orbital basis set.");
+  else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with a London orbital basis set.");
+  else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with a London orbital basis set.");
+  else if (title == "zfci")       throw runtime_error("ZFCI method has not been implemented with a London orbital basis set.");
+  else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with a London orbital basis set.");
+  else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with a London orbital basis set.");
+  else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with a London orbital basis set.");
+  else if (title == "casscf")     throw runtime_error("CASSCF method has not been implemented with a London orbital basis set.");
   return out;
 }
 

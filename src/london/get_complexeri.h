@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fock_london.h
+// Filename: get_complexeri.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __BAGEL_SRC_LONDON_FOCK_LONDON_H
-#define __BAGEL_SRC_LONDON_FOCK_LONDON_H
+#ifndef __BAGEL_SRC_LONDON_GET_COMPLEXERI_H
+#define __BAGEL_SRC_LONDON_GET_COMPLEXERI_H
 
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/integral/rys/eribatch.h>
