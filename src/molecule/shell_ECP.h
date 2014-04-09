@@ -34,7 +34,7 @@ namespace bagel {
 class Shell_ECP : public Shell_base {
 
   protected:
-    int ncore_electrons_;
+    int ecp_ncore_;
     std::vector<double> ecp_exponents_;
     std::vector<double> ecp_coefficients_;
     std::vector<int> ecp_r_power_;
@@ -45,7 +45,7 @@ class Shell_ECP : public Shell_base {
     Shell_ECP(const std::array<double,3>& position, const int ncore, const int angular_num, const std::vector<double>& ecp_exponents,
               const std::vector<double>& ecp_coefficients, const std::vector<int>& ecp_r_power);
 
-    int ncore_electrons() const { return ncore_electrons_; }
+    int ecp_ncore() const { return ecp_ncore_; }
 
     double ecp_exponents(const int i) const { return ecp_exponents_[i]; }
     const std::vector<double>& ecp_exponents() const { return ecp_exponents_; }
