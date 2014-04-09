@@ -32,6 +32,8 @@
 #include <complex>
 #include <cmath>
 #include <src/util/constants.h>
+#include <src/math/factorial.h>
+#include <src/math/comb.h>
 
 namespace bagel {
 
@@ -57,6 +59,10 @@ class SphHarmonics {
     double zlm() const;
 
     void print();
+
+    double sph_to_USP(const int lx, const int ly) const;
+    std::vector<std::pair<double, int>> sph_to_USPs_expansion();
+    void sph_to_USPs_expansion_print();
 
 };
 

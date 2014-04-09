@@ -134,3 +134,81 @@ void SphHarmonics::print() {
   cout << endl;
 }
 
+double SphHarmonics::sph_to_USP(const int lx, const int ly) const {
+
+  const int am = fabs(angular_momentum_[1]);
+  const int j = (lx + ly - am) / 2;
+  if ((lx + ly - am) % 2 != 0 || j < 0) {
+    return 0.0;
+  } else {
+    Factorial fact;
+    double flam = 1.0;
+    for (int i = 1; i <= 2*am; ++i) {
+      flam *= angular_momentum_[0] - am + i;
+    }
+    flam = 1.0 / flam;
+
+    const double lf = fact(angular_momentum_[0]);
+    const double prefactor = sqrt(0.5 * (2*angular_momentum_[0]+1) / flam / pi__) / pow(2, angular_momentum_[0]) / lf;
+    const int parity = (am - lx) % 2;
+    double factor;
+    if (angular_momentum_[1] > 0 && parity == 0) {
+      factor = 1.0;
+    } else if (angular_momentum_[1] == 0 && lx % 2 == 0) {
+      factor = 1.0 / sqrt(2.0);
+    } else if (angular_momentum_[1] < 0 && parity != 0) {
+      factor = 1.0;
+    } else {
+      factor = 0.0;
+    }
+
+    double si = 0.0;
+    Comb comb;
+    const int jp = (angular_momentum_[0] - am) / 2;
+    for (int i = j; i <= jp; ++i) {
+      si += comb(angular_momentum_[0], i) * comb(i, j) * pow(-1.0, i)
+          * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact(2 * angular_momentum_[0] - 2 * i) : 0.0)
+          / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact(angular_momentum_[0] - am - 2 * i) : 0.0);
+    }
+    double sk = 0.0;
+    for (int k = 0; k <= j; ++k) {
+      if (lx - 2*k >= 0 && lx - 2*k <= am) {
+        sk += (k <= j ? comb(j, k) : 0.0) * comb(am, lx - 2*k) * pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
+      }
+    }
+    return prefactor * si * sk * factor;
+  }
+}
+
+vector<pair<double, int>> SphHarmonics::sph_to_USPs_expansion() {
+
+  vector<pair<double, int>> usp;
+
+  int cnt = 0;
+  for (int lz = 0; lz <= angular_momentum_[0]; ++lz) {
+    for (int ly = 0; ly <= angular_momentum_[0] - lz; ++ly) {
+      ++cnt;
+      const int lx = angular_momentum_[0] - lz - ly;
+      const double coeff = sph_to_USP(lx, ly);
+      pair<double, int> c_usp(coeff, cnt);
+      usp.push_back(c_usp);
+    }
+  }
+
+  return usp;
+
+}
+
+void SphHarmonics::sph_to_USPs_expansion_print() {
+
+  cout << "** Real spherical harmonics to unitary sphere polynomials **" << endl;
+  cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "
+                                      << angular_momentum_[1] << ")" << endl;
+  cout << "Y_lm = sum_i c_i * usp_i" << endl;
+  vector<pair<double, int>> usp = this->sph_to_USPs_expansion();
+  for (auto& it : usp) {
+    cout << "(" << setw(17) << setprecision(9) << it.first << ", " << it.second << ")" << endl;
+  }
+
+}
+
