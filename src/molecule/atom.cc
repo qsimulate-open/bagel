@@ -128,7 +128,15 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
 void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
   for (auto& ibas : *basis) {
-    basis_init(ibas->get_child("valence"));
+    try
+    {
+      basis_init(ibas->get_child("valence"));
+    }
+    catch (const std::exception &err)
+    {
+      cout << err.what() << endl;
+      throw std::runtime_error("ECP basis set file has the wrong format!");
+    }
     const int ncore = ibas->get<int>("ncore");
     const shared_ptr<const PTree> core = ibas->get_child("core");
     vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> basis_info;
