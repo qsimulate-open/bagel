@@ -31,13 +31,36 @@
 using namespace std;
 using namespace bagel;
 
-SphHarmonics::SphHarmonics(std::array<int, 2> lm, std::array<double, 3> c)
+SphHarmonics::SphHarmonics(const array<int, 2> lm, const array<double, 3> c)
  : angular_momentum_(lm), centre_(c) {
 
-   const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
-   theta_ = acos(centre_[2]/r);
-   phi_ = atan2(centre_[1], centre_[0]);
+  const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
+  theta_ = acos(centre_[2]/r);
+  phi_ = atan2(centre_[1], centre_[0]);
 
+}
+
+SphHarmonics::SphHarmonics(const int l, const int m, const array<double, 3> c)
+ : angular_momentum_{{l, m}}, centre_(c) {
+
+  const double r = sqrt(centre_[0]*centre_[0] + centre_[1]*centre_[1] + centre_[2]*centre_[2]);
+  theta_ = acos(centre_[2]/r);
+  phi_ = atan2(centre_[1], centre_[0]);
+
+}
+
+SphHarmonics::SphHarmonics(const array<int, 2> lm)
+ : angular_momentum_(lm), centre_{{0.0, 0.0, 0.0}} {
+
+  theta_ = 0.0;
+  phi_ = 0.0;
+}
+
+SphHarmonics::SphHarmonics(const int l, const int m)
+ : angular_momentum_{{l, m}}, centre_{{0.0, 0.0, 0.0}} {
+
+  theta_ = 0.0;
+  phi_ = 0.0;
 }
 
 double SphHarmonics::LegendrePolynomial(const double x) const {
@@ -106,7 +129,29 @@ double SphHarmonics::zlm() const {
   const int m = angular_momentum_[1];
 
   const double cth = cos(theta_);
-  if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
+  if (fabs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+
+  const int am = fabs(m);
+  const double plm = LegendrePolynomial(cth);
+  double fact = 1.0;
+  for (int i = 1; i <= 2*am; ++i) {
+    fact *= l - am + i;
+  }
+  const double coef = sqrt((2*l+1) * 0.25/pi__ / fact);
+  if (m == 0) {
+    return coef * plm;
+  } else if (m > 0) {
+    return sqrt(2.0) * pow(-1.0, m) * coef * plm * cos(am*phi_);
+  } else {
+    return sqrt(2.0) * pow(-1.0, m) * coef * plm * sin(am*phi_);
+  }
+
+}
+
+double SphHarmonics::zlm(const int l, const int m) const {
+
+  const double cth = cos(theta_);
+  if (fabs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
   const int am = fabs(m);
   const double plm = LegendrePolynomial(cth);
@@ -126,7 +171,7 @@ double SphHarmonics::zlm() const {
 }
 
 void SphHarmonics::print() {
-  cout << "Computing Real Spherical Harmonics" << std::endl;
+  cout << "Computing Real Spherical Harmonics" << endl;
   cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "
                                       << angular_momentum_[1] << ")" << endl;
   cout << "Centre = ";

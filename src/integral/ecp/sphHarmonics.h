@@ -49,14 +49,24 @@ class SphHarmonics {
 
   public:
 
-    SphHarmonics(std::array<int, 2> lm, std::array<double, 3> c);
+    SphHarmonics(const std::array<int, 2> lm, const std::array<double, 3> c);
+    SphHarmonics(const int l, const int m, const std::array<double, 3> c);
+    SphHarmonics(const std::array<int, 2> lm);
+    SphHarmonics(const int l, const int m);
+
     ~SphHarmonics() {}
 
     double centre(const int i) const { return centre_[i]; }
+    std::array<double, 3> centre() const { return centre_; }
     int angular_momentum(const int i) const { return angular_momentum_[i]; }
+    std::array<int, 2> angular_momentum() const { return angular_momentum_; }
+
+    double theta() const { return theta_; }
+    double phi() const { return phi_; }
 
     std::complex<double> ylm() const;
     double zlm() const;
+    double zlm(const int l, const int m) const;
 
     void print();
 
