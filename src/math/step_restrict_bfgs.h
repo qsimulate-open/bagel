@@ -306,6 +306,14 @@ class SRBFGS {
 
       double alpha = alpha_;
       if (prev_value() != nullptr) {
+        if (limited_memory > 0 && delta().size() > limited_memory) {
+          std::cout << " Limited Memory : keeping the " << limited_memory << " most recent vectors " << std::endl;
+          assert(limited_memory >= 1);
+          D_.erase(D_.begin());
+          delta_.erase(delta_.begin());
+          avec_.erase(avec_.begin());
+          rho_.erase(rho_.begin());
+        }
         auto DD = std::make_shared<T>(*grad - *prev_grad());
         D_.push_back(DD);
         auto yy = std::make_shared<T>(*value - *prev_value());
@@ -320,13 +328,6 @@ class SRBFGS {
         }
         auto rr = 1.0 / detail::real(DD->dot_product(yy));
         rho_.push_back(rr);
-        if (limited_memory > 0 && delta().size() > limited_memory) {
-          std::cout << " Limited Memory : keeping the " << limited_memory << " most recent vectors " << std::endl;
-          assert(limited_memory >= 1);
-          D_.erase(D_.begin());
-          delta_.erase(delta_.begin());
-          avec_.erase(avec_.begin());
-          rho_.erase(rho_.begin());
         }
       }
 
@@ -351,7 +352,7 @@ class SRBFGS {
             prev_value_ = value;
             std::cout << " end microiteration " << mi << std::endl;
             break;
-          } else if ((rk > 0.25) && (rk < 0.75)) {
+          } else if ((rk >= 0.25) && (rk < 0.75)) {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
             trust_radius_ = trust_radius_;
             std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
@@ -386,7 +387,7 @@ class SRBFGS {
             break;
           } else if ((rgood_ < rk) && (rk < 2 - rgood_) ) {
             std::cout << " condition (ii) satisfied in microiteration " << mi << std::endl;
-            trust_radius_ = std::min(alpha * trust_radius_, 0.75);
+            trust_radius_ = std::min(alpha * trust_radius_, 0.5);
             std::cout << std::setprecision(8) << " trust radius   = " << trust_radius_ << std::endl;
             prev_grad_ = grad;
             prev_value_ = value;
@@ -420,10 +421,10 @@ class SRBFGS {
      shift_vec->fill(shift);
      double dl_norm;
      for (int k = 0; k != hebden_iter_; ++k) {
-       auto dl  = level_shift_inverse_hessian(grad, shift_vec, false); // Hn^-1 * gn
+       auto dl  = level_shift_inverse_hessian(grad, shift_vec); // Hn^-1 * gn
        dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
        if (dl_norm <= trust_radius_) break;
-       auto dl2 = level_shift_inverse_hessian(dl, shift_vec, false);   // Hn^-2 * gn
+       auto dl2 = level_shift_inverse_hessian(dl, shift_vec);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
        auto t1  =  dl_norm / dl2_norm;
        auto t2  =  dl_norm / trust_radius_;
@@ -441,7 +442,7 @@ class SRBFGS {
 
 
    // returns a level-shifted displacement according to EM12
-    std::shared_ptr<T> level_shift_inverse_hessian(std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift, const bool update = true) {
+    std::shared_ptr<T> level_shift_inverse_hessian(std::shared_ptr<const T> _vector, std::shared_ptr<const T> _shift) {
       // to make sure, inputs are copied.
       auto vector = std::make_shared<const T>(*_vector);
       auto shift = std::make_shared<const T>(*_shift);
@@ -509,9 +510,10 @@ class SRBFGS {
    void decrement_rho() { rho_.pop_back(); }
 
    void decrement_intermediates() {
-     decrement_y();
+     decrement_avec();
      decrement_delta();
      decrement_D();
+     decrement_rho();
    }
 
     std::shared_ptr<T> unrolled_hessian(std::shared_ptr<const T> _value, const bool update = true) {
