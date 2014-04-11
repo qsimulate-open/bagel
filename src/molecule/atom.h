@@ -28,7 +28,7 @@
 #define __SRC_MOLECULE_ATOM_H
 
 #include <src/molecule/shell.h>
-#include <src/molecule/shell_ECP.h>
+#include <src/molecule/ecp.h>
 #include <src/input/input.h>
 
 namespace bagel {
@@ -40,7 +40,7 @@ class Atom {
     std::string name_;
     std::array<double,3> position_;
     std::vector<std::shared_ptr<const Shell>> shells_;
-    std::vector<std::shared_ptr<const Shell_ECP>> shells_ECP_;
+    std::shared_ptr<const ECP> ecp_parameters_;
     int atom_number_;
     double atom_charge_;
     double atom_exponent_;
@@ -88,6 +88,8 @@ class Atom {
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP);
+    Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
+                                                        const std::shared_ptr<const ECP> ecp_param);
 
     Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem);
     Atom(const Atom&, const std::array<double,3>& displ);
@@ -104,8 +106,9 @@ class Atom {
     const std::array<double,3>& position() const { return position_; }
     double position(const unsigned int i) const { return position_[i]; }
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
-    const std::vector<std::shared_ptr<const Shell_ECP>>& shells_ECP() const { return shells_ECP_; }
     int nshell() const { return shells_.size(); }
+
+    const std::shared_ptr<const ECP>& ecp_parameters() const { return ecp_parameters_; }
 
     bool dummy() const { return atom_number_ == 0; }
 

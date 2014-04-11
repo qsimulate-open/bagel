@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: sphHarmonics.cc
+// Filename: sphharmonics.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <src/integral/ecp/sphHarmonics.h>
+#include <src/integral/ecp/sphharmonics.h>
 
 using namespace std;
 using namespace bagel;

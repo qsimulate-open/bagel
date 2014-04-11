@@ -193,3 +193,24 @@ double AngularBatch::project_one_gaussian(array<double, 3> posA, array<int, 3> l
 
 }
 
+#if 0
+void AngularBatch::project() {
+
+  const vector<double> expA = basisinfo_[0]->exponents();
+  const vector<double> expC = basisinfo_[1]->exponents();
+  const vector<double> expB = ecp_basisinfo_->ecp_exponents();
+
+  int index = 0;
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
+
+  for (auto expiB = expB.begin(); expiB != expB.end(); ++expiB) {
+    for (int m = 0, m != 2*ecp_basisinfo_->angular_number(); ++m) {
+      for (auto expiA = expA.begin(); expiA != expA.end(); ++expiA) {
+        for (auto expiC = expC.begin(); expiC != expC.end(); ++expiC) {
+        }
+      }
+    }
+  }
+
+}
+#endif

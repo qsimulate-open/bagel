@@ -30,7 +30,7 @@
 #include <src/math/bessel.h>
 #include <src/util/constants.h>
 #include <src/integral/ecp/radial.h>
-#include <src/integral/ecp/sphHarmonics.h>
+#include <src/integral/ecp/sphharmonics.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/ecpbatch.h>
 

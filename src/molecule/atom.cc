@@ -184,8 +184,18 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
     shells_.push_back(s->move_atom(displacement));
 }
 
-Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell, vector<shared_ptr<const Shell_ECP>> shell_ECP)
-: name_(nm), shells_(shell), shells_ECP_(shell_ECP), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell,
+                                              const vector<shared_ptr<const Shell_ECP>> shell_ECP)
+: name_(nm), shells_(shell), ecp_parameters_(make_shared<const ECP>(shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+  spherical_ = shells_.front()->spherical();
+  position_ = shells_.front()->position();
+
+  common_init();
+  atom_exponent_ = 0.0;
+}
+
+Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell, const shared_ptr<const ECP> ecp_param)
+: name_(nm), shells_(shell), ecp_parameters_(ecp_param), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -364,6 +374,8 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
 void Atom::construct_shells_ECP(vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> in) {
 
+  vector<shared_ptr<const Shell_ECP>> shells_ECP;
+
   for (auto& biter : in) {
     const int l = atommap_.angular_number(get<0>(biter));
     const int ncore = get<1>(biter);
@@ -371,9 +383,11 @@ void Atom::construct_shells_ECP(vector<tuple<string, int, vector<double>, vector
     const vector<double> coefficients = get<3>(biter);
     const vector<int> r_power = get<4>(biter);
 
-    shells_ECP_.push_back(make_shared<const Shell_ECP>(position_, l , ncore, exponents, coefficients, r_power));
+    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , ncore, exponents, coefficients, r_power));
 
   }
+
+  ecp_parameters_ = make_shared<const ECP>(shells_ECP);
 
 }
 
@@ -395,7 +409,7 @@ void Atom::split_shells(const size_t batchsize) {
 
 void Atom::print_basis() const {
   for (auto& i : shells_) cout << i->show() << endl;
-  for (auto& i : shells_ECP_) cout << i->show() << endl;
+  ecp_parameters_->print();
 }
 
 
