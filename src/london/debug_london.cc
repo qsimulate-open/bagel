@@ -31,7 +31,7 @@ using namespace std;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Debug_London)
 
-double get_average (shared_ptr<ZMatrix> S) {
+static double get_average (shared_ptr<ZMatrix> S) {
   complex<double>* data = S->data();
   double out = 0.0;
   const int size = S->ndim() * S->mdim();
@@ -41,7 +41,7 @@ double get_average (shared_ptr<ZMatrix> S) {
 }
 
 
-double get_average (shared_ptr<Matrix> S) {
+static double get_average (shared_ptr<Matrix> S) {
   double* data = S->data();
   double out = 0.0;
   const int size = S->ndim() * S->mdim();
@@ -51,7 +51,7 @@ double get_average (shared_ptr<Matrix> S) {
 }
 
 
-double get_max (shared_ptr<ZMatrix> S) {
+static double get_max (shared_ptr<ZMatrix> S) {
   complex<double>* data = S->data();
   double out = 0.0;
   const int size = S->ndim() * S->mdim();
@@ -63,7 +63,7 @@ double get_max (shared_ptr<ZMatrix> S) {
 }
 
 
-double get_max (shared_ptr<Matrix> S) {
+static double get_max (shared_ptr<Matrix> S) {
   double* data = S->data();
   double out = 0.0;
   const int size = S->ndim() * S->mdim();
@@ -75,7 +75,7 @@ double get_max (shared_ptr<Matrix> S) {
 }
 
 
-pair<int,int> get_position (shared_ptr<ZMatrix> S) {
+static pair<int,int> get_position (shared_ptr<ZMatrix> S) {
   complex<double>* data = S->data();
   double out = 0.0;
   int pos = 0;
@@ -92,7 +92,7 @@ pair<int,int> get_position (shared_ptr<ZMatrix> S) {
 }
 
 
-pair<int,int> get_position (shared_ptr<Matrix> S) {
+static pair<int,int> get_position (shared_ptr<Matrix> S) {
   double* data = S->data();
   double out = 0.0;
   int pos = 0;

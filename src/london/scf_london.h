@@ -27,21 +27,58 @@
 #ifndef __BAGEL_SRC_LONDON_SCF_LONDON_H
 #define __BAGEL_SRC_LONDON_SCF_LONDON_H
 
+#include <src/london/scf_base_london.h>
+#include <src/scf/levelshift.h>
+#include <src/math/diis.h>
 #include <src/wfn/method.h>
 
 namespace bagel {
 
-class SCF_London : public Method {
-
+class SCF_London : public SCF_base_London {
   protected:
+    double lshift_;
+    std::shared_ptr<LevelShift<DistZMatrix>> levelshift_;
+
+    bool dodf_;
+    bool restarted_;
+
+    // TODO Should the second template parameter be ZMatrix or DistZMatrix?
+    std::shared_ptr<DIIS<DistZMatrix,ZMatrix>> diis_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base_London);
+      ar << lshift_ << dodf_ << diis_;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base_London);
+      ar >> lshift_ >> dodf_ >> diis_;
+      if (lshift_ != 0.0)
+        levelshift_ = std::make_shared<ShiftVirtual<DistZMatrix>>(nocc_, lshift_);
+      restarted_ = true;
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
 
   public:
     SCF_London() { }
-    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re = nullptr) { };
+    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> geom, const std::shared_ptr<const Reference> re = nullptr);
     virtual ~SCF_London() { }
 
     void compute() override;
+
     std::shared_ptr<const Reference> conv_to_ref() const override;
+
+    bool dodf() const { return dodf_; }
 
 };
 

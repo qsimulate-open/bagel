@@ -99,7 +99,7 @@ class Geometry_London: public Molecule {
   public:
     Geometry_London() { }
     Geometry_London(const std::shared_ptr<const PTree>);
-//    Geometry_London(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
+    Geometry_London(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
     Geometry_London(const Geometry_London& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
 //    Geometry_London(const Geometry_London& o, const std::shared_ptr<const Matrix> disp, const std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
 //    Geometry_London(const Geometry_London& o, const std::array<double,3> disp);

@@ -24,20 +24,183 @@
 //
 
 #include <src/london/scf_london.h>
+#include <src/prop/multipole.h>
+#include <src/london/zatomicdensities.h>
 
 using namespace bagel;
 using namespace std;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
+SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re)
+ : SCF_base_London(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
+
+  cout << indent << "*** RHF ***" << endl << endl;
+  if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
+
+  // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
+  // In the future, this should probably be moved to SCF_base and designed to work properly there
+  lshift_ = idata->get<double>("levelshift", 0.0);
+  if (lshift_ != 0.0) {
+    cout << "  level shift : " << setprecision(3) << lshift_ << endl << endl;
+    levelshift_ = make_shared<ShiftVirtual<DistZMatrix>>(nocc_, lshift_);
+  }
+}
+
+
 void SCF_London::compute() {
-  cout << "  Hartree-Fock method with London orbitals to be implemented soon!" << endl;
+  Timer scftime;
+
+  shared_ptr<const ZMatrix> previous_fock = hcore_;
+  shared_ptr<const ZMatrix> aodensity_;
+
+  shared_ptr<const DistZMatrix> tildex = tildex_->distmatrix();
+  shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
+  shared_ptr<const DistZMatrix> overlap = overlap_->distmatrix();
+  shared_ptr<const DistZMatrix> coeff;
+  shared_ptr<const DistZMatrix> aodensity;
+
+  if (!restarted_) {
+    if (coeff_ == nullptr) {
+      shared_ptr<const DistZMatrix> fock = hcore;
+      if (dodf_ && cgeom_->spherical()) {
+        auto aden = make_shared<const ZAtomicDensities>(cgeom_);
+        auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, aden, schwarz_);
+        fock = focka->distmatrix();
+      }
+      DistZMatrix intermediate = *tildex % *fock * *tildex;
+      intermediate.diagonalize(eig());
+      coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
+    } else {
+      shared_ptr<const ZMatrix> focka;
+      if (!dodf_) {
+        throw runtime_error("Only worrying about density-fitted HF for now");
+        /*
+        aodensity_ = coeff_->form_density_rhf(nocc_);
+        focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
+        */
+        } else {
+        focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      }
+      DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
+      intermediate.diagonalize(eig());
+      coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
+    }
+    coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
+
+    cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
+    cout << indent << fixed << setprecision(10) << setw(15) << cgeom_->nuclear_repulsion() << endl << endl;
+    cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
+    scftime.tick_print("SCF startup");
+    cout << endl;
+    cout << indent << "=== RHF iteration (" + cgeom_->basisfile() + ") ===" << endl << indent << endl;
+
+    diis_ = make_shared<DIIS<DistZMatrix,ZMatrix>>(diis_size_);
+  } else {
+    coeff = coeff_->distmatrix();
+  }
+
+  if (!dodf_) {
+    throw runtime_error("Only worrying about density-fitted HF for now");
+    /*
+    aodensity_ = coeff_->form_density_rhf(nocc_);
+    aodensity = aodensity_->distmatrix();
+    */
+  } else {
+    aodensity = coeff->form_density_rhf(nocc_);
+  }
+
+  // starting SCF iteration
+  shared_ptr<const ZMatrix> densitychange = aodensity_;
+
+  for (int iter = 0; iter != max_iter_; ++iter) {
+    Timer pdebug(1);
+
+    if (restart_) {
+      stringstream ss; ss << "scf_" << iter;
+      OArchive archive(ss.str());
+      archive << static_cast<Method*>(this);
+    }
+
+    if (!dodf_) {
+      throw runtime_error("Only worrying about density-fitted HF for now");
+      /*
+      previous_fock = make_shared<Fock<0>>(cgeom_, previous_fock, densitychange, schwarz_);
+      mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
+      */
+    } else {
+      previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+    }
+    shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
+
+    // TODO Is this the best place to convert to real?
+    const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
+    energy_  = real(zenergy);
+    if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
+
+    pdebug.tick_print("Fock build");
+
+    auto error_vector = make_shared<const DistZMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
+    const double error = error_vector->rms();
+
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
+
+    if (error < thresh_scf_) {
+      cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
+      if (do_grad_) half_ = dynamic_pointer_cast<const Fock_London<1>>(previous_fock)->half();
+      break;
+    } else if (iter == max_iter_-1) {
+      cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
+      break;
+    }
+
+    if (diis_ || iter >= diis_start_) {
+      fock = diis_->extrapolate(make_pair(fock, error_vector));
+      pdebug.tick_print("DIIS");
+    }
+
+    DistZMatrix intermediate(*coeff % *fock * *coeff);
+
+    if (levelshift_)
+      levelshift_->shift(intermediate);
+
+    intermediate.diagonalize(eig());
+    pdebug.tick_print("Diag");
+
+    coeff = make_shared<const DistZMatrix>(*coeff * intermediate);
+    coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
+
+
+    if (!dodf_) {
+      throw runtime_error("Only worrying about density-fitted HF for now");
+      /*
+      shared_ptr<const ZMatrix> new_density = coeff_->form_density_rhf(nocc_);
+      densitychange = make_shared<Matrix>(*new_density - *aodensity_);
+      aodensity_ = new_density;
+      aodensity = aodensity_->distmatrix();
+      */
+    } else {
+      aodensity = coeff->form_density_rhf(nocc_);
+    }
+    pdebug.tick_print("Post process");
+  }
+
+
+  //TODO If we're going to compute dipole moments in SCF_London, this is the place to do it
+#if 0
+  if (!cgeom_->external()) {
+    if (dodf_) aodensity_ = aodensity->matrix();
+    Multipole mu(cgeom_, aodensity_, multipole_print_);
+    mu.compute();
+  }
+#endif
 }
 
 
 shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-//  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
-//  out->set_eig(eig_);
-//  return out;
-  return nullptr;
+  throw runtime_error("Need to set up Reference for London orbitals in order to do this");
+  //auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  //out->set_eig(eig_);
+  //return out;
 }
