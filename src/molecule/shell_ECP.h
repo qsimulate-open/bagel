@@ -55,6 +55,10 @@ class Shell_ECP : public Shell_base {
     const std::vector<double>& ecp_coefficients() const { return ecp_coefficients_; }
     const double* ecp_coefficients_pointer() const { return &(ecp_coefficients_[0]); }
 
+    int ecp_r_power(const int i) const { return ecp_r_power_[i]; }
+    const std::vector<int>& ecp_r_power() const { return ecp_r_power_; }
+    const int* ecp_r_power_pointer() const { return &(ecp_r_power_[0]); }
+
     std::string show() const override;
 
 };

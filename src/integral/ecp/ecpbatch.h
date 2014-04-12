@@ -31,26 +31,34 @@
 #include <src/molecule/molecule.h>
 #include <src/util/constants.h>
 #include <src/integral/integral.h>
+#include <src/integral/ecp/radial.h>
+#include <src/integral/ecp/angularbatch.h>
 
 namespace bagel {
 
 class ECPBatch: public Integral_base<double> {
   protected:
 
-    std::shared_ptr<const Shell_ECP> ecp_basisinfo_;
+    int max_iter_;
+    double integral_thresh_;
+
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const Molecule> mol_;
 
+    double* angulardata_;
 
   public:
-    ECPBatch(const std::shared_ptr<const Shell_ECP>& ecp_info, const std::array<std::shared_ptr<const Shell>,2>& info,
-            const std::shared_ptr<const Molecule> mol)
-     : ecp_basisinfo_(ecp_info), basisinfo_(info), mol_(mol) {
-//   const double integral_thresh = PRIM_SCREEN_THRESH;
-      /// call some functions to compute integrals
+    ECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol)
+     : basisinfo_(info), mol_(mol) {
+       integral_thresh_ = PRIM_SCREEN_THRESH;
+       max_iter_ = 100;
     }
 
     ~ECPBatch() {}
+
+    double* angulardata() { return angulardata_; }
+    double angulardata(const int i) { return angulardata_[i]; }
+    void integrate_angular();
 
     void compute() override;
 

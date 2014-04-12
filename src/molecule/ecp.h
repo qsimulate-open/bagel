@@ -36,27 +36,33 @@ class ECP {
 
   protected:
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp_;
+    int ishell_maxl_;
+    int maxl_;
 
   public:
-    ECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp) : shells_ecp_(shells_ecp) {}
+    ECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp) : shells_ecp_(shells_ecp) {
+      get_shell_maxl_ecp();
+    }
     ~ECP() {}
 
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp() const { return shells_ecp_; }
     std::shared_ptr<const Shell_ECP> shell_ecp(const int i) const { return shells_ecp_[i]; }
 
-    std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const {
-      int maxl = 0;
-      std::shared_ptr<const Shell_ECP> maxl_shell;
+    void get_shell_maxl_ecp() {
+      maxl_ = 0;
+      int index = 0;
       for (auto& ish : shells_ecp_) {
-        if (ish->angular_number() >= maxl) {
-          maxl = ish->angular_number();
-          maxl_shell = ish;
+        if (ish->angular_number() >= maxl_) {
+          maxl_ = ish->angular_number();
+          ishell_maxl_ = index;
         }
+        ++index;
       }
 
-      return maxl_shell;
-
     }
+
+    std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const { return shells_ecp_[ishell_maxl_]; }
+    const int maxl() const { return maxl_; }
 
     void print() const {
       for (auto& i : shells_ecp_) std::cout << i->show() << std::endl;

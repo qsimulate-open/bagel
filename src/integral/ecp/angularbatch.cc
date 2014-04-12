@@ -24,6 +24,8 @@
 //
 
 
+#include <src/math/bessel.h>
+#include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
 
 using namespace bagel;
@@ -147,8 +149,8 @@ double AngularBatch::integrate2SH1USP(const std::pair<int, int> lm1, const std::
 }
 
 
-double AngularBatch::project_one_gaussian(array<double, 3> posA, array<int, 3> lxyz, const double expA,
-                                          array<double, 3> posB, array<int, 2> lm, const double r) const {
+double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 3> lxyz, const double expA,
+                                        array<double, 3> posB, const array<int, 2> lm, const double r) {
 
   Comb comb;
   array<double, 3> AB;
@@ -158,59 +160,101 @@ double AngularBatch::project_one_gaussian(array<double, 3> posA, array<int, 3> l
   const int lnu = lm[0] + nu;
   const double exponential = exp(-expA * (dAB - r) * (dAB - r));
   double ans = 0.0;
-    for (int kx = 0; kx <= lxyz[0]; ++kx) {
-      const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
-      for (int ky = 0; ky <= lxyz[1]; ++ky) {
-        const double cky = comb(lxyz[1], ky) * pow(AB[1], lxyz[1] - ky);
-        for (int kz = 0; kz <= lxyz[2]; ++kz) {
-          const double ckz = comb(lxyz[2], kz) * pow(AB[2], lxyz[2] - kz);
-          const int lk = kx + ky + kz;
-          const double rxyz = pow(r, lk);
+  for (int kx = 0; kx <= lxyz[0]; ++kx) {
+    const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
+    for (int ky = 0; ky <= lxyz[1]; ++ky) {
+      const double cky = comb(lxyz[1], ky) * pow(AB[1], lxyz[1] - ky);
+      for (int kz = 0; kz <= lxyz[2]; ++kz) {
+        const double ckz = comb(lxyz[2], kz) * pow(AB[2], lxyz[2] - kz);
+        const int lk = kx + ky + kz;
+        const double rxyz = pow(r, lk);
 
-          double sld = 0.0;
-          for (int ld = 0; ld <= lnu; ++ld) {
-            double smu = 0.0;
-            for (int m = 0; m <= 2 * ld; ++m) {
-              const int mu = m - ld;
-              shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB);
-              const double Z_AB = (dAB == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+        double sld = 0.0;
+        for (int ld = 0; ld <= lnu; ++ld) {
+          double smu = 0.0;
+          for (int m = 0; m <= 2 * ld; ++m) {
+            const int mu = m - ld;
+            shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB);
+            const double Z_AB = (dAB == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
 
-              const array<int, 3> exp = {kx, ky, kz};
-              const pair<int, int> lm1(ld, mu);
-              const pair<int, int> lm2(lm[0], lm[1]);
-              smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
-            }
-            MSphBesselI msbessel(ld);
-            const double sbessel = msbessel.compute(2.0 * expA * dAB * r);
-            sld += smu * sbessel;
+            const array<int, 3> exp = {kx, ky, kz};
+            const pair<int, int> lm1(ld, mu);
+            const pair<int, int> lm2(lm[0], lm[1]);
+            smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
           }
-          ans += sld * ckx * cky * ckz * rxyz * pow(-1.0, lk - nu);
+          MSphBesselI msbessel(ld);
+          const double sbessel = msbessel.compute(2.0 * expA * dAB * r);
+          sld += smu * sbessel;
         }
-      }
-    }
-
-    return ans * 4.0 * pi__ * exponential;
-
-}
-
-#if 0
-void AngularBatch::project() {
-
-  const vector<double> expA = basisinfo_[0]->exponents();
-  const vector<double> expC = basisinfo_[1]->exponents();
-  const vector<double> expB = ecp_basisinfo_->ecp_exponents();
-
-  int index = 0;
-  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
-
-  for (auto expiB = expB.begin(); expiB != expB.end(); ++expiB) {
-    for (int m = 0, m != 2*ecp_basisinfo_->angular_number(); ++m) {
-      for (auto expiA = expA.begin(); expiA != expA.end(); ++expiA) {
-        for (auto expiC = expC.begin(); expiC != expC.end(); ++expiC) {
-        }
+        ans += sld * ckx * cky * ckz * rxyz * pow(-1.0, lk - nu);
       }
     }
   }
+
+  return ans * 4.0 * pi__ * exponential;
+
+}
+
+double AngularBatch::project_many_centres(const array<int, 3> lA, const double expA,
+                                          const array<int, 3> lC, const double expC, const double r) {
+
+ vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
+
+ double ans = 0.0;
+ for (auto& ishecp : shells_ecp) {
+   const int l = ishecp->angular_number();
+   if (l != ecp_->maxl()) {
+     for (int mu = 0; mu != 2*l; ++mu) {
+       int index = 0;
+       const int m = mu - l;
+       array<int, 2> lm = {l, m};
+       for (auto& exponents : ishecp->ecp_exponents()) {
+         const double projA = project_one_centre(basisinfo_[0]->position(), lA, expA, ishecp->position(), lm, r);
+         const double projC = project_one_centre(basisinfo_[1]->position(), lC, expC, ishecp->position(), lm, r);
+         ans += ishecp->ecp_coefficients(index) * projA *
+                std::pow(r, ishecp->ecp_r_power(index)) * std::exp(-exponents * r * r) * projC * r * r;
+         ++index;
+       }
+     }
+   }
+ }
+
+ return ans;
+
+}
+
+#if 1
+double AngularBatch::compute(const double r) {
+
+  const vector<double> expA = basisinfo_[0]->exponents();
+  const vector<double> expC = basisinfo_[1]->exponents();
+
+  double ans = 0.0;
+
+  for (auto& expiA : expA) {
+    const int lA = basisinfo_[0]->angular_number();
+    for (auto& expiC : expC) {
+      const int lC = basisinfo_[1]->angular_number();
+
+      for (int lzA = 0; lzA <= lA; ++lzA) {
+        for (int lyA = 0; lyA <= lA - lzA; ++lzA) {
+          const int lxA = lA - lzA - lyA;
+          array<int, 3> lxyzA = {lxA, lyA, lzA};
+          for (int lzC = 0; lzC <= lC; ++lzC) {
+            for (int lyC = 0; lyC <= lC - lzC; ++lyC) {
+              const int lxC = lC - lzC - lyC;
+              array<int, 3> lxyzC = {lxC, lyC, lzC};
+              ans += project_many_centres(lxyzA, expiA, lxyzC, expiC, r);
+            }
+          }
+        }
+      }
+
+    }
+  }
+
+  return ans;
+// TODO: coefficients
 
 }
 #endif

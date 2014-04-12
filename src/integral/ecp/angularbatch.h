@@ -27,35 +27,32 @@
 #ifndef __SRC_INTEGRAL_ANGULARBATCH_H
 #define __SRC_INTEGRAL_ANGULARBATCH_H
 
-#include <src/math/bessel.h>
 #include <src/util/constants.h>
-#include <src/integral/ecp/radial.h>
+#include <src/molecule/atom.h>
 #include <src/integral/ecp/sphharmonics.h>
-#include <src/integral/ecp/wigner3j.h>
-#include <src/integral/ecp/ecpbatch.h>
 
 namespace bagel {
 
-class AngularBatch: public ECPBatch {
+class AngularBatch {
   protected:
+
+    std::array<std::shared_ptr<const Shell>,2> basisinfo_;
+    std::shared_ptr<const ECP> ecp_;
 
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
     double integrate3USP(std::array<int, 3> xyz_exponents) const;
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const;
-    double project_one_gaussian(std::array<double, 3> posA, std::array<int, 3> lxyz, const double expA,
-                                std::array<double, 3> posB, std::array<int, 2> lm, const double r) const;
-
-    double* projdata_;
+    double project_one_centre(std::array<double, 3> posA, const std::array<int, 3> lxyz, const double expA,
+                              std::array<double, 3> posB, const std::array<int, 2> lm, const double r);
+    double project_many_centres(const std::array<int, 3> lA, const double expA,
+                                const std::array<int, 3> lC, const double expC, const double r);
 
   public:
-    AngularBatch(const std::shared_ptr<const Shell_ECP>& _ecp_info, const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol)
-     : ECPBatch(_ecp_info, _info, mol) {
-//   const double integral_thresh = PRIM_SCREEN_THRESH;
-      /// call some functions to compute integrals
-    }
+    AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info)
+     : basisinfo_(_info), ecp_(_ecp) {}
 
     ~AngularBatch() {}
+    double compute(const double r);
 
 };
 
