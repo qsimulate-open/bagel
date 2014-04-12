@@ -476,7 +476,8 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
-  return std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  const bool lindep = std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  return !lindep;
 }
 
 
