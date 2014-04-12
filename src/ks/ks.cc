@@ -35,7 +35,7 @@ void KS::compute() {
   Matrix intermediate = *tildex_ % *hcore_ * *tildex_;
   intermediate.diagonalize(eig());
   coeff_ = make_shared<Coeff>(*tildex_ * intermediate);
-  shared_ptr<Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
+  shared_ptr<const Matrix> aodensity_ = coeff_->form_density_rhf(nocc_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
   cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;

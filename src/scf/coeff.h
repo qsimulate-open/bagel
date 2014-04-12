@@ -56,7 +56,6 @@ class Coeff : public Matrix {
 
     std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
 
-    std::shared_ptr<Matrix> form_density_rhf(const int n, const int offset = 0) const;
     std::shared_ptr<Matrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> split(const int, const int) const;
 };

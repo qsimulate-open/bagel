@@ -74,14 +74,6 @@ int ZCoeff::num_basis(vector<shared_ptr<const ZCoeff>> coeff_vec) const {
 }
 
 
-shared_ptr<ZMatrix> ZCoeff::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
-  auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
-  *out *= 2.0;
-  return out;
-}
-
-
 shared_ptr<ZMatrix> ZCoeff::form_weighted_density_rhf(const int n, const vector<complex<double>>& e, const int offset) const {
   auto out = make_shared<ZMatrix>(ndim_, ndim_);
   complex<double>* out_data = out->data() + offset*ndim_;

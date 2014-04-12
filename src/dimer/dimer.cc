@@ -603,7 +603,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   set_sref(rhf->conv_to_ref());
   dimertime.tick_print("Dimer SCF");
 
-  shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
+  shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
   shared_ptr<Matrix> dimercoeff = scoeff_->slice(0,nclosed_);
 
   // Explanation of schemes:
