@@ -35,7 +35,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(ZOverlap)
 ZOverlap::ZOverlap(const shared_ptr<const Molecule> mol) : ZMatrix1e(mol) {
 
   init(mol);
-  fill_upper();
+  fill_upper_conjg();
 
 }
 

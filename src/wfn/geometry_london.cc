@@ -99,7 +99,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
   /* Set up aux_atoms_ */
 
-  std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
+  const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
 /*
 #if 1
   magnetic_field_aux[0] = magnetic_field_[1];
@@ -460,7 +460,6 @@ Geometry_London::Geometry_London(vector<shared_ptr<const Geometry_London>> nmer)
 #endif
 
 
-/*
 // used in SCF initial guess.
 Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) {
 
@@ -483,13 +482,14 @@ Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, con
     // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
     if (atomlist) {
       for (auto& i : *atomlist)
-        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_, true));
+        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux, true));
     } else {
       // in the molden case
       for (auto& i : atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
     }
   }
   // symmetry
@@ -510,7 +510,6 @@ Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, con
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
 }
-*/
 
 
 const shared_ptr<const Matrix> Geometry_London::compute_grad_vnuc() const {

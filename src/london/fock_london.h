@@ -241,7 +241,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
       }
     }
     for (int i = 0; i != ndim_; ++i) data_[i*ndim_ + i] *= 2.0;
-    fill_upper();
+    fill_upper_conjg();
 
 #endif
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,18 +293,17 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 template<int DF>
 void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock_London<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
-  if (DF == 1) throw std::logic_error("Apparently Fock_London::fock_two_electron_part_with_coeff(...) is needed");
 
-#if 0
+#if 1
   Timer pdebug(3);
 
-  std::shared_ptr<const DFDist> df = cgeom_->df();
+  std::shared_ptr<const DFDist_London> df = cgeom_->df();
 
   if (scale_exchange != 0.0) {
-    std::shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(ocoeff);
+    std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
-    std::shared_ptr<DFHalfDist> half = halfbj->apply_J();
+    std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->form_2index(half, -1.0*scale_exchange);

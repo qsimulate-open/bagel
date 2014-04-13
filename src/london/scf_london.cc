@@ -26,6 +26,7 @@
 #include <src/london/scf_london.h>
 #include <src/prop/multipole.h>
 #include <src/london/zatomicdensities.h>
+#include <src/scf/atomicdensities.h>
 
 using namespace bagel;
 using namespace std;
@@ -55,6 +56,7 @@ void SCF_London::compute() {
   shared_ptr<const ZMatrix> aodensity_;
 
   shared_ptr<const DistZMatrix> tildex = tildex_->distmatrix();
+  shared_ptr<const DistZMatrix> tildextc = tildex_->transpose_conjg()->distmatrix();
   shared_ptr<const DistZMatrix> hcore = hcore_->distmatrix();
   shared_ptr<const DistZMatrix> overlap = overlap_->distmatrix();
   shared_ptr<const DistZMatrix> coeff;
@@ -64,13 +66,17 @@ void SCF_London::compute() {
     if (coeff_ == nullptr) {
       shared_ptr<const DistZMatrix> fock = hcore;
       if (dodf_ && cgeom_->spherical()) {
-        auto aden = make_shared<const ZAtomicDensities>(cgeom_);
-        auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, aden, schwarz_);
+        auto caden = make_shared<const ZAtomicDensities>(cgeom_);
+        auto aden = make_shared<const AtomicDensities>(cgeom_);
+        auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
+        auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, zaden, schwarz_);
         fock = focka->distmatrix();
       }
+      // TODO Do you need the transpose conjugate of *tildex here?
       DistZMatrix intermediate = *tildex % *fock * *tildex;
       intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
+      coeff->print("coeff, as first assigned", 20);
     } else {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
@@ -107,13 +113,17 @@ void SCF_London::compute() {
     aodensity = aodensity_->distmatrix();
     */
   } else {
-    aodensity = coeff->form_density_rhf(nocc_);
+    coeff->print("coeff", 20);
+    shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+    aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
+    aodensity->print("aodensity, immiately after formation", 20);
   }
 
   // starting SCF iteration
   shared_ptr<const ZMatrix> densitychange = aodensity_;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
+    cout << endl << endl << endl << "STARTING ITERATION " << iter << endl << endl << endl;
     Timer pdebug(1);
 
     if (restart_) {
@@ -134,8 +144,12 @@ void SCF_London::compute() {
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
     // TODO Is this the best place to convert to real?
+    aodensity->print("aodensity", 20);
     const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
+    cout << "Energy of iteration " << iter << " = " << zenergy << endl;
     energy_  = real(zenergy);
+    hcore->print("hcore", 20);
+    fock->print("fock", 20);
     if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
 
     pdebug.tick_print("Fock build");

@@ -591,6 +591,15 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 }
 
 
+void ZMatrix::fill_upper_conjg() {
+  assert(ndim_ == mdim_);
+  for (size_t i = 0; i != mdim_; ++i)
+    for (size_t j = i+1; j != ndim_; ++j)
+      data_[i+j*ndim_] = conj(data_[j+i*ndim_]);
+}
+
+
+
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistZMatrix> ZMatrix::distmatrix() const {
   return make_shared<DistZMatrix>(*this);
@@ -604,9 +613,10 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 
 
 #ifndef HAVE_SCALAPACK
+// Caution:  Matrix::form_density_rhf(...) multiplies by 2, but ZMatrix::form_density_rhf(...) does not
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset) const {
   shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
-  auto out = make_shared<const ZMatrix>(*tmp ^ *tmp);
+  auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
   return out;
 }
 #endif
