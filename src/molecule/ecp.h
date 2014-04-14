@@ -38,6 +38,7 @@ class ECP {
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp_;
     int ishell_maxl_;
     int maxl_;
+    int nshell_;
 
   public:
     ECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp) : shells_ecp_(shells_ecp) {
@@ -51,7 +52,9 @@ class ECP {
     void get_shell_maxl_ecp() {
       maxl_ = 0;
       int index = 0;
+      nshell_ = 0;
       for (auto& ish : shells_ecp_) {
+        ++nshell_;
         if (ish->angular_number() >= maxl_) {
           maxl_ = ish->angular_number();
           ishell_maxl_ = index;
@@ -63,6 +66,8 @@ class ECP {
 
     std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const { return shells_ecp_[ishell_maxl_]; }
     const int maxl() const { return maxl_; }
+
+    const int nshell() const { return nshell_; }
 
     void print() const {
       for (auto& i : shells_ecp_) std::cout << i->show() << std::endl;

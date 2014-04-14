@@ -28,7 +28,7 @@
 using namespace bagel;
 using namespace std;
 
-void ECPBatch::integrate_angular() {//have to loop over atoms
+void ECPBatch::integrate_angular() {
 
   for (auto& aiter : mol_->atoms()) {
     shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();

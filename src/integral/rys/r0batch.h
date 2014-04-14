@@ -38,18 +38,18 @@ class R0Batch: public RnBatch {
     double scale_weight(const double weight, const double coef) override { return coef; }
 
   public:
-    R0Batch(const std::shared_ptr<const Shell_ECP>& _ecp_info, const std::array<std::shared_ptr<const Shell>,2>& _info,
+    R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
             const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      : RnBatch (_ecp_info, _info, mol, stack) {
+      : RnBatch (_info, mol, stack) {
       rank_ = 1;
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
     }
 
 
-    R0Batch(const std::shared_ptr<const Shell_ECP>& _ecp_info, const std::array<std::shared_ptr<const Shell>,2>& _info,
+    R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
             const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : RnBatch (_ecp_info, _info, mol, L, A) {
+      : RnBatch (_info, mol, L, A) {
       rank_ = 1;
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);

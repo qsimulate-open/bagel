@@ -46,35 +46,44 @@ void R2Batch::compute_ssss(const double integral_thresh) {
   const double sqrtpi = sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
-      for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
-        for (int i = 0; i != ecp_basisinfo_->ecp_exponents().size(); ++i) {
-          double zeta = ecp_basisinfo_->ecp_exponents(i);
-          const double cxp = *expi0 + *expi1;
-          const double socxp = cxp + zeta;
-          xp_[index] = cxp;
-          const double ab = *expi0 * *expi1;
-          const double cxp_inv = 1.0 / cxp;
-          const double socxp_inv = 1.0 / socxp;
-          P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-          P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-          P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
-          const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-          const double PCx = P_[index * 3    ] - (*aiter)->position(0);
-          const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
-          const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
-          const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
-          coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
-          const double sqrtt = sqrt(T);
-          const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
-          if (ss > integral_thresh) {
-            T_[index] = T;
-            screening_[screening_size_] = index;
-            ++screening_size_;
-          } else {
-            T_[index] = -1.0;
-            coeff_[index] = 0.0;
+      int iatom = 0;
+      for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
+        const shared_ptr<const Shell_ECP> shell_ecp = (*aiter)->ecp_parameters()->shell_maxl_ecp();
+        for (int i = 0; i != shell_ecp->ecp_exponents().size(); ++i) {
+          int necp = 0;
+          if (shell_ecp->ecp_r_power(i) == 1) {
+            double zeta = shell_ecp->ecp_exponents(i);
+            const double cxp = *expi0 + *expi1;
+            const double socxp = cxp + zeta;
+            xp_[index] = cxp;
+            const double ab = *expi0 * *expi1;
+            const double cxp_inv = 1.0 / cxp;
+            const double socxp_inv = 1.0 / socxp;
+            P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
+            P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
+            P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+            const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
+            const double PCx = P_[index * 3    ] - (*aiter)->position(0);
+            const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
+            const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
+            const double T = cxp * cxp * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz);
+            coeff_[index] = 2 * pi__ * sqrtpi * sqrt(socxp_inv) * exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab;
+            const double sqrtt = sqrt(T);
+            const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
+            if (ss > integral_thresh) {
+              T_[index] = T;
+              screening_[screening_size_] = index;
+              ++screening_size_;
+              indexecp_.push_back(make_pair(iatom, necp));
+            } else {
+              T_[index] = -1.0;
+              coeff_[index] = 0.0;
+            }
+            ++necp;
+            ++index;
           }
         }
+        ++iatom;
       }
     }
   }
