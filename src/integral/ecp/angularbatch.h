@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_ANGULARBATCH_H
-#define __SRC_INTEGRAL_ANGULARBATCH_H
+#ifndef __SRC_INTEGRAL_ECP_ANGULARBATCH_H
+#define __SRC_INTEGRAL_ECP_ANGULARBATCH_H
 
 #include <src/util/constants.h>
 #include <src/molecule/atom.h>
