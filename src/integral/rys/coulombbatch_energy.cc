@@ -31,7 +31,6 @@
 using namespace std;
 using namespace bagel;
 
-constexpr static double PITWOHALF = 17.493418327624862;
 const static HRRList hrr;
 const static CarSphList carsphlist;
 
