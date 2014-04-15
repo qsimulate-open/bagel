@@ -33,6 +33,27 @@ using namespace std;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
+// TODO get rid of this once the code works with a truly complex coefficient matrix
+ZMatrix diagonalize_real (ZMatrix in, double* eig) {
+
+  bool real = true;
+  shared_ptr<Matrix> check = in.get_imag_part();
+  const int size = check->ndim() * check->mdim();
+  double* data = check->data();
+  for (int i=0; i!=size; i++) if (data[i]==0.0) real = false;
+
+  if (real == true) {
+    shared_ptr<Matrix> intermediate = in.get_real_part();
+    intermediate->diagonalize(eig);
+    auto inter2 = std::make_shared<ZMatrix>(*intermediate, 1.0);
+    return *inter2;
+  } else {
+    in.diagonalize(eig);
+    return in;
+  }
+}
+
+
 SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re)
  : SCF_base_London(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
@@ -70,13 +91,15 @@ void SCF_London::compute() {
         auto aden = make_shared<const AtomicDensities>(cgeom_);
         auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
         auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, zaden, schwarz_);
+        //focka->print("FockA", 20);
         fock = focka->distmatrix();
       }
       // TODO Do you need the transpose conjugate of *tildex here?
       DistZMatrix intermediate = *tildex % *fock * *tildex;
-      intermediate.diagonalize(eig());
+      intermediate = diagonalize_real(intermediate, eig()); // TODO make this work with a complex coeff_
+      // intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
-      coeff->print("coeff, as first assigned", 20);
+      //coeff->print("coeff, as first assigned", 20);
     } else {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
@@ -87,6 +110,7 @@ void SCF_London::compute() {
         */
         } else {
         focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        //focka->print("FockA", 20);
       }
       DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -113,17 +137,17 @@ void SCF_London::compute() {
     aodensity = aodensity_->distmatrix();
     */
   } else {
-    coeff->print("coeff", 20);
+    //coeff->print("coeff", 20);
     shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
     aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
-    aodensity->print("aodensity, immiately after formation", 20);
+    //aodensity->print("aodensity, immiately after formation", 20);
   }
 
   // starting SCF iteration
   shared_ptr<const ZMatrix> densitychange = aodensity_;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    cout << endl << endl << endl << "STARTING ITERATION " << iter << endl << endl << endl;
+    //cout << endl << endl << endl << "STARTING ITERATION " << iter << endl << endl << endl;
     Timer pdebug(1);
 
     if (restart_) {
@@ -139,23 +163,27 @@ void SCF_London::compute() {
       mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
       */
     } else {
+      //coeff_->slice(0, nocc_)->print("slice of coeff_ being used",20);
       previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      // TODO TODO TODO THE BROKEN PART IS COEFF_
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
     // TODO Is this the best place to convert to real?
-    aodensity->print("aodensity", 20);
     const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
-    cout << "Energy of iteration " << iter << " = " << zenergy << endl;
+    //cout << "Energy of iteration " << iter << " = " << zenergy << endl;
     energy_  = real(zenergy);
-    hcore->print("hcore", 20);
-    fock->print("fock", 20);
+    //aodensity->print("aodensity", 20);
+    //hcore->print("hcore", 20);
+    //fock->print("fock", 20);
     if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
 
     pdebug.tick_print("Fock build");
 
     auto error_vector = make_shared<const DistZMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
+    //error_vector->print("Error Vector", 20);
+    //cout << endl << endl << "ERROR = " << error_vector->rms() << endl << endl;
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
@@ -175,13 +203,20 @@ void SCF_London::compute() {
     }
 
     DistZMatrix intermediate(*coeff % *fock * *coeff);
+    //fock->print("Fock Matrix by extrapolation from diis_", 20);
+    //intermediate.print("intermediate using coeff & extrapolated Fock", 20);
 
     if (levelshift_)
       levelshift_->shift(intermediate);
 
-    intermediate.diagonalize(eig());
+    intermediate = diagonalize_real(intermediate, eig()); // TODO make this work with a complex coeff_
+    // intermediate.diagonalize(eig());
+
+    //for (int i=0; i!=eig_.size(); i++) cout << "eigenvalue " << i << " = " << eig_[i] << endl;
+
     pdebug.tick_print("Diag");
 
+    //intermediate.print("intermediate after diagonalization", 20);
     coeff = make_shared<const DistZMatrix>(*coeff * intermediate);
     coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
 
@@ -195,7 +230,11 @@ void SCF_London::compute() {
       aodensity = aodensity_->distmatrix();
       */
     } else {
-      aodensity = coeff->form_density_rhf(nocc_);
+      //aodensity = coeff->form_density_rhf(nocc_);
+      //coeff->print("coeff from this iteration", 20);
+      shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+      aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
+      //aodensity->print("the new aodensity", 20);
     }
     pdebug.tick_print("Post process");
   }
@@ -213,8 +252,9 @@ void SCF_London::compute() {
 
 
 shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-  throw runtime_error("Need to set up Reference for London orbitals in order to do this");
+  cout << endl << "CAUTION:  Reference class has not been properly set up for London orbital basis." << endl; // TODO
   //auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
   //out->set_eig(eig_);
   //return out;
+  return nullptr;
 }

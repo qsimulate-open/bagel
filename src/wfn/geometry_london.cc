@@ -350,6 +350,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     } else {
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
+      throw runtime_error("Need to set it up to initialize magnetic field in this other place, I guess.");
     }
   }
   const string prevaux = auxfile_;

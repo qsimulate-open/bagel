@@ -61,7 +61,7 @@ void Fock_base_London::fock_one_electron_part() {
 
   *this += *previous_;
 
-  fill_upper();
+  fill_upper_conjg();
 }
 
 

@@ -56,6 +56,7 @@ ZAtomicDensities::ZAtomicDensities(std::shared_ptr<const Geometry_London> g) : Z
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
       cout.rdbuf(ss.rdbuf());
+//      cout.rdbuf(cout_orig);  //TODO DON'T KEEP THIS HERE
 
       shared_ptr<PTree> geomop = make_shared<PTree>();
       const string basis = i->basis();
@@ -155,7 +156,8 @@ shared_ptr<const ZMatrix> ZAtomicDensities::compute_atomic(shared_ptr<const Geom
     //TODO VERIFY THIS NEXT LINE!
     const double energy = std::real(((*hcore+*fock) * *aodensity).trace()*0.5);
     if (std::abs(std::imag(((*hcore+*fock) * *aodensity).trace()*0.5)) > 1.0e-8 ) throw std::logic_error("Energy is not real.");
-    cout << setprecision(10) << energy << endl;
+//    cout << setprecision(10) << energy << endl;
+    cout << setprecision(10) << energy << " = ENERGY FROM ATOMICDENSITIES!" << endl;
 
     //TODO ALSO VERIFY THIS NEXT LINE!
     auto residual = make_shared<ZMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
@@ -197,7 +199,12 @@ shared_ptr<const ZMatrix> ZAtomicDensities::compute_atomic(shared_ptr<const Geom
   shared_ptr<ZMatrix> out = vden;
   if (sclosed) {
     auto c = make_shared<const ZCoeff>(*ocoeff);
-    *out += *c->form_density_rhf(ocoeff->mdim());
+    //*out += *c->form_density_rhf(ocoeff->mdim());
+    {
+      shared_ptr<const ZMatrix> halfaodensity = c->form_density_rhf(ocoeff->mdim());
+      auto aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
+      *out += *aodensity;
+    }
   }
   return out;
 }

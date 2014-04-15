@@ -28,17 +28,20 @@
 
 #include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
+#include <src/wfn/geometry_london.h>
 
 namespace bagel {
 
 class AtomicDensities : public Matrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Geometry_London> cgeom_;
 
     std::shared_ptr<const Matrix> compute_atomic(std::shared_ptr<const Geometry> ga) const;
 
   public:
     AtomicDensities(std::shared_ptr<const Geometry> g);
+    AtomicDensities(std::shared_ptr<const Geometry_London> g);
 
 };
 
