@@ -36,6 +36,8 @@ using namespace bagel;
 void ZCASSCF::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
   shared_ptr<SRBFGS<ZRotFile>> srbfgs;
+  const bool tight = idata_->get<bool>("tight", false); 
+  const int limmem = idata_->get<int>("limited_memory", 0);
 
   // ============================
   // macro iteration from here
@@ -120,7 +122,7 @@ void ZCASSCF::compute() {
         diagonal_shift->fill(level_shift_);
         denom->ax_plus_y(-1.0, diagonal_shift);
       }
-      srbfgs = make_shared<SRBFGS<ZRotFile>>(denom, level_shift_.real());
+      srbfgs = make_shared<SRBFGS<ZRotFile>>(denom);
     }
 
     // compute orbital gradients
@@ -143,11 +145,11 @@ void ZCASSCF::compute() {
     cout << " ++++++++++++++++++++++++ " << endl;
     cout << " Starting microiterations " << endl;
     cout << " ++++++++++++++++++++++++ " << endl;
-    cout << setprecision(6) << " gradient norm      = " << grad->norm() << endl;
+    cout << setprecision(6) << " gradient norm      = " << grad->rms() << endl;
     cout << " " << endl;
-    auto shift = xlog->clone();
-    shift->fill(level_shift_.real());
-    shared_ptr<ZRotFile> a = srbfgs->step_restricted_extrapolate(energy_, grad, xlog, shift, /*tight*/true);
+    auto reset = srbfgs->check_step(energy_, grad, xlog, tight, limmem);
+    if (reset) cout << " STEP DOES NOT MEET PROPER CRITERIA : Please backtrack. " << endl;
+    shared_ptr<ZRotFile> a = srbfgs->extrapolate(grad, xlog);
     resume_stdcout();
     if (!___debug___break_kramers)
       kramers_adapt(a);
