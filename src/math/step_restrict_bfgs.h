@@ -295,22 +295,6 @@ class SRBFGS {
     }
 
 
-    // returns restricted step displacement
-    std::shared_ptr<T> step_restricted_extrapolate(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, const bool tight = false, const int limited_memory = 0) {
-      // to make sure, inputs are copied
-      auto f     = std::vector<double>(_f);
-      auto grad  = std::make_shared<const T>(*_grad);
-      auto value = std::make_shared<const T>(*_value);
-      auto shift = grad->clone();
-
-      auto  acopy = extrapolate(grad);
-
-      prev_grad_ = grad;
-      prev_value_ = value;
-      return acopy;
-    }
-
-
    // iteratively finds an appropriate level shift according to hebden's algorithm (JSY)
    double hebden_levelshift(std::shared_ptr<const T> _grad) {
      // No shift is preferred when steps are within the trust radius
@@ -507,10 +491,11 @@ class SRBFGS {
 
 
     // returns restricted step displacement
-    std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad) {
+    std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
       bool with_shift = false;
       // to make sure, inputs are copied
       auto grad  = std::make_shared<const T>(*_grad);
+      auto value  = std::make_shared<const T>(*_value);
 
       // initialize trust radius
       if (prev_value() == nullptr && trust_radius_ == 0.0) {
@@ -536,6 +521,8 @@ class SRBFGS {
         level_shift_ = 0.0;
       }
       prev_level_shift_ = level_shift_;
+      prev_grad_ = grad;
+      prev_value_ = value;
 
       return acopy;
     }
