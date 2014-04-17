@@ -310,7 +310,7 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      auto coeff = std::make_shared<const ZMatrix>(*ocoeff->transpose()*2.0);
+      auto coeff = std::make_shared<const ZMatrix>(*ocoeff->transpose_conjg()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

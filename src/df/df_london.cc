@@ -359,7 +359,7 @@ shared_ptr<DFHalfDist_London> DFHalfDist_London::apply_J(const shared_ptr<const 
     auto work = make_shared<DFDist_LondonT>(shared_from_this());
     mult.tick_print("Form DFDist_LondonT");
     work = work->apply_J(d);
-    mult.tick_print("Applicatoin of Inverse");
+    mult.tick_print("Application of Inverse");
     work->get_paralleldf(out);
     mult.tick_print("Return DFDist_London");
   } else {

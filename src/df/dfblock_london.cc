@@ -232,7 +232,7 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<cons
     if (!trans)
       zgemm3m_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, out->get()+i*asize_*nocc, asize_);
     else
-      zgemm3m_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, out->get()+i*asize_*nocc, asize_);
+      zgemm3m_("N", "C", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, out->get()+i*asize_*nocc, asize_);
   }
   return out;
 }
@@ -250,8 +250,7 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_third(std::shared_ptr<const
   if (!trans)
     zgemm3m_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, out->get(), asize_*b1size_);
   else  // trans -> back transform
-    zgemm3m_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, out->get(), asize_*b1size_);
-
+    zgemm3m_("N", "C", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, out->get(), asize_*b1size_);
   return out;
 }
 
@@ -435,7 +434,7 @@ shared_ptr<DFBlock_London> DFBlock_London::apply_2RDM(const double* rdm, const d
 
 shared_ptr<DFBlock_London> DFBlock_London::apply_2RDM(const double* rdm) const {
   shared_ptr<DFBlock_London> out = clone();
-  zgemm3m_("N", "T", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data_.get(), asize_, rdm, b1size_*b2size_, 0.0, out->get(), asize_);
+  zgemm3m_("N", "C", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data_.get(), asize_, rdm, b1size_*b2size_, 0.0, out->get(), asize_);
   return out;
 }
 */
@@ -447,12 +446,12 @@ shared_ptr<ZMatrix> DFBlock_London::form_2index(const shared_ptr<const DFBlock_L
 
   if (b1size_ == o->b1size_) {
     target = make_shared<ZMatrix>(b2size_,o->b2size_);
-    zgemm3m_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target->data(), b2size_);
+    zgemm3m_("C", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target->data(), b2size_);
   } else {
     assert(b2size_ == o->b2size_);
     target = make_shared<ZMatrix>(b1size_,o->b1size_);
     for (int i = 0; i != b2size_; ++i)
-      zgemm3m_("T", "N", b1size_, o->b1size_, asize_, a, data_.get()+i*asize_*b1size_, asize_, o->data_.get()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
+      zgemm3m_("C", "N", b1size_, o->b1size_, asize_, a, data_.get()+i*asize_*b1size_, asize_, o->data_.get()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
   }
 
   return target;
@@ -462,7 +461,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_2index(const shared_ptr<const DFBlock_L
 shared_ptr<ZMatrix> DFBlock_London::form_4index(const shared_ptr<const DFBlock_London> o, const double a) const {
   if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock_London::form_4index");
   auto target = make_shared<ZMatrix>(b1size_*b2size_, o->b1size_*o->b2size_);
-  zgemm3m_("T", "N", b1size_*b2size_, o->b1size_*o->b2size_, asize_, a, data_.get(), asize_, o->data_.get(), asize_, 0.0, target->data(), b1size_*b2size_);
+  zgemm3m_("C", "N", b1size_*b2size_, o->b1size_*o->b2size_, asize_, a, data_.get(), asize_, o->data_.get(), asize_, 0.0, target->data(), b1size_*b2size_);
   return target;
 }
 
@@ -471,7 +470,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_4index(const shared_ptr<const DFBlock_L
 shared_ptr<ZMatrix> DFBlock_London::form_4index_1fixed(const shared_ptr<const DFBlock_London> o, const double a, const size_t n) const {
   if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock_London::form_4index_1fixed");
   auto target = make_shared<ZMatrix>(b2size_*b1size_, o->b1size_);
-  zgemm3m_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target->data(), b1size_*b2size_);
+  zgemm3m_("C", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target->data(), b1size_*b2size_);
   return target;
 }
 
@@ -479,7 +478,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_4index_1fixed(const shared_ptr<const DF
 shared_ptr<ZMatrix> DFBlock_London::form_aux_2index(const shared_ptr<const DFBlock_London> o, const double a) const {
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock_London::form_aux_2index");
   auto target = make_shared<ZMatrix>(asize_, o->asize_);
-  zgemm3m_("N", "T", asize_, o->asize_, b1size_*b2size_, a, data_.get(), asize_, o->data_.get(), o->asize_, 0.0, target->data(), asize_);
+  zgemm3m_("N", "C", asize_, o->asize_, b1size_*b2size_, a, data_.get(), asize_, o->data_.get(), o->asize_, 0.0, target->data(), asize_);
   return target;
 }
 
@@ -494,7 +493,7 @@ unique_ptr<complex<double>[]> DFBlock_London::form_vec(const shared_ptr<const ZM
 
 shared_ptr<ZMatrix> DFBlock_London::form_mat(const complex<double>* fit) const {
   auto out = make_shared<ZMatrix>(b1size_,b2size_);
-  zgemv_("T", asize_, b1size_*b2size_, zone, data_.get(), asize_, fit, 1, znil, out->data(), 1);
+  zgemv_("C", asize_, b1size_*b2size_, zone, data_.get(), asize_, fit, 1, znil, out->data(), 1);
   return out;
 }
 
