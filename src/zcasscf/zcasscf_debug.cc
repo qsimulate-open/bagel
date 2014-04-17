@@ -421,13 +421,18 @@ complex<double> ZCASSCF::find_level_shift(shared_ptr<const ZRotFile> rotmat) con
     if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
       l0 = rotmat->data(j);
   }
+  complex<double> level_shift;
+  if (real(l0) < 0) {
   // IMPROVISED LEVEL SHIFT : TODO possibly move to SRBFGS class if you can generalize to non-rel hessians
   double scale = idata_->get<double>("scalefac", 1.05);
-  complex<double> level_shift = l0*scale;
+  level_shift = l0 * scale;
   cout << " " << endl;
   cout << setprecision(8) << "Smallest Hessian Element (excluding positrons) = " << l0 << endl;
   cout << setprecision(2) << "Scaling Factor                                 = " << scale << endl;
   cout << setprecision(8) << "Level Shift                                    = " << level_shift << endl << endl;
+  } else {
+    level_shift = complex<double> (0.0,0.0);
+  }
 
   return level_shift;
 }

@@ -478,14 +478,14 @@ class SRBFGS {
           *ptmp  = *utmp / (*denom_ + *shift);
           *vtild = *vtmp / (*denom_ + *shift);
           for (int i = 0; i != j; ++i) {
-            auto s1 = detail::real(vvec.at(i)->dot_product(utmp)); // double check for complex case
+            auto s1 = detail::real(vvec.at(i)->dot_product(utmp));
             auto s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
             ptmp->ax_plus_y(s2, pvec.at(i));
-                 s1 = detail::real(vvec.at(i)->dot_product(vtmp)); // double check for complex case
+                 s1 = detail::real(vvec.at(i)->dot_product(vtmp));
                  s2 = pow(-1.0, i%2) * vcoeff.at(i) * s1;
             vtild->ax_plus_y(s2, pvec.at(i));
           }
-          auto s1   = detail::real(vtmp->dot_product(ptmp)); // double check for complex case
+          auto s1   = detail::real(vtmp->dot_product(ptmp));
           auto s2   = 1.0 + pow(-1.0, j%2+1) * s1;
           assert(fabs(s2) > 1e-20);
           auto tau  = 1.0 / s2;
