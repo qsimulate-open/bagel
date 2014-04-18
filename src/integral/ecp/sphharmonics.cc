@@ -66,7 +66,7 @@ SphHarmonics::SphHarmonics(const int l, const int m)
 double SphHarmonics::LegendrePolynomial(const double x) const {
 
   const int l = angular_momentum_[0];
-  const int m = angular_momentum_[1];
+  const int m = fabs(angular_momentum_[1]);
 
   if (m < 0 || m > l || fabs(x) > 1.0) throw std::runtime_error("SH: m must be in [0, l] and x in [-1, 1]");
   double pmm = 1.0;
