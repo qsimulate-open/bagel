@@ -28,6 +28,7 @@
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
+#include <src/integral/ecp/ecpbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -48,9 +49,10 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-#if 0
-  const double zeta = 0.0;
-#endif
+
+  cout << "+++++ TEST ECP +++++" << endl;
+  ECPBatch ecp(input, mol);
+  ecp.compute();
 
   {
     KineticBatch kinetic(input);

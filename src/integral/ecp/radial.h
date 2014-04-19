@@ -38,6 +38,7 @@ class RadialInt {
 
   protected:
     int ngrid_;
+    bool print_intermediate_;
     int max_iter_;
     double thresh_int_;
     std::vector<double> x_;
@@ -45,7 +46,8 @@ class RadialInt {
     double integral_;
 
   public:
-    RadialInt(const int max_iter, const double thresh_int, Value... tail) :
+    RadialInt(Value... tail, const bool print = false, const int max_iter = 100, const double thresh_int = 1e-10) :
+      print_intermediate_(print),
       max_iter_(max_iter),
       thresh_int_(thresh_int)
     {
@@ -70,10 +72,13 @@ class RadialInt {
           ++cnt;
         }
         const double error = ans - previous;
-        std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
+        if (print_intermediate_)
+           std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
         if (fabs(error) < thresh_int_ && iter != 0) {
-          std::cout << "Integration converged..." << std::endl;
-          std::cout << "Radial integral = " << ans << std::endl;
+          if (print_intermediate_) {
+            std::cout << "Integration converged..." << std::endl;
+            std::cout << "Radial integral = " << ans << std::endl;
+          }
           integral_ = ans;
           break;
         } else if (iter == max_iter_-1) {

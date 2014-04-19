@@ -195,8 +195,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
 
 }
 
-double AngularBatch::project_many_centres(const array<int, 3> lA, const double expA,
-                                          const array<int, 3> lC, const double expC, const double r) {
+double AngularBatch::project_many_centres(const double expA, const double expC, const double r) {
 
  vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
 
@@ -204,13 +203,13 @@ double AngularBatch::project_many_centres(const array<int, 3> lA, const double e
  for (auto& ishecp : shells_ecp) {
    const int l = ishecp->angular_number();
    if (l != ecp_->maxl()) {
-     for (int mu = 0; mu != 2*l; ++mu) {
+     for (int mu = 0; mu <= 2*l; ++mu) {
        int index = 0;
        const int m = mu - l;
        array<int, 2> lm = {l, m};
        for (auto& exponents : ishecp->ecp_exponents()) {
-         const double projA = project_one_centre(basisinfo_[0]->position(), lA, expA, ishecp->position(), lm, r);
-         const double projC = project_one_centre(basisinfo_[1]->position(), lC, expC, ishecp->position(), lm, r);
+         const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
+         const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
          ans += ishecp->ecp_coefficients(index) * projA *
                 std::pow(r, -ishecp->ecp_r_power(index)) * std::exp(-exponents * r * r) * r * r * projC;
          ++index;
@@ -223,7 +222,6 @@ double AngularBatch::project_many_centres(const array<int, 3> lA, const double e
 
 }
 
-#if 1
 double AngularBatch::compute(const double r) {
 
   const vector<double> expA = basisinfo_[0]->exponents();
@@ -232,29 +230,34 @@ double AngularBatch::compute(const double r) {
   double ans = 0.0;
 
   for (auto& expiA : expA) {
-    const int lA = basisinfo_[0]->angular_number();
-    for (auto& expiC : expC) {
-      const int lC = basisinfo_[1]->angular_number();
-
-      for (int lzA = 0; lzA <= lA; ++lzA) {
-        for (int lyA = 0; lyA <= lA - lzA; ++lzA) {
-          const int lxA = lA - lzA - lyA;
-          array<int, 3> lxyzA = {lxA, lyA, lzA};
-          for (int lzC = 0; lzC <= lC; ++lzC) {
-            for (int lyC = 0; lyC <= lC - lzC; ++lyC) {
-              const int lxC = lC - lzC - lyC;
-              array<int, 3> lxyzC = {lxC, lyC, lzC};
-              ans += project_many_centres(lxyzA, expiA, lxyzC, expiC, r);
-            }
-          }
-        }
-      }
-
-    }
+    for (auto& expiC : expC)
+    ans += project_many_centres(expiA, expiC, r);
   }
 
   return ans;
-// TODO: coefficients
 
 }
-#endif
+
+void AngularBatch::print() {
+
+  cout << "Compute the integral < shell_0 | lm > exp(-zeta r^n) < lm | shell_1> r^2 dr " << endl;
+  cout << "Shell 0" << basisinfo_[0]->show() << endl;
+  cout << "Shell 1" << basisinfo_[1]->show() << endl;
+  cout << "ECP parameters" << endl;
+  ecp_->print();
+
+}
+
+void AngularBatch::print_one_centre(array<double, 3> posA, const array<int, 3> lxyz, const double expA,
+                                    array<double, 3> posB, const array<int, 2> lm, const double r) {
+
+  cout << "Project one centre <phiA | lmB> (r)" << endl;
+  cout << "A = (" << posA[0] << ", " << posA[1] << ", " << posA[2] << ")" << endl;
+  cout << "B = (" << posB[0] << ", " << posB[1] << ", " << posB[2] << ")" << endl;
+  cout << "(kx, ky, kz) = (" << lxyz[0] << ", " << lxyz[1] << ", " << lxyz[2] << ")" << endl;
+  cout << "(l, m)       = (" << lm[0] << ", " << lm[1] << ")" << endl;
+  cout << "alpha = " << expA << endl;
+  cout << "r     = " << r << endl;
+
+}
+

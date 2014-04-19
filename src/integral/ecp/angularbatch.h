@@ -38,21 +38,26 @@ class AngularBatch {
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const ECP> ecp_;
+    std::array<int, 3> ang0_, ang1_;
 
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
     double integrate3USP(std::array<int, 3> xyz_exponents) const;
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const;
     double project_one_centre(std::array<double, 3> posA, const std::array<int, 3> lxyz, const double expA,
                               std::array<double, 3> posB, const std::array<int, 2> lm, const double r);
-    double project_many_centres(const std::array<int, 3> lA, const double expA,
-                                const std::array<int, 3> lC, const double expC, const double r);
+    double project_many_centres(const double expA, const double expC, const double r);
 
   public:
-    AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info)
-     : basisinfo_(_info), ecp_(_ecp) {}
+    AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
+                 const std::array<int, 3> angA, const std::array<int, 3> angC)
+     : basisinfo_(_info), ecp_(_ecp), ang0_(angA), ang1_(angC) {}
 
     ~AngularBatch() {}
     double compute(const double r);
+
+    void print();
+    void print_one_centre(std::array<double, 3> posA, const std::array<int, 3> lxyz, const double expA,
+                          std::array<double, 3> posB, const std::array<int, 2> lm, const double r);
 
 };
 

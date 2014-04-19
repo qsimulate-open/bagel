@@ -28,6 +28,7 @@
 #define __SRC_INTEGRAL_ECP_ECPBATCH_H
 
 #include <tuple>
+#include <src/parallel/resources.h>
 #include <src/molecule/molecule.h>
 #include <src/util/constants.h>
 #include <src/integral/integral.h>
@@ -36,7 +37,7 @@
 
 namespace bagel {
 
-class ECPBatch: public Integral_base<double> {
+class ECPBatch : public Integral {
   protected:
 
     int max_iter_;
@@ -45,20 +46,39 @@ class ECPBatch: public Integral_base<double> {
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const Molecule> mol_;
 
-    double* angulardata_;
+    bool spherical_;
+
+    double* data_;
+    double* bkup_;
+
+    int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
+    int amax_, amax1_, amin_, asize_;
+    bool swap01_;
+    size_t size_alloc_;
+    unsigned int size_final_;
+    double* stack_save_;
+
+    void perform_contraction(const int, const double*, const int, const int, double*,
+                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
+                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
+
+    bool allocated_here_;
+    std::shared_ptr<StackMem> stack_;
+
+    void common_init();
 
   public:
-    ECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol)
-     : basisinfo_(info), mol_(mol) {
-       integral_thresh_ = PRIM_SCREEN_THRESH;
-       max_iter_ = 100;
-    }
+    ECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol,
+                   std::shared_ptr<StackMem> = nullptr);
+    ~ECPBatch();
 
-    ~ECPBatch() {}
-
-    double* angulardata() { return angulardata_; }
-    double angulardata(const int i) { return angulardata_[i]; }
     void integrate_angular();
+
+    double* data() { return data_; }
+    virtual double* data(const int i) override { assert(i == 0); return data_; }
+
+    bool swap01() const { return swap01_; }
+
 
     void compute() override;
 
@@ -67,3 +87,4 @@ class ECPBatch: public Integral_base<double> {
 }
 
 #endif
+
