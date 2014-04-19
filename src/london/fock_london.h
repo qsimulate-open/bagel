@@ -95,7 +95,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
   }
 
-//  const int shift = sizeof(int) * 4;
+  const int shift = sizeof(int) * 4;
   const int size = basis.size();
 
   // first make max_density_change std::vector for each batch pair.
@@ -127,9 +127,9 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
   // starting 2-e Fock matrix evaluation!
   ////////////////////////////////////////////
   if (DF == 0) {
-    throw std::runtime_error("For now we only worry about density-fitted HF with a magnetic field");
+    //throw std::runtime_error("For now we only worry about density-fitted HF with a magnetic field");
     //////////////// ONLY FOR REFERENCES. //////////////////
-#if 0
+#if 1
     std::shared_ptr<Petite> plist = cgeom_->plist();;
 
     for (int i0 = 0; i0 != size; ++i0) {
@@ -180,13 +180,9 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
             if (skip_schwarz) continue;
 
             std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-#ifdef LIBINT_INTERFACE
-            Libint eribatch(input);
-#else
-            ERIBatch eribatch(input, mulfactor);
-#endif
+            ComplexERIBatch eribatch(input, mulfactor);
             eribatch.compute();
-            const double* eridata = eribatch.data();
+            const std::complex<double>* eridata = eribatch.data();
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
               const int j0n = j0 * ndim_;
 
@@ -222,8 +218,8 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     const int maxj1j3 = std::max(j1, j3);
                     const int minj1j3 = std::min(j1, j3);
 
-                    double intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
-                    const double intval4 = 4.0 * intval;
+                    std::complex<double> intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
+                    const std::complex<double> intval4 = 4.0 * intval;
 
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;
                     data_[j2n + j3] += density_data[j0n + j1] * intval4;

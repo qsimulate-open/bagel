@@ -42,6 +42,7 @@ ZMatrix diagonalize_real (ZMatrix in, double* eig) {
   double* data = check->data();
   for (int i=0; i!=size; i++) if (data[i]==0.0) real = false;
 
+//  if (real && !real) {
   if (real == true) {
     shared_ptr<Matrix> intermediate = in.get_real_part();
     intermediate->diagonalize(eig);
@@ -103,11 +104,10 @@ void SCF_London::compute() {
     } else {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
-        throw runtime_error("Only worrying about density-fitted HF for now");
-        /*
-        aodensity_ = coeff_->form_density_rhf(nocc_);
+        //throw runtime_error("Only worrying about density-fitted HF for now");
+        shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+        aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
         focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
-        */
         } else {
         focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
         //focka->print("FockA", 20);
@@ -131,16 +131,14 @@ void SCF_London::compute() {
   }
 
   if (!dodf_) {
-    throw runtime_error("Only worrying about density-fitted HF for now");
-    /*
-    aodensity_ = coeff_->form_density_rhf(nocc_);
+    //throw runtime_error("Only worrying about density-fitted HF for now");
+    shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+    aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
     aodensity = aodensity_->distmatrix();
-    */
   } else {
     //coeff->print("coeff", 20);
     shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
     aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
-    //aodensity->print("aodensity, immiately after formation", 20);
   }
 
   // starting SCF iteration
@@ -157,15 +155,12 @@ void SCF_London::compute() {
     }
 
     if (!dodf_) {
-      throw runtime_error("Only worrying about density-fitted HF for now");
-      /*
-      previous_fock = make_shared<Fock<0>>(cgeom_, previous_fock, densitychange, schwarz_);
-      mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
-      */
+      //throw runtime_error("Only worrying about density-fitted HF for now");
+      previous_fock = make_shared<Fock_London<0>>(cgeom_, previous_fock, densitychange, schwarz_);
+      mpi__->broadcast(const_pointer_cast<ZMatrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
       //coeff_->slice(0, nocc_)->print("slice of coeff_ being used",20);
       previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
-      // TODO TODO TODO THE BROKEN PART IS COEFF_
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
@@ -222,17 +217,16 @@ void SCF_London::compute() {
 
 
     if (!dodf_) {
-      throw runtime_error("Only worrying about density-fitted HF for now");
-      /*
-      shared_ptr<const ZMatrix> new_density = coeff_->form_density_rhf(nocc_);
-      densitychange = make_shared<Matrix>(*new_density - *aodensity_);
+      //throw runtime_error("Only worrying about density-fitted HF for now");
+      shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+      shared_ptr<const ZMatrix> new_density = make_shared<ZMatrix>(*halfaodensity * 2.0);
+      densitychange = make_shared<ZMatrix>(*new_density - *aodensity_);
       aodensity_ = new_density;
       aodensity = aodensity_->distmatrix();
-      */
     } else {
       //aodensity = coeff->form_density_rhf(nocc_);
       //coeff->print("coeff from this iteration", 20);
-      shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
+      shared_ptr<const DistZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
       aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
       //aodensity->print("the new aodensity", 20);
     }
