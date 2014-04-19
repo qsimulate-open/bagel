@@ -498,3 +498,55 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
     }
     return acopy;
 }
+
+
+
+void ZCASSCF::___debug___optimize_electronic_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> denom, shared_ptr<const ZRotFile> rot) const {
+  // function to optimize only the electronic type orbital rotations neglecting any coupling to positrons
+  // copy the inputs
+  int nr_nvirt = nvirt_ - nneg_/2; 
+  cout << " non rel virt = " << nr_nvirt << endl;
+  auto newgrad = ___debug___copy_electronic_rotations(nr_nvirt, grad);
+  auto newdenom = ___debug___copy_electronic_rotations(nr_nvirt, denom);
+  auto newrot  = ___debug___copy_electronic_rotations(nr_nvirt, rot);
+  newdenom->print();
+  denom->print();
+
+}
+
+
+shared_ptr<ZRotFile> ZCASSCF::___debug___copy_electronic_rotations(int nr_nvirt, shared_ptr<const ZRotFile> rot) const {
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2); 
+  if (nr_nvirt != 0) {
+    for (int i = 0; i != nclosed_; ++i) {
+      for (int j = 0; j != nr_nvirt;   ++j) {
+        out->ele_vc(j, i) = rot->ele_vc(j, i);
+        out->ele_vc(j + nr_nvirt, i) = rot->ele_vc(j + nvirt_, i);
+        out->ele_vc(j, i + nclosed_) = rot->ele_vc(j, i + nclosed_);
+        out->ele_vc(j + nr_nvirt, i + nclosed_) = rot->ele_vc(j + nvirt_, i + nclosed_);
+      }
+    }
+    if (nact_ != 0) {
+      for (int i = 0; i != nact_; ++i) {
+        for (int j = 0; j != nr_nvirt;   ++j) {
+          out->ele_va(j, i) = rot->ele_va(j, i);
+          out->ele_va(j + nr_nvirt, i) = rot->ele_va(j + nvirt_, i);
+          out->ele_va(j, i + nact_) = rot->ele_va(j, i + nact_);
+          out->ele_va(j + nr_nvirt, i + nact_) = rot->ele_va(j + nvirt_, i + nact_);
+        }
+      }
+    }
+  }
+  if (nclosed_ != 0) {
+    for (int i = 0; i != nact_;   ++i) {
+      for (int j = 0; j != nclosed_; ++j) {
+        out->ele_ca(j, i) = rot->ele_ca(j, i);
+        out->ele_ca(j + nclosed_, i) = rot->ele_ca(j + nclosed_, i);
+        out->ele_ca(j, i + nact_) = rot->ele_ca(j, i + nact_);
+        out->ele_ca(j + nclosed_, i + nact_) = rot->ele_ca(j + nclosed_, i + nact_);
+      }
+    }
+  }
+
+  return out;
+}
