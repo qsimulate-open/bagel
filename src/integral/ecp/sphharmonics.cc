@@ -66,7 +66,7 @@ SphHarmonics::SphHarmonics(const int l, const int m)
 double SphHarmonics::LegendrePolynomial(const double x) const {
 
   const int l = angular_momentum_[0];
-  const int m = fabs(angular_momentum_[1]);
+  const int m = abs(angular_momentum_[1]);
 
   if (m < 0 || m > l || fabs(x) > 1.0) throw std::runtime_error("SH: m must be in [0, l] and x in [-1, 1]");
   double pmm = 1.0;
@@ -103,9 +103,9 @@ complex<double> SphHarmonics::ylm() const {
   const int m = angular_momentum_[1];
 
   const double cth = cos(theta_);
-  if (fabs(m) > l) throw std::runtime_error ("SphHarmonics.ylm: |m| > l");
+  if (abs(m) > l) throw std::runtime_error ("SphHarmonics.ylm: |m| > l");
 
-  const int am = fabs(m);
+  const int am = abs(m);
   const double plm = LegendrePolynomial(cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
@@ -129,9 +129,9 @@ double SphHarmonics::zlm() const {
   const int m = angular_momentum_[1];
 
   const double cth = cos(theta_);
-  if (fabs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+  if (abs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
-  const int am = fabs(m);
+  const int am = abs(m);
   const double plm = LegendrePolynomial(cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
@@ -151,9 +151,9 @@ double SphHarmonics::zlm() const {
 double SphHarmonics::zlm(const int l, const int m) const {
 
   const double cth = cos(theta_);
-  if (fabs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+  if (abs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
-  const int am = fabs(m);
+  const int am = abs(m);
   const double plm = LegendrePolynomial(cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
@@ -181,7 +181,7 @@ void SphHarmonics::print() {
 
 double SphHarmonics::sph_to_USP(const int lx, const int ly) const {
 
-  const int am = fabs(angular_momentum_[1]);
+  const int am = abs(angular_momentum_[1]);
   const int j = (lx + ly - am) / 2;
   if ((lx + ly - am) % 2 != 0 || j < 0) {
     return 0.0;
