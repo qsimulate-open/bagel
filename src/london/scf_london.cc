@@ -42,8 +42,8 @@ ZMatrix diagonalize_real (ZMatrix in, double* eig) {
   double* data = check->data();
   for (int i=0; i!=size; i++) if (data[i]==0.0) real = false;
 
-//  if (real && !real) {
-  if (real == true) {
+  if (real && !real) {
+//  if (real == true) {
     shared_ptr<Matrix> intermediate = in.get_real_part();
     intermediate->diagonalize(eig);
     auto inter2 = std::make_shared<ZMatrix>(*intermediate, 1.0);
