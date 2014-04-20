@@ -25,34 +25,12 @@
 
 #include <src/london/scf_london.h>
 #include <src/prop/multipole.h>
-#include <src/london/zatomicdensities.h>
 #include <src/scf/atomicdensities.h>
 
 using namespace bagel;
 using namespace std;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
-
-// TODO get rid of this once the code works with a truly complex coefficient matrix
-ZMatrix diagonalize_real (ZMatrix in, double* eig) {
-
-  bool real = true;
-  shared_ptr<Matrix> check = in.get_imag_part();
-  const int size = check->ndim() * check->mdim();
-  double* data = check->data();
-  for (int i=0; i!=size; i++) if (data[i]==0.0) real = false;
-
-  if (real && !real) {
-//  if (real == true) {
-    shared_ptr<Matrix> intermediate = in.get_real_part();
-    intermediate->diagonalize(eig);
-    auto inter2 = std::make_shared<ZMatrix>(*intermediate, 1.0);
-    return *inter2;
-  } else {
-    in.diagonalize(eig);
-    return in;
-  }
-}
 
 
 SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re)
@@ -88,7 +66,6 @@ void SCF_London::compute() {
     if (coeff_ == nullptr) {
       shared_ptr<const DistZMatrix> fock = hcore;
       if (dodf_ && cgeom_->spherical()) {
-        auto caden = make_shared<const ZAtomicDensities>(cgeom_);
         auto aden = make_shared<const AtomicDensities>(cgeom_);
         auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
         auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, zaden, schwarz_);
@@ -97,8 +74,7 @@ void SCF_London::compute() {
       }
       // TODO Do you need the transpose conjugate of *tildex here?
       DistZMatrix intermediate = *tildex % *fock * *tildex;
-      intermediate = diagonalize_real(intermediate, eig()); // TODO make this work with a complex coeff_
-      // intermediate.diagonalize(eig());
+      intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
       //coeff->print("coeff, as first assigned", 20);
     } else {
@@ -204,8 +180,7 @@ void SCF_London::compute() {
     if (levelshift_)
       levelshift_->shift(intermediate);
 
-    intermediate = diagonalize_real(intermediate, eig()); // TODO make this work with a complex coeff_
-    // intermediate.diagonalize(eig());
+    intermediate.diagonalize(eig());
 
     //for (int i=0; i!=eig_.size(); i++) cout << "eigenvalue " << i << " = " << eig_[i] << endl;
 

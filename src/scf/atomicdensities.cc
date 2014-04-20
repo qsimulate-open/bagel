@@ -52,7 +52,6 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
       cout.rdbuf(ss.rdbuf());
-      cout.rdbuf(cout_orig); //TODO DO NOT KEEP THIS!!
 
       shared_ptr<PTree> geomop = make_shared<PTree>();
       const string basis = i->basis();
