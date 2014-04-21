@@ -52,7 +52,7 @@ class ECPBatch : public Integral {
     double* bkup_;
 
     int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
-    int amax_, amax1_, amin_, asize_;
+    int asize_;
     bool swap01_;
     size_t size_alloc_;
     unsigned int size_final_;

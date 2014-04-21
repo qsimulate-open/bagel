@@ -156,10 +156,6 @@ void ECPBatch::common_init() {
   prim1_ = basisinfo_[1]->num_primitive();
   cont1_ = basisinfo_[1]->num_contracted();
 
-  amax_ = ang0_ + ang1_;
-  amax1_ = amax_ + 1;
-  amin_ = ang0_;
-
   asize_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
   size_alloc_ = max(asize_ * prim0_ * prim1_, asize_ * cont0_ * cont1_);
 

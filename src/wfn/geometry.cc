@@ -149,6 +149,7 @@ void Geometry::common_init1() {
 
   for (auto& catom : atoms_) {
     nele_ += atommap_.atom_number(catom->name());
+    if (catom->use_ecp_basis()) nele_ -= catom->ecp_parameters()->ecp_ncore(); // valence electrons only
 
     int cc = 0;
     vector<int> coffsets;

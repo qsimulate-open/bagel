@@ -28,6 +28,9 @@
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
+#include <src/integral/rys/r0batch.h>
+#include <src/integral/rys/r1batch.h>
+#include <src/integral/rys/r2batch.h>
 #include <src/integral/ecp/ecpbatch.h>
 
 using namespace std;
@@ -50,10 +53,6 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  cout << "+++++ TEST ECP +++++" << endl;
-  ECPBatch ecp(input, mol);
-  ecp.compute();
-
   {
     KineticBatch kinetic(input);
     kinetic.compute();
@@ -66,6 +65,36 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
+#if 1
+  if (mol->atoms(0)->use_ecp_basis())
+  {
+    cout << "+++++ TEST ECP +++++" << endl;
+    cout << "R0..." << endl;
+    R0Batch r0(input, mol);
+    r0.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r0.data());
+
+    cout << "R1..." << endl;
+    R1Batch r1(input, mol);
+    r1.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r1.data());
+
+    cout << "R2..." << endl;
+    R2Batch r2(input, mol);
+    r2.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r2.data());
+
+    cout << "Angular..." << endl;
+    ECPBatch ecp(input, mol);
+    ecp.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecp.data());
+  }
+#endif
+
 
   if (mol->external()) {
     DipoleBatch dipole(input, mol);

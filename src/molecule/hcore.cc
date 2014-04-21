@@ -29,6 +29,10 @@
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/rys/r0batch.h>
+#include <src/integral/rys/r1batch.h>
+#include <src/integral/rys/r2batch.h>
+#include <src/integral/ecp/ecpbatch.h>
 #include <src/integral/libint/libint.h>
 
 using namespace std;
@@ -63,6 +67,36 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
+
+#if 1
+  if (mol->atoms(0)->use_ecp_basis())
+  {
+    cout << "+++++ TEST ECP +++++" << endl;
+    cout << "R0..." << endl;
+    R0Batch r0(input, mol);
+    r0.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r0.data());
+
+    cout << "R1..." << endl;
+    R1Batch r1(input, mol);
+    r1.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r1.data());
+
+    cout << "R2..." << endl;
+    R2Batch r2(input, mol);
+    r2.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r2.data());
+
+    cout << "Angular..." << endl;
+    ECPBatch ecp(input, mol);
+    ecp.compute();
+
+    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecp.data());
+  }
+#endif
 
   if (mol->has_finite_nucleus()) {
     auto dummy = make_shared<const Shell>(input[0]->spherical());
