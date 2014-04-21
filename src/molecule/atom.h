@@ -58,7 +58,7 @@ class Atom {
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
     // in : angular momentum (l), exponents (zeta_kl), coefficients (A_kl), powers of r (n_kl)
-    void construct_shells_ECP(std::vector<std::tuple<std::string, int, std::vector<double>,
+    void construct_shells_ECP(const int ncore, std::vector<std::tuple<std::string, std::vector<double>,
                               std::vector<double>, std::vector<int>>> in);
 
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
@@ -87,7 +87,7 @@ class Atom {
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
-                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP);
+                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::shared_ptr<const ECP> ecp_param);
 

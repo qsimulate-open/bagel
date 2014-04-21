@@ -35,13 +35,15 @@ namespace bagel {
 class ECP {
 
   protected:
+    int ecp_ncore_;
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp_;
     int ishell_maxl_;
     int maxl_;
     int nshell_;
 
   public:
-    ECP(std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp) : shells_ecp_(shells_ecp) {
+    ECP(const int ncore, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp)
+     : ecp_ncore_(ncore), shells_ecp_(shells_ecp) {
       get_shell_maxl_ecp();
     }
     ~ECP() {}
@@ -67,9 +69,13 @@ class ECP {
     std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const { return shells_ecp_[ishell_maxl_]; }
     const int maxl() const { return maxl_; }
 
+    const int ecp_ncore() const { return ecp_ncore_; }
+
     const int nshell() const { return nshell_; }
 
     void print() const {
+      std::cout << "+++ ECP Parameters +++" << std::endl;
+      std::cout << "Number of core electrons = " << ecp_ncore_ << std::endl;
       for (auto& i : shells_ecp_) std::cout << i->show() << std::endl;
     }
 

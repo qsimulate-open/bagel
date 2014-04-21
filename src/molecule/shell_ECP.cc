@@ -29,10 +29,10 @@
 using namespace std;
 using namespace bagel;
 
-Shell_ECP::Shell_ECP(const array<double,3>& _position, const int _ang, const int ncore,
+Shell_ECP::Shell_ECP(const array<double,3>& _position, const int _ang,
                      const std::vector<double>& _ecp_expo, const std::vector<double>& _ecp_coef,
                      const std::vector<int>& _ecp_r)
- : Shell_base(false, _position, _ang), ecp_ncore_(ncore),
+ : Shell_base(false, _position, _ang),
    ecp_exponents_(_ecp_expo), ecp_coefficients_(_ecp_coef), ecp_r_power_(_ecp_r) {}
 
 string Shell_ECP::show() const {
@@ -40,7 +40,6 @@ string Shell_ECP::show() const {
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
   ss << "ecp_angular: "  << angular_number_ << endl;
-  ss << "ecp_ecp_ncore: "  << ecp_ncore_ << endl;
   ss << "ecp_exponents: ";
   for (int i = 0; i != ecp_exponents_.size(); ++i) {
     ss << " " << ecp_exponents_[i];

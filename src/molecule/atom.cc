@@ -139,7 +139,7 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
     }
     const int ncore = ibas->get<int>("ncore");
     const shared_ptr<const PTree> core = ibas->get_child("core");
-    vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> basis_info;
+    vector<tuple<string, vector<double>, vector<double>, vector<int>>> basis_info;
 
     for (auto& ibcore : *core) {
 
@@ -162,10 +162,10 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
       for (auto& r : *r_p)
           r_power.push_back(lexical_cast<int>(r->data()));
 
-      basis_info.push_back(make_tuple(ang, ncore, exponents, coefficients, r_power));
+      basis_info.push_back(make_tuple(ang, exponents, coefficients, r_power));
     }
 
-    construct_shells_ECP(basis_info);
+    construct_shells_ECP(ncore, basis_info);
 
   }
 
@@ -185,8 +185,8 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 }
 
 Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell,
-                                              const vector<shared_ptr<const Shell_ECP>> shell_ECP)
-: name_(nm), shells_(shell), ecp_parameters_(make_shared<const ECP>(shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+                                              const vector<shared_ptr<const Shell_ECP>> shell_ECP, const int ncore)
+: name_(nm), shells_(shell), ecp_parameters_(make_shared<const ECP>(ncore, shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -372,22 +372,21 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
 }
 
-void Atom::construct_shells_ECP(vector<tuple<string, int, vector<double>, vector<double>, vector<int>>> in) {
+void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<double>, vector<double>, vector<int>>> in) {
 
   vector<shared_ptr<const Shell_ECP>> shells_ECP;
 
   for (auto& biter : in) {
     const int l = atommap_.angular_number(get<0>(biter));
-    const int ncore = get<1>(biter);
-    const vector<double> exponents = get<2>(biter);
-    const vector<double> coefficients = get<3>(biter);
-    const vector<int> r_power = get<4>(biter);
+    const vector<double> exponents = get<1>(biter);
+    const vector<double> coefficients = get<2>(biter);
+    const vector<int> r_power = get<3>(biter);
 
-    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , ncore, exponents, coefficients, r_power));
+    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , exponents, coefficients, r_power));
 
   }
 
-  ecp_parameters_ = make_shared<const ECP>(shells_ECP);
+  ecp_parameters_ = make_shared<const ECP>(ncore, shells_ECP);
 
 }
 
