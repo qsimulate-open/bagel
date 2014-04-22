@@ -3,7 +3,7 @@
 // Filename: rysintegral_impl.hpp
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Ryan Reynolds <ryanreynolds2018@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.

@@ -3,7 +3,7 @@
 // Filename: _complex_eriroot_1.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Ryan Reynolds <rreynoldschem@gmail.com>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.

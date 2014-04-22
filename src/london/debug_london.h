@@ -3,7 +3,7 @@
 // Filename: debug_london.h
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.

@@ -1,5 +1,5 @@
 //
-// Author:  Ryan Reynolds
+// Author:  Ryan D. Reynolds
 // Creation date:  July 29, 2013
 // Interpolation file for Rys Quadrature - Complex arguments
 //
@@ -549,7 +549,7 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
 // Filename: " + filename + "\n\
 // Copyright (C) 2013 Toru Shiozaki\n\
 //\n\
-// Author: Ryan Reynolds <rreynoldschem@gmail.com>\n\
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>\n\
 // Maintainer: Shiozaki group\n\
 //\n\
 // This file is part of the BAGEL package.\n\

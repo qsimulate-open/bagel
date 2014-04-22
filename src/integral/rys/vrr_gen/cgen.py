@@ -8,9 +8,9 @@ ss = "\
 //\n\
 // BAGEL - Parallel electron correlation program.\n\
 // Filename: " + filename + "\n\
-// Copyright (C) 2009 Toru Shiozaki\n\
+// Copyright (C) 2013 Toru Shiozaki\n\
 //\n\
-// Author: Ryan Reynolds <ryanreynolds2018@u.northwestern.edu>\n\
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>\n\
 // Maintainer: Shiozaki group\n\
 //\n\
 // This file is part of the BAGEL package.\n\

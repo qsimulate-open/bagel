@@ -1,6 +1,6 @@
 //
 // Filename: matrix_interface.h
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 //
 // The contents of this file are used to interface MixedBasis with the complex London integral codes.
 // It could conceivably be useful later on, but is intended as a crude patch to facilitate debugging.
