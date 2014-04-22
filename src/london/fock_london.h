@@ -209,7 +209,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                   //const int maxj0j2 = std::max(j0, j2);
                   //const int minj0j2 = std::min(j0, j2);
                   //const int minj0j2n = minj0j2 * ndim_;
-                  const int j2n = j2 * ndim_;
+                  //const int j2n = j2 * ndim_;
 
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     //const bool skipj2j3 = (j2 > j3);
@@ -224,8 +224,9 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     //std::complex<double> intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
                     //const std::complex<double> intval4 = 4.0 * intval;
 
+                    const int j3n = j3 * ndim_;
                     std::complex<double> intval = *eridata * 0.5; // 1/2 in the Hamiltonian absorbed here
-                    data_[j0n + j1] += density_data[j2n + j3] * intval * 2.0; // Coulomb
+                    data_[j0n + j1] += density_data[j3n + j2] * intval * 2.0; // Coulomb
                     data_[j0n + j3] -= density_data[j1n + j2] * intval;       // Exchange
 
                     //data_[j0n + j1] += density_data[j2n + j3] * intval4;
