@@ -46,6 +46,7 @@ static constexpr double PRIM_SCREEN_THRESH = 1.0e-12;
 *  Physical/Mathematical constants                          *
 ************************************************************/
 static constexpr double ang2bohr__ = 1.889725989;
+static constexpr double au2tesla__ = 235051.7464;
 static const double pi__ = std::atan(1.0)*4.0;
 static const double rad2deg__ = 180.0 / pi__;
 static constexpr double c__ = 137.0359996287515;
