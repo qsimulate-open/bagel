@@ -187,26 +187,21 @@ class DistMatrix_base {
         for (int j = 0; j != nblock; ++j)
           for (int id = 0; id != blocksize__; ++id) {
             DataType* c = local_.get()+j*blocksize__+localrow*(i*blocksize__+id);
-            auto x = vec[mypcol+i*mstride+id];
-            std::for_each(c, c+blocksize__, [&x](DataType& a) { a*= x; });
+            blas::scale_n(vec[mypcol+i*mstride+id], c, blocksize__);
           }
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
         for (int j = 0; j != nblock; ++j) {
           DataType* c = local_.get()+j*blocksize__+localrow*(mblock*blocksize__+id);
-          auto x = vec[mypcol+mblock*mstride+id];
-          std::for_each(c, c+blocksize__, [&x](DataType& a) { a*= x; });
+          blas::scale_n(vec[mypcol+mblock*mstride+id], c, blocksize__);
         }
-
         DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
-        auto x = vec[mypcol+mblock*mstride+id];
-        std::for_each(c, c+(localrow%blocksize__), [&x](DataType& a) { a*= x; });
+        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__); 
       }
       for (int i = 0; i != mblock; ++i)
         for (int id = 0; id != blocksize__; ++id) {
           DataType* c = local_.get()+nblock*blocksize__+localrow*(i*blocksize__+id);
-          auto x = vec[mypcol+i*mstride+id];
-          std::for_each(c, c+(localrow%blocksize__), [&x](DataType& a) { a*= x; });
+          blas::scale_n(vec[mypcol+i*mstride+id], c, localrow%blocksize__);
         }
     }
 
