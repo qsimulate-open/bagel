@@ -62,10 +62,10 @@ class SRBFGS {
     double level_shift_;
     double prev_level_shift_;
     const bool debug_;
-    const int hebden_iter_ = 10;
+    const int hebden_iter_ = 15;
     const int maxiter_ = 300;
     // default convergence parameters taken from JSY
-    const double rmin_ = 0.5;
+    const double rmin_ = 0.6;
     const double rgood_ = 0.85;
     const double alpha_ = 1.3;
 
@@ -525,6 +525,66 @@ class SRBFGS {
       prev_value_ = value;
 
       return acopy;
+    }
+
+
+    // More-Sorensen method to compute level shift and displacement as discussed in Erway arXiv:1212.1525
+    std::shared_ptr<T> more_sorensen_extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
+      // to be sure; inputs are copied
+      auto grad  = std::make_shared<T>(*_grad);
+      auto value  = std::make_shared<T>(*_value);
+
+      if (prev_value() == nullptr && trust_radius_ == 0.0) {
+        initiate_trust_radius(grad);
+      }
+
+      auto p = two_loop_inverse_hessian(grad);
+      p->scale(-1.0);
+      auto phat = p->clone();
+      double tshift = 0.0;
+
+      for (int k = 0; k != hebden_iter_; ++k) {
+        if (p->norm() <= trust_radius_) {
+          std::cout << " More-Sorensen converged in " << k << " iterations. " << std::endl;
+          std::cout << " Level Shift = " << tshift << std::endl;
+          std::cout << " Step Length = " << p->norm() << " | trust radius = " << trust_radius_ << std::endl;
+          break;
+        } else {
+          auto phi = 1.0 / p->norm() - 1.0 / trust_radius_;
+          auto shift = p->clone();
+          if (tshift < 1.0e-8) {
+            phat = two_loop_inverse_hessian(p);
+            phat->scale(-1.0);
+            tshift = 0.0;
+          } else {
+            shift->fill(tshift);
+            phat = level_shift_inverse_hessian(p, shift);
+            phat->scale(-1.0);
+          }
+          auto phiprime = detail::real(p->dot_product(phat));
+          phiprime /= -1.0 * pow(p->norm(), 3);
+          tshift = tshift - phi / phiprime;
+          if (tshift < 1.0e-8) {
+            p = two_loop_inverse_hessian(grad);
+            p->scale(-1.0);
+            tshift = 0.0;
+          } else {
+            shift->fill(tshift);
+            p = level_shift_inverse_hessian(grad, shift);
+            p->scale(-1.0);
+          }
+          if (k == hebden_iter_ - 1) {
+            std::cout << "+++ More-Sorensen extrapolate did NOT converge +++ " << std::endl;
+            assert(k != hebden_iter_);
+          }
+        }
+      }
+      level_shift_ = tshift;
+      prev_level_shift_ = level_shift_;
+      prev_value_ = value;
+      prev_grad_ = grad;
+
+      return p;
     }
 
 
