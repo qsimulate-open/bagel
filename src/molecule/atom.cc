@@ -48,7 +48,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
   position_ = inp->get_array<double,3>("xyz");
 
-  for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
+  for (auto& i : position_) i /= angstrom ? au2angstrom__ : 1.0;
 
   vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
   vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);

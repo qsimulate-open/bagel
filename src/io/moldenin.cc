@@ -168,7 +168,7 @@ void MoldenIn::read() {
       boost::regex ang_re("Angs");
       boost::regex atoms_line("(\\w{1,2})\\s+\\d+\\s+\\d+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
 
-      scale = boost::regex_search(line, ang_re) ? ang2bohr__ : 1.0;
+      scale = boost::regex_search(line, ang_re) ? (1.0/au2angstrom__) : 1.0;
 
       getline(ifs, line);
       while (!boost::regex_search(line, other_re) && !ifs.eof()) {
