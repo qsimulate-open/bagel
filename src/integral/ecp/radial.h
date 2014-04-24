@@ -29,6 +29,8 @@
 
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 #include <src/util/constants.h>
 
 namespace bagel {
@@ -73,7 +75,9 @@ class RadialInt {
         }
         const double error = ans - previous;
         if (print_intermediate_)
-           std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
+           std::cout << "Iter = " << std::setw(5) << iter << std::setw(10) << "npts = " << std::setw(10) << ngrid
+                     << std::setw(10) << "ans = " << std::setw(20) << std::setprecision(10) << ans
+                     << std::setw(10) << "err = " << std::setw(20) << std::setprecision(10) << error << std::endl;
         if (fabs(error) < thresh_int_ && iter != 0) {
           if (print_intermediate_) {
             std::cout << "Integration converged..." << std::endl;

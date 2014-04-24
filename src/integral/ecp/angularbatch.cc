@@ -108,7 +108,7 @@ double AngularBatch::integrate2SH1USP(const std::pair<int, int> lm1, const std::
   for (int i = 0; i != n1; ++i) {
     for (int j = n1; j != n1 + n2; ++j) {
       const double coeff = usp[i].first * usp[j].first;
-      array<int, 3> ki;
+      array<int, 3> ki = {0, 0, 0};
       int id = usp[i].second;
       int kz = 0;
       for (int lp1 = lm1.first + 1; lp1 != 0; --lp1) {
@@ -122,7 +122,7 @@ double AngularBatch::integrate2SH1USP(const std::pair<int, int> lm1, const std::
           id -= lp1;
         }
       }
-      array<int, 3> kj;
+      array<int, 3> kj = {0, 0, 0};
       id = usp[j].second;
       kz = 0;
       for (int lp1 = lm2.first + 1; lp1 != 0; --lp1) {

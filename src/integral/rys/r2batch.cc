@@ -49,7 +49,7 @@ void R2Batch::compute_ssss(const double integral_thresh) {
         const shared_ptr<const Shell_ECP> shell_ecp = (*aiter)->ecp_parameters()->shell_maxl_ecp();
         for (int i = 0; i != shell_ecp->ecp_exponents().size(); ++i) {
           int necp = 0;
-          if (shell_ecp->ecp_r_power(i) == 1) {
+          if (shell_ecp->ecp_r_power(i) == 2) {
             double zeta = shell_ecp->ecp_exponents(i);
             const double cxp = *expi0 + *expi1;
             const double socxp = cxp + zeta;
