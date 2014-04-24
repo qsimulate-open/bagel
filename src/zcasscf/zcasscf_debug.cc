@@ -539,14 +539,13 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr
 
   // get energy
   if (nact_) {
-    micro_energy_.push_back((fci_->energy())[0]);
+    micro_energy_ = (fci_->energy())[0];
   } else {
     assert(nstate_ == 1);
-    micro_energy_.resize(iter+1);
-    micro_energy_[iter] = geom_->nuclear_repulsion();
+    micro_energy_ = geom_->nuclear_repulsion();
     auto mo = make_shared<ZMatrix>(*coeff % (*cfockao+*hcore) * *coeff);
     for (int i = 0; i != nclosed_*2; ++i)
-      micro_energy_[iter] += 0.5*mo->element(i,i).real();
+      micro_energy_ += 0.5*mo->element(i,i).real();
   }
 
   // compute orbital gradients

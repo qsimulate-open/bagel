@@ -75,7 +75,7 @@ class ZCASSCF : public Method {
 
     // energy
     std::vector<double> energy_;
-    std::vector<double> micro_energy_;
+    double micro_energy_;
 
     // internal function
     void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
