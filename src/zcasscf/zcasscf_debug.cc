@@ -503,15 +503,14 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
 
 shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore, int iter) {
 
+shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore) {
   // first perform CASCI to obtain RDMs
   if (nact_) {
-    mute_stdcout(/*fci*/true);
-    if (iter) fci_->update(coeff);
+    fci_->update(coeff);
     cout << " Executing FCI calculation " << endl;
     fci_->compute();
     cout << " Computing RDMs from FCI calculation " << endl;
     fci_->compute_rdm12();
-    resume_stdcout();
   }
 
   // calculate 1RDM in an original basis set
@@ -556,4 +555,61 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr
   *grad *= 2.0;
 
   return grad;
+}
+
+
+double ZCASSCF::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZRotFile> delta, shared_ptr<const ZMatrix> hcore) {
+  // choose initial scaling parameter
+  double alpha = 1.0;
+  double c1    = 1.0e-4;
+  double c2    = 0.1;
+
+  // begin micro iterations to find step length
+  shared_ptr<ZMatrix> newcoeff;
+  for (int k = 0; k != 10; ++k) {
+    // compute rotated coefficients
+    newcoeff = make_shared<ZMatrix>(*coeff_);
+    {
+      auto tdelta = delta->copy();
+      tdelta->scale(alpha);
+      shared_ptr<ZMatrix> amat = tdelta->unpack<ZMatrix>();
+      // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
+      *amat *= 1.0 * complex<double>(0.0, -1.0);
+      // restore the matrix from RotFile
+      unique_ptr<double[]> teig(new double[amat->ndim()]);
+      amat->diagonalize(teig.get());
+      auto amat_sav = amat->copy();
+      for (int i = 0; i != amat->ndim(); ++i) {
+        complex<double> ex = exp(complex<double>(0.0, teig[i]));
+        for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+      }
+      auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+      *newcoeff *= *expa;
+    }
+
+    auto newgrad = ___debug___compute_energy_and_gradients(newcoeff, hcore);
+
+    // check wolfe conditions
+    bool sufficient_decrease = false;
+    bool curvature_condition = false;
+    auto rho = detail::real(delta->dot_product(grad));
+    if (micro_energy_ <= energy_.back() + c1 * alpha * rho)
+      sufficient_decrease = true;
+    if (fabs(detail::real(delta->dot_product(newgrad))) <= c2 * fabs(rho))
+      curvature_condition = true;
+    
+    if (sufficient_decrease && curvature_condition) {
+      cout << " Line search converged in " << k << " iterations " << endl;
+      break;
+    } else {
+      cout << " end line search iteration " << k << endl;
+      if (!curvature_condition && sufficient_decrease) {
+        alpha *= 1.25;
+      } else {
+        alpha /= 1.35;
+      }
+    }
+  }
+  
+  return alpha;
 }

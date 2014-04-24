@@ -156,7 +156,9 @@ class ZCASSCF : public Method {
     // returns matrix of orbital rotation parameters
     std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
     // function to compute energy and gradient of a given coeff
-    std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> hcore, int iter);
+    std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> hcore);
+    // line search function specific to ZCAS
+    double  ___debug___line_search(std::shared_ptr<ZRotFile> grad, std::shared_ptr<ZRotFile> delta, std::shared_ptr<const ZMatrix> hcore);
 };
 
 }
