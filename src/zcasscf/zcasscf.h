@@ -75,6 +75,7 @@ class ZCASSCF : public Method {
 
     // energy
     std::vector<double> energy_;
+    std::vector<double> micro_energy_;
 
     // internal function
     void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
@@ -154,6 +155,8 @@ class ZCASSCF : public Method {
     double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
     // returns matrix of orbital rotation parameters
     std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
+    // function to compute energy and gradient of a given coeff
+    std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> hcore, int iter);
 };
 
 }

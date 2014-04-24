@@ -155,7 +155,7 @@ void ZCASSCF::compute() {
       kramers_adapt(a);
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
 
-    const double gradient = amat->rms();
+    const double gradient = grad->rms();
 
     // multiply -1 from the formula. multiply -i to make amat hermite (will be compensated)
     *amat *= -1.0 * complex<double>(0.0, -1.0);

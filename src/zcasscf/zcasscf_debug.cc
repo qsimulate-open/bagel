@@ -24,6 +24,7 @@
 //
 
 #include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zqvec.h>
 #include <src/smith/prim_op.h>
 
 using namespace std;
@@ -497,4 +498,63 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
       }
     }
     return acopy;
+}
+
+
+shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore, int iter) {
+
+  // first perform CASCI to obtain RDMs
+  if (nact_) {
+    mute_stdcout(/*fci*/true);
+    if (iter) fci_->update(coeff);
+    cout << " Executing FCI calculation " << endl;
+    fci_->compute();
+    cout << " Computing RDMs from FCI calculation " << endl;
+    fci_->compute_rdm12();
+    resume_stdcout();
+  }
+
+  // calculate 1RDM in an original basis set
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+
+  // closed Fock operator
+  shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
+  shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff % *cfockao * *coeff);
+
+  // active Fock operator
+  shared_ptr<const ZMatrix> afock;
+  if (nact_) {
+    shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
+    afock = make_shared<ZMatrix>(*coeff % *afockao * *coeff);
+  } else {
+    afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
+  }
+  assert(coeff->mdim()== nbasis_*2);
+
+  // qvec
+  shared_ptr<const ZMatrix> qvec;
+  if (nact_) {
+    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff, nclosed_, fci_, gaunt_, breit_);
+  }
+
+  // get energy
+  if (nact_) {
+    micro_energy_.push_back((fci_->energy())[0]);
+  } else {
+    assert(nstate_ == 1);
+    micro_energy_.resize(iter+1);
+    micro_energy_[iter] = geom_->nuclear_repulsion();
+    auto mo = make_shared<ZMatrix>(*coeff % (*cfockao+*hcore) * *coeff);
+    for (int i = 0; i != nclosed_*2; ++i)
+      micro_energy_[iter] += 0.5*mo->element(i,i).real();
+  }
+
+  // compute orbital gradients
+  shared_ptr<ZRotFile> grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+  grad_vc(cfock, afock, grad);
+  grad_va(cfock, qvec, rdm1, grad);
+  grad_ca(cfock, afock, qvec, rdm1, grad);
+  *grad *= 2.0;
+
+  return grad;
 }
