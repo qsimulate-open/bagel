@@ -117,7 +117,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
         }
       }
       const int ij = i * size + j;
-      const int ji = i * size + j;
+      const int ji = j * size + i;
       max_density_change[ij] = cmax;
       max_density_change[ji] = cmax;
     }
@@ -182,9 +182,9 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
             const double mulfactor = std::max(std::max(std::max(density_change_01, density_change_02),
                                              std::max(density_change_12, density_change_23)),
                                              std::max(density_change_03, density_change_13));
-            //const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
-            //const bool skip_schwarz = integral_bound < schwarz_thresh_;
-            //if (skip_schwarz) continue;
+            const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
+            const bool skip_schwarz = integral_bound < schwarz_thresh_;
+            if (skip_schwarz) continue;
 
             std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
             ComplexERIBatch eribatch(input, mulfactor);
