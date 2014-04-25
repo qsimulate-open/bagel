@@ -47,13 +47,11 @@ class Fock_London : public Fock_base_London {
 
   private:
     // serialization
-    /*
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Fock_base_London>(*this) & store_half_;
     }
-    */
 
   public:
     Fock_London() { }
@@ -62,11 +60,8 @@ class Fock_London : public Fock_base_London {
     Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
          const std::shared_ptr<const ZMatrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base_London(a,b,c), store_half_(store) {
-      //this->print("Fock Matrix, part 0", 20);
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
-      //this->print("Fock Matrix, part 1", 20);
       fock_one_electron_part();
-      //this->print("Fock Matrix, part 2", 20);
     }
 
     // Fock operator
@@ -181,15 +176,15 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
             const int b3offset = offset[i3];
             const int b3size = b3->nbasis();
 
+            if ((b0offset + b0size + b1offset + b1size) < (b2offset + b3offset)) continue;
+            if ((b0offset + b0size + b2offset + b2size) < (b1offset + b3offset)) continue;
+
             const double mulfactor = std::max(std::max(std::max(density_change_01, density_change_02),
                                              std::max(density_change_12, density_change_23)),
                                              std::max(density_change_03, density_change_13));
-            const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
-            const bool skip_schwarz = integral_bound < schwarz_thresh_;
-            if (skip_schwarz) continue;
-
-            if ((b0offset + b0size + b1offset + b1size) < (b2offset + b3offset)) continue;
-            if ((b0offset + b0size + b2offset + b2size) < (b1offset + b3offset)) continue;
+            //const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
+            //const bool skip_schwarz = integral_bound < schwarz_thresh_;
+            //if (skip_schwarz) continue;
 
             std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
             ComplexERIBatch eribatch(input, mulfactor);
@@ -311,11 +306,10 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
-    //TODO For initial guess - put these back in
-    //*this += *half->form_2index(half, -0.5);
+    *this += *half->form_2index(half, -0.5);
     pdebug.tick_print("Exchange build");
 
-    //*this += *df->compute_Jop(density_);
+    *this += *df->compute_Jop(density_);
     pdebug.tick_print("Coulomb build");
   }
 
@@ -336,7 +330,6 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
     std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
-    // Multiply by (i|j)^(-1) ???
     std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
@@ -350,14 +343,12 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);
-      assert(0);
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
     *this += *df->compute_Jop(density_);
-    assert(0);
   }
   pdebug.tick_print("Coulomb build");
 #endif
@@ -369,8 +360,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
 extern template class bagel::Fock_London<0>;
 extern template class bagel::Fock_London<1>;
 
-//#include <src/util/archive.h>
-//BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<0>)
-//BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<1>)
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<0>)
+BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<1>)
 
 #endif
