@@ -47,11 +47,13 @@ class Fock_London : public Fock_base_London {
 
   private:
     // serialization
+    /*
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Fock_base_London>(*this) & store_half_;
     }
+    */
 
   public:
     Fock_London() { }
@@ -60,8 +62,11 @@ class Fock_London : public Fock_base_London {
     Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
          const std::shared_ptr<const ZMatrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base_London(a,b,c), store_half_(store) {
+      //this->print("Fock Matrix, part 0", 20);
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
+      //this->print("Fock Matrix, part 1", 20);
       fock_one_electron_part();
+      //this->print("Fock Matrix, part 2", 20);
     }
 
     // Fock operator
@@ -160,7 +165,8 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 
           for (int i3 = 0; i3 != size; ++i3) {
           //for (int i3 = i2; i3 != size; ++i3) {
-            //const unsigned int i23 = i2 * size + i3;
+            const unsigned int i23 = i2 * size + i3;
+            //if (i23 < i01) std::cout << "about to skip block " << i0 << " " << i1 << " " << i2 << " " << i3 << std::endl;
             //if (i23 < i01) continue;
             //int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
             //if (ijkl == 0) continue;
@@ -178,9 +184,12 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
             const double mulfactor = std::max(std::max(std::max(density_change_01, density_change_02),
                                              std::max(density_change_12, density_change_23)),
                                              std::max(density_change_03, density_change_13));
-            //const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
-            //const bool skip_schwarz = integral_bound < schwarz_thresh_;
-            //if (skip_schwarz) continue;
+            const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
+            const bool skip_schwarz = integral_bound < schwarz_thresh_;
+            if (skip_schwarz) continue;
+
+            if ((b0offset + b0size + b1offset + b1size) < (b2offset + b3offset)) continue;
+            if ((b0offset + b0size + b2offset + b2size) < (b1offset + b3offset)) continue;
 
             std::array<std::shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
             ComplexERIBatch eribatch(input, mulfactor);
@@ -209,7 +218,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                   //const int maxj0j2 = std::max(j0, j2);
                   //const int minj0j2 = std::min(j0, j2);
                   //const int minj0j2n = minj0j2 * ndim_;
-                  //const int j2n = j2 * ndim_;
+                  const int j2n = j2 * ndim_;
 
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     //const bool skipj2j3 = (j2 > j3);
@@ -226,8 +235,24 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 
                     const int j3n = j3 * ndim_;
                     std::complex<double> intval = *eridata * 0.5; // 1/2 in the Hamiltonian absorbed here
-                    data_[j0n + j1] += density_data[j3n + j2] * intval * 2.0; // Coulomb
-                    data_[j0n + j3] -= density_data[j1n + j2] * intval;       // Exchange
+
+                    if (j0 + j1 <  j2 + j3) continue;
+                    if (j0 + j2 <  j1 + j3) continue;
+                    if (j0 + j1 == j2 + j3) intval *= 0.5;
+                    if (j0 + j2 == j1 + j3) intval *= 0.5;
+                    const std::complex<double> intval2 = intval * 2.0;
+
+                    data_[j0n + j1] += density_data[j3n + j2] * intval2; // Coulomb  (ab|cd)
+                    data_[j0n + j3] -= density_data[j1n + j2] * intval;  // Exchange (ad|cb)
+
+                    data_[j2n + j3] += density_data[j1n + j0] * intval2; // Coulomb  (cd|ab)
+                    data_[j2n + j1] -= density_data[j3n + j0] * intval;  // Exchange (cb|ad)
+
+                    data_[j1n + j0] += density_data[j2n + j3] * std::conj(intval2); // Coulomb  (ba|dc)
+                    data_[j3n + j0] -= density_data[j2n + j1] * std::conj(intval);  // Exchange (da|bc)
+
+                    data_[j3n + j2] += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
+                    data_[j1n + j2] -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
 
                     //data_[j0n + j1] += density_data[j2n + j3] * intval4;
                     //data_[j2n + j3] += density_data[j0n + j1] * intval4;
@@ -235,6 +260,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     //data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
                     //data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
                     //data_[minj1j3 * ndim_ + maxj1j3] -= density_data[j0n + j2] * intval;
+
                   }
                 }
               }
@@ -285,10 +311,11 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
-    *this += *half->form_2index(half, -0.5);
+    //TODO For initial guess - put these back in
+    //*this += *half->form_2index(half, -0.5);
     pdebug.tick_print("Exchange build");
 
-    *this += *df->compute_Jop(density_);
+    //*this += *df->compute_Jop(density_);
     pdebug.tick_print("Coulomb build");
   }
 
@@ -309,6 +336,7 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
     std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
+    // Multiply by (i|j)^(-1) ???
     std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
@@ -322,12 +350,14 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);
+      assert(0);
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
     *this += *df->compute_Jop(density_);
+    assert(0);
   }
   pdebug.tick_print("Coulomb build");
 #endif
@@ -339,8 +369,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
 extern template class bagel::Fock_London<0>;
 extern template class bagel::Fock_London<1>;
 
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<0>)
-BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<1>)
+//#include <src/util/archive.h>
+//BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<0>)
+//BOOST_CLASS_EXPORT_KEY(bagel::Fock_London<1>)
 
 #endif
