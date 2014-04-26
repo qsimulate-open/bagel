@@ -219,8 +219,14 @@ void DFBlock_London::shell_boundary() {
 }
 
 
-shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatrix> cmat, const bool trans) const {
+shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatrix> cmat2, const bool trans) const {
+  /*****/
+  shared_ptr<const ZMatrix> intermediate = cmat2->transpose();
+  shared_ptr<const ZMatrix> cmat = intermediate->transpose_conjg();
+  /*****/
+
   assert(trans ? cmat->mdim() : cmat->ndim() == b1size_);
+
   const complex<double>* const c = cmat->data();
   const int nocc = trans ? cmat->ndim() : cmat->mdim();
 
