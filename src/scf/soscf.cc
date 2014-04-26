@@ -106,7 +106,14 @@ void SOSCF::initial_guess() {
 }
 
 void SOSCF::compute() {
+  Timer scftime;
   initial_guess();
+
+  cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
+  scftime.tick_print("SOSCF startup");
+  cout << endl;
+  cout << indent << "=== SOSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
   DIIS<Matrix> diis(diis_size_);
 
@@ -117,7 +124,8 @@ void SOSCF::compute() {
                                                   *sooverlap_ * *aodensity_ * *sofock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       break;

@@ -49,8 +49,7 @@ void R1Batch::compute_ssss(const double integral_thresh) {
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
         const shared_ptr<const Shell_ECP> shell_ecp = (*aiter)->ecp_parameters()->shell_maxl_ecp();
         for (int i = 0; i != shell_ecp->ecp_exponents().size(); ++i) {
-          int necp = 0;
-          if (shell_ecp->ecp_r_power(i) == 1) {
+          if (abs(shell_ecp->ecp_r_power(i) - 2) == 1) {
             double zeta = shell_ecp->ecp_exponents(i);
             const double cxp = *expi0 + *expi1;
             const double socxp = cxp + zeta;
@@ -73,12 +72,11 @@ void R1Batch::compute_ssss(const double integral_thresh) {
               T_[index] = T;
               screening_[screening_size_] = index;
               ++screening_size_;
-              indexecp_.push_back(make_pair(iatom, necp));
+              indexecp_.push_back(make_pair(iatom, i));
             } else {
               T_[index] = -1.0;
               coeff_[index] = 0.0;
             }
-            ++necp;
             ++index;
           }
         }

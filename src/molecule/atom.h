@@ -40,6 +40,7 @@ class Atom {
     std::string name_;
     std::array<double,3> position_;
     std::vector<std::shared_ptr<const Shell>> shells_;
+    bool use_ecp_basis_;
     std::shared_ptr<const ECP> ecp_parameters_;
     int atom_number_;
     double atom_charge_;
@@ -49,10 +50,6 @@ class Atom {
 
     // basis set
     std::string basis_;
-
-    // effective core potential (0 = zeta, 1 = coef)
-    std::array<double,2> ecp_;
-    bool use_ecp_basis_;
 
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
@@ -74,7 +71,7 @@ class Atom {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_ & ecp_;
+      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_;
     }
 
   public:
@@ -123,10 +120,6 @@ class Atom {
     void print() const;
 
     bool operator==(const Atom&) const;
-
-    // effective core potential
-    bool ecp() const { return ecp(0) != 0.0 || ecp(1) != 0.0; }
-    double ecp(const int i) const { return ecp_[i]; }
 
     // distance between this and other
     double distance(const std::array<double,3>& o) const;

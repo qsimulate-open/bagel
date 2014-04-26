@@ -211,7 +211,7 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
          const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
          const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
          ans += ishecp->ecp_coefficients(index) * projA *
-                std::pow(r, -ishecp->ecp_r_power(index)) * std::exp(-exponents * r * r) * r * r * projC;
+                pow(r, ishecp->ecp_r_power(index) - 2) * exp(-exponents * r * r) * r * r * projC;
          ++index;
        }
      }

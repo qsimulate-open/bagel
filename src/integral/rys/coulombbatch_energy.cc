@@ -79,13 +79,13 @@ void CoulombBatch_energy::compute() {
     const double* cweights = weights_ + i * rank_;
     for (int r = 0; r != rank_; ++r) {
       double zeta = 1.0;
-      double c = 0.0;
+      double ecp_coef = 0.0;
       if (! indexecp_.empty()) {
         zeta = mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_exponents(indexecp_[xj].second);
-        c = mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_coefficients(indexecp_[xj].second);
+        ecp_coef = mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_coefficients(indexecp_[xj].second);
       }
       const double sroot = scale_root(croots[r], xp_[i], zeta);
-      const double sweight = scale_weight(cweights[r], c);
+      const double sweight = scale_weight(cweights[r], ecp_coef);
       r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * sroot;
       r1y[r] = P_[i * 3 + 1] - Ay - (P_[i * 3 + 1] - mol_->atoms(iatom)->position(1) - disp[1]) * sroot;
       r1z[r] = P_[i * 3 + 2] - Az - (P_[i * 3 + 2] - mol_->atoms(iatom)->position(2) - disp[2]) * sroot;
