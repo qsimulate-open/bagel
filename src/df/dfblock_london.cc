@@ -221,6 +221,7 @@ void DFBlock_London::shell_boundary() {
 
 shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatrix> cmat2, const bool trans) const {
   /*****/
+  // We need the conjugate of the coefficient here, because we're transforming the index in the bra.  This should not be needed for transform_third
   shared_ptr<const ZMatrix> intermediate = cmat2->transpose();
   shared_ptr<const ZMatrix> cmat = intermediate->transpose_conjg();
   /*****/
@@ -499,7 +500,7 @@ unique_ptr<complex<double>[]> DFBlock_London::form_vec(const shared_ptr<const ZM
 
 shared_ptr<ZMatrix> DFBlock_London::form_mat(const complex<double>* fit) const {
   auto out = make_shared<ZMatrix>(b1size_,b2size_);
-  zgemv_("C", asize_, b1size_*b2size_, zone, data_.get(), asize_, fit, 1, znil, out->data(), 1);
+  zgemv_("T", asize_, b1size_*b2size_, zone, data_.get(), asize_, fit, 1, znil, out->data(), 1);
   return out;
 }
 
