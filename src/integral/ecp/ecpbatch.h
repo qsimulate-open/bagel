@@ -49,10 +49,9 @@ class ECPBatch : public Integral {
     bool spherical_;
 
     double* data_;
-    double* bkup_;
 
     int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
-    int asize_;
+    int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
     bool swap01_;
     size_t size_alloc_;
     unsigned int size_final_;

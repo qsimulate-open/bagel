@@ -25,13 +25,14 @@
 
 
 #include <src/math/bessel.h>
+#include <src/math/algo.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
 
 using namespace bagel;
 using namespace std;
 
-double AngularBatch::integrate3SHs(std::array<std::pair<int, int>, 3> lm) const {
+double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
 
   const int l1 = lm[0].first;
   const int l2 = lm[1].first;
@@ -63,7 +64,7 @@ double AngularBatch::integrate3USP(array<int, 3> xyz_exponents) const {
 
 }
 
-double AngularBatch::integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const {
+double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, int> lm2, const array<int, 3> ijk) const {
 
   vector<pair<double, int>> usp;
 
@@ -191,6 +192,13 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
     }
   }
 
+#if 0
+  if (ans * 4.0 * pi__ * exponential != 0) {
+  print_one_centre(posA, lxyz, expA, posB, lm, r);
+  cout << " ++++ DEBUG : ans = " << ans * 4.0 * pi__ * exponential << endl;
+  }
+#endif
+
   return ans * 4.0 * pi__ * exponential;
 
 }
@@ -224,17 +232,7 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
 
 double AngularBatch::compute(const double r) {
 
-  const vector<double> expA = basisinfo_[0]->exponents();
-  const vector<double> expC = basisinfo_[1]->exponents();
-
-  double ans = 0.0;
-
-  for (auto& expiA : expA) {
-    for (auto& expiC : expC)
-    ans += project_many_centres(expiA, expiC, r);
-  }
-
-  return ans;
+  return project_many_centres(exp0_, exp1_, r);
 
 }
 

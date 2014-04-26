@@ -61,8 +61,9 @@ void ECPBatch::compute() {
   const SortList sort(spherical_);
 
   fill_n(data_, size_alloc_, zero);
-  double* current_data = &data_[0];
-  bkup_ = stack_save_;
+  double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
+  double* current_data = &intermediate_p[0];
+
 
   for (auto& aiter : mol_->atoms()) {
     shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
@@ -76,39 +77,55 @@ void ECPBatch::compute() {
           for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
             const int ixC = ang1_ - izC - iyC;
             const array<int, 3> lC = {izC, iyC, ixC};
-            RadialInt<AngularBatch, const shared_ptr<const ECP>, const array<shared_ptr<const Shell>,2>&, const array<int, 3>, const array<int, 3>>
-                              radint(aiter_ecp, basisinfo_, lA, lC, false, max_iter_, integral_thresh_);
-            current_data[index] = radint.integral();
-            ++index;
+            for (auto& ieA : basisinfo_[0]->exponents()) {
+              for (auto& ieC : basisinfo_[1]->exponents()) {
+                RadialInt<AngularBatch, const shared_ptr<const ECP>, const array<shared_ptr<const Shell>,2>&, const double, const double, const array<int, 3>, const array<int, 3>>
+                              radint(aiter_ecp, basisinfo_, ieA, ieC, lA, lC, true, max_iter_, integral_thresh_);
+
+                current_data[index] = radint.integral();
+                ++index;
+              }
+            }
           }
         }
       }
     }
   }
 
+#if 1
+  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
+
   {
-    perform_contraction(asize_, data_, prim0_, prim1_, bkup_,
+    perform_contraction(asize_, intermediate_p, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
   }
-  copy(bkup_, bkup_ + size_alloc_, data_);
+
+#endif
+
+  double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
+  const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
+  copy_n(intermediate_c, array_size, intermediate_fi);
 
   if (spherical_) {
-    const int carsphindex = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
+    double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
+    const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
     const int nloops = cont0_ * cont1_;
-    carsphlist.carsphfunc_call(carsphindex, nloops, data_, bkup_);
-  }
+    carsphlist.carsphfunc_call(carsph_index, nloops, intermediate_fi, intermediate_i);
 
-  if (spherical_) {
-    const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort.sortfunc_call(index, data_, bkup_, cont1_, cont0_, 1, swap01_);
+    const static SortList sort(true);
+    const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
+    sort.sortfunc_call(sort_index, data_, intermediate_i, cont1_, cont0_, 1, swap01_);
+    stack_->release(cont0_ * cont1_ * asize_final_, intermediate_i);
   } else {
-    const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
-    sort.sortfunc_call(index, bkup_, data_, cont1_, cont0_, 1, swap01_);
-    copy(bkup_, bkup_ + size_final_, data_);
+    const static SortList sort(false);
+    const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
+    sort.sortfunc_call(sort_index, data_, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(size_alloc_, stack_save_);
+  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+  stack_->release(cont0_*cont1_*asize_, intermediate_c);
+  stack_->release(prim0_*prim1_*asize_, intermediate_p);
 
 }
 
@@ -156,13 +173,23 @@ void ECPBatch::common_init() {
   prim1_ = basisinfo_[1]->num_primitive();
   cont1_ = basisinfo_[1]->num_contracted();
 
+  amax_ = ang0_ + ang1_;
+  amax1_ = amax_ + 1;
+  amin_ = ang0_;
+
+  asize_ = 0;
+  for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
+  asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
+  asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
+               * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
+
   asize_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
-  size_alloc_ = max(asize_ * prim0_ * prim1_, asize_ * cont0_ * cont1_);
+  size_alloc_ = prim0_ * prim1_ * std::max(asize_intermediate_, asize_);
 
   const int asize_sph = spherical_ ? (2 * ang0_ + 1) * (2 * ang1_ + 1) : asize_;
   size_final_ = asize_sph * cont0_ * cont1_;
 
-  stack_save_ = stack_->template get<double>(size_alloc_);
+  stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;
 
 }
