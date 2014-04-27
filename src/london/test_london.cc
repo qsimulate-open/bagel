@@ -63,6 +63,7 @@ BOOST_AUTO_TEST_SUITE(TEST_LONDON)
 
 BOOST_AUTO_TEST_CASE(LONDON) {
   BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),     -99.70397733));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),   -99.70391005));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
