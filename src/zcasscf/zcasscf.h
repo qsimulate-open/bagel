@@ -59,6 +59,7 @@ class ZCASSCF : public Method {
     int max_micro_iter_;
 
     std::shared_ptr<const ZMatrix> coeff_;
+    std::shared_ptr<const Matrix>  nr_coeff_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;

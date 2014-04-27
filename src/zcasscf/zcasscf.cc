@@ -33,7 +33,11 @@ using namespace bagel;
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
 
-  if (!ref_) {
+  if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
+    nr_coeff_ = ref->coeff();
+  }
+// relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
+  {
     auto idata_tmp = make_shared<PTree>(*idata_);
     const int ctmp = idata_->get<int>("charge", 0);
     const int nele = geom->nele();

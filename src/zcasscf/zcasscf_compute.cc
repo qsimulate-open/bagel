@@ -81,20 +81,29 @@ void ZCASSCF::compute() {
       for (int i = 0; i != nocc_*2+nvirtnr*2; ++i)
         blas::scale_n(1.0/sqrt(diag[i]), ctmp->element_ptr(0, i), n*4);
     }
-// hcore coefficients
-    auto hct = make_shared<ZMatrix>(*s12 % *hcore * *s12);
-    unique_ptr<double[]> eig(new double[hcore->ndim()]);
-    hct->diagonalize(eig.get());
-    auto hc_coeff = make_shared<ZMatrix>(*s12 * *hct);
+
+// kramers restricted coefficients
+    auto kcoeff = coeff_->clone();
+    int m2 = coeff_->mdim()/2;
+    for (int j=0; j!=nneg_/2; ++j) {
+      kcoeff->copy_block(0,   j*2, coeff_->ndim(), 1, coeff_->slice(   nocc_+nvirtnr + j,    nocc_+nvirtnr + j+1)->data());
+      kcoeff->copy_block(0, j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+nocc_+nvirtnr + j, m2+nocc_+nvirtnr + j+1)->data());
+    }
+    for (int j=0; j!=nocc_+nvirtnr; ++j) {
+      kcoeff->copy_block(0,   m2+j*2, coeff_->ndim(), 1, coeff_->slice( j, j+1)->data());
+      kcoeff->copy_block(0, m2+j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+j, m2+j+1)->data());
+    }
 // form overlap between non-rel and rel
-    auto ftmp = make_shared<ZMatrix>(*(ctmp->slice(0,nocc_*2+nvirtnr*2)) % *overlap * *hc_coeff);
+    auto ftmp = make_shared<ZMatrix>(*(ctmp->slice(0,nocc_*2+nvirtnr*2)) % *overlap * *kcoeff);
 // form full coeff and svd?
     unique_ptr<double[]> eig2(new double[min(ftmp->ndim(),ftmp->mdim())]);
     shared_ptr<ZMatrix> U, V;
     tie(U, V) = ftmp->svd(eig2.get());
-    *hc_coeff *= *V->transpose_conjg();
-    ctmp->copy_block(0, ctmp->mdim()/2, n*4, ctmp->mdim()/2, hc_coeff->slice(hc_coeff->mdim()/2, hc_coeff->mdim())->data());
+    *kcoeff *= *V->transpose_conjg();
+    ctmp->copy_block(0, ctmp->mdim()/2, n*4, ctmp->mdim()/2, kcoeff->slice(kcoeff->mdim()/2, kcoeff->mdim())->data());
   }
+
+
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = false;
   const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", true);
