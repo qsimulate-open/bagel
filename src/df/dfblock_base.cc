@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: simple.h
-// Copyright (C) 2013 Toru Shiozaki
+// Filename: dfblock_base.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,32 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifndef __SRC_UTIL_SIMPLE_H
-#define __SRC_UTIL_SIMPLE_H
+#include <src/df/dfblock_base.h>
 
-#include <algorithm>
-
-namespace bagel {
-
-template <typename DataType>
-struct CopyBlockTask {
-  private:
-    const DataType* const a_;
-    const size_t astride_;
-    DataType* const b_;
-    const size_t bstride_;
-    const size_t n_;
-    const size_t m_;
-  public:
-    CopyBlockTask(const DataType* const a, const size_t& ast, DataType* const b, const size_t& bst, const size_t& n, const size_t& m)
-      : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
-
-    void compute() {
-      for (size_t j = 0; j != m_; ++j)
-        std::copy_n(a_+j*astride_, n_, b_+j*bstride_);
-    }
-};
-
-}
-
-#endif
+using namespace std;
+template class bagel::DFBlock_base<double>;
+template class bagel::DFBlock_base<complex<double>>;
