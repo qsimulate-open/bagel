@@ -24,6 +24,7 @@
 //
 
 #include <src/df/paralleldf_london.h>
+#include <src/df/dfdistt_london.h>
 
 using namespace std;
 using namespace bagel;
