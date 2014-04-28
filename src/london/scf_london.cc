@@ -72,19 +72,23 @@ void SCF_London::compute() {
         fock = focka->distmatrix();
       }
 
+      //cout << "Line 75: tildex->localized?: " << tildex->localized() << endl;
+      //cout << "Line 76:   fock->localized?: " <<   fock->localized() << endl;
       DistZMatrix intermediate = *tildex % *fock * *tildex;
       intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
     } else {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
-        shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
-        aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
+        shared_ptr<const ZMatrix> halfaodensity = coeff_->form_density_rhf(nocc_, 0, 2.0);
+        aodensity_ = make_shared<ZMatrix>(*halfaodensity);
         focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
       } else {
         focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
-      DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
+      //cout << "Line 89: tildex->localized?: " << tildex->localized() << endl;
+      //cout << "Line 90:   fockadist->localized?: " << focka->localized() << endl;
+      DistZMatrix intermediate = *tildex % (*focka->distmatrix()) * *tildex;
       intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
     }
@@ -103,12 +107,12 @@ void SCF_London::compute() {
   }
 
   if (!dodf_) {
-    shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
-    aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
+    shared_ptr<const ZMatrix> halfaodensity = coeff_->form_density_rhf(nocc_, 0, 2.0);
+    aodensity_ = make_shared<ZMatrix>(*halfaodensity);
     aodensity = aodensity_->distmatrix();
   } else {
-    shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
-    aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
+    shared_ptr<const DistZMatrix> halfaodensity = coeff->form_density_rhf(nocc_, 0, 2.0);
+    aodensity = make_shared<DistZMatrix>(*halfaodensity);
   }
 
   // starting SCF iteration
@@ -158,6 +162,8 @@ void SCF_London::compute() {
       pdebug.tick_print("DIIS");
     }
 
+    //cout << "Line 165:  coeff->localized?: " << tildex->localized() << endl;
+    //cout << "Line 166:   fock->localized?: " << fock->localized() << endl;
     DistZMatrix intermediate(*coeff % *fock * *coeff);
 
     if (levelshift_)
@@ -171,15 +177,15 @@ void SCF_London::compute() {
     coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
 
     if (!dodf_) {
-      shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
-      shared_ptr<const ZMatrix> new_density = make_shared<ZMatrix>(*halfaodensity * 2.0);
+      shared_ptr<const ZMatrix> halfaodensity = coeff_->form_density_rhf(nocc_, 0, 2.0);
+      shared_ptr<const ZMatrix> new_density = make_shared<ZMatrix>(*halfaodensity);
       densitychange = make_shared<ZMatrix>(*new_density - *aodensity_);
       aodensity_ = new_density;
       aodensity = aodensity_->distmatrix();
     } else {
       //aodensity = coeff->form_density_rhf(nocc_);
-      shared_ptr<const DistZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
-      aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
+      shared_ptr<const DistZMatrix> halfaodensity = coeff->form_density_rhf(nocc_, 0, 2.0);
+      aodensity = make_shared<DistZMatrix>(*halfaodensity);
     }
     pdebug.tick_print("Post process");
   }

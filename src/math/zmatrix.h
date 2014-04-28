@@ -164,8 +164,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 #else
     std::shared_ptr<const ZMatrix> distmatrix() const;
     std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
-    std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
+    std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
 };
 
 
@@ -203,7 +203,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
 
     std::shared_ptr<ZMatrix> matrix() const;
 
-    std::shared_ptr<const DistZMatrix> form_density_rhf(const int n, const int off = 0) const;
+    std::shared_ptr<const DistZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
 };
 #endif
 

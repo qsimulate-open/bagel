@@ -612,11 +612,9 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 #endif
 
 
-#ifndef HAVE_SCALAPACK
-// Caution:  Matrix::form_density_rhf(...) multiplies by 2, but ZMatrix::form_density_rhf(...) does not
-shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset) const {
+shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
   shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
   auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
+  *out *= scale;
   return out;
 }
-#endif

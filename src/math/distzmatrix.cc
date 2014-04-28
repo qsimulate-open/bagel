@@ -139,11 +139,11 @@ shared_ptr<ZMatrix> DistZMatrix::matrix() const {
 }
 
 
-shared_ptr<const DistZMatrix> DistZMatrix::form_density_rhf(const int nocc, const int off) const {
+shared_ptr<const DistZMatrix> DistZMatrix::form_density_rhf(const int nocc, const int off, const complex<double> scale) const {
   const int l = ndim_;
   const int n = ndim_;
   auto out = make_shared<DistZMatrix>(l, n);
-  pzgemm_("N", "C", l, n, nocc, 1.0, local_.get(), 1, 1+off, desc_.data(), local_.get(), 1, 1+off, desc_.data(), 0.0, out->local_.get(), 1, 1, out->desc_.data());
+  pzgemm_("N", "C", l, n, nocc, scale, local_.get(), 1, 1+off, desc_.data(), local_.get(), 1, 1+off, desc_.data(), 0.0, out->local_.get(), 1, 1, out->desc_.data());
   return out;
 }
 

@@ -5,6 +5,7 @@
   "symmetry" : "C1",
   "basis" : "svp",
   "basis_type" : "giao",
+  "df_basis" : "sto-3g",
   "tesla" : "false",
   "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ],
   "angstrom" : "false",
