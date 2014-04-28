@@ -32,8 +32,6 @@
 using namespace std;
 using namespace bagel;
 
-static constexpr double T_thresh__ = 1.0e-8;
-
 void R1Batch::compute_ssss(const double integral_thresh) {
   screening_size_ = 0;
 
