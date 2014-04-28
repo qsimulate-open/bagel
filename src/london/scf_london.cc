@@ -69,24 +69,20 @@ void SCF_London::compute() {
         auto aden = make_shared<const AtomicDensities>(cgeom_);
         auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
         auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, zaden, schwarz_);
-        //focka->print("FockA", 20);
         fock = focka->distmatrix();
       }
-      // TODO Do you need the transpose conjugate of *tildex here?
+
       DistZMatrix intermediate = *tildex % *fock * *tildex;
       intermediate.diagonalize(eig());
       coeff = make_shared<const DistZMatrix>(*tildex * intermediate);
-      //coeff->print("coeff, as first assigned", 20);
     } else {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
-        //throw runtime_error("Only worrying about density-fitted HF for now");
         shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
         aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
         focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
-        } else {
+      } else {
         focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
-        //focka->print("FockA", 20);
       }
       DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -107,12 +103,10 @@ void SCF_London::compute() {
   }
 
   if (!dodf_) {
-    //throw runtime_error("Only worrying about density-fitted HF for now");
     shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
     aodensity_ = make_shared<ZMatrix>(*halfaodensity * 2.0);
     aodensity = aodensity_->distmatrix();
   } else {
-    //coeff->print("coeff", 20);
     shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
     aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
   }
@@ -121,7 +115,6 @@ void SCF_London::compute() {
   shared_ptr<const ZMatrix> densitychange = aodensity_;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    //cout << endl << endl << endl << "STARTING ITERATION " << iter << endl << endl << endl;
     Timer pdebug(1);
 
     if (restart_) {
@@ -129,32 +122,24 @@ void SCF_London::compute() {
       OArchive archive(ss.str());
       archive << static_cast<Method*>(this);
     }
-
     if (!dodf_) {
-      //throw runtime_error("Only worrying about density-fitted HF for now");
+      shared_ptr<ZMatrix> prev = previous_fock->copy();
       previous_fock = make_shared<Fock_London<0>>(cgeom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<ZMatrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      //coeff_->slice(0, nocc_)->print("slice of coeff_ being used",20);
       previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
-    // TODO Is this the best place to convert to real?
     const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
-    //cout << "Energy of iteration " << iter << " = " << zenergy << endl;
     energy_  = real(zenergy);
-    //aodensity->print("aodensity", 20);
-    //hcore->print("hcore", 20);
-    //fock->print("fock", 20);
+    if (abs(imag(zenergy))>1.0e-8) cout << scientific << "energy = " << zenergy << endl;;
     if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
 
     pdebug.tick_print("Fock build");
 
     auto error_vector = make_shared<const DistZMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
-    //error_vector->print("Error Vector", 20);
-    //cout << endl << endl << "ERROR = " << error_vector->rms() << endl << endl;
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
@@ -174,25 +159,18 @@ void SCF_London::compute() {
     }
 
     DistZMatrix intermediate(*coeff % *fock * *coeff);
-    //fock->print("Fock Matrix by extrapolation from diis_", 20);
-    //intermediate.print("intermediate using coeff & extrapolated Fock", 20);
 
     if (levelshift_)
       levelshift_->shift(intermediate);
 
     intermediate.diagonalize(eig());
 
-    //for (int i=0; i!=eig_.size(); i++) cout << "eigenvalue " << i << " = " << eig_[i] << endl;
-
     pdebug.tick_print("Diag");
 
-    //intermediate.print("intermediate after diagonalization", 20);
     coeff = make_shared<const DistZMatrix>(*coeff * intermediate);
     coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
 
-
     if (!dodf_) {
-      //throw runtime_error("Only worrying about density-fitted HF for now");
       shared_ptr<const ZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
       shared_ptr<const ZMatrix> new_density = make_shared<ZMatrix>(*halfaodensity * 2.0);
       densitychange = make_shared<ZMatrix>(*new_density - *aodensity_);
@@ -200,10 +178,8 @@ void SCF_London::compute() {
       aodensity = aodensity_->distmatrix();
     } else {
       //aodensity = coeff->form_density_rhf(nocc_);
-      //coeff->print("coeff from this iteration", 20);
       shared_ptr<const DistZMatrix> halfaodensity = coeff->form_density_rhf(nocc_);
       aodensity = make_shared<DistZMatrix>(*halfaodensity * 2.0);
-      //aodensity->print("the new aodensity", 20);
     }
     pdebug.tick_print("Post process");
   }

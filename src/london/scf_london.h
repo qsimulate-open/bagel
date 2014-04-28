@@ -42,7 +42,6 @@ class SCF_London : public SCF_base_London {
     bool dodf_;
     bool restarted_;
 
-    // TODO Should the second template parameter be ZMatrix or DistZMatrix?
     std::shared_ptr<DIIS<DistZMatrix,ZMatrix>> diis_;
 
   private:

@@ -127,7 +127,6 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
   // starting 2-e Fock matrix evaluation!
   ////////////////////////////////////////////
   if (DF == 0) {
-    //throw std::runtime_error("For now we only worry about density-fitted HF with a magnetic field");
     //////////////// ONLY FOR REFERENCES. //////////////////
 #if 1
     std::shared_ptr<Petite> plist = cgeom_->plist();;
@@ -161,7 +160,6 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
           for (int i3 = 0; i3 != size; ++i3) {
           //for (int i3 = i2; i3 != size; ++i3) {
             const unsigned int i23 = i2 * size + i3;
-            //if (i23 < i01) std::cout << "about to skip block " << i0 << " " << i1 << " " << i2 << " " << i3 << std::endl;
             //if (i23 < i01) continue;
             //int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
             //if (ijkl == 0) continue;
@@ -249,13 +247,14 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     data_[j3n + j2] += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
                     data_[j1n + j2] -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
 
-                    //data_[j0n + j1] += density_data[j2n + j3] * intval4;
-                    //data_[j2n + j3] += density_data[j0n + j1] * intval4;
-                    //data_[j0n + j3] -= density_data[j1n + j2] * intval;
-                    //data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
-                    //data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
-                    //data_[minj1j3 * ndim_ + maxj1j3] -= density_data[j0n + j2] * intval;
-
+                    /*
+                    data_[j0n + j1] += density_data[j2n + j3] * intval4;
+                    data_[j2n + j3] += density_data[j0n + j1] * intval4;
+                    data_[j0n + j3] -= density_data[j1n + j2] * intval;
+                    data_[minj1j2n + maxj1j2] -= density_data[j0n + j3] * intval;
+                    data_[minj0j2n + maxj0j2] -= density_data[j1n + j3] * intval;
+                    data_[minj1j3 * ndim_ + maxj1j3] -= density_data[j0n + j2] * intval;
+                    */
                   }
                 }
               }
@@ -266,7 +265,6 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
       }
     }
     //for (int i = 0; i != ndim_; ++i) data_[i*ndim_ + i] *= 2.0;
-    //fill_upper_conjg();
 
 #endif
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,30 +323,28 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
   std::shared_ptr<const DFDist_London> df = cgeom_->df();
 
   if (scale_exchange != 0.0) {
-    //ocoeff->print("Coefficient matrix for occupied orbitals only", 20);
-    //((*ocoeff ^ *ocoeff) * 2.0).print("simulated AO Density", 20);
     std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
     std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
-    //(*half->form_2index(half, -1.0*scale_exchange)).print("Exchange matrix?", 20);
     *this += *half->form_2index(half, -1.0*scale_exchange);
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
       auto coeff = std::make_shared<const ZMatrix>(*ocoeff->transpose()*2.0);
-      //(*df->compute_Jop(half,coeff,true)).print("Coulomb matrix?", 20);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);
+      assert(0);
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
     *this += *df->compute_Jop(density_);
+    assert(0);
   }
   pdebug.tick_print("Coulomb build");
 #endif
