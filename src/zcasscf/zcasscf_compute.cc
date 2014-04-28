@@ -55,7 +55,6 @@ void ZCASSCF::compute() {
 
   if (nr_coeff_ != nullptr) { // build from non-rel coeff
     nr_coeff_->print("NON REL COEFF");
-    shared_ptr<const ZMatrix> s12   = overlap->tildex(1.0e-8);
     int n = nr_coeff_->ndim();
     auto ctmp = coeff_->clone();
     int nvirtnr = nvirt_ - nneg_/2;
@@ -76,10 +75,22 @@ void ZCASSCF::compute() {
     ctmp->add_real_block(1.0, n*3, nocc_*2 + nvirtnr, n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
 // normalize ctmp
     {
-      auto csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp);
-      auto diag = csc->diag();
-      for (int i = 0; i != nocc_*2+nvirtnr*2; ++i)
-        blas::scale_n(1.0/sqrt(diag[i]), ctmp->element_ptr(0, i), n*4);
+      auto csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, (nocc_+nvirtnr)*2, (nocc_+nvirtnr)*2);
+      unique_ptr<double[]> eig2(new double[csc->mdim()]);
+      csc->diagonalize(eig2.get());
+      csc->print("eigenvectors of CSC");
+      for (int i=0; i!=csc->mdim(); ++i)
+        cout << " eigenvalue " << i << " = " << eig2[i] << endl;
+      for (int i = 0; i != (nocc_+nvirtnr)*2; ++i) {
+        if (real(eig2[i]) > 1.0e-16)
+          blas::scale_n(1.0/sqrt(eig2[i]), csc->element_ptr(0, i), csc->ndim());
+      }
+      auto newc = make_shared<ZMatrix>(*ctmp->slice(0,(nocc_+nvirtnr)*2) * *csc);      
+      ctmp->copy_block(0, 0, ctmp->ndim(), (nocc_+nvirtnr)*2, newc->data());
+      csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, ctmp->mdim()/2, ctmp->mdim()/2);
+      auto unit = csc->clone();
+      unit->unit();
+      assert((*csc - *unit).rms() < 1.0e-15);
     }
 
     { // kramers restricted coefficients
