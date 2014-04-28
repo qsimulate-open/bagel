@@ -57,8 +57,8 @@ shared_ptr<ZMatrix> ParallelDF_London::form_aux_2index(shared_ptr<const Parallel
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
 #ifdef HAVE_MPI_H
   if (!serial_) {
-    auto work = make_shared<DFDistT>(this->shared_from_this());
-    auto work2 = make_shared<DFDistT>(o);
+    auto work = make_shared<DFDistT_London>(this->shared_from_this());
+    auto work2 = make_shared<DFDistT_London>(o);
     return work->form_aux_2index(work2, a).front();
   } else {
 #else

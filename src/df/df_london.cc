@@ -25,7 +25,7 @@
 
 
 #include <src/df/df_london.h>
-#include <src/df/dfdistt.h>
+#include <src/df/dfdistt_london.h>
 #include <src/df/paralleldf_london.h>
 #include <src/integral/rys/eribatch.h>
 
@@ -330,8 +330,8 @@ shared_ptr<DFFullDist_London> DFFullDist_London::apply_J(const shared_ptr<const 
 #ifdef HAVE_MPI_H
   if (!serial_) {
     Timer mult(3);
-    auto work = make_shared<DFDist_LondonT>(shared_from_this());
-    mult.tick_print("Form DFDist_LondonT");
+    auto work = make_shared<DFDistT_London>(shared_from_this());
+    mult.tick_print("Form DFDistT_London");
     work = work->apply_J(d);
     mult.tick_print("Application of Inverse");
     work->get_paralleldf(out);
@@ -356,8 +356,8 @@ shared_ptr<DFHalfDist_London> DFHalfDist_London::apply_J(const shared_ptr<const 
 #ifdef HAVE_MPI_H
   if (!serial_) {
     Timer mult(3);
-    auto work = make_shared<DFDist_LondonT>(shared_from_this());
-    mult.tick_print("Form DFDist_LondonT");
+    auto work = make_shared<DFDistT_London>(shared_from_this());
+    mult.tick_print("Form DFDistT_London");
     work = work->apply_J(d);
     mult.tick_print("Application of Inverse");
     work->get_paralleldf(out);
