@@ -82,25 +82,48 @@ void ZCASSCF::compute() {
         blas::scale_n(1.0/sqrt(diag[i]), ctmp->element_ptr(0, i), n*4);
     }
 
-// kramers restricted coefficients
-    auto kcoeff = coeff_->clone();
-    int m2 = coeff_->mdim()/2;
-    for (int j=0; j!=nneg_/2; ++j) {
-      kcoeff->copy_block(0,   j*2, coeff_->ndim(), 1, coeff_->slice(   nocc_+nvirtnr + j,    nocc_+nvirtnr + j+1)->data());
-      kcoeff->copy_block(0, j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+nocc_+nvirtnr + j, m2+nocc_+nvirtnr + j+1)->data());
+    { // kramers restricted coefficients
+      auto kcoeff = coeff_->clone();
+      int m2 = coeff_->mdim()/2;
+      for (int j=0; j!=nneg_/2; ++j) {
+        kcoeff->copy_block(0,   j*2, coeff_->ndim(), 1, coeff_->slice(   nocc_+nvirtnr + j,    nocc_+nvirtnr + j+1)->data());
+        kcoeff->copy_block(0, j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+nocc_+nvirtnr + j, m2+nocc_+nvirtnr + j+1)->data());
+      }
+      for (int j=0; j!=nocc_+nvirtnr; ++j) {
+        kcoeff->copy_block(0,   m2+j*2, coeff_->ndim(), 1, coeff_->slice( j, j+1)->data());
+        kcoeff->copy_block(0, m2+j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+j, m2+j+1)->data());
+      }
+      // form overlap between non-rel and rel
+      auto ftmp = make_shared<ZMatrix>(*(ctmp->slice(0,nocc_*2+nvirtnr*2)) % *overlap * *kcoeff);
+      // form full coeff and svd?
+      unique_ptr<double[]> eig2(new double[min(ftmp->ndim(),ftmp->mdim())]);
+      shared_ptr<ZMatrix> U, V;
+      tie(U, V) = ftmp->svd(eig2.get());
+      *kcoeff *= *V->transpose_conjg();
+      ctmp->copy_block(0, ctmp->mdim()/2, n*4, ctmp->mdim()/2, kcoeff->slice(kcoeff->mdim()/2, kcoeff->mdim())->data());
     }
-    for (int j=0; j!=nocc_+nvirtnr; ++j) {
-      kcoeff->copy_block(0,   m2+j*2, coeff_->ndim(), 1, coeff_->slice( j, j+1)->data());
-      kcoeff->copy_block(0, m2+j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+j, m2+j+1)->data());
+    { // check orthonormality
+      auto unit = ctmp->clone();
+      unit->unit();
+      auto sdiff = make_shared<ZMatrix>((*ctmp % *overlap * *ctmp) - *unit);
+      assert(sdiff->rms() < 1.0e-14);
     }
-// form overlap between non-rel and rel
-    auto ftmp = make_shared<ZMatrix>(*(ctmp->slice(0,nocc_*2+nvirtnr*2)) % *overlap * *kcoeff);
-// form full coeff and svd?
-    unique_ptr<double[]> eig2(new double[min(ftmp->ndim(),ftmp->mdim())]);
-    shared_ptr<ZMatrix> U, V;
-    tie(U, V) = ftmp->svd(eig2.get());
-    *kcoeff *= *V->transpose_conjg();
-    ctmp->copy_block(0, ctmp->mdim()/2, n*4, ctmp->mdim()/2, kcoeff->slice(kcoeff->mdim()/2, kcoeff->mdim())->data());
+    { // re-order subspaces
+      auto ctmp2 = ctmp->clone();
+      for (int j=0; j!=nclosed_; ++j) {
+        ctmp2->copy_block(0, j, ctmp->ndim(), 1, ctmp->slice(j*2, j*2+1)->data());
+        ctmp2->copy_block(0, j+1, ctmp->ndim(), 1, ctmp->slice(j*2+1, j*2+2)->data());
+      }
+      for (int j=0; j!=nact_; ++j) {
+        ctmp2->copy_block(0, nclosed_*2   +j, ctmp->ndim(), 1, ctmp->slice(nclosed_*2 + j*2, nclosed_*2 + j*2+1)->data());
+        ctmp2->copy_block(0, nclosed_*2 +j+1, ctmp->ndim(), 1, ctmp->slice(nclosed_*2 + j*2+1,nclosed_*2 + j*2+2)->data());
+      }
+      for (int j=0; j!=nvirt_; ++j) {
+        ctmp2->copy_block(0, nocc_*2 +j, ctmp->ndim(), 1, ctmp->slice(nocc_*2 + j*2, nocc_*2+j*2+1)->data());
+        ctmp2->copy_block(0, nocc_*2 +nvirt_ +j, ctmp->ndim(), 1, ctmp->slice(nocc_*2 + j*2+1, nocc_*2 + j*2+2)->data());
+      }
+      coeff_ = ctmp2;
+    }
   }
 
 
