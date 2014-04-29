@@ -33,12 +33,15 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Molecule)
 double Molecule::compute_nuclear_repulsion() {
   double out = 0.0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
-    const double c = (*iter)->atom_charge();
+    double c = (*iter)->atom_charge();
+    if ((*iter)->use_ecp_basis()) c -= (*iter)->ecp_parameters()->ecp_ncore();
     for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
       // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
       if (!(*iter)->dummy() || !(*titer)->dummy()) {
         const double dist = (*iter)->distance(*titer);
-        const double charge = c * (*titer)->atom_charge();
+        double tc = (*titer)->atom_charge();
+        if ((*titer)->use_ecp_basis()) tc -= (*titer)->ecp_parameters()->ecp_ncore();
+        const double charge = c * tc;
 // it turned out that the deviation is numerically zero in double precision if the exponent is more than 1.0e-6. I will leave them for a while
 #ifdef BEYOND_DOUBLE
         if (!(*iter)->finite_nucleus() && !(*titer)->finite_nucleus()) { // both point charges

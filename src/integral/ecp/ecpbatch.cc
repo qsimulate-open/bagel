@@ -65,26 +65,27 @@ void ECPBatch::compute() {
   double* current_data = &intermediate_p[0];
 
 
-  for (auto& aiter : mol_->atoms()) {
-    shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
+  for (int izA = 0; izA <= ang0_; ++izA) {
+    for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
+      const int ixA = ang0_ - izA - iyA;
+      const array<int, 3> lA = {ixA, iyA, izA};
+      for (int izC = 0; izC <= ang1_; ++izC) {
+        for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
+          const int ixC = ang1_ - izC - iyC;
+          const array<int, 3> lC = {ixC, iyC, izC};
+          for (auto& ieA : basisinfo_[0]->exponents()) {
+            for (auto& ieC : basisinfo_[1]->exponents()) {
+              double tmp = 0.0;
+              for (auto& aiter : mol_->atoms()) {
+                shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
 
-    int index = 0;
-    for (int izA = 0; izA <= ang0_; ++izA) {
-      for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
-        const int ixA = ang0_ - izA - iyA;
-        const array<int, 3> lA = {izA, iyA, ixA};
-        for (int izC = 0; izC <= ang1_; ++izC) {
-          for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
-            const int ixC = ang1_ - izC - iyC;
-            const array<int, 3> lC = {izC, iyC, ixC};
-            for (auto& ieA : basisinfo_[0]->exponents()) {
-              for (auto& ieC : basisinfo_[1]->exponents()) {
-                RadialInt<AngularBatch, const shared_ptr<const ECP>, const array<shared_ptr<const Shell>,2>&, const double, const double, const array<int, 3>, const array<int, 3>>
-                              radint(aiter_ecp, basisinfo_, ieA, ieC, lA, lC, true, max_iter_, integral_thresh_);
+                RadialInt<AngularBatch, const shared_ptr<const ECP>, const array<shared_ptr<const Shell>,2>&,
+                                        const double, const double, const array<int, 3>, const array<int, 3>>
+                              radint(aiter_ecp, basisinfo_, ieA, ieC, lA, lC, false, max_iter_, integral_thresh_);
+                tmp += radint.integral();
 
-                current_data[index] = radint.integral();
-                ++index;
               }
+              *current_data++ = tmp;
             }
           }
         }

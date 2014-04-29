@@ -159,7 +159,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
   const double dAB = sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
   const int nu = lxyz[0] + lxyz[1] + lxyz[2];
   const int lnu = lm[0] + nu;
-  const double exponential = exp(-expA * (dAB - r) * (dAB - r));
+  const double exponential = exp(-expA * (dAB * dAB + r * r));
   double ans = 0.0;
   for (int kx = 0; kx <= lxyz[0]; ++kx) {
     const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
@@ -211,16 +211,16 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
  for (auto& ishecp : shells_ecp) {
    const int l = ishecp->angular_number();
    if (l != ecp_->maxl()) {
-     for (int mu = 0; mu <= 2*l; ++mu) {
-       int index = 0;
-       const int m = mu - l;
-       array<int, 2> lm = {l, m};
-       for (auto& exponents : ishecp->ecp_exponents()) {
-         const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
-         const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
-         ans += ishecp->ecp_coefficients(index) * projA *
-                pow(r, ishecp->ecp_r_power(index) - 2) * exp(-exponents * r * r) * r * r * projC;
-         ++index;
+     for (int i = 0; i != ishecp->ecp_exponents().size(); ++i) {
+       if (ishecp->ecp_coefficients(i) != 0) {
+         for (int mu = 0; mu <= 2*l; ++mu) {
+           const int m = mu - l;
+           array<int, 2> lm = {l, m};
+           const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
+           const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
+           ans += ishecp->ecp_coefficients(i) * projA *
+                pow(r, ishecp->ecp_r_power(i) - 2) * exp(-ishecp->ecp_exponents(i) * r * r) * projC * r * r;
+         }
        }
      }
    }

@@ -534,7 +534,7 @@ class ProjectionInt {
         const int nz = gauss_->angular_momentum(2);
         const int nu = nx + ny + nz;
         const int lnu = sh_->angular_momentum(0) + nu;
-        const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB - r) * (dAB - r)));
+        const mpreal exponential = static_cast<mpreal>(exp(-gauss_->exponent() * (dAB * dAB + r * r)));
         double ans = 0.0;
         for (int kx = 0; kx <= nx; ++kx) {
           const double ckx = comb(nx, kx) * std::pow(AB[0], nx - kx);
