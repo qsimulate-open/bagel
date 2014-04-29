@@ -56,85 +56,79 @@ void ZCASSCF::compute() {
   if (nr_coeff_ != nullptr) { // build from non-rel coeff
     nr_coeff_->print("NON REL COEFF");
     int n = nr_coeff_->ndim();
-    auto ctmp = coeff_->clone();
     int nvirtnr = nvirt_ - nneg_/2;
-// closed
-    ctmp->add_real_block(1.0, 0, 0, n, nclosed_, nr_coeff_->data()); 
-    ctmp->add_real_block(1.0, n, nclosed_, n, nclosed_, nr_coeff_->data()); 
-    ctmp->add_real_block(1.0, n*2, 0, n, nclosed_, nr_coeff_->data()); 
-    ctmp->add_real_block(1.0, n*3, nclosed_, n, nclosed_, nr_coeff_->data()); 
-// active
-    ctmp->add_real_block(1.0, 0,           nclosed_*2, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
-    ctmp->add_real_block(1.0, n,   nclosed_*2 + nact_, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
-    ctmp->add_real_block(1.0, n*2,         nclosed_*2, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
-    ctmp->add_real_block(1.0, n*3, nclosed_*2 + nact_, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
-// virtuals
-    ctmp->add_real_block(1.0, 0,   nocc_*2,           n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
-    ctmp->add_real_block(1.0, n,   nocc_*2 + nvirtnr, n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
-    ctmp->add_real_block(1.0, n*2, nocc_*2,           n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
-    ctmp->add_real_block(1.0, n*3, nocc_*2 + nvirtnr, n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
-// normalize ctmp
-    {
-      auto csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, (nocc_+nvirtnr)*2, (nocc_+nvirtnr)*2);
-      unique_ptr<double[]> eig2(new double[csc->mdim()]);
-      csc->diagonalize(eig2.get());
-      csc->print("eigenvectors of CSC");
-      for (int i=0; i!=csc->mdim(); ++i)
-        cout << " eigenvalue " << i << " = " << eig2[i] << endl;
-      for (int i = 0; i != (nocc_+nvirtnr)*2; ++i) {
-        if (real(eig2[i]) > 1.0e-16)
-          blas::scale_n(1.0/sqrt(eig2[i]), csc->element_ptr(0, i), csc->ndim());
-      }
-      auto newc = make_shared<ZMatrix>(*ctmp->slice(0,(nocc_+nvirtnr)*2) * *csc);      
-      ctmp->copy_block(0, 0, ctmp->ndim(), (nocc_+nvirtnr)*2, newc->data());
-      csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, ctmp->mdim()/2, ctmp->mdim()/2);
-      auto unit = csc->clone();
-      unit->unit();
-      assert((*csc - *unit).rms() < 1.0e-15);
-    }
 
-    { // kramers restricted coefficients
-      auto kcoeff = coeff_->clone();
-      int m2 = coeff_->mdim()/2;
-      for (int j=0; j!=nneg_/2; ++j) {
-        kcoeff->copy_block(0,   j*2, coeff_->ndim(), 1, coeff_->slice(   nocc_+nvirtnr + j,    nocc_+nvirtnr + j+1)->data());
-        kcoeff->copy_block(0, j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+nocc_+nvirtnr + j, m2+nocc_+nvirtnr + j+1)->data());
+    auto ctmp2 = coeff_->clone();
+    for (int i = 0; i != 2; ++i) {
+      auto ctmp = coeff_->clone();
+      // closed
+      ctmp->add_real_block(1.0,       n*i, 0, n, nclosed_, nr_coeff_->data());
+      ctmp->add_real_block(1.0, n*2 + n*i, 0, n, nclosed_, nr_coeff_->data());
+      // active
+      ctmp->add_real_block(1.0,       n*i, nclosed_, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
+      ctmp->add_real_block(1.0, n*2 + n*i, nclosed_, n, nact_, nr_coeff_->slice(nclosed_, nocc_)->data()); 
+      // virtuals
+      ctmp->add_real_block(1.0,       n*i, nocc_, n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
+      ctmp->add_real_block(1.0, n*2 + n*i, nocc_, n, nvirtnr, nr_coeff_->slice(nocc_, nocc_+nvirtnr)->data()); 
+      // normalize ctmp
+      {
+        auto csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, n, n);
+        csc->print("modified CSC");
+        unique_ptr<double[]> eig2(new double[csc->mdim()]);
+        csc->diagonalize(eig2.get());
+        csc->print("eigenvectors of CSC");
+        for (int i=0; i!=csc->mdim(); ++i)
+          cout << " eigenvalue " << i << " = " << eig2[i] << endl;
+        for (int i = 0; i != (nocc_+nvirtnr); ++i) {
+          if (real(eig2[i]) > 1.0e-16)
+            blas::scale_n(1.0/sqrt(eig2[i]), csc->element_ptr(0, i), csc->ndim());
+        }
+        auto newc = make_shared<ZMatrix>(*ctmp->slice(0, n) * *csc);      
+        ctmp->copy_block(0, 0, ctmp->ndim(), n, newc->data());
+        csc = make_shared<ZMatrix>(*ctmp % *overlap * *ctmp)->get_submatrix(0, 0, n, n);
+        auto unit = csc->clone();
+        unit->unit();
+        assert((*csc - *unit).rms() < 1.0e-15);
       }
-      for (int j=0; j!=nocc_+nvirtnr; ++j) {
-        kcoeff->copy_block(0,   m2+j*2, coeff_->ndim(), 1, coeff_->slice( j, j+1)->data());
-        kcoeff->copy_block(0, m2+j*2+1, coeff_->ndim(), 1, coeff_->slice(m2+j, m2+j+1)->data());
+
+      { // kramers restricted coefficients
+        auto kcoeff = coeff_->slice(0, n*2)->clone();
+        int m2 = coeff_->mdim()/2;
+        for (int j=0; j!=n; ++j) { // positrons
+          kcoeff->copy_block(0, j, coeff_->ndim(), 1, coeff_->slice(m2*i + n + j, m2*i + n + j+1)->data());
+        }
+        for (int j=0; j!=n; ++j) { // electrons
+          kcoeff->copy_block(0, n+j, coeff_->ndim(), 1, coeff_->slice(m2*i + j, m2*i + j+1)->data());
+        }
+        kcoeff->slice(0,kcoeff->mdim())->get_real_part()->print("kcoeff",kcoeff->ndim());
+        // form overlap between non-rel and rel
+        auto ftmp = make_shared<ZMatrix>(*ctmp->slice(0, n) % *overlap * *kcoeff);
+        // form full coeff and svd?
+        unique_ptr<double[]> eig2(new double[min(ftmp->ndim(),ftmp->mdim())]);
+        shared_ptr<ZMatrix> U, V;
+        tie(U, V) = ftmp->svd(eig2.get());
+        *kcoeff *= *V->transpose_conjg();
+        ctmp->copy_block(0, n, n*4, n, kcoeff->slice(kcoeff->mdim()/2, kcoeff->mdim())->data());
       }
-      // form overlap between non-rel and rel
-      auto ftmp = make_shared<ZMatrix>(*(ctmp->slice(0,nocc_*2+nvirtnr*2)) % *overlap * *kcoeff);
-      // form full coeff and svd?
-      unique_ptr<double[]> eig2(new double[min(ftmp->ndim(),ftmp->mdim())]);
-      shared_ptr<ZMatrix> U, V;
-      tie(U, V) = ftmp->svd(eig2.get());
-      *kcoeff *= *V->transpose_conjg();
-      ctmp->copy_block(0, ctmp->mdim()/2, n*4, ctmp->mdim()/2, kcoeff->slice(kcoeff->mdim()/2, kcoeff->mdim())->data());
+      { // check orthonormality
+        auto unit = make_shared<ZMatrix>(n*2, n*2);
+        unit->unit();
+        auto sdiff = make_shared<ZMatrix>((*ctmp->slice(0, n*2) % *overlap * *ctmp->slice(0, n*2)) - *unit);
+        assert(sdiff->rms() < 1.0e-14);
+      }
+      { // re-order subspaces
+        for (int j=0; j!=nclosed_; ++j) {
+          ctmp2->copy_block(0, nclosed_*i + j, ctmp->ndim(), 1, ctmp->slice(j, j+1)->data());
+        }
+        for (int j=0; j!=nact_; ++j) {
+          ctmp2->copy_block(0, nclosed_*2 + nact_*i + j, ctmp->ndim(), 1, ctmp->slice(nclosed_ + j, nclosed_ + j+1)->data());
+        }
+        for (int j=0; j!=nvirt_; ++j) {
+          ctmp2->copy_block(0, nocc_*2 +nvirt_*i +j, ctmp->ndim(), 1, ctmp->slice(nocc_ + j, nocc_+j+1)->data());
+        }
+      }
     }
-    { // check orthonormality
-      auto unit = ctmp->clone();
-      unit->unit();
-      auto sdiff = make_shared<ZMatrix>((*ctmp % *overlap * *ctmp) - *unit);
-      assert(sdiff->rms() < 1.0e-14);
-    }
-    { // re-order subspaces
-      auto ctmp2 = ctmp->clone();
-      for (int j=0; j!=nclosed_; ++j) {
-        ctmp2->copy_block(0, j, ctmp->ndim(), 1, ctmp->slice(j*2, j*2+1)->data());
-        ctmp2->copy_block(0, j+1, ctmp->ndim(), 1, ctmp->slice(j*2+1, j*2+2)->data());
-      }
-      for (int j=0; j!=nact_; ++j) {
-        ctmp2->copy_block(0, nclosed_*2   +j, ctmp->ndim(), 1, ctmp->slice(nclosed_*2 + j*2, nclosed_*2 + j*2+1)->data());
-        ctmp2->copy_block(0, nclosed_*2 +j+1, ctmp->ndim(), 1, ctmp->slice(nclosed_*2 + j*2+1,nclosed_*2 + j*2+2)->data());
-      }
-      for (int j=0; j!=nvirt_; ++j) {
-        ctmp2->copy_block(0, nocc_*2 +j, ctmp->ndim(), 1, ctmp->slice(nocc_*2 + j*2, nocc_*2+j*2+1)->data());
-        ctmp2->copy_block(0, nocc_*2 +nvirt_ +j, ctmp->ndim(), 1, ctmp->slice(nocc_*2 + j*2+1, nocc_*2 + j*2+2)->data());
-      }
-      coeff_ = ctmp2;
-    }
+    coeff_ = ctmp2;
   }
 
 
