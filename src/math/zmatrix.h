@@ -172,6 +172,30 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 #ifdef HAVE_SCALAPACK
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistZMatrix : public DistMatrix_base<std::complex<double>> {
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      std::shared_ptr<ZMatrix> mat = matrix();
+      ar << mat;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      std::shared_ptr<ZMatrix> mat;
+      ar >> mat;
+      DistZMatrix tmp(*mat);
+      ndim_ = tmp.ndim_;
+      mdim_ = tmp.mdim_;
+      desc_ = tmp.desc_;
+      localsize_ = tmp.localsize_;
+      local_ = std::unique_ptr<std::complex<double>[]>(new std::complex<double>[tmp.size()]);
+      *this = tmp;
+    }
+
   public:
     DistZMatrix() { }
     DistZMatrix(const int n, const int m);
