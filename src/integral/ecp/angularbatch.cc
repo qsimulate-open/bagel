@@ -156,10 +156,10 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
   Comb comb;
   array<double, 3> AB;
   for (int i = 0; i != 3; ++i) AB[i] = posA[i] - posB[i];
-  const double dAB = sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
+  const double dABsq = AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2];
   const int nu = lxyz[0] + lxyz[1] + lxyz[2];
   const int lnu = lm[0] + nu;
-  const double exponential = exp(-expA * (dAB * dAB + r * r));
+  const double exponential = exp(-expA * (dABsq + r * r));
   double ans = 0.0;
   for (int kx = 0; kx <= lxyz[0]; ++kx) {
     const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
@@ -176,7 +176,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
           for (int m = 0; m <= 2 * ld; ++m) {
             const int mu = m - ld;
             shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB);
-            const double Z_AB = (dAB == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+            const double Z_AB = (dABsq == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
 
             const array<int, 3> exp = {kx, ky, kz};
             const pair<int, int> lm1(ld, mu);
@@ -184,20 +184,13 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
             smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
           }
           MSphBesselI msbessel(ld);
-          const double sbessel = msbessel.compute(2.0 * expA * dAB * r);
+          const double sbessel = msbessel.compute(2.0 * expA * sqrt(dABsq) * r);
           sld += smu * sbessel;
         }
         ans += sld * ckx * cky * ckz * rxyz * pow(-1.0, lk - nu);
       }
     }
   }
-
-#if 0
-  if (ans * 4.0 * pi__ * exponential != 0) {
-  print_one_centre(posA, lxyz, expA, posB, lm, r);
-  cout << " ++++ DEBUG : ans = " << ans * 4.0 * pi__ * exponential << endl;
-  }
-#endif
 
   return ans * 4.0 * pi__ * exponential;
 
@@ -213,13 +206,12 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
    if (l != ecp_->maxl()) {
      for (int i = 0; i != ishecp->ecp_exponents().size(); ++i) {
        if (ishecp->ecp_coefficients(i) != 0) {
-         for (int mu = 0; mu <= 2*l; ++mu) {
-           const int m = mu - l;
-           array<int, 2> lm = {l, m};
+         for (int m = 0; m <= 2*l; ++m) {
+           array<int, 2> lm = {l, m - l};
            const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
            const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
-           ans += ishecp->ecp_coefficients(i) * projA *
-                pow(r, ishecp->ecp_r_power(i) - 2) * exp(-ishecp->ecp_exponents(i) * r * r) * projC * r * r;
+           ans += ishecp->ecp_coefficients(i) * projA * projC *
+                  pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r);
          }
        }
      }

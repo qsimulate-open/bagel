@@ -85,7 +85,7 @@ class SphUSP {
 
     double compute_coeff(const int lx, const int ly) const {
       mpfr::mpreal::set_default_prec(GMPPREC);
-      const int am = fabs(angular_momentum_[1]);
+      const int am = abs(angular_momentum_[1]);
       const int j = (lx + ly - am) / 2;
       if ((lx + ly - am) % 2 != 0 || j < 0) {
         return 0.0;
@@ -265,9 +265,9 @@ class SH {
     const mpreal pi = static_cast<mpreal>(atan(1) * 4);
     Factorial fact;
     const double cth = cos(theta);
-    if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
+    if (abs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
 
-    const int am = fabs(m);
+    const int am = abs(m);
     const double plm = alegendre(l, am, cth);
     mpreal f = fact(l-am)/fact(l+am);
     const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());
@@ -285,9 +285,9 @@ class SH {
     const mpreal pi = static_cast<mpreal>(atan(1) * 4);
     Factorial fact;
     const double cth = cos(theta);
-    if (fabs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
+    if (abs(m) > l) throw std::runtime_error ("SH.ylm: |m| > l");
 
-    const int am = fabs(m);
+    const int am = abs(m);
     const double plm = alegendre(l, am, cth);
     mpreal f = fact(l-am) / fact(l+am);
     const double coef = std::sqrt((2*l+1) * f.toDouble() * 0.25/pi.toDouble());

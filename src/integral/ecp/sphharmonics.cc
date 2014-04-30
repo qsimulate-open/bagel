@@ -63,31 +63,28 @@ SphHarmonics::SphHarmonics(const int l, const int m)
   phi_ = 0.0;
 }
 
-double SphHarmonics::LegendrePolynomial(const double x) const {
+double SphHarmonics::LegendrePolynomial(const int l, const int am, const double x) const {
 
-  const int l = angular_momentum_[0];
-  const int m = abs(angular_momentum_[1]);
-
-  if (m < 0 || m > l || fabs(x) > 1.0) throw std::runtime_error("SH: m must be in [0, l] and x in [-1, 1]");
+  if (am < 0 || am > l || fabs(x) > 1.0) throw std::runtime_error("SH: abs(m) must be in [0, l] and x in [-1, 1]");
   double pmm = 1.0;
-  if (m > 0) {
+  if (am > 0) {
     double somx2 = std::sqrt((1.0 - x)*(1.0 + x));
     double fact = 1.0;
-    for (int i = 1; i <= m; ++i) {
+    for (int i = 1; i <= am; ++i) {
       pmm *= -fact * somx2;
       fact += 2.0;
     }
   }
-  if (l == m) {
+  if (l == am) {
     return pmm;
   } else {
-    double pmmp1 = x * (2.0 * m + 1) * pmm;
-    if (l == m+1) {
+    double pmmp1 = x * (2.0 * am + 1) * pmm;
+    if (l == am+1) {
       return pmmp1;
     } else {
       double plm = 0.0;
-      for (int i = m + 2; i <= l; ++i) {
-        plm = (x * (2 * i -1) * pmmp1 - (i + m - 1) * pmm) / (i - m);
+      for (int i = am + 2; i <= l; ++i) {
+        plm = (x * (2 * i -1) * pmmp1 - (i + am - 1) * pmm) / (i - am);
         pmm = pmmp1;
         pmmp1 = plm;
       }
@@ -103,15 +100,15 @@ complex<double> SphHarmonics::ylm() const {
   const int m = angular_momentum_[1];
 
   const double cth = cos(theta_);
-  if (abs(m) > l) throw std::runtime_error ("SphHarmonics.ylm: |m| > l");
-
   const int am = abs(m);
-  const double plm = LegendrePolynomial(cth);
+  if (am > l) throw std::runtime_error ("SphHarmonics.ylm: |m| > l");
+
+  const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
     fact *= l - am + i;
   }
-  const double coef = sqrt((2*l+1) * 0.25/pi__ / fact);
+  const double coef = sqrt((2*l+1) * 0.25 * fact / pi__);
   double real = coef * plm * cos(am * phi_);
   double imag = coef * plm * sin(am * phi_);
   if (m < 0) {
@@ -129,15 +126,15 @@ double SphHarmonics::zlm() const {
   const int m = angular_momentum_[1];
 
   const double cth = cos(theta_);
-  if (abs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
-
   const int am = abs(m);
-  const double plm = LegendrePolynomial(cth);
+  if (am > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+
+  const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
     fact *= l - am + i;
   }
-  const double coef = sqrt((2*l+1) * 0.25/pi__ / fact);
+  const double coef = sqrt((2*l+1) * 0.25 * fact / pi__);
   if (m == 0) {
     return coef * plm;
   } else if (m > 0) {
@@ -151,15 +148,15 @@ double SphHarmonics::zlm() const {
 double SphHarmonics::zlm(const int l, const int m) const {
 
   const double cth = cos(theta_);
-  if (abs(m) > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
-
   const int am = abs(m);
-  const double plm = LegendrePolynomial(cth);
+  if (am > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+
+  const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;
   for (int i = 1; i <= 2*am; ++i) {
     fact *= l - am + i;
   }
-  const double coef = sqrt((2*l+1) * 0.25/pi__ / fact);
+  const double coef = sqrt((2*l+1) * 0.25 * fact/pi__);
   if (m == 0) {
     return coef * plm;
   } else if (m > 0) {
@@ -181,48 +178,48 @@ void SphHarmonics::print() {
 
 double SphHarmonics::sph_to_USP(const int lx, const int ly) const {
 
-  const int am = abs(angular_momentum_[1]);
+  const int m = angular_momentum_[1];
+  const int am = abs(m);
   const int j = (lx + ly - am) / 2;
   if ((lx + ly - am) % 2 != 0 || j < 0) {
     return 0.0;
   } else {
     Factorial fact;
-    double flam = 1.0;
-    for (int i = 1; i <= 2*am; ++i) {
-      flam *= angular_momentum_[0] - am + i;
-    }
-    flam = 1.0 / flam;
+    const int l = angular_momentum_[0];
+    const double lmamf = fact(l - am);
+    const double lpamf = fact(l + am);
+    const double lf = fact(l);
+    const double prefactor = sqrt(0.5 * (2 * l + 1) * lmamf / lpamf / pi__) / pow(2, l) / lf;
 
-    const double lf = fact(angular_momentum_[0]);
-    const double prefactor = sqrt(0.5 * (2*angular_momentum_[0]+1) / flam / pi__) / pow(2, angular_momentum_[0]) / lf;
     const int parity = (am - lx) % 2;
     double factor;
-    if (angular_momentum_[1] > 0 && parity == 0) {
+
+    if (m > 0 && parity == 0) {
       factor = 1.0;
-    } else if (angular_momentum_[1] == 0 && lx % 2 == 0) {
+    } else if (m == 0 && lx % 2 == 0) {
       factor = 1.0 / sqrt(2.0);
-    } else if (angular_momentum_[1] < 0 && parity != 0) {
+    } else if (m < 0 && parity != 0) {
       factor = 1.0;
     } else {
       factor = 0.0;
     }
 
-    double si = 0.0;
     Comb comb;
-    const int jp = (angular_momentum_[0] - am) / 2;
+    const int jp = (l - am) / 2;
+    double si = 0.0;
     for (int i = j; i <= jp; ++i) {
-      si += comb(angular_momentum_[0], i) * comb(i, j) * pow(-1.0, i)
-          * ((2 * angular_momentum_[0] - 2 * i) >= 0 ? fact(2 * angular_momentum_[0] - 2 * i) : 0.0)
-          / ((angular_momentum_[0] - am - 2 * i) >= 0 ? fact(angular_momentum_[0] - am - 2 * i) : 0.0);
+      si += comb(l, i) * comb(i, j) * pow(-1.0, i) * ((2 * l - 2 * i) >= 0 ? fact(2 * l - 2 * i) : 0.0)
+          / ((l - am - 2 * i) >= 0 ? fact(l - am - 2 * i) : 0.0);
     }
     double sk = 0.0;
-    for (int k = 0; k <= j; ++k) {
-      if (lx - 2*k >= 0 && lx - 2*k <= am) {
+    for (int k = 0; k <= j; ++k)
+      if (lx - 2*k >= 0 && lx - 2*k <= am)
         sk += (k <= j ? comb(j, k) : 0.0) * comb(am, lx - 2*k) * pow(-1.0, static_cast<int>((am - lx + 2*k) / 2));
-      }
-    }
+
     return prefactor * si * sk * factor;
+
   }
+
 }
 
 vector<pair<double, int>> SphHarmonics::sph_to_USPs_expansion() {

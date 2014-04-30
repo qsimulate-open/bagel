@@ -54,7 +54,6 @@ class ECPBatch : public Integral {
     int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
     bool swap01_;
     size_t size_alloc_;
-    unsigned int size_final_;
     double* stack_save_;
 
     void perform_contraction(const int, const double*, const int, const int, double*,

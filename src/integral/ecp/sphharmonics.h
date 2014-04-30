@@ -45,7 +45,7 @@ class SphHarmonics {
     double theta_;
     double phi_;
 
-    double LegendrePolynomial(const double x) const;
+    double LegendrePolynomial(const int l, const int am, const double x) const;
 
   public:
 
