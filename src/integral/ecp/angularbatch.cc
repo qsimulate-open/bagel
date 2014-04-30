@@ -156,10 +156,10 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
   Comb comb;
   array<double, 3> AB;
   for (int i = 0; i != 3; ++i) AB[i] = posA[i] - posB[i];
-  const double dABsq = AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2];
+  const double dAB = sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
   const int nu = lxyz[0] + lxyz[1] + lxyz[2];
   const int lnu = lm[0] + nu;
-  const double exponential = exp(-expA * (dABsq + r * r));
+  const double exponential = exp(-expA * (dAB - r) * (dAB - r));
   double ans = 0.0;
   for (int kx = 0; kx <= lxyz[0]; ++kx) {
     const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
@@ -176,7 +176,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
           for (int m = 0; m <= 2 * ld; ++m) {
             const int mu = m - ld;
             shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB);
-            const double Z_AB = (dABsq == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+            const double Z_AB = (dAB == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
 
             const array<int, 3> exp = {kx, ky, kz};
             const pair<int, int> lm1(ld, mu);
@@ -184,7 +184,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
             smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
           }
           MSphBesselI msbessel(ld);
-          const double sbessel = msbessel.compute(2.0 * expA * sqrt(dABsq) * r);
+          const double sbessel = msbessel.compute(2.0 * expA * dAB * r);
           sld += smu * sbessel;
         }
         ans += sld * ckx * cky * ckz * rxyz * pow(-1.0, lk - nu);
