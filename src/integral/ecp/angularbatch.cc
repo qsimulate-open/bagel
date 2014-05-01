@@ -159,7 +159,7 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
   const double dAB = sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
   const int nu = lxyz[0] + lxyz[1] + lxyz[2];
   const int lnu = lm[0] + nu;
-  const double exponential = exp(-expA * (dAB - r) * (dAB - r));
+  const double exponential = exp(-expA * (dAB - r) * (dAB - r)); // exp(-2aABr)i(2aABr) is computed, not i(2aABr)
   double ans = 0.0;
   for (int kx = 0; kx <= lxyz[0]; ++kx) {
     const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
