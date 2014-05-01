@@ -466,7 +466,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
     shared_ptr<ZRotFile> acopy = bfgs->extrapolate_micro(grad, xlog, shift, false);
     for (int mi = 0; mi!= max_micro_iter; ++mi) {
       shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy, shift, false); // H_n * a
-      double rk = bfgs->taylor_series_validity_ratio(energy_, grad, acopy, v);
+      double rk = bfgs->taylor_series_validity_ratio(energy_, grad, acopy);
       cout << setprecision(4) << " Taylor expansion validity parameter, rk  = " << rk << endl;
       if (((rmin < rk) && (rk < rgood)) || ((2.0 - rgood < rk) && (rk < 2.0 - rmin))) {
           if (bfgs->delta().size() != 0)
@@ -500,8 +500,6 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
     return acopy;
 }
 
-
-shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore, int iter) {
 
 shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore) {
   // first perform CASCI to obtain RDMs
