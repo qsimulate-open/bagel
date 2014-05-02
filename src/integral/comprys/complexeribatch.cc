@@ -37,10 +37,6 @@ ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
   compute_ssss(integral_thresh);
 
-#ifdef LIBINT_INTERFACE
-  assert(false);
-#endif
-
   root_weight(this->primsize_);
 }
 
@@ -49,7 +45,6 @@ void ComplexERIBatch::root_weight(const int ps) {
   if (breit_ == 0) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
   } else {
-    assert(0);
     throw runtime_error("Relativistic calculations have not been set up for London orbitals");
   }
 }

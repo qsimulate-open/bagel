@@ -337,14 +337,14 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);
-      assert(0);
+      throw std::runtime_error("So far, only RHF has been set up with London orbitals, so this should not be called.");
     }
     // when gradient is requested..
     if (store_half_)
       half_ = half;
   } else {
     *this += *df->compute_Jop(density_);
-    assert(0);
+    throw std::runtime_error("scale_exchange == 0.0 ??  This should not be the case for any London orbital methods.");
   }
   pdebug.tick_print("Coulomb build");
 #endif

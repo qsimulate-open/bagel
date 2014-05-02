@@ -96,15 +96,8 @@ shared_ptr<DFDistT_London> DFDistT_London::clone() const {
 shared_ptr<DFDistT_London> DFDistT_London::apply_J(shared_ptr<const ZMatrix> d) const {
   shared_ptr<DFDistT_London> out = clone();
   auto j = data_.begin();
-  //int k = 0;
-  for (auto& i : out->data_) {
-    //cout << "cycle " << k << endl;
-    //cout << "is d localized? " << d->localized() << endl;
-    //cout << "is j localized? " << *j->localized() << endl;
-    //cout << "is i localized? " << i->localized() << endl;
-    //k++;
+  for (auto& i : out->data_)
     *i = *d % **j++;
-  }
   return out;
 }
 

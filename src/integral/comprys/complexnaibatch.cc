@@ -38,7 +38,6 @@ void ComplexNAIBatch::root_weight(const int ps) {
   if (breit_ == 0) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
   } else {
-    assert(0);
     throw runtime_error("Relativistic calculations have not been set up for London orbitals");
   }
 }
