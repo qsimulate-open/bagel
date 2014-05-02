@@ -40,6 +40,8 @@ std::vector<double> fci_energy(std::string inp) {
   std::shared_ptr<Geometry> geom;
   std::shared_ptr<const Reference> ref;
 
+  std::vector<double> result;
+
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
@@ -57,7 +59,7 @@ std::vector<double> fci_energy(std::string inp) {
     } else if (method == "fci") {
       std::shared_ptr<FCI> fci;
       std::shared_ptr<DistFCI> dfci;
-      std::string algorithm = itree->get<std::string>("algorithm", "");
+      std::string algorithm = itree->get<std::string>("algorithm", "knowles");
       if (algorithm == "harrison") fci = std::make_shared<HarrisonZarrabian>(itree, geom, ref);
       else if (algorithm == "knowles") fci = std::make_shared<KnowlesHandy>(itree, geom, ref);
       else if (algorithm == "dist" || algorithm == "parallel")
@@ -67,12 +69,18 @@ std::vector<double> fci_energy(std::string inp) {
       if (fci) fci->compute();
       else if (dfci) dfci->compute();
       else assert(false);
-      std::cout.rdbuf(backup_stream);
-      return fci ? fci->energy() : dfci->energy();
+      result = fci ? fci->energy() : dfci->energy();
+    } else if (method == "continue") {
+      IArchive archive(itree->get<std::string>("archive"));
+      Method* ptr;
+      archive >> ptr;
+      auto fci = std::shared_ptr<Method>(ptr);
+      fci->compute();
+      result = std::dynamic_pointer_cast<FCI>(fci)->energy();
     }
   }
-  assert(false);
-  return std::vector<double>();
+  std::cout.rdbuf(backup_stream);
+  return result;
 }
 
 std::vector<double> reference_fci_energy() {
@@ -93,6 +101,7 @@ BOOST_AUTO_TEST_SUITE(TEST_FCI)
 
 BOOST_AUTO_TEST_CASE(KNOWLES_HANDY) {
     BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_kh"), reference_fci_energy()));
+    BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_restart"), reference_fci_energy()));
     BOOST_CHECK(compare(fci_energy("hhe_svp_fci_kh_trip"), reference_fci_energy2()));
 }
 

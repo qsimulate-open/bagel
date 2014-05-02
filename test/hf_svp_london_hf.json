@@ -1,0 +1,23 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "basis_type" : "giao",
+  "tesla" : "false",
+  "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ],
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "F",  "xyz" : [ -1.200000,      2.500000,      2.720616]},
+    { "atom" : "H",  "xyz" : [ -1.200000,      2.500000,      0.305956]}
+  ]
+},
+
+{
+  "title" : "hf",
+  "df" : "false",
+  "thresh" : 1.0e-10
+}
+
+]}

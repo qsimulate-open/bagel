@@ -175,8 +175,8 @@ using RysInt = RysIntegral<double>;
 #include <src/integral/rys/rysintegral_impl.hpp>
 #undef RYSINTEGRAL_HEADERS
 
-extern template class bagel::RysIntegral<double>;
-extern template class bagel::RysIntegral<std::complex<double>>;
+extern template class bagel::RysIntegral<double,bagel::Int_t::Standard>;
+extern template class bagel::RysIntegral<std::complex<double>,bagel::Int_t::London>;
 
 #endif
 

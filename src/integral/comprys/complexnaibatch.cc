@@ -2,9 +2,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexnaibatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -38,7 +38,6 @@ void ComplexNAIBatch::root_weight(const int ps) {
   if (breit_ == 0) {
     complexeriroot__.root(rank_, T_, roots_, weights_, ps);
   } else {
-    assert(0);
     throw runtime_error("Relativistic calculations have not been set up for London orbitals");
   }
 }

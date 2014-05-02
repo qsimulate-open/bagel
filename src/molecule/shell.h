@@ -39,8 +39,6 @@ class Shell {
     bool spherical_;
 
     std::array<double,3> position_;
-    std::array<double,3> vector_potential_;
-    std::array<double,3> magnetic_field_;
     int angular_number_;
     std::vector<double> exponents_;     // length of primitive basis function
     std::vector<std::vector<double>> contractions_;  // length of contracted basis function
@@ -61,6 +59,9 @@ class Shell {
     std::shared_ptr<const Shell> aux_decrement_;
     std::shared_ptr<const Matrix> overlap_compute_() const;
     std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
+
+    // magnetism
+    std::array<double,3> vector_potential_;
 
   private:
     // serialization
@@ -88,7 +89,7 @@ class Shell {
   public:
     Shell() { }
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
-          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
+          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range, const std::array<double,3>& vector_potential);
     // default constructor for adding null basis
     Shell(const bool sph);
 
@@ -99,10 +100,6 @@ class Shell {
 
     double position(const int i) const { return position_[i]; };
     const std::array<double,3>& position() const { return position_; };
-    double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
-    const std::array<double,3>& vector_potential() const { return vector_potential_; };
-    double magnetic_field(const unsigned int i) const { return magnetic_field_[i]; }
-    const std::array<double,3>& magnetic_field() const { return magnetic_field_; };
     int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };
@@ -130,6 +127,9 @@ class Shell {
     std::shared_ptr<const Shell> cartesian_shell() const;
 
     std::vector<std::shared_ptr<const Shell>> split_if_possible(const size_t batchsize) const;
+
+    double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
+    const std::array<double,3>& vector_potential() const { return vector_potential_; };
 
     void init_relativistic();
 

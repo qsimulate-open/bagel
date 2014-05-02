@@ -32,6 +32,9 @@ namespace bagel {
 
 template <typename DataType, Int_t IntType>
 void RysIntegral<DataType,IntType>::set_ab_cd() {
+  static_assert(IntType != Int_t::London || std::is_same<DataType, std::complex<double>>::value, "London-orbital integrals should be complex");
+  static_assert(IntType != Int_t::Standard || std::is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
+
   AB_[0] = basisinfo_[0]->position(0) - basisinfo_[1]->position(0);
   AB_[1] = basisinfo_[0]->position(1) - basisinfo_[1]->position(1);
   AB_[2] = basisinfo_[0]->position(2) - basisinfo_[1]->position(2);

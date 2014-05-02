@@ -43,7 +43,7 @@ template<> void Small1e<ERIBatch>::computebatch(const array<shared_ptr<const She
     if (i->finite_nucleus()) {
       const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
       nshells.push_back(make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()},
-                        vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}));
+                        vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, i->vector_potential()));
     }
   }
   batch.compute(nshells);

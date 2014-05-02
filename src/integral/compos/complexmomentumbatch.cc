@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexmomentumbatch.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -89,12 +89,9 @@ void ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
   const double A_Bx = basisinfo_[1]->vector_potential(0);
   const double A_By = basisinfo_[1]->vector_potential(1);
   const double A_Bz = basisinfo_[1]->vector_potential(2);
-  const double field_x_half = 0.5 * basisinfo_[0]->magnetic_field(0);
-  const double field_y_half = 0.5 * basisinfo_[0]->magnetic_field(1);
-  const double field_z_half = 0.5 * basisinfo_[0]->magnetic_field(2);
-  assert (basisinfo_[1]->magnetic_field(0) == field_x_half * 2.0);
-  assert (basisinfo_[1]->magnetic_field(1) == field_y_half * 2.0);
-  assert (basisinfo_[1]->magnetic_field(2) == field_z_half * 2.0);
+  const double field_x_half = 0.5 * magnetic_field_[0];
+  const double field_y_half = 0.5 * magnetic_field_[1];
+  const double field_z_half = 0.5 * magnetic_field_[2];
 
   for (int ii = 0; ii != prim0_*prim1_; ++ii) {
     // Perform VRR

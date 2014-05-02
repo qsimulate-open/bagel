@@ -635,14 +635,14 @@ int AtomMap::angular_number(const string input) const {
 double AtomMap::radius(const string input) const {
   auto miter = bsradii.find(input);
   if (miter == bsradii.end()) throw runtime_error("Unknown atom (Bragg-Slater radii).");
-  return miter->second*ang2bohr__;
+  return miter->second/au2angstrom__;
 }
 
 
 double AtomMap::cov_radius(const string input) const {
   auto miter = cov_radii.find(input);
   if (miter == cov_radii.end()) throw runtime_error("Unknown atom (Covalent radii).");
-  return miter->second*ang2bohr__;
+  return miter->second/au2angstrom__;
 }
 
 

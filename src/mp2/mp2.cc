@@ -83,14 +83,14 @@ void MP2::compute() {
       half = geom_->df()->compute_half_transform(ocoeff);
       // used later to determine the cache size
       memory_size = half->block(0)->size() * 2;
-      mpi__->broadcast(&memory_size, 1, 0); 
+      mpi__->broadcast(&memory_size, 1, 0);
     } else {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       half = cgeom->df()->compute_half_transform(ocoeff);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
-      mpi__->broadcast(&memory_size, 1, 0); 
+      mpi__->broadcast(&memory_size, 1, 0);
     }
 
     // second transform for virtual index and rearrange data
@@ -246,7 +246,7 @@ void MP2::compute() {
 
   // just to double check that all the communition is done
   for (auto& i : sendreqs)
-    mpi__->wait(i); 
+    mpi__->wait(i);
   // allreduce energy contributions
   mpi__->allreduce(&energy_, 1);
 
