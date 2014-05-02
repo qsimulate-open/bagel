@@ -53,7 +53,7 @@ ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
+ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
   add_real_block(factor, 0, 0, ndim_, mdim_, r.data());
 }
 
