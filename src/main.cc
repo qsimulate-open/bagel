@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
     shared_ptr<Dimer> dimer;
 
     map<string, shared_ptr<const void>> saved;
+    bool dodf = true;
 
     // timer for each method
     Timer timer(-1);
@@ -91,13 +92,10 @@ int main(int argc, char** argv) {
         } else throw runtime_error("basis type not understood - should be gaussian or london");
       } else {
         if (!geom && !cgeom) throw runtime_error("molecule block is missing");
+        if (!itree->get<bool>("df",true)) dodf = false;
+        if (geom) if (dodf && geom->df() == nullptr)   throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (cgeom) if (dodf && cgeom->df() == nullptr) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
-
-      // TODO we are checking this for non-DF method...
-      if (geom) if (geom->df() == nullptr)
-        throw runtime_error("It seems that DF basis was not specified in Geometry");
-      if (cgeom) if (cgeom->df() == nullptr)
-        throw runtime_error("It seems that DF basis was not specified in Geometry_London");
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
