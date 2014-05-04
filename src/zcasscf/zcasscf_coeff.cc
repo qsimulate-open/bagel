@@ -211,3 +211,73 @@ shared_ptr<ZMatrix> ZCASSCF::project_non_rel_coeff(shared_ptr<const RelOverlap> 
   }
   return ctmp2;
 }
+
+
+shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> overlap, const bool stripes) const {
+  // constructs a relativistic coefficient for electronic componenets from a non-rel coefficient
+  int n = nr_coeff_->ndim();
+  int nvirtnr = nvirt_ - nneg_/2;
+  auto ctmp = make_shared<ZMatrix>(n*4, n*4);
+
+  nr_coeff_->print(" Non Rel Coeff ", nr_coeff_->ndim());
+  // compute T^(-1/2) and S^(1/2)
+  auto t12 = overlap->get_submatrix(n*2, n*2, n, n)->copy();
+  t12->inverse_half(1.0e-10);
+  auto shalf = overlap->get_submatrix(0, 0, n, n)->copy();
+  unique_ptr<double[]> eig2(new double[shalf->mdim()]);
+  shalf->diagonalize(eig2.get());
+  for (int k = 0; k != shalf->mdim(); ++k) {
+    if (real(eig2[k]) >= 0.0)
+      blas::scale_n(sqrt(sqrt(eig2[k])), shalf->element_ptr(0, k), shalf->ndim());
+  }
+  *shalf = *shalf ^ *shalf;
+  auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());
+  tcoeff->add_real_block(1.0, 0, 0, n, n, nr_coeff_->data());
+  *tcoeff = *t12 * *shalf * *tcoeff;
+  // copy non rel values into "+/-" stripes
+  if (stripes) {
+    // closed
+    for (int j=0; j!=nclosed_; ++j) {
+      ctmp->add_real_block(1.0, 0, j*2,   n, 1, nr_coeff_->slice(j, j+1)->data());
+      ctmp->add_real_block(1.0, n, j*2+1, n, 1, nr_coeff_->slice(j, j+1)->data());
+    }
+    // active
+    for (int j=0; j!=nact_; ++j) {
+      ctmp->add_real_block(1.0, 0, nclosed_*2 + j*2,   n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+      ctmp->add_real_block(1.0, n, nclosed_*2 + j*2+1, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+    }
+    // virtuals
+    for (int j=0; j!=nvirtnr; ++j) {
+      ctmp->add_real_block(1.0, 0, nocc_*2 + j*2,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+      ctmp->add_real_block(1.0, n, nocc_*2 + j*2+1, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+    }
+    // positrons
+    for (int j=0; j!=nneg_/2; ++j) {
+      ctmp->copy_block(n*2, ctmp->mdim() - j*2-2,   n, 1, tcoeff->slice(j, j+1)->data());
+      ctmp->copy_block(n*3, ctmp->mdim() - j*2-1, n, 1, tcoeff->slice(j, j+1)->data());
+    }
+  } else { // block structure
+    int m2 = ctmp->mdim()/2;
+    // closed
+    for (int j=0; j!=nclosed_; ++j) {
+      ctmp->add_real_block(1.0, 0, j,   n, 1, nr_coeff_->slice(j, j+1)->data());
+      ctmp->add_real_block(1.0, n, m2 + j, n, 1, nr_coeff_->slice(j, j+1)->data());
+    }
+    // active
+    for (int j=0; j!=nact_; ++j) {
+      ctmp->add_real_block(1.0, 0, nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+      ctmp->add_real_block(1.0, n, m2 + nclosed_ + j, n, 1, nr_coeff_->slice(nclosed_ + j, nclosed_ + j+1)->data());
+    }
+    // virtuals
+    for (int j=0; j!=nvirtnr; ++j) {
+      ctmp->add_real_block(1.0, 0, nocc_ + j,   n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+      ctmp->add_real_block(1.0, n, m2 + nocc_ + j, n, 1, nr_coeff_->slice(nocc_ + j, nocc_ + j+1)->data());
+    }
+    // positrons
+    for (int j=0; j!=nneg_/2; ++j) {
+      ctmp->copy_block(n*2, m2 - j-1,   n, 1, tcoeff->slice(j, j+1)->data());
+      ctmp->copy_block(n*3, ctmp->mdim() - j-1, n, 1, tcoeff->slice(j, j+1)->data());
+    }
+  }
+  ctmp->get_real_part()->print(" non rel in rel ", ctmp->mdim());
+  return ctmp;

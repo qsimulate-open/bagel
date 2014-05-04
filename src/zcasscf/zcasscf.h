@@ -90,7 +90,9 @@ class ZCASSCF : public Method {
     void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
 
-    std::shared_ptr<ZMatrix> project_non_rel_coeff(std::shared_ptr<const RelOverlap> overlap, std::shared_ptr<ZMatrix> kramers_coeff) const;
+
+    std::shared_ptr<ZMatrix> project_non_rel_coeff(std::shared_ptr<const RelOverlap> overlap, std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<ZMatrix> kramers_coeff) const;
+    std::shared_ptr<ZMatrix> nonrel_to_relcoeff(std::shared_ptr<const RelOverlap> overlap, const bool stripes = true) const;
 
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
