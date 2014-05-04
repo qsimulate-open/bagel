@@ -63,8 +63,8 @@ void Dirac_London::common_init(const shared_ptr<const PTree> idata) {
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = cgeom_->nele()-ncharge_;
 
-  hcore_ = make_shared<const RelHcore>(cgeom_);
-  overlap_ = make_shared<const RelOverlap>(cgeom_);
+  hcore_ = make_shared<const RelHcore_London>(cgeom_);
+  overlap_ = make_shared<const RelOverlap_London>(cgeom_);
   s12_ = overlap_->tildex(thresh_overlap_);
 
   nneg_ = s12_->mdim()/2;
@@ -203,16 +203,16 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
     shared_ptr<ZMatrix> fock;
     if (nocc*2 == nele_) {
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
-      ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
-      ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
+      ocoeff->add_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
+      ocoeff->add_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
       fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
       assert(nocca+noccb == nele_);
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
-     ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
-      ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
+     ocoeff->add_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
+      ocoeff->add_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
       fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;

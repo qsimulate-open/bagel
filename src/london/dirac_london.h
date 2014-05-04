@@ -31,8 +31,8 @@
 #include <map>
 #include <src/wfn/method.h>
 #include <src/wfn/geometry_london.h>
-#include <src/rel/relhcore.h>
-#include <src/rel/reloverlap.h>
+#include <src/london/relhcore_london.h>
+#include <src/london/reloverlap_london.h>
 #include <src/london/reldfhalf_london.h>
 
 namespace bagel {
@@ -56,8 +56,8 @@ class Dirac_London : public Method {
     // for Fock build
     bool robust_;
 
-    std::shared_ptr<const RelHcore> hcore_;
-    std::shared_ptr<const RelOverlap> overlap_;
+    std::shared_ptr<const RelHcore_London> hcore_;
+    std::shared_ptr<const RelOverlap_London> overlap_;
     std::shared_ptr<const ZMatrix> s12_;
 
     std::shared_ptr<const ZMatrix> coeff_;
