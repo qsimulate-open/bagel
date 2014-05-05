@@ -116,23 +116,23 @@ void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 }
 
 
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o) const {
+void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
   for (int i = 0; i != nclosed_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt_, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt_, i+nclosed_) = conj(o->ele_vc(j, i));
+    for (int j = 0; j != nvirt; ++j) {
+      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed_))) * 0.5;
+      o->ele_vc(j+nvirt, i+nclosed_) = conj(o->ele_vc(j, i));
 
-      o->ele_vc(j+nvirt_, i) = (o->ele_vc(j+nvirt_, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt_, i));
+      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
+      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt, i));
     }
   }
   for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt_; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt_, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt_, i+nact_) = conj(o->ele_va(j, i));
+    for (int j = 0; j != nvirt; ++j) {
+      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact_))) * 0.5;
+      o->ele_va(j+nvirt, i+nact_) = conj(o->ele_va(j, i));
 
-      o->ele_va(j+nvirt_, i) = (o->ele_va(j+nvirt_, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt_, i));
+      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
+      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt, i));
     }
   }
   for (int i = 0; i != nact_; ++i) {

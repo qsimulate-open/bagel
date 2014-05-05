@@ -105,16 +105,16 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
 }
 
 
-void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o) const {
+void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
   // function to enforce time-reversal symmetry
   //    for a complex matrix o, that is SYMMETRIC under time reversal
 
-  auto kramers_adapt_block = [this](shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff) {
+  auto kramers_adapt_block = [this](shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff, int nvirt) {
     // function to enforce time-reversal symmetry for a given block of a complex matrix o.
     // tfac                 symmetry factor under time-reversal (symmetric : t=1, antisymm : t=-1)
-    // nq1, nq2             nclosed_, nact_, nvirt_
+    // nq1, nq2             nclosed_, nact_, nvirt
     // ioff, joff           column and row offsets, respectively
-    assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim() );
+    assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim() );
     assert( tfac == 1 || tfac == -1);
     const double t = tfac == 1 ? 1.0 : -1.0;
     for (int i = 0; i != nq2; ++i) {
@@ -130,12 +130,12 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o) const {
     }
   };
 
-  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt_)*2 == o->ndim());
-  const array<int,3> a0 {{nclosed_, nact_, nvirt_}};
+  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim());
+  const array<int,3> a0 {{nclosed_, nact_, nvirt}};
   const array<int,3> a1 {{0, 2*nclosed_, 2*nocc_}};
   for (int ii = 0; ii !=3; ++ii) {
     for (int jj = 0; jj !=3; ++jj) {
-      kramers_adapt_block(o,1,a0[jj],a0[ii],a1[jj],a1[ii]);
+      kramers_adapt_block(o,1,a0[jj],a0[ii],a1[jj],a1[ii],nvirt);
     }
   }
 }

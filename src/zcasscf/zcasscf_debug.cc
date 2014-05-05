@@ -82,7 +82,7 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
   auto expatmp = make_shared<ZMatrix>(*amattmp ^ *amattmp_sav);
 
   if (kramers) {
-    kramers_adapt(expatmp);
+    kramers_adapt(expatmp, nvirt_);
     assert( ( (*expatmp->get_submatrix(nocc_*2, 0, nvirt_, nclosed_)) 
              - (*expatmp->get_submatrix(nocc_*2+nvirt_, nclosed_, nvirt_, nclosed_)->get_conjg()) ).rms() < 1e-20 );
   }

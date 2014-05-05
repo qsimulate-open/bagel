@@ -87,8 +87,8 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
-    void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
-    void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
+    void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nvirt) const;
+    void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
 
     std::shared_ptr<ZMatrix> project_non_rel_coeff(std::shared_ptr<const RelOverlap> overlap, std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<ZMatrix> kramers_coeff) const;

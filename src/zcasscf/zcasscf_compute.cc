@@ -132,7 +132,7 @@ void ZCASSCF::compute() {
     grad_ca(cfock, afock, qvec, rdm1, grad);
     *grad *= 2.0;
     if (!___debug___break_kramers)
-      kramers_adapt(grad);
+      kramers_adapt(grad, nvirt_);
 
     if (___debug___break_kramers) {
       ___debug___print_gradient(grad, ___debug___with_kramers);
@@ -152,7 +152,7 @@ void ZCASSCF::compute() {
     shared_ptr<ZRotFile> a = srbfgs->extrapolate(grad, xlog);
     resume_stdcout();
     if (!___debug___break_kramers)
-      kramers_adapt(a);
+      kramers_adapt(a, nvirt_);
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
 
     const double gradient = grad->rms();
@@ -170,7 +170,7 @@ void ZCASSCF::compute() {
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
     if (!___debug___break_kramers)
-      kramers_adapt(expa);
+      kramers_adapt(expa, nvirt_);
 
     coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
     // for next BFGS extrapolation
