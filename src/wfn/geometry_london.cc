@@ -31,9 +31,10 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
+#include <src/integral/rys/eribatch.h>
 #include <src/integral/comprys/complexeribatch.h>
-#include <src/integral/rys/smalleribatch.h>
-#include <src/integral/rys/mixederibatch.h>
+#include <src/integral/comprys/complexsmalleribatch.h>
+#include <src/integral/comprys/complexmixederibatch.h>
 #include <src/integral/libint/libint.h>
 #include <src/wfn/geometry_london.h>
 #include <src/wfn/geometry_connect.h>
@@ -601,7 +602,7 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->relativistic());
+    atom.push_back(i->relativistic_london(magnetic_field_));
   geom->atoms_ = atom;
 
   geom->compute_relativistic_integrals(do_gaunt);
@@ -612,12 +613,11 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   return geom;
 }
 
-// TODO Need to make ComplexSmallERIBatch and ComplexMixedERIBatch?
 void Geometry_London::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
-//  dfs_  = form_fit<DFDist_London_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
-//  if (do_gaunt)
-//    dfsl_ = form_fit<DFDist_London_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+  dfs_  = form_fit<DFDist_London_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+  if (do_gaunt)
+    dfsl_ = form_fit<DFDist_London_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);

@@ -421,5 +421,21 @@ shared_ptr<const Atom> Atom::relativistic() const {
   return atom;
 }
 
+
+shared_ptr<const Atom> Atom::relativistic_london(array<double,3> magnetic_field) const {
+  // basically the same
+  // except for shells_
+  vector<shared_ptr<const Shell>> rshells;
+  for (auto& i : shells_) {
+    auto tmp = make_shared<Shell>(*i);
+    tmp->init_relativistic_london(magnetic_field);
+    rshells.push_back(tmp);
+  }
+  auto atom = make_shared<Atom>(*this);
+  atom->shells_ = rshells;
+  return atom;
+}
+
+
 double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }

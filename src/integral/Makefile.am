@@ -14,6 +14,7 @@ comprys/complexeribatch.cc rys/eribatch.cc rys/gradbatch.cc rys/gnaibatch.cc rys
 rys/compute.cc comprys/ccompute.cc rys/bcompute.cc rys/gcompute.cc rys/gncompute.cc rys/scompute.cc rys/vrr_optim.cc rys/bvrr_optim.cc rys/svrr_optim.cc rys/usvrr_optim.cc \
 rys/naibatch.cc comprys/complexnaibatch.cc rys/r0batch.cc rys/r1batch.cc rys/r2batch.cc rys/eribatch_base.cc\
 rys/smalleribatch.cc rys/mixederibatch.cc rys/gsmallnaibatch.cc rys/gsmalleribatch.cc \
+comprys/complexsmalleribatch.cc comprys/complexmixederibatch.cc \
 os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/mmbatch.cc os/momentumbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc os/osintegral.cc\
 libint/libint.cc libint/glibint.cc
 libbagel_integral_la_LIBADD = ../util/libbagel_util.la ../parallel/libbagel_parallel.la ../math/libbagel_math.la ../molecule/libbagel_molecule.la
