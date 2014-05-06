@@ -162,8 +162,8 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 }
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()),
-  nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
+: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number()),
+  atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
 
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
@@ -176,7 +176,7 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 
 Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell,
                                               const vector<shared_ptr<const Shell_ECP>> shell_ECP, const int ncore)
-: name_(nm), shells_(shell), ecp_parameters_(make_shared<const ECP>(ncore, shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(make_shared<const ECP>(ncore, shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -185,7 +185,7 @@ Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shel
 }
 
 Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell, const shared_ptr<const ECP> ecp_param)
-: name_(nm), shells_(shell), ecp_parameters_(ecp_param), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(ecp_param), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -195,7 +195,7 @@ Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shel
 
 
 Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell)
-: name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -205,7 +205,7 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
 
   if (elem)
     for (auto& i : *elem) {
@@ -224,7 +224,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -241,8 +241,9 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
-: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
+: spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
   atom_exponent_ = 0.0;
+  use_ecp_basis_ = false;
 }
 
 
