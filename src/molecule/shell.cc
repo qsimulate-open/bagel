@@ -38,7 +38,7 @@ static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range, const array<double,3>& _vector_potential)
- : spherical_(sph), position_(_position), angular_number_(_ang),
+ : Shell_base(sph, _position, _ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
 
   contraction_lower_.reserve(_range.size());
@@ -56,8 +56,8 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 }
 
 
-Shell::Shell(const bool sph) : spherical_(sph), position_{{0.0,0.0,0.0}}, angular_number_(0), exponents_{0.0},
-                               contractions_{{1.0}}, contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
+Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
+                               contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -80,8 +80,7 @@ std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const 
   return out;
 }
 
-
-const string Shell::show() const {
+string Shell::show() const {
   stringstream ss;
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
@@ -100,7 +99,6 @@ const string Shell::show() const {
   return ss.str();
 }
 
-
 bool Shell::operator==(const Shell& o) const {
   bool out = true;
   out &= spherical_ == o.spherical_;
@@ -115,7 +113,6 @@ bool Shell::operator==(const Shell& o) const {
   out &= nbasis_ == o.nbasis_;
   return out;
 }
-
 
 vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize) const {
   vector<shared_ptr<const Shell>> out;
@@ -172,12 +169,10 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
   return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
 }
 
-
 shared_ptr<const Shell> Shell::cartesian_shell() const {
   auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_, vector_potential_);
   return out;
 }
-
 
 void Shell::init_relativistic() {
   relativistic_ = true;

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: rnbatch.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: bessel.h
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,28 +23,47 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+//
 
-#ifndef __SRC_RYSINT_RNBATCH_H
-#define __SRC_RYSINT_RNBATCH_H
+#ifndef __BAGEL_UTIL_BESSEL_H
+#define __BAGEL_UTIL_BESSEL_H
 
-#include <src/integral/rys/coulombbatch_energy.h>
+#include <iostream>
+#include <cmath>
+#include <vector>
+#include <src/math/factorial.h>
 
 namespace bagel {
 
-class RnBatch: public CoulombBatch_energy {
-  protected:
+class MSphBesselI {
+
+  private:
+    int l_;
+
+     double R_l(const double x) const {
+       Factorial f;
+       double sum = 0.0;
+       for (int i = 0; i <= l_; ++i) {
+         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
+       }
+       return sum;
+     }
 
   public:
-    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      : CoulombBatch_energy (_info, mol, stack) {}
 
+     MSphBesselI(const int l) : l_(l) {}
+     ~MSphBesselI() {}
 
-    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {}
-      
-    ~RnBatch() {}
+     double compute(const double x) const {
+       Factorial f;
+       if (x < 1e-7) {
+         return (1.0 - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
+       } else if (x > 16) {
+         return 0.5 * R_l(-x) / x;
+       } else {
+         return 0.5 * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
+       }
+     }
 
 };
 

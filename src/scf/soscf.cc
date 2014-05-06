@@ -3,7 +3,7 @@
 // Filename: soscf.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu> 
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -49,6 +49,49 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 
+  geom_->atoms(0)->print_basis();
+
+#if 0
+  /**** Test Projection Integrals ****/
+
+  auto mol = make_shared<const Molecule>(geom_->aux_atoms(), geom_->aux_atoms());
+  vector<shared_ptr<const Atom>> auxatom;
+  auxatom.push_back(mol->atoms(0));
+  auto auxmol = make_shared<const Molecule>(auxatom, auxatom);
+  //auxmol->print_atoms();
+
+  vector<shared_ptr<const Atom>> refatom;
+  refatom.push_back(geom_->atoms(1));
+  auto refgeom = make_shared<const Geometry>(refatom, make_shared<const PTree>());
+  refgeom->print_atoms();
+
+  vector<shared_ptr<const Atom>> refatom2;
+  refatom2.push_back(geom_->atoms(2));
+  auto refgeom2 = make_shared<const Geometry>(refatom2, make_shared<const PTree>());
+  refgeom2->print_atoms();
+
+  auto auxgeom = make_shared<const Geometry>(auxatom, make_shared<const PTree>());
+
+  // Test < r | a >< a | s>
+  MixedBasis<OverlapBatch> mixedSra(auxgeom, refgeom);
+  mixedSra.print("< r | a >", 25);
+  MixedBasis<OverlapBatch> mixedSsa(refgeom2, auxgeom);
+  mixedSsa.print("< s | a >", 25);
+  MixedBasis<OverlapBatch> S(auxgeom, auxgeom);
+  S.inverse();
+//(mixedSra * S * mixedSsa).print(" < r | a > S^{-1} < a | s > ", 25);
+
+//MixedBasis<OverlapBatch> overlap(refgeom, refgeom2);
+//overlap.print(" < r | s > ", 21);
+
+  // Test <r | a >< a | Rn | s>
+  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0(auxmol, refgeom2, refgeom2);
+  (mixedSra * S ^ mixedR0).print(" < r | a > S^{-1} < a | R0 | s >", 25);
+  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0rs(refgeom, refgeom2, refgeom2);
+  mixedR0rs.print(" < r | R0 | s >", 25);
+
+#endif
+
 }
 
 void SOSCF::initial_guess() {
@@ -63,18 +106,26 @@ void SOSCF::initial_guess() {
 }
 
 void SOSCF::compute() {
+  Timer scftime;
   initial_guess();
+
+  cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
+  scftime.tick_print("SOSCF startup");
+  cout << endl;
+  cout << indent << "=== SOSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
   DIIS<Matrix> diis(diis_size_);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     shared_ptr<const Matrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
     energy_ = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
-    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ - 
+    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ -
                                                   *sooverlap_ * *aodensity_ * *sofock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       break;

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: rnbatch.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: shell_base.h
+// Copyright (C) 2009 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -24,30 +24,37 @@
 //
 
 
-#ifndef __SRC_RYSINT_RNBATCH_H
-#define __SRC_RYSINT_RNBATCH_H
+#ifndef __SRC_MOLECULE_SHELL_BASE_H
+#define __SRC_MOLECULE_SHELL_BASE_H
 
-#include <src/integral/rys/coulombbatch_energy.h>
+#include <array>
 
 namespace bagel {
 
-class RnBatch: public CoulombBatch_energy {
+class Shell_base {
+
   protected:
+    bool spherical_;
+    std::array<double,3> position_;
+    int angular_number_;
 
   public:
-    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      : CoulombBatch_energy (_info, mol, stack) {}
+    Shell_base() { }
+    Shell_base(const bool spherical, const std::array<double,3>& position, int angular_num);
+    Shell_base(const bool sph);
 
+    bool spherical() const { return spherical_; };
 
-    RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
-            const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {}
-      
-    ~RnBatch() {}
+    double position(const int i) const { return position_[i]; };
+    const std::array<double,3>& position() const { return position_; };
+
+    int angular_number() const { return angular_number_; };
+
+    virtual std::string show() const;
 
 };
 
 }
 
 #endif
+
