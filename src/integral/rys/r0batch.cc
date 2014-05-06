@@ -62,6 +62,7 @@ void R0Batch::compute_ssss(const double integral_thresh) {
             const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
             const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
             coeff_[index] = exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
+            coeff_[index] *= shell_ecp->ecp_coefficients(i);
             const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
             if (ss > integral_thresh) {
               screening_[screening_size_] = index;

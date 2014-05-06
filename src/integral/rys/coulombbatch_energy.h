@@ -36,7 +36,7 @@ class CoulombBatch_energy : public CoulombBatch_Base<double> {
 
     void root_weight(const int ps) override;
     virtual double scale_root(const double root, const double p, const double zeta) { return root; }
-    virtual double scale_weight(const double weight, const double coef) { return weight; }
+    virtual double scale_weight(const double weight) { return weight; }
     std::vector<std::pair<int, int>> indexecp_;
 
   public:

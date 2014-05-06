@@ -35,7 +35,7 @@ class R0Batch: public RnBatch {
   protected:
     void compute_ssss(const double) override;
     double scale_root(const double root, const double p, const double zeta) override { return zeta / (p + zeta); }
-    double scale_weight(const double weight, const double coef) override { return coef; }
+    double scale_weight(const double weight) override { return 1.0; }
 
   public:
     R0Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
