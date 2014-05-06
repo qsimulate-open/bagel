@@ -55,8 +55,6 @@ CoulombBatch_Base<DataType, IntType>::CoulombBatch_Base(const std::array<std::sh
 
   allocate_data(asize_intermediate, 1, asize_final, 1);
 
-  this->allocate_arrays(primsize_*natom_);
-
 }
 
 template <typename DataType, Int_t IntType>

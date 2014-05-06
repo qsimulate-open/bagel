@@ -65,8 +65,9 @@ void CoulombBatch_energy::compute() {
   assert(natom_ % (2 * L_ + 1) == 0);
   for (int xj = 0; xj != screening_size_; ++xj) {
     const int i = screening_[xj];
-    const int iprim = i / natom_;
-    const int resid = i % natom_;
+    const int ecp = (indexecp_.empty()) ? 1 : mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size();
+    const int iprim = i / (natom_ * ecp);
+    const int resid = i % (natom_ * ecp);
     const int cell  = resid / natom_unit - L_;
     const int iatom = resid % natom_unit;
     double disp[3];

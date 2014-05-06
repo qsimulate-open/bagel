@@ -53,6 +53,8 @@ class SlaterBatch : public RysInt {
     void root1_direct();
     void root2_direct();
 
+    this->allocate_arrays(primsize_*natom_);
+
     void compute_ssss(const double) override;
     void allocate_data(const int asize_final, const int csize_final, const int asize_final_sph, const int csize_final_sph) override;
 
