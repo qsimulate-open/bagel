@@ -28,6 +28,7 @@
 #define __SRC_MOLECULE_ATOM_H
 
 #include <src/molecule/shell.h>
+#include <src/molecule/ecp.h>
 #include <src/input/input.h>
 
 namespace bagel {
@@ -40,6 +41,8 @@ class Atom {
     std::array<double,3> position_;
     std::array<double,3> vector_potential_;
     std::vector<std::shared_ptr<const Shell>> shells_;
+    bool use_ecp_basis_;
+    std::shared_ptr<const ECP> ecp_parameters_;
     int atom_number_;
     double atom_charge_;
     double atom_exponent_;
@@ -49,16 +52,18 @@ class Atom {
     // basis set
     std::string basis_;
 
-    // effective core potential (0 = zeta, 1 = coef)
-    std::array<double,2> ecp_;
-
     // This function sets shell_ and lmax_
     // in : a vector of an angular label, exponents, and coefficients.
     void construct_shells(std::vector<std::tuple<std::string, std::vector<double>, std::vector<std::vector<double>>>> in);
+    // in : angular momentum (l), exponents (zeta_kl), coefficients (A_kl), powers of r (n_kl)
+    void construct_shells_ECP(const int ncore, std::vector<std::tuple<std::string, std::vector<double>,
+                              std::vector<double>, std::vector<int>>> in);
+
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
     void split_shells(const size_t batchsize);
 
     void basis_init(std::shared_ptr<const PTree>);
+    void basis_init_ECP(std::shared_ptr<const PTree>);
     void common_init();
 
   private:
@@ -67,7 +72,7 @@ class Atom {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_ & ecp_;
+      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_;
     }
 
   public:
@@ -80,6 +85,10 @@ class Atom {
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
+    Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
+                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore);
+    Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
+                                                        const std::shared_ptr<const ECP> ecp_param);
 
     Atom(const Atom&, const bool spherical, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem);
     Atom(const Atom&, const std::array<double,3>& displ);
@@ -98,6 +107,9 @@ class Atom {
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
 
+    const bool use_ecp_basis() const { return use_ecp_basis_; }
+    const std::shared_ptr<const ECP>& ecp_parameters() const { return ecp_parameters_; }
+
     bool dummy() const { return atom_number_ == 0; }
 
     int nbasis() const { return nbasis_; }
@@ -110,10 +122,6 @@ class Atom {
     void print() const;
 
     bool operator==(const Atom&) const;
-
-    // effective core potential
-    bool ecp() const { return ecp(0) != 0.0 || ecp(1) != 0.0; }
-    double ecp(const int i) const { return ecp_[i]; }
 
     // distance between this and other
     double distance(const std::array<double,3>& o) const;

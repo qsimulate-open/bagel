@@ -40,8 +40,8 @@ class R1Batch: public RnBatch {
     double scale_weight(const double weight, const double coef) override { return weight * coef; }
 
   public:
-    R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
-            std::shared_ptr<StackMem> stack = nullptr)
+    R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
+            const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
       : RnBatch (_info, mol, stack) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
@@ -49,8 +49,8 @@ class R1Batch: public RnBatch {
     }
 
 
-    R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol,
-            const int L, const double A = 0.0)
+    R1Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
+            const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
       : RnBatch (_info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);

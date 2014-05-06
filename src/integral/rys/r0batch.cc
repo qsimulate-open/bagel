@@ -42,29 +42,38 @@ void R0Batch::compute_ssss(const double integral_thresh) {
   const double sqrtpi = sqrt(pi__);
   for (auto expi0 = exp0.begin(); expi0 != exp0.end(); ++expi0) {
     for (auto expi1 = exp1.begin(); expi1 != exp1.end(); ++expi1) {
-      for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
-        double zeta = (*aiter)->ecp(0);
-        const double cxp = *expi0 + *expi1;
-        const double socxp = cxp + zeta;
-        xp_[index] = cxp;
-        const double ab = *expi0 * *expi1;
-        const double cxp_inv = 1.0 / cxp;
-        const double socxp_inv = 1.0 / socxp;
-        P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
-        P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
-        P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
-        const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
-        const double PCx = P_[index * 3    ] - (*aiter)->position(0);
-        const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
-        const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
-        coeff_[index] = exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
-        const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
-        if (ss > integral_thresh) {
-          screening_[screening_size_] = index;
-          ++screening_size_;
-        } else {
-          coeff_[index] = 0.0;
+      int iatom = 0;
+      for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter) {
+        const shared_ptr<const Shell_ECP> shell_ecp = (*aiter)->ecp_parameters()->shell_maxl_ecp();
+        for (int i = 0; i != shell_ecp->ecp_exponents().size(); ++i) {
+          if (abs(shell_ecp->ecp_r_power(i) - 2) == 0) {
+            double zeta = shell_ecp->ecp_exponents(i);
+            const double cxp = *expi0 + *expi1;
+            const double socxp = cxp + zeta;
+            xp_[index] = cxp;
+            const double ab = *expi0 * *expi1;
+            const double cxp_inv = 1.0 / cxp;
+            const double socxp_inv = 1.0 / socxp;
+            P_[index * 3    ] = (basisinfo_[0]->position(0) * *expi0 + basisinfo_[1]->position(0) * *expi1) * cxp_inv;
+            P_[index * 3 + 1] = (basisinfo_[0]->position(1) * *expi0 + basisinfo_[1]->position(1) * *expi1) * cxp_inv;
+            P_[index * 3 + 2] = (basisinfo_[0]->position(2) * *expi0 + basisinfo_[1]->position(2) * *expi1) * cxp_inv;
+            const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
+            const double PCx = P_[index * 3    ] - (*aiter)->position(0);
+            const double PCy = P_[index * 3 + 1] - (*aiter)->position(1);
+            const double PCz = P_[index * 3 + 2] - (*aiter)->position(2);
+            coeff_[index] = exp(-cxp * zeta * socxp_inv * (PCx * PCx + PCy * PCy + PCz * PCz)) * Eab * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
+            const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * pi__ * sqrtpi * socxp_inv * sqrt(socxp_inv);
+            if (ss > integral_thresh) {
+              screening_[screening_size_] = index;
+              ++screening_size_;
+              indexecp_.push_back(make_pair(iatom, i));
+            } else {
+              coeff_[index] = 0.0;
+            }
+            ++index;
+          }
         }
+        ++iatom;
       }
     }
   }

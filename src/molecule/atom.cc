@@ -38,6 +38,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
            std::shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
+  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
 
   if (elem)
     for (auto& i : *elem) {
@@ -62,7 +63,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
     string na = name_;
     na[0] = toupper(na[0]);
-    basis_init(basisset->get_child(na));
+    (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
   }
   atom_exponent_ = inp->get<double>("exponent", 0.0);
 }
@@ -71,6 +72,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
  : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
+  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
@@ -83,13 +85,14 @@ Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<s
     string na = name_;
     shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
     na[0] = toupper(na[0]);
-    basis_init(basisset->get_child(na));
+    (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
   }
 }
 
 
 void Atom::basis_init(shared_ptr<const PTree> basis) {
   // basis_info will be used in the construction of Basis_batch
+
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
 
   for (auto& ibas : *basis) {
@@ -115,20 +118,56 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
   construct_shells(basis_info);
   common_init();
 
-#if 1
-  // ECP initialization
-  // FIXME - for mulitple zeta's
-  // zeta
-  ecp_[0] = 10.0;
-  // weight
-  ecp_[1] = 1.0;
-#else
-  fill(ecp_.begin(), ecp_.end(), 0.0);
-#endif
+}
+
+void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
+
+  for (auto& ibas : *basis) {
+    try
+    {
+      basis_init(ibas->get_child("valence"));
+    }
+    catch (const std::exception &err)
+    {
+      cout << err.what() << endl;
+      throw std::runtime_error("ECP basis set file has the wrong format!");
+    }
+    const int ncore = ibas->get<int>("ncore");
+    const shared_ptr<const PTree> core = ibas->get_child("core");
+    vector<tuple<string, vector<double>, vector<double>, vector<int>>> basis_info;
+
+    for (auto& ibcore : *core) {
+
+      const string ang = ibcore->get<string>("ecp_angular");
+      const shared_ptr<const PTree> exp = ibcore->get_child("ecp_exp");
+      vector<double> exponents;
+
+      for (auto& p : *exp)
+        exponents.push_back(lexical_cast<double>(p->data()));
+
+      const shared_ptr<const PTree> coef = ibcore->get_child("ecp_coef");
+      vector<double> coefficients;
+
+      for (auto& c : *coef)
+          coefficients.push_back(lexical_cast<double>(c->data()));
+
+      const shared_ptr<const PTree> r_p = ibcore->get_child("ecp_r");
+      vector<int> r_power;
+
+      for (auto& r : *r_p)
+          r_power.push_back(lexical_cast<int>(r->data()));
+
+      basis_info.push_back(make_tuple(ang, exponents, coefficients, r_power));
+    }
+
+    construct_shells_ECP(ncore, basis_info);
+
+  }
+
 }
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()),
+: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis()), atom_number_(old.atom_number()), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()),
   nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
 
   assert(displacement.size() == 3 && old.position().size() == 3);
@@ -140,9 +179,28 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
     shells_.push_back(s->move_atom(displacement));
 }
 
+Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell,
+                                              const vector<shared_ptr<const Shell_ECP>> shell_ECP, const int ncore)
+: name_(nm), shells_(shell), ecp_parameters_(make_shared<const ECP>(ncore, shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+  spherical_ = shells_.front()->spherical();
+  position_ = shells_.front()->position();
+
+  common_init();
+  atom_exponent_ = 0.0;
+}
+
+Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell, const shared_ptr<const ECP> ecp_param)
+: name_(nm), shells_(shell), ecp_parameters_(ecp_param), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+  spherical_ = shells_.front()->spherical();
+  position_ = shells_.front()->position();
+
+  common_init();
+  atom_exponent_ = 0.0;
+}
+
 
 Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell)
-: name_(nm), shells_(shell), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
@@ -163,17 +221,19 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
       const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
+
+  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   string na = name_;
   na[0] = toupper(na[0]);
   shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
-  basis_init(basisset->get_child(na));
+  (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
 
   atom_exponent_ = 0.0;
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
- : spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -190,7 +250,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
-: spherical_(sph), name_(nm), position_(p), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
+: spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
   atom_exponent_ = 0.0;
 }
 
@@ -311,6 +371,24 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
 }
 
+void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<double>, vector<double>, vector<int>>> in) {
+
+  vector<shared_ptr<const Shell_ECP>> shells_ECP;
+
+  for (auto& biter : in) {
+    const int l = atommap_.angular_number(get<0>(biter));
+    const vector<double> exponents = get<1>(biter);
+    const vector<double> coefficients = get<2>(biter);
+    const vector<int> r_power = get<3>(biter);
+
+    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , exponents, coefficients, r_power));
+
+  }
+
+  ecp_parameters_ = make_shared<const ECP>(ncore, shells_ECP);
+
+}
+
 
 void Atom::split_shells(const size_t batchsize) {
   vector<shared_ptr<const Shell>> out;
@@ -329,6 +407,7 @@ void Atom::split_shells(const size_t batchsize) {
 
 void Atom::print_basis() const {
   for (auto& i : shells_) cout << i->show() << endl;
+  ecp_parameters_->print();
 }
 
 

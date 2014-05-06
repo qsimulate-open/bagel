@@ -95,6 +95,7 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
       // Now loop over all nuclei
       for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++index) {
         double Z = (*aiter)->atom_charge();
+        if ((*aiter)->use_ecp_basis()) Z -= (*aiter)->ecp_parameters()->ecp_ncore();
         xp_[index] = cxp;
         P_[index * 3    ] = px;
         P_[index * 3 + 1] = py;
