@@ -503,6 +503,36 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
 
 
 
+shared_ptr<ZRotFile> ZCASSCF::___debug___optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons) {
+  // function to optimize only the electronic type orbital rotations neglecting any coupling to positrons
+  const int nvirtnr = nvirt_ - nneg_/2;
+
+  // copy the inputs
+  shared_ptr<ZRotFile> newgrad;
+  shared_ptr<ZRotFile> newrot;
+  if (optimize_electrons) {
+    newgrad = ___debug___copy_electronic_rotations(grad);
+    newrot  = ___debug___copy_electronic_rotations(rot);
+  } else {
+    newgrad = ___debug___copy_positronic_rotations(grad);
+    newrot  = ___debug___copy_positronic_rotations(rot);
+  }
+
+  shared_ptr<ZRotFile> a = srbfgs->conjugate_gradient(newgrad, newrot);
+  if (optimize_electrons) {
+    kramers_adapt(a, nvirtnr);
+  } else {
+    kramers_adapt(a, nneg_);
+  }
+  a->scale(0.1);
+  cout << setprecision(6) << "+++ STEP LENGTH   = " << a->norm() << endl;
+  cout << setprecision(6) << "+++ grad * delta  = " << newgrad->dot_product(a) << endl;
+  cout << setprecision(6) << "+++ ele grad rms  = " << newgrad->rms() << endl;
+
+  return a;
+}
+
+
 shared_ptr<ZRotFile> ZCASSCF::___debug___copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
   int nr_nvirt = nvirt_ - nneg_/2; 
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2); 
@@ -539,6 +569,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___copy_electronic_rotations(shared_ptr<co
 
   return out;
 }
+
 
 shared_ptr<ZRotFile> ZCASSCF::___debug___copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
   int nvirtnr = nvirt_ - nneg_/2; 

@@ -160,6 +160,8 @@ class ZCASSCF : public Method {
     double trust_radius_energy_ratio(const int iter, const std::vector<double> energy, std::shared_ptr<ZRotFile> a, std::shared_ptr<ZRotFile> v, std::shared_ptr<ZRotFile> grad) const;
     // returns matrix of orbital rotation parameters
     std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
+    // function to optimize only the electronic-electronic or electronic-positronic type rotations
+    std::shared_ptr<ZRotFile> ___debug___optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons = true);
     // function to copy electronic rotations from a rotation file TODO: make lambda
     std::shared_ptr<ZRotFile> ___debug___copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
     // function to copy positronic rotations from a rotation file TODO: make lambda
