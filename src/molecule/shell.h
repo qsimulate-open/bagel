@@ -87,6 +87,7 @@ class Shell : public Shell_base {
           const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range, const std::array<double,3>& vector_potential);
     // default constructor for adding null basis
     Shell(const bool sph);
+    virtual ~Shell() { }
 
     bool dummy() const { return dummy_; };
     int num_primitive() const { return exponents_.size(); };
