@@ -276,3 +276,4 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> ove
   }
   ctmp->get_real_part()->print(" non rel in rel ", ctmp->mdim());
   return ctmp;
+}
