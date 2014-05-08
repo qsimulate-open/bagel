@@ -28,17 +28,22 @@ namespace bagel {
 // some local functions..
 static auto givens = [](const complex<double> a, const complex<double> b) {
   const double absa = abs(a);
-  const double c = absa / sqrt(absa*absa + norm(b));
+  const double c = absa == 0.0 ? 0.0 : absa / sqrt(absa*absa + norm(b));
   const complex<double> s = absa == 0.0 ? 1.0 : (a / absa * conj(b) / sqrt(absa*absa + norm(b)));
   return make_pair(c, s);
 };
 
 static auto householder = [](const complex<double>* const hin, complex<double>* const out, const int len) {
-  const double norm = sqrt(real(zdotc_(len, hin, 1, hin, 1)));
-  const double sign = abs(real(hin[0])) == 0.0 ? 0.0 : real(hin[0])/abs(real(hin[0]));
-  out[0] = hin[0] + sign*norm;
-  for (int i = 1; i < len; ++i) out[i] = hin[i];
-  return conj(1.0 / (conj(out[0]) * (sign*norm)));
+  const bool trivial = abs(real(hin[0])) == 0.0;
+  complex<double> fac = 0.0;
+  copy_n(hin, len, out);
+  if (!trivial) {
+    const double norm = sqrt(real(zdotc_(len, hin, 1, hin, 1)));
+    const double sign = real(hin[0])/abs(real(hin[0]));
+    out[0] = hin[0] + sign*norm;
+    fac = conj(1.0 / (conj(out[0]) * (sign*norm)));
+  }
+  return fac;
 };
 
 // implementation...
