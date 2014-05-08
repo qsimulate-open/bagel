@@ -583,14 +583,14 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___copy_positronic_rotations(shared_ptr<co
         out->ele_vc(j + nneg_/2, i + nclosed_) = rot->ele_vc(j + nvirt_ + nvirtnr, i + nclosed_);
       }
     }
-    if (nact_ != 0) {
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nneg_/2;   ++j) {
-          out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
-          out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
-          out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
-          out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
-        }
+  }
+  if (nact_ != 0) {
+    for (int i = 0; i != nact_; ++i) {
+      for (int j = 0; j != nneg_/2;   ++j) {
+        out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
+        out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
+        out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
+        out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
       }
     }
   }
