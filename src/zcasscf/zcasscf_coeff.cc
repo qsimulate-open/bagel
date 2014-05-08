@@ -136,7 +136,7 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::project_non_rel_coeff(shared_ptr<const RelOverlap> overlap, shared_ptr<ZMatrix> kramers_coeff) const {
+shared_ptr<ZMatrix> ZCASSCF::project_non_rel_coeff(shared_ptr<const RelOverlap> overlap, shared_ptr<const ZMatrix> hcore, shared_ptr<ZMatrix> kramers_coeff) const {
   // function to project a non-relativistic reference coefficient into a kramers restricted relativistic coeff
   int n = nr_coeff_->ndim();
   int nvirtnr = nvirt_ - nneg_/2;
