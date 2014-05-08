@@ -108,6 +108,7 @@ void ZCASSCF::init() {
   nbasis_ = coeff_->mdim()/2;
   nvirt_ = nbasis_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
+  nvirtnr_ = nvirt_ - nneg_/2;
 
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)

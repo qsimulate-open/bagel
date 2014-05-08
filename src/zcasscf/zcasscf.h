@@ -42,6 +42,7 @@ class ZCASSCF : public Method {
     int nclosed_;
     int nact_;
     int nvirt_;
+    int nvirtnr_;
     int nbasis_;
 
     int charge_;

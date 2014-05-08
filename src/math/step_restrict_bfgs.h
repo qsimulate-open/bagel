@@ -588,6 +588,20 @@ class SRBFGS {
     }
 
 
+    std::shared_ptr<T> conjugate_gradient(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value) {
+      // to be sure; inputs are copied
+      auto grad  = std::make_shared<T>(*_grad);
+      auto value  = std::make_shared<T>(*_value);
+      auto out = std::make_shared<T>(*_grad);
+      out->scale(-1.0);
+
+      prev_grad_ = grad;
+      prev_value_ = _value;
+
+      return out;
+    }
+
+
     // check if a step satisfies the quadratic approximation ; if not return bool to tell user to reset to previous expansion point
     bool check_step(std::vector<double> _f, std::shared_ptr<T> _grad, std::shared_ptr<T> _value, const bool tight = false, const int limited_memory = 0) {
       // f, grad, and value may all be modified by this function if the quadratic approximation fails for the current expansion point (CEP)
