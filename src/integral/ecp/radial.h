@@ -60,18 +60,16 @@ class RadialInt {
     ~RadialInt() {}
 
     void integrate(T function) {
-      double ans = 0.0;
       double previous = 0.0;
       int ngrid = 31;
       for (int iter = 0; iter != max_iter_; ++iter) {
         GaussChebyshev2nd(ngrid);
         std::vector<double> r;
         transform_Becke(r);
-        ans = 0.0;
+        double ans = 0.0;
         int cnt = 0;
         for (auto& it : r) {
-          ans += function.compute(it) * w_[cnt];
-          ++cnt;
+          ans += function.compute(it) * w_[cnt++];
         }
         const double error = ans - previous;
         if (print_intermediate_)
@@ -99,18 +97,19 @@ class RadialInt {
 
     void transform_Becke(std::vector<double>& r) {
       const double alpha = 1.0;
-      int cnt = 0;
+      auto witer = w_.begin();
       for (auto& it : x_) {
         r.push_back(alpha * (1.0 + it) / (1.0 - it));
-        w_[cnt] *= 2.0 / (1.0 - it) / (1.0 - it);
-        ++cnt;
+        *witer++ *= 2.0 / std::pow(1.0 - it, 2);
       }
     }
 
     void GaussChebyshev2nd(const int ngrid) {
-      for (int i = 1; i != ngrid; ++i) {
-        x_.push_back(cos(i * pi__ / (ngrid + 1)));
-        w_.push_back(pi__ * sin(i * pi__ / (ngrid + 1)) / (ngrid + 1));
+      x_.resize(ngrid);
+      w_.resize(ngrid);
+      for (int i = 1; i <= ngrid; ++i) {
+        x_[i-1] = std::cos(i * pi__ / (ngrid + 1));
+        w_[i-1] = pi__ * std::sin(i * pi__ / (ngrid + 1)) / (ngrid + 1);
       }
     }
 
