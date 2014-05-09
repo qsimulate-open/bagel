@@ -509,22 +509,31 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___optimize_subspace_rotations(vector<doub
 
   // copy the inputs
   shared_ptr<ZRotFile> newgrad;
-  shared_ptr<ZRotFile> newrot;
+  shared_ptr<ZRotFile> newrot = rot->copy();
   if (optimize_electrons) {
     newgrad = ___debug___copy_electronic_rotations(grad);
-    newrot  = ___debug___copy_electronic_rotations(rot);
   } else {
     newgrad = ___debug___copy_positronic_rotations(grad);
-    newrot  = ___debug___copy_positronic_rotations(rot);
   }
 
-  shared_ptr<ZRotFile> a = srbfgs->conjugate_gradient(newgrad, newrot);
+//  shared_ptr<ZRotFile> a = srbfgs->conjugate_gradient(newgrad, newrot);
+  const bool tight = idata_->get<bool>("tight", false); 
+  const int limmem = idata_->get<int>("limited_memory", 0);
+  auto reset = srbfgs->check_step(energy_, newgrad, newrot, tight, limmem);
+  cout << " reset ?!?! = " << reset << endl;
+  shared_ptr<ZRotFile> a;
+  if (optimize_electrons) {
+    a = srbfgs->more_sorensen_extrapolate(newgrad, newrot);
+  } else {
+    // positronic optimization results in a negative level shift so use Hebden method
+    a = srbfgs->extrapolate(newgrad, newrot);
+  }
+
   if (optimize_electrons) {
     kramers_adapt(a, nvirtnr);
   } else {
-    kramers_adapt(a, nneg_);
+    kramers_adapt(a, nneg_/2);
   }
-  a->scale(0.1);
   cout << setprecision(6) << "+++ STEP LENGTH   = " << a->norm() << endl;
   cout << setprecision(6) << "+++ grad * delta  = " << newgrad->dot_product(a) << endl;
   cout << setprecision(6) << "+++ ele grad rms  = " << newgrad->rms() << endl;
