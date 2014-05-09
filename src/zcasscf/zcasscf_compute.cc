@@ -56,8 +56,10 @@ void ZCASSCF::compute() {
 #else
   auto ele_x = make_shared<ZMatrix>((nocc_+nvirtnr_)*2, (nocc_+nvirtnr_)*2);
   ele_x->unit();
+  vector<double> ele_energy;
   auto pos_x = make_shared<ZMatrix>(nocc_*2 + nneg_, nocc_*2 + nneg_);
   pos_x->unit();
+  vector<double> pos_energy;
 #endif
 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
@@ -75,7 +77,7 @@ void ZCASSCF::compute() {
   if (nact_)
     fci_->update(coeff_);
 
-  const bool optimize_electrons = idata_->get<bool>("optimize_electrons", true); 
+  bool optimize_electrons = idata_->get<bool>("optimize_electrons", true); 
   cout << " optimizing the electrons ? " << optimize_electrons << endl;
   cout << " See casscf.log for further information on FCI output " << endl;
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -116,14 +118,26 @@ void ZCASSCF::compute() {
 
     // get energy
     if (nact_) {
+#ifdef BOTHSPACES
       energy_.push_back((fci_->energy())[0]);
+#else
+      optimize_electrons == true ? ele_energy.push_back((fci_->energy())[0]) : pos_energy.push_back((fci_->energy())[0]);
+#endif
     } else {
       assert(nstate_ == 1);
+#ifdef BOTHSPACES
       energy_.resize(iter+1);
       energy_[iter] = geom_->nuclear_repulsion();
       auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         energy_[iter] += 0.5*mo->element(i,i).real();
+#else
+      optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
+      optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
+      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
+      for (int i = 0; i != nclosed_*2; ++i)
+        optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
+#endif
     }
 
     // compute approximate diagonal hessian
@@ -175,12 +189,12 @@ void ZCASSCF::compute() {
     shared_ptr<ZRotFile> pos_rot;
     if (optimize_electrons) {
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      ele_rot = ___debug___optimize_subspace_rotations(energy_, grad, xlog, ele_srbfgs, optimize_electrons);
+      ele_rot = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, optimize_electrons);
       kramers_adapt(ele_rot, nvirtnr_);
     } else {
       cout << " optimizing positrons " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      pos_rot = ___debug___optimize_subspace_rotations(energy_, grad, xlog, pos_srbfgs, optimize_electrons);
+      pos_rot = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, optimize_electrons);
       kramers_adapt(pos_rot, nneg_/2);
     }
 #endif
@@ -282,7 +296,15 @@ void ZCASSCF::compute() {
 #endif
 
     // print energy
+#ifdef BOTHSPACES
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+#else
+    if (optimize_electrons) {
+      print_iteration(iter, 0, 0, ele_energy, gradient, timer.tick());
+    } else {
+      print_iteration(iter, 0, 0, pos_energy, gradient, timer.tick());
+    } 
+#endif
 
 #ifdef BOTHSPACES
     if (gradient < thresh_) break;
