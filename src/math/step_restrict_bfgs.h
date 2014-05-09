@@ -62,7 +62,7 @@ class SRBFGS {
     double level_shift_;
     double prev_level_shift_;
     const bool debug_;
-    const int hebden_iter_ = 15;
+    const int hebden_iter_ = 75;
     const int maxiter_ = 300;
     // default convergence parameters taken from JSY
     const double rmin_ = 0.6;
@@ -273,7 +273,7 @@ class SRBFGS {
     double taylor_series_validity_ratio(const std::vector<double> _f, std::shared_ptr<const T> _grad, std::shared_ptr<const T> _a) const {
     // Following JSY and Jensen and Jorgensen (JCP 80 1204 1984)
     // Returns r_k = ( f(a_k) - f(a_(k-1)) )/( f^(2)(a_k) - f(a_(k-1)) ) (Eq 64) 
-    //   where f^(2) is the second order Taylor expansion, f^(2)(a_k) = f(a_(k-1)) + g*a_k + 1/2 * a_k^T H a_k
+    //   where f^(2) is the second order Taylor expansion, f^(2)(a_k) = f(a_(k-1)) + g_k*a_k + 1/2 * a_k^T H_k a_k
 
       // to make sure, inputs are copied.
       auto f    = std::vector<double>(_f);
@@ -308,8 +308,12 @@ class SRBFGS {
      double dl_norm;
      for (int k = 0; k != hebden_iter_; ++k) {
        auto dl  = level_shift_inverse_hessian(grad, shift_vec); // Hn^-1 * gn
-       dl_norm = std::sqrt(detail::real(dl->dot_product(dl)));
-       if (dl_norm <= trust_radius_) break;
+       dl_norm = dl->norm();//std::sqrt(detail::real(dl->dot_product(dl)));
+       if (dl_norm <= trust_radius_ && k != 0) {
+         std::cout << " Hebden algorithm converged in " << k << " iterations. " << std::endl;
+         std::cout << " Level Shift = " << shift << std::endl;
+         break;
+       }
        auto dl2 = level_shift_inverse_hessian(dl, shift_vec);   // Hn^-2 * gn
        auto dl2_norm = detail::real(dl->dot_product(dl2)) / dl_norm;
        auto t1  =  dl_norm / dl2_norm;
@@ -517,6 +521,7 @@ class SRBFGS {
         shift->fill(tshift);
         acopy = level_shift_inverse_hessian(grad, shift);
       }
+      acopy->scale(-1.0);
       if (!with_shift) {
         level_shift_ = 0.0;
       }
@@ -575,7 +580,15 @@ class SRBFGS {
           }
           if (k == hebden_iter_ - 1) {
             std::cout << "+++ More-Sorensen extrapolate did NOT converge +++ " << std::endl;
-            assert(k != hebden_iter_);
+            std::cout << " step norm with level shift = " << p->norm() << std::endl;
+            std::cout << " Trying Hebden's method " << std::endl;
+            tshift = hebden_levelshift(grad);
+            shift->fill(tshift);
+            p = level_shift_inverse_hessian(grad, shift);
+            p->scale(-1.0);
+            if (tshift < 0.0) {
+              std::cout << " Hebden found negative level shift = " << tshift << std::endl;
+            }
           }
         }
       }
@@ -666,8 +679,8 @@ class SRBFGS {
           } else if (rk < 0) {
             std::cout << " step does not satisfy Taylor expansion criteria " << std::endl;
             std::cout << " scaling down the trust radius " << std::endl;
-//            trust_radius_ = delta().back()->norm() * 2.0 / 3.0;
-            trust_radius_ = trust_radius_ / alpha_;
+            auto t2 = two_loop_inverse_hessian(_grad);
+            trust_radius_ = std::min(trust_radius_ / alpha_, t2->norm() / 2.0);
             reset = true;
           }
         } else { // conditions for tighter optimization
