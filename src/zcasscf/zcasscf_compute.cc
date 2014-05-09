@@ -284,7 +284,12 @@ void ZCASSCF::compute() {
     // print energy
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
+#ifdef BOTHSPACES
     if (gradient < thresh_) break;
+#else
+    if (gradient < thresh_) break;
+    optimize_electrons = optimize_electrons == true ? false : true;
+#endif
   }
 }
 
