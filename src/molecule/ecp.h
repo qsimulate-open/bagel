@@ -28,6 +28,7 @@
 #define __SRC_MOLECULE_ECP_H
 
 #include <vector>
+#include <algorithm>
 #include <src/molecule/shell_ECP.h>
 
 namespace bagel {
@@ -40,6 +41,7 @@ class ECP {
     int ishell_maxl_;
     int maxl_;
     int nshell_;
+    std::array<int, 3> nr_;
 
   public:
     ECP(const int ncore, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp)
@@ -64,6 +66,9 @@ class ECP {
         ++index;
       }
 
+      for (int i = 0; i != 3; ++i)
+        nr_[i] = std::count(shells_ecp_[ishell_maxl_]->ecp_r_power().begin(), shells_ecp_[ishell_maxl_]->ecp_r_power().end(), std::abs(i-2));
+
     }
 
     std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const { return shells_ecp_[ishell_maxl_]; }
@@ -72,6 +77,9 @@ class ECP {
     const int ecp_ncore() const { return ecp_ncore_; }
 
     const int nshell() const { return nshell_; }
+
+    const std::array<int, 3> nr() { return nr_; }
+    const int nr(const int i) const { return nr_[i]; }
 
     void print() const {
       std::cout << "+++ ECP Parameters +++" << std::endl;

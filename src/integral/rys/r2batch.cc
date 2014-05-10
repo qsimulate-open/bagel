@@ -68,7 +68,7 @@ void R2Batch::compute_ssss(const double integral_thresh) {
             coeff_[index] *= shell_ecp->ecp_coefficients(i);
             const double sqrtt = sqrt(T);
             const double ss = coeff_[index] * pow(4.0 * ab * onepi2, 0.75) * (T > 1.0e-15 ? exp(sqrtt) * inline_dawson(sqrtt) / sqrtt : 1.0);
-            if (ss > integral_thresh) {
+            if (abs(ss) > integral_thresh) {
               T_[index] = T;
               screening_[screening_size_] = index;
               ++screening_size_;

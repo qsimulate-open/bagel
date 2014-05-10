@@ -369,11 +369,23 @@ void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<dou
 
   for (auto& biter : in) {
     const int l = atommap_.angular_number(get<0>(biter));
-    const vector<double> exponents = get<1>(biter);
+    vector<double> exponents = get<1>(biter);
     const vector<double> coefficients = get<2>(biter);
-    const vector<int> r_power = get<3>(biter);
+    vector<int> r_power = get<3>(biter);
 
-    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , exponents, coefficients, r_power));
+    vector<double> new_coefficients(coefficients);
+    int nzero = 0;
+    for (auto ic = coefficients.begin(); ic != coefficients.end(); ++ic)
+       if (*ic == 0.0) {
+         auto pos = std::distance(coefficients.begin(), ic) - nzero;
+         exponents.erase(exponents.begin()+pos);
+         r_power.erase(r_power.begin()+pos);
+         new_coefficients.erase(new_coefficients.begin()+pos);
+         ++nzero;
+       }
+    assert(exponents.size() == r_power.size() && r_power.size() == new_coefficients.size());
+
+    if (!exponents.empty()) shells_ECP.push_back(make_shared<const Shell_ECP>(position_, l , exponents, new_coefficients, r_power));
 
   }
 
