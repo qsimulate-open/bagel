@@ -105,7 +105,7 @@ class Atom {
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
 
-    const bool use_ecp_basis() const { return use_ecp_basis_; }
+    bool use_ecp_basis() const { return use_ecp_basis_; }
     const std::shared_ptr<const ECP>& ecp_parameters() const { return ecp_parameters_; }
 
     bool dummy() const { return atom_number_ == 0; }
