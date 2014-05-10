@@ -35,12 +35,21 @@ class RnBatch: public CoulombBatch_energy {
   protected:
     int max_rterms_;
 
+    int get_max_rterms() const {
+      int out = 0;
+      for (auto& aiter : mol_->atoms())
+        if (aiter->use_ecp_basis())
+          if (aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size() > out)
+            out = aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size();
+      return out;
+    }
+
   public:
     RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
             const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
       : CoulombBatch_energy (_info, mol, stack) {
 
-       get_max_rterms();
+       max_rterms_ = get_max_rterms();
        this->allocate_arrays(primsize_ * natom_ * max_rterms_);
     }
 
@@ -48,22 +57,13 @@ class RnBatch: public CoulombBatch_energy {
             const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
       : CoulombBatch_energy (_info, mol, L, A) {
 
-       get_max_rterms();
+       max_rterms_ = get_max_rterms();
        this->allocate_arrays(primsize_ * natom_ * max_rterms_);
     }
       
     ~RnBatch() { }
 
-    void get_max_rterms() {
-      max_rterms_ = 0;
-      for (auto& aiter : mol_->atoms())
-        if (aiter->use_ecp_basis())
-          if (aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size() > max_rterms_)
-            max_rterms_ = aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size();
-
-    }
-
-    int max_rterms() { return max_rterms_; }
+    int max_rterms() const { return max_rterms_; }
 
 };
 

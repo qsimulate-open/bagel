@@ -167,7 +167,7 @@ double SphHarmonics::zlm(const int l, const int m) const {
 
 }
 
-void SphHarmonics::print() {
+void SphHarmonics::print() const {
   cout << "Computing Real Spherical Harmonics" << endl;
   cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "
                                       << angular_momentum_[1] << ")" << endl;
@@ -222,7 +222,7 @@ double SphHarmonics::sph_to_USP(const int lx, const int ly) const {
 
 }
 
-vector<pair<double, int>> SphHarmonics::sph_to_USPs_expansion() {
+vector<pair<double, int>> SphHarmonics::sph_to_USPs_expansion() const {
 
   vector<pair<double, int>> usp;
 
@@ -241,7 +241,7 @@ vector<pair<double, int>> SphHarmonics::sph_to_USPs_expansion() {
 
 }
 
-void SphHarmonics::sph_to_USPs_expansion_print() {
+void SphHarmonics::sph_to_USPs_expansion_print() const {
 
   cout << "** Real spherical harmonics to unitary sphere polynomials **" << endl;
   cout << "Angular momentum (lm) = (" << angular_momentum_[0] << ", "

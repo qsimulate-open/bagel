@@ -36,7 +36,7 @@ struct Wigner3j {
   public:
     Wigner3j() {}
 
-    const double lookup_wigner3j(const int j1, const int m1, const int j2, const int m2, const int j3, const int m3) const {
+    double lookup_wigner3j(const int j1, const int m1, const int j2, const int m2, const int j3, const int m3) const {
       assert (j1 <= 6 && j2 <= 6 && j3 <= 6);
       const int m = m1 + m2 + m3;
       double out = 0.0;
