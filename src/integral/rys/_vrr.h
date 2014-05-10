@@ -30,6 +30,7 @@
 #define __SRC_RYSINT____VRR_H
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace bagel {
 

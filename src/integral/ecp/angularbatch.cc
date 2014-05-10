@@ -38,7 +38,7 @@ double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
   const int l2 = lm[1].first;
   const int l3 = lm[2].first;
 
-  static Wigner3j wigner3j;
+  const static Wigner3j wigner3j;
   const double w1 = wigner3j.lookup_wigner3j(l1, lm[0].second, l2, lm[1].second, l3, lm[2].second);
   const double w2 = wigner3j.lookup_wigner3j(l1, 0, l2, 0, l3, 0);
   const double coeff = sqrt(0.25 * (2*l1 + 1) * (2*l2 + 1) * (2*l3 + 1) / pi__);
@@ -53,14 +53,15 @@ double AngularBatch::integrate3USP(array<int, 3> xyz_exponents) const {
   const int j = xyz_exponents[1];
   const int k = xyz_exponents[2];
 
+  double out = 0.0;
   if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
-    Factorial fact;
+    const static Factorial fact;
     const double num = 2.0 * fact(i) * fact(j) * fact(k) * fact((i+j+k+2)/2);
     const double denom = fact(i/2) * fact(j/2) * fact(k/2) * fact(i+j+k+2);
-    return 4.0 * pi__ * num / denom;
-  } else {
-    return 0.0;
+    out = 4.0 * pi__ * num / denom;
   }
+
+  return out;
 
 }
 
@@ -228,7 +229,7 @@ double AngularBatch::compute(const double r) {
 
 }
 
-void AngularBatch::print() {
+void AngularBatch::print() const {
 
   cout << "Compute the integral < shell_0 | lm > exp(-zeta r^n) < lm | shell_1> r^2 dr " << endl;
   cout << "Shell 0" << basisinfo_[0]->show() << endl;
@@ -239,7 +240,7 @@ void AngularBatch::print() {
 }
 
 void AngularBatch::print_one_centre(array<double, 3> posA, const array<int, 3> lxyz, const double expA,
-                                    array<double, 3> posB, const array<int, 2> lm, const double r) {
+                                    array<double, 3> posB, const array<int, 2> lm, const double r) const {
 
   cout << "Project one centre <phiA | lmB> (r)" << endl;
   cout << "A = (" << posA[0] << ", " << posA[1] << ", " << posA[2] << ")" << endl;

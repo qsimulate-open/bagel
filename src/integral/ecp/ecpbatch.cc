@@ -55,6 +55,13 @@ ECPBatch::ECPBatch(const array<shared_ptr<const Shell>,2>& info, const shared_pt
 
 }
 
+
+ECPBatch::~ECPBatch() {
+  stack_->release(size_alloc_, stack_save_);
+  if (allocated_here_) resources__->release(stack_);
+}
+
+
 void ECPBatch::compute() {
 
   const double zero = 0.0;
@@ -62,7 +69,7 @@ void ECPBatch::compute() {
 
   fill_n(data_, size_alloc_, zero);
   double* const intermediate_p = stack_->get(prim0_ * prim1_ * asize_);
-  double* current_data = &intermediate_p[0];
+  double* current_data = intermediate_p;
 
 
   for (auto& ieA : basisinfo_[0]->exponents()) {
@@ -129,6 +136,7 @@ void ECPBatch::compute() {
 
 }
 
+
 void ECPBatch::perform_contraction(const int asize, const double* prim, const int pdim0, const int pdim1, double* cont,
                            const std::vector<std::vector<double>>& coeff0, const std::vector<std::pair<int, int>>& ranges0, const int cdim0,
                            const std::vector<std::vector<double>>& coeff1, const std::vector<std::pair<int, int>>& ranges1, const int cdim1) {
@@ -138,20 +146,21 @@ void ECPBatch::perform_contraction(const int asize, const double* prim, const in
   for (int i = 0; i != cdim0; ++i) {
     const int begin0 = ranges0[i].first;
     const int end0   = ranges0[i].second;
-    std::fill_n(work, worksize, double(0.0));
+    std::fill_n(work, worksize, 0.0);
     for (int j = begin0; j != end0; ++j)
       blas::ax_plus_y_n(coeff0[i][j], prim+j*worksize, worksize, work);
 
     for (int k = 0; k != cdim1; ++k, cont += asize) {
       const int begin1 = ranges1[k].first;
       const int end1   = ranges1[k].second;
-      std::fill_n(cont, asize, double(0.0));
+      std::fill_n(cont, asize, 0.0);
       for (int j = begin1; j != end1; ++j)
         blas::ax_plus_y_n(coeff1[k][j], work+j*asize, asize, cont);
     }
   }
   stack_->release(worksize, work);
 }
+
 
 void ECPBatch::common_init() {
 
@@ -188,9 +197,4 @@ void ECPBatch::common_init() {
   stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;
 
-}
-
-ECPBatch::~ECPBatch() {
-  stack_->release(size_alloc_, stack_save_);
-  if (allocated_here_) resources__->release(stack_);
 }
