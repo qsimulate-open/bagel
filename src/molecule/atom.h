@@ -84,7 +84,7 @@ class Atom {
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
-                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore);
+                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore, const int maxl);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::shared_ptr<const ECP> ecp_param);
 

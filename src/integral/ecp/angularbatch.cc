@@ -204,7 +204,7 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
  double ans = 0.0;
  for (auto& ishecp : shells_ecp) {
    const int l = ishecp->angular_number();
-   if (l != ecp_->maxl()) {
+   if (l != ecp_->ecp_maxl()) {
      for (int i = 0; i != ishecp->ecp_exponents().size(); ++i) {
        if (ishecp->ecp_coefficients(i) != 0) {
          for (int m = 0; m <= 2*l; ++m) {
