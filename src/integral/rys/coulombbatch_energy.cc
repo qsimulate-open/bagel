@@ -65,7 +65,7 @@ void CoulombBatch_energy::compute() {
   assert(natom_ % (2 * L_ + 1) == 0);
   for (int xj = 0; xj != screening_size_; ++xj) {
     const int i = screening_[xj];
-    const int ecp = (indexecp_.empty()) ? 1 : mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size();
+    const int ecp = (indexecp_.empty()) ? 1 : mol_->atoms(indexecp_[xj].first)->ecp_parameters()->nr(abs(mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_r_power(indexecp_[xj].second) - 2));
     const int iprim = i / (natom_ * ecp);
     const int resid = i % (natom_ * ecp);
     const int cell  = resid / natom_unit - L_;
@@ -80,9 +80,8 @@ void CoulombBatch_energy::compute() {
     const double* cweights = weights_ + i * rank_;
     for (int r = 0; r != rank_; ++r) {
       double zeta = 1.0;
-      if (! indexecp_.empty()) {
+      if (!indexecp_.empty())
         zeta = mol_->atoms(indexecp_[xj].first)->ecp_parameters()->shell_maxl_ecp()->ecp_exponents(indexecp_[xj].second);
-      }
       const double sroot = scale_root(croots[r], xp_[i], zeta);
       const double sweight = scale_weight(cweights[r]);
       r1x[r] = P_[i * 3    ] - Ax - (P_[i * 3    ] - mol_->atoms(iatom)->position(0) - disp[0]) * sroot;
