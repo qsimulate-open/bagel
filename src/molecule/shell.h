@@ -59,7 +59,6 @@ class Shell : public Shell_base {
 
     // TODO Refactor - These next few are essentially the same as above, but for London integrals only
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
-    std::shared_ptr<const ZMatrix> zoverlap_compute_() const;
     std::array<std::shared_ptr<const ZMatrix>,3> moment_compute_(const std::shared_ptr<const ZMatrix> zoverlap, const std::array<double,3> magnetic_field) const;
 
     // magnetism

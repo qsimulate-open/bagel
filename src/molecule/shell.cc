@@ -193,10 +193,10 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
   aux_increment_ = kinetic_balance_uncont<1>();
 
   // overlap = S^-1 between auxiliary functions
-  shared_ptr<const ZMatrix> zoverlap = zoverlap_compute_();
+  shared_ptr<const ZMatrix> overlap = make_shared<const ZMatrix>(*overlap_compute_(), 1.0);
 
   // small is a transformation matrix (x,y,z components)
-  zsmall_ = moment_compute_(zoverlap, magnetic_field);
+  zsmall_ = moment_compute_(overlap, magnetic_field);
 }
 
 
@@ -223,40 +223,6 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
     }
     {
       OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        for (int j = 0; j != asize_inc; ++j)
-          overlap->element(j,i+asize_inc) = overlap->element(i+asize_inc,j) = *(ovl.data()+j+asize_inc*i);
-    }
-  }
-
-  return overlap;
-}
-
-
-shared_ptr<const ZMatrix> Shell::zoverlap_compute_() const {
-
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto overlap = make_shared<ZMatrix>(a,a, true);
-
-  {
-    ComplexOverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_increment_}});
-    ovl.compute();
-    for (int i = 0; i != aux_increment_->nbasis(); ++i)
-      copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
-  }
-  if (aux_decrement_) {
-    {
-      ComplexOverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_decrement_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
-    }
-    {
-      ComplexOverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
       ovl.compute();
       for (int i = 0; i != asize_dec; ++i)
         for (int j = 0; j != asize_inc; ++j)
