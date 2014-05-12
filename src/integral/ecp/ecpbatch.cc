@@ -46,7 +46,7 @@ ECPBatch::ECPBatch(const array<shared_ptr<const Shell>,2>& info, const shared_pt
   }
 
   integral_thresh_ = PRIM_SCREEN_THRESH;
-  max_iter_ = 100;
+  max_iter_ = 20;
 
   spherical_ = basisinfo_[0]->spherical();
   assert(spherical_ == basisinfo_[1]->spherical());

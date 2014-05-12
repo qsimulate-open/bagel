@@ -110,16 +110,17 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
   const double r = 1.0;
 
+  cout << "Using unnormalized gaussian..." << endl;
   std::shared_ptr<ProjectionInt> projAB = std::make_shared<ProjectionInt>(cargaussA, rsh);
   const double int1 = projAB->compute(r);
-  cout << " < phi_A | lm_B >(r)  =  " << int1 << endl;
+  cout << " < phi_A | lm_B >(r = " << r << ")  =  " << int1 << endl;
 
   std::shared_ptr<ProjectionInt> projCB = std::make_shared<ProjectionInt>(cargaussC, rsh);
   const double int2 = projCB->compute(r);
-  cout << " < phi_C | lm_B >(r)  =  " << int2 << endl;
+  cout << " < phi_C | lm_B >(r = " << r << ")  =  " << int2 << endl;
 
   cout << endl;
-  cout << " < phi_A | lm_B > < lm_B | phi_C >(r) =  " << int1 * int2 << endl;
+  cout << " < phi_A | lm_B > < lm_B | phi_C >(r = " << r << ") =  " << int1 * int2 << endl;
 #endif
 
 #if 0

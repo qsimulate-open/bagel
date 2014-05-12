@@ -392,7 +392,7 @@ void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<dou
   }
 
   if (shells_ECP.empty()) { //TODO: use_ecp_basis_ = false
-    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, 0 , vector<double>(1, 0.0), vector<double>(1, 0.0), vector<int>(1, 2)));
+    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, maxl , vector<double>(1, 0.0), vector<double>(1, 0.0), vector<int>(1, 2)));
   }
 
   ecp_parameters_ = make_shared<const ECP>(ncore, maxl, shells_ECP);

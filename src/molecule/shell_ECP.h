@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: shell_ECP.h
+// Filename: shell_ecp.h
 // Copyright (C) 2009 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>

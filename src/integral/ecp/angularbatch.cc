@@ -28,6 +28,7 @@
 #include <src/math/algo.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
+#include <iomanip>
 
 using namespace bagel;
 using namespace std;
@@ -247,8 +248,8 @@ void AngularBatch::print_one_centre(array<double, 3> posA, const array<int, 3> l
   cout << "B = (" << posB[0] << ", " << posB[1] << ", " << posB[2] << ")" << endl;
   cout << "(kx, ky, kz) = (" << lxyz[0] << ", " << lxyz[1] << ", " << lxyz[2] << ")" << endl;
   cout << "(l, m)       = (" << lm[0] << ", " << lm[1] << ")" << endl;
-  cout << "alpha = " << expA << endl;
-  cout << "r     = " << r << endl;
+  cout << "alpha = " << setw(15) << setprecision(9) << expA << endl;
+  cout << "r     = " << setw(15) << setprecision(9) << r << endl;
 
 }
 

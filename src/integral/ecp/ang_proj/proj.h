@@ -566,7 +566,8 @@ class ProjectionInt {
             }
           }
         }
-        return ans * 4.0 * pi * gauss_->normalise() * exponential.toDouble();
+//      return ans * 4.0 * pi * gauss_->normalise() * exponential.toDouble();
+        return ans * 4.0 * pi * exponential.toDouble();
     }
 
 };
