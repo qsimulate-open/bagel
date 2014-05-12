@@ -97,9 +97,18 @@ void DFBlock_London::add_direct_product(const shared_ptr<const ZMatrix> a, const
 
 shared_ptr<DFBlock_London> DFBlock_London::swap() const {
   auto out = make_shared<DFBlock_London>(adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_);
-  for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2)
-    for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
-      copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, out->get()+asize_*(b2+b2size_*b1));
+  for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2) {
+    for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1) {
+      //copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, out->get()+asize_*(b2+b2size_*b1));
+      complex<double>* dat = data_.get()+asize_*(b1+b1size_*b2);
+      complex<double>* tar = out->get()+asize_*(b2+b2size_*b1);
+      for (size_t a = 0; a != asize_; a++) {
+        *tar = conj(*dat);
+        dat++;
+        tar++;
+      }
+    }
+  }
   return out;
 }
 
