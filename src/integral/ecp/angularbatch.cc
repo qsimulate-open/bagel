@@ -226,7 +226,26 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
 
 double AngularBatch::compute(const double r) {
 
-  return project_many_centres(exp0_, exp1_, r);
+    double out = 0.0;
+
+    const int begin0 = basisinfo_[0]->contraction_ranges(cont0_).first;
+    const int end0   = basisinfo_[0]->contraction_ranges(cont0_).second;
+    for (int i0 = begin0; i0 != end0; ++i0) {
+      const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
+      const double exp0  = basisinfo_[0]->exponents(i0);
+
+      const int begin1 = basisinfo_[1]->contraction_ranges(cont1_).first;
+      const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
+      for (int i1 = begin1; i1 != end1; ++i1) {
+        const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
+        const double exp1  = basisinfo_[1]->exponents(i1);
+
+        out += coef0 * coef1 * project_many_centres(exp0, exp1, r);
+
+      }
+    }
+
+  return out;
 
 }
 

@@ -38,7 +38,7 @@ class AngularBatch {
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const ECP> ecp_;
-    double exp0_, exp1_;
+    int cont0_, cont1_;
     std::array<int, 3> ang0_, ang1_;
 
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
@@ -50,9 +50,9 @@ class AngularBatch {
 
   public:
     AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
-                 const double expA, const double expC,
+                 const double contA, const double contC,
                  const std::array<int, 3> angA, const std::array<int, 3> angC)
-     : basisinfo_(_info), ecp_(_ecp), exp0_(expA), exp1_(expC), ang0_(angA), ang1_(angC) {}
+     : basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {}
 
     ~AngularBatch() {}
     double compute(const double r);
