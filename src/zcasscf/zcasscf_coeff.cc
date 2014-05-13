@@ -45,14 +45,45 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
     *o = *scratch;
   };
 
-  shared_ptr<ZMatrix> focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nele), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  shared_ptr<ZMatrix> coefftmp;
+  if (nr_coeff_ != nullptr) 
+    coefftmp = nonrel_to_relcoeff(overlap, false);
+
+  shared_ptr<ZMatrix> focktmp;
+  if (nr_coeff_ == nullptr) {
+    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nele), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  } else if (nele%2 == 0 && nele - 2 > 0) {
+    int norb = nele;//-2;
+    auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
+    ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2)->data()); 
+    ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2)->data()); 
+    focktmp = make_shared<DFock>(geom_, hcore, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    auto fmo = make_shared<ZMatrix>(*coefftmp % *focktmp * *coefftmp);
+    // quaternion diagonalization
+    {
+      unique_ptr<double[]> eig(new double[fmo->ndim()]);
+      zquatev_(fmo->ndim(), fmo->data(), eig.get());
+      // move_positronic_orbitals;
+      {
+        auto move_one = [this, &fmo](const int offset, const int block1, const int block2) {
+          shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(fmo->ndim(), block1+block2);
+          scratch->copy_block(0,      0, fmo->ndim(), block2, fmo->slice(offset+block1, offset+block1+block2));
+          scratch->copy_block(0, block2, fmo->ndim(), block1, fmo->slice(offset,        offset+block1));
+          fmo->copy_block(0, offset, fmo->ndim(), block1+block2, scratch);
+        };
+        const int nneg2 = nneg_/2;
+        move_one(           0, nneg2, nocc_+nvirt_-nneg2);
+        move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
+      }
+      coefftmp = make_shared<ZMatrix>(*coefftmp * *fmo);
+    }
+  }
   quaternion(focktmp);
 
   shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
   quaternion(s12);
 
   auto fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
-
 
   // quaternion diagonalization
   {
@@ -86,7 +117,12 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
     move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
   }
 
-    array<shared_ptr<const ZMatrix>,2> tmp = {{ ctmp->slice(0, ctmp->mdim()/2), ctmp->slice(ctmp->mdim()/2, ctmp->mdim()) }};
+  array<shared_ptr<const ZMatrix>,2> tmp;
+  if (nr_coeff_ == nullptr) {
+    tmp = {{ ctmp->slice(0, ctmp->mdim()/2), ctmp->slice(ctmp->mdim()/2, ctmp->mdim()) }};
+  } else{
+    tmp = {{ coefftmp->slice(0, coefftmp->mdim()/2), coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()) }};
+  }
     shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
 
   int i = 0;
@@ -274,6 +310,5 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> ove
       ctmp->copy_block(n*3, ctmp->mdim() - j-1, n, 1, tcoeff->slice(j, j+1)->data());
     }
   }
-  ctmp->get_real_part()->print(" non rel in rel ", ctmp->mdim());
   return ctmp;
 }

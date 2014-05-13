@@ -57,10 +57,10 @@ void ZCASSCF::compute() {
   auto ele_x = make_shared<ZMatrix>((nocc_+nvirtnr_)*2, (nocc_+nvirtnr_)*2);
   ele_x->unit();
   vector<double> ele_energy;
-  bool ele_conv = false;
   auto pos_x = make_shared<ZMatrix>(nocc_*2 + nneg_, nocc_*2 + nneg_);
   pos_x->unit();
   vector<double> pos_energy;
+  bool ele_conv = false;
   bool pos_conv = false;
 #endif
 
@@ -315,6 +315,7 @@ void ZCASSCF::compute() {
     if (gradient < thresh_ &&  optimize_electrons) ele_conv = true;
     optimize_electrons = optimize_electrons == true ? false : true;
     if (ele_conv && optimize_electrons) optimize_electrons = false;
+    if (pos_conv && !optimize_electrons) optimize_electrons = true;
     if (pos_conv && ele_conv) break;
 #endif
   }
