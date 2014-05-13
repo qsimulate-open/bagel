@@ -50,9 +50,47 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
     coefftmp = nonrel_to_relcoeff(overlap, false);
 
   shared_ptr<ZMatrix> focktmp;
+  shared_ptr<ZMatrix> ctmp;
   if (nr_coeff_ == nullptr) {
-    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nele), gaunt_, breit_, /*store_half*/false, /*robust*/false);
-  } else if (nele%2 == 0 && nele - 2 > 0) {
+    int norb = nele;// - 2 > 0 ? nele-2 : nele;
+    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    quaternion(focktmp);
+
+    shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
+    quaternion(s12);
+
+    auto fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+
+    // quaternion diagonalization
+    {
+      unique_ptr<double[]> eig(new double[fock_tilde->ndim()]);
+      zquatev_(fock_tilde->ndim(), fock_tilde->data(), eig.get());
+    }
+
+    // re-order to kramers format and move negative energy states to virtual space
+    ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+
+    // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
+    {
+      assert(ctmp->ndim() % 4 == 0);
+      const int n = ctmp->ndim()/4;
+      const int m = ctmp->mdim();
+      shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
+      ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
+      ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
+    }
+    // move_positronic_orbitals;
+    {
+      auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
+        shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
+        scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
+        scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
+        ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
+      };
+      const int nneg2 = nneg_/2;
+      move_one(           0, nneg2, nocc_+nvirt_-nneg2);
+      move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
+    }
     int norb = nele;//-2;
     auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
     ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2)->data()); 
@@ -78,44 +116,6 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
       coefftmp = make_shared<ZMatrix>(*coefftmp * *fmo);
     }
   }
-  quaternion(focktmp);
-
-  shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
-  quaternion(s12);
-
-  auto fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
-
-  // quaternion diagonalization
-  {
-    unique_ptr<double[]> eig(new double[fock_tilde->ndim()]);
-    zquatev_(fock_tilde->ndim(), fock_tilde->data(), eig.get());
-  }
-
-  // re-order to kramers format and move negative energy states to virtual space
-  auto ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
-
-  // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
-  {
-    assert(ctmp->ndim() % 4 == 0);
-    const int n = ctmp->ndim()/4;
-    const int m = ctmp->mdim();
-    shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
-    ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
-    ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
-  }
-
-  // move_positronic_orbitals;
-  {
-    auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
-      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
-      scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
-      scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
-      ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
-    };
-    const int nneg2 = nneg_/2;
-    move_one(           0, nneg2, nocc_+nvirt_-nneg2);
-    move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
-  }
 
   array<shared_ptr<const ZMatrix>,2> tmp;
   if (nr_coeff_ == nullptr) {
@@ -123,7 +123,7 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
   } else{
     tmp = {{ coefftmp->slice(0, coefftmp->mdim()/2), coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()) }};
   }
-    shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
+  shared_ptr<ZMatrix> ctmp2 = coeff_->clone();
 
   int i = 0;
   ctmp2->copy_block(0, i, coeff_->ndim(), nclosed_, tmp[0]->slice(0,nclosed_)); i += nclosed_;
@@ -250,7 +250,6 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> ove
   int nvirtnr = nvirt_ - nneg_/2;
   auto ctmp = make_shared<ZMatrix>(n*4, n*4);
 
-  nr_coeff_->print(" Non Rel Coeff ", nr_coeff_->ndim());
   // compute T^(-1/2) and S^(1/2)
   auto t12 = overlap->get_submatrix(n*2, n*2, n, n)->copy();
   t12->inverse_half(1.0e-10);
