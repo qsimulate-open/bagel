@@ -43,8 +43,7 @@ class RadialInt {
     bool print_intermediate_;
     int max_iter_;
     double thresh_int_;
-    std::vector<double> x_;
-    std::vector<double> w_;
+    std::vector<double> x_, w_, r_;
     double integral_;
 
   public:
@@ -63,12 +62,12 @@ class RadialInt {
       double previous = 0.0;
       int ngrid = 31;
       for (int iter = 0; iter != max_iter_; ++iter) {
-        GaussChebyshev2nd(ngrid);
-        std::vector<double> r;
-        transform_Becke(r);
+//      transform_Becke(ngrid);
+//      transform_Log(ngrid, 3); //TODO: to be checked
+        transform_Ahlrichs(ngrid);
         double ans = 0.0;
         int cnt = 0;
-        for (auto& it : r) {
+        for (auto& it : r_) {
           ans += function.compute(it) * w_[cnt++];
         }
         const double error = ans - previous;
@@ -89,18 +88,45 @@ class RadialInt {
         previous = ans;
         x_.clear();
         w_.clear();
+        r_.clear();
         ngrid *= 2;
       }
     }
 
     double integral() { return integral_; }
 
-    void transform_Becke(std::vector<double>& r) {
+    void transform_Log(const int ngrid, const int m = 3) { // Mura and Knowles JCP, 104, 9848.
+      w_.resize(ngrid);
+      r_.resize(ngrid);
+      const double alpha = 5.0;
+      for (int i = 1; i <= ngrid; ++i) {
+        const double x = i / (ngrid + 1.0);
+        const double xm = 1.0 - std::pow(x, m);
+        r_[i-1] = - alpha * std::log(xm);
+        w_[i-1] = std::pow(r_[i-1], 2) * alpha * m * std::pow(x, m-1) / (xm * (ngrid + 1.0));
+      }
+    }
+
+    void transform_Ahlrichs(const int ngrid) { // Treutler and Ahlrichs JCP, 102, 346.
+      GaussChebyshev2nd(ngrid);
+      r_.resize(ngrid);
       const double alpha = 1.0;
-      auto witer = w_.begin();
-      for (auto& it : x_) {
-        r.push_back(alpha * (1.0 + it) / (1.0 - it));
-        *witer++ *= 2.0 / std::pow(1.0 - it, 2);
+      for (int i = 0; i != ngrid; ++i) {
+        const double exp = 0.6;
+        const double prefactor = alpha / std::log(2.0);
+        r_[i]  = prefactor * std::pow(1.0 + x_[i], exp) * std::log(2.0 / (1 - x_[i]));
+        w_[i] *= prefactor * (exp * std::pow(1.0 + x_[i], exp - 1.0) * std::log(2.0 / (1.0 - x_[i]))
+                          + std::pow(1.0 + x_[i], exp) / (1.0 - x_[i]));
+      }
+    }
+
+    void transform_Becke(const int ngrid) { // Becke JCP, 88, 2547.
+      GaussChebyshev2nd(ngrid);
+      r_.resize(ngrid);
+      const double alpha = 1.0;
+      for (int i = 0; i != ngrid; ++i) {
+        r_[i] = alpha * (1.0 + x_[i]) / (1.0 - x_[i]);
+        w_[i] *= 2.0 * alpha / std::pow(1.0 - x_[i], 2);
       }
     }
 
