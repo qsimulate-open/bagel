@@ -42,7 +42,7 @@ void ECP::get_shell_maxl_ecp() {
       break;
     }
 
-  if (ishell_maxl_ > 0)
+  if (ishell_maxl_ != -1)
     for (int i = 0; i != 3; ++i)
       nr_[i] = count(shells_ecp_[ishell_maxl_]->ecp_r_power().begin(), shells_ecp_[ishell_maxl_]->ecp_r_power().end(), abs(i-2));
 

@@ -27,10 +27,8 @@
 #ifndef __SRC_INTEGRAL_ECP_ECPBATCH_H
 #define __SRC_INTEGRAL_ECP_ECPBATCH_H
 
-#include <tuple>
 #include <src/parallel/resources.h>
 #include <src/molecule/molecule.h>
-#include <src/util/constants.h>
 #include <src/integral/integral.h>
 #include <src/integral/ecp/radial.h>
 #include <src/integral/ecp/angularbatch.h>

@@ -7,53 +7,60 @@
 #ifndef __SRC_INTEGRAL_ECP_ANG_PROJ_RADIAL_H
 #define __SRC_INTEGRAL_ECP_ANG_PROJ_RADIAL_H
 
-#include "proj.h"
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include "mpreal.h"
 
 using namespace mpfr;
+static const double pi__ = std::atan(1.0)*4.0;
 
 template<typename T, typename... Value>
-class Radial_Int {
+class RadialInt {
 
   protected:
-    int ngrid_;
+    bool print_intermediate_;
     int max_iter_;
     double thresh_int_;
-    vector<mpreal> x_;
-    vector<mpreal> w_;
-    T function_;
+    std::vector<double> x_, w_, r_;
     double integral_;
 
   public:
-    Radial_Int(const int max_iter, const double thresh_int, Value... tail) :
+    RadialInt(Value... tail, const bool print = false, const int max_iter = 100, const double thresh_int = 1e-10) :
+      print_intermediate_(print),
       max_iter_(max_iter),
-      thresh_int_(thresh_int),
-      function_(tail...)
+      thresh_int_(thresh_int)
     {
-      integrate();
+      T function(tail...);
+      integrate(function);
     }
 
-    ~Radial_Int() {}
+    ~RadialInt() {}
 
-    void integrate() {
-      double ans = 0.0;
-      double previous = 0.0;
+    void integrate(T function) {
+      mpreal previous = 0.0;
       int ngrid = 31;
       for (int iter = 0; iter != max_iter_; ++iter) {
-        GaussChebyshev2nd(ngrid);
-        vector<mpreal> r;
-        transform_Becke(r);
-        ans = 0.0;
+        transform_Becke(ngrid);
+//      transform_Log(ngrid, 3); //TODO: to be checked
+//      transform_Ahlrichs(ngrid);
+        mpreal ans = 0.0;
         int cnt = 0;
-        for (auto& it : r) {
-          ans += (function_.compute(it) * w_[cnt]).toDouble();
-          ++cnt;
+        for (auto& it : r_) {
+          ans += function.compute(it) * w_[cnt++];
         }
-        const double error = ans - previous;
-        std::cout << "Iteration no. " << iter << " ngrid = " << ngrid << " ans = " << ans << " error = " << error << std::endl;
+        const mpreal error = ans - previous;
+        if (print_intermediate_)
+           std::cout << "Iter = " << std::setw(5) << iter << std::setw(10) << "npts = " << std::setw(10) << ngrid
+                     << std::setw(10) << "ans = " << std::setw(20) << std::setprecision(10) << ans
+                     << std::setw(10) << "err = " << std::setw(20) << std::setprecision(10) << error << std::endl;
         if (fabs(error) < thresh_int_ && iter != 0) {
-          std::cout << "Integration converged..." << std::endl;
-          std::cout << "Radial integral = " << ans << std::endl;
-          integral_ = ans;
+          if (print_intermediate_) {
+            std::cout << "Integration converged..." << std::endl;
+            std::cout << "Radial integral = " << ans << std::endl;
+          }
+          integral_ = ans.toDouble();
           break;
         } else if (iter == max_iter_-1) {
           std::cout << "Max iteration exceeded..." << std::endl;
@@ -61,32 +68,54 @@ class Radial_Int {
         previous = ans;
         x_.clear();
         w_.clear();
+        r_.clear();
         ngrid *= 2;
       }
     }
 
     double integral() { return integral_; }
 
-    void transform_Log3(vector<mpreal>& r) {
-
+    void transform_Log(const int ngrid, const int m = 3) { // Mura and Knowles JCP, 104, 9848.
+      w_.resize(ngrid);
+      r_.resize(ngrid);
+      const double alpha = 5.0;
+      for (int i = 1; i <= ngrid; ++i) {
+        const double x = i / (ngrid + 1.0);
+        const double xm = 1.0 - std::pow(x, m);
+        r_[i-1] = - alpha * std::log(xm);
+        w_[i-1] = std::pow(r_[i-1], 2) * alpha * m * std::pow(x, m-1) / (xm * (ngrid + 1.0));
+      }
     }
 
-    void transform_Becke(vector<mpreal>& r) {
+    void transform_Ahlrichs(const int ngrid) { // Treutler and Ahlrichs JCP, 102, 346.
+      GaussChebyshev2nd(ngrid);
+      r_.resize(ngrid);
       const double alpha = 1.0;
-      const mpreal one = "1.0";
-      int cnt = 0;
-      for (auto& it : x_) {
-        r.push_back(static_cast<mpreal>(alpha * (one + it) / (one - it)));
-        w_[cnt] *= 2.0 / (one - it) / (one - it);
-        ++cnt;
+      for (int i = 0; i != ngrid; ++i) {
+        const double exp = 0.6;
+        const double prefactor = alpha / std::log(2.0);
+        r_[i]  = prefactor * std::pow(1.0 + x_[i], exp) * std::log(2.0 / (1 - x_[i]));
+        w_[i] *= prefactor * (exp * std::pow(1.0 + x_[i], exp - 1.0) * std::log(2.0 / (1.0 - x_[i]))
+                          + std::pow(1.0 + x_[i], exp) / (1.0 - x_[i]));
+      }
+    }
+
+    void transform_Becke(const int ngrid) { // Becke JCP, 88, 2547.
+      GaussChebyshev2nd(ngrid);
+      r_.resize(ngrid);
+      const double alpha = 1.0;
+      for (int i = 0; i != ngrid; ++i) {
+        r_[i] = alpha * (1.0 + x_[i]) / (1.0 - x_[i]);
+        w_[i] *= 2.0 * alpha / std::pow(1.0 - x_[i], 2);
       }
     }
 
     void GaussChebyshev2nd(const int ngrid) {
-      const mpreal pi = static_cast<mpreal>(atan(1) * 4);
-      for (int i = 1; i != ngrid; ++i) {
-        x_.push_back(static_cast<mpreal>(cos(i*pi/(ngrid+1))));
-        w_.push_back(static_cast<mpreal>(pi * sin(i*pi/(ngrid+1)) / (ngrid+1)));
+      x_.resize(ngrid);
+      w_.resize(ngrid);
+      for (int i = 1; i <= ngrid; ++i) {
+        x_[i-1] = std::cos(i * pi__ / (ngrid + 1));
+        w_[i-1] = pi__ * std::sin(i * pi__ / (ngrid + 1)) / (ngrid + 1);
       }
     }
 

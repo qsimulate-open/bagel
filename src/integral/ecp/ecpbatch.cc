@@ -152,7 +152,7 @@ void ECPBatch::common_init() {
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  size_alloc_ = cont0_ * cont1_ * std::max(asize_intermediate_, asize_);
+  size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
 
   stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;
