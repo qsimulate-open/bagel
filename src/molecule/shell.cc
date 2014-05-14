@@ -281,10 +281,6 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
 
     out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
   }
-  cout << "Computing Moment in Shell! " << endl;
-  out[0]->print("First part of this Shell's moment (x-dim)");
-  out[1]->print("Second part of this Shell's moment (y-dim)");
-  out[2]->print("Third part of this Shell's moment (z-dim)");
   return out;
 }
 
@@ -342,10 +338,6 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute_(const shared_ptr<const
     out[i] = make_shared<const ZMatrix>(*moment * ii);
 
   }
-  cout << "Computing Moment in Shell! " << endl;
-  out[0]->print("First part of this Shell's moment (x-dim)");
-  out[1]->print("Second part of this Shell's moment (y-dim)");
-  out[2]->print("Third part of this Shell's moment (z-dim)");
   return out;
 }
 

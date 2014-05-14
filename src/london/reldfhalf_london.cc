@@ -40,11 +40,14 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
   // -1 due to dagger
   auto icoeff_scaled = make_shared<const ZMatrix>(*icoeff[index] * (-1.0));
 
+  // If rcoeff were truly complex, this next line would be important... but it seems to have only real parts, so this is a silent change.
+  auto rcoeff_scaled = rcoeff[index]->transpose()->transpose_conjg();;
+
   if (df->swapped()) {
-    dfhalf_[0] = df->df()->compute_half_transform_swap(rcoeff[index]);
+    dfhalf_[0] = df->df()->compute_half_transform_swap(rcoeff_scaled);
     dfhalf_[1] = df->df()->compute_half_transform_swap(icoeff_scaled);
   } else {
-    dfhalf_[0] = df->df()->compute_half_transform(rcoeff[index]);
+    dfhalf_[0] = df->df()->compute_half_transform(rcoeff_scaled);
     dfhalf_[1] = df->df()->compute_half_transform(icoeff_scaled);
   }
 }

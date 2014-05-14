@@ -196,7 +196,7 @@ void DFock_London::driver(array<shared_ptr<const ZMatrix>, 4> rocoeff, array<sha
   }
 
   list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
-  // Note that we are NOT using dagger-ed coefficients! -1 factor for imagnary will be compensated by CDMatrix and Exop
+  // Note that we are NOT using dagger-ed coefficients! -1 factor for imaginary will be compensated by CDMatrix and Exop
   list<shared_ptr<RelDFHalf_London>> half_complex = make_half_complex(dfdists, rocoeff, iocoeff);
   // apply J^{-1/2}
   for (auto& i : half_complex)
@@ -257,6 +257,7 @@ void DFock_London::driver(array<shared_ptr<const ZMatrix>, 4> rocoeff, array<sha
   for (auto& i : half_complex_exch)
     i->set_sum_diff();
   if (half_complex_exch != half_complex_exch2) {
+    throw logic_error("This should only be called with the Gaunt & Breit terms, which have not yet been implemented");
     for (auto& i : half_complex_exch2)
       i->set_sum_diff();
   }

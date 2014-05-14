@@ -86,7 +86,7 @@ void SmallERIBatch::compute() {
 
 void SmallERIBatch::eri_compute(double* eri) const {
 
-  // shells_[0] is aux function, shelles_[1] and [2] are basis
+  // shells_[0] is aux function, shells_[1] and [2] are basis
 
   const size_t s0size = shells_[0]->nbasis();
   const size_t a1size_inc = shells_[1]->nbasis_aux_increment();

@@ -59,7 +59,7 @@ class ZMatrix1eArray {
     std::shared_ptr<const ZMatrix> operator[](const int i) const { return matrices_[i]; }
     constexpr static int Nblocks() { return N; }
 
-    void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
+    void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper_conjg(); }
 
     virtual void print(const std::string name = "") const;
 
