@@ -96,7 +96,7 @@ class ZCASSCF : public Method {
     std::shared_ptr<ZMatrix> nonrel_to_relcoeff(std::shared_ptr<const RelOverlap> overlap, const bool stripes = true) const;
 
   public:
-    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
+    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr);
 
     void compute();
 

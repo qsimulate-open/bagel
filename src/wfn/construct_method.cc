@@ -109,7 +109,13 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     out = make_shared<CASPT2Grad>(itree, geom, ref);
   }
   else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
-  else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
+  else if (title == "zcasscf") {
+    string algorithm = itree->get<string>("algorithm", "");
+    if (algorithm == "bfgs" || algorithm == "")
+      out = make_shared<ZCASBFGS>(itree, geom, ref);
+    else
+      cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+  }
 
   return out;
 }
