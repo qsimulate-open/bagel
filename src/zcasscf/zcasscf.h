@@ -85,7 +85,6 @@ class ZCASSCF : public Method {
 
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
-    std::shared_ptr<ZMatrix> project_non_rel_coeff(std::shared_ptr<const RelOverlap> overlap, std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<ZMatrix> kramers_coeff) const;
     std::shared_ptr<ZMatrix> nonrel_to_relcoeff(std::shared_ptr<const RelOverlap> overlap, const bool stripes = true) const;
 
   public:

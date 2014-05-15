@@ -26,7 +26,6 @@
 #include <src/zcasscf/zqvec.h>
 #include <src/math/step_restrict_bfgs.h>
 #include <src/rel/dfock.h>
-#include <src/zcasscf/zcasscf.h>
 #include <src/zcasscf/zcasbfgs.h>
 #include <src/rel/reloverlap.h>
 
