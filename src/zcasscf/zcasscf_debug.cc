@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
 #include <src/zcasscf/zqvec.h>
 #include <src/smith/prim_op.h>
 
@@ -33,7 +33,7 @@ using namespace bagel;
 static const int morbital = 1;
 static const int norbital = 0;
 
-void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
+void ZCASBFGS::___debug___orbital_rotation(const bool kramers) {
   // currently transforming n and mth orbitals;
   const double angle = idata_->get<double>("debugrot", 0.0);
   if (angle == 0.0) return;
@@ -113,7 +113,7 @@ void ZCASSCF::___debug___orbital_rotation(const bool kramers) {
 }
 
 
-void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
+void ZCASBFGS::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const bool with_kramers) const {
   const bool perturb_va = idata_->get<bool>("perturb_va", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
   cout << ">>>>>>>>>>>> debug >>>>>>>>>>>>" << endl;
@@ -142,7 +142,7 @@ void ZCASSCF::___debug___print_gradient(shared_ptr<const ZRotFile> grad, const b
 }
 
 
-void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
+void ZCASBFGS::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool with_kramers) const {
   const bool perturb_va = idata_->get<bool>("perturb_va", false);
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
   const bool verbose        = idata_->get<bool>("verbose", false);
@@ -252,7 +252,7 @@ void ZCASSCF::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, shared
 }
 
 
-double ZCASSCF::___debug___recompute_fci_energy(shared_ptr<const ZMatrix> cfock) const {
+double ZCASBFGS::___debug___recompute_fci_energy(shared_ptr<const ZMatrix> cfock) const {
   // returns FCI energy ; requires core fock matrix for active orbitals as input
   assert(cfock->ndim() == 2*nact_ && cfock->ndim() == cfock->mdim());
 
@@ -268,7 +268,7 @@ double ZCASSCF::___debug___recompute_fci_energy(shared_ptr<const ZMatrix> cfock)
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool verbose) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_diagonal_hessian(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, const bool verbose) const {
   /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = cfock(tt) + afock(tt) - cfock(ii) - afock(ii) - cfockd(tt) + D(tt)*cfock(ii)
                                           - Q^{*}_{tt} + [ (ii|vu) - (iu|vi) ] G(ttvu)
                                           + ([ (ii|tu) - (iu|ti) ] D(tu) + c.c. )
@@ -336,7 +336,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian(shared_pt
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_diagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
   /* returns Mat(i,t) = G^{(1,1)}_{ti,ti} = [ (i ki|kt u) - (i u|kt i) ] D(t u) + [ (i ki|u t) - (u ki|i t) ] D(u kt)
                                           + [ (i ki|v u) - (i u|v ki) ] G(v u,t kt)
                                           + [ (kt ki|i t) - (i ki|kt t) ]
@@ -380,7 +380,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_hessian_kramers(s
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_offdiagonal_hessian_kramers(shared_ptr<const ZMatrix> coeffi, shared_ptr<const ZMatrix> coefft, const bool verbose) const {
   /* returns Mat(i,t) = G^{(1,2)}_{ti,ti} = [ (t ki|v k) - (t i|v ki) ] D(v kt) + [ (kt i|v ki) - (kt ki|v i) ] D(v t)
                                           -   (i ki|v u)  G(t kt,v u)   + [ (t i|kt ki) - (t ki|kt i) ]
   for the time being, we implement it in the worst possible way... to be updated to make it efficient. */
@@ -411,7 +411,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_hessian_kramer
 }
 
 
-complex<double> ZCASSCF::find_level_shift(shared_ptr<const ZRotFile> rotmat) const {
+complex<double> ZCASBFGS::find_level_shift(shared_ptr<const ZRotFile> rotmat) const {
   /* returns the smallest Hessian value that is not below -mc^2 to be used as a level shift
      This particular choice of level shift parameter ensures that the initial diagonal guess has Np negative values
      where Np is the number of positronic orbitals */
@@ -439,7 +439,7 @@ complex<double> ZCASSCF::find_level_shift(shared_ptr<const ZRotFile> rotmat) con
 }
 
 
-double ZCASSCF::trust_radius_energy_ratio(const int iter, const vector<double> energy, shared_ptr<ZRotFile> a, shared_ptr<ZRotFile> v, shared_ptr<ZRotFile> grad) const {
+double ZCASBFGS::trust_radius_energy_ratio(const int iter, const vector<double> energy, shared_ptr<ZRotFile> a, shared_ptr<ZRotFile> v, shared_ptr<ZRotFile> grad) const {
   // Following Jensen and Jorgensen JCP 80 1204 (1984)
   // Returns r_k = ( E(a_k) - E(a_(k-1)) )/( E^(2)(a_k) - E(a_(k-1)) ) (Eq 64)
   assert(energy.size() > 0);
@@ -455,7 +455,7 @@ double ZCASSCF::trust_radius_energy_ratio(const int iter, const vector<double> e
 }
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xlog, shared_ptr<ZRotFile> grad, shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const {
+shared_ptr<ZRotFile> ZCASBFGS::___debug___microiterations(shared_ptr<ZRotFile> xlog, shared_ptr<ZRotFile> grad, shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const {
     // Returns an appropriate step vector
     const double rmin = 0.6; const double rgood = 0.85; double alpha = 1.3;
     alpha = alpha + static_cast<double>(iter) * .25;
@@ -503,7 +503,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___microiterations(shared_ptr<ZRotFile> xl
 
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, bool optimize_electrons) {
+tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRotFile>> ZCASBFGS::___debug___optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, shared_ptr<ZMatrix> cold, bool optimize_electrons) {
   // function to optimize only the electronic type orbital rotations neglecting any coupling to positrons
   const int nvirtnr = nvirt_ - nneg_/2;
 
@@ -519,13 +519,14 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___optimize_subspace_rotations(vector<doub
 //  shared_ptr<ZRotFile> a = srbfgs->conjugate_gradient(newgrad, newrot);
   const bool tight = idata_->get<bool>("tight", false); 
   const int limmem = idata_->get<int>("limited_memory", 0);
-  auto reset = srbfgs->check_step(energy_, newgrad, newrot, tight, limmem);
+  auto reset = srbfgs->check_step(energy, newgrad, newrot, tight, limmem);
   cout << " reset ?!?! = " << reset << endl;
   shared_ptr<ZRotFile> a;
   if (optimize_electrons) {
     a = srbfgs->more_sorensen_extrapolate(newgrad, newrot);
   } else {
     // positronic optimization results in a negative level shift so use Hebden method
+    srbfgs->initiate_trust_radius(newgrad);
     a = srbfgs->extrapolate(newgrad, newrot);
   }
 
@@ -538,11 +539,11 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___optimize_subspace_rotations(vector<doub
   cout << setprecision(6) << "+++ grad * delta  = " << newgrad->dot_product(a) << endl;
   cout << setprecision(6) << "+++ ele grad rms  = " << newgrad->rms() << endl;
 
-  return a;
+  return make_tuple(a, energy, newgrad, newrot);
 }
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
+shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
   int nr_nvirt = nvirt_ - nneg_/2; 
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2); 
   if (nr_nvirt != 0) {
@@ -580,7 +581,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___copy_electronic_rotations(shared_ptr<co
 }
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
+shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
   int nvirtnr = nvirt_ - nneg_/2; 
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_); 
   if (nclosed_ != 0) {
@@ -607,7 +608,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___copy_positronic_rotations(shared_ptr<co
 }
 
 
-shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore) {
+shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore) {
   // first perform CASCI to obtain RDMs
   if (nact_) {
     fci_->update(coeff);
@@ -662,7 +663,7 @@ shared_ptr<ZRotFile> ZCASSCF::___debug___compute_energy_and_gradients(shared_ptr
 }
 
 
-double ZCASSCF::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZRotFile> delta, shared_ptr<const ZMatrix> hcore) {
+double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZRotFile> delta, shared_ptr<const ZMatrix> hcore) {
   // choose initial scaling parameter
   double alpha = 1.0;
   double c1    = 1.0e-4;

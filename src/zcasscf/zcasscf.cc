@@ -177,3 +177,32 @@ void ZCASSCF::resume_stdcout() const {
   cout.rdbuf(backup_stream_);
   delete ofs_;
 }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
+  assert(fci_);
+  shared_ptr<const ZMatrix> out = fci_->rdm1_av();
+  assert(out->ndim() == 2*nact_ && out->mdim() == 2*nact_);
+  return out;
+}
+
+
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
+  // form natural orbitals
+  unique_ptr<double[]> eig(new double[nact_*2]);
+  auto tmp = make_shared<ZMatrix>(*rdm1);
+  tmp->diagonalize(eig.get());
+  auto ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
+  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
+  auto natorb = make_shared<ZMatrix>(*ocoeff * *tmp->get_conjg());
+
+  // scale using eigen values
+  for (int i = 0; i != nact_*2; ++i) {
+    assert(eig[i] >= -1.0e-14);
+    const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
+    for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
+  }
+
+  auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
+  return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+}

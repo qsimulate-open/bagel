@@ -27,6 +27,7 @@
 #include <src/math/step_restrict_bfgs.h>
 #include <src/rel/dfock.h>
 #include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
 #include <src/rel/reloverlap.h>
 
 #define BOTHSPACES
@@ -35,7 +36,7 @@ using namespace std;
 using namespace bagel;
 
 
-void ZCASSCF::compute() {
+void ZCASBFGS::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
   shared_ptr<SRBFGS<ZRotFile>> srbfgs;
   shared_ptr<SRBFGS<ZRotFile>> ele_srbfgs;
@@ -190,13 +191,14 @@ void ZCASSCF::compute() {
     shared_ptr<ZRotFile> ele_rot;
     shared_ptr<ZRotFile> pos_rot;
     if (optimize_electrons) {
+      cout << "+++ Optimizing electrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      ele_rot = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, optimize_electrons);
+      tie(ele_rot, ele_energy, grad, xlog) = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
       kramers_adapt(ele_rot, nvirtnr_);
     } else {
-      cout << " optimizing positrons " << endl;
+      cout << "+++ Optimizing positrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      pos_rot = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, optimize_electrons);
+      tie(pos_rot, pos_energy, grad, xlog) = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
       kramers_adapt(pos_rot, nneg_/2);
     }
 #endif
@@ -232,7 +234,7 @@ void ZCASSCF::compute() {
 #ifdef BOTHSPACES
     const double gradient = grad->rms();
 #else
-    const double gradient = optimize_electrons ? ___debug___copy_electronic_rotations(grad)->rms() : ___debug___copy_positronic_rotations(grad)->rms();
+    const double gradient = grad->rms();//optimize_electrons ? ___debug___copy_electronic_rotations(grad)->rms() : ___debug___copy_positronic_rotations(grad)->rms();
 #endif
 
     // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
@@ -320,36 +322,3 @@ void ZCASSCF::compute() {
 #endif
   }
 }
-
-
-shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
-  assert(fci_);
-  shared_ptr<const ZMatrix> out = fci_->rdm1_av();
-  assert(out->ndim() == 2*nact_ && out->mdim() == 2*nact_);
-  return out; 
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
-  // form natural orbitals
-  unique_ptr<double[]> eig(new double[nact_*2]);
-  auto tmp = make_shared<ZMatrix>(*rdm1);
-  tmp->diagonalize(eig.get());
-  auto ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
-  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
-  auto natorb = make_shared<ZMatrix>(*ocoeff * *tmp->get_conjg());
-
-  // scale using eigen values
-  for (int i = 0; i != nact_*2; ++i) {
-    assert(eig[i] >= -1.0e-14);
-    const double fac = eig[i] > 0 ? sqrt(eig[i]) : 0.0;
-    for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
-  }
-
-  auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
-  return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
-}
-
-
-
-

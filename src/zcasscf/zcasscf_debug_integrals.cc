@@ -23,13 +23,13 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
 #include <src/smith/prim_op.h>
 
 using namespace std;
 using namespace bagel;
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___active_fock(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___active_fock(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> rdm1) const {
   // alternative implementation of active fock matrix : returns M(a) = [ (t u|a a) - (t a|a u) ] D(t u)
   // for now we implement in the worst possible way...
   shared_ptr<ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
@@ -133,7 +133,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___active_fock(shared_ptr<const ZMatrix> co
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___active_qvec_byhand(shared_ptr<const ZMatrix> coefft) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___active_qvec_byhand(shared_ptr<const ZMatrix> coefft) const {
   // returns M(t,t) =  (t u|v w) G(v w,t u) where t is active
   // for now we implement in the worst possible way ...
   assert(coefft->mdim() == nact_*2);
@@ -157,7 +157,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___active_qvec_byhand(shared_ptr<const ZMat
 /// integral routines. They work. ///
 /////////////////////////////////////
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___offdiagonal_exchange_integrals(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___offdiagonal_exchange_integrals(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns M(a,i) = (a i|a i) where a is an index of coeffa and i is an index of coeffi
   // for now we implement in the worst possible way ...
   shared_ptr<ZMatrix> out = make_shared<ZMatrix>(coeffa->mdim(), coeffi->mdim());
@@ -217,7 +217,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___offdiagonal_exchange_integrals(shared_pt
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) = (aa|ii)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -292,7 +292,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb(shared_ptr<co
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) = (ai|ia)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -367,7 +367,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange(shared_ptr<c
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_coulomb_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) = (aa'|i'i)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -446,7 +446,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_kramers(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool off_diagonal, const bool diagonal) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_exchange_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool off_diagonal, const bool diagonal) const {
   // returns Mat(a,i) = (ai|i'a')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -540,7 +540,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_kramers(shar
 
 
 // almost exactly the same code. Correct
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,j,i) = (aa|ji) where i and j are active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == 2*nact_);
@@ -617,7 +617,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active(shared
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_exchange_active(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,j,i) = (ai|ja), where i is an active index
   // with_kramers : Mat(a,j,i) = (a i|j ka) where a is an index of coeffa and i is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -701,7 +701,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_coulomb_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,t) = (a'a|t't) = (a'a|uv)G(uv,t't), where t is an active index and a is an index of coeffa
   // for closed_active : M(a,t) = (a a'|t t') = (a a'|v u)G(v u,t t')
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -793,7 +793,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_coulomb_active_kramer
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_integrals_exchange_active_kramers(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool closed_active) const {
   // returns Mat(a,t) = (a'w|va) * G(vw,t't) + (a'w|av) * G(tw,t'v) where a is an index of coeffa, and t is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   // may be possible to eliminate after Hessian has been confirmed
@@ -896,7 +896,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_integrals_exchange_active_krame
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___all_integrals_coulomb_active(shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(i,j,k,l) = (ij|kl) where all indices are in the active space.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == 2*nact_);
@@ -945,7 +945,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___all_integrals_coulomb_active(shared_ptr<
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_2rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa) const {
   // returns Mat(a,t) = (aa|vw)*(G(vw,tt)  where a is an index of coeffa, and t is active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
@@ -970,7 +970,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_coulomb(shared
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, const bool with_kramers) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_2rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, const bool with_kramers) const {
   // returns Mat(a,t) = (aw|va)*(G(vw,tt)  where a is an index of coeffa, and t is active.
   // with kramers : returns Mat(a,t) = (aw|v ka)*(G(vw,t kt)  where a is an index of coeffa, and t is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -1001,7 +1001,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_2rdm_contraction_exchange(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_1rdm_contraction_coulomb(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (aa|iu) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
   // for with_kramers Mat(a,i) = (a ka| ki u) * D(iu)
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -1097,7 +1097,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_coulomb(shared
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi, const bool with_kramers) const {
   // returns Mat(a,i) = (au|ia) * {^{A}D}_{iu}  where a is an index of coeffa and i is active
   // for with_kramers, Mat(a,i) = (a i|u ka) * {^{A}D}_{u ki}
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
@@ -1192,7 +1192,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___diagonal_1rdm_contraction_exchange(share
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_offdiagonal_1rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   /* returns Mat(a,i) =   [  (i ka|v a) -  (i a|v ka) ] * {^{A}D}_{v ki}
                         + [ (ki a|v ka) - (ki ka|v a) ] * {^{A}D}_{v i}
      where a is an index of coeffa and i is active
@@ -1284,7 +1284,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_1rdm_exchange(
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_2rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_offdiagonal_2rdm_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) = (u ka|v a) * G(u i, v ki)   where a is an index of coeffa and i is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
@@ -1356,7 +1356,7 @@ shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_offdiagonal_2rdm_exchange(
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::___debug___closed_active_diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
+shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_diagonal_1rdm_contraction_exchange(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> coeffi) const {
   // returns Mat(a,i) =  (a i|u ka) * D(u ki) where a is an index of coeffa and i is active (a t|u ka) * {^{A}D}_{u kt}
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
   assert(coeffi->mdim() == nact_*2);
