@@ -39,6 +39,8 @@
 #endif
 #include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
+#include <src/zcasscf/zsuperci.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
