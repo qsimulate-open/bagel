@@ -817,7 +817,7 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_positronic_rotations(shared_ptr<c
 }
 
 
-shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> hcore) {
+shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_ptr<const ZMatrix> coeff) {
   // first perform CASCI to obtain RDMs
   if (nact_) {
     fci_->update(coeff);
@@ -831,7 +831,7 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_pt
   shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
   // closed Fock operator
-  shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
+  shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
   shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff % *cfockao * *coeff);
 
   // active Fock operator
@@ -856,7 +856,7 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_pt
   } else {
     assert(nstate_ == 1);
     micro_energy_ = geom_->nuclear_repulsion();
-    auto mo = make_shared<ZMatrix>(*coeff % (*cfockao+*hcore) * *coeff);
+    auto mo = make_shared<ZMatrix>(*coeff % (*cfockao+*hcore_) * *coeff);
     for (int i = 0; i != nclosed_*2; ++i)
       micro_energy_ += 0.5*mo->element(i,i).real();
   }
@@ -872,7 +872,7 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_pt
 }
 
 
-double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZRotFile> delta, shared_ptr<const ZMatrix> hcore) {
+double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZRotFile> delta) {
   // choose initial scaling parameter
   double alpha = 1.0;
   double c1    = 1.0e-4;
@@ -903,7 +903,7 @@ double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZR
       *newcoeff *= *expa;
     }
 
-    auto newgrad = ___debug___compute_energy_and_gradients(newcoeff, hcore);
+    auto newgrad = ___debug___compute_energy_and_gradients(newcoeff);
     zero_positronic_elements(newgrad); 
     cout << setprecision(8) << " newgrad rms = " << newgrad->rms() << endl;
 
