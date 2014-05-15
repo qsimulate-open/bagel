@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 
-void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<const RelOverlap> overlap) {
+void ZCASSCF::init_kramers_coeff() {
   // Kramers-adapted coefficient via quaternion diagonalization
   const int nele = geom_->nele()-charge_;
 
@@ -47,16 +47,16 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
 
   shared_ptr<ZMatrix> coefftmp;
   if (nr_coeff_ != nullptr) 
-    coefftmp = nonrel_to_relcoeff(overlap, false);
+    coefftmp = nonrel_to_relcoeff(false);
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
   if (nr_coeff_ == nullptr) {
     int norb = nele;// - 2 > 0 ? nele-2 : nele;
-    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
     quaternion(focktmp);
 
-    shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
+    shared_ptr<ZMatrix> s12 = overlap_->tildex(1.0e-9);
     quaternion(s12);
 
     auto fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
@@ -91,11 +91,12 @@ void ZCASSCF::init_kramers_coeff(shared_ptr<const ZMatrix> hcore, shared_ptr<con
       move_one(           0, nneg2, nocc_+nvirt_-nneg2);
       move_one(nocc_+nvirt_, nneg2, nocc_+nvirt_-nneg2);
     }
+  } else {//if (nele%2 == 0 && nele - 2 > 0) {
     int norb = nele;//-2;
     auto ctmp = make_shared<ZMatrix>(coefftmp->ndim(), norb);
     ctmp->copy_block(0, 0, coefftmp->ndim(), norb/2, coefftmp->slice(0, norb/2)->data()); 
     ctmp->copy_block(0, norb/2, coefftmp->ndim(), norb/2, coefftmp->slice(coefftmp->mdim()/2, coefftmp->mdim()/2+norb/2)->data()); 
-    focktmp = make_shared<DFock>(geom_, hcore, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    focktmp = make_shared<DFock>(geom_, hcore_, ctmp, gaunt_, breit_, /*store_half*/false, /*robust*/false);
     auto fmo = make_shared<ZMatrix>(*coefftmp % *focktmp * *coefftmp);
     // quaternion diagonalization
     {
@@ -203,16 +204,16 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> overlap, const bool stripes) const {
+shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
   // constructs a relativistic coefficient for electronic componenets from a non-rel coefficient
   int n = nr_coeff_->ndim();
   int nvirtnr = nvirt_ - nneg_/2;
   auto ctmp = make_shared<ZMatrix>(n*4, n*4);
 
   // compute T^(-1/2) and S^(1/2)
-  auto t12 = overlap->get_submatrix(n*2, n*2, n, n)->copy();
+  auto t12 = overlap_->get_submatrix(n*2, n*2, n, n)->copy();
   t12->inverse_half(1.0e-10);
-  auto shalf = overlap->get_submatrix(0, 0, n, n)->copy();
+  auto shalf = overlap_->get_submatrix(0, 0, n, n)->copy();
   unique_ptr<double[]> eig2(new double[shalf->mdim()]);
   shalf->diagonalize(eig2.get());
   for (int k = 0; k != shalf->mdim(); ++k) {

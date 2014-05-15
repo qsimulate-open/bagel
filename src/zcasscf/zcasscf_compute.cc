@@ -64,11 +64,8 @@ void ZCASBFGS::compute() {
   bool pos_conv = false;
 #endif
 
-  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-  shared_ptr<const RelOverlap> overlap = make_shared<RelOverlap>(geom_);
-
   // intialize coefficients
-  init_kramers_coeff(hcore, overlap);
+  init_kramers_coeff();
 
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = false;
@@ -99,7 +96,7 @@ void ZCASBFGS::compute() {
     shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
     // closed Fock operator
-    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore;
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
 
     // active Fock operator
@@ -130,13 +127,13 @@ void ZCASBFGS::compute() {
 #ifdef BOTHSPACES
       energy_.resize(iter+1);
       energy_[iter] = geom_->nuclear_repulsion();
-      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
+      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         energy_[iter] += 0.5*mo->element(i,i).real();
 #else
       optimize_electrons == true ? ele_energy.resize(iter/2+1) : pos_energy.resize((iter-1)/2+1);
       optimize_electrons == true ? ele_energy[iter/2] = geom_->nuclear_repulsion() : pos_energy[(iter-1)/2] = geom_->nuclear_repulsion();
-      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore) * *coeff_);
+      auto mo = make_shared<ZMatrix>(*coeff_ % (*cfockao+*hcore_) * *coeff_);
       for (int i = 0; i != nclosed_*2; ++i)
         optimize_electrons == true ? ele_energy[iter/2] += 0.5*mo->element(i,i).real() : pos_energy[(iter-1)/2] += 0.5*mo->element(i,i).real();
 #endif

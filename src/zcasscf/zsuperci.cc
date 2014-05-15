@@ -41,11 +41,8 @@ void ZSuperCI::compute() {
   // ============================
    Timer timer;
 
-  shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
-  shared_ptr<const RelOverlap> overlap = make_shared<RelOverlap>(geom_);
-
   // intialize coefficients
-  init_kramers_coeff(hcore, overlap);
+  init_kramers_coeff();
 
   cout << setprecision(8) << " kramers restricted re part rms = " << coeff_->get_real_part()->rms() << endl;
   cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;

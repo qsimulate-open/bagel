@@ -54,7 +54,7 @@ class ZCASBFGS : public ZCASSCF {
     void compute() override;
 
    // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
-   private:
+  private:
    void ___debug___orbital_rotation(const bool kramers);
    void ___debug___print_gradient(std::shared_ptr<const ZRotFile> grad, const bool kramers) const;
    void ___debug___compute_hessian(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr, const bool kramers) const;
@@ -117,9 +117,9 @@ class ZCASBFGS : public ZCASSCF {
    // function to copy positronic rotations from a rotation file TODO: make lambda
    std::shared_ptr<ZRotFile> ___debug___copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
    // function to compute energy and gradient of a given coeff
-   std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> hcore);
+   std::shared_ptr<ZRotFile> ___debug___compute_energy_and_gradients(std::shared_ptr<const ZMatrix> coeff);
    // line search function specific to ZCAS
-   double  ___debug___line_search(std::shared_ptr<ZRotFile> grad, std::shared_ptr<ZRotFile> delta, std::shared_ptr<const ZMatrix> hcore);
+   double  ___debug___line_search(std::shared_ptr<ZRotFile> grad, std::shared_ptr<ZRotFile> delta);
 
 };
 
