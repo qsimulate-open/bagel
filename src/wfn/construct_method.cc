@@ -113,6 +113,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     string algorithm = itree->get<string>("algorithm", "");
     if (algorithm == "bfgs" || algorithm == "")
       out = make_shared<ZCASBFGS>(itree, geom, ref);
+    else if (algorithm == "superci")
+      out = make_shared<ZSuperCI>(itree, geom, ref);
     else
       cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
   }
