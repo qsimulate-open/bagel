@@ -75,6 +75,9 @@ void ZCASSCF::init() {
     coeff_ = coeff;
   }
 
+  // set hcore and overlap
+  hcore_   = make_shared<RelHcore>(geom_);
+  overlap_ = make_shared<RelOverlap>(geom_);
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -151,7 +154,7 @@ void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<doub
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
   cout << "Cycle" << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-               << setw(20) << fixed << setprecision(12) << energy[iter] << "   "
+               << setw(20) << fixed << setprecision(12) << energy[(energy.size() > 0 ? energy.size()-1 : 0)] << "   "
                << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
                << time << endl;
 }
