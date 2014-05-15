@@ -23,12 +23,12 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
 
 using namespace std;
 using namespace bagel;
 
-shared_ptr<ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<ZRotFile> ZCASBFGS::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
 
   shared_ptr<ZMatrix> cfockd;
@@ -78,7 +78,7 @@ shared_ptr<ZRotFile> ZCASSCF::compute_denom(shared_ptr<const ZMatrix> cfock, sha
 
 
 // grad(a/i) (eq.4.3a): (cfock_ai+afock_ai)
-void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
+void ZCASBFGS::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nclosed_) return;
   complex<double>* target = sigma->ptr_vc();
   for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2) {
@@ -89,7 +89,7 @@ void ZCASSCF::grad_vc(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 
 
 // grad(a/t) (eq.4.3b): cfock_au gamma_ut + q_at
-void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
+void ZCASBFGS::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
   // TODO not sure about complex conjugation of rdm1
   zgemm3m_("N", "T", nvirt_*2, nact_*2, nact_*2, 1.0, cfock->element_ptr(nocc_*2, nclosed_*2), cfock->ndim(), rdm1->data(), rdm1->ndim(), 0.0, sigma->ptr_va(), nvirt_*2);
@@ -101,7 +101,7 @@ void ZCASSCF::grad_va(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
 
 
 // grad(r/i) (eq.4.3c): (cfock_ri+afock_ri) - cfock_iu gamma_ur - qxr_ir
-void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
+void ZCASBFGS::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1, shared_ptr<ZRotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
   // TODO check
   auto qxrc = qxr->get_conjg();
@@ -114,35 +114,3 @@ void ZCASSCF::grad_ca(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix>
   // "T" effectively makes complex conjugate of cfock
   zgemm3m_("T", "N", nclosed_*2, nact_*2, nact_*2, -1.0, cfock->element_ptr(nclosed_*2, 0), cfock->ndim(), rdm1->data(), rdm1->ndim(), 1.0, sigma->ptr_ca(), nclosed_*2);
 }
-
-
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
-  for (int i = 0; i != nclosed_; ++i) {
-    for (int j = 0; j != nvirt; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt, i+nclosed_) = conj(o->ele_vc(j, i));
-
-      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nvirt; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt, i+nact_) = conj(o->ele_va(j, i));
-
-      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt, i));
-    }
-  }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j) {
-      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
-      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
-
-      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
-      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
-    }
-  }
-}
-

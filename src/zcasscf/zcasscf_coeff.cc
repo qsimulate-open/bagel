@@ -172,6 +172,37 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
 }
 
 
+void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
+  for (int i = 0; i != nclosed_; ++i) {
+    for (int j = 0; j != nvirt; ++j) {
+      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed_))) * 0.5;
+      o->ele_vc(j+nvirt, i+nclosed_) = conj(o->ele_vc(j, i));
+
+      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
+      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt, i));
+    }
+  }
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nvirt; ++j) {
+      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact_))) * 0.5;
+      o->ele_va(j+nvirt, i+nact_) = conj(o->ele_va(j, i));
+
+      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
+      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt, i));
+    }
+  }
+  for (int i = 0; i != nact_; ++i) {
+    for (int j = 0; j != nclosed_; ++j) {
+      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
+      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
+
+      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
+      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
+    }
+  }
+}
+
+
 shared_ptr<ZMatrix> ZCASSCF::project_non_rel_coeff(shared_ptr<const RelOverlap> overlap, shared_ptr<const ZMatrix> hcore, shared_ptr<ZMatrix> kramers_coeff) const {
   // function to project a non-relativistic reference coefficient into a kramers restricted relativistic coeff
   int n = nr_coeff_->ndim();
@@ -311,3 +342,21 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const RelOverlap> ove
   }
   return ctmp;
 }
+
+
+// Eliminates the positronic entries for the given rot file
+void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
+  int nr_nvirt = nvirt_ - nneg_/2;
+  for (int i = 0; i != nclosed_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_vc(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
+      rot->ele_vc(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+    } 
+  } 
+  for (int i = 0; i != nact_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_va(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
+      rot->ele_va(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+    } 
+  } 
+} 

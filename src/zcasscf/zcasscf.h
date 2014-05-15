@@ -80,17 +80,10 @@ class ZCASSCF : public Method {
     double micro_energy_;
 
     // internal function
-    void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
-    void grad_va(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> qxr,   std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
-    void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
-                 std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
-
-    std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
-                 std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
-
     void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nvirt) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
+    void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
     std::shared_ptr<ZMatrix> project_non_rel_coeff(std::shared_ptr<const RelOverlap> overlap, std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<ZMatrix> kramers_coeff) const;
     std::shared_ptr<ZMatrix> nonrel_to_relcoeff(std::shared_ptr<const RelOverlap> overlap, const bool stripes = true) const;
@@ -98,12 +91,12 @@ class ZCASSCF : public Method {
   public:
     ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr);
 
-    void compute();
+    virtual void compute() override = 0;
 
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
-  private:
+//  private:
     // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
     void ___debug___orbital_rotation(const bool kramers);
     void ___debug___print_gradient(std::shared_ptr<const ZRotFile> grad, const bool kramers) const;
