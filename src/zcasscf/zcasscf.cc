@@ -285,3 +285,13 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
   auto out = make_shared<const ZMatrix>(*tmp);
   return out;
 }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
+  auto cnew = make_shared<ZMatrix>(*cold);
+  int n    = natorb->ndim();
+  int nbas = cold->ndim();
+  zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->data(), n,
+                   0.0, cnew->data()+nbas*nclosed_*2, nbas);
+  return cnew;
+}

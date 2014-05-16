@@ -100,6 +100,7 @@ class ZCASSCF : public Method {
     std::pair<std::shared_ptr<ZMatrix>, std::vector<double>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
 
 };
 
