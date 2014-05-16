@@ -258,7 +258,31 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatri
   int ndim = coeff->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim*ndim]);
   zgemm3m_("N", "N", ndim, ndim, ndim, 1.0, rdm1->data(), ndim, start, ndim, 0.0, buf.get(), ndim);
-  zgemm3m_("T", "N", ndim, ndim, ndim, 1.0, start, ndim, buf.get(), ndim, 0.0, tmp->data(), ndim);
+  zgemm3m_("C", "N", ndim, ndim, ndim, 1.0, start, ndim, buf.get(), ndim, 0.0, tmp->data(), ndim);
   auto out = make_shared<const ZMatrix>(*tmp);
   return out;
+}
+
+
+void ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
+  shared_ptr<ZMatrix> tmp = rdm2->clone();
+  const complex<double>* start = coeff->data();
+  int ndim  = coeff->ndim();
+  int ndim2 = rdm2->ndim();
+  unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
+  rdm2->get_real_part()->print("2rdm",rdm2->ndim());
+  rdm2->get_imag_part()->print("2rdm",rdm2->ndim());
+  // first half transformation 
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start, ndim, 0.0, buf.get(), ndim2*ndim);
+  for (int i = 0; i != ndim; ++i)
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start, ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
+  // then tranpose
+  blas::transpose_conjg(tmp->data(), ndim2, ndim2, buf.get());
+  // and do it again
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start, ndim, 0.0, tmp->data(), ndim2*ndim);
+  for (int i = 0; i != ndim; ++i)
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start, ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
+  // to make sure for non-symmetric density matrices (and anyway this should be cheap).
+  blas::transpose_conjg(buf.get(), ndim2, ndim2, tmp->data());
+
 }
