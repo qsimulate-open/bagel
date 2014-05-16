@@ -211,7 +211,7 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 }
 
 
-pair<shared_ptr<ZMatrix>, vector<double>> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp = rdm1->copy();
 
@@ -247,8 +247,9 @@ pair<shared_ptr<ZMatrix>, vector<double>> ZCASSCF::make_natural_orbitals(shared_
   // copy eigenvalues TODO: change to blas
   for (int i=0; i!=tmp->ndim()/2; ++i)
     vec2[tmp->ndim()/2 + i] = vec2[i];
+  occup_ = vec2;
 
-  return make_pair(buf2, vec2);
+  return buf2;
 }
 
 

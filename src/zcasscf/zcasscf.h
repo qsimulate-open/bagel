@@ -63,6 +63,7 @@ class ZCASSCF : public Method {
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const RelOverlap> overlap_;
+    std::vector<double> occup_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
@@ -97,7 +98,7 @@ class ZCASSCF : public Method {
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
-    std::pair<std::shared_ptr<ZMatrix>, std::vector<double>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
     std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
