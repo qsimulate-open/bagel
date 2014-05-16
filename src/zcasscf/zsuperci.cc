@@ -125,4 +125,36 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
   for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;
 
+  // diagonal denom
+  auto dtmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+  fill_n(dtmp->data(), dtmp->size(), 1.0e100);
+
+  complex<double>* target = dtmp->ptr_va();
+  for (int i = 0; i != nact_*2; ++i) {
+    if (occup_[i] > zoccup_thresh) {
+      for (int j = 0; j != nvirt_*2; ++j, ++target)
+        *target = (gaa->element(i,i) + occup_[i]*f->element(j+nocc_*2, j+nocc_*2)) / (occup_[i]);
+    } else {
+      for (int j = 0; j != nvirt_*2; ++j, ++target)
+        *target = 1.0/zoccup_thresh;
+    } 
+  } 
+
+  target = dtmp->ptr_vc();
+  for (int i = 0; i != nclosed_*2; ++i)
+    for (int j = 0; j != nvirt_*2; ++j, ++target)
+      *target = (f->element(j+nocc_*2, j+nocc_*2) - f->element(i, i)) / 1.0; // TODO : check if this factor is 2.0 or 1.0 ?
+
+  target = dtmp->ptr_ca();
+  for (int i = 0; i != nact_*2; ++i) {
+    if (2.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
+      for (int j = 0; j != nclosed_*2; ++j, ++target)
+        *target = ((f->element(nclosed_*2+i,nclosed_*2+i)*2.0-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(2.0-occup_[i])) / (2.0-occup_[i]); // TODO : check on the factors of 2.0
+    } else {
+      for (int j = 0; j != nclosed_*2; ++j, ++target)
+        *target = 1.0/zoccup_thresh;
+    }
+  }
+  denom = dtmp;
+
 }
