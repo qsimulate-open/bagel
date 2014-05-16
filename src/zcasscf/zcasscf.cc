@@ -296,3 +296,18 @@ shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, 
                    0.0, cnew->data()+nbas*nclosed_*2, nbas);
   return cnew;
 }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, shared_ptr<const ZMatrix> natorb) const {
+  auto qnew = make_shared<ZMatrix>(*qold);
+  int n    = natorb->ndim();
+  int nbas = qold->ndim();
+  // first transformation
+  zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n,
+                   0.0, qnew->data(), nbas);
+  // second transformation for the active-active block
+  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy(); 
+  *qtmp = *natorb % *qtmp;
+  qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
+  return qnew;
+}
