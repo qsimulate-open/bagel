@@ -63,6 +63,12 @@ void ZSuperCI::compute() {
       resume_stdcout();
     }
 
+    auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+
+    // compute one-boedy operators
+    shared_ptr<ZMatrix> f, fact, factp, gaa;
+    shared_ptr<ZRotFile> denom;
+    one_body_operators(f, fact, factp, gaa, denom);
 
   }
 }
@@ -156,5 +162,4 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     }
   }
   denom = dtmp;
-
 }
