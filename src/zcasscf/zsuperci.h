@@ -48,6 +48,7 @@ class ZSuperCI : public ZCASSCF {
     void compute() override;
 
     std::pair<std::shared_ptr<ZMatrix>, std::vector<double>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
+    void natorb_rdm1_transform(const std::shared_ptr<ZMatrix>& coeff, std::shared_ptr<const ZMatrix>& rdm1);
 
 };
 
