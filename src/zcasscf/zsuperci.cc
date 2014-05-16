@@ -69,6 +69,14 @@ void ZSuperCI::compute() {
     shared_ptr<ZMatrix> f, fact, factp, gaa;
     shared_ptr<ZRotFile> denom;
     one_body_operators(f, fact, factp, gaa, denom);
+    // first, <proj|H|0> is computed
+    grad->zero();
+//    // <a/i|H|0> = f_ai
+    grad_vc(f, grad);
+//    // <a/r|H|0> = h_as d_sr + (as|tu)D_rs,tu = fact_ar
+    grad_va(fact, grad);
+//    // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
+    grad_ca(f, fact, grad);
 
   }
 }
@@ -133,7 +141,6 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
   // diagonal denom
   auto dtmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
-  fill_n(dtmp->data(), dtmp->size(), 1.0e100);
 
   complex<double>* target = dtmp->ptr_va();
   for (int i = 0; i != nact_*2; ++i) {
@@ -153,13 +160,19 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 
   target = dtmp->ptr_ca();
   for (int i = 0; i != nact_*2; ++i) {
-    if (2.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
+    if (1.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
       for (int j = 0; j != nclosed_*2; ++j, ++target)
-        *target = ((f->element(nclosed_*2+i,nclosed_*2+i)*2.0-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(2.0-occup_[i])) / (2.0-occup_[i]); // TODO : check on the factors of 2.0
+        *target = ((f->element(nclosed_*2+i,nclosed_*2+i)-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(1.0-occup_[i])) / (1.0-occup_[i]); // TODO : check on the factors of 2.0
     } else {
       for (int j = 0; j != nclosed_*2; ++j, ++target)
         *target = 1.0/zoccup_thresh;
     }
   }
+  const double thresh = 1.0e-8;
+  for (int i = 0; i != dtmp->size(); ++i)
+    if (fabs(dtmp->data(i)) < thresh) {
+      dtmp->data(i) = 1.0e10;
+    }
+
   denom = dtmp;
 }

@@ -48,6 +48,9 @@ class ZSuperCI : public ZCASSCF {
     void compute() override;
     void one_body_operators(std::shared_ptr<ZMatrix>& f, std::shared_ptr<ZMatrix>& fact, std::shared_ptr<ZMatrix>& factp, std::shared_ptr<ZMatrix>& gaa,
                             std::shared_ptr<ZRotFile>& denom);
+    void grad_vc(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZRotFile> sigma);
+    void grad_va(const std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
+    void grad_ca(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
 
 };
 
