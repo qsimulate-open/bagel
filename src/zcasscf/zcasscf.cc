@@ -131,7 +131,7 @@ void ZCASSCF::init() {
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
-  // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
+  // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
     mute_stdcout(/*fci*/true);
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
@@ -208,4 +208,57 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
 
   auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
   return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+}
+
+
+pair<shared_ptr<ZMatrix>, vector<double>> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
+  // input should be 1rdm in kramers format
+  shared_ptr<ZMatrix> tmp = rdm1->copy();
+
+  unique_ptr<double[]> vec(new double[rdm1->ndim()]);
+  zquatev_(tmp->ndim(), tmp->data(), vec.get());
+
+  map<int,int> emap;
+  auto buf2 = tmp->clone();
+  vector<double> vec2(tmp->ndim());
+  // sort eigenvectors so that buf is close to a unit matrix
+  // target column
+  for (int i = 0; i != tmp->ndim(); ++i) {
+    // first find the source column
+    tuple<int, double> max = make_tuple(-1, 0.0);
+    for (int j = 0; j != tmp->ndim(); ++j)
+      if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
+        max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
+
+    // register to emap
+    if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
+    emap.insert(make_pair(get<0>(max), i));
+
+    // copy to the target
+    copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
+    vec2[i] = vec[get<0>(max)];
+  }
+
+  // fix the phase
+  for (int i = 0; i != tmp->ndim(); ++i) {
+    if (real(buf2->element(i,i)) < 0.0)
+      blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+  }
+  // copy eigenvalues TODO: change to blas
+  for (int i=0; i!=tmp->ndim()/2; ++i)
+    vec2[tmp->ndim()/2 + i] = vec2[i];
+
+  return make_pair(buf2, vec2);
+}
+
+
+shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm1) const {
+  shared_ptr<ZMatrix> tmp = rdm1->clone();
+  const complex<double>* start = coeff->data();
+  int ndim = coeff->ndim();
+  unique_ptr<complex<double>[]> buf(new complex<double>[ndim*ndim]);
+  zgemm3m_("N", "N", ndim, ndim, ndim, 1.0, rdm1->data(), ndim, start, ndim, 0.0, buf.get(), ndim);
+  zgemm3m_("T", "N", ndim, ndim, ndim, 1.0, start, ndim, buf.get(), ndim, 0.0, tmp->data(), ndim);
+  auto out = make_shared<const ZMatrix>(*tmp);
+  return out;
 }

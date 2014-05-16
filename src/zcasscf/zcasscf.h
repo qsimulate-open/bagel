@@ -97,6 +97,8 @@ class ZCASSCF : public Method {
     // TODO
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
+    std::pair<std::shared_ptr<ZMatrix>, std::vector<double>> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
 };
 
 }
