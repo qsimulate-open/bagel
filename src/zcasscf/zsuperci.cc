@@ -68,3 +68,61 @@ void ZSuperCI::compute() {
 }
 
 
+void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
+                                  shared_ptr<ZRotFile>& denom) {
+  // calculate 1RDM in an original basis set
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+  // make natural orbitals, update coeff_ and transform rdm1
+  shared_ptr<ZMatrix> natorb_coeff = make_natural_orbitals(rdm1);
+  rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+
+  assert(coeff_->mdim()== nbasis_*2);
+  // qvec
+  shared_ptr<const ZMatrix> qvec;
+  if (nact_) {
+    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
+    // transform to natural orbitals
+    qvec = update_qvec(qvec, natorb_coeff);
+  }
+
+  shared_ptr<const ZMatrix> cfock;
+  { // Fock operators
+    // closed Fock - same as inactive fock
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+    cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
+    // active Fock operator
+    shared_ptr<const ZMatrix> afock;
+    if (nact_) {
+      shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
+      afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
+    } else {
+      afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
+    }
+    f = make_shared<ZMatrix>(*cfock + *afock);
+  }
+  { // active-x Fock operator : D_ts cfock_sx + Q_tx
+    fact = qvec->copy(); // nbasis_ runs first
+    for (int i = 0; i != nact_*2; ++i)
+      zaxpy_(nbasis_*2, occup_[i], cfock->element_ptr(0,nclosed_*2+i), 1, fact->data()+i*nbasis_*2, 1);
+  }
+  { // active Fock' operator (Fts+Fst) / (ns+nt)
+    factp = make_shared<ZMatrix>(nact_*2, nact_*2);
+    for (int i = 0; i != nact_*2; ++i) {
+      for (int j = 0; j != nact_*2; ++j) {
+        if (occup_[i] + occup_[j] > zoccup_thresh)
+          factp->element(j,i) = (fact->element(j+nclosed_*2,i)+fact->element(i+nclosed_*2,j)) / (occup_[i]+occup_[j]);
+        else
+          factp->element(j,i) = complex<double> (0.0, 0.0);
+      }
+    }
+  }
+
+  // G matrix (active-active) D_rs,tu Factp_tu - delta_rs nr sum_v Factp_vv
+  gaa = factp->clone();
+  auto nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
+  zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
+  complex<double> p = complex<double> (0.0,0.0);
+  for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
+  for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;
+
+}

@@ -248,6 +248,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   for (int i=0; i!=tmp->ndim()/2; ++i)
     vec2[tmp->ndim()/2 + i] = vec2[i];
   occup_ = vec2;
+  coeff_ = update_coeff(coeff_, buf2);
 
   return buf2;
 }

@@ -46,6 +46,8 @@ class ZSuperCI : public ZCASSCF {
        : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;
+    void one_body_operators(std::shared_ptr<ZMatrix>& f, std::shared_ptr<ZMatrix>& fact, std::shared_ptr<ZMatrix>& factp, std::shared_ptr<ZMatrix>& gaa,
+                            std::shared_ptr<ZRotFile>& denom);
 
 };
 

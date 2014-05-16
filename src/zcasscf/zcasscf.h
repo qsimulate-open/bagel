@@ -106,6 +106,8 @@ class ZCASSCF : public Method {
 
 };
 
+static const double zoccup_thresh = 1.0e-10;
+
 }
 
 #endif
