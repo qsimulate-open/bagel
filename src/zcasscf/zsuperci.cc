@@ -108,12 +108,13 @@ pair<shared_ptr<ZMatrix>, vector<double>> ZSuperCI::make_natural_orbitals(shared
 }
 
 
-void ZSuperCI::natorb_rdm1_transform(const shared_ptr<ZMatrix>& coeff, shared_ptr<const ZMatrix>& rdm1) {
+shared_ptr<const ZMatrix> ZSuperCI::natorb_rdm1_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm1) {
   shared_ptr<ZMatrix> tmp = rdm1->clone();
   const complex<double>* start = coeff->data();
   int ndim = coeff->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim*ndim]);
   zgemm3m_("N", "N", ndim, ndim, ndim, 1.0, rdm1->data(), ndim, start, ndim, 0.0, buf.get(), ndim);
   zgemm3m_("T", "N", ndim, ndim, ndim, 1.0, start, ndim, buf.get(), ndim, 0.0, tmp->data(), ndim);
-  rdm1 = make_shared<const ZMatrix>(*tmp); 
+  auto out = make_shared<const ZMatrix>(*tmp); 
+  return out;
 }
