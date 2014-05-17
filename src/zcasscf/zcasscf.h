@@ -35,7 +35,7 @@
 
 namespace bagel {
 
-class ZCASSCF : public Method {
+class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
   protected:
     int nneg_;
     int nocc_;
@@ -104,6 +104,18 @@ class ZCASSCF : public Method {
     std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> semi_canonical_orb();
+
+    // functions to retrieve protected members
+    int nocc() const { return nocc_; }
+    int nclosed() const { return nclosed_; }
+    int nact() const { return nact_; }
+    int nvirt() const { return nvirt_; }
+    int nbasis() const { return nbasis_; }
+    int nstate() const { return nstate_; }
+    int max_iter() const { return max_iter_; }
+    int max_micro_iter() const { return max_micro_iter_; }
+    double thresh() const { return thresh_; }
+    double thresh_micro() const { return thresh_micro_; }
 
 };
 
