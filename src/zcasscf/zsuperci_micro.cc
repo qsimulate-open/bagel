@@ -51,7 +51,7 @@ void ZSuperCIMicro::compute() {
 
     shared_ptr<ZRotFile> sigma1;
     auto sigma0 = cc0->clone();
-//
+
 //    if (miter != 0) {
 //      sigma1 = form_sigma(cc1);
 //      // projection to reference
@@ -97,3 +97,29 @@ void ZSuperCIMicro::compute() {
 //  cc_ = tmp;
 }
 
+
+
+
+// sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab 
+// TODO : check why normalization factor is commented out
+void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
+  const int nact = casscf_->nact();
+  const int nvirt = casscf_->nvirt();
+  const int nocc = casscf_->nocc();
+  const int nbasis = casscf_->nbasis();
+  if (!nact || !nvirt) return;
+
+  shared_ptr<ZMatrix> gtup = gaa_->copy();
+  for (int i = 0; i != nact; ++i) {
+    for (int j = 0; j != nact; ++j) {
+#if 0
+      const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
+#else
+      const double fac = 1.0;
+#endif
+      gtup->element(j,i) *= fac;
+    }
+  }
+  zgemm3m_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gtup->data(), nact, 1.0, sigma->ptr_va(), nvirt);
+  zgemm3m_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
+}
