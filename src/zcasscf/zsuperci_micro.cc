@@ -106,7 +106,8 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
   sigma_at_at_(cc, sigma);
   // equation 21e
   sigma_ai_ai_(cc, sigma);
-
+  // equation 21f // note a typo!
+  sigma_at_ai_(cc, sigma);
   return sigma;
 }
 
@@ -148,3 +149,20 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   zgemm3m_("N", "N", nvirt*2, nclosed*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_vc(), nvirt*2, 1.0, sigma->ptr_vc(), nvirt*2);
 }
 
+
+// sigma_at_ai = -delta_ab Fact_ti sqrt(nt/2) TODO : not including sqrt(1/2)
+void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
+  const int nclosed = casscf_->nclosed();
+  const int nact = casscf_->nact();
+  const int nvirt = casscf_->nvirt();
+  if (!nact || !nvirt || !nclosed) return;
+
+  ZMatrix tmp(nclosed*2, nact*2);
+  tmp.zero();
+  for (int i = 0; i != nact*2; ++i) {
+    const double fac = -std::sqrt(casscf_->occup(i)); // TODO check on a factor of 0.5
+    zaxpy_(nclosed*2, fac, fockact_->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
+  }
+  zgemm3m_("N", "N", nvirt*2, nact*2, nclosed*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_va(), nvirt*2);
+  zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2); // TODO : check on "C" vs "T"
+}

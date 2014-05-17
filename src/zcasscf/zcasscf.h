@@ -116,6 +116,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
+    double occup(const int i) const { return occup_[i]; }
 
 };
 
