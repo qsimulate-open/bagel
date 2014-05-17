@@ -317,3 +317,39 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
   qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
   return qnew;
 }
+
+
+shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
+  // TODO : address diagonalization issues for nclosed=1
+  assert(nact_ > 0);
+  // calculate 1RDM in an original basis set then and active fock with hcore contribution
+  shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
+  shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
+
+  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_*2) : nullptr;
+  auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
+  auto vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
+  
+  auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
+  trans->unit();
+  if (nclosed_) {
+    auto ofock = make_shared<ZMatrix>(*ocoeff % *afockao * *ocoeff);
+    ofock->print("ofock");
+    unique_ptr<double[]> eig(new double[ofock->ndim()]);
+    if (nclosed_ == 1) {
+      ofock->diagonalize(eig.get());
+    } else if (nclosed_ > 1) {
+      zquatev_(ofock->ndim(), ofock->data(), eig.get());
+    }
+    ofock->print("ofock");
+    trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
+  } 
+  auto vfock = make_shared<ZMatrix>(*vcoeff % *afockao * *vcoeff);
+  unique_ptr<double[]> eig(new double[vfock->ndim()]);
+  vfock->get_real_part()->print("vfock fockmat",vfock->ndim());
+  zquatev_(vfock->ndim(), vfock->data(), eig.get());
+  vfock->get_real_part()->print("vfock fockmat",vfock->ndim());
+  trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
+  return make_shared<const ZMatrix>(*coeff_ * *trans);
+  
+}
