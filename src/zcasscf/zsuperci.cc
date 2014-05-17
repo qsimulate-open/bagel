@@ -71,12 +71,37 @@ void ZSuperCI::compute() {
     one_body_operators(f, fact, factp, gaa, denom);
     // first, <proj|H|0> is computed
     grad->zero();
-//    // <a/i|H|0> = f_ai
+    // <a/i|H|0> = f_ai
     grad_vc(f, grad);
-//    // <a/r|H|0> = h_as d_sr + (as|tu)D_rs,tu = fact_ar
+    // <a/r|H|0> = h_as d_sr + (as|tu)D_rs,tu = fact_ar
     grad_va(fact, grad);
-//    // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
+    // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
+
+     // setting error of macro iteration
+     gradient = grad->rms();
+     if (gradient < thresh_) break;
+
+  // ============================
+     // Micro-iterations go here
+  // ============================
+
+   // orbital rotation matrix
+//    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
+//    kramers_adapt(amat, nvirt_);
+//
+//   // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
+//   *amat *= complex<double>(1.0, -1.0);
+//   unique_ptr<double[]> teig(new double[amat->ndim()]);
+//   amat->diagonalize(teig.get());
+//   auto amat_sav = amat->copy();
+//   for (int i = 0; i != amat->ndim(); ++i) {
+//     complex<double> ex = exp(complex<double>(0.0, teig[i]));
+//     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+//   }
+//   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+//
+//   coeff_ = make_shared<const Coeff>(*coeff_ * *expa);
 
   }
 }
