@@ -38,11 +38,12 @@ void ZSuperCIMicro::compute() {
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
   // a pair of 1*1 matrix and RotFile
+  // TODO : should this be 2*2 ? double check
   DavidsonDiag<ZSCIData> davidson(1, casscf_->max_micro_iter());
 
   // current coefficient
-  auto cc0    = make_shared<ZMatrix>(1,1,true);
-  auto cc1    = make_shared<ZRotFile>(nclosed, nact, nvirt);
+  auto cc0    = make_shared<ZMatrix>(1,1,true); // TODO : check if should be 2x2
+  auto cc1    = make_shared<ZRotFile>(nclosed*2, nact*2, nvirt*2);
   // BFGS initialization
   auto mbfgs = make_shared<BFGS<ZSCIData>>(make_shared<ZSCIData>(cc0, make_shared<ZRotFile>(*denom_)));
 
@@ -52,17 +53,17 @@ void ZSuperCIMicro::compute() {
     shared_ptr<ZRotFile> sigma1;
     auto sigma0 = cc0->clone();
 
-//    if (miter != 0) {
-//      sigma1 = form_sigma(cc1);
-//      // projection to reference
-//      (*cc0)   (0,0) = 0.0;
-//      (*sigma0)(0,0) = grad_->dot_product(*cc1);
-//    } else {
-//      sigma1 = grad_->copy();
-//      (*cc0)   (0,0) = 1.0;
-//      (*sigma0)(0,0) = 0.0;
-//    }
-//
+    if (miter != 0) {
+      sigma1 = form_sigma(cc1);
+      // projection to reference
+      (*cc0)   (0,0) = 0.0;
+      (*sigma0)(0,0) = grad_->dot_product(*cc1);
+    } else {
+      sigma1 = grad_->copy();
+      (*cc0)   (0,0) = 1.0;
+      (*sigma0)(0,0) = 0.0;
+    }
+
 //    // enters davidson iteration
 //    auto ccp    = make_shared<SCIData>(cc0->copy(), cc1->copy());
 //    auto sigmap = make_shared<SCIData>(sigma0->copy(), sigma1->copy());
@@ -98,6 +99,16 @@ void ZSuperCIMicro::compute() {
 }
 
 
+std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFile> cc) const {
+
+  auto sigma = cc->clone();
+  // equation 21d
+  sigma_at_at_(cc, sigma);
+  // equation 21e
+  sigma_ai_ai_(cc, sigma);
+
+  return sigma;
+}
 
 
 // sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab 
@@ -110,8 +121,8 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   if (!nact || !nvirt) return;
 
   shared_ptr<ZMatrix> gtup = gaa_->copy();
-  for (int i = 0; i != nact; ++i) {
-    for (int j = 0; j != nact; ++j) {
+  for (int i = 0; i != nact*2; ++i) {
+    for (int j = 0; j != nact*2; ++j) {
 #if 0
       const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
 #else
@@ -120,6 +131,20 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
       gtup->element(j,i) *= fac;
     }
   }
-  zgemm3m_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gtup->data(), nact, 1.0, sigma->ptr_va(), nvirt);
-  zgemm3m_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
+  zgemm3m_("N", "N", nvirt*2, nact*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, gtup->data(), nact*2, 1.0, sigma->ptr_va(), nvirt*2);
+  zgemm3m_("N", "N", nvirt*2, nact*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_va(), nvirt*2, 1.0, sigma->ptr_va(), nvirt*2);
 }
+
+
+// sigma_ai_ai = delta_ij F_ab - delta_ab F_ij
+void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
+  const int nclosed = casscf_->nclosed();
+  const int nvirt = casscf_->nvirt();
+  const int nocc = casscf_->nocc();
+  const int nbasis = casscf_->nbasis();
+  if (!nclosed || !nvirt) return;
+
+  zgemm3m_("N", "N", nvirt*2, nclosed*2, nclosed*2, -1.0, cc->ptr_vc(), nvirt*2, fock_->data(), nbasis*2, 1.0, sigma->ptr_vc(), nvirt*2);
+  zgemm3m_("N", "N", nvirt*2, nclosed*2, nvirt*2, 1.0, fock_->element_ptr(nocc*2, nocc*2), nbasis*2, cc->ptr_vc(), nvirt*2, 1.0, sigma->ptr_vc(), nvirt*2);
+}
+
