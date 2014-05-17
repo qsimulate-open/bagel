@@ -75,7 +75,7 @@ class ZCASSCF : public Method {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
-    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>) const;
+    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false) const;
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 
     // energy

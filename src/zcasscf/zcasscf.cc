@@ -190,7 +190,7 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) const {
   // form natural orbitals
   unique_ptr<double[]> eig(new double[nact_*2]);
   auto tmp = make_shared<ZMatrix>(*rdm1);
@@ -206,7 +206,12 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1) c
     for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
   }
 
-  auto zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
+  shared_ptr<ZMatrix> zero;
+  if (!with_hcore) {
+    zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
+  } else {
+    zero = hcore_->copy();
+  }
   return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
 }
 
