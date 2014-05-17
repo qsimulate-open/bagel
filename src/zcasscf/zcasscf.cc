@@ -216,7 +216,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   shared_ptr<ZMatrix> tmp = rdm1->copy();
 
   unique_ptr<double[]> vec(new double[rdm1->ndim()]);
-  zquatev_(tmp->ndim(), tmp->data(), vec.get());
+  zquatev_(tmp->ndim(), tmp->data(), vec.get()); // TODO : maybe replace with standard diagonalize
 
   map<int,int> emap;
   auto buf2 = tmp->clone();
@@ -290,10 +290,11 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 
 
 shared_ptr<const ZMatrix> ZCASSCF::update_coeff(shared_ptr<const ZMatrix> cold, shared_ptr<const ZMatrix> natorb) const {
+  // see active_fock for explanation of conjugation for natorb
   auto cnew = make_shared<ZMatrix>(*cold);
   int n    = natorb->ndim();
   int nbas = cold->ndim();
-  zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->data(), n,
+  zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->get_conjg()->data(), n,
                    0.0, cnew->data()+nbas*nclosed_*2, nbas);
   return cnew;
 }
@@ -304,8 +305,7 @@ shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, s
   int n    = natorb->ndim();
   int nbas = qold->ndim();
   // first transformation
-  zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n,
-                   0.0, qnew->data(), nbas);
+  zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n, 0.0, qnew->data(), nbas);
   // second transformation for the active-active block
   auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy(); 
   *qtmp = *natorb % *qtmp;
