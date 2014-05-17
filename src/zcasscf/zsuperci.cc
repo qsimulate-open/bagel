@@ -79,7 +79,7 @@ void ZSuperCI::compute() {
     grad_ca(f, fact, grad);
 
      // setting error of macro iteration
-     gradient = grad->rms();
+     auto gradient = grad->rms();
      if (gradient < thresh_) break;
 
   // ============================

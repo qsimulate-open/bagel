@@ -415,102 +415,29 @@ shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_offdiagonal_hessian_krame
 }
 
 
-shared_ptr<const ZRotFile> ZCASBFGS::___debug___compute_denom_exact(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
-  // returns exact diagonal hessian for BFGS updates
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
-  shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
-  shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
-
-  shared_ptr<ZMatrix> cfockd;
-  shared_ptr<const ZMatrix> coefft;
-  if (nact_) {
-    cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
-    cfockd->hermite();
-    coefft = coeff_->slice(nclosed_*2, nocc_*2);
-  }
-
-  // ia part (4.6a) : adapted for 4-component formalism
-  if (nvirt_ && nclosed_) {
-    shared_ptr<ZMatrix> maaii = ___debug___diagonal_integrals_coulomb(coeffa, coeffi);
-    shared_ptr<ZMatrix> maiia = ___debug___diagonal_integrals_exchange(coeffa, coeffi);
-    *maiia -= *maaii;
-    complex<double>* target = out->ptr_vc();
-    for (int i = 0; i != nclosed_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = cfock->element(j+nocc_*2, j+nocc_*2) + afock->element(j+nocc_*2, j+nocc_*2) 
-                  - cfock->element(i,i) - afock->element(i,i) + maiia->element(j,i);
-      }
-    }
-  }
-
-  // at part (4.6b) : adapted for 4-component formalism
-  if (nvirt_ && nact_) {
-    shared_ptr<ZMatrix> maatt = ___debug___diagonal_2rdm_contraction_coulomb(coeffa);
-    shared_ptr<ZMatrix> matta = ___debug___diagonal_2rdm_contraction_exchange(coeffa);
-    *maatt -= *matta;
-    complex<double>* target = out->ptr_va();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nvirt_*2; ++j) {
-        *target++ = rdm1->element(i, i)*cfock->element(j+nocc_*2, j+nocc_*2)
-                  - cfockd->element(i, i) - qxr->element(i+nclosed_*2, i) + maatt->element(j,i);
-      }
-    }
-  }
-
-  // it part (4.7c)
-  if (nclosed_ && nact_) {
-    shared_ptr<ZMatrix> mitti = ___debug___closed_active_diagonal_hessian(coeffi, coefft, cfock, afock, qxr, /*verbose*/false);
-    complex<double>* target = out->ptr_ca();
-    for (int i = 0; i != nact_*2; ++i) {
-      for (int j = 0; j != nclosed_*2; ++j) {
-        *target++ = mitti->element(j,i);
-      }
-    }
-  }
-
-
-  const double thresh = 1.0e-8;
-  for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh) {
-      out->data(i) = 1.0e10;
-    }
-  return out;
-}
-
-
 complex<double> ZCASBFGS::find_level_shift(shared_ptr<const ZRotFile> rotmat) const {
   /* returns the smallest Hessian value that is not below -mc^2 to be used as a level shift
      This particular choice of level shift parameter ensures that the initial diagonal guess has Np negative values
      where Np is the number of positronic orbitals */
-//  double csq = 137.00 * 137.00;
+  double csq = 137.00 * 137.00;
   complex<double> l0 = rotmat->data(0);
 
   for (int j = 1; j != rotmat->size(); ++j) {
-//    if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
-    if (l0.real() < rotmat->data(j).real())
-      l0 = rotmat->data(j);
-  }
-    cout << setprecision(8) << " largest denom element " << l0 << endl;
-
-  l0 = rotmat->data(0);
-  for (int j = 1; j != rotmat->size(); ++j) {
-//    if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
-    if (l0.real() > rotmat->data(j).real())
+    if (l0.real() > rotmat->data(j).real() && csq + rotmat->data(j).real() > 0)
       l0 = rotmat->data(j);
   }
   complex<double> level_shift;
-//  if (real(l0) < 0) {
-//  double scale = idata_->get<double>("scalefac", 1.05);
-//  level_shift = l0 * scale;
-//  cout << " " << endl;
-//  cout << setprecision(8) << "Smallest Hessian Element (excluding positrons) = " << l0 << endl;
-//  cout << setprecision(2) << "Scaling Factor                                 = " << scale << endl;
-//  cout << setprecision(8) << "Level Shift                                    = " << level_shift << endl << endl;
-//  } else {
-//    cout << " level shift is not negative " << endl;
-    level_shift = l0;
-//    level_shift = complex<double> (0.0,0.0);
-//  }
+  if (real(l0) < 0) {
+    double scale = idata_->get<double>("scalefac", 1.05);
+    level_shift = l0 * scale;
+    cout << " " << endl;
+    cout << setprecision(8) << "Smallest Hessian Element (excluding positrons) = " << l0 << endl;
+    cout << setprecision(2) << "Scaling Factor                                 = " << scale << endl;
+    cout << setprecision(8) << "Level Shift                                    = " << level_shift << endl << endl;
+  } else {
+    cout << " level shift is not negative " << endl;
+    level_shift = complex<double> (0.0,0.0);
+  }
 
   return level_shift;
 }
@@ -574,124 +501,6 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___microiterations(shared_ptr<ZRotFile> x
       }
     }
     return acopy;
-}
-
-
-void ZCASBFGS::test_solver() {
-    // f(x)   =  Cos[x] + Exp[-1/2(x)^2
-    // f'(x)  = -Exp[-x^2/2] x - Sin[x]
-    // f''(x) = -E^(-x^2/2) + x^2 E^(-x^2/2) - Cos[x]
-    // f(0)   = 2
-    // 1st min(f(x)) at x = +/- 3.16286587302553
-    // 1st max(f(x)) at x = +/- 6.28318529037025
-    // 1st inflection point at x = +/- 1.28308530064373
-    // f(x,y)   =  Cos[x] + Exp[-1/2(x)^2] + Cos[y] + Exp[-1/2(y)^2]
-    // fx(x,y)  = -Exp[-x^2/2] x - Sin[x]
-    // fy(x,y)  = -Exp[-y^2/2] y - Sin[y]
-    // fxx(x,y) = -E^(-x^2/2) + x^2 E^(-x^2/2) - Cos[x]
-    // fyy(x,y) = -E^(-y^2/2) + y^2 E^(-y^2/2) - Cos[y]
-    // f(0,0)   = 4
-    // 1st min(f(x,y))    at (x,y) = +/- 3.16286587302553
-    // 1st max(f(x,y))    at (x,y) = +/- 6.28318529037025
-    // 1st saddle(f(x,y)) at (x,y) = +/- (0,3.16286587302553)
-    vector<double> f;
-#if 1
-    shared_ptr<Matrix> grad  = make_shared<Matrix>(1,1);
-    shared_ptr<Matrix> hess  = make_shared<Matrix>(1,1);
-    shared_ptr<Matrix> shift = make_shared<Matrix>(1,1);
-    const double rstartpt = idata_->get<double>("rx0", 0.0);
-    auto x0 = make_shared<Matrix>(1,1);
-    (*x0)(0,0) = rstartpt;
-    (*hess)(0,0) = -exp(-(*x0)(0,0) * (*x0)(0,0) * 0.5) + (*x0)(0,0) * (*x0)(0,0) * exp(-(*x0)(0,0) * (*x0)(0,0) * 0.5) - cos((*x0)(0,0));
-    hess->print("hess");
-#if 1
-    shared_ptr<SRBFGS<Matrix>> srbfgs;
-    srbfgs = make_shared<SRBFGS<Matrix>>(hess, 0.5);
-    const bool tight = idata_->get<bool>("tight", false);
-    const int limmem = idata_->get<int>("limited_memory", 0);
-    const int max_micro_iter = idata_->get<int>("microiter", 30);
-#else
-    shared_ptr<BFGS<Matrix>> srbfgs;
-    srbfgs = make_shared<BFGS<Matrix>>(hess);
-#endif
-    auto oldp = x0->clone();
-    auto oldg = grad->clone();
-    // iterations
-    for (int j = 0; j != max_micro_iter; ++j) {
-      auto v1 = cos((*x0)(0,0)) + exp(- 0.5 * (*x0)(0,0) * (*x0)(0,0));
-//      if (j == 2) {
-//        cout << " bump up the energy " << endl;
-//        v1 += 10.0;
-//      }
-      f.push_back(v1);
-      (*grad)(0,0) = -exp(-0.5 * (*x0)(0,0) * (*x0)(0,0)) * (*x0)(0,0) - sin((*x0)(0,0));
-#else
-    shared_ptr<ZMatrix> grad  = make_shared<ZMatrix>(2,1);
-    shared_ptr<ZMatrix> hess  = make_shared<ZMatrix>(2,1);
-//    shared_ptr<ZMatrix> shift = make_shared<ZMatrix>(2,1);
-    auto x0 = make_shared<ZMatrix>(2,1);
-    const double rstartpt = idata_->get<double>("rx0", 0.0);
-    const double istartpt = idata_->get<double>("ix0", 0.0);
-    (*x0)(0,0) = complex<double> (rstartpt, istartpt);
-    (*x0)(1,0) = conj((*x0)(0,0));
-    (*hess)(0,0) = -8.0 - 0.4 * (*x0)(1,0) + (*x0)(0,0) * (-0.4 + 3.6 * (*x0)(1,0));
-    (*hess)(1,0) = conj((*hess)(0,0));
-    hess->print("hess");
-#if 1
-    const bool tight = idata_->get<bool>("tight", false);
-    const int limmem = idata_->get<int>("limited_memory", 0);
-    shared_ptr<SRBFGS<ZMatrix>> srbfgs;
-    srbfgs = make_shared<SRBFGS<ZMatrix>>(hess);
-#else
-    shared_ptr<BFGS<ZMatrix>> srbfgs;
-    srbfgs = make_shared<BFGS<ZMatrix>>(hess);
-#endif
-    auto oldp = x0->clone();
-    auto oldg = grad->clone();
-    // iterations
-    const int max_micro_iter = idata_->get<int>("microiter", 30);
-    for (int j = 0; j != max_micro_iter; ++j) {
-      auto v1 = detail::real(
-                  ( (*x0)(0,0) * (*x0)(1,0) + 2.0 * ( (*x0)(0,0) + (*x0)(1,0) ) )
-                * ( 0.9 * (*x0)(0,0) * (*x0)(1,0) - 2.0 * ( (*x0)(0,0) + (*x0)(1,0) ) )
-                );
-      f.push_back(v1);
-      (*grad)(0,0) = ( 2.0 + (*x0)(1,0)) * (0.9 * (*x0)(0,0) * (*x0)(1,0) - 2.0 * ((*x0)(0,0) + (*x0)(1,0))) 
-                   + (-2.0 + 0.9 * (*x0)(1,0)) * ((*x0)(0,0) * (*x0)(1,0) + 2.0 * ((*x0)(0,0) + (*x0)(1,0)));
-      (*grad)(1,0) = conj((*grad)(0,0));
-#endif
-      grad->print("grad");
-      x0->print("x0");
-      if (grad->norm() < 1e-6) {
-        cout << " converged in " << j << " iterations " << endl;
-        break;
-      }
-//      for (auto& i : f) cout << setprecision(6) << " zcas energies " << i << endl;
-#if 1
-//      grad = grad->get_conjg();
-      auto reset = srbfgs->check_step(f, grad, x0, tight, limmem);
-      std::cout << "reset is true!? " << reset << std::endl;
-//      auto t1 = srbfgs->extrapolate(grad, x0);
-      auto t1 = srbfgs->more_sorensen_extrapolate(grad, x0);
-//      t1->scale(-1.0);
-//      auto t1 = srbfgs->more_sorensen_extrapolate(grad, x0);
-//      auto t1 = srbfgs->conjugate_gradient(grad, x0);
-#else
-      grad = grad->get_conjg();
-      auto t1 = srbfgs->extrapolate(grad, x0);
-      t1->scale(-1.0);
-#endif
-      t1->print("t1");
-      *x0 += *t1;
-      oldp = t1;
-      oldg = grad;
-      cout << "XXXX end iteration " << j << " XXXX " << endl;
-    }
-    cout << setprecision(8) << " value of x0 at solution  " << endl;
-    x0->print("x0");
-    cout << " value of f at solution     = " << f.back() << endl;
-    cout << " value of gradient at sol " << endl;
-    grad->print("grad");
 }
 
 
