@@ -60,7 +60,7 @@ class ZSuperCIMicro {
                  std::shared_ptr<const ZMatrix> f1, std::shared_ptr<const ZMatrix> f2, std::shared_ptr<const ZMatrix> f3, std::shared_ptr<const ZMatrix> ga)
       : casscf_(cas), grad_(g), denom_(d), fock_(f1), fockact_(f2), fockactp_(f3), gaa_(ga) { }
 
-    void compute() {};
+    void compute();
 
     std::shared_ptr<const ZRotFile> cc() const { assert(cc_); return cc_; }
 };
