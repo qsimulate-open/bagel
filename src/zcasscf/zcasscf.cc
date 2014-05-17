@@ -334,21 +334,29 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   trans->unit();
   if (nclosed_) {
     auto ofock = make_shared<ZMatrix>(*ocoeff % *afockao * *ocoeff);
-    ofock->print("ofock");
     unique_ptr<double[]> eig(new double[ofock->ndim()]);
     if (nclosed_ == 1) {
       ofock->diagonalize(eig.get());
     } else if (nclosed_ > 1) {
       zquatev_(ofock->ndim(), ofock->data(), eig.get());
     }
-    ofock->print("ofock");
     trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
   } 
   auto vfock = make_shared<ZMatrix>(*vcoeff % *afockao * *vcoeff);
   unique_ptr<double[]> eig(new double[vfock->ndim()]);
-  vfock->get_real_part()->print("vfock fockmat",vfock->ndim());
   zquatev_(vfock->ndim(), vfock->data(), eig.get());
-  vfock->get_real_part()->print("vfock fockmat",vfock->ndim());
+  // move_positronic_orbitals;
+  {
+    auto move_one = [this, &vfock](const int offset, const int block1, const int block2) {
+      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(vfock->ndim(), block1+block2);
+      scratch->copy_block(0,      0, vfock->ndim(), block2, vfock->slice(offset+block1, offset+block1+block2));
+      scratch->copy_block(0, block2, vfock->ndim(), block1, vfock->slice(offset,        offset+block1));
+      vfock->copy_block(0, offset, vfock->ndim(), block1+block2, scratch);
+    };
+    const int nneg2 = nneg_/2;
+    move_one(           0, nneg2, nvirt_-nneg2);
+    move_one(nvirt_, nneg2, nvirt_-nneg2);
+  }
   trans->copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2, vfock->data());
   return make_shared<const ZMatrix>(*coeff_ * *trans);
   
