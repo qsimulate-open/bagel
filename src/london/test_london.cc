@@ -25,6 +25,7 @@
 
 #include <sstream>
 #include <src/london/scf_london.h>
+#include <src/london/dirac_london.h>
 #include <src/wfn/reference.h>
 
 using namespace bagel;
@@ -53,6 +54,13 @@ double london_energy(std::string filename) {
       std::cout.rdbuf(backup_stream);
       //return ref_->energy(); //TODO Set up reference
       return scf->energy();
+    } else if (method == "dhf") {
+      auto rel = std::make_shared<Dirac_London>(itree, cgeom, ref_);
+      rel->compute();
+      ref_ = rel->conv_to_ref();
+      std::cout.rdbuf(backup_stream);
+      //return ref_->energy(); //TODO Set up reference
+      return rel->energy();
     }
   }
   assert(false);
@@ -62,8 +70,9 @@ double london_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_LONDON)
 
 BOOST_AUTO_TEST_CASE(LONDON) {
-  BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),     -99.70397733));
-  BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),   -99.70391005));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),      -99.70397733));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),    -99.70391005));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"), -99.82459461));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
