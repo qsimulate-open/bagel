@@ -108,6 +108,11 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
   sigma_ai_ai_(cc, sigma);
   // equation 21f // note a typo!
   sigma_at_ai_(cc, sigma);
+  // equation 21b
+  sigma_ai_ti_(cc, sigma);
+  // equation 21a
+  sigma_ti_ti_(cc, sigma);
+
   return sigma;
 }
 
@@ -184,4 +189,22 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   }
   zgemm3m_("C", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2); // TODO : check "C" vs "T" here
   zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, tmp.data(), nvirt*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
+}
+
+
+// sigma_ti_ti = - delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij // TODO : check normalization factors
+void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
+  const int nclosed = casscf_->nclosed();
+  const int nact = casscf_->nact();
+  const int nbasis = casscf_->nbasis();
+  if (!nact || !nclosed) return;
+  ZMatrix tmp(nact*2, nact*2);
+  for (int i = 0; i != nact*2; ++i) {
+    for (int j = 0; j != nact*2; ++j) {
+      const double fac = ((1.0-casscf_->occup(i))*(1.0-casscf_->occup(j)) > zoccup_thresh) ? 1.0/std::sqrt((1.0-casscf_->occup(i))*(1.0-casscf_->occup(j))) : 0.0;
+      tmp(j,i) = -((1.0 - casscf_->occup(j) - casscf_->occup(i)) * fockactp_->element(j,i) - gaa_->element(j,i)) * fac;
+    }
+  }
+  zgemm3m_("N", "N", nclosed*2, nact*2, nact*2, 1.0, cc->ptr_ca(), nclosed*2, tmp.data(), nact*2, 1.0, sigma->ptr_ca(), nclosed*2);
+  zgemm3m_("N", "N", nclosed*2, nact*2, nclosed*2, -1.0, fock_->data(), nbasis*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_ca(), nclosed*2);
 }
