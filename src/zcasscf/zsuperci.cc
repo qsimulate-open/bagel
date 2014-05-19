@@ -50,7 +50,7 @@ void ZSuperCI::compute() {
   if (nact_)
     fci_->update(coeff_);
 
-  for (int iter = 0; iter != 1; ++iter) {
+  for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -60,6 +60,7 @@ void ZSuperCI::compute() {
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
       fci_->compute_rdm12();
+      energy_.push_back((fci_->energy())[0]);
       resume_stdcout();
     }
 
@@ -69,6 +70,7 @@ void ZSuperCI::compute() {
     shared_ptr<ZMatrix> f, fact, factp, gaa;
     shared_ptr<ZRotFile> denom;
     one_body_operators(f, fact, factp, gaa, denom);
+
     // first, <proj|H|0> is computed
     grad->zero();
     // <a/i|H|0> = f_ai
@@ -89,6 +91,9 @@ void ZSuperCI::compute() {
    // orbital rotation matrix
 //    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
 //    kramers_adapt(amat, nvirt_);
+
+   // print out...
+   print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 //
 //   // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
 //   *amat *= complex<double>(1.0, -1.0);
