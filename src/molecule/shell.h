@@ -59,6 +59,7 @@ class Shell : public Shell_base {
 
     // TODO Refactor - These next few are essentially the same as above, but for London integrals only
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
+    std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
     std::array<std::shared_ptr<const ZMatrix>,3> moment_compute_(const std::shared_ptr<const ZMatrix> zoverlap, const std::array<double,3> magnetic_field) const;
 
     // magnetism
@@ -135,6 +136,7 @@ class Shell : public Shell_base {
     bool relativistic() const { return relativistic_; }
     const std::shared_ptr<const Matrix>  small(const int i)  const { assert(relativistic_); return  small_[i]; }
     const std::shared_ptr<const ZMatrix> zsmall(const int i) const { assert(relativistic_); return zsmall_[i]; }
+    const std::shared_ptr<const ZMatrix> zsmallc(const int i) const { assert(relativistic_); return zsmallc_[i]; }
     const std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
     const std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
     int nbasis_aux_increment() const { return aux_increment_ ? aux_increment_->nbasis() : 0; }

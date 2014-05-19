@@ -197,6 +197,7 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
 
   // small is a transformation matrix (x,y,z components)
   zsmall_ = moment_compute_(overlap, magnetic_field);
+  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 
