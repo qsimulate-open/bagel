@@ -28,6 +28,7 @@
 #include <src/math/step_restrict_bfgs.h>
 #include <src/rel/dfock.h>
 #include <src/zcasscf/zsuperci.h>
+#include <src/zcasscf/zsupercimicro.h>
 #include <src/rel/reloverlap.h>
 
 using namespace std;
@@ -87,28 +88,45 @@ void ZSuperCI::compute() {
   // ============================
      // Micro-iterations go here
   // ============================
+    shared_ptr<const ZRotFile> cc;
+    {
+      ZSuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
+      micro.compute();
+      cc = micro.cc();
+    }
 
    // orbital rotation matrix
-//    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
-//    kramers_adapt(amat, nvirt_);
+    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
+    kramers_adapt(amat, nvirt_);
+
+   // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
+   *amat *= 1.0 * complex<double>(0.0, -1.0);
+   unique_ptr<double[]> teig(new double[amat->ndim()]);
+   amat->diagonalize(teig.get());
+   auto amat_sav = amat->copy();
+   for (int i = 0; i != amat->ndim(); ++i) {
+     complex<double> ex = exp(complex<double>(0.0, teig[i]));
+     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+   }
+   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+
+   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
 
    // print out...
    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
-//
-//   // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
-//   *amat *= complex<double>(1.0, -1.0);
-//   unique_ptr<double[]> teig(new double[amat->ndim()]);
-//   amat->diagonalize(teig.get());
-//   auto amat_sav = amat->copy();
-//   for (int i = 0; i != amat->ndim(); ++i) {
-//     complex<double> ex = exp(complex<double>(0.0, teig[i]));
-//     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
-//   }
-//   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
-//
-//   coeff_ = make_shared<const Coeff>(*coeff_ * *expa);
 
   }
+//
+//  // block diagonalize coeff_ in nclosed and nvirt
+//  if (nact_)
+//    coeff_ = semi_canonical_orb();
+//
+  // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
+  fci_->update(coeff_);
+  fci_->compute();
+  fci_->compute_rdm12();
+
 }
 
 

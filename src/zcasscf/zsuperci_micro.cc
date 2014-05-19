@@ -64,38 +64,38 @@ void ZSuperCIMicro::compute() {
       (*sigma0)(0,0) = 0.0;
     }
 
-//    // enters davidson iteration
-//    auto ccp    = make_shared<SCIData>(cc0->copy(), cc1->copy());
-//    auto sigmap = make_shared<SCIData>(sigma0->copy(), sigma1->copy());
+    // enters davidson iteration
+    auto ccp    = make_shared<ZSCIData>(cc0->copy(), cc1->copy());
+    auto sigmap = make_shared<ZSCIData>(sigma0->copy(), sigma1->copy());
 //    ccp->synchronize();
 //    sigmap->synchronize();
-//    const double mic_energy = davidson.compute(ccp, sigmap);
-//
-//    // residual vector and error
-//    shared_ptr<SCIData> residual = davidson.residual().front();
+    const double mic_energy = davidson.compute(ccp, sigmap);
+
+    // residual vector and error
+    shared_ptr<ZSCIData> residual = davidson.residual().front();
 //    residual->synchronize();
-//    const double error = residual->rms();
-//
-//    if (miter == 0) cout << endl << "     == micro iteration == " << endl;
-//    cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
-//         << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
-//
-//    if (error < casscf_->thresh_micro()) { cout << endl; break; }
+    const double error = residual->rms();
+
+    if (miter == 0) cout << endl << "     == micro iteration == " << endl;
+    cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
+         << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
+
+    if (error < casscf_->thresh_micro()) { cout << endl; break; }
 //    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 //
 //    // update cc0 and cc1
-//    cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
-//    cc1->normalize();
-//    cc0 = cc0->clone();
+    cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
+    cc1->normalize();
+    cc0 = cc0->clone();
   }
-//
+
 //  // rotation parameters
-//  shared_ptr<const SCIData> result = davidson.civec().front();
-//  const double cref = result->first()->element(0,0);
-//  shared_ptr<RotFile> tmp = result->second()->copy();
-//  *tmp *= 1.0/cref;
+  shared_ptr<const ZSCIData> result = davidson.civec().front();
+  const complex<double> cref = result->first()->element(0,0);
+  shared_ptr<ZRotFile> tmp = result->second()->copy();
+  *tmp *= 1.0/cref;
 //  tmp->synchronize();
-//  cc_ = tmp;
+  cc_ = tmp;
 }
 
 
