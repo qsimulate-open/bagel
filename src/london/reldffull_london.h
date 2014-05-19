@@ -1,0 +1,86 @@
+//
+// BAGEL - Parallel electron correlation program.
+// Filename: reldffull_london.h
+// Copyright (C) 2014 Toru Shiozaki
+//
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Maintainer: Shiozaki group
+//
+// This file is part of the BAGEL package.
+//
+// The BAGEL package is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Library General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// The BAGEL package is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Library General Public License for more details.
+//
+// You should have received a copy of the GNU Library General Public License
+// along with the BAGEL package; see COPYING.  If not, write to
+// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+
+#ifndef __SRC_LONDON_RELDFFULL_LONDON_H
+#define __SRC_LONDON_RELDFFULL_LONDON_H
+
+#include <src/london/reldf_london.h>
+#include <src/london/reldfhalf_london.h>
+
+namespace bagel {
+
+class RelDF_London;
+class RelDFHalf_London;
+
+class RelDFFull_London : public RelDFBase {
+  protected:
+    std::array<std::shared_ptr<DFFullDist_London>,2> dffull_;
+
+  public:
+    RelDFFull_London(std::shared_ptr<const RelDFHalf_London>, std::array<std::shared_ptr<const ZMatrix>,4>, std::array<std::shared_ptr<const ZMatrix>,4>);
+    RelDFFull_London(std::array<std::shared_ptr<DFFullDist_London>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
+    RelDFFull_London(const RelDFFull_London& o);
+
+    std::array<std::shared_ptr<DFFullDist_London>, 2> get_data() const { return dffull_; }
+    std::shared_ptr<DFFullDist_London> get_real() const { return dffull_[0]; }
+    std::shared_ptr<DFFullDist_London> get_imag() const { return dffull_[1]; }
+
+    bool matches(std::shared_ptr<const RelDFFull_London>) const { return true; }
+
+    std::shared_ptr<RelDFFull_London> copy() const { return std::make_shared<RelDFFull_London>(*this); }
+    std::shared_ptr<RelDFFull_London> clone() const;
+    std::shared_ptr<RelDFFull_London> apply_J() const;
+    std::shared_ptr<RelDFFull_London> apply_JJ() const;
+
+    // zaxpy
+    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull_London> o) { ax_plus_y(a, *o); }
+    void ax_plus_y(std::complex<double> a, const RelDFFull_London& o);
+    void scale(std::complex<double> a);
+
+    RelDFFull_London& operator+=(const RelDFFull_London& o) { ax_plus_y(1.0, o); return *this; }
+    RelDFFull_London& operator-=(const RelDFFull_London& o) { ax_plus_y(-1.0, o); return *this; }
+
+    void add_product(std::shared_ptr<const RelDFFull_London> o, const std::shared_ptr<const ZMatrix> a, const int nocc, const int offset);
+
+    std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
+
+    std::shared_ptr<ZMatrix> form_aux_2index_real() const {
+      std::shared_ptr<ZMatrix> out = dffull_[0]->form_aux_2index(dffull_[0], 1.0);
+      *out += *dffull_[1]->form_aux_2index(dffull_[1], 1.0); // positive, due to complex conjugate
+      return out;
+    }
+
+    std::list<std::shared_ptr<RelDFHalfB_London>> back_transform(std::array<std::shared_ptr<const ZMatrix>,4>,
+                                                          std::array<std::shared_ptr<const ZMatrix>,4>) const;
+    std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const RelDFFull_London>, const double fac) const;
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const RelDFFull_London>, const double fac, const bool conjugate_left = true) const;
+    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull_London>, const double fac, const int i) const;
+
+    //std::shared_ptr<RelDFFull_London> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+};
+
+}
+
+#endif
