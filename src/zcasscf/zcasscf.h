@@ -110,6 +110,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
     int nvirt() const { return nvirt_; }
+    int nvirtnr() const { return nvirtnr_; }
     int nbasis() const { return nbasis_; }
     int nstate() const { return nstate_; }
     int max_iter() const { return max_iter_; }

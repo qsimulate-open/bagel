@@ -85,9 +85,9 @@ void ZSuperCI::compute() {
     // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
 
-     // setting error of macro iteration
-     auto gradient = grad->rms();
-     if (gradient < thresh_) break;
+    // setting error of macro iteration
+    auto gradient = grad->rms();
+    if (gradient < thresh_) break;
 
   // ============================
      // Micro-iterations go here
@@ -101,7 +101,11 @@ void ZSuperCI::compute() {
 
    // orbital rotation matrix
     shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
+#ifdef BOTHSPACES
     kramers_adapt(amat, nvirt_);
+#else
+    kramers_adapt(amat, nvirtnr_);
+#endif
 
    // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
    *amat *= 1.0 * complex<double>(0.0, -1.0);
@@ -114,7 +118,20 @@ void ZSuperCI::compute() {
    }
    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
 
-   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
+#ifdef BOTHSPACES
+   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa); // NEED TO ADJUST THIS FOR ELECTRONIC ROTATIONS ONLY
+#else
+   auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+   ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+   ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
+   ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
+   *ctmp *= *expa;
+   auto ctmp2 = coeff_->copy();
+   ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
+   ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
+   ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
+   coeff_ = make_shared<const ZMatrix>(*ctmp2);
+#endif
 
    // print out...
    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
