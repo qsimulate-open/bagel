@@ -28,10 +28,13 @@
 #include <src/math/algo.h>
 #include <src/integral/ecp/wigner3j.h>
 #include <src/integral/ecp/angularbatch.h>
+#include <src/integral/ecp/sphusplist.h>
 #include <iomanip>
 
 using namespace bagel;
 using namespace std;
+
+const static SphUSPList sphusplist;
 
 double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
 
@@ -68,82 +71,39 @@ double AngularBatch::integrate3USP(array<int, 3> xyz_exponents) const {
 
 double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, int> lm2, const array<int, 3> ijk) const {
 
-  vector<pair<double, int>> usp;
+  vector<double> usp1, usp2;
+  sphusplist.sphuspfunc_call(lm1.first, lm1.second, usp1);
+  sphusplist.sphuspfunc_call(lm2.first, lm2.second, usp2);
 
-  array<int, 2> lm = {lm1.first, lm1.second};
-  shared_ptr<SphHarmonics> sphusp = make_shared<SphHarmonics>(lm);
-  int cnt = 0;
-  int nonzero = 0;
-  for (int lz = 0; lz <= lm1.first; ++lz) {
-    for (int ly = 0; ly <= lm1.first - lz; ++ly) {
-      const int lx = lm1.first - lz - ly;
-      const double coeff = sphusp->sph_to_USP(lx, ly);
-      if (coeff != 0.0) {
-        nonzero ++;
-        pair<double, int> c_usp(coeff, cnt);
-        usp.push_back(c_usp);
-      }
-      ++cnt;
-    }
-  }
-  const int n1 = nonzero;
-
-  lm = {lm2.first, lm2.second};
-  sphusp = make_shared<SphHarmonics>(lm);
-  cnt = 0;
-  nonzero = 0;
-  for (int lz = 0; lz <= lm2.first; ++lz) {
-    for (int ly = 0; ly <= lm2.first - lz; ++ly) {
-      const int lx = lm2.first - lz - ly;
-      const double coeff = sphusp->sph_to_USP(lx, ly);
-      if (coeff != 0.0) {
-        nonzero ++;
-        pair<double, int> c_usp(coeff, cnt);
-        usp.push_back(c_usp);
-      }
-      ++cnt;
-    }
-  }
-  const int n2 = nonzero;
-
-  assert (n1 + n2 == usp.size());
   double ans = 0.0;
-  for (int i = 0; i != n1; ++i) {
-    for (int j = n1; j != n1 + n2; ++j) {
-      const double coeff = usp[i].first * usp[j].first;
-      array<int, 3> ki = {0, 0, 0};
-      int id = usp[i].second;
-      int kz = 0;
-      for (int lp1 = lm1.first + 1; lp1 != 0; --lp1) {
-        if (id - lp1 < 0) {
-          ki[2] = kz;
-          ki[1] = id;
-          ki[0] = lm1.first - ki[2] - ki[1];
-          break;
-        } else {
-          kz++;
-          id -= lp1;
-        }
+  for (int i = 0; i != usp1.size(); ++i) {
+    for (int j = 0; j != usp2.size(); ++j) {
+      const double coeff = usp1[i] * usp2[j];
+      if (coeff != 0.0) {
+        array<int, 3> ki = {0, i, 0};
+        for (int lp = lm1.first + 1; lp != 0; --lp)
+          if (ki[1] - lp < 0) {
+            ki[0] = lm1.first - ki[2] - ki[1];
+            break;
+          } else {
+            ki[2]++;
+            ki[1] -= lp;
+          }
+        array<int, 3> kj = {0, j, 0};
+        for (int lp = lm2.first + 1; lp != 0; --lp)
+          if (kj[1] - lp < 0) {
+            kj[0] = lm1.first - kj[2] - kj[1];
+            break;
+          } else {
+            kj[2]++;
+            kj[1] -= lp;
+          }
+        const int x = ki[0] + kj[0] + ijk[0];
+        const int y = ki[1] + kj[1] + ijk[1];
+        const int z = ki[2] + kj[2] + ijk[2];
+        array<int, 3> xyz = {x, y, z};
+        ans += coeff * integrate3USP(xyz);
       }
-      array<int, 3> kj = {0, 0, 0};
-      id = usp[j].second;
-      kz = 0;
-      for (int lp1 = lm2.first + 1; lp1 != 0; --lp1) {
-        if (id - lp1 < 0) {
-          kj[2] = kz;
-          kj[1] = id;
-          kj[0] = lm2.first - kj[2] - kj[1];
-          break;
-        } else {
-          kz++;
-          id -= lp1;
-        }
-      }
-      const int x = ki[0] + kj[0] + ijk[0];
-      const int y = ki[1] + kj[1] + ijk[1];
-      const int z = ki[2] + kj[2] + ijk[2];
-      array<int, 3> xyz = {x, y, z};
-      ans += coeff * integrate3USP(xyz);
     }
   }
 

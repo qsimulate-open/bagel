@@ -32,6 +32,7 @@ ECP::ECP(const int ncore, const int maxl, vector<shared_ptr<const Shell_ECP>> sh
   : ecp_ncore_(ncore), ecp_maxl_(maxl), shells_ecp_(shells_ecp) {
   nshell_ = shells_ecp_.size();
   get_shell_maxl_ecp();
+  position_ = shells_ecp_[0]->position();
 }
 
 void ECP::get_shell_maxl_ecp() {

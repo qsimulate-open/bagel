@@ -64,13 +64,10 @@ class ECPBatch : public Integral {
                    std::shared_ptr<StackMem> = nullptr);
     ~ECPBatch();
 
-    void integrate_angular();
-
     double* data() { return data_; }
     virtual double* data(const int i) override { assert(i == 0); return data_; }
 
     bool swap01() const { return swap01_; }
-
 
     void compute() override;
 

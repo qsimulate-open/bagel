@@ -6,6 +6,8 @@
 
 #include "radial.h"
 #include "test.h"
+#include <gsl/gsl_sf_bessel.h>
+
 //#include "src/integral/carsphlist.h"
 
 double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_ptr<CartesianGauss> gB) {
@@ -28,15 +30,21 @@ using namespace std;
 
 int main() {
 
-// Test Bessel function
-  const double x = 1.2e-4;
+// Test Bessel function (Boost can only do very small x)
+double x = 1e-3;
+for (int i = 0; i != 100; ++i) {
   const double sbessel = boost::math::sph_bessel(0, x) * std::exp(-x);
   Modified_Spherical_Bessel_Iexp msbessel(0);
   cout << "                             x = " << setw(20) << setprecision(12) << x << endl;
-  cout << "boost:sph_bessel               = " << setw(20) << setprecision(12) << sbessel << endl;
-  cout << "Modified_Spherical_Bessel_Iexp = " << setw(20) << setprecision(12) << msbessel.compute(x).toDouble() << endl;
+  cout << "boost:sph_bessel               = " << setw(20) << setprecision(12)
+                                              << sbessel << endl;
+  cout << "Modified_Spherical_Bessel_Iexp = " << setw(20) << setprecision(12)
+                                              << msbessel.compute(x).toDouble() << endl;
+  cout << "gsl_sf_bessel_i0_scaled        = " << setw(20) << setprecision(12)
+                                              << gsl_sf_bessel_i0_scaled(x) << endl;
   cout << endl;
-  // Boost can only do very small x
+  x += 0.01;
+}
 
 #if 0
   cout << " Expansion of a Gaussian about a different centre " << endl;

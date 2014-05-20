@@ -42,6 +42,7 @@ class ECP {
     int ishell_maxl_;
     int nshell_;
     std::array<int, 3> nr_;
+    std::array<double, 3> position_;
 
   public:
     ECP(const int ncore, const int maxl, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp);
@@ -61,6 +62,9 @@ class ECP {
 
     const std::array<int, 3> nr() { return nr_; }
     const int nr(const int i) const { return nr_[i]; }
+
+    double position(const int i) const { return position_[i]; };
+    const std::array<double,3>& position() const { return position_; };
 
     void print() const;
 
