@@ -211,39 +211,46 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;
 
   // diagonal denom
-  auto dtmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+  {
+#ifdef BOTHSPACES
+    int nvirt_tmp = nvirt_;
+#else
+    int nvirt_tmp = nvirtnr_;
+#endif
+    auto dtmp = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_tmp*2);
 
-  complex<double>* target = dtmp->ptr_va();
-  for (int i = 0; i != nact_*2; ++i) {
-    if (occup_[i] > zoccup_thresh) {
-      for (int j = 0; j != nvirt_*2; ++j, ++target)
-        *target = (gaa->element(i,i) + occup_[i]*f->element(j+nocc_*2, j+nocc_*2)) / (occup_[i]);
-    } else {
-      for (int j = 0; j != nvirt_*2; ++j, ++target)
-        *target = 1.0/zoccup_thresh;
+    complex<double>* target = dtmp->ptr_va();
+    for (int i = 0; i != nact_*2; ++i) {
+      if (occup_[i] > zoccup_thresh) {
+        for (int j = 0; j != nvirt_tmp*2; ++j, ++target)
+          *target = (gaa->element(i,i) + occup_[i]*f->element(j+nocc_*2, j+nocc_*2)) / (occup_[i]);
+      } else {
+        for (int j = 0; j != nvirt_tmp*2; ++j, ++target)
+          *target = 1.0/zoccup_thresh;
+      } 
     } 
-  } 
 
-  target = dtmp->ptr_vc();
-  for (int i = 0; i != nclosed_*2; ++i)
-    for (int j = 0; j != nvirt_*2; ++j, ++target)
-      *target = (f->element(j+nocc_*2, j+nocc_*2) - f->element(i, i)) / 1.0; // TODO : check if this factor is 2.0 or 1.0 ?
+    target = dtmp->ptr_vc();
+    for (int i = 0; i != nclosed_*2; ++i)
+      for (int j = 0; j != nvirt_tmp*2; ++j, ++target)
+        *target = (f->element(j+nocc_*2, j+nocc_*2) - f->element(i, i)) / 1.0; // TODO : check if this factor is 2.0 or 1.0 ?
 
-  target = dtmp->ptr_ca();
-  for (int i = 0; i != nact_*2; ++i) {
-    if (1.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
-      for (int j = 0; j != nclosed_*2; ++j, ++target)
-        *target = ((f->element(nclosed_*2+i,nclosed_*2+i)-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(1.0-occup_[i])) / (1.0-occup_[i]); // TODO : check on the factors of 2.0
-    } else {
-      for (int j = 0; j != nclosed_*2; ++j, ++target)
-        *target = 1.0/zoccup_thresh;
+    target = dtmp->ptr_ca();
+    for (int i = 0; i != nact_*2; ++i) {
+      if (1.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
+        for (int j = 0; j != nclosed_*2; ++j, ++target)
+          *target = ((f->element(nclosed_*2+i,nclosed_*2+i)-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(1.0-occup_[i])) / (1.0-occup_[i]); // TODO : check on the factors of 2.0
+      } else {
+        for (int j = 0; j != nclosed_*2; ++j, ++target)
+          *target = 1.0/zoccup_thresh;
+      }
     }
+    const double thresh = 1.0e-8;
+    for (int i = 0; i != dtmp->size(); ++i)
+      if (fabs(dtmp->data(i)) < thresh) {
+        dtmp->data(i) = 1.0e10;
+      }
+
+    denom = dtmp;
   }
-  const double thresh = 1.0e-8;
-  for (int i = 0; i != dtmp->size(); ++i)
-    if (fabs(dtmp->data(i)) < thresh) {
-      dtmp->data(i) = 1.0e10;
-    }
-
-  denom = dtmp;
 }
