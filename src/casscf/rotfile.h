@@ -210,7 +210,8 @@ class RotationMatrix {
     }
 
     // print matrix
-    void print() const {
+    void print(const std::string in = "") const {
+      std::cout << "++++ " + in + " ++++" << std::endl;
       if (nact_ && nclosed_) {
         std::cout << " printing closed-active block" << std::endl;
         for (int i = 0; i != nact_; ++i) {
