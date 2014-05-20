@@ -31,6 +31,8 @@
 #include <src/zcasscf/zsupercimicro.h>
 #include <src/rel/reloverlap.h>
 
+#define BOTHSPACES
+
 using namespace std;
 using namespace bagel;
 
@@ -65,7 +67,11 @@ void ZSuperCI::compute() {
       resume_stdcout();
     }
 
+#ifdef BOTHSPACES
     auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
+#else
+    auto grad = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirtnr_*2);
+#endif
 
     // compute one-boedy operators
     shared_ptr<ZMatrix> f, fact, factp, gaa;
@@ -145,27 +151,44 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
     // transform to natural orbitals
     qvec = update_qvec(qvec, natorb_coeff);
+#ifndef BOTHSPACES
+    { // take non-rel parts out
+      auto tmp = make_shared<ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
+      tmp->copy_block(0,0,nocc_*2, nact_*2, qvec->get_submatrix(0,0,nocc_*2,nact_*2)->data());
+      tmp->copy_block(nocc_*2, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2,0,nvirtnr_,nact_*2)->data());
+      tmp->copy_block(nocc_*2+nvirtnr_, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2+nvirt_,0,nvirtnr_,nact_*2)->data());
+      qvec = make_shared<const ZMatrix>(*tmp);
+    }
+#endif
   }
 
   shared_ptr<const ZMatrix> cfock;
   { // Fock operators
+#ifdef BOTHSPACES
+    auto coefftmp = coeff_->copy();
+#else
+    auto coefftmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+    coefftmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+    coefftmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2, nocc_*2+nvirtnr_));
+    coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
+#endif
     // closed Fock - same as inactive fock
     shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
-    cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
+    cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
       shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
-      afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
+      afock = make_shared<ZMatrix>(*coefftmp % *afockao * *coefftmp);
     } else {
-      afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
+      afock = coefftmp->clone();
     }
     f = make_shared<ZMatrix>(*cfock + *afock);
   }
   { // active-x Fock operator : D_ts cfock_sx + Q_tx
-    fact = qvec->copy(); // nbasis_ runs first
+    fact = qvec->copy();
     for (int i = 0; i != nact_*2; ++i)
-      zaxpy_(nbasis_*2, occup_[i], cfock->element_ptr(0,nclosed_*2+i), 1, fact->data()+i*nbasis_*2, 1);
+      zaxpy_(qvec->ndim(), occup_[i], cfock->element_ptr(0,nclosed_*2+i), 1, fact->data()+i*qvec->ndim(), 1);
   }
   { // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = make_shared<ZMatrix>(nact_*2, nact_*2);

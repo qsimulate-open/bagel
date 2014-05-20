@@ -37,12 +37,10 @@ void ZSuperCIMicro::compute() {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
-  // a pair of 1*1 matrix and RotFile
-  // TODO : should this be 2*2 ? double check
   DavidsonDiag<ZSCIData> davidson(1, casscf_->max_micro_iter());
 
   // current coefficient
-  auto cc0    = make_shared<ZMatrix>(1,1,true); // TODO : check if should be 2x2
+  auto cc0    = make_shared<ZMatrix>(1,1,true);
   auto cc1    = make_shared<ZRotFile>(nclosed*2, nact*2, nvirt*2);
   // BFGS initialization
   auto mbfgs = make_shared<BFGS<ZSCIData>>(make_shared<ZSCIData>(cc0, make_shared<ZRotFile>(*denom_)));
