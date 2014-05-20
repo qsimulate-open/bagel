@@ -138,7 +138,7 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   for (int i = 0; i != nact*2; ++i) {
     for (int j = 0; j != nact*2; ++j) {
 #if 0
-      const double fac = (occup_[i]*occup_[j] > occup_thresh) ? 1.0/std::sqrt(occup_[i]*occup_[j]) : 0.0;
+      const double fac = (casscf_->occup(i)*casscf_->occup(j) > zoccup_thresh) ? 1.0/std::sqrt(casscf_->occup(i)*casscf_->occup(j)) : 0.0;
 #else
       const double fac = 1.0;
 #endif
