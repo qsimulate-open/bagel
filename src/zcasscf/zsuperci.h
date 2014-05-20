@@ -26,6 +26,8 @@
 #ifndef __SRC_ZCASSCF_ZSUPERCI_H
 #define __SRC_ZCASSCF_ZSUPERCI_H
 
+#define BOTHSPACES
+
 #include <src/zcasscf/zcasscf.h>
 
 namespace bagel {

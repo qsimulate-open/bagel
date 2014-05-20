@@ -31,8 +31,6 @@
 #include <src/zcasscf/zsupercimicro.h>
 #include <src/rel/reloverlap.h>
 
-#define BOTHSPACES
-
 using namespace std;
 using namespace bagel;
 

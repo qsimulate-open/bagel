@@ -31,20 +31,30 @@ using namespace bagel;
 
 // <a/i|H|0> = f_ai
 void ZSuperCI::grad_vc(const shared_ptr<ZMatrix> f, shared_ptr<ZRotFile> sigma) {
-  if (!nvirt_ || !nclosed_) return;
+#ifdef BOTHSPACES
+  const int nvirt_tmp = nvirt_;
+#else
+  const int nvirt_tmp = nvirtnr_;
+#endif
+  if (!nvirt_tmp || !nclosed_) return;
   complex<double>* target = sigma->ptr_vc();
-  for (int i = 0; i != nclosed_*2; ++i, target += nvirt_*2)
-    zaxpy_(nvirt_*2, 1.0, f->element_ptr(nocc_*2,i), 1, target, 1);
+  for (int i = 0; i != nclosed_*2; ++i, target += nvirt_tmp*2)
+    zaxpy_(nvirt_tmp*2, 1.0, f->element_ptr(nocc_*2,i), 1, target, 1);
 }
 
 
 // <a/r|H|0> = finact_as D_sr + (as|tu)D_rs,tu = fact_ar  (/sqrt(nr) - due to normalization) TODO : check normalization
 void ZSuperCI::grad_va(const shared_ptr<ZMatrix> fact, shared_ptr<ZRotFile> sigma) {
+#ifdef BOTHSPACES
+  const int nvirt_tmp = nvirt_;
+#else
+  const int nvirt_tmp = nvirtnr_;
+#endif
   if (!nvirt_ || !nact_) return;
   complex<double>* target = sigma->ptr_va();
-  for (int i = 0; i != nact_*2; ++i, target += nvirt_*2) {
+  for (int i = 0; i != nact_*2; ++i, target += nvirt_tmp*2) {
     const double fac = (occup_[i]>zoccup_thresh) ? 1.0/std::sqrt(occup_[i]) : 0.0;
-    zaxpy_(nvirt_*2, fac, fact->element_ptr(nocc_*2, i), 1, target, 1);
+    zaxpy_(nvirt_tmp*2, fac, fact->element_ptr(nocc_*2, i), 1, target, 1);
   }
 }
 
