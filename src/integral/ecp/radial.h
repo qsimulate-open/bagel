@@ -39,7 +39,6 @@ template<typename T, typename... Value>
 class RadialInt {
 
   protected:
-    int ngrid_;
     bool print_intermediate_;
     int max_iter_;
     double thresh_int_;
@@ -47,7 +46,7 @@ class RadialInt {
     double integral_;
 
   public:
-    RadialInt(Value... tail, const bool print = false, const int max_iter = 100, const double thresh_int = 1e-10) :
+    RadialInt(Value... tail, const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH) :
       print_intermediate_(print),
       max_iter_(max_iter),
       thresh_int_(thresh_int)
@@ -61,15 +60,34 @@ class RadialInt {
     void integrate(T function) {
       double previous = 0.0;
       int ngrid = 31;
+      std::vector<int> sigma1(ngrid);
+      std::vector<double> f(ngrid);
       for (int iter = 0; iter != max_iter_; ++iter) {
 //      transform_Becke(ngrid);
 //      transform_Log(ngrid, 3); //TODO: to be checked
         transform_Ahlrichs(ngrid);
-        double ans = 0.0;
-        int cnt = 0;
-        for (auto& it : r_) {
-          ans += function.compute(it) * w_[cnt++];
+
+        const int n1 = ngrid;
+        std::vector<int> sigma0(sigma1);
+        sigma1.resize(n1);
+
+        if (iter == 0) {
+          for (int i = 0; i != n1; ++i) {
+             sigma1[i] = i;
+             f[i] = function.compute(r_[i]);
+          }
+        } else {
+          const int n0 = (n1-1)/2;
+
+          for (int i = 0; i <= n0; ++i) {
+            if (i != n0) sigma1[i] = sigma0[i]*2+1;
+            f[n0+i] = function.compute(r_[2*i]);
+            sigma1[n0+i] = 2*i;
+          }
         }
+
+        double ans = 0.0;
+        for (int i = 0; i != r_.size(); ++i) ans += f[i] * w_[sigma1[i]];
         const double error = ans - previous;
         if (print_intermediate_)
            std::cout << "Iter = " << std::setw(5) << iter << std::setw(10) << "npts = " << std::setw(10) << ngrid
@@ -89,7 +107,8 @@ class RadialInt {
         x_.clear();
         w_.clear();
         r_.clear();
-        ngrid *= 2;
+        ngrid = 2*ngrid+1;
+        f.resize(ngrid);
       }
     }
 
