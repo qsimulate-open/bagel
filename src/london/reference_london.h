@@ -55,6 +55,7 @@ class Reference_London : public Reference {
     const std::shared_ptr<const Hcore> hcore() const override { throw std::logic_error("Reference_London::hcore() should not be called"); }
     const std::shared_ptr<const Geometry> geom() const override { throw std::logic_error("Reference_London::geom() should not be called"); }
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry_London> geomin) const override;
 
     const std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
     const std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }

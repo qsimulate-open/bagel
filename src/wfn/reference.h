@@ -31,6 +31,7 @@
 #include <src/scf/coeff.h>
 #include <src/molecule/hcore.h>
 #include <src/wfn/geometry.h>
+#include <src/wfn/geometry_london.h>
 #include <src/fci/dvec.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/rdm.h>
@@ -160,6 +161,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // basis-set projection based on SVD
     virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>) const;
+    virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry_London>) const;
 
 };
 

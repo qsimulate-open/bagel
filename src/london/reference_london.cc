@@ -24,6 +24,9 @@
 //
 
 #include <src/london/reference_london.h>
+#include <src/molecule/mixedbasis.h>
+#include <src/molecule/zoverlap.h>
+#include <src/integral/compos/complexoverlapbatch.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference_London)
 
@@ -33,20 +36,20 @@ using namespace bagel;
 Reference_London::Reference_London(shared_ptr<const Geometry_London> g, shared_ptr<const ZCoeff> c,
                                    const int _nclosed, const int _nact, const int _nvirt,
                                    const double en) : Reference() {
-  this->cgeom_ = g;
-  this->geom_ = nullptr;
-  this->energy_ = en;
-  this->zhcore_ = make_shared<ZHcore>(cgeom_);
-  this->hcore_ = nullptr;
-  this->nclosed_ = _nclosed;
-  this->nact_ = _nact;
-  this->nvirt_ = _nvirt;
-  this->nstate_ = 1;
-  this->ciwfn_ = nullptr;
-  this->rdm1_ = std::vector<std::shared_ptr<RDM<1>>>();
-  this->rdm2_ = std::vector<std::shared_ptr<RDM<2>>>();
-  this->rdm1_av_ = nullptr;
-  this->rdm2_av_ = nullptr;
+  cgeom_ = g;
+  geom_ = nullptr;
+  energy_ = en;
+  zhcore_ = make_shared<ZHcore>(cgeom_);
+  hcore_ = nullptr;
+  nclosed_ = _nclosed;
+  nact_ = _nact;
+  nvirt_ = _nvirt;
+  nstate_ = 1;
+  ciwfn_ = nullptr;
+  rdm1_ = std::vector<std::shared_ptr<RDM<1>>>();
+  rdm2_ = std::vector<std::shared_ptr<RDM<2>>>();
+  rdm1_av_ = nullptr;
+  rdm2_av_ = nullptr;
 
   // we need to make sure that all the quantities are consistent in every MPI process
   if (c) {
@@ -57,6 +60,23 @@ Reference_London::Reference_London(shared_ptr<const Geometry_London> g, shared_p
 }
 
 
+shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
+  shared_ptr<ZMatrix> snew = make_shared<ZOverlap>(geomin);
+  snew->inverse();
+  MixedBasis<ComplexOverlapBatch, ZMatrix, Geometry_London> mixed(cgeom_, geomin);
+  auto c = make_shared<ZCoeff>(*snew * mixed * *zcoeff_);
+
+  auto out = make_shared<Reference_London>(geomin, c, nclosed_, nact_, zcoeff_->mdim()-nclosed_-nact_, energy_);
+  assert (!coeffA_ && !coeffB_);
+  //if (coeffA_) {
+  //  assert(coeffB_);
+  //   out->coeffA_ = make_shared<Coeff>(*snew * mixed * *coeffA_);
+  //  out->coeffB_ = make_shared<Coeff>(*snew * mixed * *coeffB_);
+  //}
+  return out;
+}
+
+
 std::shared_ptr<Reference> Reference_London::project_coeff(std::shared_ptr<const Geometry> geomin) const {
-  throw std::logic_error("Reference_London::project_coeff(...) should not be called");
+  throw std::logic_error("You appear to be trying to project from a London basis to a Gaussian one.  This feature has not been implemented.");
 }

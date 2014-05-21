@@ -128,14 +128,6 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) {
 
   print_atoms();
 
-  if (nonzero_magnetic_field()) {
-    cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "
-                                                              << setw(7) << magnetic_field_[1] << ", "
-                                                              << setw(7) << magnetic_field_[2] << ") a.u." << endl;
-    const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
-    cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
-  }
-
   common_init2(true, overlap_thresh_);
 
   // static external electric field
@@ -324,6 +316,14 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
+
+  // check if a magnetic field has been supplied
+  auto newfield = geominfo->get_child_optional("magnetic_field");
+  if (newfield) {
+    magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
+    const bool tesla = geominfo->get<bool>("tesla", false);
+    if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+  }
 
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");

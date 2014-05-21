@@ -85,9 +85,9 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 //overlap.print(" < r | s > ", 21);
 
   // Test <r | a >< a | Rn | s>
-  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0(auxmol, refgeom2, refgeom2);
+  MixedBasis<R0Batch, Matrix, Geometry, const shared_ptr<const Geometry>> mixedR0(auxmol, refgeom2, refgeom2);
   (mixedSra * S ^ mixedR0).print(" < r | a > S^{-1} < a | R0 | s >", 25);
-  MixedBasis<R0Batch, const shared_ptr<const Geometry>> mixedR0rs(refgeom, refgeom2, refgeom2);
+  MixedBasis<R0Batch, Matrix, Geometry, const shared_ptr<const Geometry>> mixedR0rs(refgeom, refgeom2, refgeom2);
   mixedR0rs.print(" < r | R0 | s >", 25);
 
 #endif

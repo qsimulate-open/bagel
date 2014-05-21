@@ -28,6 +28,7 @@
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
 #include <src/wfn/geometry_london.h>
+#include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
 #include <src/meh/meh_cas.h>
 #include <src/meh/meh_distcas.h>
@@ -79,7 +80,7 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        const string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
+        const string basis_type = to_lower(itree->get<string>("basis_type", cgeom ? "giao" : "gaussian"));
         if (basis_type == "gaussian") {
           geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
           if (itree->get<bool>("restart", false))
@@ -88,7 +89,17 @@ int main(int argc, char** argv) {
         } else if (basis_type == "london" || basis_type == "giao") {
           cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
           if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
-          if (ref) throw runtime_error("Reference projection not set up for London orbitals");
+          if (ref) {
+            auto cref = dynamic_pointer_cast<const Reference_London>(ref);
+            if (cref) {
+              // Projecting London to London
+              cref->project_coeff(cgeom);
+              ref = cref;
+            } else {
+              // Projecting Gaussian to London - not yet implemented
+              ref->project_coeff(cgeom);
+            }
+          }
         } else throw runtime_error("basis type not understood - should be gaussian or london");
       } else {
         if (!geom && !cgeom) throw runtime_error("molecule block is missing");

@@ -342,12 +342,20 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
 
+  // check if magnetic field has changed
+  auto newfield = geominfo->get_child_optional("magnetic_field");
+  if (newfield) {
+    magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
+    const bool tesla = geominfo->get<bool>("tesla", false);
+    if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+  }
+
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
   basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
   // if so, construct atoms
-  if (prevbasis != basisfile_ || atoms) {
+  if (prevbasis != basisfile_ || atoms || newfield) {
     atoms_.clear();
     const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
@@ -357,28 +365,28 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
         atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
     } else {
       for (auto& a : o.atoms_)
-        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
-      throw runtime_error("Need to set it up to initialize magnetic field in this other place, I guess.");
+        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem, magnetic_field_));
     }
   }
   const string prevaux = auxfile_;
   auxfile_ = to_lower(geominfo->get<string>("df_basis", auxfile_));
-  if (prevaux != auxfile_ || atoms) {
+  if (prevaux != auxfile_ || atoms || newfield) {
     aux_atoms_.clear();
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
     } else {
       for (auto& a : o.atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem));
+        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
     }
   }
 
   common_init1();
-  if (prevbasis != basisfile_ || prevaux != auxfile_ || atoms) {
+  if (prevbasis != basisfile_ || prevaux != auxfile_ || atoms || newfield) {
     // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
     if (discard)
       o.discard_df();
@@ -390,6 +398,14 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
   }
   external_ = o.external_;
+
+  if (nonzero_magnetic_field()) {
+    cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "
+                                                              << setw(7) << magnetic_field_[1] << ", "
+                                                              << setw(7) << magnetic_field_[2] << ") a.u." << endl;
+    const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
+    cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
+  }
 }
 
 

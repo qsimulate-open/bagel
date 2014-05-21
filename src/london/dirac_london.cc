@@ -188,7 +188,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (dynamic_pointer_cast<const RelReference_London>(ref_)) {
     // Relativistic, GIAO-based reference
-    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet 1");
+    throw logic_error("Reference object is currently not made from gauge-invariant Dirac-Fock calculations.");
     /*
     auto relref = dynamic_pointer_cast<const RelReference_London>(ref_);
     shared_ptr<ZMatrix> fock = make_shared<DFock_London>(cgeom_, hcore_, relref->relcoeff()->slice(0, nele_), gaunt_, breit_, *//*store_half*//*false, robust_);
@@ -223,7 +223,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (ref_->coeff()->ndim() == n) {
     // Non-relativistic Gaussian orbital reference
-    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet 3");
+    throw logic_error("Reference objects from Gaussian calculations cannot currently be used with London code.");
     /*
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;

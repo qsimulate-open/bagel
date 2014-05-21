@@ -70,8 +70,14 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 
 // constructor that uses the old atom and basis
-Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
+Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem,
+           const array<double,3> magnetic_field)
  : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
+
+  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+
   (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   if (name_ == "q") {
     nbasis_ = 0;

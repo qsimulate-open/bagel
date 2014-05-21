@@ -32,23 +32,23 @@
 namespace bagel {
 
 // variadic template
-template<typename T, typename... Value>
-class MixedBasis : public Matrix {
+template<typename TBatch, typename MatType=Matrix, typename GeomType=Geometry, typename... Value>
+class MixedBasis : public MatType {
   protected:
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, Value... tail) {
       // input = [b1, b0]
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      T batch(input, tail...);
+      TBatch batch(input, tail...);
       batch.compute();
 
-      copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data());
+      this->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data());
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Geometry> g1, Value... tail)
-     : Matrix(g1->nbasis(), g0->nbasis()) {
+    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const GeomType> g1, Value... tail)
+     : MatType(g1->nbasis(), g0->nbasis()) {
       size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {
         for (auto& b0 : catom0->shells()) {
@@ -65,9 +65,9 @@ class MixedBasis : public Matrix {
 
     void print(const std::string in = "", const size_t size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
-      for (int i = 0; i != std::min(size,static_cast<size_t>(ndim_)); ++i) {
-        for (int j = 0; j != std::min(size,static_cast<size_t>(mdim_)); ++j) {
-          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << data_[j*ndim_+i]  << " ";
+      for (int i = 0; i != std::min(size,static_cast<size_t>(this->ndim_)); ++i) {
+        for (int j = 0; j != std::min(size,static_cast<size_t>(this->mdim_)); ++j) {
+          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << this->data_[j*this->ndim_+i]  << " ";
         }
         std::cout << std::endl;
       }
