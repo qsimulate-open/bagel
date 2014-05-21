@@ -77,6 +77,8 @@ void ZCASBFGS::compute() {
   if (nact_)
     fci_->update(coeff_);
 
+  auto cold = coeff_->clone();
+    
   bool optimize_electrons = idata_->get<bool>("optimize_electrons", true); 
   cout << " optimizing the electrons ? " << optimize_electrons << endl;
   cout << " See casscf.log for further information on FCI output " << endl;
@@ -258,6 +260,7 @@ void ZCASBFGS::compute() {
 #endif
     }
 
+    cold = coeff_->copy();
 #ifdef BOTHSPACES
     coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
 #else
@@ -318,4 +321,5 @@ void ZCASBFGS::compute() {
     if (pos_conv && ele_conv) break;
 #endif
   }
+  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back()); 
 }

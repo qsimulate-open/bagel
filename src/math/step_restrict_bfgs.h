@@ -87,7 +87,8 @@ class SRBFGS {
     // sets initial trust radius ; presently not used
     void initiate_trust_radius(std::shared_ptr<const T> _grad) {
       // to make sure, inputs are copied.
-      auto grad = std::make_shared<const T>(*_grad);
+      auto grad = std::make_shared<T>(*_grad);
+      *grad /= *denom_;
       trust_radius_ = std::sqrt(detail::real(grad->dot_product(grad)));
     }
 
@@ -548,6 +549,7 @@ class SRBFGS {
       auto phat = p->clone();
       double tshift = 0.0;
 
+      std::cout << " Initial Step Length = " << p->norm() << std::endl;
       for (int k = 0; k != hebden_iter_; ++k) {
         if (p->norm() <= trust_radius_) {
           std::cout << " More-Sorensen converged in " << k << " iterations. " << std::endl;
