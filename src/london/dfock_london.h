@@ -27,7 +27,7 @@
 #ifndef __SRC_LONDON_DFOCK_LONDON_H
 #define __SRC_LONDON_DFOCK_LONDON_H
 
-#include <src/wfn/reference.h>
+#include <src/london/reference_london.h>
 #include <src/wfn/geometry_london.h>
 #include <src/math/zmatrix.h>
 #include <src/london/reldf_london.h>

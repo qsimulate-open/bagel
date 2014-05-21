@@ -25,6 +25,7 @@
 
 
 #include <src/london/scf_base_london.h>
+#include <src/london/reference_london.h>
 #include <src/util/timer.h>
 #include <src/math/diis.h>
 #include <iostream>
@@ -80,10 +81,12 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
     scfb.tick_print("Schwarz matrix");
   }
 
-  //TODO Set up London orbital References?
   // if ref is passed to this
-  if (re != nullptr) throw runtime_error("SCF_base_London is unable to use References at this time");
-    //coeff_ = re->coeff();
+  if (re != nullptr) {
+    auto cref = dynamic_pointer_cast<const Reference_London>(re);
+    assert(cref);
+    coeff_ = cref->zcoeff();
+  }
 
   cout << endl;
 }

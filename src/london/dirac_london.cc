@@ -29,7 +29,7 @@
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/math/diis.h>
-#include <src/rel/relreference.h>
+#include <src/london/relreference_london.h>
 
 using namespace std;
 using namespace bagel;
@@ -162,12 +162,12 @@ void Dirac_London::print_eig() const {
 
 
 shared_ptr<const Reference> Dirac_London::conv_to_ref() const {
-  cout << endl << "CAUTION:  Reference class has not been properly set up for London orbital basis." << endl << endl; // TODO
+  cout << endl << "CAUTION:  RelReference class has not been properly set up for London orbital basis." << endl << endl; // TODO
   return nullptr;
   /*
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
-  auto out =  make_shared<RelReference>(cgeom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
+  auto out =  make_shared<RelReference_London>(cgeom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
   vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_+npos);
   vector<double> eigm(eig_.get(), eig_.get()+nneg_);
   eig.insert(eig.end(), eigm.begin(), eigm.end());
@@ -186,18 +186,44 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
     DistZMatrix interm = *s12 % *hcore * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
-  } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
-    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet");
+  } else if (dynamic_pointer_cast<const RelReference_London>(ref_)) {
+    // Relativistic, GIAO-based reference
+    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet 1");
     /*
-    auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+    auto relref = dynamic_pointer_cast<const RelReference_London>(ref_);
     shared_ptr<ZMatrix> fock = make_shared<DFock_London>(cgeom_, hcore_, relref->relcoeff()->slice(0, nele_), gaunt_, breit_, *//*store_half*//*false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
     */
+  } else if (dynamic_pointer_cast<const Reference_London>(ref_)) {
+    // Non-relativistic, GIAO-based reference
+    auto cref = dynamic_pointer_cast<const Reference_London>(ref_);
+    const int nocc = ref_->nocc();
+    shared_ptr<ZMatrix> fock;
+    if (nocc*2 == nele_) {
+      auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
+      ocoeff->add_block(1.0, 0,    0, n, nocc, cref->zcoeff()->data());
+      ocoeff->add_block(1.0, n, nocc, n, nocc, cref->zcoeff()->data());
+      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    } else {
+      throw logic_error("This Reference interface not yet implemented - one that would be produced by gauge-invariant UHF?");
+      /*
+      const int nocca = cref->noccA();
+      const int noccb = cref->noccB();
+      assert(nocca+noccb == nele_);
+      auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
+      ocoeff->add_block(1.0, 0,     0, n, nocca, cref->coeffA()->data());
+      ocoeff->add_block(1.0, n, nocca, n, noccb, cref->coeffB()->data());
+      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
+      */
+    }
+    DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
+    interm.diagonalize(eig.get());
+    coeff = make_shared<const DistZMatrix>(*s12 * interm);
   } else if (ref_->coeff()->ndim() == n) {
-    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet");
-    // non-relativistic reference.
+    // Non-relativistic Gaussian orbital reference
+    throw logic_error("Not worrying about Reference for gauge-invariant Dirac-Fock yet 3");
     /*
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;

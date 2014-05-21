@@ -26,7 +26,7 @@
 #include <sstream>
 #include <src/london/scf_london.h>
 #include <src/london/dirac_london.h>
-#include <src/wfn/reference.h>
+#include <src/london/reference_london.h>
 
 using namespace bagel;
 
@@ -41,6 +41,7 @@ double london_energy(std::string filename) {
   std::shared_ptr<Geometry_London> cgeom;
 
   std::shared_ptr<const Reference> ref_;
+  double energy = 0.0;
 
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
@@ -51,20 +52,17 @@ double london_energy(std::string filename) {
       auto scf = std::make_shared<SCF_London>(itree, cgeom, ref_);
       scf->compute();
       ref_ = scf->conv_to_ref();
-      std::cout.rdbuf(backup_stream);
-      //return ref_->energy(); //TODO Set up reference
-      return scf->energy();
+      energy = ref_->energy();
     } else if (method == "dhf") {
       auto rel = std::make_shared<Dirac_London>(itree, cgeom, ref_);
       rel->compute();
       ref_ = rel->conv_to_ref();
-      std::cout.rdbuf(backup_stream);
       //return ref_->energy(); //TODO Set up reference
-      return rel->energy();
+      energy =  rel->energy();
     }
   }
-  assert(false);
-  return 0.0;
+  std::cout.rdbuf(backup_stream);
+  return energy;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_LONDON)

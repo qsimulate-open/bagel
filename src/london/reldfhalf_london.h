@@ -30,7 +30,7 @@
 #include <memory>
 #include <string>
 #include <map>
-#include <src/wfn/reference.h>
+#include <src/london/reference_london.h>
 #include <src/math/zmatrix.h>
 #include <src/math/matrix.h>
 #include <src/rel/alpha.h>

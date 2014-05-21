@@ -33,7 +33,7 @@
 #include <src/london/relmofile_london.h>
 #include <src/london/reldvec_london.h>
 #include <src/math/davidson.h>
-#include <src/rel/relreference.h>
+#include <src/london/relreference_london.h>
 
 namespace bagel {
 

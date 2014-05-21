@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
         } else if (basis_type == "london" || basis_type == "giao") {
           cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
           if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
-          if (ref) throw runtime_error("Reference use not set up for London orbitals");
+          if (ref) throw runtime_error("Reference projection not set up for London orbitals");
         } else throw runtime_error("basis type not understood - should be gaussian or london");
       } else {
         if (!geom && !cgeom) throw runtime_error("molecule block is missing");

@@ -37,7 +37,7 @@ ZHarrison_London::ZHarrison_London(std::shared_ptr<const PTree> idat, shared_ptr
 
   print_header();
 
-  auto rr = dynamic_pointer_cast<const RelReference>(ref_);
+  auto rr = dynamic_pointer_cast<const RelReference_London>(ref_);
   assert(rr);
 
   const bool frozen = idata_->get<bool>("frozen", false);

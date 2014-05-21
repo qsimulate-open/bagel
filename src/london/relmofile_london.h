@@ -31,7 +31,7 @@
 #include <src/math/zmatrix.h>
 #include <src/london/reldffull_london.h>
 #include <src/london/dfock_london.h>
-#include <src/rel/relreference.h>
+#include <src/london/relreference_london.h>
 
 namespace bagel {
 
