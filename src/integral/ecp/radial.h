@@ -32,6 +32,7 @@
 #include <iostream>
 #include <iomanip>
 #include <src/util/constants.h>
+#include <src/util/timer.h>
 
 namespace bagel {
 
@@ -58,45 +59,50 @@ class RadialInt {
     ~RadialInt() {}
 
     void integrate(T function) {
-      double previous = 0.0;
-      int ngrid = 31;
-      std::vector<int> sigma1(ngrid);
-      std::vector<double> f(ngrid);
-      for (int iter = 0; iter != max_iter_; ++iter) {
-//      transform_Becke(ngrid);
-//      transform_Log(ngrid, 3); //TODO: to be checked
-        transform_Ahlrichs(ngrid);
+      Timer radialtime;
 
-        const int n1 = ngrid;
+      int n0 = 31;
+      std::vector<int> sigma1(n0);
+      std::vector<double> f(n0);
+      transform_Ahlrichs(n0);
+      for (int i = 0; i != r_.size(); ++i) {
+        f[i] = function.compute(r_[i]);
+        sigma1[i] = i;
+      }
+
+      double previous = std::inner_product(f.begin(), f.end(), w_.begin(), 0);
+      int n1 = n0*2+1;
+
+      for (int iter = 1; iter != max_iter_; ++iter) {
+//      transform_Becke(n1);
+//      transform_Log(n1, 3); //TODO: to be checked
+        transform_Ahlrichs(n1);
+
         std::vector<int> sigma0(sigma1);
         sigma1.resize(n1);
+        f.resize(n1);
 
-        if (iter == 0) {
-          for (int i = 0; i != n1; ++i) {
-             sigma1[i] = i;
-             f[i] = function.compute(r_[i]);
-          }
-        } else {
-          const int n0 = (n1-1)/2;
-
-          for (int i = 0; i <= n0; ++i) {
-            if (i != n0) sigma1[i] = sigma0[i]*2+1;
-            f[n0+i] = function.compute(r_[2*i]);
-            sigma1[n0+i] = 2*i;
-          }
+        for (int i = 0; i != n0; ++i) {
+          sigma1[i] = sigma0[i]*2+1;
+          f[n0+i] = function.compute(r_[2*i]);
+          sigma1[n0+i] = 2*i;
         }
+        f[2*n0] = function.compute(r_[2*n0]);
+        sigma1[2*n0] = 2*n0;
 
         double ans = 0.0;
         for (int i = 0; i != r_.size(); ++i) ans += f[i] * w_[sigma1[i]];
+
         const double error = ans - previous;
         if (print_intermediate_)
-           std::cout << "Iter = " << std::setw(5) << iter << std::setw(10) << "npts = " << std::setw(10) << ngrid
+           std::cout << "Iter = " << std::setw(5) << iter << std::setw(10) << "npts = " << std::setw(10) << n1
                      << std::setw(10) << "ans = " << std::setw(20) << std::setprecision(10) << ans
                      << std::setw(10) << "err = " << std::setw(20) << std::setprecision(10) << error << std::endl;
-        if (fabs(error) < thresh_int_ && iter != 0) {
+        if (fabs(error) < thresh_int_) {
           if (print_intermediate_) {
             std::cout << "Integration converged..." << std::endl;
             std::cout << "Radial integral = " << ans << std::endl;
+            std::cout << "Radial time = " << radialtime.tick() << std::endl;
           }
           integral_ = ans;
           break;
@@ -107,8 +113,8 @@ class RadialInt {
         x_.clear();
         w_.clear();
         r_.clear();
-        ngrid = 2*ngrid+1;
-        f.resize(ngrid);
+        n0 = n1;
+        n1 = 2*n1+1;
       }
     }
 
