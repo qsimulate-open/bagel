@@ -49,6 +49,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     bool gaunt_;
     bool breit_;
+    bool no_kramers_init_;
 
     double thresh_;
     double thresh_micro_;

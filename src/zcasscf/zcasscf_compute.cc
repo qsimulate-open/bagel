@@ -65,7 +65,8 @@ void ZCASBFGS::compute() {
 #endif
 
   // intialize coefficients
-  init_kramers_coeff();
+  if (!no_kramers_init_)
+    init_kramers_coeff();
 
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = false;

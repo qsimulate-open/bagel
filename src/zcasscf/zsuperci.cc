@@ -43,7 +43,8 @@ void ZSuperCI::compute() {
    Timer timer;
 
   // intialize coefficients
-  init_kramers_coeff();
+  if (!no_kramers_init_)
+    init_kramers_coeff();
 
   cout << setprecision(8) << " kramers restricted re part rms = " << coeff_->get_real_part()->rms() << endl;
   cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;

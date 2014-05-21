@@ -32,9 +32,14 @@ using namespace bagel;
 
 ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
-
-  if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
-    nr_coeff_ = ref->coeff();
+  if ((dynamic_pointer_cast<const RelReference>(ref))) {
+      auto relref = dynamic_pointer_cast<const RelReference>(ref);
+      coeff_ = relref->relcoeff();
+      no_kramers_init_ = true;
+  } else {
+    if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
+      nr_coeff_ = ref->coeff();
+    }
   }
 // relref needed for many things below ; TODO eliminate dependence on ref_ being a relref
   {
@@ -66,7 +71,7 @@ void ZCASSCF::init() {
   nneg_ = relref->nneg();
 
   // first set coefficient
-  {
+  if (coeff_ == nullptr) {
     shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
     shared_ptr<ZMatrix> coeff = ctmp->clone();
     const int npos = ctmp->mdim() - nneg_;
