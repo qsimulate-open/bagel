@@ -36,6 +36,12 @@ using namespace std;
 
 const static SphUSPList sphusplist;
 
+AngularBatch::AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
+                           const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
+                           const bool print, const int max_iter, const double thresh_int)
+ : RadialInt(print, max_iter, thresh_int),
+   basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) { init(); }
+
 double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
 
   const int l1 = lm[0].first;
@@ -75,7 +81,7 @@ double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, 
   sphusplist.sphuspfunc_call(lm1.first, lm1.second, usp1);
   sphusplist.sphuspfunc_call(lm2.first, lm2.second, usp2);
 
-  double ans = 0.0;
+  double out = 0.0;
   for (int i = 0; i != usp1.size(); ++i) {
     for (int j = 0; j != usp2.size(); ++j) {
       const double coeff = usp1[i] * usp2[j];
@@ -102,43 +108,30 @@ double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, 
         const int y = ki[1] + kj[1] + ijk[1];
         const int z = ki[2] + kj[2] + ijk[2];
         array<int, 3> xyz = {x, y, z};
-        ans += coeff * integrate3USP(xyz);
+        out += coeff * integrate3USP(xyz);
       }
     }
   }
 
-  return ans;
+  return out;
 
 }
 
+double AngularBatch::project_AB(const double expA, const array<int, 2> lm, const double r) {
 
-double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 3> lxyz, const double expA,
-                                        array<double, 3> posB, const array<int, 2> lm, const double r) {
-
-  Comb comb;
-  array<double, 3> AB;
-  for (int i = 0; i != 3; ++i) AB[i] = posA[i] - posB[i];
-  const double dAB = sqrt(AB[0]*AB[0] + AB[1]*AB[1] + AB[2]*AB[2]);
-  const int nu = lxyz[0] + lxyz[1] + lxyz[2];
-  const int lnu = lm[0] + nu;
-  const double exponential = exp(-expA * (dAB - r) * (dAB - r)); // exp(-2aABr)i(2aABr) is computed, not i(2aABr)
-  double ans = 0.0;
-  for (int kx = 0; kx <= lxyz[0]; ++kx) {
-    const double ckx = comb(lxyz[0], kx) * pow(AB[0], lxyz[0] - kx);
-    for (int ky = 0; ky <= lxyz[1]; ++ky) {
-      const double cky = comb(lxyz[1], ky) * pow(AB[1], lxyz[1] - ky);
-      for (int kz = 0; kz <= lxyz[2]; ++kz) {
-        const double ckz = comb(lxyz[2], kz) * pow(AB[2], lxyz[2] - kz);
+  const int l0 = ang0_[0] + ang0_[1] + ang0_[2];
+  double out = 0.0;
+  for (int kx = 0; kx <= ang0_[0]; ++kx)
+    for (int ky = 0; ky <= ang0_[1]; ++ky)
+      for (int kz = 0; kz <= ang0_[2]; ++kz) {
         const int lk = kx + ky + kz;
-        const double rxyz = pow(r, lk);
-
         double sld = 0.0;
-        for (int ld = 0; ld <= lnu; ++ld) {
+        for (int ld = 0; ld <= lm[0]+l0; ++ld) {
           double smu = 0.0;
           for (int m = 0; m <= 2 * ld; ++m) {
             const int mu = m - ld;
-            shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB);
-            const double Z_AB = (dAB == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+            shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB_);
+            const double Z_AB = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
 
             const array<int, 3> exp = {kx, ky, kz};
             const pair<int, int> lm1(ld, mu);
@@ -146,15 +139,45 @@ double AngularBatch::project_one_centre(array<double, 3> posA, const array<int, 
             smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
           }
           MSphBesselI msbessel(ld);
-          const double sbessel = msbessel.compute(2.0 * expA * dAB * r);
-          sld += smu * sbessel;
+          sld += smu * msbessel.compute(2.0 * expA * dAB_ * r);
         }
-        ans += sld * ckx * cky * ckz * rxyz * pow(-1.0, lk - nu);
+        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
+        out += sld * c0_[index] * pow(r, lk) * pow(-1.0, lk - l0);
       }
-    }
-  }
 
-  return ans * 4.0 * pi__ * exponential;
+  return out * exp(-expA * pow(dAB_-r, 2));
+
+}
+
+double AngularBatch::project_CB(const double expC, const array<int, 2> lm, const double r) {
+
+  const int l1 = ang1_[0] + ang1_[1] + ang1_[2];
+  double out = 0.0;
+  for (int kx = 0; kx <= ang1_[0]; ++kx)
+    for (int ky = 0; ky <= ang1_[1]; ++ky)
+      for (int kz = 0; kz <= ang1_[2]; ++kz) {
+        const int lk = kx + ky + kz;
+        double sld = 0.0;
+        for (int ld = 0; ld <= lm[0]+l1; ++ld) {
+          double smu = 0.0;
+          for (int m = 0; m <= 2 * ld; ++m) {
+            const int mu = m - ld;
+            shared_ptr<SphHarmonics> sphCB = make_shared<SphHarmonics>(ld, mu, CB_);
+            const double Z_CB = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphCB->zlm());
+
+            const array<int, 3> exp = {kx, ky, kz};
+            const pair<int, int> lm1(ld, mu);
+            const pair<int, int> lm2(lm[0], lm[1]);
+            smu += Z_CB * integrate2SH1USP(lm1, lm2, exp);
+          }
+          MSphBesselI msbessel(ld);
+          sld += smu * msbessel.compute(2.0 * expC * dCB_ * r);
+        }
+        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
+        out += sld * c1_[index] * pow(r, lk) * pow(-1.0, lk - l1);
+      }
+
+  return out * exp(-expC * pow(dCB_-r, 2));
 
 }
 
@@ -162,25 +185,20 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
 
  vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
 
- double ans = 0.0;
+ double out = 0.0;
  for (auto& ishecp : shells_ecp) {
    const int l = ishecp->angular_number();
-   if (l != ecp_->ecp_maxl()) {
-     for (int i = 0; i != ishecp->ecp_exponents().size(); ++i) {
-       if (ishecp->ecp_coefficients(i) != 0) {
+   if (l != ecp_->ecp_maxl())
+     for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
+       if (ishecp->ecp_coefficients(i) != 0)
          for (int m = 0; m <= 2*l; ++m) {
            array<int, 2> lm = {l, m - l};
-           const double projA = project_one_centre(basisinfo_[0]->position(), ang0_, expA, ishecp->position(), lm, r);
-           const double projC = project_one_centre(basisinfo_[1]->position(), ang1_, expC, ishecp->position(), lm, r);
-           ans += ishecp->ecp_coefficients(i) * projA * projC *
-                  pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r);
+           out += ishecp->ecp_coefficients(i) * pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r)
+                                              * project_AB(expA, lm, r) * project_CB(expC, lm, r);
          }
-       }
-     }
-   }
  }
 
- return ans;
+ return out;
 
 }
 
@@ -200,12 +218,52 @@ double AngularBatch::compute(const double r) {
         const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
         const double exp1  = basisinfo_[1]->exponents(i1);
 
-        out += coef0 * coef1 * project_many_centres(exp0, exp1, r);
+        out += 16.0 * pi__ * pi__ * coef0 * coef1 * project_many_centres(exp0, exp1, r);
 
       }
     }
 
   return out;
+
+}
+
+void AngularBatch::init() {
+
+  for (int i = 0; i != 3; ++i) {
+    AB_[i] = basisinfo_[0]->position(i) - ecp_->position(i);
+    CB_[i] = basisinfo_[1]->position(i) - ecp_->position(i);
+  }
+  dAB_ = sqrt(pow(AB_[0], 2) + pow(AB_[1], 2) + pow(AB_[2], 2));
+  dCB_ = sqrt(pow(CB_[0], 2) + pow(CB_[1], 2) + pow(CB_[2], 2));
+
+  c0_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
+  c1_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
+
+  Comb c;
+
+  for (int kx = 0; kx <= ang0_[0]; ++kx) {
+    const double ckx = c(ang0_[0], kx) * pow(AB_[0], ang0_[0] - kx);
+    for (int ky = 0; ky <= ang0_[1]; ++ky) {
+      const double cky = c(ang0_[1], ky) * pow(AB_[1], ang0_[1] - ky);
+      for (int kz = 0; kz <= ang0_[2]; ++kz) {
+        const double ckz = c(ang0_[2], kz) * pow(AB_[2], ang0_[2] - kz);
+        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
+        c0_[index] = ckx * cky * ckz;
+      }
+    }
+  }
+
+  for (int kx = 0; kx <= ang1_[0]; ++kx) {
+    const double ckx = c(ang1_[0], kx) * pow(CB_[0], ang1_[0] - kx);
+    for (int ky = 0; ky <= ang1_[1]; ++ky) {
+      const double cky = c(ang1_[1], ky) * pow(CB_[1], ang1_[1] - ky);
+      for (int kz = 0; kz <= ang1_[2]; ++kz) {
+        const double ckz = c(ang1_[2], kz) * pow(CB_[2], ang1_[2] - kz);
+        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
+        c1_[index] = ckx * cky * ckz;
+      }
+    }
+  }
 
 }
 

@@ -36,7 +36,6 @@
 
 namespace bagel {
 
-template<typename T, typename... Value>
 class RadialInt {
 
   protected:
@@ -47,18 +46,15 @@ class RadialInt {
     double integral_;
 
   public:
-    RadialInt(Value... tail, const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH) :
+    RadialInt(const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH) :
       print_intermediate_(print),
       max_iter_(max_iter),
       thresh_int_(thresh_int)
-    {
-      T function(tail...);
-      integrate(function);
-    }
+    {}
 
     ~RadialInt() {}
 
-    void integrate(T function) {
+    void integrate() {
       Timer radialtime;
 
       int n0 = 31;
@@ -66,7 +62,7 @@ class RadialInt {
       std::vector<double> f(n0);
       transform_Ahlrichs(n0);
       for (int i = 0; i != r_.size(); ++i) {
-        f[i] = function.compute(r_[i]);
+        f[i] = compute(r_[i]);
         sigma1[i] = i;
       }
 
@@ -84,10 +80,10 @@ class RadialInt {
 
         for (int i = 0; i != n0; ++i) {
           sigma1[i] = sigma0[i]*2+1;
-          f[n0+i] = function.compute(r_[2*i]);
+          f[n0+i] = compute(r_[2*i]);
           sigma1[n0+i] = 2*i;
         }
-        f[2*n0] = function.compute(r_[2*n0]);
+        f[2*n0] = compute(r_[2*n0]);
         sigma1[2*n0] = 2*n0;
 
         double ans = 0.0;
@@ -117,6 +113,8 @@ class RadialInt {
         n1 = 2*n1+1;
       }
     }
+
+    virtual double compute(const double r) = 0;
 
     double integral() { return integral_; }
 
