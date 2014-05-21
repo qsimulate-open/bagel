@@ -361,3 +361,11 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   return make_shared<const ZMatrix>(*coeff_ * *trans);
   
 }
+
+
+ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
+   // store both pos and neg energy states, only thing saved thus far
+   // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
+   auto out =  make_shared<RelReference>(geom_, coeff_, energy_.back(), 0, nocc_, nvirt_, gaunt_, breit_);
+   return out;
+ }

@@ -95,8 +95,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     virtual void compute() override = 0;
 
-    // TODO
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+    // TODO : add FCI quantities to reference
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
     std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
