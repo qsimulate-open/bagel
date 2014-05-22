@@ -64,12 +64,8 @@ double AngularBatch::integrate3USP(array<int, 3> xyz_exponents) const {
   const int k = xyz_exponents[2];
 
   double out = 0.0;
-  if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) {
-    const static Factorial fact;
-    const double num = 2.0 * fact(i) * fact(j) * fact(k) * fact((i+j+k+2)/2);
-    const double denom = fact(i/2) * fact(j/2) * fact(k/2) * fact(i+j+k+2);
-    out = 4.0 * pi__ * num / denom;
-  }
+  const static DoubleFactorial df;
+  if (i % 2 == 0 && j % 2 == 0 && k % 2 == 0) out = 4.0 * pi__ * df(i-1) * df(j-1) * df(k-1) / df(i+j+k+1);
 
   return out;
 
@@ -83,32 +79,46 @@ double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, 
 
   double out = 0.0;
   for (int i = 0; i != usp1.size(); ++i) {
-    for (int j = 0; j != usp2.size(); ++j) {
-      const double coeff = usp1[i] * usp2[j];
-      if (coeff != 0.0) {
-        array<int, 3> ki = {0, i, 0};
-        for (int lp = lm1.first + 1; lp != 0; --lp)
-          if (ki[1] - lp < 0) {
-            ki[0] = lm1.first - ki[2] - ki[1];
-            break;
-          } else {
-            ki[2]++;
-            ki[1] -= lp;
-          }
-        array<int, 3> kj = {0, j, 0};
-        for (int lp = lm2.first + 1; lp != 0; --lp)
-          if (kj[1] - lp < 0) {
-            kj[0] = lm1.first - kj[2] - kj[1];
-            break;
-          } else {
-            kj[2]++;
-            kj[1] -= lp;
-          }
-        const int x = ki[0] + kj[0] + ijk[0];
-        const int y = ki[1] + kj[1] + ijk[1];
-        const int z = ki[2] + kj[2] + ijk[2];
-        array<int, 3> xyz = {x, y, z};
-        out += coeff * integrate3USP(xyz);
+    if (usp1[i] != 0.0) {
+      array<int, 3> ki = {0, 0, 0};
+      int kz = 0;
+      int index = i;
+      for (int lp = lm1.first + 1; lp != 0; --lp)
+        if (index - lp < 0) {
+          ki[2] = kz;
+          ki[1] = index;
+          ki[0] = lm1.first - ki[2] - ki[1];
+          break;
+        } else {
+          kz++;
+          index -= lp;
+        }
+
+      for (int j = 0; j != usp2.size(); ++j) {
+        if (usp2[j] != 0.0) {
+          array<int, 3> kj = {0, 0, 0};
+          kz = 0;
+          index = j;
+          for (int lp = lm2.first + 1; lp != 0; --lp)
+            if (index - lp < 0) {
+              kj[2] = kz;
+              kj[1] = index;
+              kj[0] = lm2.first - kj[2] - kj[1];
+              break;
+            } else {
+              kz++;
+              index -= lp;
+            }
+
+          const double coeff = usp1[i] * usp2[j];
+
+          const int x = ki[0] + kj[0] + ijk[0];
+          const int y = ki[1] + kj[1] + ijk[1];
+          const int z = ki[2] + kj[2] + ijk[2];
+
+          array<int, 3> xyz = {x, y, z};
+          out += coeff * integrate3USP(xyz);
+        }
       }
     }
   }
@@ -117,7 +127,7 @@ double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, 
 
 }
 
-double AngularBatch::project_AB(const double expA, const array<int, 2> lm, const double r) {
+double AngularBatch::project_AB(const double expA, const int l, const int m, const double r) {
 
   const int l0 = ang0_[0] + ang0_[1] + ang0_[2];
   double out = 0.0;
@@ -126,20 +136,21 @@ double AngularBatch::project_AB(const double expA, const array<int, 2> lm, const
       for (int kz = 0; kz <= ang0_[2]; ++kz) {
         const int lk = kx + ky + kz;
         double sld = 0.0;
-        for (int ld = 0; ld <= lm[0]+l0; ++ld) {
-          double smu = 0.0;
-          for (int m = 0; m <= 2 * ld; ++m) {
-            const int mu = m - ld;
-            shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu, AB_);
-            const double Z_AB = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
+          if ((l + lk - ld) % 2 == 0) {
+            double smu = 0.0;
+            for (int mu = 0; mu <= 2 * ld; ++mu) {
+              shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu-ld, AB_);
+              const double Z_AB = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
 
-            const array<int, 3> exp = {kx, ky, kz};
-            const pair<int, int> lm1(ld, mu);
-            const pair<int, int> lm2(lm[0], lm[1]);
-            smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
+              const array<int, 3> exp = {kx, ky, kz};
+              const pair<int, int> lm1(ld, mu-ld);
+              const pair<int, int> lm2(l, m);
+              smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
+            }
+            MSphBesselI msbessel(ld);
+            sld += smu * msbessel.compute(2.0 * expA * dAB_ * r);
           }
-          MSphBesselI msbessel(ld);
-          sld += smu * msbessel.compute(2.0 * expA * dAB_ * r);
         }
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         out += sld * c0_[index] * pow(r, lk) * pow(-1.0, lk - l0);
@@ -149,7 +160,7 @@ double AngularBatch::project_AB(const double expA, const array<int, 2> lm, const
 
 }
 
-double AngularBatch::project_CB(const double expC, const array<int, 2> lm, const double r) {
+double AngularBatch::project_CB(const double expC, const int l, const int m, const double r) {
 
   const int l1 = ang1_[0] + ang1_[1] + ang1_[2];
   double out = 0.0;
@@ -158,20 +169,21 @@ double AngularBatch::project_CB(const double expC, const array<int, 2> lm, const
       for (int kz = 0; kz <= ang1_[2]; ++kz) {
         const int lk = kx + ky + kz;
         double sld = 0.0;
-        for (int ld = 0; ld <= lm[0]+l1; ++ld) {
-          double smu = 0.0;
-          for (int m = 0; m <= 2 * ld; ++m) {
-            const int mu = m - ld;
-            shared_ptr<SphHarmonics> sphCB = make_shared<SphHarmonics>(ld, mu, CB_);
-            const double Z_CB = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphCB->zlm());
+        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
+          if ((l + lk - ld) % 2 == 0) {
+            double smu = 0.0;
+            for (int mu = 0; mu <= 2 * ld; ++mu) {
+              shared_ptr<SphHarmonics> sphCB = make_shared<SphHarmonics>(ld, mu-ld, CB_);
+              const double Z_CB = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphCB->zlm());
 
-            const array<int, 3> exp = {kx, ky, kz};
-            const pair<int, int> lm1(ld, mu);
-            const pair<int, int> lm2(lm[0], lm[1]);
-            smu += Z_CB * integrate2SH1USP(lm1, lm2, exp);
+              const array<int, 3> exp = {kx, ky, kz};
+              const pair<int, int> lm1(ld, mu-ld);
+              const pair<int, int> lm2(l, m);
+              smu += Z_CB * integrate2SH1USP(lm1, lm2, exp);
+            }
+            MSphBesselI msbessel(ld);
+            sld += smu * msbessel.compute(2.0 * expC * dCB_ * r);
           }
-          MSphBesselI msbessel(ld);
-          sld += smu * msbessel.compute(2.0 * expC * dCB_ * r);
         }
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         out += sld * c1_[index] * pow(r, lk) * pow(-1.0, lk - l1);
@@ -191,11 +203,9 @@ double AngularBatch::project_many_centres(const double expA, const double expC, 
    if (l != ecp_->ecp_maxl())
      for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
        if (ishecp->ecp_coefficients(i) != 0)
-         for (int m = 0; m <= 2*l; ++m) {
-           array<int, 2> lm = {l, m - l};
+         for (int m = 0; m <= 2*l; ++m)
            out += ishecp->ecp_coefficients(i) * pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r)
-                                              * project_AB(expA, lm, r) * project_CB(expC, lm, r);
-         }
+                                              * project_AB(expA, l, m-l, r) * project_CB(expC, l, m-l, r);
  }
 
  return out;

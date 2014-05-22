@@ -52,6 +52,25 @@ class Factorial {
 
 }
 
+class DoubleFactorial {
+    constexpr static int max_ = 18;
+    std::array<size_t, max_> df_;
+  public:
+    DoubleFactorial() {
+      std::fill(df_.begin(), df_.end(), 0);
+      df_[ 0] =                    1ull; df_[ 1] =                    1ull; df_[ 2] =                    3ull; df_[ 3] =                   15ull;
+      df_[ 4] =                  105ull; df_[ 5] =                  945ull; df_[ 6] =                10395ull; df_[ 7] =               135135ull;
+      df_[ 8] =              2027025ull; df_[ 9] =             34459425ull; df_[10] =            654729075ull; df_[11] =          13749310575ull;
+      df_[12] =         316234143225ull; df_[13] =        7905853580625ull; df_[14] =      213458046676875ull; df_[15] =     6190283353629375ull;
+      df_[16] =   191898783962510625ull; df_[17] =  6332659870762850625ull;
+    }
+    size_t operator()(const int i) const {
+      assert(i >= -1 && i < 2*max_-1 && std::abs(i) % 2 == 1);
+      const int j = (i+1)/2;
+      return df_[j];
+    }
+};
+
 #endif
 
 #if 0
@@ -68,6 +87,11 @@ mpreal fac(const mpreal i) {
   else { return i * fac(i-1); }
 }
 
+mpreal dfac(const mpreal i) {
+  if (i < 1.1) { return 1; }
+  else { return i * dfac(i-2); }
+}
+
 int main() {
   mpreal::set_default_prec(10000);
   for (int i = 0; i != 21; ++i) {
@@ -78,6 +102,18 @@ int main() {
     if (i % 4 == 3) cout << endl;
     else cout << " ";
   }
+  cout << endl;
+
+  for (int i = 1; i != 18; ++i) {
+    mpreal out = dfac(2*i-1);
+    // out should be an integer
+    if (abs(out-mpreal(out.toULong())) > 1.0e-10) assert(false);
+    cout << "df_[" << setw(2) << i << "] = " << setw(20) << out.toULong() << "ull;";
+    if (i % 4 == 3) cout << endl;
+    else cout << " ";
+  }
+  cout << endl;
+
   return 0;
 }
 #endif

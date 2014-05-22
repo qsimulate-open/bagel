@@ -47,8 +47,8 @@ class AngularBatch : public RadialInt {
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
     double integrate3USP(std::array<int, 3> xyz_exponents) const;
     double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const;
-    double project_AB(const double expC, const std::array<int, 2> lm, const double r);
-    double project_CB(const double expC, const std::array<int, 2> lm, const double r);
+    double project_AB(const double expC, const int l, const int m, const double r);
+    double project_CB(const double expC, const int l, const int m, const double r);
     double project_many_centres(const double expA, const double expC, const double r);
 
   public:
