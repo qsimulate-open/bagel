@@ -78,6 +78,7 @@ void ZSuperCIMicro::compute() {
     shared_ptr<ZSCIData> residual = davidson.residual().front();
 //    residual->synchronize();
     const double error = residual->rms();
+    assert( error == error ); // check for nan's
 
     if (miter == 0) cout << endl << "     == micro iteration == " << endl;
     cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
@@ -105,11 +106,11 @@ void ZSuperCIMicro::compute() {
 std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFile> cc) const {
 
   auto sigma = cc->clone();
-  // equation 21d
-  sigma_at_at_(cc, sigma);
-  // equation 21e
-  sigma_ai_ai_(cc, sigma);
   // equation 21f // note a typo!
+  sigma_at_at_(cc, sigma);
+  // equation 21d
+  sigma_ai_ai_(cc, sigma);
+  // equation 21e
   sigma_at_ai_(cc, sigma);
   // equation 21b
   sigma_ai_ti_(cc, sigma);
@@ -186,7 +187,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
     zaxpy_(nclosed*2, fac, fockact_->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("N", "N", nvirt*2, nact*2, nclosed*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_va(), nvirt*2);
-  zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2); // TODO : check on "C" vs "T"
+  zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, cc->ptr_va(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
 }
 
 
