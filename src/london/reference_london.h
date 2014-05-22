@@ -57,7 +57,8 @@ class Reference_London : public Reference {
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry_London> geomin) const override;
 
-    const std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
+    virtual const std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
+
     const std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }
     const std::shared_ptr<const Geometry_London> cgeom() const { return cgeom_; }
 

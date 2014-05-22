@@ -30,8 +30,8 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference_London)
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geometry> geomin) const {
-  throw logic_error("Projection onto a new geometry not implemented for London orbitals - Probably you would need to update MixedBasis.");
+shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
+  throw logic_error("Trying to project coeffs from RelReference_London to a new geometry - not implemented.  (Probably needed for geometry optimization...)");
 /*
   // in this case we first form overlap matrices
   RelOverlap_London overlap(geomin);

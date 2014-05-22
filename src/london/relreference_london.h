@@ -52,7 +52,7 @@ class RelReference_London : public Reference_London {
      : Reference_London(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice(nneg_, c->mdim())), relcoeff_full_(c) {
     }
 
-    const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference_London::coeff() should not be called"); }
+    const std::shared_ptr<const ZCoeff> zcoeff() const override { throw std::logic_error("RelReference_London::zcoeff() should not be called"); }
     const std::shared_ptr<const ZMatrix> relcoeff() const { return relcoeff_; }
     const std::shared_ptr<const ZMatrix> relcoeff_full() const { return relcoeff_full_; }
 
@@ -60,7 +60,7 @@ class RelReference_London : public Reference_London {
     bool breit() const { return breit_; }
     int nneg() const { return nneg_; }
 
-    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry_London> geomin) const override;
 
 };
 

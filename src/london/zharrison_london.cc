@@ -38,7 +38,7 @@ ZHarrison_London::ZHarrison_London(std::shared_ptr<const PTree> idat, shared_ptr
   print_header();
 
   auto rr = dynamic_pointer_cast<const RelReference_London>(ref_);
-  assert(rr);
+  if (!rr) throw runtime_error("ZFCI requires a relativistic reference object");
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
