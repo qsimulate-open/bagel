@@ -42,7 +42,7 @@ void ZSuperCIMicro::compute() {
 #else
   const int nvirt = casscf_->nvirtnr();
 #endif
-  DavidsonDiag<ZSCIData> davidson(1, casscf_->max_micro_iter());
+  DavidsonDiag<ZSCIData, ZMatrix> davidson(1, casscf_->max_micro_iter());
 
   // current coefficient
   auto cc0    = make_shared<ZMatrix>(1,1,true);
