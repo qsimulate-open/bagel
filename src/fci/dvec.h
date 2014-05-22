@@ -44,6 +44,9 @@ namespace bagel {
 
 template <typename DataType>
 class Dvector {
+  public:
+    using data_type = DataType;
+
   // Useful in templates involving Dvectors
   public: using DetType = Determinants;
   public: using Ci    = Civector<DataType>;

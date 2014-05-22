@@ -39,6 +39,9 @@ namespace bagel {
 
 template<typename DataType>
 class Matrix_base {
+  public:
+    using data_type = DataType;
+
   protected:
     size_t ndim_;
     size_t mdim_;

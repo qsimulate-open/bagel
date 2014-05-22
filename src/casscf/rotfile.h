@@ -33,6 +33,9 @@ namespace bagel {
 
 template<typename DataType>
 class RotationMatrix {
+  public:
+    using data_type = DataType;
+
   protected:
     const int nclosed_;
     const int nact_;
