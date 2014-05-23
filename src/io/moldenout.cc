@@ -66,9 +66,9 @@ void MoldenOut::write_geom() {
 
      ofs_ << setw(2) << cur_name << setw(8)  << i+1
                                  << setw(8)  << cur_number << setiosflags(ios_base::scientific)
-                                 << setw(20) << setprecision(12) << cur_pos[0]/ang2bohr__
-                                 << setw(20) << setprecision(12) << cur_pos[1]/ang2bohr__
-                                 << setw(20) << setprecision(12) << cur_pos[2]/ang2bohr__ << endl;
+                                 << setw(20) << setprecision(12) << cur_pos[0]*au2angstrom__
+                                 << setw(20) << setprecision(12) << cur_pos[1]*au2angstrom__
+                                 << setw(20) << setprecision(12) << cur_pos[2]*au2angstrom__ << endl;
   }
 }
 

@@ -5477,7 +5477,7 @@ void applyrotationsfromtheleft(ae_bool isforward,
     double temp;
 
 
-    if( m1>m2||n1>n2 )
+    if( m1-m2 > 0 ||n1-n2 > 0)
     {
         return;
     }

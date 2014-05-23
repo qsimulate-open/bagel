@@ -34,10 +34,11 @@ using namespace bagel;
 
 static const AtomMap atommap_;
 
-Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem, const bool aux)
+Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
+           shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux)
 : spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
-  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
+  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
 
   if (elem)
     for (auto& i : *elem) {
@@ -48,7 +49,11 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
   position_ = inp->get_array<double,3>("xyz");
 
-  for (auto& i : position_) i *= angstrom ? ang2bohr__ : 1.0;
+  for (auto& i : position_) i /= angstrom ? au2angstrom__ : 1.0;
+
+  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
 
   if (name_ == "q") {
     atom_charge_ = inp->get<double>("charge");
@@ -65,9 +70,9 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 
 // constructor that uses the old atom and basis
-Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
+Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
  : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
-  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
+  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
@@ -204,8 +209,12 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const std::pair<std::string, std::shared_ptr<const PTree>> defbas, std::shared_ptr<const PTree> elem)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem, const array<double,3> mag_field)
  : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+
+  vector_potential_[0] = 0.5*(mag_field[1]*position_[2] - mag_field[2]*position_[1]);
+  vector_potential_[1] = 0.5*(mag_field[2]*position_[0] - mag_field[0]*position_[2]);
+  vector_potential_[2] = 0.5*(mag_field[0]*position_[1] - mag_field[1]*position_[0]);
 
   if (elem)
     for (auto& i : *elem) {
@@ -213,7 +222,7 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
       if (name_ == key) basis_ = i->data();
     }
 
-  (basis_.find("ecp") != std::string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
+  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   string na = name_;
   na[0] = toupper(na[0]);
   shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
@@ -333,19 +342,19 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         double denom = 1.0;
         for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
-          *diter *= ::pow(2.0 * *eiter / pi__, 0.75) * ::pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / ::sqrt(denom);
+          *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
 
         vector<vector<double>> cont(1, *iter);
         vector<pair<int, int>> cran(1, *citer);
-        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
+        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran, vector_potential_);
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
-        const double scal = 1.0 / ::sqrt((coverlap.data())[0]);
+        const double scal = 1.0 / sqrt((coverlap.data())[0]);
         for (auto& d : *iter) d *= scal;
       }
 
-      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges));
+      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges, vector_potential_));
       lmax_ = i;
     }
 

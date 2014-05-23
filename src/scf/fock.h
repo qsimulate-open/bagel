@@ -116,7 +116,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
         }
       }
       const int ij = i * size + j;
-      const int ji = i * size + j;
+      const int ji = j * size + i;
       max_density_change[ij] = cmax;
       max_density_change[ji] = cmax;
     }

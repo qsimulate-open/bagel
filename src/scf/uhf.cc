@@ -194,10 +194,9 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
 }
 
 
-tuple<shared_ptr<Matrix>, shared_ptr<Matrix>, shared_ptr<Matrix>> UHF::form_density_uhf() const {
-  shared_ptr<Matrix> outA = coeff_->form_density_rhf(nocc_);
-  shared_ptr<Matrix> outB = coeffB_->form_density_rhf(noccB_);
-  auto out = make_shared<Matrix>(*outA+*outB);
-  *out *= 0.5;
+tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>, shared_ptr<const Matrix>> UHF::form_density_uhf() const {
+  shared_ptr<const Matrix> outA = coeff_->form_density_rhf(nocc_);
+  shared_ptr<const Matrix> outB = coeffB_->form_density_rhf(noccB_);
+  auto out = make_shared<const Matrix>((*outA+*outB)*0.5);
   return make_tuple(out, outA, outB);
 }

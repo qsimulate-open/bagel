@@ -167,6 +167,30 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 #ifdef HAVE_SCALAPACK
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistMatrix : public DistMatrix_base<double> {
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      std::shared_ptr<Matrix> mat = matrix();
+      ar << mat;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      std::shared_ptr<Matrix> mat;
+      ar >> mat;
+      DistMatrix tmp(*mat);
+      ndim_ = tmp.ndim_;
+      mdim_ = tmp.mdim_;
+      desc_ = tmp.desc_;
+      localsize_ = tmp.localsize_;
+      local_ = std::unique_ptr<double[]>(new double[tmp.size()]);
+      *this = tmp;
+    }
+
   public:
     DistMatrix() { }
     DistMatrix(const int n, const int m);

@@ -98,6 +98,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<Matrix> get_imag_part() const;
 
     std::shared_ptr<ZMatrix> get_conjg() const;
+    void fill_upper_conjg();
 
     std::shared_ptr<ZMatrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
       return this->get_submatrix_impl<ZMatrix>(nstart, mstart, ndim, mdim);
@@ -138,7 +139,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void ax_plus_y(const std::complex<double> a, const ZMatrix& o) { this->ax_plus_y_impl(a, o); }
     std::complex<double> dot_product(const ZMatrix& o) const { return this->dot_product_impl(o); }
 
-    double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); } 
+    double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); }
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
       assert(ndim_ == mdim_);
@@ -163,14 +164,38 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 #else
     std::shared_ptr<const ZMatrix> distmatrix() const;
     std::shared_ptr<const ZMatrix> matrix() const { return shared_from_this(); }
-    std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0) const;
 #endif
+    std::shared_ptr<const ZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
 };
 
 
 #ifdef HAVE_SCALAPACK
 // Not to be confused with Matrix. DistMatrix is distributed and only supported when SCALAPACK is turned on. Limited functionality
 class DistZMatrix : public DistMatrix_base<std::complex<double>> {
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      std::shared_ptr<ZMatrix> mat = matrix();
+      ar << mat;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      std::shared_ptr<ZMatrix> mat;
+      ar >> mat;
+      DistZMatrix tmp(*mat);
+      ndim_ = tmp.ndim_;
+      mdim_ = tmp.mdim_;
+      desc_ = tmp.desc_;
+      localsize_ = tmp.localsize_;
+      local_ = std::unique_ptr<std::complex<double>[]>(new std::complex<double>[tmp.size()]);
+      *this = tmp;
+    }
+
   public:
     DistZMatrix() { }
     DistZMatrix(const int n, const int m);
@@ -197,12 +222,12 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     using DistMatrix_base<std::complex<double>>::ax_plus_y;
     using DistMatrix_base<std::complex<double>>::dot_product;
 
-    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { this->ax_plus_y_impl(a, o); } 
+    void ax_plus_y(const std::complex<double> a, const DistZMatrix& o) { this->ax_plus_y_impl(a, o); }
     std::complex<double> dot_product(const DistZMatrix& o) const { return this->dot_product_impl(o); }
 
     std::shared_ptr<ZMatrix> matrix() const;
 
-    std::shared_ptr<const DistZMatrix> form_density_rhf(const int n, const int off = 0) const;
+    std::shared_ptr<const DistZMatrix> form_density_rhf(const int n, const int off = 0, const std::complex<double> scale = 1.0) const;
 };
 #endif
 

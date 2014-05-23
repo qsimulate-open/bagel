@@ -46,7 +46,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : inpu
   nbasis_(A->nbasis(), A->nbasis()) {
     array<double, 3> translation = input->get_array<double, 3>("translate");
     if (input->get<bool>("angstrom", false))
-      for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+      for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
     auto geomB = make_shared<const Geometry>((*A), translation);
 
     geoms_ = make_pair(A, geomB);
@@ -58,7 +58,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
 {
   array<double, 3> translation = input->get_array<double, 3>("translate");
   if (input->get<bool>("angstrom", false))
-    for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+    for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
 
   assert(A);
   auto geomB = make_shared<const Geometry>((*A->geom()), translation);
@@ -603,7 +603,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   set_sref(rhf->conv_to_ref());
   dimertime.tick_print("Dimer SCF");
 
-  shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
+  shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
   shared_ptr<Matrix> dimercoeff = scoeff_->slice(0,nclosed_);
 
   // Explanation of schemes:

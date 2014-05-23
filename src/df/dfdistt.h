@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfblockt.h
+// Filename: dfdistt.h
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,15 +24,15 @@
 //
 
 
-#ifndef __SRC_DF_DFBLOCKT_H
-#define __SRC_DF_DFBLOCKT_H
+#ifndef __SRC_DF_DFDISTT_H
+#define __SRC_DF_DFDISTT_H
 
 #include <src/df/df.h>
 
 namespace bagel {
 
 /*
-    DFDistT is a 3-index DF integral object, which is distributed by the second and third indeices.
+    DFDistT is a 3-index DF integral object, which is distributed by the second and third indices.
 */
 
 class DFDistT {

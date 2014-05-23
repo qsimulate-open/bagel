@@ -35,25 +35,9 @@ using namespace bagel;
 static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
-                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
+                       const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range, const array<double,3>& _vector_potential)
  : Shell_base(sph, _position, _ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range),dummy_(false), relativistic_(false) {
-
-  // TODO Set these values to those of the applied magnetic field vector ultimately coming from an input file.
-  // Probably the best approach is to pass it as an argument of the constructor.
-//  std::array<double,3> magnetic_field;
-#if 0
-  magnetic_field_[0] =  0.0032;
-  magnetic_field_[1] =  0.0006;
-  magnetic_field_[2] = -0.0051;
-#else
-  fill(magnetic_field_.begin(), magnetic_field_.end(), 0.0);
-#endif
-
-  // TODO We might want to do this calculation in geometry, then pass the result to Shell or a derived class of Shell
-  vector_potential_[0] = 0.5*(magnetic_field_[1]*position_[2] - magnetic_field_[2]*position_[1]);
-  vector_potential_[1] = 0.5*(magnetic_field_[2]*position_[0] - magnetic_field_[0]*position_[2]);
-  vector_potential_[2] = 0.5*(magnetic_field_[0]*position_[1] - magnetic_field_[1]*position_[0]);
+   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
@@ -69,8 +53,9 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 }
 
+
 Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{make_pair(0,1)}, dummy_(true) {
+                               contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -152,7 +137,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
         contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
         range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
       }
-      out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range));
+      out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range, vector_potential_));
       smallest = *lower;
       nstart = nend;
       if (upper == contraction_upper_.end()) break;
@@ -179,11 +164,11 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     conts.push_back(cont);
     ranges.push_back(make_pair(i,i+1));
   }
-  return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
+  return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
 }
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_, vector_potential_);
   return out;
 }
 

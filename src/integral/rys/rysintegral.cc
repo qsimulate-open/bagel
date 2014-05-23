@@ -25,5 +25,5 @@
 
 #include <src/integral/rys/rysintegral.h>
 
-template class bagel::RysIntegral<double>;
-template class bagel::RysIntegral<std::complex<double>>;
+template class bagel::RysIntegral<double,bagel::Int_t::Standard>;
+template class bagel::RysIntegral<std::complex<double>,bagel::Int_t::London>;

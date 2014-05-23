@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexnaibatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -47,6 +47,7 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>,Int_t::Lon
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
       :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, stack, 0, 0.0) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
+      this->allocate_arrays(primsize_*natom_);
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }
@@ -54,6 +55,7 @@ class ComplexNAIBatch : public CoulombBatch_Base<std::complex<double>,Int_t::Lon
     ComplexNAIBatch(const std::array<std::shared_ptr<const Shell>,2>& _info, const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
       :  CoulombBatch_Base<std::complex<double>,Int_t::London>(_info, mol, 0, nullptr, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
+      this->allocate_arrays(primsize_*natom_);
       compute_ssss(integral_thresh);
       root_weight(primsize_*natom_);
     }

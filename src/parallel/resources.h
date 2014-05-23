@@ -121,7 +121,7 @@ namespace bagel {
           return stackmem_[i];
         }
       }
-      throw std::runtime_error("Stack Memory exhausted (using real numbers)");
+      throw std::runtime_error("Stack Memory exhausted");
       return stackmem_.front();
     }
 

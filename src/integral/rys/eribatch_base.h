@@ -29,7 +29,6 @@
 
 #include <src/integral/rys/inline.h>
 #include <src/integral/rys/rysintegral.h>
-#include <iomanip>  // Only for testing
 
 
 namespace bagel {
@@ -124,5 +123,8 @@ using ERIBatch_base = ERIBatch_Base<double, Int_t::Standard>;
 #define ERIBATCH_BASE_HEADERS
 #include <src/integral/rys/eribatch_base_impl.hpp>
 #undef ERIBATCH_BASE_HEADERS
+
+extern template class bagel::ERIBatch_Base<double,bagel::Int_t::Standard>;
+extern template class bagel::ERIBatch_Base<std::complex<double>,bagel::Int_t::London>;
 
 #endif

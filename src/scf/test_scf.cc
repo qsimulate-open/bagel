@@ -60,6 +60,13 @@ double scf_energy(std::string filename, std::string extension = ".json") {
       auto scf = std::make_shared<ROHF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
+    } else if (method == "continue") {
+      IArchive archive(itree->get<std::string>("archive"));
+      Method* ptr;
+      archive >> ptr;
+      auto scf = std::shared_ptr<Method>(ptr);
+      scf->compute();
+      ref = scf->conv_to_ref();
     }
   }
   std::cout.rdbuf(backup_stream);
@@ -71,6 +78,7 @@ BOOST_AUTO_TEST_SUITE(TEST_SCF)
 BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_svp_hf"),          -99.84779026));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),        -99.84772354));
+//  BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_restart"),-99.84772354));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf",".bgl"), -99.84772354));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),    -99.83765614));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"),   -99.84911270));

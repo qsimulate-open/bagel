@@ -53,7 +53,7 @@ ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>
 }
 
 
-ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
+ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
   add_real_block(factor, 0, 0, ndim_, mdim_, r.data());
 }
 
@@ -476,8 +476,10 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
-  return std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  const bool lindep = std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  return !lindep;
 }
+
 
 shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   shared_ptr<ZMatrix> out = this->copy();
@@ -589,6 +591,15 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 }
 
 
+void ZMatrix::fill_upper_conjg() {
+  assert(ndim_ == mdim_);
+  for (size_t i = 0; i != mdim_; ++i)
+    for (size_t j = i+1; j != ndim_; ++j)
+      data_[i+j*ndim_] = conj(data_[j+i*ndim_]);
+}
+
+
+
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistZMatrix> ZMatrix::distmatrix() const {
   return make_shared<DistZMatrix>(*this);
@@ -601,10 +612,9 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 #endif
 
 
-#ifndef HAVE_SCALAPACK
-shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset) const {
+shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
   shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
-  auto out = make_shared<const ZMatrix>(*tmp ^ *tmp);
+  auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
+  *out *= scale;
   return out;
 }
-#endif
