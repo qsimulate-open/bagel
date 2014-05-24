@@ -270,3 +270,24 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     denom = dtmp;
   }
 }
+
+
+// rotate (within allowed rotations) the transformation matrix so that it is diagonal in each subblock
+shared_ptr<ZMatrix> ZSuperCI::tailor_rotation(const shared_ptr<ZMatrix> seed) {
+
+  shared_ptr<ZMatrix> out = seed->clone();
+  for (int i = 0; i != nclosed_*2; ++i)
+    for (int j = 0; j != nclosed_*2; ++j)
+      out->element(j,i) = seed->element(j,i);
+  for (int i = 0; i != nact_*2; ++i)
+    for (int j = 0; j != nact_*2; ++j)
+      out->element(j+nclosed_*2,i+nclosed_*2) = seed->element(j+nclosed_*2,i+nclosed_*2);
+  for (int i = 0; i != nvirt_*2; ++i)
+    for (int j = 0; j != nvirt_*2; ++j)
+      out->element(j+nocc_*2,i+nocc_*2) = seed->element(j+nocc_*2,i+nocc_*2);
+  out->inverse();
+  out->purify_unitary();
+  *out = *seed * *out;
+
+  return out;
+}

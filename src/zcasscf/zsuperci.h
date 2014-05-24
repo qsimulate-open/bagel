@@ -53,6 +53,7 @@ class ZSuperCI : public ZCASSCF {
     void grad_vc(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZRotFile> sigma);
     void grad_va(const std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
     void grad_ca(const std::shared_ptr<ZMatrix> f, std::shared_ptr<ZMatrix> fact, std::shared_ptr<ZRotFile> sigma);
+    std::shared_ptr<ZMatrix> tailor_rotation(const std::shared_ptr<ZMatrix> seed);
 
 };
 
