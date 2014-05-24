@@ -32,16 +32,12 @@ using namespace bagel;
 
 // Also, C and D matrices are either real (for Coulomb) or purely imaginary (for Gaunt and Breit) due to symmetry. We are not taking advantage of it.
 
-CDMatrix_London::CDMatrix_London(shared_ptr<const RelDFHalf_London> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const ZMatrix>, 4> trcoeff,
-                                 array<shared_ptr<const ZMatrix>, 4> ticoeff, shared_ptr<const ZMatrix> dat2, const bool onlyonce)
- : ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
+CDMatrix_London::CDMatrix_London(shared_ptr<const RelDFHalf_London> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
+                                 array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
+ : ZMatrix(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)-*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),
+           *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
    alpha_comp_(abc->alpha_comp()) {
 
-  // TODO This should be correct now... but do be careful
-  const complex<double> ii (0.0, 1.0);
-  *this -= *dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce);
-  *this += *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)*ii;
-  *this += *dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)*ii;
-
   *this *= abc->fac(dfhc->cartesian());
+
 }

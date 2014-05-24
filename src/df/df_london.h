@@ -37,11 +37,14 @@
 #include <src/util/timer.h>
 #include <src/util/taskqueue.h>
 
+#include <src/df/df.h>
+
 namespace bagel {
 
 class DFHalfDist_London;
 class DFFullDist_London;
 
+class DFHalfDist;
 
 class DFDist_London : public ParallelDF_London {
   friend class DFIntTask_OLD<DFDist_London>;
@@ -72,11 +75,15 @@ class DFDist_London : public ParallelDF_London {
        { add_direct_product(std::vector<std::shared_ptr<const ZMatrix>>{a}, std::vector<std::shared_ptr<const ZMatrix>>{b}, fac); }
     void add_direct_product(std::vector<std::shared_ptr<const ZMatrix>> a, std::vector<std::shared_ptr<const ZMatrix>> b, const double fac);
 
+    std::array<std::shared_ptr<DFDist>,2> split_parts() const;
+
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist_London> compute_half_transform(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<DFHalfDist_London> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
     std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
 
     std::shared_ptr<DFDist_London> copy() const;
     std::shared_ptr<DFDist_London> clone() const;
@@ -181,6 +188,7 @@ class DFHalfDist_London : public ParallelDF_London {
     size_t nbasis() const { return nindex2_; }
 
     std::shared_ptr<DFFullDist_London> compute_second_transform(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<DFFullDist_London> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
     std::shared_ptr<DFDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
     std::shared_ptr<DFHalfDist_London> copy() const;

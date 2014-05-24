@@ -101,7 +101,7 @@ class RelMOFile_London {
 
 
     static std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull_London>>
-        compute_full(std::array<std::array<std::shared_ptr<const ZMatrix>,4>,2> rocoeff, std::array<std::array<std::shared_ptr<const ZMatrix>,4>,2> iocoeff,
+        compute_full(std::array<std::array<std::shared_ptr<const Matrix>,4>,2> rocoeff, std::array<std::array<std::shared_ptr<const Matrix>,4>,2> iocoeff,
                      std::array<std::list<std::shared_ptr<RelDFHalf_London>>,2> half, const bool appj, const bool appjj = false) {
       std::unordered_map<std::bitset<2>, std::shared_ptr<const RelDFFull_London>> out;
       for (size_t t = 0; t != 4; ++t) {

@@ -41,6 +41,7 @@ class DFFullDist;
 
 class DFDist : public ParallelDF {
   friend class DFIntTask_OLD<DFDist>;
+  friend class ComplexDFDist;
   protected:
     std::pair<const double*, std::shared_ptr<RysInt>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
 
@@ -63,6 +64,9 @@ class DFDist : public ParallelDF {
     size_t nbasis0() const { return nindex2_; }
     size_t nbasis1() const { return nindex1_; }
     size_t naux() const { return naux_; }
+
+    // TODO Get rid of this once DF_London is obsolete
+    void set_data2(std::shared_ptr<Matrix> d2) { data2_ = d2; }
 
     void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
        { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }

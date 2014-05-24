@@ -44,20 +44,20 @@ class RelDF_London;
 
 class RelDFHalf_London : public RelDFBase {
   protected:
-    std::array<std::shared_ptr<DFHalfDist_London>,2> dfhalf_;
-    std::array<std::shared_ptr<DFHalfDist_London>,2> df2_;
+    std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
+    std::array<std::shared_ptr<DFHalfDist>,2> df2_;
     bool split_;
 
   public:
     RelDFHalf_London(std::shared_ptr<const RelDF_London>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
-                     std::array<std::shared_ptr<const ZMatrix>,4>, std::array<std::shared_ptr<const ZMatrix>,4>);
+                     std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
 
-    RelDFHalf_London(std::array<std::shared_ptr<DFHalfDist_London>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);
+    RelDFHalf_London(std::array<std::shared_ptr<DFHalfDist>,2> data, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> bas);
     RelDFHalf_London(const RelDFHalf_London& o);
 
-    std::array<std::shared_ptr<DFHalfDist_London>, 2> get_data() const { return dfhalf_; }
-    std::shared_ptr<DFHalfDist_London> get_real() const { return dfhalf_[0]; }
-    std::shared_ptr<DFHalfDist_London> get_imag() const { return dfhalf_[1]; }
+    std::array<std::shared_ptr<DFHalfDist>, 2> get_data() const { return dfhalf_; }
+    std::shared_ptr<DFHalfDist> get_real() const { return dfhalf_[0]; }
+    std::shared_ptr<DFHalfDist> get_imag() const { return dfhalf_[1]; }
 
     bool matches(std::shared_ptr<const RelDFHalf_London>) const;
     bool alpha_matches(std::shared_ptr<const Breit2Index>) const;
@@ -72,9 +72,9 @@ class RelDFHalf_London : public RelDFBase {
 
     // for the zgemm3m-like algorithm
     void set_sum_diff();
-    void discard_sum_diff() { df2_ = std::array<std::shared_ptr<DFHalfDist_London>,2>(); }
-    std::shared_ptr<DFHalfDist_London> sum() const { return df2_[0]; }
-    std::shared_ptr<DFHalfDist_London> diff() const { return df2_[1]; }
+    void discard_sum_diff() { df2_ = std::array<std::shared_ptr<DFHalfDist>,2>(); }
+    std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
+    std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
     std::list<std::shared_ptr<RelDFHalf_London>> split(const bool docopy = false);
@@ -86,14 +86,14 @@ class RelDFHalf_London : public RelDFBase {
 // Half-transformed DF objects when backtransforming to AO
 class RelDFHalfB_London {
   protected:
-    std::array<std::shared_ptr<DFHalfDist_London>,2> dfhalf_;
+    std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
     const int basis_;
     const int alpha_;
   public:
-    RelDFHalfB_London(std::array<std::shared_ptr<DFHalfDist_London>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { }
+    RelDFHalfB_London(std::array<std::shared_ptr<DFHalfDist>,2> data, const int basis, const int alpha) : dfhalf_(data), basis_(basis), alpha_(alpha) { }
 
     int basis() const { return basis_; }
-    std::shared_ptr<DFDist_London> back_transform(std::shared_ptr<const ZMatrix>, std::shared_ptr<const ZMatrix>, const bool imag = false) const;
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, const bool imag = false) const;
 };
 
 }

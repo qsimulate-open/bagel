@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const ZMatrix>,4> rcoeff, array<shared_ptr<const ZMatrix>,4> icoeff)
+RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
 : RelDFBase(*df) {
 
   basis_ = bas;
@@ -38,22 +38,33 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
   for (auto& i : basis_)
     if (i->basis(0) != index) throw logic_error("basis should have the same first index");
   // -1 due to dagger
-  auto icoeff_scaled = make_shared<const ZMatrix>(*icoeff[index] * (-1.0));
+  auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
 
-  // If rcoeff were truly complex, this next line would be important... but it seems to have only real parts, so this is a silent change.
-  auto rcoeff_scaled = rcoeff[index]->transpose()->transpose_conjg();;
-
+  // TODO Using 4-multiplication - switch to 3
+  std::array<std::shared_ptr<DFDist>,2> dfparts = df->df()->split_parts();
   if (df->swapped()) {
-    dfhalf_[0] = df->df()->compute_half_transform_swap(rcoeff_scaled);
-    dfhalf_[1] = df->df()->compute_half_transform_swap(icoeff_scaled);
+    auto rr = dfparts[0]->compute_half_transform_swap(rcoeff[index]);
+    auto ri = dfparts[0]->compute_half_transform_swap(icoeff_scaled);
+    auto ir = dfparts[1]->compute_half_transform_swap(rcoeff[index]);
+    auto ii = dfparts[1]->compute_half_transform_swap(icoeff_scaled);
+    dfhalf_[0] = rr;
+    dfhalf_[0]->ax_plus_y(1.0, ii);
+    dfhalf_[1] = ri;
+    dfhalf_[1]->ax_plus_y(-1.0, ir);
   } else {
-    dfhalf_[0] = df->df()->compute_half_transform(rcoeff_scaled);
-    dfhalf_[1] = df->df()->compute_half_transform(icoeff_scaled);
+    auto rr = dfparts[0]->compute_half_transform(rcoeff[index]);
+    auto ri = dfparts[0]->compute_half_transform(icoeff_scaled);
+    auto ir = dfparts[1]->compute_half_transform(rcoeff[index]);
+    auto ii = dfparts[1]->compute_half_transform(icoeff_scaled);
+    dfhalf_[0] = rr;
+    dfhalf_[0]->ax_plus_y(-1.0, ii);
+    dfhalf_[1] = ri;
+    dfhalf_[1]->ax_plus_y(1.0, ir);
   }
 }
 
 
-RelDFHalf_London::RelDFHalf_London(array<shared_ptr<DFHalfDist_London>,2> data, pair<int, int> cartesian, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(cartesian), dfhalf_(data) {
+RelDFHalf_London::RelDFHalf_London(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> cartesian, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(cartesian), dfhalf_(data) {
   basis_ = bas;
 }
 
@@ -66,7 +77,7 @@ RelDFHalf_London::RelDFHalf_London(const RelDFHalf_London& o) : RelDFBase(o.cart
 
 
 shared_ptr<RelDFHalf_London> RelDFHalf_London::apply_J() const {
-  return make_shared<RelDFHalf_London>(array<shared_ptr<DFHalfDist_London>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_);
+  return make_shared<RelDFHalf_London>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_);
 }
 
 
@@ -121,7 +132,7 @@ shared_ptr<RelDFHalf_London> RelDFHalf_London::multiply_breit2index(shared_ptr<c
   return nullptr;
   /*
   assert(basis_.size() == 1);
-  array<shared_ptr<DFHalfDist_London>,2> d = {{ dfhalf_[0]->apply_J(bt->data()), dfhalf_[1]->apply_J(bt->data())}};
+  array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->apply_J(bt->data()), dfhalf_[1]->apply_J(bt->data())}};
 
   vector<shared_ptr<const SpinorInfo>> spinor = { make_shared<const SpinorInfo>(basis_[0]->basis(), bt->index().first, bt->index().second) };
   return make_shared<RelDFHalf_London>(d, cartesian_, spinor);
@@ -136,7 +147,7 @@ list<shared_ptr<RelDFHalf_London>> RelDFHalf_London::split(const bool docopy) {
       out.push_back(make_shared<RelDFHalf_London>(dfhalf_, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     } else {
       // TODO Any way to avoid copying?
-      array<shared_ptr<DFHalfDist_London>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
+      array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
       out.push_back(make_shared<RelDFHalf_London>(d, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
     }
   }
@@ -144,8 +155,9 @@ list<shared_ptr<RelDFHalf_London>> RelDFHalf_London::split(const bool docopy) {
 }
 
 
-shared_ptr<DFDist_London> RelDFHalfB_London::back_transform(shared_ptr<const ZMatrix> r, shared_ptr<const ZMatrix> i, const bool imag) const {
-  shared_ptr<DFDist_London> out;
+shared_ptr<DFDist> RelDFHalfB_London::back_transform(shared_ptr<const Matrix> r, shared_ptr<const Matrix> i, const bool imag) const {
+  assert(false);
+  shared_ptr<DFDist> out;
   if (!imag) {
     out = dfhalf_[0]->back_transform(r);
     out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(i));

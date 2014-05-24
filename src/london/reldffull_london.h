@@ -36,16 +36,16 @@ class RelDFHalf_London;
 
 class RelDFFull_London : public RelDFBase {
   protected:
-    std::array<std::shared_ptr<DFFullDist_London>,2> dffull_;
+    std::array<std::shared_ptr<DFFullDist>,2> dffull_;
 
   public:
-    RelDFFull_London(std::shared_ptr<const RelDFHalf_London>, std::array<std::shared_ptr<const ZMatrix>,4>, std::array<std::shared_ptr<const ZMatrix>,4>);
-    RelDFFull_London(std::array<std::shared_ptr<DFFullDist_London>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
+    RelDFFull_London(std::shared_ptr<const RelDFHalf_London>, std::array<std::shared_ptr<const Matrix>,4>, std::array<std::shared_ptr<const Matrix>,4>);
+    RelDFFull_London(std::array<std::shared_ptr<DFFullDist>,2> a, std::pair<int,int> cartesian, std::vector<std::shared_ptr<const SpinorInfo>> basis);
     RelDFFull_London(const RelDFFull_London& o);
 
-    std::array<std::shared_ptr<DFFullDist_London>, 2> get_data() const { return dffull_; }
-    std::shared_ptr<DFFullDist_London> get_real() const { return dffull_[0]; }
-    std::shared_ptr<DFFullDist_London> get_imag() const { return dffull_[1]; }
+    std::array<std::shared_ptr<DFFullDist>, 2> get_data() const { return dffull_; }
+    std::shared_ptr<DFFullDist> get_real() const { return dffull_[0]; }
+    std::shared_ptr<DFFullDist> get_imag() const { return dffull_[1]; }
 
     bool matches(std::shared_ptr<const RelDFFull_London>) const { return true; }
 
@@ -66,14 +66,14 @@ class RelDFFull_London : public RelDFBase {
 
     std::complex<double> fac() const { assert(basis_.size() == 1); return basis_[0]->fac(cartesian_); }
 
-    std::shared_ptr<ZMatrix> form_aux_2index_real() const {
-      std::shared_ptr<ZMatrix> out = dffull_[0]->form_aux_2index(dffull_[0], 1.0);
+    std::shared_ptr<Matrix> form_aux_2index_real() const {
+      std::shared_ptr<Matrix> out = dffull_[0]->form_aux_2index(dffull_[0], 1.0);
       *out += *dffull_[1]->form_aux_2index(dffull_[1], 1.0); // positive, due to complex conjugate
       return out;
     }
 
-    std::list<std::shared_ptr<RelDFHalfB_London>> back_transform(std::array<std::shared_ptr<const ZMatrix>,4>,
-                                                          std::array<std::shared_ptr<const ZMatrix>,4>) const;
+    std::list<std::shared_ptr<RelDFHalfB_London>> back_transform(std::array<std::shared_ptr<const Matrix>,4>,
+                                                          std::array<std::shared_ptr<const Matrix>,4>) const;
     std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const RelDFFull_London>, const double fac) const;
     std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const RelDFFull_London>, const double fac, const bool conjugate_left = true) const;
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull_London>, const double fac, const int i) const;

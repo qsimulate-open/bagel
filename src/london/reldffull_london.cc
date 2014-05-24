@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFFull_London::RelDFFull_London(shared_ptr<const RelDFHalf_London> df, array<shared_ptr<const ZMatrix>,4> rcoeff, array<shared_ptr<const ZMatrix>,4> icoeff) : RelDFBase(*df) {
+RelDFFull_London::RelDFFull_London(shared_ptr<const RelDFHalf_London> df, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) : RelDFBase(*df) {
 
   basis_ = df->basis();
   if (basis_.size() != 1)
@@ -47,7 +47,7 @@ RelDFFull_London::RelDFFull_London(shared_ptr<const RelDFHalf_London> df, array<
 }
 
 
-RelDFFull_London::RelDFFull_London(array<shared_ptr<DFFullDist_London>,2> a, pair<int,int> cartesian, vector<shared_ptr<const SpinorInfo>> basis) : RelDFBase(cartesian) {
+RelDFFull_London::RelDFFull_London(array<shared_ptr<DFFullDist>,2> a, pair<int,int> cartesian, vector<shared_ptr<const SpinorInfo>> basis) : RelDFBase(cartesian) {
   basis_ = basis;
   dffull_ = a;
 }
@@ -61,27 +61,26 @@ RelDFFull_London::RelDFFull_London(const RelDFFull_London& o) : RelDFBase(o.cart
 
 
 shared_ptr<RelDFFull_London> RelDFFull_London::apply_J() const {
-  array<shared_ptr<DFFullDist_London>,2> a{{dffull_[0]->apply_J(), dffull_[1]->apply_J()}};
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->apply_J(), dffull_[1]->apply_J()}};
   return make_shared<RelDFFull_London>(a, cartesian_, basis_);
 }
 
 
 shared_ptr<RelDFFull_London> RelDFFull_London::apply_JJ() const {
-  array<shared_ptr<DFFullDist_London>,2> a{{dffull_[0]->apply_JJ(), dffull_[1]->apply_JJ()}};
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->apply_JJ(), dffull_[1]->apply_JJ()}};
   return make_shared<RelDFFull_London>(a, cartesian_, basis_);
 }
 
 
 shared_ptr<RelDFFull_London> RelDFFull_London::clone() const {
-  array<shared_ptr<DFFullDist_London>,2> a{{dffull_[0]->clone(), dffull_[1]->clone()}};
+  array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->clone(), dffull_[1]->clone()}};
   return make_shared<RelDFFull_London>(a, cartesian_, basis_);
 }
 
 
 void RelDFFull_London::add_product(shared_ptr<const RelDFFull_London> o, const shared_ptr<const ZMatrix> a, const int nocc, const int offset) {
-  // TODO Another silly fix, with unnecessarily large storage and memory allocation costs
-  shared_ptr<const ZMatrix> ra = make_shared<const ZMatrix>(*a->get_real_part(), 1.0);
-  shared_ptr<const ZMatrix> ia = make_shared<const ZMatrix>(*a->get_real_part(), 1.0);
+  shared_ptr<const Matrix> ra = a->get_real_part();
+  shared_ptr<const Matrix> ia = a->get_real_part();
   // taking the complex conjugate of "o"
   dffull_[0]->add_product(o->dffull_[0], ra, nocc, offset, 1.0);
   dffull_[0]->add_product(o->dffull_[1], ia, nocc, offset, 1.0);
@@ -126,7 +125,7 @@ void RelDFFull_London::scale(complex<double> a) {
 }
 
 
-list<shared_ptr<RelDFHalfB_London>> RelDFFull_London::back_transform(array<shared_ptr<const ZMatrix>,4> rcoeff, array<shared_ptr<const ZMatrix>,4> icoeff) const {
+list<shared_ptr<RelDFHalfB_London>> RelDFFull_London::back_transform(array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) const {
   list<shared_ptr<RelDFHalfB_London>> out;
   assert(basis_.size() == 1);
   const int alpha = basis_[0]->alpha_comp();
@@ -134,13 +133,13 @@ list<shared_ptr<RelDFHalfB_London>> RelDFFull_London::back_transform(array<share
   for (int i = 0; i != 4; ++i) {
     // Note that icoeff should be scaled by -1.0 !!
 
-    shared_ptr<DFHalfDist_London> real = dffull_[0]->back_transform(rcoeff[i]);
+    shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(rcoeff[i]);
     real->ax_plus_y( 1.0, dffull_[1]->back_transform(icoeff[i]));
 
-    shared_ptr<DFHalfDist_London> imag = dffull_[1]->back_transform(rcoeff[i]);
+    shared_ptr<DFHalfDist> imag = dffull_[1]->back_transform(rcoeff[i]);
     imag->ax_plus_y(-1.0, dffull_[0]->back_transform(icoeff[i]));
 
-    out.push_back(make_shared<RelDFHalfB_London>(array<shared_ptr<DFHalfDist_London>,2>{{real, imag}}, i, alpha));
+    out.push_back(make_shared<RelDFHalfB_London>(array<shared_ptr<DFHalfDist>,2>{{real, imag}}, i, alpha));
   }
   return out;
 }
@@ -154,43 +153,43 @@ shared_ptr<ZMatrix> RelDFFull_London::form_4index_1fixed(shared_ptr<const RelDFF
     throw logic_error("illegal call of RelDFFull_London::form_4index_1fixed");
 #endif
 
-  shared_ptr<ZMatrix> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
+  shared_ptr<Matrix> real = dffull_[0]->form_4index_1fixed(a->dffull_[0], fac, i);
   *real += *dffull_[1]->form_4index_1fixed(a->dffull_[1], -fac, i);
 
-  shared_ptr<ZMatrix> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
+  shared_ptr<Matrix> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
   *imag += *dffull_[1]->form_4index_1fixed(a->dffull_[0], fac, i);
 
   // TODO Careful...  this should be right though
-  //return make_shared<ZMatrix>(*real, *imag);
-  return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
+  return make_shared<ZMatrix>(*real, *imag);
+  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
 shared_ptr<ZMatrix> RelDFFull_London::form_4index(shared_ptr<const RelDFFull_London> a, const double fac) const {
-  shared_ptr<ZMatrix> real = dffull_[0]->form_4index(a->dffull_[0], fac);
+  shared_ptr<Matrix> real = dffull_[0]->form_4index(a->dffull_[0], fac);
   *real += *dffull_[1]->form_4index(a->dffull_[1], -fac);
 
-  shared_ptr<ZMatrix> imag = dffull_[0]->form_4index(a->dffull_[1], fac);
+  shared_ptr<Matrix> imag = dffull_[0]->form_4index(a->dffull_[1], fac);
   *imag += *dffull_[1]->form_4index(a->dffull_[0], fac);
 
   // TODO Careful...  this should be right though
-  //return make_shared<ZMatrix>(*real, *imag);
-  return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
+  return make_shared<ZMatrix>(*real, *imag);
+  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
 shared_ptr<ZMatrix> RelDFFull_London::form_2index(shared_ptr<const RelDFFull_London> a, const double fac, const bool conjugate_left) const {
   const double ifac = conjugate_left ? -1.0 : 1.0;
 
-  shared_ptr<ZMatrix> real = dffull_[0]->form_2index(a->dffull_[0], fac);
+  shared_ptr<Matrix> real = dffull_[0]->form_2index(a->dffull_[0], fac);
   *real -= *dffull_[1]->form_2index(a->dffull_[1], fac*ifac);
 
-  shared_ptr<ZMatrix> imag = dffull_[0]->form_2index(a->dffull_[1], fac);
+  shared_ptr<Matrix> imag = dffull_[0]->form_2index(a->dffull_[1], fac);
   *imag += *dffull_[1]->form_2index(a->dffull_[0], fac*ifac);
 
   // TODO Careful...  this should be right though
-  //return make_shared<ZMatrix>(*real, *imag);
-  return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
+  return make_shared<ZMatrix>(*real, *imag);
+  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
@@ -201,11 +200,11 @@ shared_ptr<RelDFFull_London> RelDFFull_London::apply_2rdm(shared_ptr<const ZRDM<
   shared_ptr<const Matrix> rrdm = rdm2->get_real_part();
   shared_ptr<const Matrix> irdm = rdm2->get_imag_part();
 
-  shared_ptr<DFFullDist_London> r  =  dffull_[0]->apply_2rdm(rrdm->data());
+  shared_ptr<DFFullDist> r  =  dffull_[0]->apply_2rdm(rrdm->data());
   r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(irdm->data()));
 
-  shared_ptr<DFFullDist_London> i  =  dffull_[1]->apply_2rdm(rrdm->data());
+  shared_ptr<DFFullDist> i  =  dffull_[1]->apply_2rdm(rrdm->data());
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(irdm->data()));
-  return make_shared<RelDFFull_London>(array<shared_ptr<DFFullDist_London>,2>{{r, i}}, cartesian_, basis_);
+  return make_shared<RelDFFull_London>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }
 */

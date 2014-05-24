@@ -52,7 +52,7 @@ shared_ptr<const RelDF_London> RelDF_London::swap() const {
 }
 
 
-vector<shared_ptr<RelDFHalf_London>> RelDF_London::compute_half_transform(array<shared_ptr<const ZMatrix>,4> rc, array<shared_ptr<const ZMatrix>,4> ic) const {
+vector<shared_ptr<RelDFHalf_London>> RelDF_London::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
   vector<shared_ptr<RelDFHalf_London>> out;
 
   // first make a subset

@@ -156,11 +156,50 @@ shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform(const std::s
 }
 
 
+shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform(const std::shared_ptr<const Matrix> c) const {
+  auto cc = make_shared<ZMatrix>(*c, 1.0);
+  const int nocc = c->mdim();
+  auto out = make_shared<DFHalfDist_London>(shared_from_this(), nocc);
+  for (auto& i : block_)
+    out->add_block(i->transform_second(cc));
+  return out;
+}
+
+
+array<shared_ptr<DFDist>,2> DFDist_London::split_parts() const {
+  assert(nindex1_ == nindex2_);
+  auto realpart = make_shared<DFDist>(nindex1_, naux_);
+  auto imagpart = make_shared<DFDist>(nindex2_, naux_);
+  vector<shared_ptr<DFBlock>>& realblocks = realpart->block();
+  vector<shared_ptr<DFBlock>>& imagblocks = imagpart->block();
+  const int nblocks = block_.size();
+  for (int i=0; i!=nblocks; i++) {
+    array<shared_ptr<DFBlock>,2> newblocks = block_[i]->split_parts();
+    realblocks.push_back(newblocks[0]);
+    imagblocks.push_back(newblocks[1]);
+  }
+  realpart->set_data2(data2_);
+  imagpart->set_data2(data2_);
+
+  return {{ realpart, imagpart }};
+}
+
+
 shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const {
   const int nocc = c->mdim();
   auto out = make_shared<DFHalfDist_London>(shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c)->swap());
+  return out;
+}
+
+
+shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const {
+  auto cc = make_shared<ZMatrix>(*c, 1.0);
+  const int nocc = cc->mdim();
+  auto out = make_shared<DFHalfDist_London>(shared_from_this(), nocc);
+  for (auto& i : block_)
+    out->add_block(i->transform_third(cc)->swap());
   return out;
 }
 
@@ -173,6 +212,16 @@ shared_ptr<DFFullDist_London> DFHalfDist_London::compute_second_transform(const 
   auto out = make_shared<DFFullDist_London>(df_, nindex1_, nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c));
+  return out;
+}
+
+
+shared_ptr<DFFullDist_London> DFHalfDist_London::compute_second_transform(const std::shared_ptr<const Matrix> c) const {
+  auto cc = make_shared<ZMatrix>(*c, 1.0);
+  const int nocc = cc->mdim();
+  auto out = make_shared<DFFullDist_London>(df_, nindex1_, nocc);
+  for (auto& i : block_)
+    out->add_block(i->transform_third(cc));
   return out;
 }
 

@@ -141,6 +141,27 @@ shared_ptr<ZMatrix> ParallelDF_London::compute_cd(const shared_ptr<const ZMatrix
 }
 
 
+shared_ptr<ZMatrix> ParallelDF_London::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const ZMatrix> dat2, const bool onlyonce) const {
+  if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
+  if (!dat2) dat2 = data2();
+
+  auto tmp0 = make_shared<ZMatrix>(naux_, 1, true);
+
+  // D = (D|rs)*d_rs
+  if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
+  unique_ptr<complex<double>[]> tmp = block_[0]->form_vec(den);
+  copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
+  // All reduce
+  if (!serial_)
+    tmp0->allreduce();
+
+  tmp0 = make_shared<ZMatrix>(*dat2 * *tmp0);
+  if (!onlyonce)
+    tmp0 = make_shared<ZMatrix>(*dat2 * *tmp0);
+  return tmp0;
+}
+
+
 shared_ptr<ZMatrix> ParallelDF_London::compute_Jop(const shared_ptr<const ZMatrix> den) const {
   return compute_Jop(this->shared_from_this(), den);
 }

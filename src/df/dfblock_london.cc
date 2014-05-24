@@ -296,6 +296,46 @@ unique_ptr<complex<double>[]> DFBlock_London::form_vec(const shared_ptr<const ZM
 }
 
 
+std::array<std::shared_ptr<DFBlock>,2> DFBlock_London::split_parts() const {
+  auto realpart = make_shared<DFBlock>(adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
+  auto imagpart = make_shared<DFBlock>(adist_shell_, adist_, asize_, b1size_, b2size_, astart_, b1start_, b2start_, averaged_);
+  double* realdata = realpart->get();
+  double* imagdata = imagpart->get();
+  const complex<double>* origdata = get();
+  const size_t size = this->size();
+  for (int i=0; i!=size; i++) {
+    realdata[i] = origdata[i].real();
+    imagdata[i] = origdata[i].imag();
+  }
+  return {{ realpart, imagpart }};
+}
+
+
+unique_ptr<complex<double>[]> DFBlock_London::form_vec(const shared_ptr<const Matrix> den) const {
+  auto cden = make_shared<ZMatrix>(*den, 1.0);
+  unique_ptr<complex<double>[]> out(new complex<double>[asize_]);
+  assert(cden->ndim() == b1size_ && cden->mdim() == b2size_);
+  zgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, cden->data(), 1, 0.0, out.get(), 1);
+  return out;
+  /*
+  const size_t tsize = asize_*b1size_*b2size_;
+  unique_ptr<complex<double>[]> out(new complex<double>[asize_]);
+  complex<double>* in = data_.get();
+  unique_ptr<double[]> inr(new double[tsize]);
+  unique_ptr<double[]> ini(new double[tsize]);
+
+  for (int i=0; i!=tsize; i++) {inr[i] = in[i].real(); ini[i] = in[i].imag();}
+  unique_ptr<double[]> outr(new double[asize_]);
+  unique_ptr<double[]> outi(new double[asize_]);
+  assert(den->ndim() == b1size_ && den->mdim() == b2size_);
+  dgemv_("N", asize_, b1size_*b2size_, 1.0, inr.get(), asize_, den->data(), 1, 0.0, outr.get(), 1);
+  dgemv_("N", asize_, b1size_*b2size_, 1.0, ini.get(), asize_, den->data(), 1, 0.0, outi.get(), 1);
+  for (int i=0; i!=tsize; i++) {out[i].real(outr[i]); out[i].imag(outi[i]);}
+  return out;
+  */
+}
+
+
 shared_ptr<ZMatrix> DFBlock_London::form_mat(const complex<double>* fit) const {
   auto out = make_shared<ZMatrix>(b1size_,b2size_);
   zgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out->data(), 1);

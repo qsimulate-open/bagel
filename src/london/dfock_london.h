@@ -47,8 +47,8 @@ class DFock_London : public ZMatrix {
 
     void add_Jop_block(std::shared_ptr<const RelDF_London>, std::list<std::shared_ptr<const CDMatrix_London>>, const double scale);
     void add_Exop_block(std::shared_ptr<RelDFHalf_London>, std::shared_ptr<RelDFHalf_London>, const double scale, const bool diag = false);
-    void driver(std::array<std::shared_ptr<const ZMatrix>, 4> rocoeff, std::array<std::shared_ptr<const ZMatrix>, 4> iocoeff,
-                           std::array<std::shared_ptr<const ZMatrix>, 4> trocoeff, std::array<std::shared_ptr<const ZMatrix>, 4>tiocoeff, bool gaunt, bool breit,
+    void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
+                           std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);
 
     // when gradient is requested, we store half-transformed integrals
@@ -83,8 +83,8 @@ class DFock_London : public ZMatrix {
         }
     }
     static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const DFDist_London>>, bool);
-    static std::list<std::shared_ptr<RelDFHalf_London>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const ZMatrix>,4>,
-                                                                   std::array<std::shared_ptr<const ZMatrix>,4>);
+    static std::list<std::shared_ptr<RelDFHalf_London>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const Matrix>,4>,
+                                                                   std::array<std::shared_ptr<const Matrix>,4>);
 
     std::list<std::shared_ptr<RelDFHalf_London>> half() const { assert(store_half_); return half_; }
 

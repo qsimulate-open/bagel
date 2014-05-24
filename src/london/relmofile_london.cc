@@ -128,7 +128,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile_London::kramers(shared_ptr<const ZM
     s->diagonalize(tmp.get());
     *cnow *= *s;
 
-    // fix the phase - making the largest large-component element in each colomn real
+    // fix the phase - making the largest large-component element in each column real
 #if 1
     for (int i = 0; i != n; ++i) {
       const int iblock = i/(n/2);
@@ -220,15 +220,14 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop_London::compute_mo2e(
 
     // Separate Coefficients into real and imaginary
     // correlated occupied orbitals
-    array<array<shared_ptr<const ZMatrix>,4>,2> rocoeff;
-    array<array<shared_ptr<const ZMatrix>,4>,2> iocoeff;
+    array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+    array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
     for (int k = 0; k != 2; ++k) {
       for (int i = 0; i != 4; ++i) {
         shared_ptr<const ZMatrix> oc = coeff[k]->get_submatrix(i*nbasis_, 0, nbasis_, nocc_);
         assert(nocc_ == coeff[k]->mdim());
-        // TODO Avoid unnecessary memory allocation
-        rocoeff[k][i] = make_shared<const ZMatrix>(*oc->get_real_part(), 1.0);
-        iocoeff[k][i] = make_shared<const ZMatrix>(*oc->get_imag_part(), 1.0);
+        rocoeff[k][i] = oc->get_real_part();
+        iocoeff[k][i] = oc->get_imag_part();
       }
     }
 

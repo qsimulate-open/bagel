@@ -47,16 +47,16 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
 
   for (auto& itable : table) {
     // Separate Coefficients into real and imaginary
-    array<shared_ptr<const ZMatrix>, 4> rocoeff;
-    array<shared_ptr<const ZMatrix>, 4> iocoeff;
-    array<shared_ptr<const ZMatrix>, 4> trocoeff;
-    array<shared_ptr<const ZMatrix>, 4> tiocoeff;
+    array<shared_ptr<const Matrix>, 4> rocoeff;
+    array<shared_ptr<const Matrix>, 4> iocoeff;
+    array<shared_ptr<const Matrix>, 4> trocoeff;
+    array<shared_ptr<const Matrix>, 4> tiocoeff;
 
     for (int i = 0; i != 4; ++i) {
       shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*cgeom_->nbasis(), itable.first, cgeom_->nbasis(), itable.second);
       // TODO This is just silly.
-      rocoeff[i] = make_shared<ZMatrix>(*ocoeff->get_real_part(), 1.0);
-      iocoeff[i] = make_shared<ZMatrix>(*ocoeff->get_imag_part(), 1.0);
+      rocoeff[i] = ocoeff->get_real_part();
+      iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();
       tiocoeff[i] = iocoeff[i]->transpose();
     }
@@ -99,7 +99,7 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<
   // minus from -1 in the definition of exchange
   const int n = cgeom_->nbasis();
 
-  shared_ptr<ZMatrix> r, i;
+  shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
     cout << "** warning : using 4 multiplication" << endl;
     r   =  dfc1->get_real()->form_2index(dfc2->get_real(), 1.0);
@@ -108,17 +108,17 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<
     *i += *dfc1->get_imag()->form_2index(dfc2->get_real(),-1.0);
   } else {
     // the same as above
-    shared_ptr<ZMatrix> ss = dfc1->sum()->form_2index(dfc2->sum(), 0.5);
-    shared_ptr<ZMatrix> dd = dfc1->diff()->form_2index(dfc2->diff(), 0.5);
-    r = make_shared<ZMatrix>(*ss + *dd);
-    i = make_shared<ZMatrix>(*dd - *ss + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0));
+    shared_ptr<Matrix> ss = dfc1->sum()->form_2index(dfc2->sum(), 0.5);
+    shared_ptr<Matrix> dd = dfc1->diff()->form_2index(dfc2->diff(), 0.5);
+    r = make_shared<Matrix>(*ss + *dd);
+    i = make_shared<Matrix>(*dd - *ss + *dfc1->get_real()->form_2index(dfc2->get_imag(), 2.0));
   }
 
   const bool diagonal = diag || dfc1 == dfc2;
 
   // TODO Is this right?  Probably should refactor the preceeding 15 lines
-  auto a = make_shared<ZMatrix>(*r + (*i * complex<double>(0.0, 1.0)));
-  //auto a = make_shared<ZMatrix>(*r, *i);
+  //auto a = make_shared<ZMatrix>(*r + (*i * complex<double>(0.0, 1.0)));
+  auto a = make_shared<ZMatrix>(*r, *i);
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {
       auto out = make_shared<ZMatrix>(*a * (conj(i1->fac(dfc1->cartesian()))*i2->fac(dfc2->cartesian())));
@@ -162,8 +162,8 @@ list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<cons
 }
 
 
-list<shared_ptr<RelDFHalf_London>> DFock_London::make_half_complex(list<shared_ptr<RelDF_London>> dfdists, array<shared_ptr<const ZMatrix>,4> rocoeff,
-                                                     array<shared_ptr<const ZMatrix>,4> iocoeff) {
+list<shared_ptr<RelDFHalf_London>> DFock_London::make_half_complex(list<shared_ptr<RelDF_London>> dfdists, array<shared_ptr<const Matrix>,4> rocoeff,
+                                                     array<shared_ptr<const Matrix>,4> iocoeff) {
   list<shared_ptr<RelDFHalf_London>> half_complex;
   for (auto& i : dfdists) {
     vector<shared_ptr<RelDFHalf_London>> dat = i->compute_half_transform(rocoeff, iocoeff);
@@ -179,8 +179,8 @@ list<shared_ptr<RelDFHalf_London>> DFock_London::make_half_complex(list<shared_p
 }
 
 
-void DFock_London::driver(array<shared_ptr<const ZMatrix>, 4> rocoeff, array<shared_ptr<const ZMatrix>, 4> iocoeff,
-                   array<shared_ptr<const ZMatrix>, 4> trocoeff, array<shared_ptr<const ZMatrix>, 4>tiocoeff, bool gaunt, bool breit,
+void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shared_ptr<const Matrix>, 4> iocoeff,
+                   array<shared_ptr<const Matrix>, 4> trocoeff, array<shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                    const double scale_exchange)  {
 
   Timer timer(0);
@@ -281,7 +281,7 @@ void DFock_London::driver(array<shared_ptr<const ZMatrix>, 4> rocoeff, array<sha
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2()));
+      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2_real()));
     }
   }
 

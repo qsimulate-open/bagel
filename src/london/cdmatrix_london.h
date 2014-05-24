@@ -39,8 +39,8 @@ class CDMatrix_London : public ZMatrix {
     const int alpha_comp_;
 
   public:
-    CDMatrix_London(std::shared_ptr<const RelDFHalf_London> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const ZMatrix>, 4> trcoeff,
-                    std::array<std::shared_ptr<const ZMatrix>, 4> ticoeff, std::shared_ptr<const ZMatrix> dat2, const bool onlyonce = true);
+    CDMatrix_London(std::shared_ptr<const RelDFHalf_London> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
+                    std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
     CDMatrix_London(const ZMatrix& o, const int acomp) : ZMatrix(o), alpha_comp_(acomp) { }
 
     int alpha_comp() const { return alpha_comp_; }

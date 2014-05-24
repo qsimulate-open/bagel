@@ -86,6 +86,7 @@ class ParallelDF_London : public std::enable_shared_from_this<ParallelDF_London>
     std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ParallelDF_London> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
     std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZMatrix> cd) const;
     std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const ZMatrix> dat2 = nullptr, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const ZMatrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {
       Timer time;
