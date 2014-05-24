@@ -139,8 +139,6 @@ class SmallInts1e_London {
 template<>
 template<typename Value>
 void SmallInts1e_London<ComplexERIBatch>::compute(const Value& nshells) {
-  throw std::logic_error("Finite nucleus is currently unavailable with London orbitals.");
-  /*
   const int a0size_inc = shells_[0]->aux_increment()->nbasis();
   const int a1size_inc = shells_[1]->aux_increment()->nbasis();
   const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
@@ -185,7 +183,6 @@ void SmallInts1e_London<ComplexERIBatch>::compute(const Value& nshells) {
   }
 
   transform(unc);
-  */
 }
 
 }

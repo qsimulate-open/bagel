@@ -51,8 +51,7 @@ class RelHcore_London : public ZMatrix {
             nai_(std::make_shared<ZMatrix>(*hcore_ - *kinetic_)) {
       smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_);
       if (geom_->has_finite_nucleus()) {
-        throw std::logic_error("Finite nucleus not yet implemented for London orbitals");
-        //smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_));
+        smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_));
       }
       compute_();
     }
