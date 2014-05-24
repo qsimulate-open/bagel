@@ -78,7 +78,7 @@ void ZSuperCIMicro::compute() {
     shared_ptr<ZSCIData> residual = davidson.residual().front();
 //    residual->synchronize();
     const double error = residual->rms();
-    assert( error == error ); // check for nan's
+    assert(isnormal(error)); // check for nan's
 
     if (miter == 0) cout << endl << "     == micro iteration == " << endl;
     cout << setw(10) << miter << "   " << setw(20) << setprecision(12) << mic_energy << " "
