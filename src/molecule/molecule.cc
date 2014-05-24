@@ -57,8 +57,8 @@ double Molecule::compute_nuclear_repulsion() {
           out += charge / dist;
 #ifdef BEYOND_DOUBLE
         } else if ((*iter)->finite_nucleus() && (*titer)->finite_nucleus()) { // both gaussian charges
-          const double gamma0 = (*iter)->finite_nucleus();
-          const double gamma1 = (*titer)->finite_nucleus();
+          const double gamma0 = (*iter)->atom_exponent();
+          const double gamma1 = (*titer)->atom_exponent();
           out += charge * erf(sqrt(gamma0 * gamma1 / (gamma0 + gamma1)) * dist) / dist;
         } else { // one point charge, the other gaussian
           const double gamma = (*iter)->finite_nucleus() ? (*iter)->atom_exponent() : (*titer)->atom_exponent();
