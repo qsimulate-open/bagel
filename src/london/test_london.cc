@@ -57,8 +57,7 @@ double london_energy(std::string filename) {
       auto rel = std::make_shared<Dirac_London>(itree, cgeom, ref_);
       rel->compute();
       ref_ = rel->conv_to_ref();
-      //return ref_->energy(); //TODO Set up reference
-      energy =  rel->energy();
+      energy = ref_->energy();
     }
   }
   std::cout.rdbuf(backup_stream);
@@ -71,6 +70,7 @@ BOOST_AUTO_TEST_CASE(LONDON) {
   BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),      -99.70397733));
   BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),    -99.70391005));
   BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"), -99.82459461));
+  BOOST_CHECK(compare(london_energy("hcl_svp_london_coulomb"), -458.35543900));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

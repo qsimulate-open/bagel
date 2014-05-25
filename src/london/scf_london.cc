@@ -131,8 +131,11 @@ void SCF_London::compute() {
 
     const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
     energy_  = real(zenergy);
-    if (abs(imag(zenergy))>1.0e-8) cout << scientific << "energy = " << zenergy << endl;;
-    if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
+    if (fabs(zenergy.imag()) > 1.0e-12) {
+      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << zenergy.imag();
+//    throw runtime_error(ss.str());
+      cout << ss.str() << endl;
+    }
 
     pdebug.tick_print("Fock build");
 
