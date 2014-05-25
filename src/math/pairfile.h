@@ -45,7 +45,7 @@ class PairFile {
     PairFile(std::pair<std::shared_ptr<T>, std::shared_ptr<U>> o) : file0_(o.first), file1_(o.second) {}
     PairFile(std::tuple<std::shared_ptr<T>, std::shared_ptr<U>> o) : file0_(std::get<0>(o)), file1_(std::get<1>(o)) {}
     // copy constructor (that requires T and U to have a copy constructor)
-    PairFile(const PairFile<T, U>& o) : file0_(new T(*o.file0_)), file1_(new U(*o.file1_)) {}
+    PairFile(const PairFile<T, U>& o) : file0_(o.file0_->copy()), file1_(o.file1_->copy()) {}
     ~PairFile() {}
 
     std::shared_ptr<T>& first() { return file0_; }
@@ -56,21 +56,21 @@ class PairFile {
 
     // operator overloads
     PairFile<T, U> operator+(const PairFile<T, U>& o) const {
-      std::shared_ptr<T> a0(new T(*first())); *a0 += *o.first();
-      std::shared_ptr<U> a1(new U(*second())); *a1 += *o.second();
+      std::shared_ptr<T> a0 = first()->copy();  *a0 += *o.first();
+      std::shared_ptr<U> a1 = second()->copy(); *a1 += *o.second();
       return PairFile(a0, a1);
     }
     PairFile<T, U> operator-(const PairFile<T, U>& o) const {
-      std::shared_ptr<T> a0(new T(*first())); *a0 -= *o.first();
-      std::shared_ptr<U> a1(new U(*second())); *a1 -= *o.second();
+      std::shared_ptr<T> a0 = first()->copy();  *a0 -= *o.first();
+      std::shared_ptr<U> a1 = second()->copy(); *a1 -= *o.second();
       return PairFile(a0, a1);
     }
     PairFile<T, U>& operator+=(const PairFile<T, U>& o) { *first()+=*o.first(); *second()+=*o.second(); return *this; }
     PairFile<T, U>& operator-=(const PairFile<T, U>& o) { *first()-=*o.first(); *second()-=*o.second(); return *this; }
 
     PairFile<T, U> operator/(const PairFile<T, U>& o) const {
-      std::shared_ptr<T> a0(new T(*first())); *a0 /= *o.first();
-      std::shared_ptr<U> a1(new U(*second())); *a1 /= *o.second();
+      std::shared_ptr<T> a0 = first()->copy();  *a0 /= *o.first();
+      std::shared_ptr<U> a1 = second()->copy(); *a1 /= *o.second();
       return PairFile(a0, a1);
     }
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; }
@@ -87,13 +87,13 @@ class PairFile {
 
     void zero() { first()->zero(); second()->zero(); }
 
-    std::shared_ptr<PairFile<T, U>> clone() const { return std::shared_ptr<PairFile<T, U>>(new PairFile<T, U>(file0_->clone(), file1_->clone())); }
+    std::shared_ptr<PairFile<T, U>> clone() const { return std::make_shared<PairFile<T, U>>(file0_->clone(), file1_->clone()); }
 
     // assumes that c is already orthogonal with each other.
     double orthog(std::list<std::shared_ptr<const PairFile<T, U>>> c) {
-      for (auto iter = c.begin(); iter != c.end(); ++iter) {
-        const double scal = - this->dot_product(**iter);
-        ax_plus_y(scal, *iter);
+      for (auto& i : c) {
+        const double scal = - this->dot_product(*i);
+        ax_plus_y(scal, i);
       }
       const double scal = 1.0/this->norm();
       scale(scal);

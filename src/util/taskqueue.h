@@ -34,6 +34,7 @@
 #include <stdexcept>
 #include <utility>
 #include <thread>
+#include <algorithm>
 
 #include <vector>
 #include <bagel_config.h>
@@ -53,7 +54,7 @@ template<typename T>
 class TaskQueue {
   protected:
     std::vector<T> task_;
-    std::list<std::shared_ptr<std::atomic_flag>> flag_;
+    std::list<std::atomic_flag> flag_;
     static const int chunck_ = 12;
 
   public:
@@ -70,14 +71,12 @@ class TaskQueue {
       mkl_set_num_threads(1);
 #endif
 #ifndef _OPENMP
-      for (int i = 0; i != (task_.size()-1)/chunck_+1; ++i)
-        flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-      std::list<std::shared_ptr<std::thread>> threads;
+      flag_.resize((task_.size()-1)/chunck_+1);
+      std::for_each(flag_.begin(), flag_.end(), [](std::atomic_flag& i){ i.clear(); });
+      std::list<std::thread> threads;
       for (int i = 0; i != num_threads; ++i)
-        threads.push_back(std::make_shared<std::thread>(&TaskQueue<T>::compute_one_thread, this));
-      for (auto& i : threads) {
-        i->join();
-      }
+        threads.emplace_back(&TaskQueue<T>::compute_one_thread, this);
+      std::for_each(threads.begin(), threads.end(), [](std::thread& i){ i.join(); });
 #else
       const size_t n = task_.size();
       #pragma omp parallel for schedule(dynamic,chunck_)
@@ -92,7 +91,7 @@ class TaskQueue {
     void compute_one_thread() {
       int j = 0;
       for (auto i = flag_.begin(); i != flag_.end(); ++i, j += chunck_)
-        if (!(*i)->test_and_set()) {
+        if (!i->test_and_set()) {
           call_compute(task_[j]);
           for (int k = 1; k < chunck_; ++k)
             if (j+k < task_.size()) call_compute(task_[j+k]);

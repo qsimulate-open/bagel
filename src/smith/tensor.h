@@ -97,21 +97,15 @@ class Tensor {
           off += size;
         }
 
-        std::shared_ptr<T> tmp(new T(hashmap, init));
-        data_ = tmp;
+        data_ = std::make_shared<T>(hashmap, init);
       } else {
         rank_ = 0;
-        std::map<size_t, size_t> hashmap;
-        hashmap.insert(std::make_pair(0lu, 1lu));
-        std::shared_ptr<T> tmp(new T(hashmap, init));
-        data_ = tmp;
+        std::map<size_t, size_t> hashmap {{0lu, 1lu}};
+        data_ = std::make_shared<T>(hashmap, init);
       }
     }
 
     void initialize() { data_->initialize(); }
-
-    ~Tensor() {
-    }
 
     Tensor<T>& operator=(const Tensor<T>& o) {
       *data_ = *(o.data_);
@@ -119,9 +113,9 @@ class Tensor {
     }
 
     std::shared_ptr<Tensor<T>> clone() const {
-      std::shared_ptr<Tensor<T>> out(new Tensor<T>(range_));
-      return out;
+      return std::make_shared<Tensor<T>>(range_);
     }
+
     std::shared_ptr<Tensor<T>> copy() const {
       std::shared_ptr<Tensor<T>> out = clone();
       *out = *this;
