@@ -27,12 +27,12 @@
 using namespace std;
 using namespace bagel;
 
+ECP::ECP() : ecp_ncore_(0), ecp_maxl_(0), shells_ecp_(1, make_shared<const Shell_ECP>()), ishell_maxl_(-1) {}
 
 ECP::ECP(const int ncore, const int maxl, vector<shared_ptr<const Shell_ECP>> shells_ecp)
   : ecp_ncore_(ncore), ecp_maxl_(maxl), shells_ecp_(shells_ecp) {
   nshell_ = shells_ecp_.size();
   get_shell_maxl_ecp();
-  position_ = shells_ecp_[0]->position();
 }
 
 void ECP::get_shell_maxl_ecp() {
@@ -53,7 +53,7 @@ shared_ptr<const Shell_ECP> ECP::shell_maxl_ecp() const {
 
   shared_ptr<const Shell_ECP> shell_maxl;
   if (ishell_maxl_ < 0) {
-    shell_maxl = make_shared<const Shell_ECP>(shells_ecp_[0]->position(), ecp_maxl_, vector<double>(1, 0.0), vector<double>(1, 0.0), vector<int>(1, 2));
+    shell_maxl = make_shared<const Shell_ECP>();
   } else {
     shell_maxl = shells_ecp_[ishell_maxl_];
   }

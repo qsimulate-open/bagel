@@ -29,7 +29,7 @@
 
 #include <vector>
 #include <algorithm>
-#include <src/molecule/shell_ECP.h>
+#include <src/molecule/shellecp.h>
 
 namespace bagel {
 
@@ -42,9 +42,9 @@ class ECP {
     int ishell_maxl_;
     int nshell_;
     std::array<int, 3> nr_;
-    std::array<double, 3> position_;
 
   public:
+    ECP();
     ECP(const int ncore, const int maxl, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp);
     ~ECP() {}
 
@@ -63,8 +63,8 @@ class ECP {
     const std::array<int, 3> nr() { return nr_; }
     const int nr(const int i) const { return nr_[i]; }
 
-    double position(const int i) const { return position_[i]; };
-    const std::array<double,3>& position() const { return position_; };
+    double position(const int i) const { return shells_ecp_[0]->position(i); };
+    const std::array<double,3>& position() const { return shells_ecp_[0]->position(); };
 
     void print() const;
 

@@ -24,10 +24,14 @@
 //
 
 
-#include <src/molecule/shell_ECP.h>
+#include <src/molecule/shellecp.h>
 
 using namespace std;
 using namespace bagel;
+
+Shell_ECP::Shell_ECP()
+ : Shell_base(false, {{0.0, 0.0, 0.0}}, 0),
+   ecp_exponents_(0.0), ecp_coefficients_(0.0), ecp_r_power_(0) {}
 
 Shell_ECP::Shell_ECP(const array<double,3>& _position, const int _ang,
                      const std::vector<double>& _ecp_expo, const std::vector<double>& _ecp_coef,

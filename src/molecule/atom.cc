@@ -35,10 +35,10 @@ using namespace bagel;
 static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
-           shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux)
-: spherical_(spherical), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
+           shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux, const bool ecp)
+: spherical_(spherical), use_ecp_basis_(false), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
-  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
+  if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
 
   if (elem)
     for (auto& i : *elem) {
@@ -64,6 +64,10 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
     string na = name_;
     na[0] = toupper(na[0]);
     (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
+    if (!use_ecp_basis_ && ecp) {
+      ecp_parameters_ = make_shared<const ECP>();
+      use_ecp_basis_ = true;
+    }
   }
   atom_exponent_ = inp->get<double>("exponent", 0.0);
 }
@@ -71,8 +75,8 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
- : spherical_(spherical), name_(old.name_), position_(old.position_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
-  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
+ : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
+  if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   if (name_ == "q") {
     nbasis_ = 0;
     lmax_ = 0;
@@ -222,10 +226,10 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
       if (name_ == key) basis_ = i->data();
     }
 
-  (basis_.find("ecp") != string::npos) ? use_ecp_basis_ = true : use_ecp_basis_ = false;
   string na = name_;
   na[0] = toupper(na[0]);
   shared_ptr<const PTree> basisset = (basis_ == defbas.first) ? defbas.second : PTree::read_basis(basis_);
+  if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
 
   atom_exponent_ = 0.0;
@@ -252,7 +256,6 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
 : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
   atom_exponent_ = 0.0;
-  use_ecp_basis_ = false;
 }
 
 
@@ -400,11 +403,7 @@ void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<dou
 
   }
 
-  if (shells_ECP.empty()) { //TODO: use_ecp_basis_ = false
-    shells_ECP.push_back(make_shared<const Shell_ECP>(position_, maxl , vector<double>(1, 0.0), vector<double>(1, 0.0), vector<int>(1, 2)));
-  }
-
-  ecp_parameters_ = make_shared<const ECP>(ncore, maxl, shells_ECP);
+  ecp_parameters_ = (shells_ECP.empty()) ? make_shared<const ECP>() : make_shared<const ECP>(ncore, maxl, shells_ECP);
 
 }
 

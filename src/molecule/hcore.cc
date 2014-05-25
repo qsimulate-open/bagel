@@ -68,7 +68,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
-  if (mol->atoms(0)->use_ecp_basis()) {
+  if (mol->atoms().front()->use_ecp_basis()) {
     {
       R0Batch r0(input, mol);
       r0.compute();

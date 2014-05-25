@@ -78,7 +78,7 @@ class Atom {
   public:
     Atom() { }
     Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas,
-         std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field, const bool aux=false);
+         std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field, const bool aux=false, const bool ecp=false);
 
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas, const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field = {{0.0,0.0,0.0}});
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);

@@ -39,7 +39,7 @@ class Shell_ECP : public Shell_base {
     std::vector<int> ecp_r_power_;
 
   public:
-    Shell_ECP() { }
+    Shell_ECP();
 
     Shell_ECP(const std::array<double,3>& position, const int angular_num, const std::vector<double>& ecp_exponents,
               const std::vector<double>& ecp_coefficients, const std::vector<int>& ecp_r_power);
