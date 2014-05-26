@@ -86,14 +86,14 @@ void ZSuperCIMicro::compute() {
 
     if (error < casscf_->thresh_micro()) { cout << endl; break; }
 //    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
-//
-//    // update cc0 and cc1
+
+    // update cc0 and cc1
     cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
     cc1->normalize();
     cc0 = cc0->clone();
   }
 
-//  // rotation parameters
+  // rotation parameters
   shared_ptr<const ZSCIData> result = davidson.civec().front();
   const complex<double> cref = result->first()->element(0,0);
   shared_ptr<ZRotFile> tmp = result->second()->copy();
