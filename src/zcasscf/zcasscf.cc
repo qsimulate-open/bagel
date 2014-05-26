@@ -224,43 +224,58 @@ shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, c
 shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) {
   // input should be 1rdm in kramers format
   shared_ptr<ZMatrix> tmp = rdm1->copy();
-
-  unique_ptr<double[]> vec(new double[rdm1->ndim()]);
-  zquatev_(tmp->ndim(), tmp->data(), vec.get()); // TODO : maybe replace with standard diagonalize
-
-  map<int,int> emap;
-  auto buf2 = tmp->clone();
-  vector<double> vec2(tmp->ndim());
-  // sort eigenvectors so that buf is close to a unit matrix
-  // target column
-  for (int i = 0; i != tmp->ndim(); ++i) {
-    // first find the source column
-    tuple<int, double> max = make_tuple(-1, 0.0);
-    for (int j = 0; j != tmp->ndim(); ++j)
-      if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
-        max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
-
-    // register to emap
-    if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
-    emap.insert(make_pair(get<0>(max), i));
-
-    // copy to the target
-    copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
-    vec2[i] = vec[get<0>(max)];
+  bool unitmat = false;
+  { // check for unit matrix
+    auto unit = tmp->clone();
+    unit->unit();
+    auto diff = (*tmp - *unit).rms();
+    if (diff < 1.0e-14) unitmat = true;
   }
 
-  // fix the phase
-  for (int i = 0; i != tmp->ndim(); ++i) {
-    if (real(buf2->element(i,i)) < 0.0)
-      blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
-  }
-  // copy eigenvalues TODO: change to blas
-  for (int i=0; i!=tmp->ndim()/2; ++i)
-    vec2[tmp->ndim()/2 + i] = vec2[i];
-  occup_ = vec2;
-  coeff_ = update_coeff(coeff_, buf2);
+  if (!unitmat) {
+    unique_ptr<double[]> vec(new double[rdm1->ndim()]);
+    zquatev_(tmp->ndim(), tmp->data(), vec.get()); // TODO : maybe replace with standard diagonalize
 
-  return buf2;
+    map<int,int> emap;
+    auto buf2 = tmp->clone();
+    vector<double> vec2(tmp->ndim());
+    // sort eigenvectors so that buf is close to a unit matrix
+    // target column
+    for (int i = 0; i != tmp->ndim(); ++i) {
+      // first find the source column
+      tuple<int, double> max = make_tuple(-1, 0.0);
+      for (int j = 0; j != tmp->ndim(); ++j)
+        if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
+          max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
+
+      // register to emap
+      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
+      emap.insert(make_pair(get<0>(max), i));
+
+      // copy to the target
+      copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
+      vec2[i] = vec[get<0>(max)];
+    }
+
+    // fix the phase
+    for (int i = 0; i != tmp->ndim(); ++i) {
+      if (real(buf2->element(i,i)) < 0.0)
+        blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
+    }
+    // copy eigenvalues TODO: change to blas
+    for (int i=0; i!=tmp->ndim()/2; ++i)
+      vec2[tmp->ndim()/2 + i] = vec2[i];
+    occup_ = vec2;
+    coeff_ = update_coeff(coeff_, buf2);
+    return buf2;
+  } else { // set occupation numbers, but coefficients don't need to be updated
+    vector<double> vec2(tmp->ndim());
+    for (int i=0; i!=tmp->ndim(); ++i)
+      vec2[i] = tmp->get_real_part()->element(i,i);
+    occup_ = vec2;
+    return tmp;
+  }
+
 }
 
 
