@@ -42,7 +42,9 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   thresh_ = input->get<double>("thresh", 1.0e-7);
   print_thresh_ = input->get<double>("print_thresh", 0.01);
   store_matrix_ = input->get<bool>("store_matrix", false);
-  nspin_ = 0; // TODO hardcoded to singlets for now
+  charge_ = input->get<int>("charge", 0);
+  // TODO hardcoded to singlets for now
+  nspin_ = input->get<int>("spin", 0);
 
   Timer timer;
 
@@ -58,15 +60,18 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   // Process DimerCISpace to form and organize needed Civecs and figure out maxspin
   for ( auto& aiter : cispace_->template cispace<0>() ) {
     SpaceKey akey = aiter.first;
-    SpaceKey bkey( akey.S, -akey.m_s, -akey.q );
-    std::shared_ptr<const VecType> bspace = cispace_->template ccvec<1>(bkey);
-    if ( bspace ) {
-      subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
-      maxspin = std::max(aiter.second->det()->nspin(), maxspin);
+    // values of S_b that could give the proper spin:
+    //   S_a-nspin_, S_a-nspin+2,...,S_a+nspin
+    for (int Sb = std::abs(akey.S-std::abs(nspin_)); Sb <= akey.S+std::abs(nspin_); Sb+=2) {
+      SpaceKey bkey( Sb, nspin_ - akey.m_s, charge_ - akey.q );
+      std::shared_ptr<const VecType> bspace = cispace_->template ccvec<1>(bkey);
+      if ( bspace ) {
+        subspaces_.emplace_back(dimerstates_, akey, bkey, make_pair(aiter.second, bspace));
+        maxspin = std::max(akey.S+Sb, maxspin);
+      }
     }
   }
-  maxspin = 2 * maxspin + 1;
-  max_spin_ = maxspin;
+  max_spin_ = maxspin + 1;
 
   energies_ = std::vector<double>(nstates_, 0.0);
 
@@ -205,6 +210,7 @@ void MultiExcitonHamiltonian<VecType>::print_adiabats(const double thresh, const
          << std::setprecision(8) << std::setw(17) << std::fixed << energies_.at(istate)
          << "   <S^2> = " << std::setw(4) << std::setprecision(4) << std::fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << std::endl;
     double *eigendata = adiabats_->element_ptr(0,istate);
+    double printed = 0.0;
     for (auto& subspace : subspaces_) {
       const int nA = subspace.template nstates<0>();
       const int nB = subspace.template nstates<1>();
@@ -212,11 +218,12 @@ void MultiExcitonHamiltonian<VecType>::print_adiabats(const double thresh, const
         for (int j = 0; j < nB; ++j, ++eigendata) {
           if ( (*eigendata)*(*eigendata) > thresh ) {
             std::cout << "      " << subspace.string(i,j) << std::setprecision(12) << std::setw(20) << *eigendata << std::endl;
+            printed += (*eigendata)*(*eigendata);
           }
         }
       }
     }
-    std::cout << std::endl;
+    std::cout << "    total weight of printed elements: " << std::setprecision(12) << std::setw(20) << printed << std::endl << std::endl;
   }
 }
 

@@ -130,6 +130,7 @@ class MultiExcitonHamiltonian {
       // Options
       int nstates_;
       int nspin_;
+      int charge_;
       int max_iter_;
       int nguess_;
       int davidson_subspace_;

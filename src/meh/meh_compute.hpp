@@ -59,9 +59,9 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
     const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
     int start, end;
     for (start = 0; start < nguess; ++start)
-      if (std::fabs(spin_values[start] - expected_spin) < 1.0e-8) break;
+      if (std::fabs(spin_values[start] - expected_spin) < 1.0e-4) break;
     for (end = start; end < nguess; ++end)
-      if (std::fabs(spin_values[end] - expected_spin) > 1.0e-8) break;
+      if (std::fabs(spin_values[end] - expected_spin) > 1.0e-4) break;
 
     trialsize = end - start;
 
@@ -89,7 +89,11 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
 template <class VecType>
 void MultiExcitonHamiltonian<VecType>::compute() {
   Timer mehtime;
-  std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian with " << dimerstates_ << " states ===== " << std::endl;
+  std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian " << std::endl;
+  std::cout << "   o Dimer space:" << std::endl;
+  std::cout << "     -  spin: " << nspin_ << std::endl;
+  std::cout << "     -  charge: " << charge_ << std::endl;
+  std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
   {
     std::map<std::pair<int,int>, double> spinmap;
