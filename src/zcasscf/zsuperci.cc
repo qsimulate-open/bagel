@@ -101,7 +101,7 @@ void ZSuperCI::compute() {
     // setting error of macro iteration
     gradient = grad->rms();
     if (gradient < thresh_) {
-      print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      if (!nact_) print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       break;
     }
 
