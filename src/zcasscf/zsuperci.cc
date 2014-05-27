@@ -86,9 +86,24 @@ void ZSuperCI::compute() {
     // <r/i|H|0> = f_ri - f^inact_is d_sr - (is|tu)P_rs,tu = f_ri - fact_ri
     grad_ca(f, fact, grad);
 
+    if (!nact_) { // compute energy
+      assert(nstate_ == 1);
+      energy_.resize(iter+1);
+      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice(0,nclosed_*2) % *hcore_ * *coeff_->slice(0,nclosed_*2));
+      *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
+      double etmp = 0.0;
+      for (int j=0; j!= nclosed_*2; ++j)
+        etmp += 0.5 * hcoremo->element(j,j).real();
+      etmp += geom_->nuclear_repulsion();
+      energy_.push_back(etmp);
+    }
+
     // setting error of macro iteration
-    auto gradient = grad->rms();
-    if (gradient < thresh_) break;
+    gradient = grad->rms();
+    if (gradient < thresh_) {
+      print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      break;
+    }
 
   // ============================
      // Micro-iterations go here
