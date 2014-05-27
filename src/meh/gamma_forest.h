@@ -96,6 +96,9 @@ class GammaBranch {
       return contributes;
     }
 
+    bool is_terminal() { return std::any_of(branches_.begin(), branches_.end(),
+      [] (std::shared_ptr<GammaBranch<VecType>> b) { return ( b ? b->active() : false ); }); }
+
 };
 
 template <typename VecType>
@@ -410,7 +413,7 @@ class RASTask {
       auto out = std::make_shared<RASBlock_alloc<double>>(ta,tb);
 
       RAS::Apply_block apply_block(orbital, action, spin);
-      apply_block(base_block, out);
+      apply_block(base_block, out, branch->is_terminal());
 
       return out;
     }
