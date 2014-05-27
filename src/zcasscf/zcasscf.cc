@@ -70,19 +70,33 @@ void ZCASSCF::init() {
 
   nneg_ = relref->nneg();
 
-  // first set coefficient
-  if (coeff_ == nullptr) {
-    shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
-    shared_ptr<ZMatrix> coeff = ctmp->clone();
-    const int npos = ctmp->mdim() - nneg_;
-    coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
-    coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
-    coeff_ = coeff;
-  }
-
   // set hcore and overlap
   hcore_   = make_shared<RelHcore>(geom_);
   overlap_ = make_shared<RelOverlap>(geom_);
+
+  // first set coefficient
+  if (coeff_ == nullptr) {
+    const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
+    if (hcore_guess) {
+      auto hctmp = hcore_->copy();
+      auto s12 = overlap_->tildex(1.0e-10);
+      *hctmp = *s12 % *hctmp * *s12;
+      unique_ptr<double[]> eig(new double[hctmp->ndim()]);
+      hctmp->diagonalize(eig.get());
+      *hctmp = *s12 * *hctmp;
+      auto tmp = hctmp->clone();
+      tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp->slice(0,nneg_));
+      tmp->copy_block(0, 0, tmp->ndim(), nneg_, hctmp->slice(nneg_,hctmp->mdim()));
+      coeff_ = tmp;
+    } else {
+      shared_ptr<const ZMatrix> ctmp = relref->relcoeff_full();
+      shared_ptr<ZMatrix> coeff = ctmp->clone();
+      const int npos = ctmp->mdim() - nneg_;
+      coeff->copy_block(0, 0, ctmp->mdim(), npos, ctmp->slice(nneg_, nneg_+npos));
+      coeff->copy_block(0, npos, ctmp->mdim(), nneg_, ctmp->slice(0, nneg_));
+      coeff_ = coeff;
+    }
+  }
 
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
