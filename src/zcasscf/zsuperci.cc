@@ -145,9 +145,11 @@ void ZSuperCI::compute() {
 //
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
-  fci_->update(coeff_);
-  fci_->compute();
-  fci_->compute_rdm12();
+  if (nact_) {
+    fci_->update(coeff_);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
 
 }
 
@@ -157,8 +159,11 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // calculate 1RDM in an original basis set
   shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
   // make natural orbitals, update coeff_ and transform rdm1
-  shared_ptr<ZMatrix> natorb_coeff = make_natural_orbitals(rdm1);
-  rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+  shared_ptr<ZMatrix> natorb_coeff;
+  if (nact_) {
+    natorb_coeff = make_natural_orbitals(rdm1);
+    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+  }
 
   assert(coeff_->mdim()== nbasis_*2);
   // qvec
@@ -197,7 +202,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
       shared_ptr<const ZMatrix> afockao = active_fock(rdm1);
       afock = make_shared<ZMatrix>(*coefftmp % *afockao * *coefftmp);
     } else {
-      afock = coefftmp->clone();
+      afock = cfock->clone();
     }
     f = make_shared<ZMatrix>(*cfock + *afock);
   }
