@@ -504,15 +504,30 @@ void Matrix::sqrt() {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
+#ifdef HAVE_SCALAPACK
+  if (localized_) {
+#endif
+    diagonalize(vec.get());
 
-  for (int i = 0; i != n; ++i) {
-    if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-    double s = std::sqrt(std::sqrt(vec[i]));
-    for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+    for (int i = 0; i != n; ++i) {
+      if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      double s = std::sqrt(std::sqrt(vec[i]));
+      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+    }
+
+    *this = *this ^ *this;
+#ifdef HAVE_SCALAPACK
   }
-
-  *this = *this ^ *this;
+  else {
+    unique_ptr<double[]> scal(new double[n]);
+    shared_ptr<DistMatrix> dist = distmatrix();
+    dist->diagonalize(vec.get());
+    for (int i = 0; i != n; ++i)
+      scal[i] = std::sqrt(std::sqrt(vec[i]));
+    dist->scale(scal.get());
+    *this = *(*dist ^ *dist).matrix();
+  }
+#endif
 }
 
 
