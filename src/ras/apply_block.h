@@ -43,9 +43,10 @@ class Apply_block {
     const bool spin_;
 
   private:
-    bool condition(std::bitset<nbit__>& bit) {
-      bool out = action_ ? !bit[orbital_] : bit[orbital_];
-      action_ ? bit.set(orbital_) : bit.reset(orbital_);
+    // takes a potential target string, returns whether it is valid and flips the proper bit in the process
+    bool test_and_set(std::bitset<nbit__>& bit) {
+      bool out = action_ ? bit[orbital_] : !bit[orbital_];
+      action_ ? bit.reset(orbital_) : bit.set(orbital_);
       return out;
     }
 
@@ -67,23 +68,22 @@ class Apply_block {
     void operator()(std::shared_ptr<const BlockTypeA> source, std::shared_ptr<BlockTypeB> target) {
       typedef typename BlockTypeA::data_type DataType;
       if (spin_) {
-          const size_t lb = source->lenb();
-          assert(lb == target->lenb());
-          const DataType* sourcedata = source->data();
-          for (auto& abit : *source->stringsa()) {
-            std::bitset<nbit__> tabit = abit;
-            if (condition(tabit)) { // Also sets bit appropriately
-              DataType* targetdata = target->data() + target->stringsa()->lexical_zero(tabit) * lb;
-              const DataType sign = static_cast<DataType>(this->sign(abit));
-              blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
-            }
-            sourcedata += lb;
+        const size_t lb = source->lenb();
+        assert(lb == target->lenb());
+        for (size_t ia = 0; ia < target->lena(); ++ia) {
+          std::bitset<nbit__> tabit = target->string_bits_a(ia);
+          std::bitset<nbit__> sabit = tabit;
+          if (test_and_set(sabit)) {
+            const DataType* sourcedata = source->data() + source->stringsa()->lexical_zero(sabit) * lb;
+            DataType* targetdata = target->data() + ia * lb;
+            const DataType sign = static_cast<DataType>(this->sign(sabit));
+            blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
           }
+        }
       }
       else {
         const size_t la = source->lena();
         assert( la == target->lena() );
-        const DataType* sourcedata_base = source->data();
 
         const size_t tlb = target->lenb();
         const size_t slb = source->lenb();
@@ -91,17 +91,16 @@ class Apply_block {
         // phase from alpha electrons
         const int alpha_phase = 1 - ((source->stringsa()->nele() & 1) << 1);
 
-        for (auto& bbit : *source->stringsb()) {
-          const DataType* sourcedata = sourcedata_base;
-          std::bitset<nbit__> tbbit = bbit;
-          if (condition(tbbit)) {
-            DataType* targetdata = target->data() + target->stringsb()->lexical_zero(tbbit);
-            const DataType sign = static_cast<DataType>(this->sign(bbit) * alpha_phase);
-            for (size_t i = 0; i < la; ++i, targetdata+=tlb, sourcedata+=slb) {
-              *targetdata += *sourcedata * sign;
+        for (auto& tbbit : *target->stringsb()) {
+          std::bitset<nbit__> sbbit = tbbit;
+          if (test_and_set(sbbit)) {
+            DataType* targetdata_base = target->data() + target->stringsb()->lexical_zero(tbbit);
+            const DataType* sourcedata_base = source->data() + source->stringsb()->lexical_zero(sbbit);
+            const DataType sign = static_cast<DataType>(this->sign(sbbit) * alpha_phase);
+            for (size_t i = 0; i < la; ++i) {
+              targetdata_base[i*tlb] += sourcedata_base[i*slb] * sign;
             }
           }
-          ++sourcedata_base;
         }
       }
     }
