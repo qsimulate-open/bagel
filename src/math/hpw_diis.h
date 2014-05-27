@@ -40,11 +40,13 @@
 
 namespace bagel {
 
-template<class T>
+template<class T, class Mat = Matrix,
+         class = typename std::enable_if<std::is_same<typename Mat::data_type, typename T::data_type>::value>::type
+        >
 class HPW_DIIS  {
   using RefT = std::shared_ptr<const T>;
   protected:
-    DIIS<T> diis_;
+    DIIS<T,Mat> diis_;
     RefT base_;
     const RefT orig_;
     const bool testing_;
