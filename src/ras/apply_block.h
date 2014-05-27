@@ -65,12 +65,15 @@ class Apply_block {
                                               and std::is_same<typename BlockTypeA::data_type, typename BlockTypeB::data_type>::value
                                              >::type
              >
-    void operator()(std::shared_ptr<const BlockTypeA> source, std::shared_ptr<BlockTypeB> target) {
+    void operator()(std::shared_ptr<const BlockTypeA> source, std::shared_ptr<BlockTypeB> target, const bool dist_target = false) {
       typedef typename BlockTypeA::data_type DataType;
+      size_t astart, aend;
+      std::tie(astart, aend) = ( dist_target ? target->stringsa()->dist()->range(mpi__->rank())
+                                             : std::make_tuple(0ul, target->lena()) );
       if (spin_) {
         const size_t lb = source->lenb();
         assert(lb == target->lenb());
-        for (size_t ia = 0; ia < target->lena(); ++ia) {
+        for (size_t ia = astart; ia < aend; ++ia) {
           std::bitset<nbit__> tabit = target->string_bits_a(ia);
           std::bitset<nbit__> sabit = tabit;
           if (test_and_set(sabit)) {
@@ -97,8 +100,8 @@ class Apply_block {
             DataType* targetdata_base = target->data() + target->stringsb()->lexical_zero(tbbit);
             const DataType* sourcedata_base = source->data() + source->stringsb()->lexical_zero(sbbit);
             const DataType sign = static_cast<DataType>(this->sign(sbbit) * alpha_phase);
-            for (size_t i = 0; i < la; ++i) {
-              targetdata_base[i*tlb] += sourcedata_base[i*slb] * sign;
+            for (size_t ia = astart; ia < aend; ++ia) {
+              targetdata_base[ia*tlb] += sourcedata_base[ia*slb] * sign;
             }
           }
         }
