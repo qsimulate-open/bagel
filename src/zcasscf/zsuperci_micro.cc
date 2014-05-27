@@ -206,7 +206,7 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   ZMatrix tmp(nvirt*2, nact*2);
   tmp.zero();
   for (int i = 0; i != nact*2; ++i) {
-    const double fac = std::sqrt(1.0-casscf_->occup(i));
+    const double fac = 1.0 - casscf_->occup(i) > zoccup_thresh ? std::sqrt(1.0-casscf_->occup(i)) : 0.0;
     zaxpy_(nvirt*2, fac, fockact_->element_ptr(nocc*2,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("C", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2); // TODO : check "C" vs "T" here
