@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <src/util/taskqueue.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -528,6 +529,20 @@ void Matrix::sqrt() {
     *this = *(*dist ^ *dist).matrix();
   }
 #endif
+}
+
+// CAUTION: assumes no orbital is rotated twice
+void Matrix::rotate(std::vector<std::tuple<int, int, double>>& rotations) {
+  if (rotations.size() > 6*resources__->max_num_threads()) {
+    TaskQueue<function<void(void)>> tq(rotations.size());
+    for (auto& irot : rotations)
+      tq.emplace_back( [this,irot] { rotate(get<0>(irot), get<1>(irot), get<2>(irot)); } );
+
+    tq.compute();
+  }
+  else {
+    for_each(rotations.begin(), rotations.end(), [this] (tuple<int, int, double> irot) { rotate(get<0>(irot), get<1>(irot), get<2>(irot)); });
+  }
 }
 
 
