@@ -101,12 +101,19 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   const size_t psize = pend - pstart;
   const size_t localorbs = 2*psize;
 
-  auto localQ = make_shared<Matrix>(nbasis_, 2*psize, true);
+  auto right = make_shared<Matrix>(nbasis_, 2*psize, true);
   for (size_t ip = 0; ip < psize; ++ip) {
-    copy_n(Q_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, localQ->element_ptr(0, 2*ip));
-    copy_n(Q_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, localQ->element_ptr(0, 2*ip+1));
+    copy_n(SQ_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, right->element_ptr(0, 2*ip));
+    copy_n(SQ_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, right->element_ptr(0, 2*ip+1));
   }
-  auto localmos = make_shared<Matrix>(*S_ * *localQ);
+
+  shared_ptr<Matrix> left = ( lowdin_ ? right : make_shared<Matrix>(nbasis_, 2*psize, true) );
+  if (!lowdin_) {
+    for (size_t ip = 0; ip < psize; ++ip) {
+      copy_n(Q_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, left->element_ptr(0, 2*ip));
+      copy_n(Q_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, left->element_ptr(0, 2*ip+1));
+    }
+  }
 
   auto P_A = make_shared<Matrix>(localorbs, localorbs, true);
 
@@ -116,12 +123,8 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   for (auto& ibounds : atom_bounds_) {
     const int natombasis = ibounds.second - ibounds.first;
 
-    if (lowdin_)
-      dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, localmos->element_ptr(ibounds.first, 0), nbasis_,
-                              localmos->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
-    else
-      dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, localmos->element_ptr(ibounds.first, 0), nbasis_,
-                              localQ->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
+    dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, left->element_ptr(ibounds.first, 0), nbasis_,
+                              right->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
 
     for (int ip = 0; ip < psize; ++ip) {
       const int kk = 2*ip;
@@ -153,4 +156,5 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   }
 
   Q_->rotate(rotations);
+  SQ_->rotate(rotations);
 }
