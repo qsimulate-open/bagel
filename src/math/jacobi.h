@@ -95,7 +95,10 @@ class JacobiPM : public Jacobi_base {
 
   public:
     JacobiPM(std::shared_ptr<const PTree> input, std::shared_ptr<Matrix> coeff, const int nstart, const int norb, std::shared_ptr<Matrix> S,  std::vector<std::pair<int, int>> atom_bounds, const bool lowdin) :
-      Jacobi_base(input, coeff, nstart, norb), S_(S), atom_bounds_(atom_bounds), lowdin_(lowdin) {}
+      Jacobi_base(input, coeff, nstart, norb), S_(std::make_shared<Matrix>(*S)), atom_bounds_(atom_bounds), lowdin_(lowdin)
+      {
+        S_->localize();
+      }
 };
 
 }

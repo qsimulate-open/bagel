@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <memory>
 #include <list>
+
+#include <src/parallel/staticdist.h>
 #include <src/math/matrix.h>
 #include <src/math/jacobi.h>
 
@@ -90,11 +92,23 @@ void JacobiDiag::rotate(const int k, const int l) {
 }
 
 void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
-  auto mos = make_shared<Matrix>(nbasis_, norb_);
-  auto P_A = make_shared<Matrix>(norb_, norb_);
-
-  dgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->data(), nbasis_, Q_->element_ptr(0, nstart_), nbasis_, 0.0, mos->data(), nbasis_);
   const int npairs = pairlist.size();
+
+  // For parallelization across nodes
+  StaticDist dist(npairs, mpi__->size());
+  size_t pstart, pend;
+  tie(pstart, pend) = dist.range(mpi__->rank());
+  const size_t psize = pend - pstart;
+  const size_t localorbs = 2*psize;
+
+  auto localQ = make_shared<Matrix>(nbasis_, 2*psize, true);
+  for (size_t ip = 0; ip < psize; ++ip) {
+    copy_n(Q_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, localQ->element_ptr(0, 2*ip));
+    copy_n(Q_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, localQ->element_ptr(0, 2*ip+1));
+  }
+  auto localmos = make_shared<Matrix>(*S_ * *localQ);
+
+  auto P_A = make_shared<Matrix>(localorbs, localorbs, true);
 
   vector<double> AA(npairs, 0.0);
   vector<double> BB(npairs, 0.0);
@@ -103,22 +117,25 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
     const int natombasis = ibounds.second - ibounds.first;
 
     if (lowdin_)
-      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
-                              mos->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), norb_);
+      dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, localmos->element_ptr(ibounds.first, 0), nbasis_,
+                              localmos->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
     else
-      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
-                              Q_->element_ptr(ibounds.first, nstart_), nbasis_, 0.0, P_A->data(), norb_);
+      dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, localmos->element_ptr(ibounds.first, 0), nbasis_,
+                              localQ->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
 
-    for (int ipair = 0; ipair < npairs; ++ipair) {
-      const int kk = pairlist[ipair].first - nstart_;
-      const int ll = pairlist[ipair].second - nstart_;
+    for (int ip = 0; ip < psize; ++ip) {
+      const int kk = 2*ip;
+      const int ll = 2*ip + 1;
       const double Qkl_A = 0.5 * (P_A->element( kk, ll ) + P_A->element( ll, kk ));
       const double Qkminusl_A = P_A->element(kk, kk) - P_A->element(ll, ll);
 
-      AA[ipair] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
-      BB[ipair] += Qkl_A*Qkminusl_A;
+      AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
+      BB[ip + pstart] += Qkl_A*Qkminusl_A;
     }
   }
+
+  mpi__->allreduce(AA.data(), AA.size());
+  mpi__->allreduce(BB.data(), BB.size());
 
   vector<tuple<int, int, double>> rotations;
   for (int ipair = 0; ipair < npairs; ++ipair) {
