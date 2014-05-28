@@ -69,18 +69,17 @@ class TaskQueue {
   protected:
     std::vector<T> task_;
     std::list<std::atomic_flag> flag_;
-    int chunck_;
+    static const int chunck_ = 12;
 
   public:
-    TaskQueue(size_t expected = 0) : chunck_(12) { task_.reserve(expected); }
-    TaskQueue(std::vector<T>&& t) : task_(std::move(t)), chunck_(12) { }
+    TaskQueue(size_t expected = 0) { task_.reserve(expected); }
+    TaskQueue(std::vector<T>&& t) : task_(std::move(t)) { }
 
     template<typename ...args>
     void emplace_back(args&&... a) { task_.emplace_back(std::forward<args>(a)...); }
 
     void compute(const int num_threads = resources__->max_num_threads()) {
       if (task_.empty()) return;
-      if (task_.size()/chunck_ < num_threads) chunck_ = (task_.size()-1)/num_threads+1;
 #ifdef HAVE_MKL_H
       const int mkl_num = mkl_get_max_threads();
       mkl_set_num_threads(1);
