@@ -96,8 +96,21 @@ class GammaBranch {
       return contributes;
     }
 
-    bool is_terminal() { return std::any_of(branches_.begin(), branches_.end(),
-      [] (std::shared_ptr<GammaBranch<VecType>> b) { return ( b ? b->active() : false ); }); }
+    // distterminal means there are no alpha operators higher in the tree
+    bool is_distterminal() {
+      bool not_terminal = false;
+      if (branch(GammaSQ::CreateAlpha))
+        not_terminal |= branch(GammaSQ::CreateAlpha)->active();
+      if (branch(GammaSQ::AnnihilateAlpha))
+        not_terminal |= branch(GammaSQ::AnnihilateAlpha)->active();
+      if (!not_terminal) {
+        if (branch(GammaSQ::CreateBeta) && branch(GammaSQ::CreateBeta)->active())
+          not_terminal |= branch(GammaSQ::CreateBeta)->is_distterminal();
+        if (branch(GammaSQ::AnnihilateBeta) && branch(GammaSQ::AnnihilateBeta)->active())
+          not_terminal |= branch(GammaSQ::AnnihilateBeta)->is_distterminal();
+      }
+      return !not_terminal;
+    }
 
 };
 
@@ -413,7 +426,7 @@ class RASTask {
       auto out = std::make_shared<RASBlock_alloc<double>>(ta,tb);
 
       RAS::Apply_block apply_block(orbital, action, spin);
-      apply_block(base_block, out, branch->is_terminal());
+      apply_block(base_block, out, branch->is_distterminal());
 
       return out;
     }
