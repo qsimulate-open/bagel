@@ -34,7 +34,10 @@ namespace bagel {
 class MEH_DistCAS : public MultiExcitonHamiltonian<DistDvec> {
    public:
       MEH_DistCAS(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerDistCAS> cispace) :
-        MultiExcitonHamiltonian<DistDvec>(input, dimer, cispace) {}
+        MultiExcitonHamiltonian<DistDvec>(input, dimer, cispace)
+      {
+        cispace_->intermediates();
+      }
 
    private:
       std::shared_ptr<DistDvec> form_sigma(std::shared_ptr<const DistDvec> ccvec, std::shared_ptr<const MOFile> jop) const override;

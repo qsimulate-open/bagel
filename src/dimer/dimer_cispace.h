@@ -234,7 +234,10 @@ class DimerCISpace_base {
           }
         }
       }
+    }
 
+    // Fills in N-1 electron intermediates for Harrison--Zarrabian CAS algorithm
+    void intermediates() {
       for (auto& imap : cispaceA_) {
         int qa, qb;
         std::tie(qa, qb) = detkey<0>(imap.first);
