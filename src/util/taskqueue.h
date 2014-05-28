@@ -45,13 +45,27 @@
 
 namespace bagel {
 
-namespace {
-  template<typename T> void call_compute(T& task) { task.compute(); }
-  template<typename T> void call_compute(std::shared_ptr<T>& task) { task->compute(); }
-}
-
 template<typename T>
 class TaskQueue {
+
+  private:
+    template <class U>
+    struct has_compute {
+      protected:
+        template<class V> static auto __compute(V* p) -> decltype(p->compute(), std::true_type());
+        template<class  > static std::false_type __compute(...);
+      public:
+        static constexpr const bool value = std::is_same<std::true_type, decltype(__compute<U>(0))>::value;
+    };
+    template<typename U, bool>
+    struct call       { static void compute(U& task) { assert(false); } };
+    template<typename U>
+    struct call<U, true> { static void compute(U& task) { task.compute(); } };
+    template<typename U>
+    struct call<U, false>{ static void compute(U& task) { task(); } };
+    template<typename U> void call_compute(U& task)                  { call<U, has_compute<U>::value>::compute(task); }
+    template<typename U> void call_compute(std::shared_ptr<U>& task) { call<U, has_compute<U>::value>::compute(*task); }
+
   protected:
     std::vector<T> task_;
     std::list<std::atomic_flag> flag_;
