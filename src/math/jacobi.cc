@@ -125,26 +125,19 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
     const int natombasis = ibounds.second - ibounds.first;
     const int boundstart = ibounds.first;
 
-    TaskQueue<function<void(void)>> tq(psize);
-
     for (int ip = 0; ip < psize; ++ip) {
-      tq.emplace_back( [ip, &pstart, &natombasis, &boundstart, &left, &right, &P_A, &AA, &BB] {
+      dgemm_("T", "N", 2, 2, natombasis, 1.0, left->element_ptr(boundstart, 2*ip), left->ndim(),
+          right->element_ptr(boundstart, 2*ip), right->ndim(), 0.0, P_A.element_ptr(2*ip,2*ip), P_A.ndim());
 
-        dgemm_("T", "N", 2, 2, natombasis, 1.0, left->element_ptr(boundstart, 2*ip), left->ndim(),
-                                  right->element_ptr(boundstart, 2*ip), right->ndim(), 0.0, P_A.element_ptr(2*ip,2*ip), P_A.ndim());
+      const int kk = 2*ip;
+      const int ll = 2*ip+1;
 
-        const int kk = 2*ip;
-        const int ll = 2*ip+1;
+      const double Qkl_A = 0.5 * (P_A(kk,ll) + P_A(ll,kk));
+      const double Qkminusl_A = P_A(kk,kk) - P_A(ll,ll);
 
-        const double Qkl_A = 0.5 * (P_A(kk,ll) + P_A(ll,kk));
-        const double Qkminusl_A = P_A(kk,kk) - P_A(ll,ll);
-
-        AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
-        BB[ip + pstart] += Qkl_A*Qkminusl_A;
-      } );
+      AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
+      BB[ip + pstart] += Qkl_A*Qkminusl_A;
     }
-
-    tq.compute();
   }
 
   mpi__->allreduce(AA.data(), AA.size());
