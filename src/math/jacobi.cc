@@ -29,10 +29,12 @@
 #include <algorithm>
 #include <memory>
 #include <list>
+#include <functional>
 
 #include <src/parallel/staticdist.h>
 #include <src/math/matrix.h>
 #include <src/math/jacobi.h>
+#include <src/util/taskqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -99,7 +101,6 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   size_t pstart, pend;
   tie(pstart, pend) = dist.range(mpi__->rank());
   const size_t psize = pend - pstart;
-  const size_t localorbs = 2*psize;
 
   auto right = make_shared<Matrix>(nbasis_, 2*psize, true);
   for (size_t ip = 0; ip < psize; ++ip) {
@@ -115,26 +116,35 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
     }
   }
 
-  auto P_A = make_shared<Matrix>(localorbs, localorbs, true);
+  Matrix P_A(2*psize, 2*psize, true);
 
   vector<double> AA(npairs, 0.0);
   vector<double> BB(npairs, 0.0);
 
   for (auto& ibounds : atom_bounds_) {
     const int natombasis = ibounds.second - ibounds.first;
+    const int boundstart = ibounds.first;
 
-    dgemm_("T", "N", localorbs, localorbs, natombasis, 1.0, left->element_ptr(ibounds.first, 0), nbasis_,
-                              right->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), localorbs);
+    TaskQueue<function<void(void)>> tq(psize);
 
     for (int ip = 0; ip < psize; ++ip) {
-      const int kk = 2*ip;
-      const int ll = 2*ip + 1;
-      const double Qkl_A = 0.5 * (P_A->element( kk, ll ) + P_A->element( ll, kk ));
-      const double Qkminusl_A = P_A->element(kk, kk) - P_A->element(ll, ll);
+      tq.emplace_back( [ip, &pstart, &natombasis, &boundstart, &left, &right, &P_A, &AA, &BB] {
 
-      AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
-      BB[ip + pstart] += Qkl_A*Qkminusl_A;
+        dgemm_("T", "N", 2, 2, natombasis, 1.0, left->element_ptr(boundstart, 2*ip), left->ndim(),
+                                  right->element_ptr(boundstart, 2*ip), right->ndim(), 0.0, P_A.element_ptr(2*ip,2*ip), P_A.ndim());
+
+        const int kk = 2*ip;
+        const int ll = 2*ip+1;
+
+        const double Qkl_A = 0.5 * (P_A(kk,ll) + P_A(ll,kk));
+        const double Qkminusl_A = P_A(kk,kk) - P_A(ll,ll);
+
+        AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
+        BB[ip + pstart] += Qkl_A*Qkminusl_A;
+      } );
     }
+
+    tq.compute();
   }
 
   mpi__->allreduce(AA.data(), AA.size());
