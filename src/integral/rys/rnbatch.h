@@ -33,8 +33,6 @@ namespace bagel {
 
 class RnBatch: public CoulombBatch_energy {
   protected:
-    int max_rterms_;
-
     int get_max_rterms() const {
       int out = 0;
       for (auto& aiter : mol_->atoms())
@@ -62,8 +60,6 @@ class RnBatch: public CoulombBatch_energy {
     }
       
     ~RnBatch() { }
-
-    int max_rterms() const { return max_rterms_; }
 
 };
 

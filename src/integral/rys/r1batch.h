@@ -44,7 +44,7 @@ class R1Batch: public RnBatch {
       : RnBatch (_info, mol, stack) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
+      root_weight(primsize_*natom_*max_rterms_);
     }
 
 
@@ -53,7 +53,7 @@ class R1Batch: public RnBatch {
       : RnBatch (_info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
+      root_weight(primsize_*natom_*max_rterms_);
     }
 
     ~R1Batch() {}

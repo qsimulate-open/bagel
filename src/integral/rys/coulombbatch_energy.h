@@ -38,6 +38,7 @@ class CoulombBatch_energy : public CoulombBatch_Base<double> {
     virtual double scale_root(const double root, const double p, const double zeta) { return root; }
     virtual double scale_weight(const double weight) { return weight; }
     std::vector<std::pair<int, int>> indexecp_;
+    int max_rterms_;
 
   public:
 

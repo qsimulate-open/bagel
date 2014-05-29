@@ -101,9 +101,7 @@ void CoulombBatch_Base<DataType, IntType>::compute_ssss(const double integral_th
         const double Eab = exp(-(AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2]) * (ab * cxp_inv) );
         const double coeff_real = - 2 * Z * pi__ * cxp_inv * Eab;
         coeff_[index] = coeff_real;
-        if (IntType == Int_t::London) {
-          coeff_[index] *= std::exp(factor_ab);
-        }
+        if (IntType == Int_t::London) coeff_[index] *= std::exp(factor_ab);
         const DataType PCx = P_[index * 3    ] - (*aiter)->position(0);
         const DataType PCy = P_[index * 3 + 1] - (*aiter)->position(1);
         const DataType PCz = P_[index * 3 + 2] - (*aiter)->position(2);
