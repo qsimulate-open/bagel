@@ -235,6 +235,8 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   }
 
   print(nstates_, print_thresh_);
+
+  modelize();
 }
 
 #endif

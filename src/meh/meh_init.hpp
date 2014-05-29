@@ -43,8 +43,28 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   print_thresh_ = input->get<double>("print_thresh", 0.01);
   store_matrix_ = input->get<bool>("store_matrix", false);
   charge_ = input->get<int>("charge", 0);
-  // TODO hardcoded to singlets for now
   nspin_ = input->get<int>("spin", 0);
+
+  std::shared_ptr<const PTree> model_input = input->get_child_optional("models");
+  if (model_input) {
+    std::shared_ptr<const PTree> pruning_input = model_input->get_child_optional("pruned");
+    std::vector<int> pruned = (pruning_input ? model_input->get_vector<int>("pruned")
+                                             : std::vector<int>());
+    pruned.push_back(-1);
+    std::cout << "pruned stuff is checked in" << std::endl;
+
+    for (auto& p : pruned) {
+      std::vector<ModelBlock> this_model;
+      std::shared_ptr<const PTree> sblock_input = model_input->get_child("subblocks");
+      for (auto& b : *sblock_input) {
+        std::array<int,2> charges = b->get_array<int, 2>("charges");
+        std::array<int,2> spins = b->get_array<int, 2>("spins");
+        const int nstates = b->get<int>("nstates");
+        this_model.emplace_back( std::make_pair(spins[0],spins[1]), std::make_pair(charges[0],charges[1]), std::make_pair(p,p), nstates );
+      }
+      models_to_form_.emplace_back(std::move(this_model));
+    }
+  }
 
   Timer timer;
 
@@ -54,8 +74,8 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   cispace_->complete();
   std::cout << "  o completing CI spin space: " << timer.tick() << std::endl;
 
+  // Organize subspaces
   dimerstates_ = 0;
-
   int maxspin = 0;
   // Process DimerCISpace to form and organize needed Civecs and figure out maxspin
   for ( auto& aiter : cispace_->template cispace<0>() ) {
@@ -74,7 +94,6 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   max_spin_ = maxspin + 1;
 
   energies_ = std::vector<double>(nstates_, 0.0);
-
   gammaforest_ = std::make_shared<GammaForest<VecType, 2>>();
 }
 

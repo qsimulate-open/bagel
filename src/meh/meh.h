@@ -57,6 +57,28 @@ enum class Coupling {
   inv_bbET = -7
 };
 
+// wrapper for monomer CI wavefunctions that includes extra helpful information
+template <class VecType>
+struct MonomerSubspace_base {
+  const int S_;
+  const int ms_;
+  const int charge_;
+  std::shared_ptr<const VecType> monomerci_;
+
+  MonomerSubspace_base(const int S, const int ms, const int charge, std::shared_ptr<const VecType> monomerci) :
+    S_(S), ms_(ms), charge_(charge), monomerci_(monomerci) {}
+};
+
+struct ModelBlock {
+  std::pair<int, int> S_;
+  std::pair<int, int> charge_;
+  std::pair<int, int> M_;
+  int nstates_;
+
+  ModelBlock(std::pair<int, int> S, std::pair<int, int> q, std::pair<int, int> M, const int nstates) :
+    S_(S), charge_(q), M_(M), nstates_(nstates) {}
+};
+
 template <class VecType>
 class DimerSubspace_base { // until I come up with a better name
   protected:
@@ -66,13 +88,15 @@ class DimerSubspace_base { // until I come up with a better name
     const std::string stringA_;
     const std::string stringB_;
 
-    std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> ci_;
+    std::pair<MonomerSubspace_base<VecType>, MonomerSubspace_base<VecType>> ci_;
     std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
 
   public:
     DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
       offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
-       ci_(_ci) { _offset += dimerstates(); }
+       ci_(std::make_pair(MonomerSubspace_base<VecType>(Akey.S, Akey.m_s, Akey.q, _ci.first),
+                     MonomerSubspace_base<VecType>(Bkey.S, Bkey.m_s, Bkey.q, _ci.second)))
+    { _offset += dimerstates(); }
 
     const int offset() const { return offset_; }
     const int dimerstates() const { return nstatesA_ * nstatesB_; }
@@ -83,8 +107,12 @@ class DimerSubspace_base { // until I come up with a better name
     }
 
     template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
-    template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first : ci_.second ); }
+    template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first.monomerci_ : ci_.second.monomerci_ ); }
     template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
+
+    std::pair<int,int> S() const { return std::make_pair(ci_.first.S_, ci_.second.S_); }
+    std::pair<int,int> ms() const { return std::make_pair(ci_.first.ms_, ci_.second.ms_); }
+    std::pair<int,int> charge() const { return std::make_pair(ci_.first.charge_, ci_.second.charge_); }
 
     template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 
@@ -141,10 +169,14 @@ class MultiExcitonHamiltonian {
       double thresh_;
       double print_thresh_;
 
+      std::vector<std::vector<ModelBlock>> models_to_form_;
+      std::vector<std::shared_ptr<Matrix>> models_;
+
    public:
       MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
       void compute();
+      void modelize();
 
       std::vector<double> energy() const { return energies_; }
       double energy(const int i) const { return energies_.at(i); }
@@ -198,6 +230,7 @@ class MultiExcitonHamiltonian {
 #include <src/meh/meh_compute_offdiagonal.hpp>
 #include <src/meh/meh_gamma_coupling.hpp>
 #include <src/meh/meh_init.hpp>
+#include <src/meh/meh_modelize.hpp>
 #include <src/meh/meh_spin_coupling.hpp>
 #undef MEH_HEADERS
 
