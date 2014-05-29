@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_compute.h
+// Filename: meh_compute.hpp
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -25,19 +25,24 @@
 
 #ifdef MEH_HEADERS
 
-#ifndef BAGEL_MEH_H
-#define BAGEL_MEH_H
+#ifndef BAGEL_MEH_COMPUTE_H
+#define BAGEL_MEH_COMPUTE_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Matrix> cc) {
+void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Matrix> cc, std::vector<DSubSpace>& subspaces, int nstates) {
   int trialsize = 0;
   int nguess = nguess_;
 
-  std::map<double, std::vector<int>> seeds;
-  for (int state = 0; state < dimerstates_; ++state)
-    seeds[denom_[state]].push_back(state);
+  const int subspace_states = std::accumulate(subspaces.begin(), subspaces.end(), 0,
+                                              [] (int x, const DSubSpace& s) { return s.dimerstates()+x; });
 
-  while (trialsize < nstates_) {
+  std::map<double, std::vector<int>> seeds;
+  for(auto& ispace : subspaces) {
+    for(int state = ispace.offset(); state < ispace.offset()+ispace.dimerstates(); ++state)
+      seeds[denom_[state]].push_back(state);
+  }
+
+  while (trialsize < nstates) {
     std::vector<int> b;
     b.reserve(nguess);
 
@@ -65,7 +70,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
 
     trialsize = end - start;
 
-    if (trialsize >= nstates_) {
+    if (trialsize >= nstates) {
       basis = (*basis * *spn).slice(start, end);
 
       std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis);
@@ -77,7 +82,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
       for (int i = 0; i < nstates_; ++i)
         std::copy_n(basis->element_ptr(0, i), basis->ndim(), cc->element_ptr(0, i));
     }
-    else if (nguess >= dimerstates_) {
+    else if (nguess >= subspace_states) {
       throw std::runtime_error("Requesting more spin allowed states than exist in MEH space");
     }
     else {
@@ -148,7 +153,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   DavidsonDiag<Matrix> davidson(nstates_, davidson_subspace_);
 
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
-  generate_initial_guess(cc);
+  generate_initial_guess(cc, subspaces_, nstates_);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl << std::endl;
 
   std::vector<int> conv(nstates_, static_cast<int>(false));
