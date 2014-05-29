@@ -94,15 +94,13 @@ class Apply_block {
         // phase from alpha electrons
         const int alpha_phase = 1 - ((source->stringsa()->nele() & 1) << 1);
 
-        for (auto& tbbit : *target->stringsb()) {
-          std::bitset<nbit__> sbbit = tbbit;
+        for (size_t ib = 0; ib < tlb; ++ib) {
+          std::bitset<nbit__> sbbit = target->string_bits_b(ib);
           if (test_and_set(sbbit)) {
-            DataType* targetdata_base = target->data() + target->stringsb()->lexical_zero(tbbit);
+            DataType* targetdata_base = target->data() + ib;
             const DataType* sourcedata_base = source->data() + source->stringsb()->lexical_zero(sbbit);
             const DataType sign = static_cast<DataType>(this->sign(sbbit) * alpha_phase);
-            for (size_t ia = astart; ia < aend; ++ia) {
-              targetdata_base[ia*tlb] += sourcedata_base[ia*slb] * sign;
-            }
+            daxpy_(aend-astart, sign, sourcedata_base + astart*slb, slb, targetdata_base + astart*tlb, tlb);
           }
         }
       }
