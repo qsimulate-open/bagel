@@ -33,6 +33,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
   // makes, prints, and stores multiple model Hamiltonians
   for(auto& model : models_to_form_) {
     std::vector<std::shared_ptr<Matrix>> modelstates;
+    std::vector<double> diagonals;
     std::cout << "Building model Hamiltonian from model states:" << std::endl;
     for(auto& block : model) {
       int S_A, q_A, S_B, q_B;
@@ -46,16 +47,14 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
         if ( block.S_ == sp.S() && block.charge_ == sp.charge() )
           blocks_in_subspace.push_back(sp);
 
-      // Diagonalize in subspace
-
-      // initial guess
+      // diagonalize in subspace
       auto cc = std::make_shared<Matrix>(dimerstates_, nstates);
       generate_initial_guess(cc, blocks_in_subspace, nstates);
-
-      // Davidson diagonalize
+      std::vector<double> eigenvalues = diagonalize(cc, blocks_in_subspace, /*mute=*/true);
 
       // append to model space
       modelstates.push_back(cc);
+      diagonals.insert(diagonals.end(), eigenvalues.begin(), eigenvalues.end());
     }
 
     std::cout << std::endl;
@@ -71,10 +70,10 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
     auto model_hamiltonian = std::make_shared<Matrix>(*modelsigma % *modelcc);
 
     const double E0 = model_hamiltonian->element(0,0);
-    std::cout << " Model Hamiltonian (in eV) with E_0 = " << E0 << " H" << std::endl;
+    std::cout << "E_0 = " << E0 << " H" << std::endl;
     model_hamiltonian->add_diag(-E0);
     model_hamiltonian->scale(au2eV__);
-    model_hamiltonian->print("", modelsize);
+    model_hamiltonian->print("Model Hamiltonian (eV)", modelsize);
   }
 }
 

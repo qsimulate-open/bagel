@@ -51,7 +51,6 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
     std::vector<int> pruned = (pruning_input ? model_input->get_vector<int>("pruned")
                                              : std::vector<int>());
     pruned.push_back(-1);
-    std::cout << "pruned stuff is checked in" << std::endl;
 
     for (auto& p : pruned) {
       std::vector<ModelBlock> this_model;

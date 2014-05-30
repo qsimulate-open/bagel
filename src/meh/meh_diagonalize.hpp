@@ -79,8 +79,6 @@ std::vector<double> MultiExcitonHamiltonian<VecType>::diagonalize(std::shared_pt
 
   DavidsonDiag<Matrix> davidson(nstates, davidson_subspace_);
 
-  if (!mute) std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl << std::endl;
-
   std::vector<bool> conv(nstates, false);
   std::vector<double> out(nstates, 0.0);
 
@@ -110,7 +108,7 @@ std::vector<double> MultiExcitonHamiltonian<VecType>::diagonalize(std::shared_pt
     }
 
     if (std::any_of(conv.begin(), conv.end(), [] (const bool t) { return (!t); })) {
-      for (int ist = 0; ist != nstates_; ++ist) {
+      for (int ist = 0; ist != nstates; ++ist) {
         if (conv.at(ist)) continue;
         auto tmp_cc = std::make_shared<Matrix>(dimerstates_, 1);
         double* target_array = tmp_cc->data();
