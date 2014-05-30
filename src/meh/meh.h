@@ -182,9 +182,9 @@ class MultiExcitonHamiltonian {
       double energy(const int i) const { return energies_.at(i); }
 
       void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
-      void print_adiabats(const double thresh = 0.05, const std::string title = "Adiabats", const int nstates = 10) const;
+      void print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh = 0.01, const std::string title = "Adiabats") const;
       void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
-      void print(const int nstates = 10, const double thresh = 0.05) const;
+      void print(const double thresh = 0.01) const;
 
       const Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
 

@@ -192,15 +192,15 @@ void MultiExcitonHamiltonian<VecType>::print_hamiltonian(const std::string title
 
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print_adiabats(const double thresh, const std::string title, const int nstates) const {
-  const int end = std::min(nstates, adiabats_->mdim());
-  std::shared_ptr<Matrix> spn = spin_->apply(*adiabats_);
+void MultiExcitonHamiltonian<VecType>::print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh, const std::string title) const {
+  const int nstates = cc.mdim();
+  std::shared_ptr<Matrix> spn = spin_->apply(cc);
   std::cout << std::endl << " ===== " << title << " =====" << std::endl;
-  for (int istate = 0; istate < end; ++istate) {
+  for (int istate = 0; istate < nstates; ++istate) {
     std::cout << "   state  " << std::setw(3) << istate << ": "
-         << std::setprecision(8) << std::setw(17) << std::fixed << energies_.at(istate)
-         << "   <S^2> = " << std::setw(4) << std::setprecision(4) << std::fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, adiabats_->element_ptr(0,istate), 1) << std::endl;
-    double *eigendata = adiabats_->element_ptr(0,istate);
+         << std::setprecision(8) << std::setw(17) << std::fixed << energies.at(istate)
+         << "   <S^2> = " << std::setw(4) << std::setprecision(4) << std::fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, cc.element_ptr(0,istate), 1) << std::endl;
+    const double *eigendata = cc.element_ptr(0,istate);
     double printed = 0.0;
     for (auto& subspace : subspaces_) {
       const int nA = subspace.template nstates<0>();
@@ -237,9 +237,9 @@ void MultiExcitonHamiltonian<VecType>::print_property(const std::string label, s
 }
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print(const int nstates, const double thresh) const {
-  print_adiabats(thresh, "Adiabatic States", nstates);
-  if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates); }
+void MultiExcitonHamiltonian<VecType>::print(const double thresh) const {
+  print_states(*adiabats_, energies_, thresh, "Adiabatic States");
+  if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
 }
 
 #endif

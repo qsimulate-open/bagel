@@ -66,6 +66,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       modelcc->copy_block(0, offset, dimerstates_, m->mdim(), *m);
       offset += m->mdim();
     }
+    print_states(*modelcc, diagonals, print_thresh_, "Model states");
     std::shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_);
     auto model_hamiltonian = std::make_shared<Matrix>(*modelsigma % *modelcc);
 
