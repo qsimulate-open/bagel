@@ -193,6 +193,7 @@ class MultiExcitonHamiltonian {
 
       void generate_initial_guess(std::shared_ptr<Matrix> cc, std::vector<DSubSpace>& subspace, const int nstates);
       std::shared_ptr<Matrix> apply_hamiltonian(const Matrix& o, std::vector<DSubSpace>& subspaces);
+      std::vector<double> diagonalize(std::shared_ptr<Matrix>& cc, std::vector<DSubSpace>& subspace, const bool mute = false);
 
       std::shared_ptr<Matrix> compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
       std::shared_ptr<Matrix> compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const;
@@ -231,6 +232,7 @@ class MultiExcitonHamiltonian {
 #include <src/meh/meh_gamma_coupling.hpp>
 #include <src/meh/meh_init.hpp>
 #include <src/meh/meh_modelize.hpp>
+#include <src/meh/meh_diagonalize.hpp>
 #include <src/meh/meh_spin_coupling.hpp>
 #undef MEH_HEADERS
 

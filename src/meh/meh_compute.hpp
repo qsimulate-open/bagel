@@ -150,76 +150,13 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   }
 
   std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
-  DavidsonDiag<Matrix> davidson(nstates_, davidson_subspace_);
-
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
   generate_initial_guess(cc, subspaces_, nstates_);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl << std::endl;
 
-  std::vector<int> conv(nstates_, static_cast<int>(false));
+  energies_ = diagonalize(cc, subspaces_);
 
-  for (int iter = 0; iter != max_iter_; ++iter) {
-    std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc, subspaces_);
-
-    std::vector<std::shared_ptr<const Matrix>> sigman;
-    std::vector<std::shared_ptr<const Matrix>> ccn;
-    for (int i = 0; i != nstates_; ++i) {
-      if (!conv[i]) {
-        sigman.push_back(sigma->slice(i,i+1));
-        ccn.push_back(cc->slice(i,i+1));
-      }
-      else {
-        sigman.push_back(std::shared_ptr<const Matrix>());
-        ccn.push_back(std::shared_ptr<const Matrix>());
-      }
-    }
-    const std::vector<double> energies = davidson.compute(ccn, sigman);
-
-    // residual
-    std::vector<std::shared_ptr<Matrix>> errvec = davidson.residual();
-    std::vector<double> errors;
-    for (int i = 0; i != nstates_; ++i) {
-      errors.push_back(errvec.at(i)->rms());
-      conv.at(i) = static_cast<int>(errors.at(i) < thresh_);
-    }
-
-    if (!*min_element(conv.begin(), conv.end())) {
-      for (int ist = 0; ist != nstates_; ++ist) {
-        if (conv.at(ist)) continue;
-        const int size = dimerstates_;
-        auto tmp_cc = std::make_shared<Matrix>(dimerstates_, 1);
-        double* target_array = tmp_cc->data();
-        double* source_array = errvec.at(ist)->data();
-        const double en = energies.at(ist);
-        for (int i = 0; i != size; ++i) {
-          target_array[i] = source_array[i] / std::min(en - denom_[i], -0.1);
-        }
-        std::list<std::shared_ptr<const Matrix>> tmp;
-        spin_->filter(*tmp_cc, nspin_);
-        double nrm = tmp_cc->norm();
-        double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
-        tmp_cc->scale(scal);
-        std::copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
-      }
-      cc->broadcast();
-    }
-
-    if (nstates_ != 1 && iter) std::cout << std::endl;
-    for (int i = 0; i != nstates_; ++i) {
-      std::cout << std::setw(7) << iter << std::setw(3) << i << std::setw(2) << (conv[i] ? "*" : " ")
-                              << std::setw(17) << std::fixed << std::setprecision(8) << energies[i] << "   "
-                              << std::setw(10) << std::scientific << std::setprecision(2) << errors[i] << "   "
-                              << std::fixed << std::setw(10) << std::setprecision(2) << mehtime.tick() << std::endl;
-      energies_.at(i) = energies[i];
-    }
-    if (*min_element(conv.begin(), conv.end())) break;
-  }
-
-  adiabats_ = std::make_shared<Matrix>(dimerstates_, nstates_);
-  std::vector<std::shared_ptr<Matrix>> advec = davidson.civec();
-  for (int i = 0; i != nstates_; ++i) {
-    std::copy_n(advec.at(i)->data(), dimerstates_, adiabats_->element_ptr(0, i));
-  }
+  adiabats_ = cc->copy();
 
   if ( dipoles_ ) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;

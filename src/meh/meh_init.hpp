@@ -141,47 +141,6 @@ const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& 
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(const Matrix& o, std::vector<DSubSpace>& subspaces) {
-  const int nstates = o.mdim();
-
-  std::shared_ptr<Matrix> out = o.clone();
-  for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
-    const int ioff = iAB->offset();
-    for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
-      const int joff = jAB->offset();
-
-      if (store_matrix_) {
-        dgemm_("N", "N", iAB->dimerstates(), nstates, jAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, joff), hamiltonian_->ndim(),
-                                                                                o.element_ptr(joff, 0), o.ndim(),
-                                                                           1.0, out->element_ptr(ioff, 0), out->ndim());
-        dgemm_("T", "N", jAB->dimerstates(), nstates, iAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, joff), hamiltonian_->ndim(),
-                                                                                o.element_ptr(ioff, 0), o.ndim(),
-                                                                           1.0, out->element_ptr(joff, 0), out->ndim());
-      }
-      else {
-        std::shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
-
-        dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
-        dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
-      }
-    }
-
-    if (store_matrix_) {
-      dgemm_("N", "N", iAB->dimerstates(), nstates, iAB->dimerstates(), 1.0, hamiltonian_->element_ptr(ioff, ioff), hamiltonian_->ndim(),
-                                                                             o.element_ptr(ioff, 0), o.ndim(),
-                                                                        1.0, out->element_ptr(ioff, 0), out->ndim());
-    }
-    else {
-      std::shared_ptr<const Matrix> block = compute_diagonal_block(*iAB);
-      dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), out->ndim());
-    }
-  }
-
-  return out;
-}
-
-
-template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
 
   auto out = std::make_shared<Matrix>(dimerstates_, dimerstates_);
