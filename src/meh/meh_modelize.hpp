@@ -33,16 +33,13 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
   // makes, prints, and stores multiple model Hamiltonians
   for(auto& model : models_to_form_) {
     std::vector<std::shared_ptr<Matrix>> modelstates;
-    std::cout << "Asking to build a model Hamiltonian from:" << std::endl;
+    std::cout << "Building model Hamiltonian from model states:" << std::endl;
     for(auto& block : model) {
       int S_A, q_A, S_B, q_B;
       std::tie(S_A, S_B) = block.S_;
       std::tie(q_A, q_B) = block.charge_;
       const int nstates = block.nstates_;
-      std::cout << "  -";
-      std::cout << " (" << S_A << ", " << q_A << ", " << nstates << ")";
-      std::cout << " (" << S_B << ", " << q_B << ", " << nstates << ")";
-      std::cout << std::endl;
+      std::cout << "  o S: (" << S_A << ", " << S_B << "), Q: (" << q_A << ", " << q_B << "), nstates: " << nstates << std::endl;
 
       std::vector<DSubSpace> blocks_in_subspace;
       for (auto& sp : subspaces_)
@@ -60,6 +57,8 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       // append to model space
       modelstates.push_back(cc);
     }
+
+    std::cout << std::endl;
 
     const int modelsize = std::accumulate(modelstates.begin(), modelstates.end(), 0, [] (int x, std::shared_ptr<const Matrix> m) { return x + m->mdim(); });
     auto modelcc = std::make_shared<Matrix>(dimerstates_, modelsize);
