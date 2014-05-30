@@ -79,7 +79,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
       H->diagonalize(energies.data());
 
       basis = std::make_shared<Matrix>(*basis * *H);
-      for (int i = 0; i < nstates_; ++i)
+      for (int i = 0; i < nstates; ++i)
         std::copy_n(basis->element_ptr(0, i), basis->ndim(), cc->element_ptr(0, i));
     }
     else if (nguess >= subspace_states) {

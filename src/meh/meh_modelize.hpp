@@ -53,6 +53,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
 
       // initial guess
       auto cc = std::make_shared<Matrix>(dimerstates_, nstates);
+      generate_initial_guess(cc, blocks_in_subspace, nstates);
 
       // Davidson diagonalize
 
