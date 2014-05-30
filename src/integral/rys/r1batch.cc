@@ -73,7 +73,7 @@ void R1Batch::compute_ssss(const double integral_thresh) {
                 T_[index] = T;
                 screening_[screening_size_] = index;
                 ++screening_size_;
-                indexecp_.push_back(make_pair(std::distance(atoms.begin(), aiter), i));
+                indexecp_.push_back(i);
               } else {
                 T_[index] = -1.0;
                 coeff_[index] = 0.0;
