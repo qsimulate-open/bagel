@@ -70,7 +70,12 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
     }
     std::shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_);
     auto model_hamiltonian = std::make_shared<Matrix>(*modelsigma % *modelcc);
-    model_hamiltonian->print("Model Hamiltonian", modelsize);
+
+    const double E0 = model_hamiltonian->element(0,0);
+    std::cout << " Model Hamiltonian (in eV) with E_0 = " << E0 << " H" << std::endl;
+    model_hamiltonian->add_diag(-E0);
+    model_hamiltonian->scale(au2eV__);
+    model_hamiltonian->print("", modelsize);
   }
 }
 
