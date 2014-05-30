@@ -73,7 +73,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
     if (trialsize >= nstates) {
       basis = (*basis * *spn).slice(start, end);
 
-      std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis);
+      std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_);
       auto H = std::make_shared<Matrix>(*sigma % *basis);
       std::vector<double> energies(trialsize, 0.0);
       H->diagonalize(energies.data());
@@ -159,7 +159,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   std::vector<int> conv(nstates_, static_cast<int>(false));
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc);
+    std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc, subspaces_);
 
     std::vector<std::shared_ptr<const Matrix>> sigman;
     std::vector<std::shared_ptr<const Matrix>> ccn;
