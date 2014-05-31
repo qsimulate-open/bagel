@@ -368,7 +368,9 @@ class DistRASCivector : public RASCivector_base<DistCIBlock<DataType>> {
         }
 
         for (auto& i : tmp) {
-          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->norb())
+          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0))
+                    << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0), det_->ras(0)+det_->ras(1))
+                    << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0)+det_->ras(1), det_->norb())
                     << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
 
         }
@@ -591,9 +593,11 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
           }
         }
       }
-      for (auto& iter : tmp)
-        std::cout << "       " << print_bit(std::get<1>(iter.second), std::get<2>(iter.second), det_->norb())
-                  << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
+      for (auto& i : tmp)
+        std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0))
+                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0), det_->ras(0)+det_->ras(1))
+                  << "-" << print_bit(std::get<1>(i.second), std::get<2>(i.second), det_->ras(0)+det_->ras(1), det_->norb())
+                  << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
     }
 
     void synchronize(const int root = 0) {
