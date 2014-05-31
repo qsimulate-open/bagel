@@ -35,12 +35,18 @@ using namespace bagel;
 using namespace std;
 
 const static SphUSPList sphusplist;
+const static DoubleFactorial df;
 
 AngularBatch::AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
                            const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                            const bool print, const int max_iter, const double thresh_int)
  : RadialInt(print, max_iter, thresh_int),
-   basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) { init(); }
+   basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {
+
+  init();
+  map_angular_number();
+
+}
 
 double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
 
@@ -54,6 +60,24 @@ double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
   const double coeff = sqrt(0.25 * (2*l1 + 1) * (2*l2 + 1) * (2*l3 + 1) / pi__);
 
   return coeff * w1 * w2;
+
+}
+
+void AngularBatch::map_angular_number() {
+
+  for (int l = 0; l != ANG_HRR_END; ++l) {
+    map<int, array<int, 3>> mapl;
+    int key = 0;
+    for (int z = 0; z <= l; ++z) {
+      for (int y = 0; y <= l - z; ++y) {
+        const int x = l - y - z;
+        array<int, 3> xyz = {{x, y, z}};
+        mapl.insert(make_pair(key, xyz));
+        ++key;
+      }
+    }
+    map_.push_back(mapl);
+  }
 
 }
 
@@ -71,54 +95,60 @@ double AngularBatch::integrate3USP(array<int, 3> xyz_exponents) const {
 
 }
 
-double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, int> lm2, const array<int, 3> ijk) const {
+double AngularBatch::project_AB(const int l, const vector<double> usp, const double r) {
 
-  vector<double> usp1, usp2;
-  sphusplist.sphuspfunc_call(lm1.first, lm1.second, usp1);
-  sphusplist.sphuspfunc_call(lm2.first, lm2.second, usp2);
+  vector<double> bessel(l0_+l+1);
+  const int begin0 = basisinfo_[0]->contraction_ranges(cont0_).first;
+  const int end0   = basisinfo_[0]->contraction_ranges(cont0_).second;
+  for (int i0 = begin0; i0 != end0; ++i0) {
+    const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
+    const double exp0  = basisinfo_[0]->exponents(i0);
+    const double fac = coef0 * exp(-exp0 * pow(dAB_-r, 2));
+    for (int i = 0; i <= l0_+l; ++i) {
+      MSphBesselI msbessel(i);
+      bessel[i] += fac * msbessel.compute(2.0 * exp0 * dAB_ * r);
+    }
+  }
 
   double out = 0.0;
-  for (int i = 0; i != usp1.size(); ++i) {
-    if (usp1[i] != 0.0) {
-      array<int, 3> ki = {0, 0, 0};
-      int kz = 0;
-      int index = i;
-      for (int lp = lm1.first + 1; lp != 0; --lp)
-        if (index - lp < 0) {
-          ki[2] = kz;
-          ki[1] = index;
-          ki[0] = lm1.first - ki[2] - ki[1];
-          break;
-        } else {
-          kz++;
-          index -= lp;
-        }
+  for (int j = 0; j != usp.size(); ++j) {
+    if (usp[j] != 0.0) {
+      map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+      assert (pj != map_[l].end());
+      const array<int, 3> kj = pj->second;
 
-      for (int j = 0; j != usp2.size(); ++j) {
-        if (usp2[j] != 0.0) {
-          array<int, 3> kj = {0, 0, 0};
-          kz = 0;
-          index = j;
-          for (int lp = lm2.first + 1; lp != 0; --lp)
-            if (index - lp < 0) {
-              kj[2] = kz;
-              kj[1] = index;
-              kj[0] = lm2.first - kj[2] - kj[1];
-              break;
-            } else {
-              kz++;
-              index -= lp;
+      for (int kx = 0; kx <= ang0_[0]; ++kx)
+      for (int ky = 0; ky <= ang0_[1]; ++ky)
+      for (int kz = 0; kz <= ang0_[2]; ++kz) {
+        const int lk = kx + ky + kz;
+        double sld = 0.0;
+        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
+          if ((l + lk - ld) % 2 == 0) {
+            double smu = 0.0;
+            for (int mu = 0; mu <= 2 * ld; ++mu) {
+
+              vector<double> usp1;
+              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              double sAB = 0.0;
+              for (int i = 0; i != usp1.size(); ++i) {
+                if (usp1[i] != 0.0) {
+                  map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
+                  assert (p != map_[ld].end());
+                  const array<int, 3> ki = p->second;
+                  const int x = ki[0] + kj[0] + kx;
+                  const int y = ki[1] + kj[1] + ky;
+                  const int z = ki[2] + kj[2] + kz;
+                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                  sAB += usp1[i] * usp[j] * xyz;
+                }
+              }
+              smu += zAB_[ld][mu] * sAB;
             }
-
-          const double coeff = usp1[i] * usp2[j];
-
-          const int x = ki[0] + kj[0] + ijk[0];
-          const int y = ki[1] + kj[1] + ijk[1];
-          const int z = ki[2] + kj[2] + ijk[2];
-
-          array<int, 3> xyz = {x, y, z};
-          out += coeff * integrate3USP(xyz);
+            sld += smu * bessel[ld];
+          }
         }
+        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
+        out += sld * c0_[index] * pow(r, lk) * pow(-1.0, lk - l0_);
       }
     }
   }
@@ -127,45 +157,31 @@ double AngularBatch::integrate2SH1USP(const pair<int, int> lm1, const pair<int, 
 
 }
 
-double AngularBatch::project_AB(const double expA, const int l, const int m, const double r) {
+double AngularBatch::project_CB(const int l, const vector<double> usp, const double r) {
 
-  const int l0 = ang0_[0] + ang0_[1] + ang0_[2];
+  vector<double> bessel(l1_+l+1);
+
+  const int begin1 = basisinfo_[1]->contraction_ranges(cont1_).first;
+  const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
+  for (int i1 = begin1; i1 != end1; ++i1) {
+    const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
+    const double exp1  = basisinfo_[1]->exponents(i1);
+    const double fac = coef1 * exp(-exp1 * pow(dCB_-r, 2));
+    for (int i = 0; i <= l1_+l; ++i) {
+      MSphBesselI msbessel(i);
+      bessel[i] += fac * msbessel.compute(2.0 * exp1 * dCB_ * r);
+    }
+  }
+
   double out = 0.0;
-  for (int kx = 0; kx <= ang0_[0]; ++kx)
-    for (int ky = 0; ky <= ang0_[1]; ++ky)
-      for (int kz = 0; kz <= ang0_[2]; ++kz) {
-        const int lk = kx + ky + kz;
-        double sld = 0.0;
-        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
-          if ((l + lk - ld) % 2 == 0) {
-            double smu = 0.0;
-            for (int mu = 0; mu <= 2 * ld; ++mu) {
-              shared_ptr<SphHarmonics> sphAB = make_shared<SphHarmonics>(ld, mu-ld, AB_);
-              const double Z_AB = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphAB->zlm());
+  for (int j = 0; j != usp.size(); ++j) {
+    if (usp[j] != 0.0) {
+      map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+      assert (pj != map_[l].end());
+      const array<int, 3> kj = pj->second;
 
-              const array<int, 3> exp = {kx, ky, kz};
-              const pair<int, int> lm1(ld, mu-ld);
-              const pair<int, int> lm2(l, m);
-              smu += Z_AB * integrate2SH1USP(lm1, lm2, exp);
-            }
-            MSphBesselI msbessel(ld);
-            sld += smu * msbessel.compute(2.0 * expA * dAB_ * r);
-          }
-        }
-        const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
-        out += sld * c0_[index] * pow(r, lk) * pow(-1.0, lk - l0);
-      }
-
-  return out * exp(-expA * pow(dAB_-r, 2));
-
-}
-
-double AngularBatch::project_CB(const double expC, const int l, const int m, const double r) {
-
-  const int l1 = ang1_[0] + ang1_[1] + ang1_[2];
-  double out = 0.0;
-  for (int kx = 0; kx <= ang1_[0]; ++kx)
-    for (int ky = 0; ky <= ang1_[1]; ++ky)
+      for (int kx = 0; kx <= ang1_[0]; ++kx)
+      for (int ky = 0; ky <= ang1_[1]; ++ky)
       for (int kz = 0; kz <= ang1_[2]; ++kz) {
         const int lk = kx + ky + kz;
         double sld = 0.0;
@@ -173,67 +189,58 @@ double AngularBatch::project_CB(const double expC, const int l, const int m, con
           if ((l + lk - ld) % 2 == 0) {
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
-              shared_ptr<SphHarmonics> sphCB = make_shared<SphHarmonics>(ld, mu-ld, CB_);
-              const double Z_CB = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : sphCB->zlm());
 
-              const array<int, 3> exp = {kx, ky, kz};
-              const pair<int, int> lm1(ld, mu-ld);
-              const pair<int, int> lm2(l, m);
-              smu += Z_CB * integrate2SH1USP(lm1, lm2, exp);
+              vector<double> usp1;
+              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              double sCB = 0.0;
+              for (int i = 0; i != usp1.size(); ++i) {
+                if (usp1[i] != 0.0) {
+                  map<int, array<int, 3>>::const_iterator p = map_[ld].find(i);
+                  assert (p != map_[ld].end());
+                  const array<int, 3> ki = p->second;
+                  const int x = ki[0] + kj[0] + kx;
+                  const int y = ki[1] + kj[1] + ky;
+                  const int z = ki[2] + kj[2] + kz;
+                  const double xyz = (x % 2 == 0 && y % 2 == 0 && z % 2 == 0) ? (4.0 * pi__ * df(x-1) * df(y-1) * df(z-1) / df(x+y+z+1)) : 0.0;
+                  sCB += usp1[i] * usp[j] * xyz;
+                }
+              }
+              smu += zCB_[ld][mu] * sCB;
             }
-            MSphBesselI msbessel(ld);
-            sld += smu * msbessel.compute(2.0 * expC * dCB_ * r);
+            sld += smu * bessel[ld];
           }
         }
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
-        out += sld * c1_[index] * pow(r, lk) * pow(-1.0, lk - l1);
+        out += sld * c1_[index] * pow(r, lk) * pow(-1.0, lk - l1_);
       }
+    }
+  }
 
-  return out * exp(-expC * pow(dCB_-r, 2));
-
-}
-
-double AngularBatch::project_many_centres(const double expA, const double expC, const double r) {
-
- vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
-
- double out = 0.0;
- for (auto& ishecp : shells_ecp) {
-   const int l = ishecp->angular_number();
-   if (l != ecp_->ecp_maxl())
-     for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
-       if (ishecp->ecp_coefficients(i) != 0)
-         for (int m = 0; m <= 2*l; ++m)
-           out += ishecp->ecp_coefficients(i) * pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r)
-                                              * project_AB(expA, l, m-l, r) * project_CB(expC, l, m-l, r);
- }
-
- return out;
+  return out;
 
 }
 
 double AngularBatch::compute(const double r) {
 
-    double out = 0.0;
+  vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
+  double out = 0.0;
 
-    const int begin0 = basisinfo_[0]->contraction_ranges(cont0_).first;
-    const int end0   = basisinfo_[0]->contraction_ranges(cont0_).second;
-    for (int i0 = begin0; i0 != end0; ++i0) {
-      const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
-      const double exp0  = basisinfo_[0]->exponents(i0);
-
-      const int begin1 = basisinfo_[1]->contraction_ranges(cont1_).first;
-      const int end1   = basisinfo_[1]->contraction_ranges(cont1_).second;
-      for (int i1 = begin1; i1 != end1; ++i1) {
-        const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
-        const double exp1  = basisinfo_[1]->exponents(i1);
-
-        out += 16.0 * pi__ * pi__ * coef0 * coef1 * project_many_centres(exp0, exp1, r);
-
+  for (auto& ishecp : shells_ecp) {
+    const int l = ishecp->angular_number();
+    if (l != ecp_->ecp_maxl()) {
+      for (int m = 0; m <= 2*l; ++m) {
+        vector<double> usp;
+        sphusplist.sphuspfunc_call(l, m-l, usp);
+        const double ABC = project_AB(l, usp, r) * project_CB(l, usp, r);
+        for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
+          if (ishecp->ecp_coefficients(i) != 0)
+          out += ishecp->ecp_coefficients(i) * pow(r, ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r * r) * ABC;
       }
     }
+  }
 
-  return out;
+
+  return 16.0 * pi__ * pi__ * out;
 
 }
 
@@ -273,6 +280,21 @@ void AngularBatch::init() {
         c1_[index] = ckx * cky * ckz;
       }
     }
+  }
+
+  l0_ = ang0_[0] + ang0_[1] + ang0_[2];
+  l1_ = ang1_[0] + ang1_[1] + ang1_[2];
+
+  for (int l = 0; l != max(l0_, l1_) + ecp_->ecp_maxl(); ++l) {
+    vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
+    for (int m = 0; m <= 2*l; ++m) {
+      shared_ptr<SphHarmonics> shAB = make_shared<SphHarmonics>(l, m-l, AB_);
+      zAB_l[m] = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
+      shared_ptr<SphHarmonics> shCB = make_shared<SphHarmonics>(l, m-l, CB_);
+      zCB_l[m] = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
+    }
+    zAB_.push_back(zAB_l);
+    zCB_.push_back(zCB_l);
   }
 
 }

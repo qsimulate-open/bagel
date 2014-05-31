@@ -35,6 +35,7 @@ void RadialInt::integrate() {
   int n0 = 31;
   vector<int> sigma1(n0);
   vector<double> f(n0);
+//transform_Becke(n0);
   transform_Ahlrichs(n0);
   for (int i = 0; i != r_.size(); ++i) {
     f[i] = compute(r_[i]);
@@ -45,8 +46,8 @@ void RadialInt::integrate() {
   int n1 = n0*2+1;
 
   for (int iter = 1; iter != max_iter_; ++iter) {
-    transform_Becke(n1);
-    transform_Log(n1, 3); //TODO: to be checked
+//  transform_Becke(n1); // Very slow!
+//  transform_Log(n1, 3); //TODO: to be checked
     transform_Ahlrichs(n1);
 
     vector<int> sigma0(sigma1);

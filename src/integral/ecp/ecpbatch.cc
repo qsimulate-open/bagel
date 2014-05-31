@@ -69,29 +69,34 @@ void ECPBatch::compute() {
 
   fill_n(data_, size_alloc_, zero);
   double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
+  fill_n(intermediate_c, cont0_ * cont1_ * asize_, zero);
   double* current_data = intermediate_c;
 
-  for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
-    for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC)
-      for (int izA = 0; izA <= ang0_; ++izA)
-        for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
-          const int ixA = ang0_ - izA - iyA;
-          const array<int, 3> lA = {ixA, iyA, izA};
-          for (int izC = 0; izC <= ang1_; ++izC)
-            for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
-              const int ixC = ang1_ - izC - iyC;
-              const array<int, 3> lC = {ixC, iyC, izC};
-              double tmp = 0.0;
-              for (auto& aiter : mol_->atoms()) {
-                shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
+  int i = 0;
+  for (int izA = 0; izA <= ang0_; ++izA)
+  for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
+    const int ixA = ang0_ - izA - iyA;
+    const array<int, 3> lA = {ixA, iyA, izA};
+    for (int izC = 0; izC <= ang1_; ++izC)
+    for (int iyC = 0; iyC <= ang1_ - izC; ++iyC) {
+      const int ixC = ang1_ - izC - iyC;
+      const array<int, 3> lC = {ixC, iyC, izC};
+      for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
+      for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC) {
+        double tmp = 0.0;
+        for (auto& aiter : mol_->atoms()) {
+          shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
 
-                AngularBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
-                radint.integrate();
-                tmp += radint.integral();
-              }
-              *current_data++ = tmp;
-            }
+          AngularBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
+          radint.integrate();
+          tmp += radint.integral();
         }
+        const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
+        current_data[index] = tmp;
+      }
+      ++i;
+    }
+  }
 
   double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
   const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;

@@ -30,6 +30,7 @@
 #include <src/molecule/atom.h>
 #include <src/integral/ecp/sphharmonics.h>
 #include <src/integral/ecp/radial.h>
+#include <map>
 
 namespace bagel {
 
@@ -43,13 +44,18 @@ class AngularBatch : public RadialInt {
     std::array<double, 3> AB_, CB_;
     double dAB_, dCB_;
     std::vector<double> c0_, c1_;
+    std::vector<std::map<int, std::array<int, 3>>> map_;
+
+    int l0_, l1_;
+    std::vector<std::vector<double>> zAB_, zCB_;
+
+    void map_angular_number();
 
     double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
     double integrate3USP(std::array<int, 3> xyz_exponents) const;
-    double integrate2SH1USP(const std::pair<int, int> lm1, const std::pair<int, int> lm2, const std::array<int, 3> ijk) const;
-    double project_AB(const double expC, const int l, const int m, const double r);
-    double project_CB(const double expC, const int l, const int m, const double r);
-    double project_many_centres(const double expA, const double expC, const double r);
+    double integrate2SH1USP(const std::pair<int, int> lm1, const int l, const std::vector<double> usp2, const std::array<int, 3> ijk) const;
+    double project_AB(const int l, const std::vector<double> usp, const double r);
+    double project_CB(const int l, const std::vector<double> usp, const double r);
 
   public:
     AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
