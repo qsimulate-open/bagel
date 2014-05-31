@@ -98,6 +98,8 @@ class GammaBranch {
 
     // distterminal means there are no alpha operators higher in the tree
     bool is_distterminal() {
+      return false;
+#if 0
       bool not_terminal = false;
       if (branch(GammaSQ::CreateAlpha))
         not_terminal |= branch(GammaSQ::CreateAlpha)->active();
@@ -110,6 +112,7 @@ class GammaBranch {
           not_terminal |= branch(GammaSQ::AnnihilateBeta)->is_distterminal();
       }
       return !not_terminal;
+#endif
     }
 
 };
