@@ -185,8 +185,6 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   shared_ptr<const ZMatrix> qvec;
   if (nact_) {
     qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
-    // transform to natural orbitals
-    qvec = update_qvec(qvec, natorb_coeff);
 #ifndef BOTHSPACES
     { // take non-rel parts out
       auto tmp = make_shared<ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
@@ -241,7 +239,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // G matrix (active-active) D_rs,tu Factp_tu - delta_rs nr sum_v Factp_vv
   if (nact_) {
     gaa = factp->clone();
-    auto nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
+    auto nat_rdm2 = fci_->rdm2_av();
     zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
     complex<double> p = complex<double> (0.0,0.0);
     for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
