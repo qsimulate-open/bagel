@@ -35,6 +35,9 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
     std::vector<std::shared_ptr<Matrix>> modelstates;
     std::vector<double> diagonals;
     std::cout << "Building model Hamiltonian from model states:" << std::endl;
+
+    std::vector<int> space_bounds;
+
     for(auto& block : model) {
       int S_A, q_A, S_B, q_B;
       std::tie(S_A, S_B) = block.S_;
@@ -46,6 +49,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       for (auto& sp : subspaces_)
         if ( block.S_ == sp.S() && block.charge_ == sp.charge() )
           blocks_in_subspace.push_back(sp);
+      std::for_each(blocks_in_subspace.begin(), blocks_in_subspace.end(), [&space_bounds] (const DSubSpace& s) { space_bounds.push_back(s.offset()); });
 
       // diagonalize in subspace
       auto cc = std::make_shared<Matrix>(dimerstates_, nstates);
@@ -75,6 +79,28 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
     model_hamiltonian->add_diag(-E0);
     model_hamiltonian->scale(au2eV__);
     model_hamiltonian->print("Model Hamiltonian (eV)", modelsize);
+
+    // Compute perturbative correction
+    std::shared_ptr<Matrix> perturbation = model_hamiltonian->clone();
+    for (int i = 0; i < modelsize; ++i) {
+      const double Ei = diagonals[i];
+      for (int j = 0; j <= i; ++j) {
+        const double Ej = diagonals[j];
+        double perturb = 0;
+        for (auto& space : subspaces_) {
+          if (std::count(space_bounds.begin(), space_bounds.end(), space.offset()) == 1) continue;
+          for (int k = 0; k < space.dimerstates(); ++k) {
+            const int kk = k + space.offset();
+            const double fac = 1.0/(denom_[kk] - Ei) + 1.0/(denom_[kk] - Ej);
+            const double V = modelsigma->element(kk,i) * modelsigma->element(kk,j);
+            perturb -= 0.5*V*fac;
+          }
+        }
+        perturbation->element(i,j) = perturbation->element(j,i) = perturb;
+      }
+    }
+    perturbation->scale(au2eV__);
+    perturbation->print("Perturbative correction (eV)", modelsize);
   }
 }
 
