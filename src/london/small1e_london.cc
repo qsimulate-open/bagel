@@ -32,7 +32,7 @@ template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
-  SmallInts1e_London<ComplexERIBatch> batch(input, mol);
+  SmallInts1e_London<ComplexERIBatch> batch(input, mol, conj_);
 
   vector<shared_ptr<const Shell>> nshells;
   for (auto& i : mol->atoms()) {

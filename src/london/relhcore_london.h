@@ -29,7 +29,9 @@
 
 #include <src/molecule/zhcore.h>
 #include <src/molecule/zkinetic.h>
+#include <src/molecule/zoverlap.h>
 #include <src/integral/comprys/complexnaibatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
 #include <src/london/small1e_london.h>
 
 namespace bagel {
@@ -40,18 +42,23 @@ class RelHcore_London : public ZMatrix {
     const std::shared_ptr<const ZMatrix> kinetic_;
     const std::shared_ptr<const ZMatrix> hcore_;
     const std::shared_ptr<const ZMatrix> nai_;
+    const std::shared_ptr<const ZMatrix> overlap_;
     std::shared_ptr<Small1e_London<ComplexNAIBatch>> smallnai_;
+    std::shared_ptr<Small1e_London<ComplexOverlapBatch>> smalloverlap_;
 
     void compute_();
+
 
   public:
     RelHcore_London(const std::shared_ptr<const Molecule> geom) : ZMatrix(geom->nbasis()*4, geom->nbasis()*4), geom_(geom),
             kinetic_(std::make_shared<ZKinetic>(geom_)),
             hcore_(std::make_shared<ZHcore>(geom_)),
-            nai_(std::make_shared<ZMatrix>(*hcore_ - *kinetic_)) {
-      smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_);
+            nai_(std::make_shared<ZMatrix>(*hcore_ - *kinetic_)),
+            overlap_(std::make_shared<ZOverlap>(geom_)) {
+      smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_, false);
+      smalloverlap_ = std::make_shared<Small1e_London<ComplexOverlapBatch>>(geom_, true);
       if (geom_->has_finite_nucleus()) {
-        smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_));
+        smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_, false));
       }
       compute_();
     }

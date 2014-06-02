@@ -54,8 +54,11 @@ class Small1e_London : public ZMatrix1eArray<4*Batch::Nblocks()> {
       }
     }
 
+    bool conj_;  // TODO Do we need this in the long run?
+
   public:
-    Small1e_London(const std::shared_ptr<const Molecule> mol) : ZMatrix1eArray<4*Batch::Nblocks()>(mol) {
+    Small1e_London(const std::shared_ptr<const Molecule> mol, const bool conj) : ZMatrix1eArray<4*Batch::Nblocks()>(mol) {
+      conj_ = conj;
       init(mol);
     }
 
@@ -64,7 +67,7 @@ class Small1e_London : public ZMatrix1eArray<4*Batch::Nblocks()> {
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e_London<Batch> batch(input, mol);
+      SmallInts1e_London<Batch> batch(input, mol, conj_);
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)

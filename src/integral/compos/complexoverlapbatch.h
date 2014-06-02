@@ -28,6 +28,7 @@
 #define __SRC_INTEGRAL_COMPOS_COMPLEXOVERLAPBATCH_H
 
 #include <src/integral/os/osintegral.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
@@ -44,7 +45,12 @@ class ComplexOverlapBatch : public OSIntegral<std::complex<double>,Int_t::London
     ComplexOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
     : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
 
+    // TODO Extra constructor to interface with SmallInts1e - find a way to get rid of this
+    ComplexOverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::shared_ptr<const Molecule> geom)
+    : OSIntegral<std::complex<double>,Int_t::London>(basis, nullptr) { common_init(); }
+
     void compute() override;
+    constexpr static int Nblocks() { return 1; }  // TODO Use consistent format
 };
 
 }
