@@ -44,7 +44,6 @@ class DFock_London : public ZMatrix {
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const double scale_ex);
 
-
     void add_Jop_block(std::shared_ptr<const RelDF_London>, std::list<std::shared_ptr<const CDMatrix_London>>, const double scale);
     void add_Exop_block(std::shared_ptr<RelDFHalf_London>, std::shared_ptr<RelDFHalf_London>, const double scale, const bool diag = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
@@ -82,7 +81,7 @@ class DFock_London : public ZMatrix {
             ++j;
         }
     }
-    static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const DFDist_London>>, bool);
+    static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const ComplexDFDist>>, bool);
     static std::list<std::shared_ptr<RelDFHalf_London>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
 

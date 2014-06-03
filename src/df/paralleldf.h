@@ -35,6 +35,11 @@
 namespace bagel {
 
 class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
+  // TODO Refactor so fewer friends are needed?
+  friend class ComplexParallelDF;
+  friend class ComplexDFDist;
+  template<typename T> friend class ComplexDFDist_ints;
+
   protected:
     // blocks that this process has
     std::vector<std::shared_ptr<DFBlock>> block_;
@@ -53,6 +58,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
 
   public:
     ParallelDF(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF> = nullptr, std::shared_ptr<Matrix> = nullptr);
+    virtual ~ParallelDF() { }
 
     size_t naux() const { return naux_; }
     size_t nindex1() const { return nindex1_; }

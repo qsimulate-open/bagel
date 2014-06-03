@@ -210,13 +210,17 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop_London::compute_mo2e(
     assert(!breit || gaunt);
     // (1) make DFDists
     vector<shared_ptr<const DFDist_London>> dfs;
+    vector<shared_ptr<const ComplexDFDist>> cdfs;
     if (!gaunt) {
       dfs = cgeom_->dfs()->split_blocks();
       dfs.push_back(cgeom_->df());
+      cdfs = cgeom_->cdfs()->split_blocks();
+      cdfs.push_back(cgeom_->cdf());
     } else {
       dfs = cgeom_->dfsl()->split_blocks();
+      cdfs = cgeom_->cdfsl()->split_blocks();
     }
-    list<shared_ptr<RelDF_London>> dfdists = DFock_London::make_dfdists(dfs, gaunt);
+    list<shared_ptr<RelDF_London>> dfdists = DFock_London::make_dfdists(cdfs, gaunt);
 
     // Separate Coefficients into real and imaginary
     // correlated occupied orbitals

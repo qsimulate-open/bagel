@@ -31,9 +31,7 @@ using namespace bagel;
 
 
 ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2, shared_ptr<const ParallelDF> df, shared_ptr<Matrix> dat)
- : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat), serial_(df ? df->serial_ : false) {
-
- }
+ : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat), serial_(df ? df->serial_ : false) { }
 
 
 shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
