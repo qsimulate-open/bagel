@@ -942,7 +942,7 @@ shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
+    out->insert<0>(embedded_distrasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
@@ -955,7 +955,7 @@ shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
+    out->insert<1>(embedded_distrasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;

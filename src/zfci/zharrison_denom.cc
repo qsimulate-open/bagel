@@ -61,7 +61,7 @@ void ZHarrison::const_denom() {
   denom_ = make_shared<RelDvec>(space_, 1);
 
   const size_t est = accumulate(space_->detmap().begin(), space_->detmap().end(), 0ull,
-                                [](size_t r, pair<int,shared_ptr<Determinants>> i){ return r+i.second->string_bits_a().size(); });
+                                [](size_t r, pair<pair<int,int>,shared_ptr<Determinants>> i){ return r+i.second->string_bits_a().size(); });
   TaskQueue<HZDenomTask> tasks(est);
 
   for (auto& i : space_->detmap()) {

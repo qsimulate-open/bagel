@@ -29,8 +29,12 @@
 #include <algorithm>
 #include <memory>
 #include <list>
+#include <functional>
+
+#include <src/parallel/staticdist.h>
 #include <src/math/matrix.h>
 #include <src/math/jacobi.h>
+#include <src/util/taskqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -90,35 +94,54 @@ void JacobiDiag::rotate(const int k, const int l) {
 }
 
 void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
-  auto mos = make_shared<Matrix>(nbasis_, norb_);
-  auto P_A = make_shared<Matrix>(norb_, norb_);
-
-  dgemm_("N", "N", nbasis_, norb_, nbasis_, 1.0, S_->data(), nbasis_, Q_->element_ptr(0, nstart_), nbasis_, 0.0, mos->data(), nbasis_);
   const int npairs = pairlist.size();
+
+  // For parallelization across nodes
+  StaticDist dist(npairs, mpi__->size());
+  size_t pstart, pend;
+  tie(pstart, pend) = dist.range(mpi__->rank());
+  const size_t psize = pend - pstart;
+
+  auto right = make_shared<Matrix>(nbasis_, 2*psize, true);
+  for (size_t ip = 0; ip < psize; ++ip) {
+    copy_n(SQ_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, right->element_ptr(0, 2*ip));
+    copy_n(SQ_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, right->element_ptr(0, 2*ip+1));
+  }
+
+  shared_ptr<Matrix> left = ( lowdin_ ? right : make_shared<Matrix>(nbasis_, 2*psize, true) );
+  if (!lowdin_) {
+    for (size_t ip = 0; ip < psize; ++ip) {
+      copy_n(Q_->element_ptr(0, pairlist[ip + pstart].first), nbasis_, left->element_ptr(0, 2*ip));
+      copy_n(Q_->element_ptr(0, pairlist[ip + pstart].second), nbasis_, left->element_ptr(0, 2*ip+1));
+    }
+  }
+
+  Matrix P_A(2*psize, 2*psize, true);
 
   vector<double> AA(npairs, 0.0);
   vector<double> BB(npairs, 0.0);
 
   for (auto& ibounds : atom_bounds_) {
     const int natombasis = ibounds.second - ibounds.first;
+    const int boundstart = ibounds.first;
 
-    if (lowdin_)
-      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
-                              mos->element_ptr(ibounds.first, 0), nbasis_, 0.0, P_A->data(), norb_);
-    else
-      dgemm_("T", "N", norb_, norb_, natombasis, 1.0, mos->element_ptr(ibounds.first, 0), nbasis_,
-                              Q_->element_ptr(ibounds.first, nstart_), nbasis_, 0.0, P_A->data(), norb_);
+    for (int ip = 0; ip < psize; ++ip) {
+      dgemm_("T", "N", 2, 2, natombasis, 1.0, left->element_ptr(boundstart, 2*ip), left->ndim(),
+          right->element_ptr(boundstart, 2*ip), right->ndim(), 0.0, P_A.element_ptr(2*ip,2*ip), P_A.ndim());
 
-    for (int ipair = 0; ipair < npairs; ++ipair) {
-      const int kk = pairlist[ipair].first - nstart_;
-      const int ll = pairlist[ipair].second - nstart_;
-      const double Qkl_A = 0.5 * (P_A->element( kk, ll ) + P_A->element( ll, kk ));
-      const double Qkminusl_A = P_A->element(kk, kk) - P_A->element(ll, ll);
+      const int kk = 2*ip;
+      const int ll = 2*ip+1;
 
-      AA[ipair] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
-      BB[ipair] += Qkl_A*Qkminusl_A;
+      const double Qkl_A = 0.5 * (P_A(kk,ll) + P_A(ll,kk));
+      const double Qkminusl_A = P_A(kk,kk) - P_A(ll,ll);
+
+      AA[ip + pstart] += Qkl_A*Qkl_A - 0.25*Qkminusl_A*Qkminusl_A;
+      BB[ip + pstart] += Qkl_A*Qkminusl_A;
     }
   }
+
+  mpi__->allreduce(AA.data(), AA.size());
+  mpi__->allreduce(BB.data(), BB.size());
 
   vector<tuple<int, int, double>> rotations;
   for (int ipair = 0; ipair < npairs; ++ipair) {
@@ -136,4 +159,5 @@ void JacobiPM::subsweep(vector<pair<int,int>>& pairlist) {
   }
 
   Q_->rotate(rotations);
+  SQ_->rotate(rotations);
 }

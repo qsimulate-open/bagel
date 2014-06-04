@@ -29,6 +29,7 @@
 #include <src/fci/harrison.h>
 #include <src/fci/distfci.h>
 #include <src/ras/rasci.h>
+#include <src/ras/distrasci.h>
 #include <src/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
 #include <src/util/muffle.h>
@@ -110,6 +111,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<DimerDistCAS> compute_distcispace(std::shared_ptr<const PTree> idata);
 
       template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
+      template <int unit> Ref<DistRASDvec> embedded_distrasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
+
       std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
       std::shared_ptr<DimerDistRAS> compute_distrcispace(std::shared_ptr<const PTree> idata);
 
@@ -212,6 +215,48 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
 
   std::shared_ptr<RASCI> rasci;
   rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
+  rasci->compute();
+
+  return rasci->civectors();
+}
+
+template<int unit>
+std::shared_ptr<const DistRASDvec> Dimer::embedded_distrasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
+  const int nclosed = nclosed_;
+  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
+  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
+
+  // Make new input data, set charge, spin to what I want
+  auto input = std::make_shared<PTree>(*idata);
+  auto erase_put = [&input] ( std::string name, int data ) { input->erase(name); input->put(name, lexical_cast<std::string>(data)); };
+
+  erase_put("charge", charge);
+  erase_put("nspin", nspin);
+  erase_put("ncore", ncore);
+  erase_put("nstate", nstate);
+  erase_put("max_holes", std::get<1>(desc));
+  erase_put("max_particles", std::get<2>(desc));
+
+  input->erase("active");
+  int current = ncore;
+  auto parent = std::make_shared<PTree>();
+  for (int i = 0; i < 3; ++i) {
+    auto tmp = std::make_shared<PTree>();
+    const int nras = std::get<0>(desc)[i];
+    for (int i = 0; i < nras; ++i, ++current)
+      tmp->push_back(current+1);
+    parent->push_back(tmp);
+  }
+  input->add_child("active", parent);
+  input->erase("algorithm"); input->put("algorithm", "parallel");
+
+  // Hiding normal cout
+  std::stringstream outfilename;
+  outfilename << "meh_ras_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
+  Muffle hide(outfilename.str());
+
+  std::shared_ptr<DistRASCI> rasci;
+  rasci = std::dynamic_pointer_cast<DistRASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
   rasci->compute();
 
   return rasci->civectors();

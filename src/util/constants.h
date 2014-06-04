@@ -60,14 +60,14 @@ static const double au2second__ = c__ * au2meter__ / 2.99792458e8;
 static const double au2angstrom__ = au2meter__ * 1.0e10;
 static const double au2joule__ = au2kilogram__ * std::pow(au2meter__ / au2second__, 2);
 static const double au2kjmol__ = au2joule__ * avogadro__ / 1.0e3;
+static const double au2eV__ = au2kilogram__ * au2meter__ * au2meter__ / au2second__ / au2second__ / au2coulomb__;
 static const double au2tesla__ = au2kilogram__ / au2coulomb__ / au2second__;
 
 /************************************************************
 *  Numerical constants                                      *
 ************************************************************/
 static constexpr double numerical_zero__ = 1.0e-15;
-static constexpr unsigned int large__ = 32;
-static constexpr unsigned int nbit__ = 32;
+static constexpr unsigned int nbit__ = 64;
 
 /************************************************************
 *  Misc constants                                           *

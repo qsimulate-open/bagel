@@ -35,7 +35,7 @@ class FileIO {
       const std::string filename_;
 
    public:
-      FileIO(const std::string filename) : filename_(filename) { };
+      FileIO(const std::string filename) : filename_(filename) { }
 };
 
 }

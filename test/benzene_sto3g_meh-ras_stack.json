@@ -56,9 +56,15 @@
     "max_particles" : 2
   } ],
   "ras" : {
-    "thresh" : 1.0e-12,
+    "thresh" : 1.0e-6,
     "nguess" : 50
   },
+  "models" : {
+    "subblocks" : [ { "spins" : [2, 0], "charges" : [0, 0], "nstates" : 1 },
+                    { "spins" : [0, 2], "charges" : [0, 0], "nstates" : 1 } ]
+  },
+  "charge" : 0,
+  "spin" : 2,
   "nstates" : 1
 }
 

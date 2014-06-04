@@ -102,6 +102,9 @@ void MultiExcitonHamiltonian<VecType>::spin_couple_blocks(DSubSpace& AB, DSubSpa
 }
 
 
+// diagonal parts:
+//   S^2 = [ (S^A)^2 + (S^B)^2 ] + (S^2 - (S^A)^2 - (S^B)^2)
+//       = [ (S^A)^2 + (S^B)^2 ] + 2 S_z^A S_z^B
 template <class VecType>
 void MultiExcitonHamiltonian<VecType>::compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap) {
   std::shared_ptr<const VecType> Ap = subspace.template ci<0>();

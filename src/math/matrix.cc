@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <src/util/taskqueue.h>
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 
@@ -504,15 +505,44 @@ void Matrix::sqrt() {
   assert(ndim_ == mdim_);
   const int n = ndim_;
   unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
+#ifdef HAVE_SCALAPACK
+  if (localized_) {
+#endif
+    diagonalize(vec.get());
 
-  for (int i = 0; i != n; ++i) {
-    if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-    double s = std::sqrt(std::sqrt(vec[i]));
-    for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+    for (int i = 0; i != n; ++i) {
+      if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      double s = std::sqrt(std::sqrt(vec[i]));
+      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+    }
+
+    *this = *this ^ *this;
+#ifdef HAVE_SCALAPACK
   }
+  else {
+    unique_ptr<double[]> scal(new double[n]);
+    shared_ptr<DistMatrix> dist = distmatrix();
+    dist->diagonalize(vec.get());
+    for (int i = 0; i != n; ++i)
+      scal[i] = std::sqrt(std::sqrt(vec[i]));
+    dist->scale(scal.get());
+    *this = *(*dist ^ *dist).matrix();
+  }
+#endif
+}
 
-  *this = *this ^ *this;
+// CAUTION: assumes no orbital is rotated twice
+void Matrix::rotate(std::vector<std::tuple<int, int, double>>& rotations) {
+  if (rotations.size() > 6*resources__->max_num_threads()) {
+    TaskQueue<function<void(void)>> tq(rotations.size());
+    for (auto& irot : rotations)
+      tq.emplace_back( [this,irot] { rotate(get<0>(irot), get<1>(irot), get<2>(irot)); } );
+
+    tq.compute();
+  }
+  else {
+    for_each(rotations.begin(), rotations.end(), [this] (tuple<int, int, double> irot) { rotate(get<0>(irot), get<1>(irot), get<2>(irot)); });
+  }
 }
 
 
