@@ -273,6 +273,34 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
 }
 
 
+// Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
+shared_ptr<ZMatrix> ZCASSCF::coeff_stripe_to_block(shared_ptr<const ZMatrix> coeff) const {
+  assert(coeff->ndim() == coeff->mdim());
+  auto ctmp2 = coeff->clone();
+  { // block format
+    int n = coeff->ndim();
+    // closed
+    for (int j=0; j!=nclosed_; ++j) {
+      ctmp2->copy_block(0,            j, n, 1, coeff->slice(j*2  , j*2+1)->data());
+      ctmp2->copy_block(0, nclosed_ + j, n, 1, coeff->slice(j*2+1, j*2+2)->data());
+    }
+    int offset = nclosed_*2;
+    // active
+    for (int j=0; j!=nact_; ++j) {
+      ctmp2->copy_block(0, offset + j,         n, 1, coeff->slice(offset +j*2,   offset + j*2+1)->data());
+      ctmp2->copy_block(0, offset + nact_ + j, n, 1, coeff->slice(offset +j*2+1, offset + j*2+2)->data());
+    }
+    offset = nocc_*2;
+    // virtual (including positrons)
+    for (int j=0; j!=nvirt_; ++j) {
+      ctmp2->copy_block(0, offset + j,            n, 1, coeff->slice(offset + j*2,   offset + j*2+1)->data());
+      ctmp2->copy_block(0, offset + nvirt_ + j,   n, 1, coeff->slice(offset + j*2+1, offset + j*2+2)->data());
+    }
+  }
+   return ctmp2;
+}
+
+
 // Eliminates the positronic entries for the given rot file
 void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
   int nr_nvirt = nvirt_ - nneg_/2;
