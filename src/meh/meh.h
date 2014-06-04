@@ -170,10 +170,12 @@ class MultiExcitonHamiltonian {
       double print_thresh_;
 
       std::vector<std::vector<ModelBlock>> models_to_form_;
-      std::vector<std::shared_ptr<Matrix>> models_;
+      std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_;
 
    public:
       MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
+
+      std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
 
       void compute();
       void modelize();

@@ -100,7 +100,10 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       }
     }
     perturbation->scale(au2eV__);
+    std::cout << std::endl;
     perturbation->print("Perturbative correction (eV)", modelsize);
+
+    models_.emplace_back(model_hamiltonian, perturbation);
   }
 }
 
