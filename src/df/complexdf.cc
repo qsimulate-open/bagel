@@ -146,3 +146,57 @@ pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> ComplexDFD
   return make_pair(eribatch->data(), eribatch);
 }
 
+
+// Note that we are transforming the bra index, so we need the complex conjugate
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const std::shared_ptr<const ZMatrix> c) const {
+  const std::shared_ptr<Matrix> cr = c->get_real_part();
+  const std::shared_ptr<Matrix> ci = c->get_imag_part();
+  auto rpart = dynamic_pointer_cast<const DFDist>(dfdata_[0]);
+  auto ipart = dynamic_pointer_cast<const DFDist>(dfdata_[1]);
+  assert(rpart && ipart);
+  auto outr = rpart->compute_half_transform(cr);
+  auto outi = ipart->compute_half_transform(cr);
+  outr->ax_plus_y( 1.0, ipart->compute_half_transform(ci));
+  outi->ax_plus_y(-1.0, rpart->compute_half_transform(ci));
+  return make_shared<ComplexDFHalfDist> (outr, outi, shared_from_this());
+}
+
+
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const {
+  throw runtime_error("ComplexDFDist::compute_half_transform_swap has not been verified - use caution.");
+  const std::shared_ptr<Matrix> cr = c->get_real_part();
+  const std::shared_ptr<Matrix> ci = c->get_imag_part();
+  auto rpart = dynamic_pointer_cast<const DFDist>(dfdata_[0]);
+  auto ipart = dynamic_pointer_cast<const DFDist>(dfdata_[1]);
+  assert(rpart && ipart);
+  shared_ptr<DFHalfDist> outr = rpart->compute_half_transform_swap(cr);
+  shared_ptr<DFHalfDist> outi = rpart->compute_half_transform_swap(ci);
+  outr->ax_plus_y(-1.0, ipart->compute_half_transform_swap(ci));
+  outi->ax_plus_y( 1.0, ipart->compute_half_transform_swap(cr));
+  outi->scale(-1.0);
+  return make_shared<ComplexDFHalfDist> (outr, outi, shared_from_this());
+}
+
+
+ComplexDFHalfDist::ComplexDFHalfDist(std::shared_ptr<DFHalfDist> rdf, std::shared_ptr<DFHalfDist> idf, std::shared_ptr<const ComplexParallelDF> df)
+ : ComplexParallelDF(rdf->naux(), rdf->nocc(), rdf->nbasis(), df->nblock(), df) {
+  assert(rdf->naux() == idf->naux());
+  assert(rdf->nocc() == idf->nocc());
+  assert(rdf->nbasis() == idf->nbasis());
+  assert(rdf->block().size() == idf->block().size());
+  assert(rdf->block().size() == nblock_);
+  dfdata_[0] = rdf;
+  dfdata_[1] = idf;
+}
+
+
+shared_ptr<ComplexDFHalfDist> ComplexDFHalfDist::apply_J(const shared_ptr<const Matrix> d) const {
+  auto rpart = dynamic_pointer_cast<const DFHalfDist>(dfdata_[0]);
+  auto ipart = dynamic_pointer_cast<const DFHalfDist>(dfdata_[1]);
+  assert(rpart && ipart);
+  auto rout = rpart->apply_J(d);
+  auto iout = ipart->apply_J(d);
+  auto out = make_shared<ComplexDFHalfDist>(rout, iout, df_);
+  return out;
+}
+

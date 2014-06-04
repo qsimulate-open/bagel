@@ -53,8 +53,16 @@ class ComplexDFDist : public ComplexParallelDF {
     ComplexDFDist(const std::shared_ptr<const ComplexParallelDF> df);
     ComplexDFDist(const std::array<std::shared_ptr<DFBlock>,2> block, const std::shared_ptr<const ComplexParallelDF> df, const std::shared_ptr<Matrix> d2);
 
-    //ComplexDFHalfDist compute_half_transform(std::shared_ptr<const ZMatrix>> ocoeff) const;
-    //ComplexDFHalfDist compute_half_transform(std::shared_ptr<const Matrix> ocoeffr, std::shared_ptr<const Matrix> ocoeffi) const;
+    bool has_2index() const { return data2_.get() != nullptr; }
+    size_t nbasis0() const { return nindex2_; }
+    size_t nbasis1() const { return nindex1_; }
+    size_t naux() const { return naux_; }
+
+    // compute half transforms; c is dimensioned by nbasis_;
+    std::shared_ptr<ComplexDFHalfDist> compute_half_transform(const std::shared_ptr<const ZMatrix> c) const;
+
+    // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
+    std::shared_ptr<ComplexDFHalfDist> compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const;
 
     // split up smalleri integrals into 6 dfdist objects
     std::vector<std::shared_ptr<const ComplexDFDist>> split_blocks() const {
@@ -154,6 +162,24 @@ class ComplexDFDist_ints : public ComplexDFDist {
       if (average)
         average_3index();
     }
+
+};
+
+
+// TODO Functions not needed for RHF have not been implemented (transform_second, back_transform, etc.)
+class ComplexDFHalfDist : public ComplexParallelDF {
+  protected:
+
+  public:
+    //ComplexDFHalfDist(const std::shared_ptr<const ComplexParallelDF> df, const int nocc) : ComplexParallelDF(df->naux(), nocc, df->nindex2(), df->nblock(), df) { }
+    ComplexDFHalfDist(std::shared_ptr<DFHalfDist> rdf, std::shared_ptr<DFHalfDist> idf, const std::shared_ptr<const ComplexParallelDF>);
+
+    size_t nocc() const { return nindex1_; }
+    size_t nbasis() const { return nindex2_; }
+
+    std::shared_ptr<ComplexDFHalfDist> apply_J() const { return apply_J(df_->data2_real()); }
+    //std::shared_ptr<ComplexDFHalfDist> apply_J(const std::shared_ptr<const ComplexDFDist> d) const { return apply_J(d->data2_real()); }
+    std::shared_ptr<ComplexDFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
 
 };
 

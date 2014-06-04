@@ -64,7 +64,7 @@ class SCF_base_London : public Method {
     // when gradient is requested, we store half-transformed integrals
     // TODO so far only implemented in closed-shell SCF
     bool do_grad_;
-    std::shared_ptr<DFHalfDist_London> half_;
+    std::shared_ptr<ComplexDFHalfDist> half_;
 
     bool restart_;
 
@@ -104,7 +104,7 @@ class SCF_base_London : public Method {
 
     double* eig() { return eig_.data(); };
 
-    std::shared_ptr<DFHalfDist_London> half() const { return half_; }
+    std::shared_ptr<ComplexDFHalfDist> half() const { return half_; }
     void discard_half() { half_.reset(); }
 };
 

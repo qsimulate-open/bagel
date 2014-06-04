@@ -27,7 +27,7 @@
 #ifndef __BAGEL_SRC_LONDON_FOCK_LONDON_H
 #define __BAGEL_SRC_LONDON_FOCK_LONDON_H
 
-#include <src/df/df_london.h>
+#include <src/df/complexdf.h>
 #include <src/integral/libint/libint.h>
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/london/scf_base_london.h>
@@ -43,7 +43,7 @@ class Fock_London : public Fock_base_London {
 
     // when DF gradients are requested
     bool store_half_;
-    std::shared_ptr<DFHalfDist_London> half_;
+    std::shared_ptr<ComplexDFHalfDist> half_;
 
   private:
     // serialization
@@ -77,7 +77,7 @@ class Fock_London : public Fock_base_London {
       fock_one_electron_part();
     }
 
-    std::shared_ptr<DFHalfDist_London> half() const { return half_; }
+    std::shared_ptr<ComplexDFHalfDist> half() const { return half_; }
 };
 
 
@@ -274,7 +274,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::cout << "    .. warning .. use a new Fock builder if possible (coeff_ required)" << std::endl;
 #endif
 
-    std::shared_ptr<const DFDist_London> df = cgeom_->df();
+    std::shared_ptr<const ComplexDFDist> df = cgeom_->cdf();
 
     // some constants
     assert(ndim_ == df->nbasis0());
@@ -298,10 +298,10 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     if (nocc == 0) return;
     pdebug.tick_print("Compute coeff (redundant)");
 
-    std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
+    std::shared_ptr<ComplexDFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
     pdebug.tick_print("First index transform");
 
-    std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->form_2index(half, -0.5);
@@ -320,13 +320,13 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
 #if 1
   Timer pdebug(3);
 
-  std::shared_ptr<const DFDist_London> df = cgeom_->df();
+  std::shared_ptr<const ComplexDFDist> df = cgeom_->cdf();
 
   if (scale_exchange != 0.0) {
-    std::shared_ptr<DFHalfDist_London> halfbj = df->compute_half_transform(ocoeff);
+    std::shared_ptr<ComplexDFHalfDist> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
-    std::shared_ptr<DFHalfDist_London> half = halfbj->apply_J();
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->form_2index(half, -1.0*scale_exchange);

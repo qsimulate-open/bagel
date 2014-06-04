@@ -69,14 +69,12 @@ class ComplexParallelDF : public std::enable_shared_from_this<ComplexParallelDF>
     const std::array<std::shared_ptr<ParallelDF>,2>& dfdata() const { return dfdata_; }
     std::shared_ptr<const ParallelDF> get_real() const { return dfdata_[0]; }
     std::shared_ptr<const ParallelDF> get_imag() const { return dfdata_[1]; }
-    //std::shared_ptr<std::vector<std::shared_ptr<DFBlock>>> real_block() const { return dfdata_[0]->block_; }
-    //std::shared_ptr<std::vector<std::shared_ptr<DFBlock>>> imag_block() const { return dfdata_[1]->block_; }
     std::shared_ptr<const DFBlock> real_block(int i) const { return dfdata_[0]->block_[i]; }
     std::shared_ptr<const DFBlock> imag_block(int i) const { return dfdata_[1]->block_[i]; }
 
     std::shared_ptr<const StaticDist> adist_now() const { return dfdata_[0]->block_[0]->adist_now(); }
 
-    //std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ComplexParallelDF> o, const double a, const bool swap = false) const;
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ComplexParallelDF> o, const double a, const bool swap = false) const;
     //std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ComplexParallelDF> o, const double a, const bool swap = false) const;
     //std::shared_ptr<ZMatrix> form_aux_2index(std::shared_ptr<const ComplexParallelDF> o, const double a) const;
 
@@ -88,14 +86,13 @@ class ComplexParallelDF : public std::enable_shared_from_this<ComplexParallelDF>
     std::shared_ptr<const ZMatrix> data2() const { return std::make_shared<ZMatrix>(*data2_, 1.0); }
 
     // compute a J operator, given density matrices in AO basis
-    //std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
-    //std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexParallelDF> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
-    //std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZMatrix> cd) const;
-    //std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const ZMatrix> dat2 = nullptr, const bool onlyonce = false) const;
-    //std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const ZMatrix> dat2 = nullptr, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexParallelDF> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZMatrix> cd) const;
+    std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+    //std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {
-      //throw std::logic_error("Using a function that has not been verified to work with complex integrals - use caution");
       Timer time;
       if (!serial_)
         for (auto& i : dfdata_[0]->block_)
