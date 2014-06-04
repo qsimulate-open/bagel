@@ -56,7 +56,7 @@ class RadialInt {
 
     void integrate();
     double integral() { return integral_; }
-    virtual double compute(const double r) = 0;
+    virtual std::vector<double> compute(const std::vector<double> r) = 0;
 
     void transform_Log(const int ngrid, const int m = 3);
     void transform_Ahlrichs(const int ngrid);

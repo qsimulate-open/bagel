@@ -34,13 +34,11 @@ void RadialInt::integrate() {
 
   int n0 = 31;
   vector<int> sigma1(n0);
-  vector<double> f(n0);
 //transform_Becke(n0);
   transform_Ahlrichs(n0);
-  for (int i = 0; i != r_.size(); ++i) {
-    f[i] = compute(r_[i]);
-    sigma1[i] = i;
-  }
+  vector<double> f = compute(r_);
+  assert(f.size() == n0);
+  for (int i = 0; i != r_.size(); ++i) sigma1[i] = i;
 
   double previous = inner_product(f.begin(), f.end(), w_.begin(), 0);
   int n1 = n0*2+1;
@@ -54,24 +52,26 @@ void RadialInt::integrate() {
     sigma1.resize(n1);
     f.resize(n1);
 
+    vector<double> rr(n0+1);
     for (int i = 0; i != n0; ++i) {
       sigma1[i] = sigma0[i]*2+1;
-      f[n0+i] = compute(r_[2*i]);
       sigma1[n0+i] = 2*i;
+      rr[i] = r_[2*i];
     }
-    f[2*n0] = compute(r_[2*n0]);
     sigma1[2*n0] = 2*n0;
+    rr[n0] = r_[2*n0];
+
+    vector<double> tmp = compute(rr);
+    for (int i = 0; i <= n0; ++i) f[n0+i] = tmp[i];
 
     double ans = 0.0;
     for (int i = 0; i != r_.size(); ++i) ans += f[i] * w_[sigma1[i]];
 
     const double error = ans - previous;
-#if 0
     if (print_intermediate_)
        cout << "Iter = " << setw(5) << iter << setw(10) << "npts = " << setw(10) << n1
                  << setw(10) << "ans = " << setw(20) << setprecision(10) << ans
                  << setw(10) << "err = " << setw(20) << setprecision(10) << error << endl;
-#endif
     if (fabs(error) < thresh_int_) {
       if (print_intermediate_) {
         cout << "Integration converged..." << endl;
