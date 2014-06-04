@@ -39,8 +39,9 @@ RASDeterminants::RASDeterminants(const int norb1, const int norb2, const int nor
 
   if ( nelea < 0 || neleb < 0) throw runtime_error("nele < 0");
 
-  // check that large__ is big enough
-  if (max_particles_ >= large__) throw logic_error("Inappropriate value for \"large__\". Must be greater than max_particles");
+  // check that nbit__ is big enough
+  if ( max_particles_ >= nbit__ || std::max(nelea,neleb) >= nbit__)
+    throw logic_error("Inappropriate value for \"nbit__\". Must be greater than nele AND max_particles");
 
   // Construct spaces and with them, a list of strings
   if (!mute) cout << " o Restricted Active Spaces:" << endl;

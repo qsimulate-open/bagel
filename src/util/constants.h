@@ -67,8 +67,7 @@ static const double au2tesla__ = au2kilogram__ / au2coulomb__ / au2second__;
 *  Numerical constants                                      *
 ************************************************************/
 static constexpr double numerical_zero__ = 1.0e-15;
-static constexpr unsigned int large__ = 32;
-static constexpr unsigned int nbit__ = 128;
+static constexpr unsigned int nbit__ = 64;
 
 /************************************************************
 *  Misc constants                                           *
