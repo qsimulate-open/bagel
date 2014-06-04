@@ -48,7 +48,7 @@ void RelMOFile_London::init(const int nstart, const int nfence) {
   nbasis_ = cgeom_->nbasis();
   nocc_ = (nfence - nstart)/2;
   assert((nfence - nstart) % 2 == 0);
-  if (!cgeom_->cdfs())
+  if (!cgeom_->dfs())
     cgeom_ = cgeom_->relativistic(gaunt_);
 
   // calculates the core fock matrix
@@ -211,10 +211,10 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop_London::compute_mo2e(
     // (1) make DFDists
     vector<shared_ptr<const ComplexDFDist>> dfs;
     if (!gaunt) {
-      dfs = cgeom_->cdfs()->split_blocks();
-      dfs.push_back(cgeom_->cdf());
+      dfs = cgeom_->dfs()->split_blocks();
+      dfs.push_back(cgeom_->df());
     } else {
-      dfs = cgeom_->cdfsl()->split_blocks();
+      dfs = cgeom_->dfsl()->split_blocks();
     }
     list<shared_ptr<RelDF_London>> dfdists = DFock_London::make_dfdists(dfs, gaunt);
 
@@ -259,7 +259,7 @@ unordered_map<bitset<4>, shared_ptr<const ZMatrix>> RelJop_London::compute_mo2e(
       auto breitint = make_shared<BreitInt>(cgeom_);
       list<shared_ptr<Breit2Index>> breit_2index;
       for (int i = 0; i != breitint->Nblocks(); ++i) {
-        breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), cgeom_->cdf()->data2_real()));
+        breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), cgeom_->df()->data2_real()));
         if (breitint->not_diagonal(i))
           breit_2index.push_back(breit_2index.back()->cross());
       }

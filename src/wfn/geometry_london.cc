@@ -192,8 +192,7 @@ void Geometry_London::common_init2(const bool print, const double thresh, const 
 
 
 void Geometry_London::compute_integrals(const double thresh, const bool nodf) {
-    df_ = form_fit<DFDist_London_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
-    cdf_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
+    df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
 }
 
 
@@ -632,12 +631,9 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
 
 void Geometry_London::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
-  cdf_->average_3index();
-  dfs_  = form_fit<DFDist_London_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
-  cdfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+  dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
   if (do_gaunt) {
-    dfsl_ = form_fit<DFDist_London_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
-    cdfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+    dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
   }
 
   // suppress some of the printing

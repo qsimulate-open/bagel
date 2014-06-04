@@ -188,11 +188,11 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   vector<shared_ptr<const ComplexDFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
-    dfs = cgeom_->cdfs()->split_blocks();
-    dfs.push_back(cgeom_->cdf());
+    dfs = cgeom_->dfs()->split_blocks();
+    dfs.push_back(cgeom_->df());
   } else if (gaunt) {
     throw logic_error("Gaunt integral not yet implemented for DFock_London.");
-    //dfs = cgeom_->cdfsl()->split_blocks();
+    //dfs = cgeom_->dfsl()->split_blocks();
   }
 
   list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
@@ -228,7 +228,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
     auto breitint = make_shared<BreitInt>(cgeom_);
     list<shared_ptr<Breit2Index>> breit_2index;
     for (int i = 0; i != breitint->Nblocks(); ++i) {
-      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), cgeom_->cdf()->data2()));
+      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), cgeom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
       if (breitint->not_diagonal(i))
@@ -281,7 +281,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->cdf()->data2_real()));
+      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2_real()));
     }
   }
 

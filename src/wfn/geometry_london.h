@@ -27,7 +27,6 @@
 #ifndef __SRC_WFN_GEOMETRY_LONDON_H
 #define __SRC_WFN_GEOMETRY_LONDON_H
 
-#include <src/df/df_london.h>
 #include <src/df/complexdf.h>
 #include <src/molecule/molecule.h>
 #include <src/input/input.h>
@@ -41,18 +40,11 @@ class Geometry_London: public Molecule {
     double overlap_thresh_;
 
     // for DF calculations
-    mutable std::shared_ptr<DFDist_London> df_;
+    mutable std::shared_ptr<ComplexDFDist> df_;
     // small component
-    mutable std::shared_ptr<DFDist_London> dfs_;
+    mutable std::shared_ptr<ComplexDFDist> dfs_;
     // small-large component
-    mutable std::shared_ptr<DFDist_London> dfsl_;
-
-    // for DF calculations
-    mutable std::shared_ptr<ComplexDFDist> cdf_;
-    // small component
-    mutable std::shared_ptr<ComplexDFDist> cdfs_;
-    // small-large component
-    mutable std::shared_ptr<ComplexDFDist> cdfsl_;
+    mutable std::shared_ptr<ComplexDFDist> dfsl_;
 
     // for R12 calculations
     double gamma_;
@@ -70,7 +62,7 @@ class Geometry_London: public Molecule {
       ar << boost::serialization::base_object<Molecule>(*this);
       ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
          << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
-      const size_t dfindex = !df_ ? 0 : std::hash<DFDist_London*>()(df_.get());
+      const size_t dfindex = !df_ ? 0 : std::hash<ComplexDFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
       const bool do_gaunt = !!dfsl_;
@@ -85,7 +77,7 @@ class Geometry_London: public Molecule {
 
       size_t dfindex;
       ar >> dfindex;
-      static std::map<size_t, std::weak_ptr<DFDist_London>> dfmap;
+      static std::map<size_t, std::weak_ptr<ComplexDFDist>> dfmap;
       if (dfmap[dfindex].expired()) {
         compute_integrals(overlap_thresh_, dfindex == 0);
         dfmap[dfindex] = df_;
@@ -133,15 +125,12 @@ class Geometry_London: public Molecule {
     std::shared_ptr<Petite> plist() const { return plist_; }
 
     // Returns DF data
-    const std::shared_ptr<const ComplexDFDist> cdf() const { return cdf_; }
-    const std::shared_ptr<const ComplexDFDist> cdfs() const { return cdfs_; }
-    const std::shared_ptr<const ComplexDFDist> cdfsl() const { return cdfsl_; }
-    const std::shared_ptr<const DFDist_London> df() const { return df_; }
-    const std::shared_ptr<const DFDist_London> dfs() const { return dfs_; }
-    const std::shared_ptr<const DFDist_London> dfsl() const { return dfsl_; }
+    const std::shared_ptr<const ComplexDFDist> df() const { return df_; }
+    const std::shared_ptr<const ComplexDFDist> dfs() const { return dfs_; }
+    const std::shared_ptr<const ComplexDFDist> dfsl() const { return dfsl_; }
+
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
-    void discard_cdf() const { cdf_.reset(); cdfs_.reset(); cdfsl_.reset(); }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

@@ -36,7 +36,6 @@
 #include <src/rel/alpha.h>
 #include <src/rel/breit2index.h>
 #include <src/london/reldf_london.h>
-#include <src/df/df_london.h>
 
 namespace bagel {
 

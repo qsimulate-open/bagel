@@ -1,3 +1,4 @@
+#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: debug_london.cc
@@ -116,7 +117,7 @@ void Debug_London::compute() {
   cout << "  Running debug code for London orbital density fitting." << endl;
 
   {
-    shared_ptr<const DFDist_London> df = cgeom_->df();
+    shared_ptr<const ComplexDFDist> df = cgeom_->df();
     shared_ptr<const ZMatrix> ij = df->data2();
 
     const int asize = df->block(0)->asize();
@@ -193,3 +194,4 @@ shared_ptr<const Reference> Debug_London::conv_to_ref() const {
 //  return out;
   return nullptr;
 }
+#endif

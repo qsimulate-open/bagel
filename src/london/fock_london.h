@@ -274,7 +274,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::cout << "    .. warning .. use a new Fock builder if possible (coeff_ required)" << std::endl;
 #endif
 
-    std::shared_ptr<const ComplexDFDist> df = cgeom_->cdf();
+    std::shared_ptr<const ComplexDFDist> df = cgeom_->df();
 
     // some constants
     assert(ndim_ == df->nbasis0());
@@ -320,7 +320,7 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
 #if 1
   Timer pdebug(3);
 
-  std::shared_ptr<const ComplexDFDist> df = cgeom_->cdf();
+  std::shared_ptr<const ComplexDFDist> df = cgeom_->df();
 
   if (scale_exchange != 0.0) {
     std::shared_ptr<ComplexDFHalfDist> halfbj = df->compute_half_transform(ocoeff);
