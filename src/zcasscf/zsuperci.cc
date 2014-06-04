@@ -43,8 +43,10 @@ void ZSuperCI::compute() {
    Timer timer;
 
   // intialize coefficients
-  if (!no_kramers_init_)
-    init_kramers_coeff();
+  { // re order coefficient matrix to block format
+    auto ctmp = coeff_stripe_to_block(coeff_);
+    coeff_ = make_shared<const ZMatrix>(*ctmp);
+  }
 
   cout << setprecision(8) << " kramers restricted re part rms = " << coeff_->get_real_part()->rms() << endl;
   cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;

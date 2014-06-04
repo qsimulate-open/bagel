@@ -35,7 +35,7 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
   if ((dynamic_pointer_cast<const RelReference>(ref))) {
       auto relref = dynamic_pointer_cast<const RelReference>(ref);
       coeff_ = relref->relcoeff();
-      no_kramers_init_ = true;
+      no_kramers_init_ = true; // TODO : be aware this will probably break of relref is from Dirac.
   } else {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
@@ -149,6 +149,10 @@ void ZCASSCF::init() {
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
+
+  // initialize coefficient to enforce kramers symmetry
+  if (!no_kramers_init_)
+    init_kramers_coeff();
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
@@ -307,20 +311,20 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatri
 
 shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
   shared_ptr<ZMatrix> tmp = rdm2->clone();
-  const complex<double>* start = coeff->data();
+  auto start = make_shared<const ZMatrix>(*coeff);
   int ndim  = coeff->ndim();
   int ndim2 = rdm2->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
   // first half transformation 
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start, ndim, 0.0, buf.get(), ndim2*ndim);
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->data(), ndim, 0.0, buf.get(), ndim2*ndim);
   for (int i = 0; i != ndim; ++i) 
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start, ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
   // then tranpose
   blas::transpose(tmp->data(), ndim2, ndim2, buf.get());
   // and do it again
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start, ndim, 0.0, tmp->data(), ndim2*ndim);
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start->data(), ndim, 0.0, tmp->data(), ndim2*ndim);
   for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start, ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
   // to make sure for non-symmetric density matrices (and anyway this should be cheap).
   blas::transpose(buf.get(), ndim2, ndim2, tmp->data());
   auto out = make_shared<const ZMatrix>(*tmp);
