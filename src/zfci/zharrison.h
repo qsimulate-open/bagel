@@ -157,7 +157,7 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 

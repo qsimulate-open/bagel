@@ -157,7 +157,7 @@ void ZCASSCF::init() {
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
     mute_stdcout(/*fci*/true);
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_);
     resume_stdcout();
   }
 
