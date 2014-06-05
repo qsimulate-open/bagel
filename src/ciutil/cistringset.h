@@ -92,7 +92,8 @@ class CIStringSet {
     size_t size() const { return size_; }
     size_t nspaces() const { return stringset_.size(); }
 
-    size_t key() const { return nele_+large__*norb_; }
+    // use nbit__ for the striding since nbit__ should be an upper bound on nele_ anyways
+    size_t key() const { return nele_+nbit__*norb_; }
 
     bool allowed(const std::bitset<nbit__>& bit) const {
       return std::any_of(stringset_.begin(), stringset_.end(),

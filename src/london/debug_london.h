@@ -1,4 +1,3 @@
-#if 0
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: debug_london.h
@@ -51,5 +50,4 @@ class Debug_London : public Method {
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Debug_London)
 
-#endif
 #endif

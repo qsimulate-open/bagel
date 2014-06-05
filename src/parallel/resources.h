@@ -35,6 +35,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <complex>
+#include <map>
 #ifdef LIBINT_INTERFACE
   #include <libint2.h>
 #endif
@@ -98,8 +99,7 @@ namespace bagel {
  class Resources {
   private:
     std::shared_ptr<Process> proc_;
-    std::vector<std::shared_ptr<StackMem>> stackmem_;
-    std::vector<std::shared_ptr<std::atomic_flag>> flag_;
+    std::map<std::shared_ptr<StackMem>, std::atomic_flag> stackmem_;
     size_t max_num_threads_;
 
   public:
@@ -107,35 +107,24 @@ namespace bagel {
 #ifdef LIBINT_INTERFACE
       LIBINT2_PREFIXED_NAME(libint2_static_init)();
 #endif
-
-      for (int i = 0; i != max_num_threads_; ++i) {
-        flag_.push_back(std::shared_ptr<std::atomic_flag>(new std::atomic_flag(ATOMIC_FLAG_INIT)));
-        stackmem_.push_back(std::make_shared<StackMem>());
-      }
+      for (int i = 0; i != max; ++i)
+        stackmem_[std::make_shared<StackMem>()].clear();
     }
 
     std::shared_ptr<StackMem> get() {
-      for (int i = 0; i != max_num_threads_; ++i) {
-        bool used = flag_[i]->test_and_set();
-        if (!used) {
-          return stackmem_[i];
-        }
+      for (auto& i : stackmem_) {
+        if (!i.second.test_and_set())
+          return i.first;
       }
       throw std::runtime_error("Stack Memory exhausted");
-      return stackmem_.front();
+      return nullptr;
     }
 
     void release(std::shared_ptr<StackMem> o) {
-      bool found = false;
-      for (int i = 0; i != max_num_threads_; ++i) {
-        if (stackmem_[i] == o) {
-          o->clear();
-          flag_[i]->clear();
-          found = true;
-          break;
-        }
-      }
-      if (!found) throw std::logic_error("This should not happen: resources.h");
+      o->clear();
+      auto iter = stackmem_.find(o);
+      assert(iter != stackmem_.end());
+      iter->second.clear();
     }
 
     size_t max_num_threads() const { return max_num_threads_; }

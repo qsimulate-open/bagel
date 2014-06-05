@@ -37,9 +37,9 @@
 namespace bagel {
   namespace {
 
-    std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2, const int nmax) {
+    std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2, const int start, const int fence) {
       std::string out;
-      for (int i = 0; i != nmax; ++i) {
+      for (int i = start; i != fence; ++i) {
         if (bit1[i] && bit2[i]) { out += "2"; }
         else if (bit1[i]) { out += "a"; }
         else if (bit2[i]) { out += "b"; }
@@ -47,11 +47,17 @@ namespace bagel {
       }
       return out;
     }
+    std::string print_bit(std::bitset<nbit__> bit1, std::bitset<nbit__> bit2, const int max) {
+      return print_bit(bit1, bit2, 0, max);
+    }
 
-    std::string print_bit(std::bitset<nbit__> bit, const int nmax) {
+    std::string print_bit(std::bitset<nbit__> bit, const int start, const int fence) {
       std::string out;
-      for (int i = 0; i != nmax; ++i) { out += bit[i] ? "1" : "."; }
+      for (int i = start; i != fence; ++i) { out += bit[i] ? "1" : "."; }
       return out;
+    }
+    std::string print_bit(std::bitset<nbit__> bit, const int max) {
+      return print_bit(bit, 0, max);
     }
 
     std::vector<int> bit_to_numbers(std::bitset<nbit__> bit) {
