@@ -23,10 +23,194 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <src/util/taskqueue.h>
 #include <src/df/dfblock.h>
+#include <src/util/constants.h>
+#include <src/util/simple.h>
 
 using namespace bagel;
 using namespace std;
+
+
+DFBlock::DFBlock(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
+                 const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
+ : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
+
+  assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()) || asize_ == adist_->nele());
+
+  const size_t amax = max(adist_shell_->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
+  data_ = unique_ptr<double[]>(new double[amax*b1size_*b2size_]);
+}
+
+
+DFBlock::DFBlock(const DFBlock& o)
+ : adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), asize_(o.asize_), b1size_(o.b1size_), b2size_(o.b2size_),
+   astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
+
+  const size_t amax = max(adist_shell_->size(mpi__->rank()), max(adist_->size(mpi__->rank()), asize_));
+  data_ = unique_ptr<double[]>(new double[amax*b1size_*b2size_]);
+  copy_n(o.data_.get(), size(), data_.get());
+}
+
+
+void DFBlock::average() {
+  if (averaged_) return;
+  averaged_ = true;
+
+  // first make a send and receive buffer
+  const size_t o_start = astart_;
+  const size_t o_end   = o_start + asize_;
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_->range(myrank);
+
+  assert(o_end - t_end >= 0);
+  assert(o_start - t_start >= 0);
+
+  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
+  const size_t asendsize = o_end - t_end;
+  const size_t arecvsize = o_start - t_start;
+
+  assert(asendsize < t_end-t_start && arecvsize < t_end-t_start);
+
+  unique_ptr<double[]> sendbuf;
+  unique_ptr<double[]> recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size_);
+
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
+    const size_t retsize = asize_ - asendsize;
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
+      task.emplace_back(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+
+    task.compute();
+
+    // send to the next node
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank+1, myrank);
+  }
+
+  if (arecvsize) {
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size_*b2size_]);
+    // recv from the previous node
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank-1, myrank-1);
+  }
+
+  // second move local data
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize_ - asendsize;
+    if (t_size <= asize_) {
+      for (size_t i = 0; i != b1size_*b2size_; ++i) {
+        if (i*asize_ < (i+1)*t_size-retsize) {
+          copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+        } else if (i*asize_ > (i+1)*t_size-retsize) {
+          copy_n(data_.get()+i*asize_, retsize, data_.get()+(i+1)*t_size-retsize);
+        }
+      }
+    } else {
+      for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
+        assert(i*asize_ < (i+1)*t_size-retsize);
+        copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+      }
+    }
+  }
+
+  // set new astart_ and asize_
+  asize_ = t_end - t_start;
+  astart_ = t_start;
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size_);
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
+
+}
+
+
+// reverse operation of average() function
+void DFBlock::shell_boundary() {
+  if (!averaged_) return;
+  averaged_ = false;
+  const size_t o_start = astart_;
+  const size_t o_end = o_start + asize_;
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_shell_->range(myrank);
+
+  const size_t asendsize = t_start - o_start;
+  const size_t arecvsize = t_end - o_end;
+  assert(t_start >= o_start && t_end >= o_end);
+
+  unique_ptr<double[]> sendbuf, recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size_);
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size_*b2size_]);
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
+      task.emplace_back(data_.get()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+
+    task.compute();
+    assert(myrank > 0);
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank-1, myrank);
+  }
+  if (arecvsize) {
+    assert(myrank+1 < mpi__->size());
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size_*b2size_]);
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank+1, myrank+1);
+  }
+
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize_ - asendsize;
+    assert(t_size >= retsize);
+    if (t_size <= asize_) {
+      for (size_t i = 0; i != b1size_*b2size_; ++i) {
+        assert(i*asize_+asendsize > i*t_size);
+        copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+      }
+    } else {
+      for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
+        if (i*asize_+asendsize > i*t_size) {
+          copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+        } else if (i*asize_+asendsize < i*t_size) {
+          copy_backward(data_.get()+i*asize_+asendsize, data_.get()+(i+1)*asize_, data_.get()+i*t_size+retsize);
+        }
+      }
+    }
+  }
+
+  // set new astart_ and asize_
+  asize_ = t_end - t_start;
+  astart_ = t_start;
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size_);
+    for (size_t b2 = 0; b2 != b2size_; ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
+}
 
 
 shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
@@ -78,11 +262,36 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 }
 
 
+DFBlock& DFBlock::operator+=(const DFBlock& o) { ax_plus_y( 1.0, o); return *this; }
+DFBlock& DFBlock::operator-=(const DFBlock& o) { ax_plus_y(-1.0, o); return *this; }
+
+
+void DFBlock::ax_plus_y(const double a, const DFBlock& o) {
+  if (size() != o.size()) throw logic_error("DFBlock::daxpy called illegally");
+  blas::ax_plus_y_n(a, o.data_.get(), size(), data_.get());
+}
+
+
+void DFBlock::scale(const double a) {
+  blas::scale_n(a, data_.get(), size());
+}
+
+
 void DFBlock::add_direct_product(const shared_ptr<const Matrix> a, const shared_ptr<const Matrix> b, const double fac) {
   assert(asize_ == a->ndim() && b1size_*b2size_ == b->size());
   dger_(asize_, b1size_*b2size_, fac, a->data(), 1, b->data(), 1, data_.get(), asize_);
 }
 
+
+void DFBlock::symmetrize() {
+  if (b1size_ != b2size_) throw logic_error("illegal call of DFBlock::symmetrize()");
+  const int n = b1size_;
+  for (int i = 0; i != n; ++i)
+    for (int j = i; j != n; ++j) {
+      blas::ax_plus_y_n(1.0, data_.get()+asize_*(j+n*i), asize_, data_.get()+asize_*(i+n*j));
+      copy_n(data_.get()+asize_*(i+n*j), asize_, data_.get()+asize_*(j+n*i));
+    }
+}
 
 
 shared_ptr<DFBlock> DFBlock::swap() const {
@@ -286,6 +495,18 @@ void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_pt
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::contrib_apply_J");
   dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data_.get(), o->asize_,
                                                         1.0, data_.get(), asize_);
+}
+
+
+void DFBlock::copy_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset) {
+  assert(o->size() == asize_*jdim);
+  copy_n(o->data(), asize_*jdim, data_.get()+offset);
+}
+
+
+void DFBlock::add_block(const std::shared_ptr<const Matrix> o, const int jdim, const size_t offset, const double fac) {
+  assert(o->size() == asize_*jdim);
+  blas::ax_plus_y_n(fac, o->data(), asize_*jdim, data_.get()+offset);
 }
 
 
