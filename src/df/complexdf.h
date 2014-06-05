@@ -74,7 +74,7 @@ class ComplexDFDist : public ComplexParallelDF {
         outr.push_back(dfdata_[0]->block_[i]);
         outi.push_back(dfdata_[1]->block_[i]);
         std::array<std::shared_ptr<DFBlock>,2> in = {{ outr[i], outi[i] }};
-        out.push_back(std::make_shared<const ComplexDFDist>(in, df_, data2_));
+        out.push_back(std::make_shared<const ComplexDFDist>(in, df_ ? df_ : shared_from_this() , data2_));
       }
       return out;
     }
