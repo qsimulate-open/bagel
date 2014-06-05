@@ -121,7 +121,7 @@ std::shared_ptr<ZRotFile> ZSuperCIMicro::form_sigma(std::shared_ptr<const ZRotFi
 }
 
 
-// sigma_at_at = delta_ab Gtu/sqrt(nt nu) + delta_tu Fab 
+// sigma_at_at = 2 * delta_ab Gtu/sqrt(nt nu) + delta_tu Fab  : TODO factor 2 needed here to reproduce non-rel limit
 // TODO : check why normalization factor is commented out
 void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nact = casscf_->nact();
@@ -141,7 +141,7 @@ void ZSuperCIMicro::sigma_at_at_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 #if 0
       const double fac = (casscf_->occup(i)*casscf_->occup(j) > zoccup_thresh) ? 1.0/std::sqrt(casscf_->occup(i)*casscf_->occup(j)) : 0.0;
 #else
-      const double fac = 1.0;
+      const double fac = 2.0;
 #endif
       gtup->element(j,i) *= fac;
     }
@@ -169,7 +169,7 @@ void ZSuperCIMicro::sigma_ai_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_at_ai = -delta_ab Fact_ti sqrt(nt/2) TODO : not including sqrt(1/2)
+// sigma_at_ai = -delta_ab Fact_ti sqrt(nt)*2 TODO : not including sqrt(1/2) ; factor 2 needed to reproduce non-rel limit
 void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
@@ -183,7 +183,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   ZMatrix tmp(nclosed*2, nact*2);
   tmp.zero();
   for (int i = 0; i != nact*2; ++i) {
-    const double fac = -std::sqrt(casscf_->occup(i)); // TODO check on a factor of 0.5
+    const double fac = -2.0 * std::sqrt(casscf_->occup(i)); // TODO check on a factor of 0.5
     zaxpy_(nclosed*2, fac, fockact_->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("N", "N", nvirt*2, nact*2, nclosed*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_va(), nvirt*2);
@@ -191,7 +191,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_ai_ti = sqrt((2-nt)/2) Fact_at // TODO check normalization factors
+// sigma_ai_ti = sqrt((1-nt))*2* Fact_at // TODO check normalization factors ; factor 2 needed to recover non-rel limit
 void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
@@ -207,7 +207,7 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   tmp.zero();
   for (int i = 0; i != nact*2; ++i) {
     const double fac = 1.0 - casscf_->occup(i) > zoccup_thresh ? std::sqrt(1.0-casscf_->occup(i)) : 0.0;
-    zaxpy_(nvirt*2, fac, fockact_->element_ptr(nocc*2,i), 1, tmp.element_ptr(0,i), 1);
+    zaxpy_(nvirt*2, fac*2.0, fockact_->element_ptr(nocc*2,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("C", "N", nclosed*2, nact*2, nvirt*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nvirt*2, 1.0, sigma->ptr_ca(), nclosed*2); // TODO : check "C" vs "T" here
   zgemm3m_("N", "C", nvirt*2, nclosed*2, nact*2, 1.0, tmp.data(), nvirt*2, cc->ptr_ca(), nclosed*2, 1.0, sigma->ptr_vc(), nvirt*2);
