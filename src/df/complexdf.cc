@@ -47,7 +47,7 @@ ComplexDFDist::ComplexDFDist(const shared_ptr<const ComplexParallelDF> df) : Com
 
 // Constructor used by split_blocks()
 ComplexDFDist::ComplexDFDist(const std::array<std::shared_ptr<DFBlock>,2> block, const std::shared_ptr<const ComplexParallelDF> df, const shared_ptr<Matrix> d2)
- : ComplexParallelDF(block[0]->asize(), block[0]->b1size(), block[0]->b2size(), 1) {
+ : ComplexParallelDF(df->naux(), df->nindex1(), df->nindex2(), 1) {
   assert(block[0]->asize() == block[1]->asize());
   assert(block[0]->b1size() == block[1]->b1size());
   assert(block[0]->b2size() == block[1]->b2size());
