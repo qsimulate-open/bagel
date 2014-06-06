@@ -323,5 +323,5 @@ void ZCASBFGS::compute() {
     if (pos_conv && ele_conv) break;
 #endif
   }
-  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back()); 
+//  if (ele_energy.size() > 0 && energy_.size() == 0) energy_.push_back(ele_energy.back()); 
 }
