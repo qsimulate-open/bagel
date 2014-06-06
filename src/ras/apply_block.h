@@ -85,8 +85,7 @@ class Apply_block {
         }
       }
       else {
-        const size_t la = source->lena();
-        assert( la == target->lena() );
+        assert( source->lena() == target->lena() );
 
         const size_t tlb = target->lenb();
         const size_t slb = source->lenb();
