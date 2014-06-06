@@ -35,25 +35,6 @@ namespace bagel {
 
 class Geometry : public Molecule {
   protected:
-    bool spherical_;
-
-    bool aux_merged_;
-
-    // Some shared info for basis sets.
-    int nbasis_;
-    int nele_;
-    int nfrc_;
-    int naux_;
-    int lmax_;
-    int aux_lmax_;
-
-    // these two offsets are in principle redundant information (can be derived from Shells);
-    std::vector<std::vector<int>> offsets_;
-    std::vector<std::vector<int>> aux_offsets_;
-
-    std::string basisfile_;
-    std::string auxfile_;
-
     // integral screening
     double schwarz_thresh_;
     double overlap_thresh_;
@@ -69,7 +50,6 @@ class Geometry : public Molecule {
     double gamma_;
 
     // Constructor helpers
-    void common_init1();
     void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh, const bool nodf);
 
@@ -126,27 +106,13 @@ class Geometry : public Molecule {
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
     // Returns a constant
-    size_t nbasis() const { return nbasis_; }
-    size_t nele() const { return nele_; }
-    size_t nfrc() const { return nfrc_; }
-    size_t naux() const { return naux_; }
-    int lmax() const { return lmax_; }
-    int aux_lmax() const { return aux_lmax_; }
-    bool spherical() const { return spherical_; }
     int nirrep() const { return nirrep_; }
     double gamma() const {return gamma_; }
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
-    const std::string basisfile() const { return basisfile_; }
-    const std::string auxfile() const { return auxfile_; }
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
 
-    bool operator==(const Geometry& o) const;
-
-    int num_count_ncore_only() const; // also set nfrc_
-    int num_count_full_valence_nocc() const;
-
-    // The position of the specific funciton in the basis set.
+    // The position of the specific function in the basis set.
     const std::vector<std::vector<int>>& offsets() const { return offsets_; }
     const std::vector<std::vector<int>>& aux_offsets() const { return aux_offsets_; }
     const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
@@ -176,10 +142,6 @@ class Geometry : public Molecule {
     std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
       return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
     }
-
-    // transformation matrices for the internal coordinate for geometry optimization
-    // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;

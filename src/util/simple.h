@@ -30,16 +30,17 @@
 
 namespace bagel {
 
+template <typename DataType>
 struct CopyBlockTask {
   private:
-    const double* const a_;
+    const DataType* const a_;
     const size_t astride_;
-    double* const b_;
+    DataType* const b_;
     const size_t bstride_;
     const size_t n_;
     const size_t m_;
   public:
-    CopyBlockTask(const double* const a, const size_t& ast, double* const b, const size_t& bst, const size_t& n, const size_t& m)
+    CopyBlockTask(const DataType* const a, const size_t& ast, DataType* const b, const size_t& bst, const size_t& n, const size_t& m)
       : a_(a), astride_(ast), b_(b), bstride_(bst), n_(n), m_(m) {}
 
     void compute() {

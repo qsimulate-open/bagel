@@ -33,91 +33,6 @@ using namespace std;
 using namespace bagel;
 
 
-ParallelDF::ParallelDF(const size_t naux, const size_t nb1, const size_t nb2, std::shared_ptr<const ParallelDF> df, std::shared_ptr<Matrix> dat)
- : naux_(naux), nindex1_(nb1), nindex2_(nb2), df_(df), data2_(dat), serial_(df ? df->serial_ : false) {
-
-}
-
-
-shared_ptr<Matrix> ParallelDF::form_2index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = (!swap) ? block_[0]->form_2index(o->block_[0], a) : o->block_[0]->form_2index(block_[0], a);
-  if (!serial_)
-    out->allreduce();
-  return out;
-}
-
-
-shared_ptr<Matrix> ParallelDF::form_4index(shared_ptr<const ParallelDF> o, const double a, const bool swap) const {
-  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = (!swap) ? block_[0]->form_4index(o->block_[0], a) : o->block_[0]->form_4index(block_[0], a);
-
-  // all reduce
-  if (!serial_)
-    out->allreduce();
-  return out;
-}
-
-
-shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, const double a) const {
-  if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-#ifdef HAVE_MPI_H
-  if (!serial_) {
-    auto work = make_shared<DFDistT>(shared_from_this());
-    auto work2 = make_shared<DFDistT>(o);
-    return work->form_aux_2index(work2, a).front();
-  } else {
-#else
-  {
-#endif
-    return block_[0]->form_aux_2index(o->block_[0], a);
-  }
-}
-
-
-void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o) {
-  assert(block_.size() == o->block_.size() && nindex1_ == o->nindex1_ && nindex2_ == o->nindex2_);
-  auto j = o->block_.begin();
-  for (auto& i : block_)
-    i->ax_plus_y(a, *j++);
-}
-
-
-void ParallelDF::scale(const double a) {
-  for (auto& i : block_)
-    i->scale(a);
-}
-
-
-void ParallelDF::symmetrize() {
-  for (auto& i : block_)
-    i->symmetrize();
-}
-
-
-void ParallelDF::add_block(shared_ptr<DFBlock> o) {
-  block_.push_back(o);
-}
-
-
-shared_ptr<Matrix> ParallelDF::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
-  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  // first thing is to find the node
-  tuple<size_t, size_t> info = adist_now()->locate(i);
-
-  // date has to be localised in this node
-  if (get<0>(info) == mpi__->rank() && !block_[0]->averaged()) {
-    return block_[0]->get_block(i, id, j, jd, k, kd);
-  } else {
-    throw logic_error("ParallelDF::get_block is an intra-node function (or bug?)");
-  }
-  return nullptr;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 shared_ptr<DFDist> DFDist::copy() const {
   auto out = make_shared<DFDist>(df_);
   for (auto& i : block_)
@@ -232,49 +147,6 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
 #endif
   eribatch->compute();
   return make_pair(eribatch->data(), eribatch);
-}
-
-
-shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) const {
-  return compute_Jop(shared_from_this(), den);
-}
-
-shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
-  // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const Matrix> tmp0 = o->compute_cd(den, data2_, onlyonce);
-  // then compute J operator J_{rs} = |E*) (E|rs)
-  return compute_Jop_from_cd(tmp0);
-}
-
-
-shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const Matrix> tmp0) const {
-  if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0->data()+block_[0]->astart());
-  // all reduce
-  if (!serial_)
-    out->allreduce();
-  return out;
-}
-
-
-shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
-  if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
-  if (!dat2) dat2 = data2_;
-
-  auto tmp0 = make_shared<Matrix>(naux_, 1, true);
-
-  // D = (D|rs)*d_rs
-  if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  unique_ptr<double[]> tmp = block_[0]->form_vec(den);
-  copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
-  // All reduce
-  if (!serial_)
-    tmp0->allreduce();
-
-  tmp0 = make_shared<Matrix>(*dat2 * *tmp0);
-  if (!onlyonce)
-    tmp0 = make_shared<Matrix>(*dat2 * *tmp0);
-  return tmp0;
 }
 
 
@@ -490,7 +362,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_J(const shared_ptr<const Matrix> d) con
     auto work = make_shared<DFDistT>(shared_from_this());
     mult.tick_print("Form DFDistT");
     work = work->apply_J(d);
-    mult.tick_print("Applicatoin of Inverse");
+    mult.tick_print("Application of Inverse");
     work->get_paralleldf(out);
     mult.tick_print("Return DFDist");
   } else {

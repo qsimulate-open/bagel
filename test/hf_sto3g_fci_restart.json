@@ -19,7 +19,13 @@
 
 {
   "title" : "fci",
+  "restart" : true,
   "nstate" : 2
+},
+
+{
+  "title" : "continue",
+  "archive" : "fci_3"
 }
 
 ]}

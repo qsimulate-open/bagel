@@ -102,8 +102,10 @@ class MPI_Interface {
 
     // one-sided communication with Isend, Irecv
     int request_send(const double* sbuf, const size_t size, const int dest, const int tag);
+    int request_send(const std::complex<double>* sbuf, const size_t size, const int dest, const int tag);
     int request_send(const size_t* sbuf, const size_t size, const int dest, const int tag);
     int request_recv(double* rbuf, const size_t size, const int source = -1, const int tag = -1);
+    int request_recv(std::complex<double>* rbuf, const size_t size, const int source = -1, const int tag = -1);
     int request_recv(size_t* rbuf, const size_t size, const int source = -1, const int tag = -1);
     void wait(const int rq);
     void cancel(const int rq);

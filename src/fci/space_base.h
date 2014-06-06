@@ -35,9 +35,9 @@ namespace bagel {
 
 class Space_base {
   protected:
-    std::map<int, std::shared_ptr<Determinants>> detmap_;
+    std::map<std::pair<int, int>, std::shared_ptr<Determinants>> detmap_;
 
-    int key_(const int a, const int b) const { return a*large__ + b; }
+    std::pair<int,int> key_(const int a, const int b) const { return std::make_pair(a, b); }
 
   private:
     friend class boost::serialization::access;
@@ -57,7 +57,7 @@ class Space_base {
     std::shared_ptr<Determinants> finddet(const int i, const int j) { return detmap_.at(key_(i,j)); }
     std::shared_ptr<const Determinants> finddet(const int i, const int j) const { return detmap_.at(key_(i,j)); }
 
-    const std::map<int, std::shared_ptr<Determinants>>& detmap() const { return detmap_; }
+    const std::map<std::pair<int,int>, std::shared_ptr<Determinants>>& detmap() const { return detmap_; }
 };
 
 }

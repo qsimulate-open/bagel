@@ -55,7 +55,7 @@ class SpaceKey {
       std::vector<std::string> anions = {{ "O", "A", "diA", "triA", "tetA", "pentA" }};
       std::vector<std::string> cations = {{ "O", "C", "diC", "triC", "tetC", "pentC" }};
 
-      std::string out = ( q > 0 ? anions.at(q) : cations.at(-q) );
+      std::string out = ( q < 0 ? anions.at(-q) : cations.at(q) );
       out = out + "(2S=" + std::to_string(S) + ";2m_s=" + std::to_string(m_s) + ")";
       return out;
     }
@@ -185,8 +185,8 @@ class DimerCISpace_base {
             const int mult = S + 1;
 
             for (int i = 1; i < mult; ++i) {
-              const int nqa = ref_qa - i;
-              const int nqb = ref_qb + i;
+              const int nqa = ref_qa + i;
+              const int nqb = ref_qb - i;
 
               std::shared_ptr<DetType> det = add_det<0>(nqa, nqb);
 
@@ -218,8 +218,8 @@ class DimerCISpace_base {
             const int mult = S + 1;
 
             for (int i = 1; i < mult; ++i) {
-              const int nqa = ref_qa - i;
-              const int nqb = ref_qb + i;
+              const int nqa = ref_qa + i;
+              const int nqb = ref_qb - i;
 
               std::shared_ptr<DetType> det = add_det<1>(nqa, nqb);
 
@@ -234,23 +234,26 @@ class DimerCISpace_base {
           }
         }
       }
+    }
 
+    // Fills in N-1 electron intermediates for Harrison--Zarrabian CAS algorithm
+    void intermediates() {
       for (auto& imap : cispaceA_) {
         int qa, qb;
         std::tie(qa, qb) = detkey<0>(imap.first);
 
-        add_det<0>(qa-1, qb);
-        add_det<0>(qa, qb-1);
-        add_det<0>(qa-1, qb-1);
+        add_det<0>(qa+1, qb);
+        add_det<0>(qa, qb+1);
+        add_det<0>(qa+1, qb+1);
       }
 
       for (auto& imap : cispaceB_) {
         int qa, qb;
         std::tie(qa, qb) = detkey<1>(imap.first);
 
-        add_det<1>(qa-1, qb);
-        add_det<1>(qa, qb-1);
-        add_det<1>(qa-1, qb-1);
+        add_det<1>(qa+1, qb);
+        add_det<1>(qa, qb+1);
+        add_det<1>(qa+1, qb+1);
       }
     }
 
@@ -259,17 +262,17 @@ class DimerCISpace_base {
     template<int unit> std::pair<int, int> detkey(const int S, const int m_s, const int q) {
       const int nS = m_s - (nelea<unit>() - neleb<unit>());
 
-      return std::make_pair( (nS - q)/2, -(nS + q)/2 );
+      return std::make_pair( (q - nS)/2, (q + nS)/2 );
     }
-    template<int unit> std::pair<int, int> detkey(const int a, const int b) const {
-      return std::make_pair(a - nelea<unit>(), b - neleb<unit>());
+    template<int unit> std::pair<int, int> detkey(const int nea, const int neb) const {
+      return std::make_pair(nelea<unit>() - nea, neleb<unit>() - neb);
     }
 
     template<int unit> std::pair<int, int> detunkey(const int qa, const int qb) const {
-      return std::make_pair(qa + nelea<unit>(), qb + neleb<unit>());
+      return std::make_pair(nelea<unit>() - qa, neleb<unit>() - qb);
     }
 
-    template<int unit> int charge(const int na, const int nb) const { return ( (nelea<unit>() + neleb<unit>()) - (na + nb) ); }
+    template<int unit> int charge(const int nea, const int neb) const { return ( (nelea<unit>() + neleb<unit>()) - (nea + neb) ); }
 };
 
 using DimerCAS = DimerCISpace_base<Dvec>;

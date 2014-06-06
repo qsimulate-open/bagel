@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfblockt.cc
+// Filename: dfdistt.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -64,7 +64,7 @@ DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const Sta
     }
     for (auto& i : rrequest) mpi__->wait(i);
 
-    TaskQueue<CopyBlockTask> task(mpi__->size());
+    TaskQueue<CopyBlockTask<double>> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
       task.emplace_back(buf->data()+adist->start(i)*bsize_, adist->size(i), dat->data()+adist->start(i), naux_, adist->size(i), bsize_);
     task.compute();
@@ -139,7 +139,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
     shared_ptr<const StaticDist> adist = df_->adist_now();
 
     // copy using threads
-    TaskQueue<CopyBlockTask> task(mpi__->size());
+    TaskQueue<CopyBlockTask<double>> task(mpi__->size());
     for (int i = 0; i != mpi__->size(); ++i)
       task.emplace_back((*dat)->data()+adist->start(i), naux_, (*buf)->data()+adist->start(i)*bsize_, adist->size(i), adist->size(i), bsize_);
     task.compute(resources__->max_num_threads());

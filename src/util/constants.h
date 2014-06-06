@@ -43,19 +43,31 @@ static constexpr int RYS_MAX = 13;
 static constexpr double PRIM_SCREEN_THRESH = 1.0e-12;
 
 /************************************************************
-*  Physical/Mathematical constants                          *
+*  Fundamental Physical/Mathematical constants              *
 ************************************************************/
-static constexpr double ang2bohr__ = 1.889725989;
 static const double pi__ = std::atan(1.0)*4.0;
 static const double rad2deg__ = 180.0 / pi__;
-static constexpr double c__ = 137.0359996287515;
+static constexpr double c__ = 137.035999074;               // CODATA 2010 inverse fine-structure constant
+static constexpr double au2kilogram__ = 9.10938291e-31;    // CODATA 2010 electron rest mass
+static constexpr double au2coulomb__ = 1.602176565e-19;    // CODATA 2010 elementary charge
+static constexpr double au2meter__ = 5.2917721092e-11;     // CODATA 2010 Bohr radius
+static constexpr double avogadro__ = 6.02214129e23;        // CODATA 2010 Avogadro constant
+
+/************************************************************
+*  Derived unit conversions                                 *
+************************************************************/
+static const double au2second__ = c__ * au2meter__ / 2.99792458e8;
+static const double au2angstrom__ = au2meter__ * 1.0e10;
+static const double au2joule__ = au2kilogram__ * std::pow(au2meter__ / au2second__, 2);
+static const double au2kjmol__ = au2joule__ * avogadro__ / 1.0e3;
+static const double au2eV__ = au2kilogram__ * au2meter__ * au2meter__ / au2second__ / au2second__ / au2coulomb__;
+static const double au2tesla__ = au2kilogram__ / au2coulomb__ / au2second__;
 
 /************************************************************
 *  Numerical constants                                      *
 ************************************************************/
 static constexpr double numerical_zero__ = 1.0e-15;
-static constexpr unsigned int large__ = 32;
-static constexpr unsigned int nbit__ = 32;
+static constexpr unsigned int nbit__ = 64;
 
 /************************************************************
 *  Misc constants                                           *

@@ -34,7 +34,7 @@
 #include <complex>
 
 extern "C" {
-  // scalapck routines
+  // scalapack routines
   void sl_init_(int*, const int*, const int*);
   void blacs_gridinfo_(const int*, const int*, const int*, int*, int*);
   void blacs_gridexit_(const int*);

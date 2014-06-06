@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: bagel_interface.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Ryan Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -35,11 +35,11 @@
 
 namespace ryan {
 
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI (const std::array<std::shared_ptr<const bagel::Shell>,4>& basisinfo);
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_NAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol);
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_overlap (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_kinetic (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
-std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_momentum (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI (const std::array<std::shared_ptr<const bagel::Shell>,4>& basisinfo, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_NAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_overlap (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_kinetic (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_momentum (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
 
 }
 

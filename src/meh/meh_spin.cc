@@ -40,7 +40,12 @@ void MEHSpin::filter(Matrix& o, const int desired_spin) const {
 
     Matrix S2 = *this * o;
 
-    const double factor = -4.0/(static_cast<double>(ispin*(ispin+2)));
-    o.ax_plus_y(factor, S2);
+    if (ispin == 0) {
+      o = S2;
+    }
+    else {
+      const double factor = -4.0/(static_cast<double>(ispin*(ispin+2)));
+      o.ax_plus_y(factor, S2);
+    }
   }
 }

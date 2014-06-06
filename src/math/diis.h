@@ -59,7 +59,7 @@ class DIIS {
 
   public:
     DIIS() { }
-    DIIS(const int ndiis) : ndiis_(ndiis), matrix_(new Mat(ndiis+1, ndiis+1, true)), coeff_(new Mat(ndiis+1, 1)) { }
+    DIIS(const int ndiis) : ndiis_(ndiis), matrix_(std::make_shared<Mat>(ndiis+1, ndiis+1, true)), coeff_(std::make_shared<Mat>(ndiis+1, 1)) { }
 
     std::shared_ptr<T> extrapolate(const std::pair<std::shared_ptr<const T>, std::shared_ptr<const T>> input) {
       std::shared_ptr<const T> v = input.first;

@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexmomentumbatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -33,6 +33,8 @@ namespace bagel {
 
 class ComplexMomentumBatch : public OSIntegral<std::complex<double>,Int_t::London> {
   protected:
+    std::array<double,3> magnetic_field_;
+
     void perform_VRR(std::complex<double>*) override;
     virtual std::complex<double> get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                        const int dim, const bool swap) override;
@@ -41,8 +43,9 @@ class ComplexMomentumBatch : public OSIntegral<std::complex<double>,Int_t::Londo
     int nrank() const override { return 0; }
 
   public:
-    ComplexMomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
-     : OSIntegral<std::complex<double>,Int_t::London>(basis, stack) { common_init(); }
+    ComplexMomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _magnetic_field,
+                         std::shared_ptr<StackMem> stack = nullptr)
+     : OSIntegral<std::complex<double>,Int_t::London>(basis, stack), magnetic_field_(_magnetic_field) { common_init(); }
 
     void compute() override;
 };

@@ -46,7 +46,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : inpu
   nbasis_(A->nbasis(), A->nbasis()) {
     array<double, 3> translation = input->get_array<double, 3>("translate");
     if (input->get<bool>("angstrom", false))
-      for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+      for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
     auto geomB = make_shared<const Geometry>((*A), translation);
 
     geoms_ = make_pair(A, geomB);
@@ -58,7 +58,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
 {
   array<double, 3> translation = input->get_array<double, 3>("translate");
   if (input->get<bool>("angstrom", false))
-    for_each(translation.begin(), translation.end(), [] (double& p) { p*= ang2bohr__; });
+    for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
 
   assert(A);
   auto geomB = make_shared<const Geometry>((*A->geom()), translation);
@@ -213,7 +213,7 @@ void Dimer::construct_coeff() {
   }
   else {
     // Round nele up for number of orbitals
-    ncore_ = make_pair( (nele_.first + 1)/2, (nele_.second + 1)/2 );
+    ncore_ = make_pair( (nele_.first - 1)/2 + 1, (nele_.second - 1)/2 + 1);
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
   }
@@ -570,7 +570,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
       copy_n(subspace.data(), dimerbasis_ * norb, out_coeff->element_ptr(0, active_position));
       active_position += norb;
 
-      for (size_t i = nact; i < active_size; ++i)
+      for (size_t i = norb; i < active_size; ++i)
         copy_n(subspace.element_ptr(0, i), dimerbasis_, out_coeff->element_ptr(0, ( closed ? closed_position++ : virt_position++ )));
     }
     else {
@@ -603,7 +603,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   set_sref(rhf->conv_to_ref());
   dimertime.tick_print("Dimer SCF");
 
-  shared_ptr<Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
+  shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
   shared_ptr<Matrix> dimercoeff = scoeff_->slice(0,nclosed_);
 
   // Explanation of schemes:
@@ -641,6 +641,13 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     dimertime.tick_print("Dimer localization");
 
     set_active(idata, /*localize_first*/ true);
+
+    Matrix active_mos = *scoeff_->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
+    Matrix fock_mo(active_mos % *fock * active_mos);
+    vector<double> eigs(active_mos.mdim(), 0.0);
+    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
+    active_mos *= *active_transformation;
+    scoeff_->copy_block(0, nclosed_, scoeff_->ndim(), active_mos.mdim(), active_mos);
   }
 }
 
@@ -935,7 +942,7 @@ shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<0>(embedded_rasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
+    out->insert<0>(embedded_distrasci<0>(rasdata, charge, spin, nstate, ras_desc.first));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;
@@ -948,7 +955,7 @@ shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const
     const int spin = ispace.at(1);
     const int nstate = ispace.at(2);
 
-    out->insert<1>(embedded_rasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
+    out->insert<1>(embedded_distrasci<1>(rasdata, charge, spin, nstate, ras_desc.second));
 
     cout << "      - charge: " << charge << ", spin: " << spin << ", nstates: " << nstate
                                << fixed << setw(10) << setprecision(2) << castime.tick() << endl;

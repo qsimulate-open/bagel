@@ -1,4 +1,4 @@
-// Author:  Ryan Reynolds
+// Author:  Ryan D. Reynolds
 // Date Created:  July 2013
 // Based upon a related file for 1-D quadrature from April-May 2009
 

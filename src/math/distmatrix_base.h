@@ -84,28 +84,6 @@ class DistMatrix_base {
       return std::make_pair(pcol, off);
     }
 
-  private:
-    // serialization
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << ndim_ << mdim_ << desc_ << localsize_;
-      for (size_t i = 0; i != size(); ++i) ar << local_[i];
-    }
-
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      ar >> ndim_ >> mdim_ >> desc_ >> localsize_;
-      local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      for (size_t i = 0; i != size(); ++i) ar >> local_[i];
-    }
-
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
-      boost::serialization::split_member(ar, *this, file_version);
-    }
-
   public:
     DistMatrix_base() { }
 
@@ -187,22 +165,21 @@ class DistMatrix_base {
         for (int j = 0; j != nblock; ++j)
           for (int id = 0; id != blocksize__; ++id) {
             DataType* c = local_.get()+j*blocksize__+localrow*(i*blocksize__+id);
-            std::for_each(c, c+blocksize__, [&x = vec[mypcol+i*mstride+id]](DataType& a) { a*= x; });
+            blas::scale_n(vec[mypcol+i*mstride+id], c, blocksize__);
           }
 
       for (int id = 0; id != localcol % blocksize__; ++id) {
         for (int j = 0; j != nblock; ++j) {
           DataType* c = local_.get()+j*blocksize__+localrow*(mblock*blocksize__+id);
-          std::for_each(c, c+blocksize__, [&x = vec[mypcol+mblock*mstride+id]](DataType& a) { a*= x; });
+          blas::scale_n(vec[mypcol+mblock*mstride+id], c, blocksize__);
         }
-
         DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
-        std::for_each(c, c+(localrow%blocksize__), [&x = vec[mypcol+mblock*mstride+id]](DataType& a) { a*= x; });
+        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__); 
       }
       for (int i = 0; i != mblock; ++i)
         for (int id = 0; id != blocksize__; ++id) {
           DataType* c = local_.get()+nblock*blocksize__+localrow*(i*blocksize__+id);
-          std::for_each(c, c+(localrow%blocksize__), [&x = vec[mypcol+i*mstride+id]](DataType& a) { a*= x; });
+          blas::scale_n(vec[mypcol+i*mstride+id], c, localrow%blocksize__);
         }
     }
 

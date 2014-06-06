@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: complexkineticbatch.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <rreynoldschem@u.northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -33,6 +33,8 @@ namespace bagel {
 
 class ComplexKineticBatch : public OSIntegral<std::complex<double>,Int_t::London> {
   protected:
+    std::array<double,3> magnetic_field_;
+
     void perform_VRR(std::complex<double>*) override;
     virtual std::complex<double> get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                        const int dim, const bool swap) override;
@@ -41,7 +43,8 @@ class ComplexKineticBatch : public OSIntegral<std::complex<double>,Int_t::London
     int nrank() const override { return 0; }
 
   public:
-    ComplexKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& basis) : OSIntegral<std::complex<double>,Int_t::London>(basis) { common_init(); }
+    ComplexKineticBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, const std::array<double,3> _magnetic_field)
+      : OSIntegral<std::complex<double>,Int_t::London>(basis), magnetic_field_(_magnetic_field) { common_init(); }
 
     void compute() override;
 };

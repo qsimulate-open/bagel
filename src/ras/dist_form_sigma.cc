@@ -29,8 +29,7 @@
 #include <src/ras/dist_form_sigma.h>
 #include <src/math/sparsematrix.h>
 
-// toggle for timing print out.
-static const bool tprint = false;
+#include <src/ras/form_sigma.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,6 +41,16 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
   const int nstate = ccvec->ij();
   shared_ptr<const RASDeterminants> det = ccvec->det();
 
+#if 1
+  vector<shared_ptr<RASCivec>> tmpvecs;
+  for (int i = 0; i < nstate; ++i) {
+    tmpvecs.push_back(ccvec->data(i)->civec());
+  }
+  auto localvecs = make_shared<const RASDvec>(tmpvecs);
+  FormSigmaRAS form_sigma(512);
+  shared_ptr<const RASDvec> sigmavec = form_sigma(localvecs, jop, conv);
+  return make_shared<DistRASDvec>(sigmavec);
+#else
   const int norb = det->norb();
   auto g = make_shared<Matrix>(norb, norb);
   for (int k = 0, kl = 0; k < norb; ++k) {
@@ -104,6 +113,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     sigma->ax_plus_y(1.0, *saa);
   }
   return sigmavec;
+#endif
 }
 
 // A bit of a temporary hack for 1e terms

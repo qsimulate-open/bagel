@@ -23,10 +23,19 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <boost/regex.hpp>
 #include <src/io/moldenin.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
+#include <regex>
+#else
+#include <boost/regex.hpp>
+using boost::regex;
+using boost::regex_search;
+using boost::regex_replace;
+using boost::cmatch;
+#endif
 
 using namespace bagel;
 using namespace std;
@@ -111,12 +120,12 @@ void MoldenIn::read() {
   /************************************************************
   *  Set up "global" regular expressions                      *
   ************************************************************/
-  boost::regex gto_re("\\[GTO\\]");
-  boost::regex atoms_re("\\[Atoms\\]");
-  boost::regex mo_re("\\[MO\\]");
-  boost::regex other_re("\\[\\w+\\]");
+  regex gto_re("\\[GTO\\]");
+  regex atoms_re("\\[Atoms\\]");
+  regex mo_re("\\[MO\\]");
+  regex other_re("\\[\\w+\\]");
 
-  boost::cmatch matches;
+  cmatch matches;
 
   /************************************************************
   *  Booleans to check and make sure each important section   *
@@ -141,14 +150,14 @@ void MoldenIn::read() {
       throw runtime_error("Molden input file not found");
     }
     else {
-      boost::regex _5d_re("\\[5[Dd]\\]");
-      boost::regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
+      regex _5d_re("\\[5[Dd]\\]");
+      regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
       while (!sph_input.eof()) {
         getline(sph_input, line);
-        if (boost::regex_search(line,_5d_re)){
+        if (regex_search(line,_5d_re)){
           cartesian_ = false;
         }
-        else if(boost::regex_search(line,_5d7f_re)) {
+        else if(regex_search(line,_5d7f_re)) {
           cartesian_ = false;
         }
       }
@@ -164,15 +173,15 @@ void MoldenIn::read() {
   getline(ifs, line);
 
   while (!ifs.eof()){
-    if (boost::regex_search(line,atoms_re)) {
-      boost::regex ang_re("Angs");
-      boost::regex atoms_line("(\\w{1,2})\\s+\\d+\\s+\\d+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
+    if (regex_search(line,atoms_re)) {
+      regex ang_re("Angs");
+      regex atoms_line("(\\w{1,2})\\s+\\d+\\s+\\d+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)");
 
-      scale = boost::regex_search(line, ang_re) ? ang2bohr__ : 1.0;
+      scale = regex_search(line, ang_re) ? (1.0/au2angstrom__) : 1.0;
 
       getline(ifs, line);
-      while (!boost::regex_search(line, other_re) && !ifs.eof()) {
-        if (boost::regex_search(line.c_str(), matches, atoms_line)) {
+      while (!regex_search(line, other_re) && !ifs.eof()) {
+        if (regex_search(line.c_str(), matches, atoms_line)) {
           ++num_atoms;
 
           const string nm(matches[1].first, matches[1].second);
@@ -197,17 +206,17 @@ void MoldenIn::read() {
 
       found_atoms = true;
     }
-    else if (boost::regex_search(line,gto_re)){
+    else if (regex_search(line,gto_re)){
       getline(ifs, line);
 
-      boost::regex atom_line("(\\d+)\\s*\\S*");
-      boost::regex shell_line("([spdf])\\s+(\\d+)\\s*\\S*");
-      boost::regex exp_line("(\\S+)\\s+(\\S+)");
-      boost::regex Dd("[Dd]");
+      regex atom_line("(\\d+)\\s*\\S*");
+      regex shell_line("([spdf])\\s+(\\d+)\\s*\\S*");
+      regex exp_line("(\\S+)\\s+(\\S+)");
+      regex Dd("[Dd]");
 
-      while (!boost::regex_search(line,other_re) && !ifs.eof()){
+      while (!regex_search(line,other_re) && !ifs.eof()){
         /* This line should be a new atom */
-        if (!boost::regex_search(line.c_str(), matches, atom_line)) {
+        if (!regex_search(line.c_str(), matches, atom_line)) {
            getline(ifs, line); continue;
         }
         vector<tuple<string,vector<double>,vector<double>>> atom_basis_info;
@@ -222,7 +231,7 @@ void MoldenIn::read() {
 
         getline(ifs, line);
 
-        while (boost::regex_search(line.c_str(), matches, shell_line)) {
+        while (regex_search(line.c_str(), matches, shell_line)) {
           /* Now it should be a new angular shell */
           const string ang_l(matches[1].first, matches[1].second);
           atomic_shell_order.push_back(atommap.angular_number(ang_l));
@@ -236,13 +245,13 @@ void MoldenIn::read() {
           for (int i = 0; i < num_exponents; ++i) {
             getline(ifs, line);
 
-            boost::regex_search(line.c_str(), matches, exp_line);
+            regex_search(line.c_str(), matches, exp_line);
 
             string exp_string(matches[1].first, matches[1].second);
             string coeff_string(matches[2].first, matches[2].second);
 
-            exp_string = boost::regex_replace(exp_string, Dd, "E");
-            coeff_string = boost::regex_replace(coeff_string, Dd, "E");
+            exp_string = regex_replace(exp_string, Dd, "E");
+            coeff_string = regex_replace(coeff_string, Dd, "E");
 
             const double exponent = lexical_cast<double>(exp_string);
             const double coeff = lexical_cast<double>(coeff_string);
@@ -266,28 +275,28 @@ void MoldenIn::read() {
 
       found_gto = true;
     }
-    else if (boost::regex_search(line,mo_re)) {
+    else if (regex_search(line,mo_re)) {
       if (!found_gto) {
         throw runtime_error("MO section found before GTO section. Check Molden file.");
       }
       /* Not used at the moment. Maybe later.
-      boost::regex sym_re("Sym=\\s+(\\S+)");
-      boost::regex ene_re("Ene=\\s+(\\S+)");
-      boost::regex spin_re("Spin=\\s+(\\w+)");
-      boost::regex occup_re("Occup=\\s+(\\S+)"); */
-      boost::regex coeff_re("\\d+\\s+(\\S+)");
+      regex sym_re("Sym=\\s+(\\S+)");
+      regex ene_re("Ene=\\s+(\\S+)");
+      regex spin_re("Spin=\\s+(\\w+)");
+      regex occup_re("Occup=\\s+(\\S+)"); */
+      regex coeff_re("\\d+\\s+(\\S+)");
 
       getline(ifs, line);
-      while (!boost::regex_search(line,other_re) && !ifs.eof()) {
+      while (!regex_search(line,other_re) && !ifs.eof()) {
         vector<double> movec;
 
         getline(ifs, line);
-        while (!boost::regex_search(line.c_str(),coeff_re)) {
+        while (!regex_search(line.c_str(),coeff_re)) {
           /* For now, throwing away excess data until we get to MO coefficients */
           getline(ifs, line);
         }
 
-        while (boost::regex_search(line.c_str(),matches,coeff_re)){
+        while (regex_search(line.c_str(),matches,coeff_re)){
           string mo_string(matches[1].first, matches[1].second);
           double coeff = lexical_cast<double>(mo_string);
 
