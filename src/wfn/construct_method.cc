@@ -36,6 +36,7 @@
 #if 0
 #include <src/casscf/werner.h>
 #endif
+#include <src/casscf/cashybrid.h>
 #include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
@@ -101,6 +102,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     string algorithm = itree->get<string>("algorithm", "");
     if (algorithm == "superci" || algorithm == "")
       out = make_shared<SuperCI>(itree, geom, ref);
+    else if (algorithm == "hybrid")
+      out = make_shared<CASHYBRID>(itree, geom, ref);
 #if 0
     else if (algorithm == "werner" || algorithm == "knowles")
       out = make_shared<WernerKnowles>(itree, geom, ref);
