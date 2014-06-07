@@ -27,7 +27,7 @@
 #include <src/casscf/casbfgs.h>
 #include <src/casscf/qvec.h>
 #include <src/math/davidson.h>
-#include <src/math/bfgs.h>
+#include <src/math/step_restrict_bfgs.h>
 #include <src/math/hpw_diis.h>
 
 using namespace std;
@@ -37,8 +37,8 @@ void CASBFGS::compute() {
 
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
-  shared_ptr<BFGS<Matrix>> bfgs;
   shared_ptr<HPW_DIIS<Matrix>> diis;
+  shared_ptr<SRBFGS<RotFile>> bfgs;
 
   // ============================
   // macro iteration from here
@@ -48,6 +48,7 @@ void CASBFGS::compute() {
   auto x = make_shared<Matrix>(nbasis_, nbasis_);
   x->unit();
   shared_ptr<const Matrix> xstart;
+  vector<double> evals;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -61,6 +62,7 @@ void CASBFGS::compute() {
     fci_->compute_rdm12();
     // get energy
     energy_ = fci_->energy();
+    evals.push_back((fci_->energy())[0]);
     resume_stdcout();
 
     shared_ptr<Matrix> natorb_mat = x->clone();
@@ -74,7 +76,7 @@ void CASBFGS::compute() {
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
     sigma->zero();
 
-    // compute one-boedy operators
+    // compute one-body operators
     // * preparation
     shared_ptr<const Matrix> ccoeff = coeff_->slice(0, nclosed_);
     shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc_);
@@ -101,28 +103,31 @@ void CASBFGS::compute() {
     grad_ca(cfock, afock, qxr, sigma);
 
     // if this is the first time, set up the BFGS solver
-//  if (iter == 0) {
-  if (true) {
-      // BFGS and DIIS should start at the same time
-      shared_ptr<const Matrix> denom = compute_denom(cfock, afock, qxr)->unpack<Matrix>(1.0e10);
-      bfgs = make_shared<BFGS<Matrix>>(denom);
-    }
     if (iter == 0) {
-//if (false) {
+      // BFGS and DIIS should start at the same time
+      shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
+      bfgs = make_shared<SRBFGS<RotFile>>(denom);
+    }
+    if (false) {
       xstart = xold->copy();
       shared_ptr<Matrix> unit = make_shared<Matrix>(xold->mdim(), xold->mdim());
       unit->unit();
       diis = make_shared<HPW_DIIS<Matrix>>(10, cold, unit);
     }
     // extrapolation using BFGS
+    mute_stdcout();
+    cout << " " << endl;
+    cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
     *x *= *natorb_mat;
-    auto xlog = make_shared<Matrix>(*x->log(100));
-    shared_ptr<const Matrix> sigma_mat = sigma->unpack_sym<Matrix>();
-    shared_ptr<Matrix> a = bfgs->extrapolate(sigma_mat, xlog);
-    *a *= -1.0;
+    auto xcopy = x->log(8);
+    auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
+    bfgs->check_step(evals, sigma, xlog);
+    shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
+    cout << " ---------------------------------------------------- " << endl << endl;
+    resume_stdcout();
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a;
+    shared_ptr<const Matrix> amat = a->unpack<Matrix>();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
@@ -140,7 +145,7 @@ void CASBFGS::compute() {
     }
 
     // setting error of macro iteration
-    const double gradient = sigma->dot_product(*sigma) / sigma->size();
+    const double gradient = sigma->rms();
 
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 

@@ -35,8 +35,8 @@
 #include <src/casscf/superci.h>
 #if 0
 #include <src/casscf/werner.h>
-#include <src/casscf/casbfgs.h>
 #endif
+#include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
 #include <src/zcasscf/zcasbfgs.h>
@@ -104,9 +104,9 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
 #if 0
     else if (algorithm == "werner" || algorithm == "knowles")
       out = make_shared<WernerKnowles>(itree, geom, ref);
+#endif
     else if (algorithm == "bfgs")
       out = make_shared<CASBFGS>(itree, geom, ref);
-#endif
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
   }
