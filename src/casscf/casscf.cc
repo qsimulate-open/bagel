@@ -318,7 +318,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
                                     fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 
   // TODO
-  // compute one-boedy operators
+  // compute one-body operators
   shared_ptr<Matrix> f;
   shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile>  denom;
