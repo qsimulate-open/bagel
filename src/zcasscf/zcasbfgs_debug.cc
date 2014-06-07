@@ -443,67 +443,6 @@ complex<double> ZCASBFGS::find_level_shift(shared_ptr<const ZRotFile> rotmat) co
 }
 
 
-double ZCASBFGS::trust_radius_energy_ratio(const int iter, const vector<double> energy, shared_ptr<ZRotFile> a, shared_ptr<ZRotFile> v, shared_ptr<ZRotFile> grad) const {
-  // Following Jensen and Jorgensen JCP 80 1204 (1984)
-  // Returns r_k = ( E(a_k) - E(a_(k-1)) )/( E^(2)(a_k) - E(a_(k-1)) ) (Eq 64)
-  assert(energy.size() > 0);
-
-  double DeltaE = energy[iter] - energy[iter-1];
-
-  double e2 = 0.5*((a->dot_product(v)).real());
-  double e1 = (a->dot_product(grad)).real();
-  double e0 = energy[iter] + e1 + e2;
-  e0 -= energy[iter-1];
-  DeltaE /= e0;
-  return DeltaE;
-}
-
-
-shared_ptr<ZRotFile> ZCASBFGS::___debug___microiterations(shared_ptr<ZRotFile> xlog, shared_ptr<ZRotFile> grad, shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const {
-    // Returns an appropriate step vector
-    const double rmin = 0.6; const double rgood = 0.85; double alpha = 1.3;
-    alpha = alpha + static_cast<double>(iter) * .25;
-    const int max_micro_iter = idata_->get<int>("microiter", 30);
-    auto tls = level_shift_.real();
-    auto shift = xlog->clone();
-    shift->fill(tls);
-    shared_ptr<ZRotFile> acopy = bfgs->extrapolate_micro(grad, xlog, shift, false);
-    for (int mi = 0; mi!= max_micro_iter; ++mi) {
-      shared_ptr<ZRotFile> v = bfgs->interpolate_hessian(acopy, shift, false); // H_n * a
-      double rk = bfgs->taylor_series_validity_ratio(energy_, grad, acopy);
-      cout << setprecision(4) << " Taylor expansion validity parameter, rk  = " << rk << endl;
-      if (((rmin < rk) && (rk < rgood)) || ((2.0 - rgood < rk) && (rk < 2.0 - rmin))) {
-          if (bfgs->delta().size() != 0)
-            bfgs->decrement_intermediates();
-          auto tmp1 = bfgs->extrapolate_micro(grad, acopy, shift, true);
-          auto v = bfgs->interpolate_hessian(acopy, shift, true);
-          trust_radius = trust_radius;
-          cout << " condition (i) satisfied in microiteration " << mi << endl;
-          cout << " trust radius from previous macroiteration will be used " << endl;
-          cout << " end microiteration " << mi << endl;
-          break;
-      } else if ((rgood < rk) && (rk < 2 - rgood) ) {
-          trust_radius = min(alpha * trust_radius, 0.75);
-          cout << " condition (ii) satisfied in microiteration " << mi << endl;
-          cout << " new trust radius = " << trust_radius << endl; cout << " end microiteration " << mi << endl;
-          if (bfgs->delta().size() != 0)
-            bfgs->decrement_intermediates();
-          auto tmp1 = bfgs->extrapolate_micro(grad, acopy, shift, true);
-          auto v = bfgs->interpolate_hessian(acopy, shift, true);
-          break;
-      } else if (rk < rmin || rk > 2 - rmin ) {
-          if (bfgs->delta().size() == bfgs->Y().size())
-            bfgs->decrement_intermediates();
-          cout << " step does not satisfy Taylor expansion criteria " << endl; 
-          cout << " scaling down the step vector " << endl;
-          acopy->scale(1.0/alpha);
-          cout << " end microiteration " << mi << endl;
-      }
-    }
-    return acopy;
-}
-
-
 tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRotFile>> ZCASBFGS::___debug___optimize_subspace_rotations(vector<double> energy, shared_ptr<const ZRotFile> grad, shared_ptr<const ZRotFile> rot, shared_ptr<SRBFGS<ZRotFile>> srbfgs, shared_ptr<ZMatrix> cold, bool optimize_electrons) {
   // function to optimize only the electronic type orbital rotations neglecting any coupling to positrons
   const int nvirtnr = nvirt_ - nneg_/2;
