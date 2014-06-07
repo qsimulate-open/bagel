@@ -88,7 +88,6 @@ class SRBFGS {
     void initiate_trust_radius(std::shared_ptr<const T> _grad) {
       // to make sure, inputs are copied.
       auto grad = std::make_shared<T>(*_grad);
-      *grad /= *denom_;
       trust_radius_ = std::sqrt(detail::real(grad->dot_product(grad)));
     }
 
