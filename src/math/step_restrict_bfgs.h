@@ -33,7 +33,7 @@
 //      and Erway, Jain, Marcia, arXiv:1209.5141.
 // Hebden algorithm : Hebden, AERE Harwell Report TP515 (1973).
 // T needs clone, ddot and daxpy, along with overloaded operators, a copy constructor
-//         data(const size_t), norm
+//         data(const size_t), norm, fill
 
 #include <stddef.h>
 #include <vector>
