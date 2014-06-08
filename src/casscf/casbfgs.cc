@@ -149,10 +149,18 @@ void CASBFGS::compute() {
 
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
-    if (gradient < thresh_) break;
+    if (gradient < thresh_) {
+      rms_grad_ = gradient;
+      break;
+    }
 
-    if (iter == max_iter_-1)
-      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
+//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
+    }
   }
   // ============================
   // macro iteration to here

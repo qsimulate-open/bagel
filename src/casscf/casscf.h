@@ -75,6 +75,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // energy
     std::vector<double> energy_;
+    double rms_grad_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
@@ -106,6 +107,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     double energy(const int i) const { return energy_[i]; };
     double energy() const { return energy_[istate_]; };
+    double rms_grad() const { return rms_grad_; };
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,
