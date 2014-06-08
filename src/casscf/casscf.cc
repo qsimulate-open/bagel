@@ -35,9 +35,6 @@ using namespace bagel;
 CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
-  // TODO coefficient projection is not working properly.
-  ref_ = nullptr;
-
   if (!ref_) {
     auto scf = make_shared<SCF>(idat, geom);
     scf->compute();
