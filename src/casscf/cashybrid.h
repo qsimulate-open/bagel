@@ -36,21 +36,24 @@ namespace bagel {
 class CASHYBRID : public Method {
 
   protected:
-    int maxiter_sci_;
-    int maxiter_bfgs_;
+    int maxiter_switch_;
     double thresh_switch_;
 
     std::shared_ptr<const Reference> refout_;
 
     void common_init() {
       std::cout << "    * Using a hybrid approach to CASSCF *    " << std::endl;
-      maxiter_sci_   = idata_->get<int>("maxiter_sci", 10);
-      maxiter_bfgs_  = idata_->get<int>("maxiter_bfgs", 10);
-      thresh_switch_ = idata_->get<double>("thresh_switch", 1.0e-4);
-      std::cout << "    * SuperCI used for a maximum of " << maxiter_sci_ << " iterations *    " << std::endl;
-      std::cout << std::setprecision(2) << std::scientific
-                << "    * Switching to qusi-Newton methods when the rms gradient norm is smaller than " << thresh_switch_ << " *    " << std::endl;
-      std::cout << "    * Step-restricted BFGS will then be used for a maximum of " << maxiter_bfgs_ << " iterations *    " << std::endl << std::endl;
+
+      maxiter_switch_   = idata_->get<int>("maxiter_switch", -1);
+      int maxiter_bfgs   = idata_->get<int>("maxiter", 50);
+      int maxiter_sci = maxiter_switch_ > 0 ? maxiter_switch_ : maxiter_bfgs;
+      thresh_switch_ = idata_->get<double>("thresh_switch", -1.0);
+
+      if (thresh_switch_ > 0.0)
+        std::cout << std::setprecision(2) << std::scientific
+                  << "    * Quasi-Newton methods will be used if the rms gradient norm becomes smaller than " << thresh_switch_ << " *    " << std::endl;
+      std::cout << "    * SuperCI will be used for a maximum of " << maxiter_sci << " iterations *    " << std::endl;
+      std::cout << "    * Step-restricted BFGS will then be used for a maximum of " << maxiter_bfgs << " iterations *    " << std::endl << std::endl;
     }
 
 

@@ -68,7 +68,7 @@ void CASSCF::common_init() {
 #endif
 
   // get maxiter from the input
-  max_iter_ = idata_->get<int>("maxiter", 100);
+  max_iter_ = idata_->get<int>("maxiter", 50);
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
