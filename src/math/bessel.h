@@ -40,30 +40,42 @@ class MSphBesselI {
   private:
     int l_;
 
-     double R_l(const double x) const {
-       Factorial f;
-       double sum = 0.0;
-       for (int i = 0; i <= l_; ++i) {
-         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
-       }
-       return sum;
-     }
+    double R_l(const double x) const {
+      Factorial f;
+      double sum = 0.0;
+      for (int i = 0; i <= l_; ++i) sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
+      return sum;
+    }
 
   public:
+    MSphBesselI(const int l) : l_(l) {}
+    ~MSphBesselI() {}
 
-     MSphBesselI(const int l) : l_(l) {}
-     ~MSphBesselI() {}
+    double compute(const double x) const {
 
-     double compute(const double x) const {
-       Factorial f;
-       if (x < 1e-7) {
-         return (1.0 - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
-       } else if (x > 16) {
-         return 0.5 * R_l(-x) / x;
-       } else {
-         return 0.5 * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
-       }
-     }
+      double bessel = 0.0;
+
+      Factorial f;
+      if (x < 1e-7) {
+        bessel = (1.0 - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
+      } else if (x > 16) {
+        bessel = 0.5 * R_l(-x) / x;
+      } else {
+        const double halfxsq = 0.5 * x * x;
+        double current = std::exp(-x);
+        if (l_ != 0)
+          for (int ll = 1; ll <= l_; ++ll) current *= x / double(2*ll+1);
+
+        int j = 0;
+        do {
+            bessel += current;
+            ++j;
+            current *= halfxsq / double(2*l_ + 2*j + 1) / double(j);
+        } while (std::fabs(current) > std::numeric_limits<double>::epsilon());
+      }
+
+      return bessel;
+    }
 
 };
 
