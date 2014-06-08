@@ -155,7 +155,8 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   tuple<int,int,int,int> nopen   = atommap_.num_open(ga->atoms().front()->name());
   int nclo[4] = {get<0>(nclosed)/2, get<1>(nclosed)/2, get<2>(nclosed)/2, get<3>(nclosed)/2};
   int nope[4] = {get<0>(nopen),     get<1>(nopen),     get<2>(nopen),     get<3>(nopen)};
-  const int sclosed = get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed);
+  const int sclosed = (!ga->atoms().front()->use_ecp_basis()) ? get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed)
+                    : (get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed) - ga->atoms().front()->ecp_parameters()->ecp_ncore());
   const int sopen   = get<0>(nopen)  +get<1>(nopen)  +get<2>(nopen)  +get<3>(nopen);
   if (sclosed+sopen != ga->nele())
     throw logic_error("Inconsistent nclosed and nopen. See AtomMap");

@@ -27,19 +27,14 @@
 #ifndef __SRC_MOLECULE_SHELL_H
 #define __SRC_MOLECULE_SHELL_H
 
-#include <array>
-#include <src/math/matrix.h>
+#include <src/molecule/shell_base.h>
 #include <src/util/serialization.h>
 
 namespace bagel {
 
-class Shell {
+class Shell : public Shell_base {
 
   protected:
-    bool spherical_;
-
-    std::array<double,3> position_;
-    int angular_number_;
     std::vector<double> exponents_;     // length of primitive basis function
     std::vector<std::vector<double>> contractions_;  // length of contracted basis function
     std::vector<std::pair<int, int>> contraction_ranges_;
@@ -92,15 +87,12 @@ class Shell {
           const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range, const std::array<double,3>& vector_potential);
     // default constructor for adding null basis
     Shell(const bool sph);
+    virtual ~Shell() { }
 
     bool dummy() const { return dummy_; };
-    bool spherical() const { return spherical_; };
     int num_primitive() const { return exponents_.size(); };
     int num_contracted() const { return contractions_.size(); };
 
-    double position(const int i) const { return position_[i]; };
-    const std::array<double,3>& position() const { return position_; };
-    int angular_number() const { return angular_number_; };
     double exponents(const int i) const { return exponents_[i]; };
     const std::vector<double>& exponents() const { return exponents_; };
     const double* exponents_pointer() const { return &(exponents_[0]); };
@@ -112,8 +104,8 @@ class Shell {
     const std::vector<int>& contraction_upper() const { return contraction_upper_; };
     const std::vector<int>& contraction_lower() const { return contraction_lower_; };
 
-    const std::string show() const;
     int nbasis() const { return nbasis_; };
+    std::string show() const override;
 
     std::shared_ptr<const Shell> move_atom(const std::array<double,3>&) const;
     std::shared_ptr<const Shell> move_atom(const double*) const;

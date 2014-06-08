@@ -174,7 +174,7 @@ class DistMatrix_base {
           blas::scale_n(vec[mypcol+mblock*mstride+id], c, blocksize__);
         }
         DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
-        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__); 
+        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__);
       }
       for (int i = 0; i != mblock; ++i)
         for (int id = 0; id != blocksize__; ++id) {

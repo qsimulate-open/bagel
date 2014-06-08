@@ -1,0 +1,20 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "lanl2dz-ecp",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "Zn",  "xyz" : [  0.000000,      0.000000,      0.000000]}
+  ]
+},
+
+{
+  "charge" : "2",
+  "title" : "hf",
+  "df" : "false",
+  "thresh" : 1.0e-10
+}
+
+]}
