@@ -35,17 +35,27 @@
 
 void CASHYBRID::compute() {
 
+  double global_thresh = idata_->get<double>("thresh", 1.0e-8); 
   shared_ptr<Method> active_method;
   // construct and compute SuperCI
   {
     auto idata = make_shared<PTree>(*idata_);
-    idata->erase("maxiter");
-    idata->erase("thresh");
-    idata->put("maxiter", maxiter_sci_); 
-    idata->put("thresh",  thresh_switch_); 
+    if (maxiter_switch_ != -1) {
+      idata->erase("maxiter");
+      idata->put("maxiter", maxiter_switch_); 
+    }
+    if (thresh_switch_ > 0.0) {
+      idata->erase("thresh");
+      idata->put("thresh",  thresh_switch_); 
+    }
     active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
+    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    if (grad < global_thresh) {
+      cout << "      * CASSCF converged *    " << endl;
+      return;
+    }
   }
 
   // construct and compute step-restricted BFGS
@@ -53,6 +63,10 @@ void CASHYBRID::compute() {
     active_method = make_shared<CASBFGS>(idata_, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
+    double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    if (grad < global_thresh) {
+      cout << "      * CASSCF converged *    " << endl;
+    }
   }
 
 }
