@@ -1,0 +1,21 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "lanl2dz-ecp",
+  "angstrom" : "true",
+  "geometry" : [
+    { "atom" : "Cu",  "xyz" : [  0.000000,      0.000000,      0.000000]},
+    { "atom" :  "H",  "xyz" : [  0.000000,      0.000000,      1.597000],
+                     "basis" : "cc-pvtz"}
+  ]
+},
+
+{
+  "title" : "hf",
+  "df" : "false",
+  "thresh" : 1.0e-10
+}
+
+]}

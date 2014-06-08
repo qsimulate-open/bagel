@@ -37,6 +37,8 @@ GNAIBatch::GNAIBatch(const array<shared_ptr<const Shell>,2>& _info, const shared
   }
   set_exponents();
   const double integral_thresh = PRIM_SCREEN_THRESH;
+
+  this->allocate_arrays(primsize_*natom_);
   compute_ssss(integral_thresh);
   root_weight(primsize_*natom_);
 }

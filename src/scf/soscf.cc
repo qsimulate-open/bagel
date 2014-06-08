@@ -3,7 +3,7 @@
 // Filename: soscf.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu> 
+// Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -47,6 +47,7 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
   soeig_ = unique_ptr<double[]> (new double[geom_->nbasis() * 2]);
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
+
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
 
 }
@@ -63,18 +64,26 @@ void SOSCF::initial_guess() {
 }
 
 void SOSCF::compute() {
+  Timer scftime;
   initial_guess();
+
+  cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
+  scftime.tick_print("SOSCF startup");
+  cout << endl;
+  cout << indent << "=== SOSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
   DIIS<Matrix> diis(diis_size_);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     shared_ptr<const Matrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
     energy_ = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
-    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ - 
+    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ -
                                                   *sooverlap_ * *aodensity_ * *sofock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << endl;
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+                                      << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SOSCF iteration converged." << endl << endl;
       break;
