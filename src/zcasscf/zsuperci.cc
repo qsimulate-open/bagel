@@ -54,6 +54,8 @@ void ZSuperCI::compute() {
   if (nact_)
     fci_->update(coeff_);
 
+  double gradient = 1.0e10;
+
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
@@ -101,7 +103,7 @@ void ZSuperCI::compute() {
     }
 
     // setting error of macro iteration
-    auto gradient = grad->rms();
+    gradient = grad->rms();
     if (gradient < thresh_) {
       if (!nact_) print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
       break;
@@ -129,7 +131,7 @@ void ZSuperCI::compute() {
    *amat *= 1.0 * complex<double>(0.0, -1.0);
    unique_ptr<double[]> teig(new double[amat->ndim()]);
    amat->diagonalize(teig.get());
-   auto amat_sav = amat->copy();
+   shared_ptr<ZMatrix> amat_sav = amat->copy();
    for (int i = 0; i != amat->ndim(); ++i) {
      complex<double> ex = exp(complex<double>(0.0, teig[i]));
      for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
@@ -137,7 +139,7 @@ void ZSuperCI::compute() {
    auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
 
 #ifdef BOTHSPACES
-   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa); // NEED TO ADJUST THIS FOR ELECTRONIC ROTATIONS ONLY
+   coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
 #else
    auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
    ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
@@ -241,7 +243,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // G matrix (active-active) D_rs,tu Factp_tu - delta_rs nr sum_v Factp_vv
   if (nact_) {
     gaa = factp->clone();
-    auto nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
+    shared_ptr<const ZMatrix> nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
     zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
     complex<double> p = complex<double> (0.0,0.0);
     for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
@@ -271,7 +273,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     target = dtmp->ptr_vc();
     for (int i = 0; i != nclosed_*2; ++i)
       for (int j = 0; j != nvirt_tmp*2; ++j, ++target)
-        *target = (f->element(j+nocc_*2, j+nocc_*2) - f->element(i, i)) / 1.0; // TODO : check if this factor is 2.0 or 1.0 ?
+        *target = (f->element(j+nocc_*2, j+nocc_*2) - f->element(i, i)) / 2.0; // 2.0 to recover non-rel limit
 
     if (nact_) {
       target = dtmp->ptr_ca();
