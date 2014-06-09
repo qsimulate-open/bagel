@@ -55,7 +55,7 @@ class RadialInt {
     ~RadialInt() {}
 
     void integrate();
-    double integral() { return integral_; }
+    double integral() const { return integral_; }
     virtual std::vector<double> compute(const std::vector<double> r) = 0;
 
     void transform_Log(const int ngrid, const int m = 3);

@@ -35,16 +35,16 @@
 
 namespace bagel {
 
-const static Factorial f;
-
 class MSphBesselI {
 
   private:
     int l_;
 
+    const static Factorial f;
+
     double R_l(const double x) const {
       double sum = 0.0;
-      for (int i = 0; i <= l_; ++i) sum += f(l_ + i) / f(i) / f(l_ -  i) / std::pow(2.0 * x, i);
+      for (int i = 0; i <= l_; ++i) sum += f(l_ + i) / (f(i) * f(l_ -  i) * std::pow(2.0 * x, i));
       return sum;
     }
 
