@@ -95,8 +95,9 @@ using namespace bagel;\n\
 \n";
 
 ofs << "\
-void SphUSPList::sphusp_" << lstr << "(const int m, vector<double>& c) {\n";
+vector<double> SphUSPList::sphusp_" << lstr << "(const int m) {\n";
   ofs << "\n\
+  vector<double> c;\n\
   constexpr double coeff[" << size << "] = {";
 
     const vector<vector<double>> lusp = usp.at(l);
@@ -128,6 +129,7 @@ void SphUSPList::sphusp_" << lstr << "(const int m, vector<double>& c) {\n";
   const int mu = m + " << l << ";\n\
   const int i0 = mu * size_c;\n\
   for (int i = i0; i != i0 + size_c; ++i) c.push_back(coeff[i]);\n\
+  return c;\n\
   \n";
 
 ofs << "}\n";

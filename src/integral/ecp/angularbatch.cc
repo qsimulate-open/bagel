@@ -119,8 +119,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              vector<double> usp1;
-              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
               double sAB = 0.0;
               for (int i = 0; i != usp1.size(); ++i) {
                 if (usp1[i] != 0.0) {
@@ -185,8 +184,7 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              vector<double> usp1;
-              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
               double sCB = 0.0;
               for (int i = 0; i != usp1.size(); ++i) {
                 if (usp1[i] != 0.0) {
@@ -222,8 +220,7 @@ vector<double> AngularBatch::compute(const vector<double> r) {
     const int l = ishecp->angular_number();
     if (l != ecp_->ecp_maxl()) {
       for (int m = 0; m <= 2*l; ++m) {
-        vector<double> usp;
-        sphusplist.sphuspfunc_call(l, m-l, usp);
+        const vector<double> usp = sphusplist.sphuspfunc_call(l, m-l);
         vector<double> pA = project_AB(l, usp, r);
         vector<double> pC = project_CB(l, usp, r);
         for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)

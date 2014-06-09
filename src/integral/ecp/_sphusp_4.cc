@@ -30,8 +30,9 @@
 using namespace std;
 using namespace bagel;
 
-void SphUSPList::sphusp_4(const int m, vector<double>& c) {
+vector<double> SphUSPList::sphusp_4(const int m) {
 
+  vector<double> c;
   constexpr double coeff[135] = {   0.000000000000000e+00,   2.503342941796705e+00,   0.000000000000000e+00,  -2.503342941796705e+00,   0.000000000000000e+00,
    0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,
    0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,   0.000000000000000e+00,
@@ -66,5 +67,6 @@ void SphUSPList::sphusp_4(const int m, vector<double>& c) {
   const int mu = m + 4;
   const int i0 = mu * size_c;
   for (int i = i0; i != i0 + size_c; ++i) c.push_back(coeff[i]);
+  return c;
 
 }

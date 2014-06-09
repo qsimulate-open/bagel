@@ -35,16 +35,16 @@ namespace bagel {
 struct SphUSPList {
   private:
 
-    std::function<void (const int, std::vector<double>&)> sphuspfunc[ANG_HRR_END+1];
+    std::function<std::vector<double>(const int)> sphuspfunc[ANG_HRR_END+1];
 
-    static void sphusp_0(const int, std::vector<double>&);
-    static void sphusp_1(const int, std::vector<double>&);
-    static void sphusp_2(const int, std::vector<double>&);
-    static void sphusp_3(const int, std::vector<double>&);
-    static void sphusp_4(const int, std::vector<double>&);
-    static void sphusp_5(const int, std::vector<double>&);
-    static void sphusp_6(const int, std::vector<double>&);
-    static void sphusp_7(const int, std::vector<double>&);
+    static std::vector<double> sphusp_0(const int);
+    static std::vector<double> sphusp_1(const int);
+    static std::vector<double> sphusp_2(const int);
+    static std::vector<double> sphusp_3(const int);
+    static std::vector<double> sphusp_4(const int);
+    static std::vector<double> sphusp_5(const int);
+    static std::vector<double> sphusp_6(const int);
+    static std::vector<double> sphusp_7(const int);
 
   public:
     SphUSPList() {
@@ -58,7 +58,7 @@ struct SphUSPList {
       sphuspfunc[7] = &sphusp_7;
     }
 
-    void sphuspfunc_call(const int l, const int m, std::vector<double>& c) const { sphuspfunc[l](m, c); }
+    std::vector<double> sphuspfunc_call(const int l, const int m) const { return sphuspfunc[l](m); }
 
 };
 
