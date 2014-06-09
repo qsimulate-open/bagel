@@ -37,9 +37,9 @@ class ZSuperCI : public ZCASSCF {
     int diis_start_;
 
     void common_init() {
-      std::cout << "   * Using the Super CI algorithm as noted in Roos (1980) IJQC" << std::endl;
-       diis_start_ = idata_->get<int>("diis_start", 100);
-       std::cout << "    * DIIS will be used after " << diis_start_ << " macro iteration" << std::endl << std::endl;
+      std::cout << "   * Using the Super CI algorithm as noted in Roos (1980) IJQC *    " << std::endl;
+      diis_start_ = idata_->get<int>("diis_start", 100);
+      std::cout << "   * DIIS will be used after " << diis_start_ << " macro iterations *    " << std::endl << std::endl;
     }
 
     // internal function

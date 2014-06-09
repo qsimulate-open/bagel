@@ -36,7 +36,6 @@ using namespace std;
 using namespace bagel;
 
 void ZSuperCI::compute() {
-    // TODO : DIIS needs to be introduced eventually
   // TODO : DIIS needs to be cleaned up
   shared_ptr<HPW_DIIS<ZMatrix,ZMatrix>> diis;
 
