@@ -249,7 +249,7 @@ void AngularBatch::init() {
   c0_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
   c1_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
 
-  Comb c;
+  const static Comb c;
 
   for (int kx = 0; kx <= ang0_[0]; ++kx) {
     const double ckx = c(ang0_[0], kx) * pow(AB_[0], ang0_[0] - kx);
@@ -281,9 +281,9 @@ void AngularBatch::init() {
   for (int l = 0; l != max(l0_, l1_) + ecp_->ecp_maxl(); ++l) {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
     for (int m = 0; m <= 2*l; ++m) {
-      shared_ptr<SphHarmonics> shAB = make_shared<SphHarmonics>(l, m-l, AB_);
+      auto shAB = make_shared<SphHarmonics>(l, m-l, AB_);
       zAB_l[m] = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
-      shared_ptr<SphHarmonics> shCB = make_shared<SphHarmonics>(l, m-l, CB_);
+      auto shCB = make_shared<SphHarmonics>(l, m-l, CB_);
       zCB_l[m] = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
     }
     zAB_.push_back(zAB_l);
