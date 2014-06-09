@@ -127,6 +127,7 @@ void ZSuperCI::compute() {
     kramers_adapt(amat, nvirtnr_);
 #endif
 
+   amat->scale(sqrt(2.0));
    // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
    *amat *= 1.0 * complex<double>(0.0, -1.0);
    unique_ptr<double[]> teig(new double[amat->ndim()]);
