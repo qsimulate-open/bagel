@@ -30,12 +30,15 @@
 #include <src/zcasscf/zsuperci.h>
 #include <src/zcasscf/zsupercimicro.h>
 #include <src/rel/reloverlap.h>
+#include <src/math/hpw_diis.h>
 
 using namespace std;
 using namespace bagel;
 
 void ZSuperCI::compute() {
     // TODO : DIIS needs to be introduced eventually
+  // TODO : DIIS needs to be cleaned up
+  shared_ptr<HPW_DIIS<ZMatrix,ZMatrix>> diis;
 
   // ============================
   // macro iteration from here
@@ -57,6 +60,17 @@ void ZSuperCI::compute() {
   double gradient = 1.0e10;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
+
+    if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
+      cout << "+++ STARTING DIIS on iteration " << iter << " +++ " << endl;
+      shared_ptr<ZMatrix> tmp = make_shared<ZMatrix>(coeff_->ndim(),coeff_->mdim()/2);
+      tmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+      tmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
+      tmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
+      shared_ptr<ZMatrix> unit = make_shared<ZMatrix>(coeff_->mdim()/2, coeff_->mdim()/2);
+      unit->unit();
+      diis = make_shared<HPW_DIIS<ZMatrix, ZMatrix>>(10, tmp, unit);
+    }
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -142,16 +156,25 @@ void ZSuperCI::compute() {
 #ifdef BOTHSPACES
    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
 #else
-   auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
-   ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
-   ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
-   ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
-   *ctmp *= *expa;
-   auto ctmp2 = coeff_->copy();
-   ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
-   ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
-   ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
-   coeff_ = make_shared<const ZMatrix>(*ctmp2);
+   if (diis == nullptr) {
+     auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), nbasis_);
+     ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+     ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
+     ctmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_,nocc_*2+nvirt_+nvirtnr_));
+     *ctmp *= *expa;
+     auto ctmp2 = coeff_->copy();
+     ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
+     ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2,nocc_*2+nvirtnr_));
+     ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, ctmp->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
+     coeff_ = make_shared<const ZMatrix>(*ctmp2);
+   } else {
+     shared_ptr<const ZMatrix> mcc = diis->extrapolate(expa);
+     auto ctmp2 = coeff_->copy();
+     ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, mcc->slice(0, nocc_*2));
+     ctmp2->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2,nocc_*2+nvirtnr_));
+     ctmp2->copy_block(0, nocc_*2+nvirt_, coeff_->ndim(), nvirtnr_, mcc->slice(nocc_*2+nvirtnr_,nocc_*2+nvirtnr_*2));
+     coeff_ = make_shared<const ZMatrix>(*ctmp2);
+   }
 #endif
 
    // print out...
