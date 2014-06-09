@@ -82,6 +82,7 @@ void AngularBatch::map_angular_number() {
 }
 
 vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, const vector<double> r) {
+  const static MSphBesselI msbessel;
 
   vector<vector<double>> rbessel(r.size());
 
@@ -94,8 +95,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
       const double exp0  = basisinfo_[0]->exponents(i0);
       const double fac = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
       for (int i = 0; i <= l0_+l; ++i) {
-        MSphBesselI msbessel(i);
-        bessel[i] += fac * msbessel.compute(2.0 * exp0 * dAB_ * r[ir]);
+        bessel[i] += fac * msbessel.compute(i, 2.0 * exp0 * dAB_ * r[ir]);
       }
     }
     rbessel[ir] = bessel;
@@ -148,6 +148,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
 }
 
 vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, const vector<double> r) {
+  const static MSphBesselI msbessel;
 
   vector<vector<double>> rbessel(r.size());
 
@@ -160,8 +161,7 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
       const double exp1  = basisinfo_[1]->exponents(i1);
       const double fac = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
       for (int i = 0; i <= l1_+l; ++i) {
-        MSphBesselI msbessel(i);
-        bessel[i] += fac * msbessel.compute(2.0 * exp1 * dCB_ * r[ir]);
+        bessel[i] += fac * msbessel.compute(i, 2.0 * exp1 * dCB_ * r[ir]);
       }
     }
     rbessel[ir] = bessel;
