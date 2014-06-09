@@ -43,7 +43,7 @@ void ZSuperCI::compute() {
    Timer timer;
 
   // intialize coefficients
-  { // re order coefficient matrix to block format
+  if (!no_kramers_init_) { // re order coefficient matrix to block format
     auto ctmp = coeff_stripe_to_block(coeff_);
     coeff_ = make_shared<const ZMatrix>(*ctmp);
   }
