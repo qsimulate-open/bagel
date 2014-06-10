@@ -101,7 +101,7 @@ void ZCASBFGS::compute() {
     shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
     // closed Fock operator
-    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? fci_->jop()->core_fock() : hcore_;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
 
     // active Fock operator
