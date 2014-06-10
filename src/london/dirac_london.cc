@@ -92,7 +92,7 @@ void Dirac_London::compute() {
   cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
   scftime.tick_print("SCF startup");
   cout << endl;
-  cout << indent << "=== Dirac RHF iteration (" + cgeom_->basisfile() + ", RKB) ===" << endl << indent << endl;
+  cout << indent << "=== Dirac RHF iteration (" + cgeom_->basisfile() + ", RMB) ===" << endl << indent << endl;
 
   DIIS<DistZMatrix, ZMatrix> diis(5);
 
