@@ -203,7 +203,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
-    natorb_coeff = make_natural_orbitals(rdm1);
+    natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
     rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
   }
 
@@ -234,7 +234,12 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
 #endif
     // closed Fock - same as inactive fock
-    cfock = make_shared<ZMatrix>(*coefftmp % *fci_->jop()->core_fock() * *coefftmp);
+    if (!nact_) {
+      shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+      cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
+    } else {
+      cfock = make_shared<const ZMatrix>(*coefftmp % *fci_->jop()->core_fock() * *coefftmp);
+    }
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
