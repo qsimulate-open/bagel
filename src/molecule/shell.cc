@@ -196,8 +196,8 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
   shared_ptr<const ZMatrix> overlap = make_shared<const ZMatrix>(*overlap_compute_(), 1.0);
 
   // small is a transformation matrix (x,y,z components)
-  zsmall_ = moment_compute_(overlap, magnetic_field);
-  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
+  zsmallc_ = moment_compute_(overlap, magnetic_field);
+  for (int i=0; i!=3; i++) zsmall_[i] = zsmallc_[i]->get_conjg();
 }
 
 

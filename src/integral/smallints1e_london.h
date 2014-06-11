@@ -55,8 +55,9 @@ class SmallInts1e_London {
       for (int n = 0; n != N; ++n) {
         std::array<std::shared_ptr<ZMatrix>,3> ints;
         for (int i = 0; i != 3; ++i) {
-          if (conj_) ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmallc(i) % *unc[n]);
-          else ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmall(i) % *unc[n]);
+          //if (conj_) ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmallc(i) % *unc[n]);
+          //else ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmall(i) % *unc[n]);
+          ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmall(i) % *unc[n]);
         }
 
         std::array<int,3> f = {{2,3,1}};
@@ -69,15 +70,15 @@ class SmallInts1e_London {
 
         // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
         for (int i = 0; i != 3; ++i) {
-          if (conj_){
-            *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmallc(i);
-            *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmallc(i);
-            *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmallc(i);
-          } else {
+          //if (conj_){
+          //  *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmallc(i);
+          //  *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmallc(i);
+          //  *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmallc(i);
+          //} else {
             *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmall(i);
             *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmall(i);
             *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmall(i);
-          }
+          //}
         }
       }
     }
