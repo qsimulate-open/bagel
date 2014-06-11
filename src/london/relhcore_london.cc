@@ -87,7 +87,9 @@ void RelHcore_London::compute_() {
   copy_block(2*n, 0, 2*n, 2*n, kinetic);
   copy_block(2*n, 2*n, 2*n, 2*n, zsnai);
   add_block(-1.0, 2*n, 2*n, 2*n, 2*n, kinetic);
-  //add_block(  1.0, 2*n, 2*n, 2*n, 2*n, zeeman);
+  add_block( -1.0, 0, 2*n, 2*n, 2*n, zeeman);
+  add_block( -1.0, 2*n, 0, 2*n, 2*n, zeeman);
+  add_block(  1.0, 2*n, 2*n, 2*n, 2*n, zeeman);
 
 }
 
