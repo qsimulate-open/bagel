@@ -109,12 +109,13 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator/=(const double& a);
     Matrix operator%(const Matrix&) const; // caution
     Matrix operator^(const Matrix&) const; // caution
-    Matrix operator+(const Matrix&) const;
-    Matrix operator-(const Matrix&) const;
-    Matrix& operator+=(const Matrix&);
-    Matrix& operator-=(const Matrix&);
-    Matrix& operator=(const Matrix&);
-//  Matrix& operator=(Matrix&&);
+
+    Matrix operator+(const Matrix& o) const { Matrix out(*this); out += o; return out; }
+    Matrix operator-(const Matrix& o) const { Matrix out(*this); out -= o; return out; }
+    Matrix& operator+=(const Matrix& o){ btas::Tensor2<double>::operator+=(o); return *this; }
+    Matrix& operator-=(const Matrix& o){ btas::Tensor2<double>::operator-=(o); return *this; }
+    Matrix& operator=(const Matrix& o) { btas::Tensor2<double>::operator=(o); return *this; }
+    Matrix& operator=(Matrix&& o)      { btas::Tensor2<double>::operator=(o); return *this; }
 
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;

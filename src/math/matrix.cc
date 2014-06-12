@@ -61,52 +61,6 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 #endif
 
 
-Matrix Matrix::operator+(const Matrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  Matrix out(*this);
-  out.ax_plus_y(1.0, o);
-  return out;
-}
-
-
-Matrix& Matrix::operator+=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(1.0, o);
-  return *this;
-}
-
-
-Matrix& Matrix::operator-=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(-1.0, o);
-  return *this;
-}
-
-
-Matrix& Matrix::operator=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  copy_n(o.data(), ndim_*mdim_, data());
-  return *this;
-}
-
-
-#if 0
-Matrix& Matrix::operator=(Matrix&& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  data_ = move(o.data_);
-  return *this;
-}
-#endif
-
-
-Matrix Matrix::operator-(const Matrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  Matrix out(*this);
-  out.ax_plus_y(-1.0, o);
-  return out;
-}
-
-
 Matrix Matrix::operator*(const Matrix& o) const {
   const int l = ndim_;
   const int m = mdim_;

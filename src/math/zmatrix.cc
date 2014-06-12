@@ -65,52 +65,6 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 #endif
 
 
-ZMatrix ZMatrix::operator+(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ZMatrix out(*this);
-  out += o;
-  return out;
-}
-
-
-ZMatrix ZMatrix::operator-(const ZMatrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ZMatrix out(*this);
-  out -= o;
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator+=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(1.0, o);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator-=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(-1.0, o);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  copy_n(o.data(), ndim_*mdim_, data());
-  return *this;
-}
-
-
-#if 0
-ZMatrix& ZMatrix::operator=(ZMatrix&& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  data_ = move(o.data_);
-  return *this;
-}
-#endif
-
-
 ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
   const int l = ndim_;
   const int m = mdim_;
