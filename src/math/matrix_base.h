@@ -34,18 +34,19 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
+#include <src/math/btas_interface.h>
 
 namespace bagel {
 
 template<typename DataType>
-class Matrix_base {
+class Matrix_base : public btas::Tensor2<DataType> {
   public:
     using data_type = DataType;
+    using btas::Tensor2<DataType>::data;
 
   protected:
     size_t ndim_;
     size_t mdim_;
-    std::unique_ptr<DataType[]> data_;
 
     // if this matrix is used within node
     bool localized_;
@@ -110,8 +111,8 @@ class Matrix_base {
     std::shared_ptr<T> merge_impl(const std::shared_ptr<const T> o) const {
       assert(ndim_ == o->ndim_ && localized_ == o->localized_);
       auto out = std::make_shared<T>(ndim_, mdim_ + o->mdim_, localized_);
-      std::copy_n(data_.get(), ndim_*mdim_, out->data_.get());
-      std::copy_n(o->data_.get(), o->ndim_*o->mdim_, out->data_.get()+ndim_*mdim_);
+      std::copy_n(data(), ndim_*mdim_, out->data());
+      std::copy_n(o->data(), o->ndim_*o->mdim_, out->data()+ndim_*mdim_);
       return out;
     }
 
@@ -155,7 +156,7 @@ class Matrix_base {
 
     template <class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << ndim_ << mdim_ << make_array(data(), size()) << localized_;
+//    ar << ndim_ << mdim_ << make_array(data(), size()) << localized_;
 #ifdef HAVE_SCALAPACK
       ar << desc_ << localsize_;
 #endif
@@ -163,9 +164,9 @@ class Matrix_base {
 
     template <class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> ndim_ >> mdim_;
-      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      ar >> make_array(data(), size()) >> localized_;
+//    ar >> ndim_ >> mdim_;
+//    data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+//    ar >> make_array(data(), size()) >> localized_;
 #ifdef HAVE_SCALAPACK
       ar >> desc_ >> localsize_;
 #endif
@@ -177,7 +178,7 @@ class Matrix_base {
     }
 
   public:
-    Matrix_base(const size_t n, const size_t m, const bool local = false) : ndim_(n), mdim_(m), data_(new DataType[n*m]), localized_(local) {
+    Matrix_base(const size_t n, const size_t m, const bool local = false) : btas::Tensor2<DataType>(n, m), ndim_(n), mdim_(m), localized_(local) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
@@ -187,17 +188,17 @@ class Matrix_base {
       zero();
     }
 
-    Matrix_base(const Matrix_base& o) : ndim_(o.ndim_), mdim_(o.mdim_), data_(new DataType[o.ndim_*o.mdim_]), localized_(o.localized_) {
+    Matrix_base(const Matrix_base& o) : btas::Tensor2<DataType>(o.ndim_, o.mdim_), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
         localsize_ = mpi__->numroc(ndim_, mdim_);
       }
 #endif
-      std::copy_n(o.data_.get(), size(), data_.get());
+      std::copy_n(o.data(), size(), data());
     }
 
-    Matrix_base(Matrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), data_(std::move(o.data_)), localized_(o.localized_) {
+    Matrix_base(Matrix_base&& o) : btas::Tensor2<DataType>(std::forward<Matrix_base<DataType>>(o)), ndim_(o.ndim_), mdim_(o.mdim_), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim_, mdim_);
@@ -218,7 +219,7 @@ class Matrix_base {
       assert(ndim_ == mdim_);
       for (size_t i = 0; i != mdim_; ++i)
         for (size_t j = i+1; j != ndim_; ++j)
-          data_[i+j*ndim_] = data_[j+i*ndim_];
+          element(i, j) = element(j, i);
     }
 
     void symmetrize() {
@@ -226,7 +227,7 @@ class Matrix_base {
       const size_t n = mdim_;
       for (size_t i = 0; i != n; ++i)
         for (size_t j = i+1; j != n; ++j)
-          data_[i+j*n] = data_[j+i*n] = 0.5*(data_[i+j*n]+data_[j+i*n]);
+          element(i, j) = element(j, i) = 0.5*(element(i, j)+element(j, i));
     }
 
     virtual void diagonalize(double* vec) = 0;
@@ -237,7 +238,7 @@ class Matrix_base {
 
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
-        std::copy_n(o + j*nsize, nsize, data_.get() + nstart + i*ndim_);
+        std::copy_n(o + j*nsize, nsize, data() + nstart + i*ndim_);
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
       assert(nsize == o->ndim() && msize == o->mdim());
@@ -268,20 +269,17 @@ class Matrix_base {
     std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
       std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-        std::copy_n(data_.get() + nstart + i*ndim_, nsize, out.get() + j*nsize);
+        std::copy_n(data() + nstart + i*ndim_, nsize, out.get() + j*nsize);
       return out;
     }
 
-    DataType& operator()(const size_t& i, const size_t& j) { return data_[i+j*ndim_]; }
-    const DataType& operator()(const size_t& i, const size_t& j) const { return data_[i+j*ndim_]; }
+    DataType& operator()(const size_t& i, const size_t& j) { return element(i, j); }
+    const DataType& operator()(const size_t& i, const size_t& j) const { return element(i, j); }
 
-    DataType* data() { return data_.get(); }
-    const DataType* data() const { return data_.get(); }
-
-    DataType* begin() { return data_.get(); }
-    DataType* end() { return data_.get() + size(); }
-    const DataType* cbegin() const { return data_.get(); }
-    const DataType* cend() const { return data_.get() + size(); }
+    DataType* begin() { return data(); }
+    DataType* end() { return data() + size(); }
+    const DataType* cbegin() const { return data(); }
+    const DataType* cend() const { return data() + size(); }
 
     DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }
@@ -299,18 +297,18 @@ class Matrix_base {
       DataType out(0.0);
       assert(ndim_ == mdim_);
       for (int i = 0; i != ndim_; ++i)
-        out += data_[i * ndim_ + i];
+        out += element(i, i);
       return out;
     }
 
     void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
 
     void allreduce() {
-      mpi__->allreduce(data_.get(), size());
+      mpi__->allreduce(data(), size());
     }
 
     void broadcast(const int root = 0) {
-      mpi__->broadcast(data_.get(), size(), root);
+      mpi__->broadcast(data(), size(), root);
     }
 
     void synchronize() {

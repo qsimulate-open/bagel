@@ -235,17 +235,17 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     if (j0 + j2 == j1 + j3) intval *= 0.5;
                     const std::complex<double> intval2 = intval * 2.0;
 
-                    data_[j0n + j1] += density_data[j3n + j2] * intval2; // Coulomb  (ab|cd)
-                    data_[j0n + j3] -= density_data[j1n + j2] * intval;  // Exchange (ad|cb)
+                    element(j1, j0) += density_data[j3n + j2] * intval2; // Coulomb  (ab|cd)
+                    element(j3, j0) -= density_data[j1n + j2] * intval;  // Exchange (ad|cb)
 
-                    data_[j2n + j3] += density_data[j1n + j0] * intval2; // Coulomb  (cd|ab)
-                    data_[j2n + j1] -= density_data[j3n + j0] * intval;  // Exchange (cb|ad)
+                    element(j3, j2) += density_data[j1n + j0] * intval2; // Coulomb  (cd|ab)
+                    element(j1, j2) -= density_data[j3n + j0] * intval;  // Exchange (cb|ad)
 
-                    data_[j1n + j0] += density_data[j2n + j3] * std::conj(intval2); // Coulomb  (ba|dc)
-                    data_[j3n + j0] -= density_data[j2n + j1] * std::conj(intval);  // Exchange (da|bc)
+                    element(j0, j1) += density_data[j2n + j3] * std::conj(intval2); // Coulomb  (ba|dc)
+                    element(j0, j3) -= density_data[j2n + j1] * std::conj(intval);  // Exchange (da|bc)
 
-                    data_[j3n + j2] += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
-                    data_[j1n + j2] -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
+                    element(j2, j3) += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
+                    element(j2, j1) -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
 
                     /*
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;

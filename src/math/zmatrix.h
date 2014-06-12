@@ -117,7 +117,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix& operator+=(const ZMatrix&);
     ZMatrix& operator-=(const ZMatrix&);
     ZMatrix& operator=(const ZMatrix&);
-    ZMatrix& operator=(ZMatrix&&);
+//  ZMatrix& operator=(ZMatrix&&);
 
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;

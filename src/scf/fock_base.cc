@@ -73,7 +73,7 @@ void Fock_base::computebatch(const array<shared_ptr<const Shell>,2>& input, cons
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i*ndim_+j] = 0.0;
+      element(j, i) = 0.0;
     }
   }
 }

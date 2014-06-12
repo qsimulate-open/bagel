@@ -114,7 +114,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix& operator+=(const Matrix&);
     Matrix& operator-=(const Matrix&);
     Matrix& operator=(const Matrix&);
-    Matrix& operator=(Matrix&&);
+//  Matrix& operator=(Matrix&&);
 
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;

@@ -90,11 +90,13 @@ Matrix& Matrix::operator=(const Matrix& o) {
 }
 
 
+#if 0
 Matrix& Matrix::operator=(Matrix&& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   data_ = move(o.data_);
   return *this;
 }
+#endif
 
 
 Matrix Matrix::operator-(const Matrix& o) const {
@@ -116,7 +118,7 @@ Matrix Matrix::operator*(const Matrix& o) const {
   assert(localized_ == o.localized_);
   if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
-    dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
+    dgemm_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
   } else {
     unique_ptr<double[]> locala = getlocal();
@@ -172,7 +174,7 @@ Matrix Matrix::operator%(const Matrix& o) const {
   assert(localized_ == o.localized_);
   if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
-    dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
+    dgemm_("T", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
   } else {
     unique_ptr<double[]> locala = getlocal();
@@ -199,7 +201,7 @@ Matrix Matrix::operator^(const Matrix& o) const {
   assert(localized_ == o.localized_);
   if (localized_ || min(min(l,m),n) < blocksize__) {
 #endif
-    dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
+    dgemm_("N", "T", l, n, m, 1.0, data(), ndim_, o.data(), o.ndim_, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
   } else {
     unique_ptr<double[]> locala = getlocal();
@@ -551,7 +553,7 @@ void Matrix::print(const string name, const size_t size) const {
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != min(size,ndim_); ++i) {
     for (int j = 0; j != min(size,mdim_); ++j) {
-      cout << fixed << setw(12) << setprecision(9) << data_[j * ndim_ + i]  << " ";
+      cout << fixed << setw(12) << setprecision(9) << element(i, j)  << " ";
     }
     cout << endl;
   }

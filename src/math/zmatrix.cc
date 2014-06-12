@@ -102,11 +102,13 @@ ZMatrix& ZMatrix::operator=(const ZMatrix& o) {
 }
 
 
+#if 0
 ZMatrix& ZMatrix::operator=(ZMatrix&& o) {
   assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
   data_ = move(o.data_);
   return *this;
 }
+#endif
 
 
 ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
@@ -506,7 +508,7 @@ void ZMatrix::print(const string name, const size_t size) const {
   cout << "++++ " + name + " ++++" << endl;
   for (int i = 0; i != min(size,ndim_); ++i) {
     for (int j = 0; j != min(size,mdim_); ++j) {
-      cout << fixed << setw(30) << setprecision(8) << data_[j * ndim_ + i]  << " ";
+      cout << fixed << setw(30) << setprecision(8) << element(i, j) << " ";
     }
     cout << endl;
   }
@@ -595,7 +597,7 @@ void ZMatrix::fill_upper_conjg() {
   assert(ndim_ == mdim_);
   for (size_t i = 0; i != mdim_; ++i)
     for (size_t j = i+1; j != ndim_; ++j)
-      data_[i+j*ndim_] = conj(data_[j+i*ndim_]);
+      element(i, j) = conj(element(j, i));
 }
 
 
