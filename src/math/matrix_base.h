@@ -43,6 +43,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
   public:
     using data_type = DataType;
     using btas::Tensor2<DataType>::data;
+    using btas::Tensor2<DataType>::begin;
+    using btas::Tensor2<DataType>::cbegin;
+    using btas::Tensor2<DataType>::end;
+    using btas::Tensor2<DataType>::cend;
 
   protected:
     size_t ndim_;
@@ -117,9 +121,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     template<class T>
-    void ax_plus_y_impl(const DataType& a, const T& o) {
-      blas::ax_plus_y_n(a, o.data(), size(), data());
-    }
+    void ax_plus_y_impl(const DataType& a, const T& o) { btas::axpy(a, o, *this); }
+
     template<class T>
     DataType dot_product_impl(const T& o) const {
       return blas::dot_product(data(), size(), o.data());
@@ -273,17 +276,9 @@ class Matrix_base : public btas::Tensor2<DataType> {
       return out;
     }
 
-    DataType& operator()(const size_t& i, const size_t& j) { return element(i, j); }
-    const DataType& operator()(const size_t& i, const size_t& j) const { return element(i, j); }
-
-    DataType* begin() { return data(); }
-    DataType* end() { return data() + size(); }
-    const DataType* cbegin() const { return data(); }
-    const DataType* cend() const { return data() + size(); }
-
-    DataType& element(size_t i, size_t j) { return *element_ptr(i, j); }
+    DataType& element(size_t i, size_t j) { return (*this)(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim_; }
-    const DataType& element(size_t i, size_t j) const { return *element_ptr(i, j); }
+    const DataType& element(size_t i, size_t j) const { return (*this)(i, j); }
     const DataType* element_ptr(size_t i, size_t j) const { return data()+i+j*ndim_; }
 
     void ax_plus_y(const DataType a, const std::shared_ptr<const Matrix_base<DataType>> o) { ax_plus_y_impl(a, *o); }
