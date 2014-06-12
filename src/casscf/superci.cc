@@ -40,7 +40,6 @@ using namespace std;
 using namespace bagel;
 
 void SuperCI::compute() {
-
   // DIIS: will be turned on at iter = diis_start_ (>1),
   //       update log(U) where Cnow = Corig U. This is basically the same as the Hampel-Peterson-Werner
   //       paper on Brueckner CC

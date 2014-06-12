@@ -100,6 +100,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
       return this->get_submatrix_impl<Matrix>(nstart, mstart, ndim, mdim);
     }
+    std::shared_ptr<Matrix> swap_columns(const int n, const int nblock, const int m, const int mblock) const;
 
     Matrix operator*(const Matrix&) const;
     Matrix& operator*=(const Matrix&);

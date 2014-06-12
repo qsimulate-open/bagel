@@ -577,3 +577,16 @@ shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset)
   *out *= 2.0;
   return out;
 }
+
+
+shared_ptr<Matrix> Matrix::swap_columns(const int n, const int nblock, const int m, const int mblock) const {
+  assert(m > n);
+  assert(nblock > 0 && mblock > 0);
+  shared_ptr<Matrix> out = this->clone();
+  out->copy_block(0, 0,                 ndim_,                n-1, this->slice(0, n)->data());
+  out->copy_block(0, n-1,               ndim_,             mblock, this->slice(m-1, m-1+mblock)->data());
+  out->copy_block(0, n-1+mblock,        ndim_,         m-n-nblock, this->slice(n-1+nblock, m-1)->data());
+  out->copy_block(0, m-1+mblock-nblock, ndim_,             nblock, this->slice(n-1, n-1+nblock)->data());
+  out->copy_block(0, m-1+mblock,        ndim_, mdim_-(m-1+mblock), this->slice(m-1+mblock, mdim_)->data());
+  return out;
+}
