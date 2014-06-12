@@ -24,6 +24,10 @@
 //
 
 #include <src/london/relreference_london.h>
+#include <src/london/reloverlap_london.h>
+#include <src/integral/compos/complexoverlapbatch.h>
+#include <src/integral/compos/complexkineticbatch.h>
+#include <src/molecule/mixedbasis.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference_London)
 
@@ -31,25 +35,22 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
-  throw logic_error("Trying to project coeffs from RelReference_London to a new geometry - not implemented.  (Probably needed for geometry optimization...)");
-/*
   // in this case we first form overlap matrices
   RelOverlap_London overlap(geomin);
   shared_ptr<ZMatrix> sinv = overlap.inverse();
 
-  MixedBasis<ComplexOverlapBatch> smixed(cgeom_, geomin);
-  MixedBasis<ComplexKineticBatch> tmixed(cgeom_, geomin);
+  // TODO Kinetic energy uses the magnetic field of the new geometry - is this correct?
+  MixedBasis<ComplexOverlapBatch, ZMatrix, Geometry_London> smixed(cgeom_, geomin);
+  MixedBasis<ComplexKineticBatch, ZMatrix, Geometry_London, const array<double,3>> tmixed(cgeom_, geomin, geomin->magnetic_field());
   const int nb = geomin->nbasis();
   const int mb = cgeom_->nbasis();
-  const complex<double> one(1.0);
-  const complex<double> sca = one * (0.5/(c__*c__));
+  tmixed.scale(0.5/(c__*c__));
   ZMatrix mixed(nb*4, mb*4);
-  mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
-  mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
-  mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
-  mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
+  mixed.copy_block(0,    0, nb, mb, smixed);
+  mixed.copy_block(nb,  mb, nb, mb, smixed);
+  mixed.copy_block(2*nb, 2*mb, nb, mb, tmixed);
+  mixed.copy_block(3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
-  return make_shared<RelReference_London>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
-*/
+  return make_shared<RelReference_London>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-cgeom_->nbasis()), gaunt_, breit_);
 }
