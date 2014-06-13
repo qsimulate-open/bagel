@@ -72,6 +72,7 @@ class RelMOFile {
 
     // static function
     static std::array<std::shared_ptr<const ZMatrix>,2> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
+    std::array<std::shared_ptr<const ZMatrix>,2> kramers_zquat(const int nstart, const int nfence, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> hcore);
 
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }

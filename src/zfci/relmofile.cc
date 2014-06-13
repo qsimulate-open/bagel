@@ -173,6 +173,76 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 }
 
 
+// modified from init_kramers_coeff in zcasscf_coeff.cc
+array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+  assert(nstart < nfence);
+  const int ndim    = coeff->ndim();
+  const int nb      = ndim/4;
+  const int nclosed = nstart/2;
+  const int nact    = (nfence - nstart)/2;
+  const int nocc    = nact + nclosed;
+  const int nvnr    = nb - nact - nclosed;
+  const int nvirt   = nvnr + nb;
+  if(ndim%2 != 0 || ndim % 4 != 0)
+    throw logic_error("illegal call of RelMOFile::kramers_zquat");
+
+  // local function to transform from kramers to quaternion format
+  auto quaternion = [](shared_ptr<ZMatrix> o) {
+    shared_ptr<ZMatrix> scratch = o->clone();
+    const int n = o->ndim()/4;
+    const int m = o->mdim()/4;
+    map<int, int> trans {{0,0}, {1,2}, {2,1}, {3,3}};
+    for (auto& i : trans)
+      for (auto& j : trans)
+        scratch->copy_block(i.first*n, j.first*m, n, m, o->get_submatrix(i.second*n, j.second*m, n, m));
+    *o = *scratch;
+  };
+
+  shared_ptr<ZMatrix> focktmp;
+  shared_ptr<ZMatrix> ctmp;
+  focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, geom_->nele()), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  quaternion(focktmp);
+
+  shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
+  quaternion(s12);
+
+  auto fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
+
+  // quaternion diagonalization
+  {
+    unique_ptr<double[]> eig(new double[fock_tilde->ndim()]);
+    zquatev_(fock_tilde->ndim(), fock_tilde->data(), eig.get());
+  }
+  // re-order to kramers format and move negative energy states to virtual space
+  ctmp = make_shared<ZMatrix>(*s12 * *fock_tilde);
+  { // rows: {L+, S+, L-, S-} -> {L+, L-, S+, S-}
+    assert(ctmp->ndim() % 4 == 0);
+    const int n = ctmp->ndim()/4;
+    const int m = ctmp->mdim();
+    shared_ptr<ZMatrix> scratch = ctmp->get_submatrix(n, 0, n*2, m);
+    ctmp->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
+    ctmp->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
+  }
+  // move_positronic_orbitals
+  {
+    auto move_one = [this, &ctmp](const int offset, const int block1, const int block2) {
+      shared_ptr<ZMatrix> scratch = make_shared<ZMatrix>(ctmp->ndim(), block1+block2);
+      scratch->copy_block(0,      0, ctmp->ndim(), block2, ctmp->slice(offset+block1, offset+block1+block2));
+      scratch->copy_block(0, block2, ctmp->ndim(), block1, ctmp->slice(offset,        offset+block1));
+      ctmp->copy_block(0, offset, ctmp->ndim(), block1+block2, scratch);
+    };
+    const int nneg2 = ctmp->mdim()/4;
+    move_one(           0, nneg2, nocc+nvnr);
+    move_one(nocc + nvirt, nneg2, nocc+nvnr);
+  }
+
+  array<shared_ptr<const ZMatrix>,2> tmp;
+  tmp = {{ ctmp->slice(nstart/2, nfence/2), ctmp->slice(ctmp->mdim()/2+nstart/2, ctmp->mdim()/2 + nfence/2) }};
+
+  return tmp;
+}
+
+
 void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatrix>> buf1e, unordered_map<bitset<4>,shared_ptr<const ZMatrix>> buf2e) {
   mo1e_ = buf1e;
 
