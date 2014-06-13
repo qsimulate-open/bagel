@@ -1088,7 +1088,6 @@ namespace btas {
           size_t iend)
       {
       using index_type = typename RangeNd<_Order,_Index,_Ordinal>::index_type;
-      using index_value = typename index_type::value_type;
 
       if(r.rank() == 0 || iend <= (istart+1)) return r;
       const auto ngroup = iend-istart;

@@ -22,7 +22,7 @@ namespace btas {
                                           >::type
           >
   void permute(const _TensorX& X, const _Permutation& p, _TensorY& Y) {
-    Y = _TensorY(permute(X.range(), p));
+    Y.resize(permute(X.range(), p));
     auto itrX = std::begin(X);
     auto itrY = std::begin(Y);
     for (auto i : X.range()) {
