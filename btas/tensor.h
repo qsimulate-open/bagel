@@ -503,6 +503,7 @@ namespace btas {
 
       ///@} // element accessors with range check
 
+#if 0
       /// resize array with range object
       template <typename Range>
       void
@@ -511,6 +512,7 @@ namespace btas {
         range_ = range;
         array_adaptor<storage_type>::resize(storage_, range_.area());
       }
+#endif
 
       /// resize array with extent object
       template <typename Extent>

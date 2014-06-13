@@ -50,11 +50,6 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     // if true, asize is evenly distributed. If false, asize is at the shell boundary
     bool averaged_;
 
-    // dimensions of the block
-    size_t asize_;
-    size_t b1size_;
-    size_t b2size_;
-
     // a set of offsets of this block in the entire DF integrals
     size_t astart_;
     size_t b1start_;
@@ -65,35 +60,32 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     DFBlock_base(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged = false)
      : btas::Tensor3<DataType>(std::max(adist_shell->size(mpi__->rank()), std::max(adist->size(mpi__->rank()), a)), b1, b2),
-       adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
+       adist_shell_(adist_shell), adist_(adist), averaged_(averaged), astart_(as), b1start_(b1s), b2start_(b2s) {
 
-      assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()) || asize_ == adist_->nele());
+      assert(asize() == adist_shell->size(mpi__->rank()) || asize() == adist_->size(mpi__->rank()) || asize() == adist_->nele());
 
+      // resize to the current size (moving the end pointer)
+      const btas::Range range(a, b1, b2);
+      this->resize(range);
     }
 
     DFBlock_base(const DFBlock_base<DataType>& o)
-     : btas::Tensor3<DataType>(o), adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), asize_(o.asize_), b1size_(o.b1size_), b2size_(o.b2size_),
-       astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
+     : btas::Tensor3<DataType>(o), adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
 
     }
 
     // dimensions of the block
-    size_t asize() const { return asize_; }
-    size_t b1size() const { return b1size_; }
-    size_t b2size() const { return b2size_; }
+    size_t asize() const { return this->range(0).size(); }
+    size_t b1size() const { return this->range(1).size(); }
+    size_t b2size() const { return this->range(2).size(); }
 
-    size_t size() const { return asize_*b1size_*b2size_; }
+    size_t size() const { return asize()*b1size()*b2size(); }
     bool averaged() const { return averaged_; }
 
     // a set of offsets of this block in the entire DF integrals
     size_t astart() const { return astart_; }
     size_t b1start() const { return b1start_; }
     size_t b2start() const { return b2start_; }
-
-    // TODO direct access to data will be disabled once implementation is done
-//  DataType* get() { return data_.get(); }
-//  const DataType* get() const { return data_.get(); }
-//  DataType& operator[](const size_t i) { return data_[i]; }
 
     // dist
     const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; }
@@ -113,26 +105,26 @@ class DFBlock_base : public btas::Tensor3<DataType> {
 
     void zero() { std::fill_n(data(), size(), 0.0); }
 
-    // symmetrize b1 and b2 (assuming b1size_ == b2size_)
+    // symmetrize b1 and b2 (assuming b1size() == b2size())
     void symmetrize() {
-      if (b1size_ != b2size_) throw std::logic_error("illegal call of DFBlock::symmetrize()");
-      const int n = b1size_;
+      if (b1size() != b2size()) throw std::logic_error("illegal call of DFBlock::symmetrize()");
+      const int n = b1size();
       for (int i = 0; i != n; ++i)
         for (int j = i; j != n; ++j) {
-          blas::ax_plus_y_n(1.0, data()+asize_*(j+n*i), asize_, data()+asize_*(i+n*j));
-          std::copy_n(data()+asize_*(i+n*j), asize_, data()+asize_*(j+n*i));
+          blas::ax_plus_y_n(1.0, data()+asize()*(j+n*i), asize(), data()+asize()*(i+n*j));
+          std::copy_n(data()+asize()*(i+n*j), asize(), data()+asize()*(j+n*i));
         }
     }
 
     template <class MatType>
     void copy_block(std::shared_ptr<MatType> o, const int jdim, const size_t offset) {
-      assert(o->size() == asize_*jdim);
-      std::copy_n(o->data(), asize_*jdim, data()+offset);
+      assert(o->size() == asize()*jdim);
+      std::copy_n(o->data(), asize()*jdim, data()+offset);
     }
     template <class MatType>
     void add_block(std::shared_ptr<MatType> o, const int jdim, const size_t offset, const DataType fac = 1.0) {
-      assert(o->size() == asize_*jdim);
-      blas::ax_plus_y_n(fac, o->data(), asize_*jdim, data()+offset);
+      assert(o->size() == asize()*jdim);
+      blas::ax_plus_y_n(fac, o->data(), asize()*jdim, data()+offset);
     }
 
 
@@ -143,7 +135,7 @@ class DFBlock_base : public btas::Tensor3<DataType> {
 
       // first make a send and receive buffer
       const size_t o_start = astart_;
-      const size_t o_end   = o_start + asize_;
+      const size_t o_end   = o_start + asize();
       const int myrank = mpi__->rank();
       size_t t_start, t_end;
       std::tie(t_start, t_end) = adist_->range(myrank);
@@ -163,57 +155,58 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       int recvtag = 0;
 
       if (asendsize) {
-        TaskQueue<CopyBlockTask<DataType>> task(b2size_);
+        TaskQueue<CopyBlockTask<DataType>> task(b2size());
 
-        sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size_*b2size_]);
-        const size_t retsize = asize_ - asendsize;
-        for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(data()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+        sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size()*b2size()]);
+        const size_t retsize = asize() - asendsize;
+        for (size_t b2 = 0; b2 != b2size(); ++b2)
+          task.emplace_back(data()+retsize+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
 
         task.compute();
 
         // send to the next node
-        sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank+1, myrank);
+        sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank+1, myrank);
       }
 
       if (arecvsize) {
-        recvbuf = std::unique_ptr<DataType[]>(new DataType[arecvsize*b1size_*b2size_]);
+        recvbuf = std::unique_ptr<DataType[]>(new DataType[arecvsize*b1size()*b2size()]);
         // recv from the previous node
-        recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank-1, myrank-1);
+        recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank-1, myrank-1);
       }
 
       // second move local data
       if (arecvsize || asendsize) {
         const size_t t_size = t_end - t_start;
-        const size_t retsize = asize_ - asendsize;
-        if (t_size <= asize_) {
-          for (size_t i = 0; i != b1size_*b2size_; ++i) {
-            if (i*asize_ < (i+1)*t_size-retsize) {
-              std::copy_backward(data()+i*asize_, data()+i*asize_+retsize, data()+(i+1)*t_size);
-            } else if (i*asize_ > (i+1)*t_size-retsize) {
-              std::copy_n(data()+i*asize_, retsize, data()+(i+1)*t_size-retsize);
+        const size_t retsize = asize() - asendsize;
+        if (t_size <= asize()) {
+          for (size_t i = 0; i != b1size()*b2size(); ++i) {
+            if (i*asize() < (i+1)*t_size-retsize) {
+              std::copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
+            } else if (i*asize() > (i+1)*t_size-retsize) {
+              std::copy_n(data()+i*asize(), retsize, data()+(i+1)*t_size-retsize);
             }
           }
         } else {
-          for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
-            assert(i*asize_ < (i+1)*t_size-retsize);
-            std::copy_backward(data()+i*asize_, data()+i*asize_+retsize, data()+(i+1)*t_size);
+          for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+            assert(i*asize() < (i+1)*t_size-retsize);
+            std::copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
           }
         }
       }
 
-      // set new astart_ and asize_
-      asize_ = t_end - t_start;
+      // set new astart_ and asize()
       astart_ = t_start;
+      const btas::Range range(t_end - t_start, b1size(), b2size());
+      this->resize(range);
 
       // set received data
       if (arecvsize) {
         // wait for recv communication
         mpi__->wait(recvtag);
 
-        TaskQueue<CopyBlockTask<DataType>> task(b2size_);
-        for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
+        TaskQueue<CopyBlockTask<DataType>> task(b2size());
+        for (size_t b2 = 0; b2 != b2size(); ++b2)
+          task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2, asize(), arecvsize, b1size());
         task.compute();
       }
 
@@ -226,7 +219,7 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       if (!averaged_) return;
       averaged_ = false;
       const size_t o_start = astart_;
-      const size_t o_end = o_start + asize_;
+      const size_t o_end = o_start + asize();
       const int myrank = mpi__->rank();
       size_t t_start, t_end;
       std::tie(t_start, t_end) = adist_shell_->range(myrank);
@@ -240,43 +233,44 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       int recvtag = 0;
 
       if (asendsize) {
-        TaskQueue<CopyBlockTask<DataType>> task(b2size_);
-        sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size_*b2size_]);
-        for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(data()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+        TaskQueue<CopyBlockTask<DataType>> task(b2size());
+        sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size()*b2size()]);
+        for (size_t b2 = 0; b2 != b2size(); ++b2)
+          task.emplace_back(data()+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
 
         task.compute();
         assert(myrank > 0);
-        sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size_*b2size_, myrank-1, myrank);
+        sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank-1, myrank);
       }
       if (arecvsize) {
         assert(myrank+1 < mpi__->size());
-        recvbuf = std::unique_ptr<DataType[]>(new DataType[arecvsize*b1size_*b2size_]);
-        recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size_*b2size_, myrank+1, myrank+1);
+        recvbuf = std::unique_ptr<DataType[]>(new DataType[arecvsize*b1size()*b2size()]);
+        recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank+1, myrank+1);
       }
 
       if (arecvsize || asendsize) {
         const size_t t_size = t_end - t_start;
-        const size_t retsize = asize_ - asendsize;
+        const size_t retsize = asize() - asendsize;
         assert(t_size >= retsize);
-        if (t_size <= asize_) {
-          for (size_t i = 0; i != b1size_*b2size_; ++i) {
-            assert(i*asize_+asendsize > i*t_size);
-            std::copy_n(data()+i*asize_+asendsize, retsize, data()+i*t_size);
+        if (t_size <= asize()) {
+          for (size_t i = 0; i != b1size()*b2size(); ++i) {
+            assert(i*asize()+asendsize > i*t_size);
+            std::copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
           }
         } else {
-          for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
-            if (i*asize_+asendsize > i*t_size) {
-              std::copy_n(data()+i*asize_+asendsize, retsize, data()+i*t_size);
-            } else if (i*asize_+asendsize < i*t_size) {
-              std::copy_backward(data()+i*asize_+asendsize, data()+(i+1)*asize_, data()+i*t_size+retsize);
+          for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+            if (i*asize()+asendsize > i*t_size) {
+              std::copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
+            } else if (i*asize()+asendsize < i*t_size) {
+              std::copy_backward(data()+i*asize()+asendsize, data()+(i+1)*asize(), data()+i*t_size+retsize);
             }
           }
         }
       }
 
-      // set new astart_ and asize_
-      asize_ = t_end - t_start;
+      // set new astart_ and asize()
+      const btas::Range range(t_end - t_start, b1size(), b2size());
+      this->resize(range);
       astart_ = t_start;
 
       // set received data
@@ -284,9 +278,9 @@ class DFBlock_base : public btas::Tensor3<DataType> {
         // wait for recv communication
         mpi__->wait(recvtag);
 
-        TaskQueue<CopyBlockTask<DataType>> task(b2size_);
-        for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
+        TaskQueue<CopyBlockTask<DataType>> task(b2size());
+        for (size_t b2 = 0; b2 != b2size(); ++b2)
+          task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2+(asize()-arecvsize), asize(), arecvsize, b1size());
         task.compute();
       }
 

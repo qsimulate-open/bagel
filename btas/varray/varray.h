@@ -94,6 +94,7 @@ private:
      }
    };
    _M_impl data_;
+   size_type capacity_;
 
    allocator_type& alloc() { return static_cast<allocator_type&>(*this); }
    const allocator_type& alloc() const { return static_cast<const allocator_type&>(*this); }
@@ -267,11 +268,15 @@ public:
    void resize (size_type n)
    {
      if (size() != n) {
-       if (!empty()) {
-         deallocate();
-       }
-       if (n > 0) {
-         allocate(n);
+       if (n > capacity_) {
+         if (!empty()) {
+           deallocate();
+         }
+         if (n > 0) {
+           allocate(n);
+         }
+       } else {
+         reinterpret(n);
        }
      }
    }
@@ -331,12 +336,18 @@ public:
      assert(n <= allocator_traits::max_size(alloc()));
      data_._M_start = allocator_traits::allocate(alloc(), n);
      data_._M_finish = data_._M_start + n;
+     capacity_ = n;
    }
 
    void deallocate() {
      if (!data_.empty())
        allocator_traits::deallocate(alloc(), data_._M_start, data_.size());
      data_._M_start = data_._M_finish = nullptr;
+     capacity_ = 0;
+   }
+
+   void reinterpret(size_type n) {
+     data_._M_finish = data_._M_start + n;
    }
 
    void
