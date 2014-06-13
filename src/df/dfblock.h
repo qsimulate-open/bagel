@@ -77,7 +77,7 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<Matrix> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
     // use with caution
-    std::unique_ptr<double[]> release_data() { return std::move(data_); }
+//  std::unique_ptr<double[]> release_data() { return std::move(data_); }
 };
 
 }

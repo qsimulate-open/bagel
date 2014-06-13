@@ -40,9 +40,9 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
 
   for (size_t i = 0; i != b2size_; ++i) {
     if (!trans)
-      dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, b1size_, 0.0, out->get()+i*asize_*nocc, asize_);
+      dgemm_("N", "N", asize_, nocc, b1size_, 1.0, data()+i*asize_*b1size_, asize_, c, b1size_, 0.0, out->data()+i*asize_*nocc, asize_);
     else
-      dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data_.get()+i*asize_*b1size_, asize_, c, nocc, 0.0, out->get()+i*asize_*nocc, asize_);
+      dgemm_("N", "T", asize_, nocc, b1size_, 1.0, data()+i*asize_*b1size_, asize_, c, nocc, 0.0, out->data()+i*asize_*nocc, asize_);
   }
   return out;
 }
@@ -58,9 +58,9 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, b1size_, nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, b2size_, 0.0, out->get(), asize_*b1size_);
+    dgemm_("N", "N", asize_*b1size_, nocc, b2size_, 1.0, data(), asize_*b1size_, c, b2size_, 0.0, out->data(), asize_*b1size_);
   else  // trans -> back transform
-    dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data_.get(), asize_*b1size_, c, nocc, 0.0, out->get(), asize_*b1size_);
+    dgemm_("N", "T", asize_*b1size_, nocc, b2size_, 1.0, data(), asize_*b1size_, c, nocc, 0.0, out->data(), asize_*b1size_);
 
   return out;
 }
@@ -80,7 +80,7 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 
 void DFBlock::add_direct_product(const shared_ptr<const Matrix> a, const shared_ptr<const Matrix> b, const double fac) {
   assert(asize_ == a->ndim() && b1size_*b2size_ == b->size());
-  dger_(asize_, b1size_*b2size_, fac, a->data(), 1, b->data(), 1, data_.get(), asize_);
+  dger_(asize_, b1size_*b2size_, fac, a->data(), 1, b->data(), 1, data(), asize_);
 }
 
 
@@ -89,7 +89,7 @@ shared_ptr<DFBlock> DFBlock::swap() const {
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize_, b2size_, b1size_, astart_, b2start_, b1start_, averaged_);
   for (size_t b2 = b2start_; b2 != b2start_+b2size_; ++b2)
     for (size_t b1 = b1start_; b1 != b1start_+b1size_; ++b1)
-      copy_n(data_.get()+asize_*(b1+b1size_*b2), asize_, out->get()+asize_*(b2+b2size_*b1));
+      copy_n(data()+asize_*(b1+b1size_*b2), asize_, out->data()+asize_*(b2+b2size_*b1));
   return out;
 }
 
@@ -105,9 +105,9 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(1.0, data_.get()+asize_*(i+nocc*i), asize_, diagsum.get());
+    blas::ax_plus_y_n(1.0, data()+asize_*(i+nocc*i), asize_, diagsum.get());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(4.0, diagsum.get(), asize_, out->get()+asize_*(i+nocc*i));
+    blas::ax_plus_y_n(4.0, diagsum.get(), asize_, out->data()+asize_*(i+nocc*i));
   return out;
 }
 
@@ -122,12 +122,12 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const double* amat, const double* bm
   {
     unique_ptr<double[]> d2(new double[size()]);
     // exchange contributions
-    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data_.get(), asize_*nocc, amat, nocc, 0.0, d2.get(), asize_*nocc);
+    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data(), asize_*nocc, amat, nocc, 0.0, d2.get(), asize_*nocc);
     for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, amat, nocc, 0.0, out->get()+asize_*nocc*i, asize_);
-    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data_.get(), asize_*nocc, bmat, nocc, 0.0, d2.get(), asize_*nocc);
+      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, amat, nocc, 0.0, out->data()+asize_*nocc*i, asize_);
+    dgemm_("N", "N", asize_*nocc, nocc, nocc, 1.0, data(), asize_*nocc, bmat, nocc, 0.0, d2.get(), asize_*nocc);
     for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, bmat, nocc, 1.0, out->get()+asize_*nocc*i, asize_);
+      dgemm_("N", "N", asize_, nocc, nocc, -1.0, d2.get()+asize_*nocc*i, asize_, bmat, nocc, 1.0, out->data()+asize_*nocc*i, asize_);
   }
 
   unique_ptr<double[]> sum(new double[nocc]);
@@ -136,9 +136,9 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const double* amat, const double* bm
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], data_.get()+asize_*(i+nocc*i), asize_, diagsum.get());
+    blas::ax_plus_y_n(sum[i], data()+asize_*(i+nocc*i), asize_, diagsum.get());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], diagsum.get(), asize_, out->get()+asize_*(i+nocc*i));
+    blas::ax_plus_y_n(sum[i], diagsum.get(), asize_, out->data()+asize_*(i+nocc*i));
   return out;
 }
 
@@ -160,14 +160,14 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   // exchange contribution
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nclosed; ++j)
-      daxpy_(asize_, -2.0, data_.get()+asize_*(j+b1size_*i), 1, out->get()+asize_*(j+b1size_*i), 1);
+      daxpy_(asize_, -2.0, data()+asize_*(j+b1size_*i), 1, out->data()+asize_*(j+b1size_*i), 1);
   // coulomb contribution
   unique_ptr<double[]> diagsum(new double[asize_]);
   fill_n(diagsum.get(), asize_, 0.0);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 1.0, data_.get()+asize_*(i+b1size_*i), 1, diagsum.get(), 1);
+    daxpy_(asize_, 1.0, data()+asize_*(i+b1size_*i), 1, diagsum.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 4.0, diagsum.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+    daxpy_(asize_, 4.0, diagsum.get(), 1, out->data()+asize_*(i+b1size_*i), 1);
 
   // act-act part
   // compress
@@ -175,42 +175,42 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
   unique_ptr<double[]> buf2(new double[nact*nact*asize_]);
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      copy_n(data_.get()+asize_*(j+nclosed+b1size_*(i+nclosed)), asize_, buf.get()+asize_*(j+nact*i));
+      copy_n(data()+asize_*(j+nclosed+b1size_*(i+nclosed)), asize_, buf.get()+asize_*(j+nact*i));
   // multiply
   dgemm_("N", "N", asize_, nact*nact, nact*nact, 1.0, buf.get(), asize_, rdm, nact*nact, 0.0, buf2.get(), asize_);
   // slot in
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      copy_n(buf2.get()+asize_*(j+nact*i), asize_, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)));
+      copy_n(buf2.get()+asize_*(j+nact*i), asize_, out->data()+asize_*(j+nclosed+b1size_*(i+nclosed)));
 
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab
   // ASSUMING natural orbitals
   if (natural) {
     for (int i = 0; i != nact; ++i)
-      daxpy_(asize_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->get()+asize_*(i+nclosed+b1size_*(i+nclosed)), 1);
+      daxpy_(asize_, 2.0*rdm1[i+nact*i], diagsum.get(), 1, out->data()+asize_*(i+nclosed+b1size_*(i+nclosed)), 1);
   } else {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        daxpy_(asize_, 2.0*rdm1[j+nact*i], diagsum.get(), 1, out->get()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1);
+        daxpy_(asize_, 2.0*rdm1[j+nact*i], diagsum.get(), 1, out->data()+asize_*(j+nclosed+b1size_*(i+nclosed)), 1);
   }
   unique_ptr<double[]> diagsum2(new double[asize_]);
   dgemv_("N", asize_, nact*nact, 1.0, buf.get(), asize_, rdm1, 1, 0.0, diagsum2.get(), 1);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize_, 2.0, diagsum2.get(), 1, out->get()+asize_*(i+b1size_*i), 1);
+    daxpy_(asize_, 2.0, diagsum2.get(), 1, out->data()+asize_*(i+b1size_*i), 1);
   // exchange contribution
   if (natural) {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nclosed; ++j) {
-        daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(j+b1size_*(i+nclosed)), 1, out->get()+asize_*(j+b1size_*(i+nclosed)), 1);
-        daxpy_(asize_, -rdm1[i+nact*i], data_.get()+asize_*(i+nclosed+b1size_*j), 1, out->get()+asize_*(i+nclosed+b1size_*j), 1);
+        daxpy_(asize_, -rdm1[i+nact*i], data()+asize_*(j+b1size_*(i+nclosed)), 1, out->data()+asize_*(j+b1size_*(i+nclosed)), 1);
+        daxpy_(asize_, -rdm1[i+nact*i], data()+asize_*(i+nclosed+b1size_*j), 1, out->data()+asize_*(i+nclosed+b1size_*j), 1);
       }
   } else {
     for (int i0 = 0; i0 != nact; ++i0)
       for (int i1 = 0; i1 != nact; ++i1)
         for (int j = 0; j != nclosed; ++j) { // TODO be careful when rdm1 is not symmetric (e.g., transition density matrices)
-          daxpy_(asize_, -rdm1[i1+nact*i0], data_.get()+asize_*(j+b1size_*(i0+nclosed)), 1, out->get()+asize_*(j+b1size_*(i1+nclosed)), 1);
-          daxpy_(asize_, -rdm1[i1+nact*i0], data_.get()+asize_*(i0+nclosed+b1size_*j), 1, out->get()+asize_*(i1+nclosed+b1size_*j), 1);
+          daxpy_(asize_, -rdm1[i1+nact*i0], data()+asize_*(j+b1size_*(i0+nclosed)), 1, out->data()+asize_*(j+b1size_*(i1+nclosed)), 1);
+          daxpy_(asize_, -rdm1[i1+nact*i0], data()+asize_*(i0+nclosed+b1size_*j), 1, out->data()+asize_*(i1+nclosed+b1size_*j), 1);
         }
   }
   return out;
@@ -219,7 +219,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
 
 shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
   shared_ptr<DFBlock> out = clone();
-  dgemm_("N", "T", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data_.get(), asize_, rdm, b1size_*b2size_, 0.0, out->get(), asize_);
+  dgemm_("N", "T", asize_, b1size_*b2size_, b1size_*b2size_, 1.0, data(), asize_, rdm, b1size_*b2size_, 0.0, out->data(), asize_);
   return out;
 }
 
@@ -230,12 +230,12 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 
   if (b1size_ == o->b1size_) {
     target = make_shared<Matrix>(b2size_,o->b2size_);
-    dgemm_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data_.get(), asize_*b1size_, o->data_.get(), asize_*b1size_, 0.0, target->data(), b2size_);
+    dgemm_("T", "N", b2size_, o->b2size_, asize_*b1size_, a, data(), asize_*b1size_, o->data(), asize_*b1size_, 0.0, target->data(), b2size_);
   } else {
     assert(b2size_ == o->b2size_);
     target = make_shared<Matrix>(b1size_,o->b1size_);
     for (int i = 0; i != b2size_; ++i)
-      dgemm_("T", "N", b1size_, o->b1size_, asize_, a, data_.get()+i*asize_*b1size_, asize_, o->data_.get()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
+      dgemm_("T", "N", b1size_, o->b1size_, asize_, a, data()+i*asize_*b1size_, asize_, o->data()+i*asize_*o->b1size_, asize_, 1.0, target->data(), b1size_);
   }
 
   return target;
@@ -245,7 +245,7 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 shared_ptr<Matrix> DFBlock::form_4index(const shared_ptr<const DFBlock> o, const double a) const {
   if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index");
   auto target = make_shared<Matrix>(b1size_*b2size_, o->b1size_*o->b2size_);
-  dgemm_("T", "N", b1size_*b2size_, o->b1size_*o->b2size_, asize_, a, data_.get(), asize_, o->data_.get(), asize_, 0.0, target->data(), b1size_*b2size_);
+  dgemm_("T", "N", b1size_*b2size_, o->b1size_*o->b2size_, asize_, a, data(), asize_, o->data(), asize_, 0.0, target->data(), b1size_*b2size_);
   return target;
 }
 
@@ -254,7 +254,7 @@ shared_ptr<Matrix> DFBlock::form_4index(const shared_ptr<const DFBlock> o, const
 shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o, const double a, const size_t n) const {
   if (asize_ != o->asize_) throw logic_error("illegal call of DFBlock::form_4index_1fixed");
   auto target = make_shared<Matrix>(b2size_*b1size_, o->b1size_);
-  dgemm_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data_.get(), asize_, o->data_.get()+n*asize_*o->b1size_, asize_, 0.0, target->data(), b1size_*b2size_);
+  dgemm_("T", "N", b1size_*b2size_, o->b1size_, asize_, a, data(), asize_, o->data()+n*asize_*o->b1size_, asize_, 0.0, target->data(), b1size_*b2size_);
   return target;
 }
 
@@ -262,7 +262,7 @@ shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::form_aux_2index");
   auto target = make_shared<Matrix>(asize_, o->asize_);
-  dgemm_("N", "T", asize_, o->asize_, b1size_*b2size_, a, data_.get(), asize_, o->data_.get(), o->asize_, 0.0, target->data(), asize_);
+  dgemm_("N", "T", asize_, o->asize_, b1size_*b2size_, a, data(), asize_, o->data(), o->asize_, 0.0, target->data(), asize_);
   return target;
 }
 
@@ -270,29 +270,29 @@ shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, c
 unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
   unique_ptr<double[]> out(new double[asize_]);
   assert(den->ndim() == b1size_ && den->mdim() == b2size_);
-  dgemv_("N", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, den->data(), 1, 0.0, out.get(), 1);
+  dgemv_("N", asize_, b1size_*b2size_, 1.0, data(), asize_, den->data(), 1, 0.0, out.get(), 1);
   return out;
 }
 
 
 shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
   auto out = make_shared<Matrix>(b1size_,b2size_);
-  dgemv_("T", asize_, b1size_*b2size_, 1.0, data_.get(), asize_, fit, 1, 0.0, out->data(), 1);
+  dgemv_("T", asize_, b1size_*b2size_, 1.0, data(), asize_, fit, 1, 0.0, out->data(), 1);
   return out;
 }
 
 
 void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
   if (b1size_ != o->b1size_ || b2size_ != o->b2size_) throw logic_error("illegal call of DFBlock::contrib_apply_J");
-  dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data_.get(), o->asize_,
-                                                        1.0, data_.get(), asize_);
+  dgemm_("N", "N", asize_, b1size_*b2size_, o->asize_, 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data(), o->asize_,
+                                                       1.0, data(), asize_);
 }
 
 
 shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int jdim) const {
   assert(o->size() == b1size_*b2size_*jdim);
   auto out = make_shared<Matrix>(asize_, jdim);
-  dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data_.get(), asize_, o->data(), b1size_*b2size_, 0.0, out->data(), asize_);
+  dgemm_("N", "N", asize_, jdim, b1size_*b2size_, 1.0, data(), asize_, o->data(), b1size_*b2size_, 0.0, out->data(), asize_);
   return out;
 }
 
@@ -312,7 +312,7 @@ shared_ptr<Matrix> DFBlock::get_block(const int ist, const int i, const int jst,
   double* d = out->data();
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj, d += i)
-      copy_n(data_.get()+ista+asize_*(jj+b1size_*kk), i, d);
+      copy_n(data()+ista+asize_*(jj+b1size_*kk), i, d);
 
   return out;
 }

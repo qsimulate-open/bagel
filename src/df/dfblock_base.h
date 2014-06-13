@@ -33,16 +33,17 @@
 #include <src/util/taskqueue.h>
 #include <src/parallel/staticdist.h>
 #include <src/parallel/mpi_interface.h>
+#include <src/math/btas_interface.h>
 
 namespace bagel {
 
-
 template <typename DataType>
-class DFBlock_base {
-  protected:
-    // aux_ runs fastest, b2_ runs slowest
-    std::unique_ptr<DataType[]> data_;
+class DFBlock_base : public btas::Tensor3<DataType> {
+  // aux_ runs fastest, b2_ runs slowest
+  public:
+    using btas::Tensor3<DataType>::data;
 
+  protected:
     // distribution information
     const std::shared_ptr<const StaticDist> adist_shell_;
     const std::shared_ptr<const StaticDist> adist_;
@@ -63,21 +64,17 @@ class DFBlock_base {
     // construction of a block from AO integrals
     DFBlock_base(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged = false)
-     : adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
+     : btas::Tensor3<DataType>(std::max(adist_shell->size(mpi__->rank()), std::max(adist->size(mpi__->rank()), a)), b1, b2),
+       adist_shell_(adist_shell), adist_(adist), averaged_(averaged), asize_(a), b1size_(b1), b2size_(b2), astart_(as), b1start_(b1s), b2start_(b2s) {
 
       assert(asize_ == adist_shell->size(mpi__->rank()) || asize_ == adist_->size(mpi__->rank()) || asize_ == adist_->nele());
 
-      const size_t amax = std::max(adist_shell_->size(mpi__->rank()), std::max(adist_->size(mpi__->rank()), asize_));
-      data_ = std::unique_ptr<DataType[]>(new DataType[amax*b1size_*b2size_]);
     }
 
     DFBlock_base(const DFBlock_base<DataType>& o)
-     : adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), asize_(o.asize_), b1size_(o.b1size_), b2size_(o.b2size_),
+     : btas::Tensor3<DataType>(o), adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), asize_(o.asize_), b1size_(o.b1size_), b2size_(o.b2size_),
        astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
 
-      const size_t amax = std::max(adist_shell_->size(mpi__->rank()), std::max(adist_->size(mpi__->rank()), asize_));
-      data_ = std::unique_ptr<DataType[]>(new DataType[amax*b1size_*b2size_]);
-      std::copy_n(o.data_.get(), size(), data_.get());
     }
 
     // dimensions of the block
@@ -94,9 +91,9 @@ class DFBlock_base {
     size_t b2start() const { return b2start_; }
 
     // TODO direct access to data will be disabled once implementation is done
-    DataType* get() { return data_.get(); }
-    const DataType* get() const { return data_.get(); }
-    DataType& operator[](const size_t i) { return data_[i]; }
+//  DataType* get() { return data_.get(); }
+//  const DataType* get() const { return data_.get(); }
+//  DataType& operator[](const size_t i) { return data_[i]; }
 
     // dist
     const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; }
@@ -107,14 +104,14 @@ class DFBlock_base {
     template <typename ScaleType, class DType> // TODO parameter check needed
     void ax_plus_y(const ScaleType a, const DType& o) {
       if (size() != o.size()) throw std::logic_error("DFBlock::daxpy called illegally");
-      blas::ax_plus_y_n(a, o.data_.get(), size(), data_.get());
+      blas::ax_plus_y_n(a, o.data(), size(), data());
     }
     template <typename ScaleType, class DType> // TODO parameter check needed
     void ax_plus_y(const ScaleType a, const std::shared_ptr<DType>& o) { ax_plus_y(a, *o); }
     template <typename ScaleType>
-    void scale(const ScaleType a) { blas::scale_n(a, data_.get(), size()); }
+    void scale(const ScaleType a) { blas::scale_n(a, data(), size()); }
 
-    void zero() { std::fill_n(data_.get(), size(), 0.0); }
+    void zero() { std::fill_n(data(), size(), 0.0); }
 
     // symmetrize b1 and b2 (assuming b1size_ == b2size_)
     void symmetrize() {
@@ -122,20 +119,20 @@ class DFBlock_base {
       const int n = b1size_;
       for (int i = 0; i != n; ++i)
         for (int j = i; j != n; ++j) {
-          blas::ax_plus_y_n(1.0, data_.get()+asize_*(j+n*i), asize_, data_.get()+asize_*(i+n*j));
-          std::copy_n(data_.get()+asize_*(i+n*j), asize_, data_.get()+asize_*(j+n*i));
+          blas::ax_plus_y_n(1.0, data()+asize_*(j+n*i), asize_, data()+asize_*(i+n*j));
+          std::copy_n(data()+asize_*(i+n*j), asize_, data()+asize_*(j+n*i));
         }
     }
 
     template <class MatType>
     void copy_block(std::shared_ptr<MatType> o, const int jdim, const size_t offset) {
       assert(o->size() == asize_*jdim);
-      std::copy_n(o->data(), asize_*jdim, data_.get()+offset);
+      std::copy_n(o->data(), asize_*jdim, data()+offset);
     }
     template <class MatType>
     void add_block(std::shared_ptr<MatType> o, const int jdim, const size_t offset, const DataType fac = 1.0) {
       assert(o->size() == asize_*jdim);
-      blas::ax_plus_y_n(fac, o->data(), asize_*jdim, data_.get()+offset);
+      blas::ax_plus_y_n(fac, o->data(), asize_*jdim, data()+offset);
     }
 
 
@@ -171,7 +168,7 @@ class DFBlock_base {
         sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size_*b2size_]);
         const size_t retsize = asize_ - asendsize;
         for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(data_.get()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+          task.emplace_back(data()+retsize+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
 
         task.compute();
 
@@ -192,15 +189,15 @@ class DFBlock_base {
         if (t_size <= asize_) {
           for (size_t i = 0; i != b1size_*b2size_; ++i) {
             if (i*asize_ < (i+1)*t_size-retsize) {
-              std::copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+              std::copy_backward(data()+i*asize_, data()+i*asize_+retsize, data()+(i+1)*t_size);
             } else if (i*asize_ > (i+1)*t_size-retsize) {
-              std::copy_n(data_.get()+i*asize_, retsize, data_.get()+(i+1)*t_size-retsize);
+              std::copy_n(data()+i*asize_, retsize, data()+(i+1)*t_size-retsize);
             }
           }
         } else {
           for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
             assert(i*asize_ < (i+1)*t_size-retsize);
-            std::copy_backward(data_.get()+i*asize_, data_.get()+i*asize_+retsize, data_.get()+(i+1)*t_size);
+            std::copy_backward(data()+i*asize_, data()+i*asize_+retsize, data()+(i+1)*t_size);
           }
         }
       }
@@ -216,7 +213,7 @@ class DFBlock_base {
 
         TaskQueue<CopyBlockTask<DataType>> task(b2size_);
         for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
+          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data()+asize_*b1size_*b2, asize_, arecvsize, b1size_);
         task.compute();
       }
 
@@ -246,7 +243,7 @@ class DFBlock_base {
         TaskQueue<CopyBlockTask<DataType>> task(b2size_);
         sendbuf = std::unique_ptr<DataType[]>(new DataType[asendsize*b1size_*b2size_]);
         for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(data_.get()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
+          task.emplace_back(data()+asize_*b1size_*b2, asize_, sendbuf.get()+asendsize*b1size_*b2, asendsize, asendsize, b1size_);
 
         task.compute();
         assert(myrank > 0);
@@ -265,14 +262,14 @@ class DFBlock_base {
         if (t_size <= asize_) {
           for (size_t i = 0; i != b1size_*b2size_; ++i) {
             assert(i*asize_+asendsize > i*t_size);
-            std::copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+            std::copy_n(data()+i*asize_+asendsize, retsize, data()+i*t_size);
           }
         } else {
           for (long long int i = b1size_*b2size_-1; i >= 0; --i) {
             if (i*asize_+asendsize > i*t_size) {
-              std::copy_n(data_.get()+i*asize_+asendsize, retsize, data_.get()+i*t_size);
+              std::copy_n(data()+i*asize_+asendsize, retsize, data()+i*t_size);
             } else if (i*asize_+asendsize < i*t_size) {
-              std::copy_backward(data_.get()+i*asize_+asendsize, data_.get()+(i+1)*asize_, data_.get()+i*t_size+retsize);
+              std::copy_backward(data()+i*asize_+asendsize, data()+(i+1)*asize_, data()+i*t_size+retsize);
             }
           }
         }
@@ -289,7 +286,7 @@ class DFBlock_base {
 
         TaskQueue<CopyBlockTask<DataType>> task(b2size_);
         for (size_t b2 = 0; b2 != b2size_; ++b2)
-          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data_.get()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
+          task.emplace_back(recvbuf.get()+arecvsize*b1size_*b2, arecvsize, data()+asize_*b1size_*b2+(asize_-arecvsize), asize_, arecvsize, b1size_);
         task.compute();
       }
 
