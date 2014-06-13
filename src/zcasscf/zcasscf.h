@@ -105,7 +105,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
     std::shared_ptr<const ZMatrix> semi_canonical_orb();
-    std::shared_ptr<ZMatrix> coeff_stripe_to_block(std::shared_ptr<const ZMatrix> coeff) const;
+    // coeff format transformation is a static function!
+    static std::shared_ptr<ZMatrix> coeff_stripe_to_block(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
