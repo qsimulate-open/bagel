@@ -75,15 +75,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     using Matrix_base<std::complex<double>>::get_block;
     using Matrix_base<std::complex<double>>::add_block;
 
-    void copy_block(const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
-      assert(o.ndim() == ndim && o.mdim() == mdim);
-      this->copy_block(nstart, mstart, ndim, mdim, o.data());
-    }
-    void add_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const ZMatrix& o) {
-      assert(o.ndim() == ndim && o.mdim() == mdim);
-      this->add_block(a, nstart, mstart, ndim, mdim, o.data());
-    }
-
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);

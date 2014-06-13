@@ -250,6 +250,9 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       copy_block(nstart, mstart, nsize, msize, o.get());
     }
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix_base<DataType>& o) {
+      copy_block(nstart, mstart, nsize, msize, o.data());
+    }
 
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
@@ -262,6 +265,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       add_block(a, nstart, mstart, nsize, msize, o.get());
     }
+    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const Matrix_base<DataType>& o) {
+      add_block(a, nstart, mstart, nsize, msize, o.data());
+    }
+
 
     void add_strided_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize,
                             const int ld, const DataType* o) {
