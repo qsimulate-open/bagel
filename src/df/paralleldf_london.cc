@@ -95,7 +95,7 @@ void ParallelDF_London::add_block(shared_ptr<DFBlock_London> o) {
 }
 
 
-shared_ptr<ZMatrix> ParallelDF_London::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
+shared_ptr<btas::Tensor3<std::complex<double>>> ParallelDF_London::get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   // first thing is to find the node
   tuple<size_t, size_t> info = adist_now()->locate(i);

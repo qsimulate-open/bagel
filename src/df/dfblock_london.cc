@@ -309,7 +309,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_Dj(const shared_ptr<const ZMatrix> o, c
 }
 
 
-shared_ptr<ZMatrix> DFBlock_London::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   const int ista = ist - astart_;
   const int jsta = jst - b1start_;
   const int ksta = kst - b2start_;
@@ -320,17 +320,17 @@ shared_ptr<ZMatrix> DFBlock_London::get_block(const int ist, const int i, const 
     throw logic_error("illegal call of DFBlock_London::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<ZMatrix>(i, j*k);
-  complex<double>* d = out->data();
+  auto out = make_shared<btas::Tensor3<std::complex<double>>>(i, j*k);
   for (int kk = ksta; kk != kfen; ++kk)
-    for (int jj = jsta; jj != jfen; ++jj, d += i)
-      copy_n(data()+ista+asize_*(jj+b1size_*kk), i, d);
+    for (int jj = jsta; jj != jfen; ++jj)
+      for (int ii = ista; ii != ifen; ++ii)
+        (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
 
   return out;
 }
 
 
-shared_ptr<ZMatrix> DFBlock_London::get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   if (ist != 0 || jst != 0 || kst != 0 || astart_ != 0 || b1start_ != 0 || b2start_ != 0) throw logic_error("DFBlock_London::get_block_conj currently is not designed to work with >1 block");
   if (b1size_ != b2size_) throw logic_error ("DFBLock_London::get_block_conj assumes b1 and b2 contain the same set of basis functions");
 
@@ -344,13 +344,12 @@ shared_ptr<ZMatrix> DFBlock_London::get_block_conj(const int ist, const int i, c
     throw logic_error("illegal call of DFBlock_London::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<ZMatrix>(i, j*k);
+  auto out = make_shared<btas::Tensor3<std::complex<double>>>(i, j, k);
 
-  for (int ii=ista; ii!=ifen; ii++) {
-    for (int jj=jsta; jj!=jfen; jj++) {
-      for (int kk=ksta; kk!=kfen; kk++) (*out)(ii, jj+b1size_*kk) = conj((*this)(ii, kk, ii));
-    }
-  }
+  for (int kk = ksta; kk != kfen; kk++)
+    for (int jj = jsta; jj != jfen; jj++)
+      for (int ii = ista; ii != ifen; ii++)
+        (*out)(ii-ista, jj-jsta, kk-ksta) = conj((*this)(ii, kk, jj));
 
   return out;
 }

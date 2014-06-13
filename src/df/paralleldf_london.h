@@ -75,7 +75,7 @@ class ParallelDF_London : public std::enable_shared_from_this<ParallelDF_London>
     void scale(const double a);
     void symmetrize();
 
-    std::shared_ptr<ZMatrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF_London> df() const { return df_; }
     std::shared_ptr<const Matrix> data2_real() const { return data2_; }

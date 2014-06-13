@@ -297,7 +297,7 @@ shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int 
 }
 
 
-shared_ptr<Matrix> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<btas::Tensor3<double>> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   const int ista = ist - astart_;
   const int jsta = jst - b1start_;
   const int ksta = kst - b2start_;
@@ -308,11 +308,11 @@ shared_ptr<Matrix> DFBlock::get_block(const int ist, const int i, const int jst,
     throw logic_error("illegal call of DFBlock::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<Matrix>(i, j*k);
-  double* d = out->data();
+  auto out = make_shared<btas::Tensor3<double>>(i, j, k);
   for (int kk = ksta; kk != kfen; ++kk)
-    for (int jj = jsta; jj != jfen; ++jj, d += i)
-      copy_n(data()+ista+asize_*(jj+b1size_*kk), i, d);
+    for (int jj = jsta; jj != jfen; ++jj)
+      for (int ii = ista; ii != ifen; ++ii)
+        (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
 
   return out;
 }

@@ -23,6 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#if 0
 #include <src/london/debug_london.h>
 #include <src/london/get_complexeri.h>
 
@@ -193,3 +194,4 @@ shared_ptr<const Reference> Debug_London::conv_to_ref() const {
 //  return out;
   return nullptr;
 }
+#endif

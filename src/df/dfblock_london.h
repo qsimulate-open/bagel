@@ -75,13 +75,11 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     std::shared_ptr<ZMatrix> form_Dj(const std::shared_ptr<const ZMatrix> o, const int jdim) const;
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns complex<double>[] whose size is i*j*k
-    std::shared_ptr<ZMatrix> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
     // get_block returns (j|cd), while get_block_conj returns (j*|cd)
-    std::shared_ptr<ZMatrix> get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
-    // use with caution
-//  std::unique_ptr<std::complex<double>[]> release_data() { return std::move(data_); }
 };
 
 }

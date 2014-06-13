@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
+#if 0
 #ifndef __BAGEL_SRC_LONDON_DEBUG_LONDON_H
 #define __BAGEL_SRC_LONDON_DEBUG_LONDON_H
 
@@ -50,4 +50,5 @@ class Debug_London : public Method {
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Debug_London)
 
+#endif
 #endif
