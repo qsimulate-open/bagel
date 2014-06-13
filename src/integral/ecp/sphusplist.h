@@ -32,6 +32,7 @@
 
 namespace bagel {
 
+// USP = Unitary Sphere Polynomial = x^i y^j z^k
 struct SphUSPList {
   private:
 

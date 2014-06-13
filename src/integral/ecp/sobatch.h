@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: angularbatch.h
+// Filename: sobatch.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_ECP_ANGULARBATCH_H
-#define __SRC_INTEGRAL_ECP_ANGULARBATCH_H
+#ifndef __SRC_INTEGRAL_ECP_SOBATCH_H
+#define __SRC_INTEGRAL_ECP_SOBATCH_H
 
 #include <src/molecule/atom.h>
 #include <src/integral/ecp/sphharmonics.h>
@@ -34,15 +34,15 @@
 
 namespace bagel {
 
-class AngularBatch : public RadialInt {
+class SOBatch : public RadialInt {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
     std::shared_ptr<const ECP> ecp_;
     int cont0_, cont1_;
     std::array<int, 3> ang0_, ang1_;
-    std::array<double, 3> AB_, CB_;
-    double dAB_, dCB_;
+    std::array<double, 3> AB_, CB_, AC_;
+    double dAB_, dCB_, dAC_;
     std::vector<double> c0_, c1_;
     std::vector<std::map<int, std::array<int, 3>>> map_;
 
@@ -50,17 +50,19 @@ class AngularBatch : public RadialInt {
     std::vector<std::vector<double>> zAB_, zCB_;
 
     void map_angular_number();
+    bool delta(const int i, const int j);
 
-    double integrate3SHs(std::array<std::pair<int, int>, 3> lm) const;
-    std::vector<double> project_AB(const int l, const std::vector<double> usp, const std::vector<double> r);
-    std::vector<double> project_CB(const int l, const std::vector<double> usp, const std::vector<double> r);
+    std::array<double, 3> fm0lm1(const int l, const int m0, const int m1);
+    std::vector<double> project(const int l, const std::vector<double> r);
+    double angularA(const int h, const int ld, const std::vector<double> usp);
+    double angularC(const int h, const int ld, const std::vector<double> usp);
 
   public:
-    AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
+    SOBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
                  const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                  const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH);
 
-    ~AngularBatch() {}
+    ~SOBatch() {}
 
     std::vector<double> compute(const std::vector<double> r) override;
 
