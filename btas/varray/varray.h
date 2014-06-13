@@ -265,6 +265,9 @@ public:
    size_type size () const noexcept
    { return data_.size(); }
 
+   size_type capacity() const noexcept
+   { return capacity_; }
+
    void resize (size_type n)
    {
      if (size() != n) {
