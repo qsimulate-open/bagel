@@ -69,10 +69,12 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       this->resize(range);
     }
 
+#if 0
     DFBlock_base(const DFBlock_base<DataType>& o)
      : btas::Tensor3<DataType>(o), adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
 
     }
+#endif
 
     // dimensions of the block
     size_t asize() const { return this->range(0).size(); }
