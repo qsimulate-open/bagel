@@ -188,7 +188,7 @@ shared_ptr<ZMatrix> RelDFFull::form_2index(shared_ptr<const RelDFFull> a, const 
 
 
 shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> inp) const {
-  shared_ptr<ZMatrix> rdm2 = make_shared<ZMatrix>(inp->dim(), inp->dim());
+  shared_ptr<ZMatrix> rdm2 = make_shared<ZMatrix>(inp->norb()*inp->norb(), inp->norb()*inp->norb());
   copy_n(inp->data(), inp->size(), rdm2->data());
   shared_ptr<const Matrix> rrdm = rdm2->get_real_part();
   shared_ptr<const Matrix> irdm = rdm2->get_imag_part();
