@@ -103,11 +103,11 @@ private:
 
 public:
 
-   varray () : allocator_type()
+   varray () : allocator_type(), capacity_(0)
    { }
 
    explicit
-   varray (const allocator_type& a) : allocator_type(a)
+   varray (const allocator_type& a) : allocator_type(a), capacity_(0)
    { }
 
    ~varray ()
@@ -116,7 +116,7 @@ public:
    }
 
    explicit
-   varray (size_type n, const allocator_type& a = allocator_type()) : allocator_type(a)
+   varray (size_type n, const allocator_type& a = allocator_type()) : allocator_type(a), capacity_(0)
    {
      if (n > 0) { // this ensures that if n == 0, pointers are null
        allocate(n);
@@ -125,7 +125,7 @@ public:
    }
 
    varray (size_type n, const_reference val,
-           const allocator_type& a = allocator_type()) : allocator_type(a)
+           const allocator_type& a = allocator_type()) : allocator_type(a), capacity_(0)
    {
      if (n > 0) {
        allocate(n);
@@ -134,7 +134,7 @@ public:
    }
 
    template <class InputIterator>
-   varray (InputIterator first, InputIterator last)
+   varray (InputIterator first, InputIterator last) : capacity_(0)
    {
      const auto n = std::distance(first, last);
      if (n > 0) {
@@ -143,7 +143,7 @@ public:
      }
    }
 
-   varray (const varray& x) : allocator_type(x)
+   varray (const varray& x) : allocator_type(x), capacity_(0)
    {
      const auto n = x.size();
      if (n > 0) {
@@ -152,7 +152,7 @@ public:
      }
    }
 
-   varray (const varray& x, const allocator_type& a) : allocator_type(a)
+   varray (const varray& x, const allocator_type& a) : allocator_type(a), capacity_(0)
    {
      const auto n = x.size();
      if (n > 0) {
@@ -162,12 +162,12 @@ public:
    }
 
    varray (varray&& x)
-   : allocator_type(std::move(static_cast<allocator_type&&>(x))), data_(std::move(x.data_))
+   : allocator_type(std::move(static_cast<allocator_type&&>(x))), data_(std::move(x.data_)), capacity_(x.capacity_)
    {
    }
 
    template <typename U, class = typename std::enable_if< std::is_convertible<U, value_type>::value >::type >
-   varray (std::initializer_list<U> il)
+   varray (std::initializer_list<U> il) : capacity_(0)
    {
       size_type n = il.size();
       if (n > 0) {

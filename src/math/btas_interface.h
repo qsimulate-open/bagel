@@ -37,16 +37,16 @@ namespace btas {
   using CRange = RangeNd<CblasColMajor, std::array<long,N>>;
 
   template<typename T>
-  using Tensor1 = Tensor<T, CRange<1>, std::vector<T>>;
+  using Tensor1 = Tensor<T, CRange<1>>;
   template<typename T>
-  using Tensor2 = Tensor<T, CRange<2>, std::vector<T>>;
+  using Tensor2 = Tensor<T, CRange<2>>;
   template<typename T>
-  using Tensor3 = Tensor<T, CRange<3>, std::vector<T>>;
+  using Tensor3 = Tensor<T, CRange<3>>;
   template<typename T>
-  using Tensor4 = Tensor<T, CRange<4>, std::vector<T>>;
+  using Tensor4 = Tensor<T, CRange<4>>;
 
   template<typename T, int N>
-  using TensorN = Tensor<T, CRange<N>, std::vector<T>>;
+  using TensorN = Tensor<T, CRange<N>>;
 }
 
 #endif
