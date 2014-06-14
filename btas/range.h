@@ -286,9 +286,7 @@ namespace btas {
 
         typedef typename common_signed_type<typename Index1::value_type, typename Index2::value_type>::type ctype;
         for(auto i = 0; i != n; ++i) {
-          auto li = *(std::begin(lobound) + i);
-          auto ui = *(std::begin(upbound) + i);
-          assert(static_cast<ctype>(li) <= static_cast<ctype>(ui));
+          assert(static_cast<ctype>(*(std::begin(lobound) + i)) <= static_cast<ctype>(*(std::begin(upbound) + i)));
         }
       }
 
