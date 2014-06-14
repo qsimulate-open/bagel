@@ -280,14 +280,18 @@ namespace btas {
 
       template <typename Index1, typename Index2>
       void validate(const Index1& lobound, const Index2& upbound) {
+#ifndef NDEBUG
         using btas::rank;
         auto n = rank(lobound);
         assert(n == rank(upbound));
 
         typedef typename common_signed_type<typename Index1::value_type, typename Index2::value_type>::type ctype;
         for(auto i = 0; i != n; ++i) {
-          assert(static_cast<ctype>(*(std::begin(lobound) + i)) <= static_cast<ctype>(*(std::begin(upbound) + i)));
+          auto li = *(std::begin(lobound) + i);
+          auto ui = *(std::begin(upbound) + i);
+          assert(static_cast<ctype>(li) <= static_cast<ctype>(ui));
         }
+#endif
       }
 
     protected:
