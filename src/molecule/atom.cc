@@ -166,6 +166,37 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
     construct_shells_ECP(ncore, basis_info);
 
+
+    const shared_ptr<const PTree> soecp = ibas->get_child_optional("so");
+    if (soecp) {
+      const shared_ptr<const PTree> soecp = ibas->get_child("so");
+      vector<tuple<string, vector<double>, vector<double>, vector<int>>> sobasis_info;
+      for (auto& ibcore : *soecp) {
+
+        const string ang = ibcore->get<string>("ecp_angular");
+        const shared_ptr<const PTree> exp = ibcore->get_child("ecp_exp");
+        vector<double> exponents;
+
+        for (auto& p : *exp)
+          exponents.push_back(lexical_cast<double>(p->data()));
+
+        const shared_ptr<const PTree> coef = ibcore->get_child("ecp_coef");
+        vector<double> coefficients;
+
+        for (auto& c : *coef)
+            coefficients.push_back(lexical_cast<double>(c->data()));
+
+        const shared_ptr<const PTree> r_p = ibcore->get_child("ecp_r");
+        vector<int> r_power;
+
+        for (auto& r : *r_p)
+            r_power.push_back(lexical_cast<int>(r->data()));
+
+        sobasis_info.push_back(make_tuple(ang, exponents, coefficients, r_power));
+      }
+
+      construct_shells_SOECP(sobasis_info);
+    }
   }
 
 }
@@ -407,6 +438,34 @@ void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<dou
 
 }
 
+void Atom::construct_shells_SOECP(vector<tuple<string, vector<double>, vector<double>, vector<int>>> in) {
+
+  vector<shared_ptr<const Shell_ECP>> shells_SO;
+
+  for (auto& biter : in) {
+    const int l = atommap_.angular_number(get<0>(biter));
+    vector<double> exponents = get<1>(biter);
+    const vector<double> coefficients = get<2>(biter);
+    vector<int> r_power = get<3>(biter);
+
+    vector<double> new_coefficients(coefficients);
+    int nzero = 0;
+    for (auto ic = coefficients.begin(); ic != coefficients.end(); ++ic)
+       if (*ic == 0.0) {
+         auto pos = std::distance(coefficients.begin(), ic) - nzero;
+         exponents.erase(exponents.begin()+pos);
+         r_power.erase(r_power.begin()+pos);
+         new_coefficients.erase(new_coefficients.begin()+pos);
+         ++nzero;
+       }
+    assert(exponents.size() == r_power.size() && r_power.size() == new_coefficients.size());
+
+    if (!exponents.empty()) shells_SO.push_back(make_shared<const Shell_ECP>(position_, l , exponents, new_coefficients, r_power));
+  }
+
+  so_parameters_ = (shells_SO.empty()) ? make_shared<const SOECP>() : make_shared<const SOECP>(shells_SO);
+
+}
 
 void Atom::split_shells(const size_t batchsize) {
   vector<shared_ptr<const Shell>> out;

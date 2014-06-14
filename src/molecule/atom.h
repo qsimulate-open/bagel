@@ -29,6 +29,7 @@
 
 #include <src/molecule/shell.h>
 #include <src/molecule/ecp.h>
+#include <src/molecule/soecp.h>
 #include <src/input/input.h>
 
 namespace bagel {
@@ -43,6 +44,7 @@ class Atom {
     std::vector<std::shared_ptr<const Shell>> shells_;
     bool use_ecp_basis_;
     std::shared_ptr<const ECP> ecp_parameters_;
+    std::shared_ptr<const SOECP> so_parameters_;
     int atom_number_;
     double atom_charge_;
     double atom_exponent_;
@@ -58,6 +60,8 @@ class Atom {
     // in : angular momentum (l), exponents (zeta_kl), coefficients (A_kl), powers of r (n_kl)
     void construct_shells_ECP(const int ncore, std::vector<std::tuple<std::string, std::vector<double>,
                               std::vector<double>, std::vector<int>>> in);
+    void construct_shells_SOECP(std::vector<std::tuple<std::string, std::vector<double>,
+                                std::vector<double>, std::vector<int>>> in);
 
     // if needed and possible, we split shells whose nbasis are bigger than batchsize
     void split_shells(const size_t batchsize);
@@ -109,6 +113,7 @@ class Atom {
 
     bool use_ecp_basis() const { return use_ecp_basis_; }
     const std::shared_ptr<const ECP>& ecp_parameters() const { return ecp_parameters_; }
+    const std::shared_ptr<const SOECP>& so_parameters() const { return so_parameters_; }
 
     bool dummy() const { return atom_number_ == 0; }
 
