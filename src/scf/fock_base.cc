@@ -43,8 +43,8 @@ Fock_base::Fock_base(const shared_ptr<const Geometry> geom, const shared_ptr<con
 
 void Fock_base::fock_one_electron_part() {
 
-  const int nbasis = ndim_;
-  assert(ndim_ == mdim_);
+  const int nbasis = ndim();
+  assert(ndim() == mdim());
 
   const int nirrep = geom_->nirrep();
   if (nirrep != 1) {

@@ -55,8 +55,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     void antisymmetrize();
     void hermite();
-    std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
-    std::shared_ptr<ZMatrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
+    std::shared_ptr<ZMatrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim()); }
+    std::shared_ptr<ZMatrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
     // diagonalize this matrix (overwritten by a coefficient matrix)
@@ -114,7 +114,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
 
-    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim_, mdim_); }
+    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim()); }
     std::shared_ptr<ZMatrix> copy() const { return std::make_shared<ZMatrix>(*this); }
 
     // returns exp(*this)
@@ -134,10 +134,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     double orthog(const std::list<std::shared_ptr<const ZMatrix>> o) { return this->orthog_impl(o); }
 
     void add_diag(const std::complex<double> a, const int i, const int j) {
-      assert(ndim_ == mdim_);
+      assert(ndim() == mdim());
       for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
     }
-    void add_diag(const std::complex<double> a) { add_diag(a,0,ndim_); }
+    void add_diag(const std::complex<double> a) { add_diag(a,0,ndim()); }
     // returns diagonal elements
     std::unique_ptr<std::complex<double>[]> diag() const;
 
@@ -148,7 +148,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
-    void print(const std::string in = "", const size_t size = 10) const;
+    void print(const std::string in = "", const int size = 10) const;
 
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;

@@ -43,8 +43,8 @@ Fock_base_London::Fock_base_London(const shared_ptr<const Geometry_London> geom,
 
 void Fock_base_London::fock_one_electron_part() {
 
-  //const int nbasis = ndim_;
-  assert(ndim_ == mdim_);
+  //const int nbasis = ndim();
+  assert(ndim() == mdim());
 
   const int nirrep = cgeom_->nirrep();
   if (nirrep != 1) throw std::runtime_error("London-based methods currently cannot make use of symmetry.");

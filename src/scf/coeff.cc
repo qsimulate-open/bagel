@@ -36,7 +36,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
 
 Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
-  copy_n(inp.data(), ndim_*mdim_, data());
+  copy_n(inp.data(), size(), data());
 }
 
 
@@ -51,7 +51,7 @@ Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff
 
     int cur_nbasis = (*icoeff)->ndim();
 
-    int cur_nend = ndim_ - (cur_nstart + cur_nbasis);
+    int cur_nend = ndim() - (cur_nstart + cur_nbasis);
 
     int cur_mdim = (*icoeff)->mdim();
 
@@ -75,27 +75,27 @@ int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
 
 
 shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e, const int offset) const {
-  auto out = make_shared<Matrix>(ndim_, ndim_);
-  double* out_data = out->data() + offset*ndim_;
+  auto out = make_shared<Matrix>(ndim(), ndim());
+  double* out_data = out->data() + offset*ndim();
   const double* cdata = data();
-  for (int i = 0; i != n; ++i, cdata += ndim_) {
-    dgemm_("N", "T", ndim_, ndim_, 1, 2.0*e[i], cdata, ndim_, cdata, ndim_, 1.0, out_data, ndim_);
+  for (int i = 0; i != n; ++i, cdata += ndim()) {
+    dgemm_("N", "T", ndim(), ndim(), 1, 2.0*e[i], cdata, ndim(), cdata, ndim(), 1.0, out_data, ndim());
   }
   return out;
 }
 
 
 pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const int nrow2) const {
-  auto out1 = make_shared<Matrix>(nrow1, mdim_);
-  auto out2 = make_shared<Matrix>(nrow2, mdim_);
+  auto out1 = make_shared<Matrix>(nrow1, mdim());
+  auto out2 = make_shared<Matrix>(nrow2, mdim());
 
-  assert(nrow1+nrow2 == ndim_);
+  assert(nrow1+nrow2 == ndim());
 
   const double* source = data();
   double* data1 = out1->data();
   double* data2 = out2->data();
 
-  for (int m = 0; m != mdim_; ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim_) {
+  for (int m = 0; m != mdim(); ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim()) {
     copy_n(source,       nrow1, data1);
     copy_n(source+nrow1, nrow2, data2);
   }

@@ -63,10 +63,10 @@ class MixedBasis : public Matrix {
       }
     }
 
-    void print(const std::string in = "", const size_t size = 10) const {
+    void print(const std::string in = "", const int size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
-      for (int i = 0; i != std::min(size,static_cast<size_t>(ndim_)); ++i) {
-        for (int j = 0; j != std::min(size,static_cast<size_t>(mdim_)); ++j) {
+      for (int i = 0; i != std::min(size, ndim()); ++i) {
+        for (int j = 0; j != std::min(size, mdim()); ++j) {
           std::cout << std::fixed << std::setw(12) << std::setprecision(9) << element(i, j) << " ";
         }
         std::cout << std::endl;

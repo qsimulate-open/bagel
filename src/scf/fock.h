@@ -110,7 +110,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
       double cmax = 0.0;
       for (int ii = ioffset; ii != ioffset + isize; ++ii) {
-        const int iin = ii * ndim_;
+        const int iin = ii * ndim();
         for (int jj = joffset; jj != joffset + jsize; ++jj) {
           cmax = std::max(cmax, ::fabs(density_data[iin + jj]));
         }
@@ -185,7 +185,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
             eribatch.compute();
             const double* eridata = eribatch.data();
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-              const int j0n = j0 * ndim_;
+              const int j0n = j0 * ndim();
 
               for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
                 const unsigned int nj01 = (j0 << shift) + j1;
@@ -197,7 +197,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
                 const bool eqlj0j1 = (j0 == j1);
                 const double scal01 = (eqlj0j1 ? 0.5 : 1.0) * static_cast<double>(ijkl);
-                const int j1n = j1 * ndim_;
+                const int j1n = j1 * ndim();
 
                 for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                   const int maxj1j2 = std::max(j1, j2);
@@ -205,7 +205,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 
                   const int maxj0j2 = std::max(j0, j2);
                   const int minj0j2 = std::min(j0, j2);
-                  const int j2n = j2 * ndim_;
+                  const int j2n = j2 * ndim();
 
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     const bool skipj2j3 = (j2 > j3);
@@ -235,7 +235,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
         }
       }
     }
-    for (int i = 0; i != ndim_; ++i) element(i, i) *= 2.0;
+    for (int i = 0; i != ndim(); ++i) element(i, i) *= 2.0;
     fill_upper();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,7 +248,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     std::shared_ptr<const DFDist> df = geom_->df();
 
     // some constants
-    assert(ndim_ == df->nbasis0());
+    assert(ndim() == df->nbasis0());
 
     Timer pdebug(3);
 
@@ -256,9 +256,9 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
     *coeff *= -1.0;
     int nocc = 0;
     {
-      std::unique_ptr<double[]> vec(new double[ndim_]);
+      std::unique_ptr<double[]> vec(new double[ndim()]);
       coeff->diagonalize(vec.get());
-      for (int i = 0; i != ndim_; ++i) {
+      for (int i = 0; i != ndim(); ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
           const double fac = std::sqrt(-vec[i]);
