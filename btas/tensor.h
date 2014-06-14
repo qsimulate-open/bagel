@@ -503,7 +503,6 @@ namespace btas {
 
       ///@} // element accessors with range check
 
-#if 0
       /// resize array with range object
       template <typename Range>
       void
@@ -512,12 +511,13 @@ namespace btas {
         range_ = range;
         array_adaptor<storage_type>::resize(storage_, range_.area());
       }
-#endif
 
       /// resize array with extent object
       template <typename Extent>
       void
-      resize (const Extent& extent, typename std::enable_if<is_index<Extent>::value,Enabler>::type = Enabler())
+      resize (const Extent& extent, typename std::enable_if<is_index<Extent>::value &&
+                                                            not is_boxrange<Extent>::value,
+                                                            Enabler>::type = Enabler())
       {
         range_ = range_type(extent);
         array_adaptor<storage_type>::resize(storage_, range_.area());
@@ -662,7 +662,6 @@ namespace btas {
 
 } // namespace btas
 
-#if 0
 namespace boost {
 namespace serialization {
 
@@ -674,6 +673,5 @@ namespace serialization {
 
 }
 }
-#endif
 
 #endif // __BTAS_TENSOR_H
