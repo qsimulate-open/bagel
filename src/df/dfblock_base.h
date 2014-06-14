@@ -65,16 +65,9 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       assert(asize() == adist_shell->size(mpi__->rank()) || asize() == adist_->size(mpi__->rank()) || asize() == adist_->nele());
 
       // resize to the current size (moving the end pointer)
-      const btas::Range range(a, b1, b2);
+      const btas::CRange<3> range(a, b1, b2);
       this->resize(range);
     }
-
-#if 0
-    DFBlock_base(const DFBlock_base<DataType>& o)
-     : btas::Tensor3<DataType>(o), adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
-
-    }
-#endif
 
     // dimensions of the block
     size_t asize() const { return this->range(0).size(); }
@@ -198,7 +191,7 @@ class DFBlock_base : public btas::Tensor3<DataType> {
 
       // set new astart_ and asize()
       astart_ = t_start;
-      const btas::Range range(t_end - t_start, b1size(), b2size());
+      const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
       this->resize(range);
 
       // set received data
@@ -271,7 +264,7 @@ class DFBlock_base : public btas::Tensor3<DataType> {
       }
 
       // set new astart_ and asize()
-      const btas::Range range(t_end - t_start, b1size(), b2size());
+      const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
       this->resize(range);
       astart_ = t_start;
 

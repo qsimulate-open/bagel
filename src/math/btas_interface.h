@@ -33,17 +33,20 @@
 #include <btas/tensor.h>
 
 namespace btas {
+  template<int N>
+  using CRange = RangeNd<CblasColMajor, std::array<long,N>>;
+
   template<typename T>
-  using Tensor1 = Tensor<T, RangeNd<CblasColMajor, std::array<long,1>>, std::vector<T>>;
+  using Tensor1 = Tensor<T, CRange<1>, std::vector<T>>;
   template<typename T>
-  using Tensor2 = Tensor<T, RangeNd<CblasColMajor, std::array<long,2>>, std::vector<T>>;
+  using Tensor2 = Tensor<T, CRange<2>, std::vector<T>>;
   template<typename T>
-  using Tensor3 = Tensor<T, RangeNd<CblasColMajor, std::array<long,3>>, std::vector<T>>;
+  using Tensor3 = Tensor<T, CRange<3>, std::vector<T>>;
   template<typename T>
-  using Tensor4 = Tensor<T, RangeNd<CblasColMajor, std::array<long,4>>, std::vector<T>>;
+  using Tensor4 = Tensor<T, CRange<4>, std::vector<T>>;
 
   template<typename T, int N>
-  using TensorN = Tensor<T, RangeNd<CblasColMajor, std::array<long,N>>, std::vector<T>>;
+  using TensorN = Tensor<T, CRange<N>, std::vector<T>>;
 }
 
 #endif
