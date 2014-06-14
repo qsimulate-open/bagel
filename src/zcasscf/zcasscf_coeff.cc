@@ -292,11 +292,11 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
 }
 
 
-// Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
-shared_ptr<ZMatrix> ZCASSCF::coeff_stripe_to_block(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff) {
-  assert(coeff->ndim() == coeff->mdim());
+shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, const int nvirt, shared_ptr<const ZMatrix> coeff, const bool striped) {
+  assert(coeff->ndim() == coeff->mdim()); // TODO : generalize for when coeff is not a square ; shouldn't be too difficult
   auto ctmp2 = coeff->clone();
-  { // block format
+  if (striped) { 
+    // Transforms a coefficient matrix from striped format to block format : assumes ordering is (c,a,v,positrons)
     int n = coeff->ndim();
     // closed
     for (int j=0; j!=nclosed; ++j) {
@@ -314,6 +314,29 @@ shared_ptr<ZMatrix> ZCASSCF::coeff_stripe_to_block(const int nclosed, const int 
     for (int j=0; j!=nvirt; ++j) {
       ctmp2->copy_block(0, offset + j,           n, 1, coeff->slice(offset + j*2,   offset + j*2+1)->data());
       ctmp2->copy_block(0, offset + nvirt + j,   n, 1, coeff->slice(offset + j*2+1, offset + j*2+2)->data());
+    }
+  } else {
+    // Transforms a coefficient matrix from block format to striped format : assumes ordering is (c,a,v,positrons)
+    cout << " block format in : striped format out " << endl;
+    // striped format
+    int n = coeff->ndim();
+    int offset = nclosed;
+    // closed
+    for (int j=0; j!=nclosed; ++j) {
+      ctmp2->copy_block(0, j*2,   n, 1, coeff->slice(j, j+1)->data());
+      ctmp2->copy_block(0, j*2+1, n, 1, coeff->slice(offset + j, offset + j+1)->data());
+    }
+    offset = nclosed*2;
+    // active
+    for (int j=0; j!=nact; ++j) {
+      ctmp2->copy_block(0, offset + j*2,   n, 1, coeff->slice(offset + j, offset + j+1)->data());
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, coeff->slice(offset + nact + j, offset + nact + j+1)->data());
+    }
+    offset = (nclosed+nact)*2;
+    // vituals (including positrons)
+    for (int j=0; j!=nvirt; ++j) {
+      ctmp2->copy_block(0, offset + j*2,   n, 1, coeff->slice(offset + j, offset + j+1)->data());
+      ctmp2->copy_block(0, offset + j*2+1, n, 1, coeff->slice(offset + nvirt + j, offset + nvirt + j+1)->data());
     }
   }
    return ctmp2;

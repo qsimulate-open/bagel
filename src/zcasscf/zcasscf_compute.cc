@@ -66,7 +66,7 @@ void ZCASBFGS::compute() {
 
   // intialize coefficients
   if (!no_kramers_init_) { // re order coefficient matrix to block format
-    auto ctmp = coeff_stripe_to_block(nclosed_, nact_, nvirt_, coeff_);
+    auto ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_);
     coeff_ = make_shared<const ZMatrix>(*ctmp);
   }
 
