@@ -99,15 +99,12 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     // some math functions
     DFBlock_base<DataType>& operator+=(const DFBlock_base<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
     DFBlock_base<DataType>& operator-=(const DFBlock_base<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
-    template <typename ScaleType, class DType> // TODO parameter check needed
-    void ax_plus_y(const ScaleType a, const DType& o) {
-      if (size() != o.size()) throw std::logic_error("DFBlock::daxpy called illegally");
-      blas::ax_plus_y_n(a, o.data(), size(), data());
-    }
-    template <typename ScaleType, class DType> // TODO parameter check needed
+    template <typename ScaleType, class DType>
+    void ax_plus_y(const ScaleType a, const DType& o) { btas::axpy(a, o, *this); }
+    template <typename ScaleType, class DType>
     void ax_plus_y(const ScaleType a, const std::shared_ptr<DType>& o) { ax_plus_y(a, *o); }
     template <typename ScaleType>
-    void scale(const ScaleType a) { blas::scale_n(a, data(), size()); }
+    void scale(const ScaleType a) { btas::scal(a, *this); }
 
     void zero() { std::fill_n(data(), size(), 0.0); }
 

@@ -109,7 +109,9 @@ void axpy (
    static_assert(std::is_same<typename __traits_X::iterator_category, std::random_access_iterator_tag>::value, "iterator X must be a random access iterator");
    static_assert(std::is_same<typename __traits_Y::iterator_category, std::random_access_iterator_tag>::value, "iterator Y must be a random access iterator");
 
-   axpy_impl<std::is_same<typename __traits_X::value_type, _T>::value>::call(Nsize, alpha, itrX, incX, itrY, incY);
+   const bool match = std::is_convertible<_T, typename __traits_X::value_type>::value;
+   axpy_impl<std::is_convertible<_T, typename __traits_X::value_type>::value>
+          ::call(Nsize, !match ? alpha : static_cast<typename __traits_X::value_type>(alpha), itrX, incX, itrY, incY);
 }
 
 //  ================================================================================================
