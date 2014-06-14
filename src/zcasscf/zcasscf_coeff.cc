@@ -140,7 +140,7 @@ void ZCASSCF::init_kramers_coeff() {
       ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1)->data());
     }
     offset = nocc_*2;
-    // active
+    // virtual
     for (int j=0; j!=nvirtnr_; ++j) {
       ctmp2->copy_block(0, offset + j*2,   n, 1, tmp[0]->slice(offset/2 + j, offset/2 + j+1)->data());
       ctmp2->copy_block(0, offset + j*2+1, n, 1, tmp[1]->slice(offset/2 + j, offset/2 + j+1)->data());
