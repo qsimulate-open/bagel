@@ -51,6 +51,7 @@ void ZCASSCF::init_kramers_coeff() {
 
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
+  // quaternion diagonalize a fock matrix
   if (nr_coeff_ == nullptr) {
     int norb = nele;// - 2 > 0 ? nele-2 : nele;
     focktmp = make_shared<DFock>(geom_, hcore_, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);

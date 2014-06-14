@@ -64,12 +64,6 @@ void ZCASBFGS::compute() {
   bool pos_conv = false;
 #endif
 
-  // intialize coefficients
-  if (!no_kramers_init_) { // re order coefficient matrix to block format
-    auto ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_);
-    coeff_ = make_shared<const ZMatrix>(*ctmp);
-  }
-
   // TODO for debug, we may rotate coefficients. The magnitude can be specified in the input
   const bool ___debug___break_kramers = false;
   const bool ___debug___with_kramers = idata_->get<bool>("debugkramers", true);
