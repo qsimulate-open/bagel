@@ -662,6 +662,7 @@ namespace btas {
 
 } // namespace btas
 
+#if 0
 namespace boost {
 namespace serialization {
 
@@ -673,5 +674,6 @@ namespace serialization {
 
 }
 }
+#endif
 
 #endif // __BTAS_TENSOR_H
