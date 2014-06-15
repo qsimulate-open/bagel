@@ -98,8 +98,9 @@ void scal (
 
    static_assert(std::is_same<typename __traits_X::iterator_category, std::random_access_iterator_tag>::value, "iterator X must be a random access iterator");
 
-   const bool match = std::is_convertible<_T, typename __traits_X::value_type>::value;
-   scal_impl<std::is_convertible<_T, typename __traits_X::value_type>::value>::call(Nsize, !match ? alpha : static_cast<typename __traits_X::value_type>(alpha), itrX, incX);
+   typedef typename __traits_X::value_type __value_X;
+   typedef typename std::conditional<std::is_convertible<_T, __value_X>::value, __value_X, _T>::type __alpha;
+   scal_impl<std::is_convertible<_T, __value_X>::value>::call(Nsize, static_cast<__alpha>(alpha), itrX, incX);
 }
 
 //  ================================================================================================
