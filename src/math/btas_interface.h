@@ -31,22 +31,23 @@
 
 #include <btas/btas.h>
 #include <btas/tensor.h>
+#include <src/math/btas_varray.h>
 
 namespace btas {
   template<int N>
   using CRange = RangeNd<CblasColMajor, std::array<long,N>>;
 
   template<typename T>
-  using Tensor1 = Tensor<T, CRange<1>>;
+  using Tensor1 = Tensor<T, CRange<1>, bagel::varray<T>>;
   template<typename T>
-  using Tensor2 = Tensor<T, CRange<2>>;
+  using Tensor2 = Tensor<T, CRange<2>, bagel::varray<T>>;
   template<typename T>
-  using Tensor3 = Tensor<T, CRange<3>>;
+  using Tensor3 = Tensor<T, CRange<3>, bagel::varray<T>>;
   template<typename T>
-  using Tensor4 = Tensor<T, CRange<4>>;
+  using Tensor4 = Tensor<T, CRange<4>, bagel::varray<T>>;
 
   template<typename T, int N>
-  using TensorN = Tensor<T, CRange<N>>;
+  using TensorN = Tensor<T, CRange<N>, bagel::varray<T>>;
 }
 
 #endif
