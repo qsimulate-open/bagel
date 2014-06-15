@@ -40,6 +40,11 @@ class DFBlock : public DFBlock_base<double> {
     template<typename... Types>
     DFBlock(Types&&... args) : DFBlock_base<double>(std::forward<Types>(args)...) { }
 
+    DFBlock& operator=(const DFBlock& o) { DFBlock_base<double>::operator=(o); return *this; }
+    DFBlock& operator=(DFBlock&& o)      { DFBlock_base<double>::operator=(std::move(o)); return *this; }
+    DFBlock& operator+=(const DFBlock& o){ DFBlock_base<double>::operator+=(o); return *this; }
+    DFBlock& operator-=(const DFBlock& o){ DFBlock_base<double>::operator-=(o); return *this; }
+
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 

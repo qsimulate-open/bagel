@@ -45,8 +45,8 @@ class DFBlock_base : public btas::Tensor3<DataType> {
 
   protected:
     // distribution information
-    const std::shared_ptr<const StaticDist> adist_shell_;
-    const std::shared_ptr<const StaticDist> adist_;
+    std::shared_ptr<const StaticDist> adist_shell_;
+    std::shared_ptr<const StaticDist> adist_;
     // if true, asize is evenly distributed. If false, asize is at the shell boundary
     bool averaged_;
 
@@ -56,6 +56,8 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     size_t b2start_;
 
   public:
+    DFBlock_base() { }
+
     // construction of a block from AO integrals
     DFBlock_base(std::shared_ptr<const StaticDist> adist_shell, std::shared_ptr<const StaticDist> adist,
                  const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged = false)
@@ -97,8 +99,29 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     const std::shared_ptr<const StaticDist>& adist_now() const { return averaged_ ? adist_ : adist_shell_; }
 
     // some math functions
-    DFBlock_base<DataType>& operator+=(const DFBlock_base<DataType>& o) { ax_plus_y( 1.0, o); return *this; }
-    DFBlock_base<DataType>& operator-=(const DFBlock_base<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
+    DFBlock_base<DataType>& operator=(const DFBlock_base<DataType>& o) {
+      btas::Tensor3<DataType>::operator=(o);
+      adist_shell_ = o.adist_shell_;
+      adist_ = o.adist_;
+      averaged_ = o.averaged_;
+      astart_ = o.astart_;
+      b1start_ = o.b1start_;
+      b2start_ = o.b2start_;
+      return *this;
+    }
+    DFBlock_base<DataType>& operator=(DFBlock_base<DataType>&& o) {
+      btas::Tensor3<DataType>::operator=(std::move(o));
+      adist_shell_ = o.adist_shell_;
+      adist_ = o.adist_;
+      averaged_ = o.averaged_;
+      astart_ = o.astart_;
+      b1start_ = o.b1start_;
+      b2start_ = o.b2start_;
+      return *this;
+    }
+    DFBlock_base<DataType>& operator+=(const DFBlock_base<DataType>& o) { btas::Tensor3<DataType>::operator+=(o); return *this; }
+    DFBlock_base<DataType>& operator-=(const DFBlock_base<DataType>& o) { btas::Tensor3<DataType>::operator-=(o); return *this; }
+
     template <typename ScaleType, class DType>
     void ax_plus_y(const ScaleType a, const DType& o) { btas::axpy(a, o, *this); }
     template <typename ScaleType, class DType>

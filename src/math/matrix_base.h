@@ -211,6 +211,30 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     virtual ~Matrix_base() { }
 
+    Matrix_base<DataType>& operator=(const Matrix_base<DataType>& o) {
+      btas::Tensor2<DataType>::operator=(o);
+      localized_ = o.localized_;
+#ifdef HAVE_SCALAPACK
+      if (!localized_) {
+        desc_ = o.desc_;
+        localsize_ = o.localsize_;
+      }
+#endif
+      return *this;
+    }
+
+    Matrix_base<DataType>& operator=(Matrix_base<DataType>&& o) {
+      btas::Tensor2<DataType>::operator=(std::move(o));
+      localized_ = o.localized_;
+#ifdef HAVE_SCALAPACK
+      if (!localized_) {
+        desc_ = o.desc_;
+        localsize_ = o.localsize_;
+      }
+#endif
+      return *this;
+    }
+
     size_t size() const { return ndim()*mdim(); }
     int ndim() const { return this->range(0).size(); }
     int mdim() const { return this->range(1).size(); }
