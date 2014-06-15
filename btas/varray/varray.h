@@ -94,7 +94,6 @@ private:
      }
    };
    _M_impl data_;
-   size_type capacity_;
 
    allocator_type& alloc() { return static_cast<allocator_type&>(*this); }
    const allocator_type& alloc() const { return static_cast<const allocator_type&>(*this); }
@@ -103,11 +102,11 @@ private:
 
 public:
 
-   varray () : allocator_type(), capacity_(0)
+   varray () : allocator_type()
    { }
 
    explicit
-   varray (const allocator_type& a) : allocator_type(a), capacity_(0)
+   varray (const allocator_type& a) : allocator_type(a)
    { }
 
    ~varray ()
@@ -116,7 +115,7 @@ public:
    }
 
    explicit
-   varray (size_type n, const allocator_type& a = allocator_type()) : allocator_type(a), capacity_(0)
+   varray (size_type n, const allocator_type& a = allocator_type()) : allocator_type(a)
    {
      if (n > 0) { // this ensures that if n == 0, pointers are null
        allocate(n);
@@ -125,7 +124,7 @@ public:
    }
 
    varray (size_type n, const_reference val,
-           const allocator_type& a = allocator_type()) : allocator_type(a), capacity_(0)
+           const allocator_type& a = allocator_type()) : allocator_type(a)
    {
      if (n > 0) {
        allocate(n);
@@ -134,7 +133,7 @@ public:
    }
 
    template <class InputIterator>
-   varray (InputIterator first, InputIterator last) : capacity_(0)
+   varray (InputIterator first, InputIterator last)
    {
      const auto n = std::distance(first, last);
      if (n > 0) {
@@ -143,7 +142,7 @@ public:
      }
    }
 
-   varray (const varray& x) : allocator_type(x), capacity_(0)
+   varray (const varray& x) : allocator_type(x)
    {
      const auto n = x.size();
      if (n > 0) {
@@ -152,7 +151,7 @@ public:
      }
    }
 
-   varray (const varray& x, const allocator_type& a) : allocator_type(a), capacity_(0)
+   varray (const varray& x, const allocator_type& a) : allocator_type(a)
    {
      const auto n = x.size();
      if (n > 0) {
@@ -162,12 +161,12 @@ public:
    }
 
    varray (varray&& x)
-   : allocator_type(std::move(static_cast<allocator_type&&>(x))), data_(std::move(x.data_)), capacity_(x.capacity_)
+   : allocator_type(std::move(static_cast<allocator_type&&>(x))), data_(std::move(x.data_))
    {
    }
 
    template <typename U, class = typename std::enable_if< std::is_convertible<U, value_type>::value >::type >
-   varray (std::initializer_list<U> il) : capacity_(0)
+   varray (std::initializer_list<U> il)
    {
       size_type n = il.size();
       if (n > 0) {
@@ -265,21 +264,14 @@ public:
    size_type size () const noexcept
    { return data_.size(); }
 
-   size_type capacity() const noexcept
-   { return capacity_; }
-
    void resize (size_type n)
    {
      if (size() != n) {
-       if (n > capacity_) {
-         if (!empty()) {
-           deallocate();
-         }
-         if (n > 0) {
-           allocate(n);
-         }
-       } else {
-         reinterpret(n);
+       if (!empty()) {
+         deallocate();
+       }
+       if (n > 0) {
+         allocate(n);
        }
      }
    }
@@ -339,18 +331,12 @@ public:
      assert(n <= allocator_traits::max_size(alloc()));
      data_._M_start = allocator_traits::allocate(alloc(), n);
      data_._M_finish = data_._M_start + n;
-     capacity_ = n;
    }
 
    void deallocate() {
      if (!data_.empty())
        allocator_traits::deallocate(alloc(), data_._M_start, data_.size());
      data_._M_start = data_._M_finish = nullptr;
-     capacity_ = 0;
-   }
-
-   void reinterpret(size_type n) {
-     data_._M_finish = data_._M_start + n;
    }
 
    void
