@@ -214,6 +214,7 @@ namespace btas {
   };
 }
 
+#if 0
 namespace boost {
   namespace serialization {
 
@@ -225,4 +226,5 @@ namespace boost {
 
   } // namespace serialization
 } // namespace boost
+#endif
 #endif /* __BTAS_ARRAYADAPTOR_H_ */
