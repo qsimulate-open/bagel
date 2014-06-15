@@ -481,20 +481,20 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   if (localize_first) {
     auto activeA = make_shared<Matrix>(dimerbasis_, nactA);
-    activeA->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
+    activeA->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
     svd_info.emplace_back(activeA, make_pair(0, noccA), noccA - nclosedA, "A", true);
     svd_info.emplace_back(activeA, make_pair(noccA+noccB, noccA+noccB+nexternA), nactvirtA, "A", false);
 
     auto activeB = make_shared<Matrix>(dimerbasis_, nactB);
-    activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
+    activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
     svd_info.emplace_back(activeB, make_pair(noccA, noccA+noccB), noccB - nclosedB, "B", true);
     svd_info.emplace_back(activeB, make_pair(noccA+noccB+nexternA, noccA+noccB+nexternA+nexternB), nactvirtB, "B", false);
   }
   else {
     auto active = make_shared<Matrix>(dimerbasis_, nact);
 
-    active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_block(0, nclosedA, nbasisA, nactA));
-    active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_block(0, nclosedB, nbasisB, nactB));
+    active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
+    active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
 
     svd_info.emplace_back(active, make_pair(0, noccA + noccB), noccA + noccB - (nclosedA + nclosedB), "dimer", true);
     svd_info.emplace_back(active, make_pair(noccA + noccB, nbasisA + nbasisB), nactvirtA + nactvirtB, "dimer", false);

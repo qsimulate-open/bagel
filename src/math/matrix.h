@@ -85,7 +85,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void sqrt();
 
     using Matrix_base<double>::copy_block;
-    using Matrix_base<double>::get_block;
     using Matrix_base<double>::add_block;
 
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {

@@ -273,13 +273,6 @@ class Matrix_base : public btas::Tensor2<DataType> {
         blas::ax_plus_y_n(a, o+j*ld, nsize, element_ptr(nstart, i));
     }
 
-    std::unique_ptr<DataType[]> get_block(const int nstart, const int mstart, const int nsize, const int msize) const {
-      std::unique_ptr<DataType[]> out(new DataType[nsize*msize]);
-      for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
-        std::copy_n(data() + nstart + i*ndim(), nsize, out.get() + j*nsize);
-      return out;
-    }
-
     DataType& element(size_t i, size_t j) { return (*this)(i, j); }
     DataType* element_ptr(size_t i, size_t j) { return data()+i+j*ndim(); }
     const DataType& element(size_t i, size_t j) const { return (*this)(i, j); }

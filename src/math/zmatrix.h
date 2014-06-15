@@ -72,7 +72,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> tildex(const double thresh = 1.0e-8) const;
 
     using Matrix_base<std::complex<double>>::copy_block;
-    using Matrix_base<std::complex<double>>::get_block;
     using Matrix_base<std::complex<double>>::add_block;
 
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
