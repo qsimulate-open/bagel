@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/array.hpp>
 
 namespace btas {
 
@@ -386,29 +386,20 @@ inline bool operator!= (const btas::varray<T>& a,
   return not (a == b);
 }
 
-}
+} // namespace btas
 
 namespace boost {
-namespace serialization {
+  namespace serialization {
 
-  /// boost serialization: load as varray
+  /// boost serialization for varray
   template<class Archive, typename T>
-  void load (Archive& ar, btas::varray<T>& x, const unsigned int version)
+  void serialize (Archive& ar, btas::varray<T>& x, const unsigned int version)
   {
-      typename btas::varray<T>::size_type n; ar >> n;
-      x.resize(n);
-      for (typename btas::varray<T>::value_type& xi : x) ar >> xi;
+      ar & boost::serialization::make_array(x.data(), x.size());
   }
 
-  /// boost serialization: save as varray
-  template<class Archive, typename T>
-  void save (Archive& ar, const btas::varray<T>& x, const unsigned int version)
-  {
-      ar << x.size();
-      for (const typename btas::varray<T>::value_type& xi : x) ar << xi;
-  }
-}
-}
+  } // namespace serialization
+} // namespace boost
 
 template <typename T>
 inline bool operator== (const btas::varray<T>& a,

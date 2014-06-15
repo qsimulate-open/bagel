@@ -96,7 +96,7 @@ namespace btas {
         return stride_;
       }
 
-      bool offset() const {
+      value_type offset() const {
         return offset_;
       }
 
@@ -205,6 +205,12 @@ namespace btas {
         }
       }
 
+      friend class boost::serialization::access;
+      template<class Archive>
+      void serialize(Archive& ar, const unsigned int version) {
+        ar & stride_ & offset_ & contiguous_;
+      }
+
       stride_type stride_; //!< stride of each dimension (stride in the language of NumPy)
       value_type offset_; //!< lobound . stride so that easy to compute ordinal: ordinal(index) = index . stride - offset
       bool contiguous_; //!< whether index iterator traverses a contiguous sequence of ordinals
@@ -249,7 +255,6 @@ namespace btas {
     return os;
   }
 
-}
-
+} // namespace btas
 
 #endif /* BTAS_ORDINAL_H_ */

@@ -9,6 +9,7 @@
 #include <btas/tensor_traits.h>
 #include <btas/generic/numeric_type.h>
 #include <btas/varray/varray.h>
+#include <boost/serialization/array.hpp>
 
 namespace btas {
 
@@ -213,4 +214,15 @@ namespace btas {
   };
 }
 
+namespace boost {
+  namespace serialization {
+
+    template<class Archive, class T, size_t N>
+    void serialize(Archive & ar, std::array<T,N> & a, const unsigned int version)
+    {
+        ar & boost::serialization::make_array(a.data(), a.size());
+    }
+
+  } // namespace serialization
+} // namespace boost
 #endif /* __BTAS_ARRAYADAPTOR_H_ */

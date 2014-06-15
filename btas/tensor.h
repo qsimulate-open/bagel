@@ -14,6 +14,7 @@
 #include <btas/array_adaptor.h>
 
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace btas {
 
@@ -662,18 +663,19 @@ namespace btas {
 
 } // namespace btas
 
-#if 0
 namespace boost {
-namespace serialization {
+  namespace serialization {
 
-  /// boost serialization
-  template<class Archive, class _Tensor, class = typename std::enable_if<btas::is_boxtensor<_Tensor>::value>::type>
-  void serialize(Archive& ar, _Tensor& t, const unsigned int version) {
-    ar & t.range() & t.storage();
-  }
+    /// boost serialization
+    template<class Archive,
+             typename _T,
+             class _Range,
+             class _Storage>
+    void serialize(Archive& ar, btas::Tensor<_T,_Range,_Storage> t, const unsigned int version) {
+      ar & t.range() & t.storage();
+    }
 
-}
-}
-#endif
+  } // namespace serialization
+} // namespace boost
 
 #endif // __BTAS_TENSOR_H
