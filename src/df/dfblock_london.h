@@ -40,6 +40,9 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     template<typename... Types>
     DFBlock_London(Types&&... args) : DFBlock_base<std::complex<double>>(std::forward<Types>(args)...) { }
 
+    DFBlock_London(const DFBlock_London& o) : DFBlock_base<std::complex<double>>(o) { }
+    DFBlock_London(DFBlock_London&& o)      : DFBlock_base<std::complex<double>>(std::move(o)) { }
+
     DFBlock_London& operator=(const DFBlock_London& o) { DFBlock_base<std::complex<double>>::operator=(o); return *this; }
     DFBlock_London& operator=(DFBlock_London&& o)      { DFBlock_base<std::complex<double>>::operator=(std::move(o)); return *this; }
     DFBlock_London& operator+=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator+=(o); return *this; }
