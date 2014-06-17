@@ -46,6 +46,9 @@
 #include <boost/archive/shared_ptr_helper.hpp>
 #include <boost/property_tree/ptree_serialization.hpp>
 
+// to avoid duplicate serialize functions, we need to include this here
+#include <src/math/btas_interface.h>
+
 namespace bagel {
   // default implementation of bagel::base_of
   template <class T, typename = void>
@@ -250,10 +253,12 @@ namespace boost {
     }
 
     // serialization of std::array
+#ifndef BOOST_SERIALIZATION_STD_ARRAY
     template<class Archive, typename T, size_t N>
     void serialize(Archive& ar, std::array<T,N>& t, const unsigned int) {
       ar & bagel::make_array(t.data(), N);
     }
+#endif
 
   }
 }

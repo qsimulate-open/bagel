@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <btas/serialization.h>
 
 #include <boost/serialization/array.hpp>
 
@@ -395,7 +396,7 @@ namespace boost {
   template<class Archive, typename T>
   void serialize (Archive& ar, btas::varray<T>& x, const unsigned int version)
   {
-      ar & boost::serialization::make_array(x.data(), x.size());
+      ar & btas::make_array(x.data(), x.size());
   }
 
   } // namespace serialization
