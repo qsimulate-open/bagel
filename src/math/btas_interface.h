@@ -35,7 +35,7 @@
 
 namespace btas {
   template<int N>
-  using CRange = RangeNd<CblasColMajor, std::array<long,N>>;
+  using CRange = RangeNd<CblasColMajor>;
 
   template<typename T>
   using Tensor1 = Tensor<T, CRange<1>, bagel::varray<T>>;
@@ -46,8 +46,19 @@ namespace btas {
   template<typename T>
   using Tensor4 = Tensor<T, CRange<4>, bagel::varray<T>>;
 
+  template<typename T>
+  using View1 = TensorView<T, CRange<1>, bagel::varray<T>>;
+  template<typename T>
+  using View2 = TensorView<T, CRange<2>, bagel::varray<T>>;
+  template<typename T>
+  using View3 = TensorView<T, CRange<3>, bagel::varray<T>>;
+  template<typename T>
+  using View4 = TensorView<T, CRange<4>, bagel::varray<T>>;
+
   template<typename T, int N>
   using TensorN = Tensor<T, CRange<N>, bagel::varray<T>>;
+  template<typename T, int N>
+  using ViewN = TensorView<T, CRange<N>, bagel::varray<T>>;
 }
 
 #endif

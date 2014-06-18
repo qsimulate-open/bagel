@@ -165,7 +165,7 @@ vector<shared_ptr<ZMatrix>> DFDistT_London::get_slice(const int start, const int
   assert(start >= bstart_ && end <= bstart_+bsize_);
   vector<shared_ptr<ZMatrix>> out;
   for (auto& i : data_)
-    out.push_back(i->slice(start-bstart_, end-bstart_));
+    out.push_back(i->slice_copy(start-bstart_, end-bstart_));
   return out;
 }
 

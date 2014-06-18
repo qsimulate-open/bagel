@@ -74,6 +74,15 @@ namespace btas {
       {
       }
 
+      // TODO replace once there is a solution
+      /// construct from \c range and \c storage
+      template <typename S = _Storage>
+      explicit
+      TensorView (const range_type& range, const S& storage)
+      : range_(range), storageref_(*const_cast<S*>(&storage))
+      {
+      }
+
       /// move-construct from \c range and \c storage
       explicit
       TensorView (range_type&& range, storage_type&& storage) :
@@ -160,7 +169,7 @@ namespace btas {
       const Range1d<typename index_type::value_type>
       range(size_t d) const
       {
-        return range_.dim(d);
+        return range_.range(d);
       }
 
       /// \return range's extent object

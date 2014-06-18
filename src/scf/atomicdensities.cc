@@ -189,7 +189,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   for (; iter != maxiter; ++iter) {
     shared_ptr<Matrix> fock = sclosed ? make_shared<Fock<1>>(ga, hcore, nullptr, ocoeff->slice(0,sclosed/2), false/*store*/, true/*rhf*/)
                                       : hcore->copy();
-    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, nullptr, false/*store*/, false/*rhf*/, 0.0/*exch*/);
+    shared_ptr<Matrix> fock2 = make_shared<Fock<1>>(ga, hcore, vden, shared_ptr<btas::View2<double>>(), false/*store*/, false/*rhf*/, 0.0/*exch*/);
     *fock += *fock2 - *hcore;
 
     auto aodensity = make_shared<const Matrix>((*ocoeff^*ocoeff)*2.0 + *vden);

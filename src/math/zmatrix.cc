@@ -42,6 +42,10 @@ ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
 }
 
 
+ZMatrix::ZMatrix(const btas::View2<complex<double>>& o, const bool localized) : Matrix_base<complex<double>>(o, localized) {
+}
+
+
 ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
 }
 
@@ -452,7 +456,7 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](complex<double> a) { return a*e; });
       }
     }
-    out = out->slice(0,m);
+    out = out->slice_copy(0,m);
   }
   return out;
 }
@@ -488,6 +492,12 @@ void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const i
 }
 
 
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const btas::View2<double>> data) {
+  assert(ndim == data->range(0).size() && mdim == data->range(1).size() && data->range().ordinal().contiguous());
+  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, &*data->begin());
+}
+
+
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
   copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
@@ -511,6 +521,12 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
   assert(ndim == data->ndim() && mdim == data->mdim());
   add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
+}
+
+
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const btas::View2<double>> data) {
+  assert(ndim == data->range(0).size() && mdim == data->range(1).size() && data->range().ordinal().contiguous());
+  add_real_block(a, ndim_i, mdim_i, ndim, mdim, &*data->begin());
 }
 
 
@@ -569,7 +585,7 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 
 
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
-  shared_ptr<const ZMatrix> tmp = this->slice(offset, offset+n);
+  shared_ptr<const ZMatrix> tmp = this->slice_copy(offset, offset+n);
   auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
   *out *= scale;
   return out;

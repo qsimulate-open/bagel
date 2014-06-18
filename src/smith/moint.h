@@ -163,13 +163,13 @@ class MOFock {
 
       std::shared_ptr<const Matrix> fock1;
       {
-        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice(ncore, nocc);
+        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore, nocc);
         if (nact) {
           Matrix tmp(nact, nact);
           std::copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
           tmp.sqrt();
           tmp.scale(1.0/std::sqrt(2.0));
-          weighted_coeff->copy_block(0, nclosed, nbasis, nact, *weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
+          weighted_coeff->copy_block(0, nclosed, nbasis, nact, *weighted_coeff->slice_copy(nclosed, nclosed+nact) * tmp);
         }
         fock1 = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
       }
@@ -180,12 +180,12 @@ class MOFock {
       if (nclosed > 1) {
         std::shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
         fcl->diagonalize(eig.get());
-        coeff_->copy_block(0, ncore, nbasis, nclosed, *coeff_->slice(ncore, ncore+nclosed) * *fcl);
+        coeff_->copy_block(0, ncore, nbasis, nclosed, *coeff_->slice_copy(ncore, ncore+nclosed) * *fcl);
       }
       if (nvirt > 1) {
         std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
         fvirt->diagonalize(eig.get());
-        coeff_->copy_block(0, nocc, nbasis, nvirt, *coeff_->slice(nocc, nocc+nvirt) * *fvirt);
+        coeff_->copy_block(0, nocc, nbasis, nvirt, *coeff_->slice_copy(nocc, nocc+nvirt) * *fvirt);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
       const Matrix hc = *coeff_ % *hcore * *coeff_;

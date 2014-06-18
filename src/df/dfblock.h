@@ -51,6 +51,9 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 
+    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const btas::View2<double>> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const btas::View2<double>> c, const bool trans = false) const;
+    // TODO will be deprecated
     std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
 

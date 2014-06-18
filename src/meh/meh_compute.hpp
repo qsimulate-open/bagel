@@ -71,7 +71,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
     trialsize = end - start;
 
     if (trialsize >= nstates) {
-      basis = (*basis * *spn).slice(start, end);
+      basis = (*basis * *spn).slice_copy(start, end);
 
       std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_);
       auto H = std::make_shared<Matrix>(*sigma % *basis);

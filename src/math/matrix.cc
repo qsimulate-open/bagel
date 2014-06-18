@@ -49,6 +49,8 @@ Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(
 Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
+Matrix::Matrix(const btas::View2<double>& o, const bool localized) : Matrix_base<double>(o, localized) {
+}
 
 Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
 }
@@ -451,7 +453,7 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
       }
     }
-    out = out->slice(0,m);
+    out = out->slice_copy(0,m);
   }
   return out;
 }
@@ -528,7 +530,7 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 
 
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
+  shared_ptr<const Matrix> tmp = this->slice_copy(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;

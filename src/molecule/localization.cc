@@ -89,7 +89,7 @@ shared_ptr<Matrix> OrbitalLocalization::localize() {
     for (int iter = start; iter < fence; ++iter)
       if (!localized.insert(iter).second) cout << "WARNING: Orbital " << iter << " has already been localized." << endl;
 
-    shared_ptr<Matrix> loc_subspace = localize_space(out->slice(start, fence));
+    shared_ptr<Matrix> loc_subspace = localize_space(out->slice_copy(start, fence));
     if (ordering) {
       Matrix tmp = *loc_subspace % *ordering * *loc_subspace;
       multimap<double, int> to_copy;

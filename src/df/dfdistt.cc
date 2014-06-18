@@ -165,7 +165,7 @@ vector<shared_ptr<Matrix>> DFDistT::get_slice(const int start, const int end) co
   assert(start >= bstart_ && end <= bstart_+bsize_);
   vector<shared_ptr<Matrix>> out;
   for (auto& i : data_)
-    out.push_back(i->slice(start-bstart_, end-bstart_));
+    out.push_back(i->slice_copy(start-bstart_, end-bstart_));
   return out;
 }
 

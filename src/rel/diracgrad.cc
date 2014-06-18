@@ -46,7 +46,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
   // density matrix
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice(0, ref->nocc());
+  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, ref->nocc());
   auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
 
   // energy-weighted density matrix

@@ -38,7 +38,7 @@ template<int DF>
 class Fock : public Fock_base {
   protected:
     void fock_two_electron_part(std::shared_ptr<const Matrix> den = nullptr);
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> coeff, const bool rhf, const double scale_ex);
+    void fock_two_electron_part_with_coeff(const std::shared_ptr<const btas::View2<double>> coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested
     bool store_half_;
@@ -57,11 +57,19 @@ class Fock : public Fock_base {
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
     Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
-         const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+         const std::shared_ptr<const btas::View2<double>> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
+
+    // TODO will be deprecated
+    template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
+    Fock(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const Matrix> b, const std::shared_ptr<const Matrix> c,
+         const std::shared_ptr<const Matrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+     : Fock(a,b,c,std::make_shared<btas::View2<double>>(ocoeff->range(),ocoeff->storage()),store,rhf,scale_ex) {
+    }
+
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
@@ -285,7 +293,7 @@ void Fock<DF>::fock_two_electron_part(std::shared_ptr<const Matrix> den_ex) {
 }
 
 template<int DF>
-void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Matrix> ocoeff, const bool rhf, const double scale_exchange) {
+void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const btas::View2<double>> ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
   Timer pdebug(3);
@@ -303,7 +311,8 @@ void Fock<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const Mat
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      auto coeff = std::make_shared<const Matrix>(*ocoeff->transpose()*2.0);
+      Matrix oc(*ocoeff, true);
+      auto coeff = std::make_shared<const Matrix>(*oc.transpose()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

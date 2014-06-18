@@ -290,7 +290,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
   // TODO compute RelOverlap only once (this is comptued also in zqvec)
   auto overlap = make_shared<const RelOverlap>(geom_);
-  shared_ptr<const ZMatrix> ocoeff = jop_->coeff_input()->slice(ncore_*2, ncore_*2+norb_*2)->get_conjg();
+  shared_ptr<const ZMatrix> ocoeff = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
   const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
   return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
 }
@@ -300,7 +300,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
 
   // forming transformation matrices
-  auto coeff_tot = jop_->coeff_input()->slice(ncore_*2, ncore_*2+norb_*2)->get_conjg();
+  auto coeff_tot = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
   auto overlap = make_shared<const RelOverlap>(geom_);
   unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
   for (int i = 0; i != 2; ++i) {

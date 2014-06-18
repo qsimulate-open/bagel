@@ -27,8 +27,46 @@
 
 using namespace bagel;
 using namespace std;
+using namespace btas;
+
+shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const View2<double>> cmat, const bool trans) const {
+  assert(trans ? cmat->range(1).size() : cmat->range(0).size() == b1size());
+  assert(cmat->range().ordinal().contiguous());
+
+  // so far I only consider the following case
+  assert(b1start_ == 0);
+  const int nocc = trans ? cmat->range(0).size() : cmat->range(1).size();
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
+
+  for (size_t i = 0; i != b2size(); ++i) {
+    if (!trans)
+      dgemm_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), &*cmat->begin(), b1size(), 0.0, out->data()+i*asize()*nocc, asize());
+    else
+      dgemm_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), &*cmat->begin(), nocc, 0.0, out->data()+i*asize()*nocc, asize());
+  }
+  return out;
+}
 
 
+shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const View2<double>> cmat, const bool trans) const {
+  assert(trans ? cmat->range(1).size() : cmat->range(0).size() == b2size());
+  assert(cmat->range().ordinal().contiguous());
+
+  // so far I only consider the following case
+  assert(b2start_ == 0);
+  const int nocc = trans ? cmat->range(0).size() : cmat->range(1).size();
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
+
+  if (!trans)
+    dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), &*cmat->begin(), b2size(), 0.0, out->data(), asize()*b1size());
+  else  // trans -> back transform
+    dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), &*cmat->begin(), nocc, 0.0, out->data(), asize()*b1size());
+
+  return out;
+}
+
+
+// TODO will be deprecated
 shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
   assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
 
@@ -47,6 +85,7 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
 }
 
 
+// TODO will be deprecated
 shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat, const bool trans) const {
   assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
 
@@ -56,10 +95,8 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-//  btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
     dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), b2size(), 0.0, out->data(), asize()*b1size());
   else  // trans -> back transform
-//  btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
     dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), nocc, 0.0, out->data(), asize()*b1size());
 
   return out;
@@ -297,7 +334,7 @@ shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int 
 }
 
 
-shared_ptr<btas::Tensor3<double>> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   const int ista = ist - astart_;
   const int jsta = jst - b1start_;
   const int ksta = kst - b2start_;
@@ -308,7 +345,7 @@ shared_ptr<btas::Tensor3<double>> DFBlock::get_block(const int ist, const int i,
     throw logic_error("illegal call of DFBlock::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<btas::Tensor3<double>>(i, j, k);
+  auto out = make_shared<Tensor3<double>>(i, j, k);
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj)
       for (int ii = ista; ii != ifen; ++ii)

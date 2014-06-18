@@ -59,13 +59,20 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 #endif
     Matrix(const Matrix&);
     Matrix(Matrix&&);
+    Matrix(const btas::View2<double>& o, const bool localized);
     Matrix() { }
     virtual ~Matrix() { }
 
     std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim()); }
-    std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
+    std::shared_ptr<Matrix> slice_copy(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
     std::shared_ptr<Matrix> resize(const int n, const int m) const { return this->resize_impl<Matrix>(n, m); }
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix> o) const { return this->merge_impl<Matrix>(o); }
+
+    std::shared_ptr<btas::View2<double>> slice(const int mstart, const int mend) const {
+      auto low = {0, mstart};
+      auto up  = {ndim(), mend};
+      return std::make_shared<btas::View2<double>>(this->range().slice(low, up), this->storage());
+    }
 
     // antisymmetrize
     void antisymmetrize();

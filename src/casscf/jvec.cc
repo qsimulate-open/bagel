@@ -33,7 +33,7 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
 
   shared_ptr<const DFDist> df = fci->geom()->df();
   const size_t nocc = nclosed+nact;
-  shared_ptr<const Matrix> cc = coeff->slice(0, nocc);
+  shared_ptr<const btas::View2<double>> cc = coeff->slice(0, nocc);
 
   shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
   shared_ptr<RDM<2>> rdm = fci->rdm2_av();

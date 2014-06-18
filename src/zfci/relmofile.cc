@@ -55,7 +55,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -69,7 +69,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
   // then compute Kramers adapated coefficient matrices
   auto overlap = make_shared<RelOverlap>(geom_);
-  kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
+  kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);

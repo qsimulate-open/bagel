@@ -198,6 +198,15 @@ class Matrix_base : public btas::Tensor2<DataType> {
       std::copy_n(o.data(), size(), data());
     }
 
+    Matrix_base(const btas::View2<DataType>& o, const bool localized) : btas::Tensor2<DataType>(o), localized_(localized) {
+#ifdef HAVE_SCALAPACK
+      if (!localized_) {
+        desc_ = mpi__->descinit(ndim(), mdim());
+        localsize_ = mpi__->numroc(ndim(), mdim());
+      }
+#endif
+    }
+
     Matrix_base(Matrix_base&& o) : btas::Tensor2<DataType>(std::forward<Matrix_base<DataType>>(o)), localized_(o.localized_) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
@@ -268,6 +277,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(nsize == o->ndim() && msize == o->mdim());
       copy_block(nstart, mstart, nsize, msize, o->data());
     }
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const btas::View2<DataType>> o) {
+      assert(nsize == o->range(0).size() && msize == o->range(1).size());
+      copy_block(nstart, mstart, nsize, msize, &*o->begin());
+    }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       copy_block(nstart, mstart, nsize, msize, o.get());
     }
@@ -282,6 +295,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
       assert(nsize == o->ndim() && msize == o->mdim());
       add_block(a, nstart, mstart, nsize, msize, o->data());
+    }
+    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const btas::View2<DataType>> o) {
+      assert(nsize == o->range(0).size() && msize == o->range(1).size());
+      add_block(a, nstart, mstart, nsize, msize, &*o->begin());
     }
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       add_block(a, nstart, mstart, nsize, msize, o.get());

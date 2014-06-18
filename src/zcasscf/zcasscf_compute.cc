@@ -101,7 +101,7 @@ void ZCASBFGS::compute() {
     shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
     // closed Fock operator
-    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
 
     // active Fock operator
@@ -269,24 +269,24 @@ void ZCASBFGS::compute() {
     if (optimize_electrons) {
       int nvirtnr = nvirt_ - nneg_/2;
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2);
-      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr, coeff_->slice(0, nocc_*2 + nvirtnr)->data());
-      ctmp->copy_block(0, nocc_*2 + nvirtnr, coeff_->ndim(), nvirtnr, coeff_->slice(nocc_*2 + nvirt_, nocc_*2 + nvirt_ + nvirtnr)->data());
+      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr, coeff_->slice(0, nocc_*2 + nvirtnr));
+      ctmp->copy_block(0, nocc_*2 + nvirtnr, coeff_->ndim(), nvirtnr, coeff_->slice(nocc_*2 + nvirt_, nocc_*2 + nvirt_ + nvirtnr));
       *ctmp = *ctmp * *expa;
       auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr, ctmp->slice(0, nocc_*2 + nvirtnr)->data());
-      ctmp2->copy_block(0, nocc_*2 + nvirt_, coeff_->ndim(), nvirtnr, ctmp->slice(nocc_*2 + nvirtnr, ctmp->mdim())->data());
+      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2 + nvirtnr, ctmp->slice(0, nocc_*2 + nvirtnr));
+      ctmp2->copy_block(0, nocc_*2 + nvirt_, coeff_->ndim(), nvirtnr, ctmp->slice(nocc_*2 + nvirtnr, ctmp->mdim()));
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     } else {
       int nvirtnr = nvirt_ - nneg_/2;
       auto ctmp = make_shared<ZMatrix>(coeff_->ndim(), coeff_->mdim()/2 + nocc_*2);
-      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2)->data());
-      ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirtnr, nocc_*2 + nvirt_)->data());
-      ctmp->copy_block(0, nocc_*2 + nneg_/2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirt_ + nvirtnr, nocc_*2 + nvirt_*2)->data());
+      ctmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
+      ctmp->copy_block(0, nocc_*2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirtnr, nocc_*2 + nvirt_));
+      ctmp->copy_block(0, nocc_*2 + nneg_/2, coeff_->ndim(), nneg_/2, coeff_->slice(nocc_*2 + nvirt_ + nvirtnr, nocc_*2 + nvirt_*2));
       *ctmp = *ctmp * *expa;
       auto ctmp2 = coeff_->copy();
-      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2)->data());
-      ctmp2->copy_block(0, nocc_*2 + nvirtnr, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2, nocc_*2 +nneg_/2)->data());
-      ctmp2->copy_block(0, nocc_*2 + nvirtnr + nvirt_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2 + nneg_/2, ctmp->mdim())->data());
+      ctmp2->copy_block(0, 0, coeff_->ndim(), nocc_*2, ctmp->slice(0, nocc_*2));
+      ctmp2->copy_block(0, nocc_*2 + nvirtnr, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2, nocc_*2 +nneg_/2));
+      ctmp2->copy_block(0, nocc_*2 + nvirtnr + nvirt_, coeff_->ndim(), nneg_/2, ctmp->slice(nocc_*2 + nneg_/2, ctmp->mdim()));
       coeff_ = make_shared<const ZMatrix>(*ctmp2);
     }
 #endif

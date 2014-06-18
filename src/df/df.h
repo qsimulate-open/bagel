@@ -69,9 +69,13 @@ class DFDist : public ParallelDF {
     void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
+    std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<const btas::View2<double>> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<const btas::View2<double>> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
 
     std::shared_ptr<DFDist> copy() const;
@@ -175,6 +179,9 @@ class DFHalfDist : public ParallelDF {
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
+    std::shared_ptr<DFFullDist> compute_second_transform(std::shared_ptr<const btas::View2<double>> c) const;
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const btas::View2<double>> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
     std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
@@ -208,6 +215,8 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> copy() const;
     std::shared_ptr<DFFullDist> clone() const;
 
+    std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<const btas::View2<double>> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     void rotate_occ1(const std::shared_ptr<const Matrix> d);

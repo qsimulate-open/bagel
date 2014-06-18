@@ -32,7 +32,7 @@ using namespace bagel;
 shared_ptr<ZMatrix> ZCASBFGS::___debug___active_fock(shared_ptr<const ZMatrix> coeffa, shared_ptr<const ZMatrix> rdm1) const {
   // alternative implementation of active fock matrix : returns M(a) = [ (t u|a a) - (t a|a u) ] D(t u)
   // for now we implement in the worst possible way...
-  shared_ptr<ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
+  shared_ptr<ZMatrix> coefft = coeff_->slice_copy(nclosed_*2, nocc_*2);
   assert(rdm1->mdim() == nact_*2);
  
   // (1) Sepeate real and imaginary parts for pcoeff
@@ -949,7 +949,7 @@ shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_2rdm_contraction_coulomb(share
   // returns Mat(a,t) = (aa|vw)*(G(vw,tt)  where a is an index of coeffa, and t is active.
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
-  shared_ptr<ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
+  shared_ptr<ZMatrix> coefft = coeff_->slice_copy(nclosed_*2, nocc_*2);
   shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
 
   // (1) compute (aa|vw) integrals
@@ -975,7 +975,7 @@ shared_ptr<ZMatrix> ZCASBFGS::___debug___diagonal_2rdm_contraction_exchange(shar
   // with kramers : returns Mat(a,t) = (aw|v ka)*(G(vw,t kt)  where a is an index of coeffa, and t is active
   // for the time being, we implement it in the worst possible way... to be updated to make it efficient.
 
-  shared_ptr<ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
+  shared_ptr<ZMatrix> coefft = coeff_->slice_copy(nclosed_*2, nocc_*2);
   shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
 
   // (1) compute (aw|va) integrals

@@ -147,9 +147,9 @@ void ZCASBFGS::___debug___compute_hessian(shared_ptr<const ZMatrix> cfock, share
   const bool perturb_ca     = idata_->get<bool>("perturb_ca", false);
   const bool verbose        = idata_->get<bool>("verbose", false);
 
-  shared_ptr<const ZMatrix> coeffa = coeff_->slice(nocc_*2, coeff_->mdim());
-  shared_ptr<const ZMatrix> coeffi = coeff_->slice(0, nclosed_*2);
-  shared_ptr<const ZMatrix> coefft = coeff_->slice(nclosed_*2, nocc_*2);
+  shared_ptr<const ZMatrix> coeffa = coeff_->slice_copy(nocc_*2, coeff_->mdim());
+  shared_ptr<const ZMatrix> coeffi = coeff_->slice_copy(0, nclosed_*2);
+  shared_ptr<const ZMatrix> coefft = coeff_->slice_copy(nclosed_*2, nocc_*2);
 
   shared_ptr<ZMatrix> cfockd;
   if (perturb_va) { // virtual-active block
@@ -258,7 +258,7 @@ double ZCASBFGS::___debug___recompute_fci_energy(shared_ptr<const ZMatrix> cfock
 
   shared_ptr<const ZMatrix> rdm2 = fci_->rdm2_av();
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
-  shared_ptr<ZMatrix> ijkl = ___debug___all_integrals_coulomb_active(coeff_->slice(nclosed_*2, nclosed_*2 + nact_*2));
+  shared_ptr<ZMatrix> ijkl = ___debug___all_integrals_coulomb_active(coeff_->slice_copy(nclosed_*2, nclosed_*2 + nact_*2));
 
   double twoelen = (rdm2->dot_product(ijkl)).real();
   double oneelen = (rdm1->dot_product(cfock)).real();
@@ -579,7 +579,7 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___compute_energy_and_gradients(shared_pt
   shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
 
   // closed Fock operator
-  shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+  shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
   shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff % *cfockao * *coeff);
 
   // active Fock operator

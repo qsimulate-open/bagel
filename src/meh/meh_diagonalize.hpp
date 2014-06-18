@@ -89,8 +89,8 @@ std::vector<double> MultiExcitonHamiltonian<VecType>::diagonalize(std::shared_pt
     std::vector<std::shared_ptr<const Matrix>> ccn;
     for (int i = 0; i != nstates; ++i) {
       if (!conv[i]) {
-        sigman.push_back(sigma->slice(i,i+1));
-        ccn.push_back(cc->slice(i,i+1));
+        sigman.push_back(sigma->slice_copy(i,i+1));
+        ccn.push_back(cc->slice_copy(i,i+1));
       }
       else {
         sigman.push_back(std::shared_ptr<const Matrix>());

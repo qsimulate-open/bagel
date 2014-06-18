@@ -35,6 +35,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 MP2Grad::MP2Grad(shared_ptr<const PTree> input, shared_ptr<const Geometry> g, shared_ptr<const Reference> ref) : MP2(input, g, ref) {
 
@@ -59,10 +60,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const size_t nvirt = nmobasis - nocca;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
-  shared_ptr<const Matrix> ccmat = ref_->coeff()->slice(0, ncore);
-  shared_ptr<const Matrix> acmat = ref_->coeff()->slice(ncore, nocca);
-  shared_ptr<const Matrix> ocmat = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice(nocca, nmobasis);
+  shared_ptr<const Matrix> ccmat = ref_->coeff()->slice_copy(0, ncore);
+  shared_ptr<const Matrix> ocmat = ref_->coeff()->slice_copy(0, nocca);
+  shared_ptr<const Matrix> vcmat = ref_->coeff()->slice_copy(nocca, nmobasis);
+  shared_ptr<const View2<double>> acmat = ref_->coeff()->slice(ncore, nocca);
 
   // first compute half transformed integrals
   shared_ptr<DFHalfDist> half;

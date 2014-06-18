@@ -91,7 +91,7 @@ void ZSuperCI::compute() {
     if (!nact_) { // compute energy
       assert(nstate_ == 1);
       energy_.resize(iter+1);
-      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice(0,nclosed_*2) % *hcore_ * *coeff_->slice(0,nclosed_*2));
+      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice_copy(0,nclosed_*2) % *hcore_ * *coeff_->slice_copy(0,nclosed_*2));
       *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
       double etmp = 0.0;
       for (int j=0; j!= nclosed_*2; ++j)
@@ -209,7 +209,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     coefftmp->copy_block(0, nocc_*2+nvirtnr_, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2+nvirt_, nocc_*2+nvirt_+nvirtnr_));
 #endif
     // closed Fock - same as inactive fock
-    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+    shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
     cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
     // active Fock operator
     shared_ptr<const ZMatrix> afock;

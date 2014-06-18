@@ -133,7 +133,7 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
     if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<Matrix> coeffs = spin->slice(start, end);
+    shared_ptr<Matrix> coeffs = spin->slice_copy(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
     hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
