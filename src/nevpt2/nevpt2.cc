@@ -72,10 +72,9 @@ void NEVPT2::compute() {
   Timer timer;
 
   // coefficients -- will be updated later
-  shared_ptr<Matrix> ccoeff = nclosed_ ? ref_->coeff()->slice_copy(ncore_, ncore_+nclosed_) : nullptr;
-  shared_ptr<Matrix> acoeff =            ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
-  shared_ptr<Matrix> vcoeff = nvirt_   ? ref_->coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
-
+  shared_ptr<const MatView> ccoeff = nclosed_ ? ref_->coeff()->slice(ncore_, ncore_+nclosed_) : nullptr;
+  shared_ptr<const MatView> acoeff =            ref_->coeff()->slice(ncore_+nclosed_, ncore_+nclosed_+nact_);
+  shared_ptr<const MatView> vcoeff = nvirt_   ? ref_->coeff()->slice(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
   shared_ptr<const MatView> ocoeff = ncore_+nclosed_ ? ref_->coeff()->slice(0, ncore_+nclosed_) : nullptr;
 
   // obtain particle RDMs

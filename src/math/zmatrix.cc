@@ -70,32 +70,6 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 #endif
 
 
-ZMatrix ZMatrix::operator*(const complex<double>& a) const {
-  ZMatrix out(*this);
-  out *= a;
-  return out;
-}
-
-
-ZMatrix ZMatrix::operator/(const complex<double>& a) const {
-  ZMatrix out(*this);
-  out /= a;
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
-  scale(a);
-  return *this;
-}
-
-
-ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
-  *this *= 1.0/a;
-  return *this;
-}
-
-
 ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
   ZMatrix out(*this);
   out /= o;

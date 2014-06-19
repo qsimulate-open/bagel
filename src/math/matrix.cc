@@ -64,30 +64,6 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 #endif
 
 
-Matrix Matrix::operator*(const double& a) const {
-  Matrix out(*this);
-  out *= a;
-  return out;
-}
-
-
-Matrix Matrix::operator/(const double& a) const {
-  Matrix out(*this);
-  out /= a;
-  return out;
-}
-
-
-Matrix& Matrix::operator*=(const double& a) {
-  scale(a);
-  return *this;
-}
-Matrix& Matrix::operator/=(const double& a) {
-  *this *= 1.0/a;
-  return *this;
-}
-
-
 Matrix Matrix::operator/(const Matrix& o) const {
   Matrix out(*this);
   out /= o;

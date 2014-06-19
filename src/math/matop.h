@@ -285,6 +285,30 @@ inline Matrix& operator*=(Matrix& a,  const MatView& b) { a = a*b; return a; }
 
 inline ZMatrix& operator*=(ZMatrix& a,  const ZMatrix& b)  { a = a*b; return a; }
 inline ZMatrix& operator*=(ZMatrix& a,  const ZMatView& b) { a = a*b; return a; }
+
+// operator* with scalar 
+inline Matrix&  operator*=(Matrix& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline MatView& operator*=(MatView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline Matrix operator*(const Matrix& a, const double b)  { Matrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline Matrix operator*(const MatView& a, const double b) { Matrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline Matrix operator*(const double b, const Matrix& a)  { Matrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline Matrix operator*(const double b, const MatView& a) { Matrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline Matrix&  operator/=(Matrix& a, const double b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline MatView& operator/=(MatView& a, const double b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline Matrix operator/(const Matrix& a, const double b)  { Matrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline Matrix operator/(const MatView& a, const double b) { Matrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+
+inline ZMatrix&  operator*=(ZMatrix& a, const std::complex<double> b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZMatView& operator*=(ZMatView& a, const std::complex<double> b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZMatrix operator*(const ZMatrix& a, const std::complex<double> b)  { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const ZMatView& a, const std::complex<double> b) { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const std::complex<double> b, const ZMatrix& a)  { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const std::complex<double> b, const ZMatView& a) { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix&  operator/=(ZMatrix& a, const std::complex<double> b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZMatView& operator/=(ZMatView& a, const std::complex<double> b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZMatrix operator/(const ZMatrix& a, const std::complex<double> b)  { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline ZMatrix operator/(const ZMatView& a, const std::complex<double> b) { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+
 }
 
 #endif
