@@ -337,10 +337,12 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
 
     void allreduce() {
+      assert(!localized_);
       mpi__->allreduce(data(), size());
     }
 
     void broadcast(const int root = 0) {
+      assert(!localized_);
       mpi__->broadcast(data(), size(), root);
     }
 
