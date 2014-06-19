@@ -32,7 +32,6 @@
 #include <map>
 #include <src/wfn/reference.h>
 #include <src/math/zmatrix.h>
-#include <src/math/matrix.h>
 #include <src/rel/alpha.h>
 #include <src/rel/breit2index.h>
 #include <src/rel/reldf.h>

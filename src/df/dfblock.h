@@ -27,6 +27,7 @@
 #define __SRC_DF_DFBLOCK_H
 
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <src/df/dfblock_base.h>
 
 namespace bagel {

@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
+#include <src/math/matop.h>
 #include <src/util/serialization.h>
 
 // std::shared_ptr<T> is assumed to be a shared_pointer of some class

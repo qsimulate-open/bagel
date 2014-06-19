@@ -30,6 +30,7 @@
 #include <src/util/f77.h>
 #include <src/math/algo.h>
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <cassert>
 #include <cmath>
 #include <stdexcept>

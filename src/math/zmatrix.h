@@ -113,10 +113,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix operator%(const ZMatrix&) const; // caution
     ZMatrix operator^(const ZMatrix&) const; // caution
 
-    ZMatrix operator+(const ZMatrix& o) const { ZMatrix out(*this); out += o; return out; }
-    ZMatrix operator-(const ZMatrix& o) const { ZMatrix out(*this); out -= o; return out; }
-    ZMatrix& operator+=(const ZMatrix& o){ btas::Tensor2<std::complex<double>>::operator+=(o); return *this; }
-    ZMatrix& operator-=(const ZMatrix& o){ btas::Tensor2<std::complex<double>>::operator-=(o); return *this; }
     ZMatrix& operator=(const ZMatrix& o) { Matrix_base<std::complex<double>>::operator=(o); return *this; }
     ZMatrix& operator=(ZMatrix&& o)      { Matrix_base<std::complex<double>>::operator=(o); return *this; }
 

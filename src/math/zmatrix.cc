@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <cmath>
 #include <src/math/zmatrix.h>
+#include <src/math/matop.h>
 
 using namespace std;
 using namespace bagel;

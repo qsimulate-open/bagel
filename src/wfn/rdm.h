@@ -29,7 +29,6 @@
 
 #include <type_traits>
 #include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 

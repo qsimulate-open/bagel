@@ -44,12 +44,13 @@ class MatView_ : public btas::TensorView2<DataType> {
 
     int ndim() const { return this->range(0).size(); }
     int mdim() const { return this->range(1).size(); }
+    size_t size() const { return ndim() * mdim(); }
 
-    DataType* data()             { assert(this->range().ordinal().contiguous()); return &*this->begin(); }
-    const DataType* data() const { assert(this->range().ordinal().contiguous()); return &*this->cbegin(); }
+    DataType* data()             { assert(contiguous()); return &*this->begin(); }
+    const DataType* data() const { assert(contiguous()); return &*this->cbegin(); }
 
     bool localized() const { return localized_; }
-
+    bool contiguous() const { return this->range().ordinal().contiguous(); }
 };
 
 using MatView = MatView_<double>;

@@ -27,7 +27,6 @@
 #ifndef __SRC_DF_PARALLELDF_LONDON_H
 #define __SRC_DF_PARALLELDF_LONDON_H
 
-#include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
 #include <src/df/dfblock_london.h>
 

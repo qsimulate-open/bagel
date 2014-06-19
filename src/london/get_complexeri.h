@@ -30,8 +30,6 @@
 #include <src/integral/comprys/complexeribatch.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/wfn/geometry_london.h>
-#include <src/math/zmatrix.h>
-#include <src/math/matrix.h>
 #include <memory>
 #include <vector>
 #include <complex>

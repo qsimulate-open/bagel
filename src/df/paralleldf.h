@@ -30,7 +30,6 @@
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
 #include <src/df/dfblock.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
