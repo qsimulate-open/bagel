@@ -157,13 +157,13 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr, const bool restricted = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const ZMatrix> coeff) {
+    void update(std::shared_ptr<const ZMatrix> coeff, const bool restricted = false) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, restricted);
 
       // right now full basis is used.
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
