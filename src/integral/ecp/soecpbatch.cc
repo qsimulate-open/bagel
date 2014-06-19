@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ecpbatch.cc
+// Filename: soecpbatch.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -23,7 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/integral/ecp/ecpbatch.h>
+#include <src/integral/ecp/soecpbatch.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/sortlist.h>
 
@@ -33,8 +33,8 @@ using namespace std;
 
 const static CarSphList carsphlist;
 
-ECPBatch::ECPBatch(const array<shared_ptr<const Shell>,2>& info, const shared_ptr<const Molecule> mol,
-                         shared_ptr<StackMem> stack)
+SOECPBatch::SOECPBatch(const array<shared_ptr<const Shell>,2>& info, const shared_ptr<const Molecule> mol,
+                       shared_ptr<StackMem> stack)
  : basisinfo_(info), mol_(mol) {
 
   if (stack == nullptr) {
@@ -56,21 +56,25 @@ ECPBatch::ECPBatch(const array<shared_ptr<const Shell>,2>& info, const shared_pt
 }
 
 
-ECPBatch::~ECPBatch() {
-  stack_->release(size_alloc_, stack_save_);
+SOECPBatch::~SOECPBatch() {
+  stack_->release(3*size_alloc_, stack_save_);
   if (allocated_here_) resources__->release(stack_);
 }
 
 
-void ECPBatch::compute() {
+void SOECPBatch::compute() {
 
   const SortList sort(spherical_);
 
-  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
-  fill_n(intermediate_c, cont0_ * cont1_ * asize_, 0.0);
-  double* current_data = intermediate_c;
+  const size_t size_c = cont0_ * cont1_ * asize_;
+  double* const intermediate_c = stack_->get(3*size_c);
+  fill_n(intermediate_c, 3*size_c, 0.0);
 
-  int i = 0;
+  double* current_data = intermediate_c;
+  double* current_data1 = intermediate_c + size_c;
+  double* current_data2 = intermediate_c + size_c;
+
+  int i = 0; // we want to get data1_, data2_, data_ here
   for (int izA = 0; izA <= ang0_; ++izA)
   for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
     const int ixA = ang0_ - izA - iyA;
@@ -81,28 +85,33 @@ void ECPBatch::compute() {
       const array<int, 3> lC = {ixC, iyC, izC};
       for (int contA = 0; contA != basisinfo_[0]->contractions().size(); ++contA)
       for (int contC = 0; contC != basisinfo_[1]->contractions().size(); ++contC) {
-        double tmp = 0.0;
+        vector<double> tmp(3, 0.0);
         for (auto& aiter : mol_->atoms()) {
-          shared_ptr<const ECP> aiter_ecp = aiter->ecp_parameters();
+          shared_ptr<const SOECP> aiter_ecp = aiter->so_parameters();
 
-          AngularBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, false, max_iter_, integral_thresh_);
-          radint.integrate();
-          tmp += radint.integral().front();
+// have to integrate x y z components here
+          SOBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, true, max_iter_, integral_thresh_);
+//        radint.integrate();
+//        tmp = radint.integral();
         }
         const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
-        current_data[index] = tmp;
+        current_data[index] = tmp[0];
+        current_data1[index] = tmp[1];
+        current_data2[index] = tmp[2];
       }
       ++i;
     }
   }
 
   get_data(current_data, data_);
+  get_data(current_data1, data1_);
+  get_data(current_data2, data2_);
 
-  stack_->release(cont0_*cont1_*asize_, intermediate_c);
+  stack_->release(3*size_c, intermediate_c);
 
 }
 
-void ECPBatch::get_data(double* intermediate, double* data) {
+void SOECPBatch::get_data(double* intermediate, double* data) {
 
   fill_n(data, size_alloc_, 0.0);
 
@@ -126,11 +135,11 @@ void ECPBatch::get_data(double* intermediate, double* data) {
     sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+  stack_->release(array_size, intermediate_fi);
 
 }
 
-void ECPBatch::common_init() {
+void SOECPBatch::common_init() {
 
   assert(basisinfo_.size() == 2);
 
@@ -159,8 +168,12 @@ void ECPBatch::common_init() {
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
   size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
+  stack_save_ = stack_->get(3*size_alloc_);
 
-  stack_save_ = stack_->get(size_alloc_);
-  data_ = stack_save_;
+  double* pointer = stack_save_;
+  data_  = pointer;   pointer += size_alloc_;
+  data1_ = pointer;   pointer += size_alloc_;
+  data2_ = pointer;   pointer += size_alloc_;
 
 }
+

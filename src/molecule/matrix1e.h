@@ -36,6 +36,8 @@ namespace bagel {
 class Matrix1e : public Matrix {
   friend class Matrix1eTask;
   protected:
+    std::shared_ptr<Matrix> soab_;
+    std::shared_ptr<Matrix> soba_;
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
     virtual void init(std::shared_ptr<const Molecule>);
 

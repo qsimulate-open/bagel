@@ -36,11 +36,11 @@ using namespace std;
 const static SphUSPList sphusplist;
 const static DoubleFactorial df;
 
-SOBatch::SOBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
+SOBatch::SOBatch(const std::shared_ptr<const SOECP> _so, const std::array<std::shared_ptr<const Shell>,2>& _info,
                            const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                            const bool print, const int max_iter, const double thresh_int)
- : RadialInt(print, max_iter, thresh_int),
-   basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {
+ : RadialInt(3, print, max_iter, thresh_int),
+   basisinfo_(_info), so_(_so), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {
 
   init();
   map_angular_number();
@@ -65,16 +65,16 @@ void SOBatch::map_angular_number() {
 
 }
 
-bool delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
+bool SOBatch::delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
 
-array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) {
+array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { // <lm0 | lz, l+, l- | lm1>
 
-  assert(l >=0 && abs(m0) <= l && abs(m1) <=l);
+  assert(l > 0);
+  assert(abs(m0) <= l && abs(m1) <=l);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
-  out[2] = (delta(m0, m1)) ?  m0 : 0.0;
-  out[0] = (delta(m0+1, m1)) ? 0.5*sqrt(l*(l+1)-m0*(m0+1))
-        : ((delta(m0-1, m1)) ? 0.5*sqrt(l*(l+1)-m0*(m0-1)) : 0.0);
-  out[1] = -out[0];
+  out[0] = (delta(m0, m1)) ?  m0 : 0.0;
+  out[1] = (delta(m0+1, m1)) ? pow(-1, m0) * sqrt((l-m0)*(l+m0+1)*0.5) : 0.0;
+  out[2] = (delta(m0-1, m1)) ? pow(-1, m0) * sqrt((l+m0)*(l-m0+1)*0.5) : 0.0;
 
   return out;
 }
@@ -83,7 +83,7 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
 
   double out = 0;
 
-  const int l = static_cast<int>(round(sqrt(usp.size()*2))-1);
+  const int l = static_cast<int>(round(sqrt(usp.size()*2)-1));
   assert((l+1)*(l+2) == usp.size() * 2);
   for (int j = 0; j != usp.size(); ++j) {
     if (usp[j] != 0.0) {
@@ -92,7 +92,7 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
       const array<int, 3> kj = pj->second;
 
       for (int a = abs(h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
-        for (int b = abs(h-a-ang0_[2]); a <= min(ang0_[1], h-a); ++a) {
+        for (int b = abs(h-a-ang0_[2]); a <= min(ang0_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
           const double coeff = c0_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
@@ -127,7 +127,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
 
   double out = 0;
 
-  const int l = static_cast<int>(round(sqrt(usp.size()*2))-1);
+  const int l = static_cast<int>(round(sqrt(usp.size()*2)-1));
   assert((l+1)*(l+2) == usp.size() * 2);
   for (int j = 0; j != usp.size(); ++j) {
     if (usp[j] != 0.0) {
@@ -135,8 +135,8 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
       assert (pj != map_[l].end());
       const array<int, 3> kj = pj->second;
 
-      for (int a = abs(h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
-        for (int b = abs(h-a-ang0_[2]); a <= min(ang0_[1], h-a); ++a) {
+      for (int a = abs(h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
+        for (int b = abs(h-a-ang1_[2]); a <= min(ang1_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
           const double coeff = c0_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
@@ -207,7 +207,7 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
   vector<vector<double>> usp(2*l+1);
   for (int m = 0; m <= 2*l; ++m) usp[m] = sphusplist.sphuspfunc_call(l, m-l);
 
-  vector<double> out(r.size(), 0.0);
+  vector<double> out(3*r.size(), 0.0);
 
   for (int ld0 = abs(l-l0_); ld0 <= l+l0_; ++ld0) {
     for (int ld1 = abs(l-l1_); ld1 <= l+l1_; ++ld1) {
@@ -217,22 +217,25 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
       const int gmin = abs(ld0-l)+abs(ld1-l);
       const int gmax = c0 + c1;
       for (int g = gmin; g <= gmax; g += 2) {
-        double sum = 0.0;
+        array<double, 3> sum = {{0.0, 0.0, 0.0}};
 
-        const int hmin = max(abs(ld0-l), g - c1);
-        const int hmax = min(c0, g - abs(ld1-l));
-        for (int h = hmin; h <= hmax; h += 2) {
-          for (int m0 = 0; m0 <= 2*l; ++m0) {
-            for (int m1 = 0; m1 <= m0-1; ++m1) {
-              const double fm0lm1 = 1.0; //to be computed
-              sum +=(angularA(h, ld0, usp[m0-l]) * angularC(g-h, ld1, usp[m1-l])
-                   - angularA(h, ld0, usp[m1-l]) * angularC(g-h, ld1, usp[m0-l])) * fm0lm1;
+        for (int m0 = 0; m0 <= 2*l; ++m0) {
+          for (int m1 = 0; m1 <= l+m0-1; ++m1) {
+            const array<double, 3> fm = fm0lm1(l, m0-l, m1-l);
+            const int hmin = max(abs(ld0-l), g - c1);
+            const int hmax = min(c0, g - abs(ld1-l));
+            for (int h = hmin; h <= hmax; h += 2) {
+              for (int id = 0; id != 3; ++id)
+              sum[id] +=(angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1])
+                       - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0])) * fm[id];
 
             }
           }
         }
 
-        for (int ir = 0; ir != r.size(); ++ir) out[ir] += sum * rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
+        for (int id = 0; id != 3; ++id)
+          for (int ir = 0; ir != r.size(); ++ir) out[id*r.size() + ir] += sum[id] * rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
+
       }
     }
   }
@@ -243,19 +246,18 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
 
 vector<double> SOBatch::compute(const vector<double> r) {
 
-  vector<shared_ptr<const Shell_ECP>> shells_ecp = ecp_->shells_ecp();
-  vector<double> out(r.size(), 0.0);
+  vector<shared_ptr<const Shell_ECP>> shells_so = so_->shells_so();
+  vector<double> out(3*r.size(), 0.0);
 
-  for (auto& ishecp : shells_ecp) {
-    const int l = ishecp->angular_number();
-    if (l != ecp_->ecp_maxl()) {
-      vector<double> p = project(l, r);
-      for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
-        if (ishecp->ecp_coefficients(i) != 0)
-        for (int ir = 0; ir != r.size(); ++ir)
-          out[ir] += 16.0 * pi__ * pi__ * ishecp->ecp_coefficients(i) * pow(r[ir], ishecp->ecp_r_power(i))
-                          * exp(-ishecp->ecp_exponents(i) * r[ir] * r[ir]) * p[ir];
-    }
+  for (auto& ishso : shells_so) {
+    const int l = ishso->angular_number();
+    vector<double> p = project(l, r);
+    for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
+      if (ishso->ecp_coefficients(i) != 0)
+      for (int ir = 0; ir != r.size(); ++ir)
+        for (int id = 0; id != 3; ++id)
+          out[id*r.size() + ir] += 16.0 * pi__ * pi__ * ishso->ecp_coefficients(i) * pow(r[ir], ishso->ecp_r_power(i))
+                                 * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]) * p[ir];
   }
 
   return out;
@@ -265,8 +267,8 @@ vector<double> SOBatch::compute(const vector<double> r) {
 void SOBatch::init() {
 
   for (int i = 0; i != 3; ++i) {
-    AB_[i] = basisinfo_[0]->position(i) - ecp_->position(i);
-    CB_[i] = basisinfo_[1]->position(i) - ecp_->position(i);
+    AB_[i] = basisinfo_[0]->position(i) - so_->position(i);
+    CB_[i] = basisinfo_[1]->position(i) - so_->position(i);
     AC_[i] = basisinfo_[0]->position(i) - basisinfo_[1]->position(i);
   }
   dAB_ = sqrt(pow(AB_[0], 2) + pow(AB_[1], 2) + pow(AB_[2], 2));
@@ -305,7 +307,7 @@ void SOBatch::init() {
   l0_ = ang0_[0] + ang0_[1] + ang0_[2];
   l1_ = ang1_[0] + ang1_[1] + ang1_[2];
 
-  for (int l = 0; l != max(l0_, l1_) + ecp_->ecp_maxl(); ++l) {
+  for (int l = 0; l <= max(l0_, l1_) + so_->nshell(); ++l) {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
     for (int m = 0; m <= 2*l; ++m) {
       auto shAB = make_shared<SphHarmonics>(l, m-l, AB_);
@@ -325,7 +327,7 @@ void SOBatch::print() const {
   cout << "Shell 0" << basisinfo_[0]->show() << endl;
   cout << "Shell 1" << basisinfo_[1]->show() << endl;
   cout << "ECP parameters" << endl;
-  ecp_->print();
+  so_->print();
 
 }
 

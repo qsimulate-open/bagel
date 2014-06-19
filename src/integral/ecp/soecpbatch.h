@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: ecpbatch.h
+// Filename: soecpbatch.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,17 +24,17 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_ECP_ECPBATCH_H
-#define __SRC_INTEGRAL_ECP_ECPBATCH_H
+#ifndef __SRC_INTEGRAL_ECP_SOECPBATCH_H
+#define __SRC_INTEGRAL_ECP_SOECPBATCH_H
 
 #include <src/parallel/resources.h>
 #include <src/molecule/molecule.h>
 #include <src/integral/integral.h>
-#include <src/integral/ecp/angularbatch.h>
+#include <src/integral/ecp/sobatch.h>
 
 namespace bagel {
 
-class ECPBatch : public Integral {
+class SOECPBatch : public Integral {
   protected:
 
     int max_iter_;
@@ -46,6 +46,8 @@ class ECPBatch : public Integral {
     bool spherical_;
 
     double* data_;
+    double* data1_;
+    double* data2_;
 
     int ang0_, ang1_, cont0_, cont1_;
     int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
@@ -60,12 +62,15 @@ class ECPBatch : public Integral {
     void get_data(double* intermediate, double* data);
 
   public:
-    ECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol,
+    SOECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol,
                    std::shared_ptr<StackMem> = nullptr);
-    ~ECPBatch();
+    ~SOECPBatch();
 
     double* data() { return data_; }
     virtual double* data(const int i) override { assert(i == 0); return data_; }
+
+    double* data1() { return data1_; }
+    double* data2() { return data2_; }
 
     bool swap01() const { return swap01_; }
 

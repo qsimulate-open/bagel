@@ -39,14 +39,16 @@ namespace bagel {
 class RadialInt {
 
   protected:
+    int nc_;
     bool print_intermediate_;
     int max_iter_;
     double thresh_int_;
     std::vector<double> x_, w_, r_;
-    double integral_;
+    std::vector<double> integral_;
 
   public:
-    RadialInt(const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH) :
+    RadialInt(const int nc = 1, const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH) :
+      nc_(nc),
       print_intermediate_(print),
       max_iter_(max_iter),
       thresh_int_(thresh_int)
@@ -55,7 +57,9 @@ class RadialInt {
     ~RadialInt() {}
 
     void integrate();
-    double integral() const { return integral_; }
+    std::vector<double> integral() { return integral_; }
+    double integral(const int ic = 0) const { return integral_.at(ic); }
+
     virtual std::vector<double> compute(const std::vector<double> r) = 0;
 
     void transform_Log(const int ngrid, const int m = 3);

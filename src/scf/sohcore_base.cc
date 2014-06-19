@@ -32,18 +32,14 @@
 #include <src/integral/rys/r1batch.h>
 #include <src/integral/rys/r2batch.h>
 #include <src/integral/ecp/ecpbatch.h>
+#include <src/integral/ecp/soecpbatch.h>
 
 using namespace std;
 using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore_base)
 
-SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
-
-  init(mol);
-  fill_upper();
-
-}
+SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) { init(mol); }
 
 
 void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
@@ -85,12 +81,26 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
 
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, r2.data());
     }
+#if 1
     {
       ECPBatch ecp(input, mol);
       ecp.compute();
 
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, ecp.data());
     }
+#endif
+#if 1
+    {
+      if (mol->atoms(0)->so_parameters()) {
+        SOECPBatch soecp(input, mol);
+        soecp.compute();
+
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+        soab_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
+        soba_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
+      }
+    }
+#endif
   }
 
   if (mol->external()) {

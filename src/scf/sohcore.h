@@ -37,14 +37,7 @@ class SOHcore : public Matrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const SOHcore_base> hcore_;
-//  std::shared_ptr<const Matrix> so1_;
-//  std::shared_ptr<const Matrix> so2_;
-//  std::shared_ptr<const Matrix> ecp_;
-    std::shared_ptr<const Matrix> so1();
-    std::shared_ptr<const Matrix> so2();
-    std::shared_ptr<const Matrix> ecp();
 
-    // initialize "this"
     void form_sohcore();
 
   private:

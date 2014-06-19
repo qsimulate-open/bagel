@@ -36,27 +36,11 @@ SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const S
   form_sohcore();
 }
 
-// TODO: so1, so2, ecp
-shared_ptr<const Matrix> SOHcore::so1() {
-  return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-}
-
-shared_ptr<const Matrix> SOHcore::so2() {
-  return make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-}
-
-shared_ptr<const Matrix> SOHcore::ecp() {
-  shared_ptr<Matrix> out = make_shared<Matrix>(hcore_->ndim(), hcore_->mdim());
-  *out += *hcore_;
-  return out;
-}
-
 void SOHcore::form_sohcore() {
-  shared_ptr<const Matrix> ecpmat = ecp();
 
-  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), ecpmat);
-  add_block(1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), ecpmat);
+  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_);
+  add_block(1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_);
 
-  add_block(1.0, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), so1());
-  add_block(1.0, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), so2());
+  add_block(1.0, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soab());
+  add_block(1.0, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->soba());
 }

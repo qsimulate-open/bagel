@@ -40,7 +40,7 @@ const static DoubleFactorial df;
 AngularBatch::AngularBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
                            const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                            const bool print, const int max_iter, const double thresh_int)
- : RadialInt(print, max_iter, thresh_int),
+ : RadialInt(1, print, max_iter, thresh_int),
    basisinfo_(_info), ecp_(_ecp), cont0_(contA), cont1_(contC), ang0_(angA), ang1_(angC) {
 
   init();

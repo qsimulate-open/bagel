@@ -39,6 +39,8 @@ class SOHcore_base : public Matrix1e {
     SOHcore_base() { }
     SOHcore_base(const std::shared_ptr<const Molecule>);
 
+    std::shared_ptr<const Matrix> soab() const { return soab_;}
+    std::shared_ptr<const Matrix> soba() const { return soba_;}
 };
 
 }

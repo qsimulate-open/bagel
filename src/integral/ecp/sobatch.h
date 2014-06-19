@@ -38,7 +38,7 @@ class SOBatch : public RadialInt {
   protected:
 
     std::array<std::shared_ptr<const Shell>,2> basisinfo_;
-    std::shared_ptr<const ECP> ecp_;
+    std::shared_ptr<const SOECP> so_;
     int cont0_, cont1_;
     std::array<int, 3> ang0_, ang1_;
     std::array<double, 3> AB_, CB_, AC_;
@@ -58,7 +58,7 @@ class SOBatch : public RadialInt {
     double angularC(const int h, const int ld, const std::vector<double> usp);
 
   public:
-    SOBatch(const std::shared_ptr<const ECP> _ecp, const std::array<std::shared_ptr<const Shell>,2>& _info,
+    SOBatch(const std::shared_ptr<const SOECP> _so, const std::array<std::shared_ptr<const Shell>,2>& _info,
                  const double contA, const double contC, const std::array<int, 3> angA, const std::array<int, 3> angC,
                  const bool print = false, const int max_iter = 100, const double thresh_int = PRIM_SCREEN_THRESH);
 
