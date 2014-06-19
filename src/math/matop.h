@@ -86,7 +86,7 @@ namespace impl {
 
 #ifdef HAVE_SCALAPACK
     assert(a.localized() == b.localized());
-    if (a.localized() || min(min(l,m),n) < blocksize__) {
+    if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
       dgemm_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -94,7 +94,7 @@ namespace impl {
       std::unique_ptr<double[]> locala = a.getlocal();
       std::unique_ptr<double[]> localb = b.getlocal();
       std::unique_ptr<double[]> localc = out.getlocal();
-      pdgemm_("N", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), o.desc().data(), 0.0, localc.get(), out.desc().data());
+      pdgemm_("N", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
       out.setlocal(localc);
     }
 #endif
@@ -114,7 +114,7 @@ namespace impl {
 
 #ifdef HAVE_SCALAPACK
     assert(a.localized() == b.localized());
-    if (a.localized() || min(min(l,m),n) < blocksize__) {
+    if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
       dgemm_("T", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -175,7 +175,7 @@ namespace impl {
 
 #ifdef HAVE_SCALAPACK
     assert(a.localized() == b.localized());
-    if (a.localized() || min(min(l,m),n) < blocksize__) {
+    if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
       zgemm3m_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
@@ -203,7 +203,7 @@ namespace impl {
 
 #ifdef HAVE_SCALAPACK
     assert(a.localized() == b.localized());
-    if (a.localized() || min(min(l,m),n) < blocksize__) {
+    if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
       zgemm3m_("C", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
 #ifdef HAVE_SCALAPACK
