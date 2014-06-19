@@ -96,32 +96,6 @@ ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
 }
 
 
-ZMatrix ZMatrix::operator^(const ZMatrix& o) const {
-  const int l = ndim();
-  const int m = mdim();
-  assert(mdim() == o.mdim());
-  const int n = o.ndim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("N", "C", l, n, m, 1.0, data(), ndim(), o.data(), o.ndim(), 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "C", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
 ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
   ZMatrix out(*this);
   out /= o;

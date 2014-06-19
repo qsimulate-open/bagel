@@ -88,33 +88,6 @@ Matrix& Matrix::operator/=(const double& a) {
 }
 
 
-Matrix Matrix::operator^(const Matrix& o) const {
-  const int l = ndim();
-  const int m = mdim();
-  assert(mdim() == o.mdim());
-  const int n = o.ndim();
-
-  Matrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    dgemm_("N", "T", l, n, m, 1.0, data(), ndim(), o.data(), o.ndim(), 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<double[]> locala = getlocal();
-    unique_ptr<double[]> localb = o.getlocal();
-    unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
 Matrix Matrix::operator/(const Matrix& o) const {
   Matrix out(*this);
   out /= o;
