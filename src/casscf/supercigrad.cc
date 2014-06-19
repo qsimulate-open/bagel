@@ -51,7 +51,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice_copy(0,nocc);
+  shared_ptr<const MatView> ocoeff = ref_->coeff()->slice(0,nocc);
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
@@ -134,7 +134,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
   shared_ptr<DFHalfDist> qri;
   {
-    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * *zmat->slice_copy(0,nocc));
+    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * *zmat->slice(0,nocc));
     {
       const RDM<2> D(*ref_->rdm2(target)+*zrdm2);
       const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);

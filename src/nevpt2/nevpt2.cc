@@ -381,8 +381,8 @@ void NEVPT2::compute() {
       const Matrix mat(*iblock % *jblock);
 
       // active part
-      shared_ptr<const Matrix> iablock = fullai->slice_copy(i*nact_, (i+1)*nact_);
-      shared_ptr<const Matrix> jablock = fullai->slice_copy(j*nact_, (j+1)*nact_);
+      shared_ptr<const MatView> iablock = fullai->slice(i*nact_, (i+1)*nact_);
+      shared_ptr<const MatView> jablock = fullai->slice(j*nact_, (j+1)*nact_);
       const Matrix mat_va(*iblock % *jablock);
       const Matrix mat_av(*iablock % *jblock);
       // hole density matrix
@@ -443,8 +443,8 @@ void NEVPT2::compute() {
       // S(-2)rs sector
       const int iv = i-nclosed_-nact_;
       const int jv = j-nclosed_-nact_;
-      shared_ptr<const Matrix> iablock = fullav->slice_copy(iv*nact_, (iv+1)*nact_);
-      shared_ptr<const Matrix> jablock = fullav->slice_copy(jv*nact_, (jv+1)*nact_);
+      shared_ptr<const MatView> iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
+      shared_ptr<const MatView> jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
       Matrix mat_aa(*iablock % *jablock);
       Matrix mat_aaR(nact_, nact_, true);
       Matrix mat_aaK(nact_, nact_, true);
@@ -462,7 +462,7 @@ void NEVPT2::compute() {
       SMITH::sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
-      shared_ptr<const Matrix> rblock = fullav->slice_copy(iv*nact_, (iv+1)*nact_);
+      shared_ptr<const MatView> rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
       shared_ptr<const Matrix> bac = make_shared<Matrix>(*rblock % *fullaa);
       shared_ptr<Matrix> abc = make_shared<Matrix>(nact_*nact_*nact_, 1, true);
       SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
@@ -478,19 +478,19 @@ void NEVPT2::compute() {
       // (g|vi) with i fixed
       shared_ptr<const Matrix> iblock = cache.at(i);
       // (g|ai) with i fixed
-      shared_ptr<const Matrix> iablock = fullai->slice_copy(i*nact_, (i+1)*nact_);
+      shared_ptr<const MatView> iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
       Matrix srdm2_p(nact_*nact_, nact_*nact_);
       SMITH::sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
 
       for (int r = 0; r != nvirt_; ++r) {
-        shared_ptr<const Matrix> ibr = iblock->slice_copy(r, r+1);
-        shared_ptr<const Matrix> rblock = fullav->slice_copy(r*nact_, (r+1)*nact_);
+        shared_ptr<const MatView> ibr = iblock->slice(r, r+1);
+        shared_ptr<const MatView> rblock = fullav->slice(r*nact_, (r+1)*nact_);
 
         // S(-1)rs sector
         for (int s = r; s != nvirt_; ++s) {
-          shared_ptr<const Matrix> ibs = iblock->slice_copy(s, s+1);
-          shared_ptr<const Matrix> sblock = fullav->slice_copy(s*nact_, (s+1)*nact_);
+          shared_ptr<const MatView> ibs = iblock->slice(s, s+1);
+          shared_ptr<const MatView> sblock = fullav->slice(s*nact_, (s+1)*nact_);
           const Matrix mat1(*ibs % *rblock); // (vi|ar) (i, r fixed)
           const Matrix mat2(*ibr % *sblock); // (vi|as) (i, s fixed)
           const Matrix mat1R(*ibs % *rblock * *rdm1_); // (vi|ar) (i, r fixed)

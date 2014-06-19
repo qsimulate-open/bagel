@@ -129,7 +129,7 @@ void MOFile::update_1ext_ints(const shared_ptr<const Matrix>& coeff) {
 
 
 shared_ptr<const Matrix> Jop::compute_mo1e(const int nstart, const int nfence) {
-  shared_ptr<const Matrix> ocoeff = coeff_->slice_copy(nstart, nfence);
+  shared_ptr<const MatView> ocoeff = coeff_->slice(nstart, nfence);
   return make_shared<const Matrix>(*ocoeff % *core_fock_ * *ocoeff);
 }
 
