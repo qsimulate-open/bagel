@@ -43,7 +43,7 @@ RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZMa
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-void RelMOFile::init(const int nstart, const int nfence) {
+void RelMOFile::init(const int nstart, const int nfence, const bool restricted) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
@@ -69,7 +69,11 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
   // then compute Kramers adapated coefficient matrices
   auto overlap = make_shared<RelOverlap>(geom_);
-  kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
+//  if (!restricted) {
+//    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice(nstart, nfence), overlap, hcore);
+//  } else {
+    kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
+//  }
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
@@ -175,17 +179,16 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 
 // modified from init_kramers_coeff in zcasscf_coeff.cc
 array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, const int nfence, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
+  assert(coeff->mdim() > 2 && coeff->mdim()%2 == 0); // zquatev has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
   assert(nstart < nfence);
   const int ndim    = coeff->ndim();
   const int nb      = ndim/4;
   const int nclosed = nstart/2;
   const int nact    = (nfence - nstart)/2;
-  const int nocc    = nact + nclosed;
   const int nvnr    = nb - nact - nclosed;
   const int nvirt   = nvnr + nb;
   if(ndim%2 != 0 || ndim % 4 != 0)
     throw logic_error("illegal call of RelMOFile::kramers_zquat");
-
   // local function to transform from kramers to quaternion format
   auto quaternion = [](shared_ptr<ZMatrix> o) {
     shared_ptr<ZMatrix> scratch = o->clone();
@@ -198,9 +201,15 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     *o = *scratch;
   };
 
+  const int nocc    = nact + nclosed;
+
   shared_ptr<ZMatrix> focktmp;
   shared_ptr<ZMatrix> ctmp;
-  focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, geom_->nele()), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  {
+    const int norb = geom_->nele();
+    assert(norb <= coeff_->mdim());
+    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+  }
   quaternion(focktmp);
 
   shared_ptr<ZMatrix> s12 = overlap->tildex(1.0e-9);
@@ -234,10 +243,14 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     const int nneg2 = ctmp->mdim()/4;
     move_one(           0, nneg2, nocc+nvnr);
     move_one(nocc + nvirt, nneg2, nocc+nvnr);
+    auto tmp = coeff->clone();
+    tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2)->data());
+    tmp->copy_block(0, coeff->mdim()/2, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(ctmp->mdim()/2 + nstart/2, ctmp->mdim()/2 + nstart/2+coeff->mdim()/2)->data());
+    ctmp = tmp;
   }
 
   array<shared_ptr<const ZMatrix>,2> tmp;
-  tmp = {{ ctmp->slice(nstart/2, nfence/2), ctmp->slice(ctmp->mdim()/2+nstart/2, ctmp->mdim()/2 + nfence/2) }};
+  tmp = {{ ctmp->slice(0, ctmp->mdim()/2), ctmp->slice(ctmp->mdim()/2, ctmp->mdim()) }};
 
   return tmp;
 }

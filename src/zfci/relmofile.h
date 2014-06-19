@@ -50,7 +50,7 @@ class RelMOFile {
     bool breit_;
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nend);
+    void init(const int nstart, const int nend, const bool restricted = false);
 
     // hamiltoniam data
     std::unordered_map<std::bitset<2>, std::shared_ptr<const ZMatrix>> mo1e_;
@@ -131,8 +131,8 @@ class RelJop : public RelMOFile {
     std::unordered_map<std::bitset<4>, std::shared_ptr<const ZMatrix>> compute_mo2e(const std::array<std::shared_ptr<const ZMatrix>,2> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit)
-      : RelMOFile(geo, coeff, gaunt, breit) { init(c, d); }
+    RelJop(const std::shared_ptr<const Geometry> geo, const int c, const int d, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit, const bool restricted = false)
+      : RelMOFile(geo, coeff, gaunt, breit) { init(c, d, restricted); }
 };
 
 

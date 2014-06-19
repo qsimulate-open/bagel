@@ -31,7 +31,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas)
+ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const ZMatrix> coeff_zcas, const bool restricted)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
@@ -74,9 +74,11 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
   if (coeff_zcas == nullptr) {
-    update(rr->relcoeff());
+    // coeff from ref is always in striped format
+    update(rr->relcoeff(), restricted);
   } else {
-    update(coeff_zcas);
+    // coeff from zcas presently in striped format
+    update(coeff_zcas, restricted);
   }
 }
 
