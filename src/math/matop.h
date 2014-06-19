@@ -154,7 +154,7 @@ namespace impl {
       std::unique_ptr<double[]> localb = b.getlocal();
       std::unique_ptr<double[]> localc = out.getlocal();
       pdgemm_("N", "T", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
-      out.setlocal_(localc);
+      out.setlocal(localc);
     }
 #endif
 
@@ -241,7 +241,7 @@ namespace impl {
       std::unique_ptr<std::complex<double>[]> localb = b.getlocal();
       std::unique_ptr<std::complex<double>[]> localc = out.getlocal();
       pzgemm_("N", "C", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
-      out.setlocal_(localc);
+      out.setlocal(localc);
     }
 #endif
 
