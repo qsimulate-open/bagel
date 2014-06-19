@@ -33,6 +33,7 @@
 #include <memory>
 #include <list>
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <src/math/jacobi_pairs.h>
 #include <src/input/input.h>
 #include <src/util/constants.h>

@@ -70,38 +70,6 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 #endif
 
 
-ZMatrix ZMatrix::operator*(const ZMatrix& o) const {
-  const int l = ndim();
-  const int m = mdim();
-  assert(mdim() == o.ndim());
-  const int n = o.mdim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("N", "N", l, n, m, 1.0, data(), l, o.data(), o.ndim(), 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
-ZMatrix& ZMatrix::operator*=(const ZMatrix& o) {
-  *this = *this * o;
-  return *this;
-}
-
-
 ZMatrix ZMatrix::operator*(const complex<double>& a) const {
   ZMatrix out(*this);
   out *= a;
@@ -125,32 +93,6 @@ ZMatrix& ZMatrix::operator*=(const complex<double>& a) {
 ZMatrix& ZMatrix::operator/=(const complex<double>& a) {
   *this *= 1.0/a;
   return *this;
-}
-
-
-ZMatrix ZMatrix::operator%(const ZMatrix& o) const {
-  const int l = mdim();
-  const int m = ndim();
-  assert(ndim() == o.ndim());
-  const int n = o.mdim();
-  ZMatrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    zgemm3m_("C", "N", l, n, m, 1.0, data(), m, o.data(), o.ndim(), 0.0, out.data(), l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<complex<double>[]> locala = getlocal();
-    unique_ptr<complex<double>[]> localb = o.getlocal();
-    unique_ptr<complex<double>[]> localc = out.getlocal();
-    pzgemm_("C", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
 }
 
 

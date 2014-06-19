@@ -104,13 +104,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
       return this->get_submatrix_impl<ZMatrix>(nstart, mstart, ndim, mdim);
     }
 
-    ZMatrix operator*(const ZMatrix&) const;
-    ZMatrix& operator*=(const ZMatrix&);
     ZMatrix operator*(const std::complex<double>& a) const;
     ZMatrix operator/(const std::complex<double>& a) const;
     ZMatrix& operator*=(const std::complex<double>& a);
     ZMatrix& operator/=(const std::complex<double>& a);
-    ZMatrix operator%(const ZMatrix&) const; // caution
     ZMatrix operator^(const ZMatrix&) const; // caution
 
     ZMatrix& operator=(const ZMatrix& o) { Matrix_base<std::complex<double>>::operator=(o); return *this; }

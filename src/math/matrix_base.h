@@ -373,6 +373,9 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
 
 #ifdef HAVE_SCALAPACK
+    const std::vector<int>& desc() const { return desc_; }
+    void setlocal(const std::unique_ptr<DataType[]>& local) { setlocal_(local); }
+
     std::unique_ptr<DataType[]> getlocal() const {
       const int localrow = std::get<0>(localsize_);
       const int localcol = std::get<1>(localsize_);

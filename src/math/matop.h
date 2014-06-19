@@ -69,6 +69,154 @@ inline ZMatrix operator-(const ZMatrix& a,  const ZMatrix& b)  { ZMatrix out(a);
 inline ZMatrix operator-(const ZMatrix& a,  const ZMatView& b) { ZMatrix out(a); out -= b; return out; }
 inline ZMatrix operator-(const ZMatView& a, const ZMatrix& b)  { ZMatrix out(a); out -= b; return out; }
 inline ZMatrix operator-(const ZMatView& a, const ZMatView& b) { ZMatrix out(a); out -= b; return out; }
+
+namespace impl {
+
+  template<class A, class B,
+           class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
+                                       and std::is_same<typename A::value_type, double>::value
+                                          >::type
+          >
+  Matrix multNN(const A& a, const B& b) {
+    const int l = a.ndim();
+    const int m = a.mdim();
+    assert(a.mdim() == b.ndim());
+    const int n = b.mdim();
+    Matrix out(l, n, a.localized());
+
+#ifdef HAVE_SCALAPACK
+    assert(a.localized() == b.localized());
+    if (a.localized() || min(min(l,m),n) < blocksize__) {
+#endif
+      dgemm_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
+#ifdef HAVE_SCALAPACK
+    } else {
+      std::unique_ptr<double[]> locala = a.getlocal();
+      std::unique_ptr<double[]> localb = b.getlocal();
+      std::unique_ptr<double[]> localc = out.getlocal();
+      pdgemm_("N", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), o.desc().data(), 0.0, localc.get(), out.desc().data());
+      out.setlocal(localc);
+    }
+#endif
+    return out;
+  }
+  template<class A, class B,
+           class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
+                                       and std::is_same<typename A::value_type, double>::value
+                                          >::type
+          >
+  Matrix multTN(const A& a, const B& b) {
+    const int l = a.mdim();
+    const int m = a.ndim();
+    assert(a.ndim() == b.ndim());
+    const int n = b.mdim();
+    Matrix out(l, n, a.localized());
+
+#ifdef HAVE_SCALAPACK
+    assert(a.localized() == b.localized());
+    if (a.localized() || min(min(l,m),n) < blocksize__) {
+#endif
+      dgemm_("T", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
+#ifdef HAVE_SCALAPACK
+    } else {
+      std::unique_ptr<double[]> locala = a.getlocal();
+      std::unique_ptr<double[]> localb = b.getlocal();
+      std::unique_ptr<double[]> localc = out.getlocal();
+      pdgemm_("T", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
+      out.setlocal(localc);
+    }
+#endif
+
+    return out;
+  }
+
+  template<class A, class B,
+           class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
+                                       and std::is_same<typename A::value_type, std::complex<double>>::value
+                                          >::type
+          >
+  ZMatrix multNN(const A& a, const B& b) {
+    const int l = a.ndim();
+    const int m = a.mdim();
+    assert(a.mdim() == b.ndim());
+    const int n = b.mdim();
+    ZMatrix out(l, n, a.localized());
+
+#ifdef HAVE_SCALAPACK
+    assert(a.localized() == b.localized());
+    if (a.localized() || min(min(l,m),n) < blocksize__) {
+#endif
+      zgemm3m_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
+#ifdef HAVE_SCALAPACK
+    } else {
+      std::unique_ptr<std::complex<double>[]> locala = a.getlocal();
+      std::unique_ptr<std::complex<double>[]> localb = b.getlocal();
+      std::unique_ptr<std::complex<double>[]> localc = out.getlocal();
+      pzgemm_("N", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
+      out.setlocal(localc);
+    }
+#endif
+    return out;
+  }
+  template<class A, class B,
+           class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
+                                       and std::is_same<typename A::value_type, std::complex<double>>::value
+                                          >::type
+          >
+  ZMatrix multTN(const A& a, const B& b) {
+    const int l = a.mdim();
+    const int m = a.ndim();
+    assert(a.ndim() == b.ndim());
+    const int n = b.mdim();
+    ZMatrix out(l, n, a.localized());
+
+#ifdef HAVE_SCALAPACK
+    assert(a.localized() == b.localized());
+    if (a.localized() || min(min(l,m),n) < blocksize__) {
+#endif
+      zgemm3m_("C", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
+#ifdef HAVE_SCALAPACK
+    } else {
+      std::unique_ptr<std::complex<double>[]> locala = a.getlocal();
+      std::unique_ptr<std::complex<double>[]> localb = b.getlocal();
+      std::unique_ptr<std::complex<double>[]> localc = out.getlocal();
+      pzgemm_("C", "N", l, n, m, 1.0, locala.get(), a.desc().data(), localb.get(), b.desc().data(), 0.0, localc.get(), out.desc().data());
+      out.setlocal(localc);
+    }
+#endif
+
+    return out;
+  }
+
+}
+
+// WARNING - we are abusing the operator overload!
+
+// operator*
+inline Matrix operator*(const Matrix& a,  const Matrix& b)  { return impl::multNN(a,b); }
+inline Matrix operator*(const Matrix& a,  const MatView& b) { return impl::multNN(a,b); }
+inline Matrix operator*(const MatView& a, const Matrix& b)  { return impl::multNN(a,b); }
+inline Matrix operator*(const MatView& a, const MatView& b) { return impl::multNN(a,b); }
+inline Matrix operator%(const Matrix& a,  const Matrix& b)  { return impl::multTN(a,b); }
+inline Matrix operator%(const Matrix& a,  const MatView& b) { return impl::multTN(a,b); }
+inline Matrix operator%(const MatView& a, const Matrix& b)  { return impl::multTN(a,b); }
+inline Matrix operator%(const MatView& a, const MatView& b) { return impl::multTN(a,b); }
+
+inline ZMatrix operator*(const ZMatrix& a,  const ZMatrix& b)  { return impl::multNN(a,b); }
+inline ZMatrix operator*(const ZMatrix& a,  const ZMatView& b) { return impl::multNN(a,b); }
+inline ZMatrix operator*(const ZMatView& a, const ZMatrix& b)  { return impl::multNN(a,b); }
+inline ZMatrix operator*(const ZMatView& a, const ZMatView& b) { return impl::multNN(a,b); }
+inline ZMatrix operator%(const ZMatrix& a,  const ZMatrix& b)  { return impl::multTN(a,b); }
+inline ZMatrix operator%(const ZMatrix& a,  const ZMatView& b) { return impl::multTN(a,b); }
+inline ZMatrix operator%(const ZMatView& a, const ZMatrix& b)  { return impl::multTN(a,b); }
+inline ZMatrix operator%(const ZMatView& a, const ZMatView& b) { return impl::multTN(a,b); }
+
+// operator*=
+inline Matrix& operator*=(Matrix& a,  const Matrix& b)  { a = a*b; return a; }
+inline Matrix& operator*=(Matrix& a,  const MatView& b) { a = a*b; return a; }
+
+inline ZMatrix& operator*=(ZMatrix& a,  const ZMatrix& b)  { a = a*b; return a; }
+inline ZMatrix& operator*=(ZMatrix& a,  const ZMatView& b) { a = a*b; return a; }
 }
 
 #endif

@@ -98,13 +98,10 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
       return this->get_submatrix_impl<Matrix>(nstart, mstart, ndim, mdim);
     }
 
-    Matrix operator*(const Matrix&) const;
-    Matrix& operator*=(const Matrix&);
     Matrix operator*(const double& a) const;
     Matrix operator/(const double& a) const;
     Matrix& operator*=(const double& a);
     Matrix& operator/=(const double& a);
-    Matrix operator%(const Matrix&) const; // caution
     Matrix operator^(const Matrix&) const; // caution
 
     Matrix& operator=(const Matrix& o) { Matrix_base<double>::operator=(o); return *this; }
