@@ -137,7 +137,7 @@ shared_ptr<const Matrix> Jop::compute_mo1e(const int nstart, const int nfence) {
 shared_ptr<const Matrix> Jop::compute_mo2e(const int nstart, const int nfence) {
 
   assert(nfence-nstart > 0);
-  shared_ptr<const btas::View2<double>> cdata = coeff_->slice(nstart, nfence);
+  shared_ptr<const MatView> cdata = coeff_->slice(nstart, nfence);
 
   // first half transformation
   shared_ptr<DFHalfDist> half = geom_->df()->compute_half_transform(cdata);

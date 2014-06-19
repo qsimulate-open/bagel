@@ -29,38 +29,38 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const View2<double>> cmat, const bool trans) const {
-  assert(trans ? cmat->range(1).size() : cmat->range(0).size() == b1size());
+shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cmat, const bool trans) const {
+  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
   assert(cmat->range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  const int nocc = trans ? cmat->range(0).size() : cmat->range(1).size();
+  const int nocc = trans ? cmat->ndim() : cmat->mdim();
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   for (size_t i = 0; i != b2size(); ++i) {
     if (!trans)
-      dgemm_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), &*cmat->begin(), b1size(), 0.0, out->data()+i*asize()*nocc, asize());
+      dgemm_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), b1size(), 0.0, out->data()+i*asize()*nocc, asize());
     else
-      dgemm_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), &*cmat->begin(), nocc, 0.0, out->data()+i*asize()*nocc, asize());
+      dgemm_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), nocc, 0.0, out->data()+i*asize()*nocc, asize());
   }
   return out;
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const View2<double>> cmat, const bool trans) const {
-  assert(trans ? cmat->range(1).size() : cmat->range(0).size() == b2size());
+shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const MatView> cmat, const bool trans) const {
+  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
   assert(cmat->range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  const int nocc = trans ? cmat->range(0).size() : cmat->range(1).size();
+  const int nocc = trans ? cmat->ndim() : cmat->mdim();
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), &*cmat->begin(), b2size(), 0.0, out->data(), asize()*b1size());
+    dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), b2size(), 0.0, out->data(), asize()*b1size());
   else  // trans -> back transform
-    dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), &*cmat->begin(), nocc, 0.0, out->data(), asize()*b1size());
+    dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), nocc, 0.0, out->data(), asize()*b1size());
 
   return out;
 }

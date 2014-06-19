@@ -241,7 +241,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   const int nmobasis = coeff_->mdim();
   assert(nall == nmobasis);
 
-  shared_ptr<const btas::View2<double>> ocmat = coeff_->slice(0, nocc);
+  shared_ptr<const MatView> ocmat = coeff_->slice(0, nocc);
 
   auto dmr = make_shared<Matrix>(*dm1);
 

@@ -604,7 +604,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   dimertime.tick_print("Dimer SCF");
 
   shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
-  shared_ptr<const btas::View2<double>> dimercoeff = scoeff_->slice(0,nclosed_);
+  shared_ptr<const MatView> dimercoeff = scoeff_->slice(0,nclosed_);
 
   // Explanation of schemes:
   //   localize_first           - fragment localizes, then picks the active space within each fragment (recommended)

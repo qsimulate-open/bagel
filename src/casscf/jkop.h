@@ -48,7 +48,7 @@ class JKop {
          const std::shared_ptr<FCI> fci, const size_t nocc, const size_t nclosed, const size_t nact)
     : fci_(fci), coeff_(c), nocc_(nocc), nclosed_(nclosed), nbasis_(df->nbasis0()) {
 
-      std::shared_ptr<const btas::View2<double>> ocoeff = coeff_->slice(0, nocc);
+      std::shared_ptr<const MatView> ocoeff = coeff_->slice(0, nocc);
       assert(nclosed+nact == nocc);
       assert(df->nbasis0() == df->nbasis1());
       // K operator // (ai|ai)

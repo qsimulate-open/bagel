@@ -32,17 +32,17 @@
 
 using namespace bagel;
 using namespace std;
-using namespace btas;
+
 
 // TODO this is a temp fix
-shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const View2<complex<double>>> cmat2, const bool trans) const {
-  auto c2 = make_shared<ZMatrix>(*cmat2, true);
+shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatView> cmat2, const bool trans) const {
+  auto c2 = make_shared<ZMatrix>(*cmat2);
   return transform_second(c2, trans);
 }
 
 
-shared_ptr<DFBlock_London> DFBlock_London::transform_third(std::shared_ptr<const View2<complex<double>>> cmat2, const bool trans) const {
-  auto c2 = make_shared<ZMatrix>(*cmat2, true);
+shared_ptr<DFBlock_London> DFBlock_London::transform_third(std::shared_ptr<const ZMatView> cmat2, const bool trans) const {
+  auto c2 = make_shared<ZMatrix>(*cmat2);
   return transform_third(c2, trans);
 }
 

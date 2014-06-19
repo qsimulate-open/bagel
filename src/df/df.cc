@@ -151,8 +151,8 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform(std::shared_ptr<const View2<double>> c) const {
-  const int nocc = c->range(1).size();
+shared_ptr<DFHalfDist> DFDist::compute_half_transform(std::shared_ptr<const MatView> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_second(c));
@@ -160,8 +160,8 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(std::shared_ptr<const View
 }
 
 
-shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(std::shared_ptr<const View2<double>> c) const {
-  const int nocc = c->range(1).size();
+shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(std::shared_ptr<const MatView> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c)->swap());
@@ -192,8 +192,8 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const std::shared_ptr
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(std::shared_ptr<const View2<double>> c) const {
-  const int nocc = c->range(1).size();
+shared_ptr<DFFullDist> DFHalfDist::compute_second_transform(std::shared_ptr<const MatView> c) const {
+  const int nocc = c->mdim();
   auto out = make_shared<DFFullDist>(df_, nindex1_, nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c));
@@ -227,8 +227,8 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
-shared_ptr<DFDist> DFHalfDist::back_transform(std::shared_ptr<const View2<double>> c) const{
-  assert(df_->nindex1() == c->range(0).size());
+shared_ptr<DFDist> DFHalfDist::back_transform(std::shared_ptr<const MatView> c) const{
+  assert(df_->nindex1() == c->ndim());
   auto out = make_shared<DFDist>(df_);
   for (auto& i : block_)
     out->add_block(i->transform_second(c, true));
@@ -294,8 +294,8 @@ void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
-shared_ptr<DFHalfDist> DFFullDist::back_transform(std::shared_ptr<const View2<double>> c) const {
-  assert(c->range(0).size() == df_->nindex2());
+shared_ptr<DFHalfDist> DFFullDist::back_transform(std::shared_ptr<const MatView> c) const {
+  assert(c->ndim() == df_->nindex2());
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
     out->add_block(i->transform_third(c, true));

@@ -102,7 +102,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   const int nact = ref_->nact();
   assert(nact + nclosed == nocca);
 
-  shared_ptr<const View2<double>> ocoeff = coeff_->slice(0, nocca);
+  shared_ptr<const MatView> ocoeff = coeff_->slice(0, nocca);
 
   // some DF vectors
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();

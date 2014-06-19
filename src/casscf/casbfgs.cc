@@ -78,7 +78,7 @@ void CASBFGS::compute() {
 
     // compute one-body operators
     // * preparation
-    shared_ptr<const btas::View2<double>> ccoeff = coeff_->slice(0, nclosed_);
+    shared_ptr<const MatView> ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);

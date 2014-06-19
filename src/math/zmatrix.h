@@ -47,7 +47,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix(const int n, const int m, const bool localized = true);
 #endif
     ZMatrix(const ZMatrix&);
-    ZMatrix(const btas::View2<std::complex<double>>& o, const bool localized);
+    ZMatrix(const ZMatView& o);
     ZMatrix(ZMatrix&&);
     ZMatrix(const Matrix& real, const Matrix& imag);
     ZMatrix(const Matrix& real, const std::complex<double> factor);
@@ -61,10 +61,10 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
 
-    std::shared_ptr<btas::View2<std::complex<double>>> slice(const int mstart, const int mend) const {
+    std::shared_ptr<ZMatView> slice(const int mstart, const int mend) const {
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
-      return std::make_shared<btas::View2<std::complex<double>>>(this->range().slice(low, up), this->storage());
+      return std::make_shared<ZMatView>(this->range().slice(low, up), this->storage(), localized_);
     }
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
@@ -85,13 +85,13 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const btas::View2<double>> o);
+    void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const MatView> o);
     void copy_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const double* data);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::unique_ptr<double[]> o);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const Matrix> o);
-    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const btas::View2<double>> o);
+    void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const std::shared_ptr<const MatView> o);
     void add_real_block(const std::complex<double> a, const int nstart, const int mstart, const int ndim, const int mdim, const Matrix& o);
 
     std::shared_ptr<Matrix> get_real_part() const;

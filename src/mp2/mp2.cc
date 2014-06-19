@@ -69,8 +69,8 @@ void MP2::compute() {
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
 
-  shared_ptr<const View2<double>> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
-  shared_ptr<const View2<double>> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
+  shared_ptr<const MatView> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
+  shared_ptr<const MatView> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
 
   Timer timer;
   // compute transformed integrals

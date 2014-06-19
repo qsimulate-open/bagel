@@ -34,7 +34,7 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
-#include <src/math/btas_interface.h>
+#include <src/math/matview.h>
 
 namespace bagel {
 
@@ -198,7 +198,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       std::copy_n(o.data(), size(), data());
     }
 
-    Matrix_base(const btas::View2<DataType>& o, const bool localized) : btas::Tensor2<DataType>(o), localized_(localized) {
+    Matrix_base(const MatView_<DataType>& o) : btas::Tensor2<DataType>(o), localized_(o.localized()) {
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim(), mdim());
@@ -277,9 +277,9 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(nsize == o->ndim() && msize == o->mdim());
       copy_block(nstart, mstart, nsize, msize, o->data());
     }
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const btas::View2<DataType>> o) {
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
       assert(nsize == o->range(0).size() && msize == o->range(1).size());
-      copy_block(nstart, mstart, nsize, msize, &*o->begin());
+      copy_block(nstart, mstart, nsize, msize, o->data());
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       copy_block(nstart, mstart, nsize, msize, o.get());
@@ -296,9 +296,9 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(nsize == o->ndim() && msize == o->mdim());
       add_block(a, nstart, mstart, nsize, msize, o->data());
     }
-    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const btas::View2<DataType>> o) {
+    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
       assert(nsize == o->range(0).size() && msize == o->range(1).size());
-      add_block(a, nstart, mstart, nsize, msize, &*o->begin());
+      add_block(a, nstart, mstart, nsize, msize, o->data());
     }
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
       add_block(a, nstart, mstart, nsize, msize, o.get());

@@ -42,7 +42,7 @@ ZMatrix::ZMatrix(const ZMatrix& o) : Matrix_base<complex<double>>(o) {
 }
 
 
-ZMatrix::ZMatrix(const btas::View2<complex<double>>& o, const bool localized) : Matrix_base<complex<double>>(o, localized) {
+ZMatrix::ZMatrix(const ZMatView& o) : Matrix_base<complex<double>>(o) {
 }
 
 
@@ -492,9 +492,9 @@ void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const i
 }
 
 
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const btas::View2<double>> data) {
-  assert(ndim == data->range(0).size() && mdim == data->range(1).size() && data->range().ordinal().contiguous());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, &*data->begin());
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
+  assert(ndim == data->ndim() && mdim == data->mdim());
+  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
 
@@ -524,9 +524,9 @@ void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const in
 }
 
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const btas::View2<double>> data) {
-  assert(ndim == data->range(0).size() && mdim == data->range(1).size() && data->range().ordinal().contiguous());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, &*data->begin());
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
+  assert(ndim == data->ndim() && mdim == data->mdim());
+  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
 }
 
 

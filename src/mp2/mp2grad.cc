@@ -63,7 +63,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   shared_ptr<const Matrix> ccmat = ref_->coeff()->slice_copy(0, ncore);
   shared_ptr<const Matrix> ocmat = ref_->coeff()->slice_copy(0, nocca);
   shared_ptr<const Matrix> vcmat = ref_->coeff()->slice_copy(nocca, nmobasis);
-  shared_ptr<const View2<double>> acmat = ref_->coeff()->slice(ncore, nocca);
+  shared_ptr<const MatView> acmat = ref_->coeff()->slice(ncore, nocca);
 
   // first compute half transformed integrals
   shared_ptr<DFHalfDist> half;

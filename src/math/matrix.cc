@@ -49,7 +49,7 @@ Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(
 Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
-Matrix::Matrix(const btas::View2<double>& o, const bool localized) : Matrix_base<double>(o, localized) {
+Matrix::Matrix(const MatView& o) : Matrix_base<double>(o) {
 }
 
 Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
