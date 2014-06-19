@@ -48,7 +48,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
   const int nocc = ref_->nocc();
   const int nvirt = ref_->nvirt();
   const int nmobasis = coeff_->mdim();
-  shared_ptr<const Matrix> acoeff = coeff_->slice_copy(nclosed, nclosed+nact);
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
   shared_ptr<Matrix> fock;
@@ -137,7 +137,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     Matrix rot(*zcore + *ref_->rdm1_mat());
     rot.sqrt();
     rot.scale(1.0/sqrt(2.0));
-    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, make_shared<Matrix>(*coeff_->slice_copy(0, nocca) * rot), false, true);
+    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, make_shared<Matrix>(*coeff_->slice(0, nocca) * rot), false, true);
     gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock);
   }
 
@@ -259,7 +259,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
   auto htilde = make_shared<Matrix>(*coeff_ % *ref_->hcore() * *cz0);
   htilde->symmetrize();
   htilde->scale(2.0);
-  const Matrix cbuf(*htilde->slice_copy(0, nocca) * *ref_->rdm1_mat());
+  const Matrix cbuf(*htilde->slice(0, nocca) * *ref_->rdm1_mat());
   sigmaorb->add_block(2.0, 0, 0, nmobasis, nocca, cbuf);
 
   // At this point
@@ -327,7 +327,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
-  shared_ptr<const Matrix> acoeff = coeff_->slice_copy(nclosed, nclosed+nact);
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   // compute RDMs
   shared_ptr<const RDM<1>> rdm1t;
@@ -366,7 +366,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
     shared_ptr<const Matrix> adenj = make_shared<Matrix>(*rdm1mat ^ *acoeff);
 
-    shared_ptr<const Matrix> ocoeff = coeff_->slice_copy(0, nclosed);
+    shared_ptr<const MatView> ocoeff = coeff_->slice(0, nclosed);
     // coulomb
     Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * *ocoeff);
     // exchange
@@ -392,13 +392,13 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
 
   shared_ptr<const Matrix> z0 = z->first();
   shared_ptr<const Dvec>   z1 = z->second();
-  shared_ptr<const Matrix> ccoeff = nclosed ? coeff_->slice_copy(0, nclosed) : nullptr;
-  shared_ptr<const Matrix> acoeff = coeff_->slice_copy(nclosed, nclosed+nact);
+  shared_ptr<const MatView> ccoeff = nclosed ? coeff_->slice(0, nclosed) : nullptr;
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
-  shared_ptr<const Matrix> az0 = z0->slice_copy(nclosed, nocca);
-  shared_ptr<const Matrix> oz0 = z0->slice_copy(0, nocca);
-  shared_ptr<const Matrix> cz0  = nclosed ? z0->slice_copy(0, nclosed) : nullptr;
-  shared_ptr<const Matrix> ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * *cz0) : nullptr;
+  shared_ptr<const MatView> az0 = z0->slice(nclosed, nocca);
+  shared_ptr<const MatView> oz0 = z0->slice(0, nocca);
+  shared_ptr<const MatView> cz0  = nclosed ? z0->slice(0, nclosed) : nullptr;
+  shared_ptr<const Matrix>  ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * *cz0) : nullptr;
 
   shared_ptr<RDM<1>> rdm1_av = ref_->rdm1_av()->copy();
   shared_ptr<RDM<2>> rdm2_av = ref_->rdm2_av()->copy();

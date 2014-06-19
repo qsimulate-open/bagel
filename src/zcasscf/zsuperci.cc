@@ -91,7 +91,7 @@ void ZSuperCI::compute() {
     if (!nact_) { // compute energy
       assert(nstate_ == 1);
       energy_.resize(iter+1);
-      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice_copy(0,nclosed_*2) % *hcore_ * *coeff_->slice_copy(0,nclosed_*2));
+      auto hcoremo = make_shared<ZMatrix>(*coeff_->slice(0,nclosed_*2) % *hcore_ * *coeff_->slice(0,nclosed_*2));
       *hcoremo += *f->get_submatrix(0, 0, nclosed_*2, nclosed_*2);
       double etmp = 0.0;
       for (int j=0; j!= nclosed_*2; ++j)
