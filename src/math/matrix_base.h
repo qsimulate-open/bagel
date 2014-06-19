@@ -198,7 +198,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
       std::copy_n(o.data(), size(), data());
     }
 
-    Matrix_base(const MatView_<DataType>& o) : btas::Tensor2<DataType>(o), localized_(o.localized()) {
+    Matrix_base(const MatView_<DataType>& o) : btas::Tensor2<DataType>(o.ndim(), o.mdim()), localized_(o.localized()) {
+      std::copy_n(o.data(), o.size(), data());
 #ifdef HAVE_SCALAPACK
       if (!localized_) {
         desc_ = mpi__->descinit(ndim(), mdim());
