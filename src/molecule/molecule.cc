@@ -401,7 +401,7 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
   // form B = U^+ Bprim
-  Matrix bbslice = *bb.slice_copy(0,ninternal);
+  Matrix bbslice = *bb.slice(0,ninternal);
   auto bnew = make_shared<Matrix>(bdag * bbslice);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
