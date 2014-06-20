@@ -113,7 +113,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   // d0 including core
   shared_ptr<const Matrix> d0 = ref->rdm1_mat(task_->target())->resize(nmobasis,nmobasis);
-  shared_ptr<const Matrix> ocoeff = coeff->slice_copy(0, nocc);
+  shared_ptr<const MatView> ocoeff = coeff->slice(0, nocc);
 
   {
     auto dtotao = make_shared<Matrix>(*coeff * (*d0 + *d1) ^ *coeff);
@@ -173,7 +173,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
   shared_ptr<DFHalfDist> qri;
   {
-    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * *zmat->slice_copy(0,nocc));
+    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * *zmat->slice(0,nocc));
     {
       const RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
       const RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
@@ -250,7 +250,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
   // Y_rs = 2[Y1 + Y2 + Y3(ri) + Y4 + Y5(ri)]
   shared_ptr<Matrix> out = make_shared<Matrix>(nmobasis, nmobasis);
-  auto ocoeff = coeff_->slice_copy(0, nocc);
+  auto ocoeff = coeff_->slice(0, nocc);
 
   {
     // 2 Y1 = h(d0 + d1 + d2) * 2
