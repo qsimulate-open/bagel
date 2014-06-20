@@ -26,8 +26,11 @@
 #ifndef __SRC_MATH_BTAS_INTERFACE_H
 #define __SRC_MATH_BTAS_INTERFACE_H
 
+#include <bagel_config.h>
 #define _HAS_CBLAS
+#ifdef HAVE_MKL_H
 #define _HAS_INTEL_MKL
+#endif
 
 #include <btas/btas.h>
 #include <btas/tensor.h>
