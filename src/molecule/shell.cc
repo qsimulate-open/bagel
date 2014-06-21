@@ -235,7 +235,7 @@ shared_ptr<const Matrix> Shell::overlap_compute_() const {
 }
 
 
-array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
+array<shared_ptr<const Matrix>,3> Shell::moment_compute(const shared_ptr<const Matrix> overlap) const {
   const int ssize = nbasis();
   const int asize_inc = aux_increment_->nbasis();
   const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
@@ -266,8 +266,9 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
       const int nloop = num_contracted() * asize_inc;
       carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
     } else {
-      assert(coeff0->size_block() == asize_inc*ssize);
-      copy(carea0, carea0+coeff0->size_block(), tmparea->data());
+      const size_t size = coeff0->asize_final()*num_contracted()*num_primitive();
+      assert(size == asize_inc*ssize);
+      copy(carea0, carea0+size, tmparea->data());
     }
     if (aux_decrement_) {
       if (spherical_) {
@@ -275,8 +276,9 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
         const int nloop = num_contracted() * asize_dec;
         carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
       } else {
-        assert(coeff1->size_block() == asize_dec*ssize);
-        copy(carea1, carea1+coeff1->size_block(), tmparea->data()+asize_inc*ssize);
+        const size_t size = coeff1->asize_final()*num_contracted()*num_primitive();
+        assert(size == asize_dec*ssize);
+        copy(carea1, carea1+size, tmparea->data()+asize_inc*ssize);
         }
     }
 
@@ -286,7 +288,7 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const 
 }
 
 
-array<shared_ptr<const ZMatrix>,3> Shell::moment_compute_(const shared_ptr<const ZMatrix> overlap, const array<double, 3> magnetic_field) const {
+array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const shared_ptr<const ZMatrix> overlap, const array<double, 3> magnetic_field) const {
   const int ssize = nbasis();
   const int asize_inc = aux_increment_->nbasis();
   const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
@@ -317,8 +319,9 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute_(const shared_ptr<const
       const int nloop = num_contracted() * asize_inc;
       carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
     } else {
-      assert(coeff0->size_block() == asize_inc*ssize);
-      copy(carea0, carea0+coeff0->size_block(), tmparea->data());
+      const size_t size = coeff0->asize_final()*num_contracted()*num_primitive();
+      assert(size == asize_inc*ssize);
+      copy(carea0, carea0+size, tmparea->data());
     }
     if (aux_decrement_) {
       if (spherical_) {
@@ -326,8 +329,9 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute_(const shared_ptr<const
         const int nloop = num_contracted() * asize_dec;
         carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
       } else {
-        assert(coeff1->size_block() == asize_dec*ssize);
-        copy(carea1, carea1+coeff1->size_block(), tmparea->data()+asize_inc*ssize);
+        const size_t size = coeff1->asize_final()*num_contracted()*num_primitive();
+        assert(size == asize_dec*ssize);
+        copy(carea1, carea1+size, tmparea->data()+asize_inc*ssize);
         }
     }
 
