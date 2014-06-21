@@ -25,9 +25,12 @@
 
 
 #include <src/molecule/shell.h>
+#include <src/molecule/carsph_shell.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/momentumbatch.h>
+#include <src/integral/compos/complexoverlapbatch.h>
+#include <src/integral/compos/complexmomentumbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -173,100 +176,25 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 }
 
 void Shell::init_relativistic() {
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
 
-  // overlap = S^-1 between auxiliary functions
-  shared_ptr<const Matrix> overlap = overlap_compute_();
-
   // small is a transformation matrix (x,y,z components)
-  small_ = moment_compute_(overlap);
+  small_ = moment_compute();
 }
 
 
-shared_ptr<const Matrix> Shell::overlap_compute_() const {
+void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+  relativistic_ = true;
+  aux_decrement_ = kinetic_balance_uncont<-1>();
+  aux_increment_ = kinetic_balance_uncont<1>();
 
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto overlap = make_shared<Matrix>(a,a, true);
-
-  {
-    OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_increment_}});
-    ovl.compute();
-    for (int i = 0; i != aux_increment_->nbasis(); ++i)
-      copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
-  }
-  if (aux_decrement_) {
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_decrement_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
-    }
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        for (int j = 0; j != asize_inc; ++j)
-          overlap->element(j,i+asize_inc) = overlap->element(i+asize_inc,j) = *(ovl.data()+j+asize_inc*i);
-    }
-  }
-
-  return overlap;
-}
-
-
-array<shared_ptr<const Matrix>,3> Shell::moment_compute_(const shared_ptr<const Matrix> overlap) const {
-  const int ssize = nbasis();
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_increment_}});
-  coeff0->compute();
-
-  shared_ptr<MomentumBatch> coeff1;
-  if (aux_decrement_) {
-    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_decrement_}});
-    coeff1->compute();
-  } else {
-    // just to run. coeff1 is not referenced in the code
-    coeff1 = coeff0;
-  }
-
-  const double* carea0 = coeff0->data();
-  const double* carea1 = coeff1->data();
-
-  auto tmparea = make_shared<Matrix>(ssize,a, true);
-  array<shared_ptr<const Matrix>,3> out;
-
-  const static CarSphList carsphlist;
-  for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
-    if (spherical_) {
-      const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-      const int nloop = num_contracted() * asize_inc;
-      carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
-    } else {
-      assert(coeff0->size_block() == asize_inc*ssize);
-      copy(carea0, carea0+coeff0->size_block(), tmparea->data());
-    }
-    if (aux_decrement_) {
-      if (spherical_) {
-        const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-        const int nloop = num_contracted() * asize_dec;
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
-      } else {
-        assert(coeff1->size_block() == asize_dec*ssize);
-        copy(carea1, carea1+coeff1->size_block(), tmparea->data()+asize_inc*ssize);
-        }
-    }
-
-    out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
-  }
-  return out;
+  // zsmall is a transformation matrix (x,y,z components)
+  zsmall_ = moment_compute(magnetic_field);
+  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 
@@ -423,4 +351,247 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
     bzz += nxyz;
     ++range;
   }
+}
+
+
+// for each primitive basis function
+array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
+
+  const int norig = (angular_number_+1) * (angular_number_+2) / 2;
+  const int ninc = norig + angular_number_ + 2;
+  const int ndec = norig - angular_number_ - 1;
+  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
+  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
+  else assert (ndec == 0);
+
+  array<shared_ptr<Matrix>,6> mcart;
+  for (int i=0; i!=3; i++) mcart[i] = make_shared<Matrix>(ninc, norig, true);
+  if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<Matrix>(ndec, norig, true);
+  for (int i=0; i!=norig; i++) {
+    int x, y, z;
+    size_t column = 0;
+    for (int i=0; i<=angular_number_; i++) {
+      z = i;
+      for (int j=0; j<=(angular_number_-i); j++) {
+        y = j;
+        x = angular_number_ - i - j;
+
+        // three components of the angular momentum
+        array<int,3> index = {{x, y, z}};
+        array<double,3> dindex;
+        for (int k=0; k!=3; k++) dindex[k] = index[k];
+
+        assert(column == index[2]*(angular_number_+1) - index[2]*(index[2]-1)/2 + index[1]);
+        const double talph = 2.0 * exponent;
+
+        // k tells us which dimension of the momentum operator we're using
+        for (int k=0; k!=3; k++) {
+
+          // -i a_x phi^(x-1)
+          if (index[k]!=0) {
+            array<int,3> newindex = index;
+            newindex[k]--;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ - 1);
+            const size_t row = newindex[2]*(angular_number_) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[3+k]->element(row, column) = -dindex[k];
+          }
+
+          // +i 2alpha phi^(x+1)
+          {
+            array<int,3> newindex = index;
+            newindex[k]++;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ + 1);
+            const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[k]->element(row, column) = talph;
+          }
+        }
+        column++;
+      }
+    }
+  }
+
+  array<shared_ptr<const Matrix>,6> out;
+  const int nblock = aux_decrement_ ? 6 : 3;
+
+  // convert this block from cartesian to spherical
+  if (spherical_) for (int i=0; i!=nblock; i++) out[i] = make_shared<const Matrix>(*mcart[i] * *carsph_matrix(angular_number_));
+  else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
+
+  return out;
+}
+
+
+// for each primitive basis function
+array<shared_ptr<const ZMatrix>,6> Shell::mblock(const double exponent, const array<double,3> magnetic_field) const {
+
+  const int norig = (angular_number_+1) * (angular_number_+2) / 2;
+  const int ninc = norig + angular_number_ + 2;
+  const int ndec = norig - angular_number_ - 1;
+  const complex<double> imag (0.0, 1.0);
+  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
+  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
+  else assert (ndec == 0);
+
+  array<shared_ptr<ZMatrix>,6> mcart;
+  for (int i=0; i!=3; i++) mcart[i] = make_shared<ZMatrix>(ninc, norig, true);
+  if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<ZMatrix>(ndec, norig, true);
+  for (int i=0; i!=norig; i++) {
+    int x, y, z;
+    size_t column = 0;
+    for (int i=0; i<=angular_number_; i++) {
+      z = i;
+      for (int j=0; j<=(angular_number_-i); j++) {
+        y = j;
+        x = angular_number_ - i - j;
+
+        // three components of the angular momentum
+        array<int,3> index = {{x, y, z}};
+        array<double,3> dindex;
+        for (int k=0; k!=3; k++) dindex[k] = index[k];
+        const array<const int,3> fwd  = {{1, 2, 0}};
+        const array<const int,3> back = {{2, 0, 1}};
+
+        assert(column == index[2]*(angular_number_+1) - index[2]*(index[2]-1)/2 + index[1]);
+        const complex<double> tialph = imag * 2.0 * exponent;
+        const array<const complex<double>,3> halfb = {{0.5*magnetic_field[0], 0.5*magnetic_field[1], 0.5*magnetic_field[2]}};
+
+        // k tells us which dimension of the momentum operator we're using
+        for (int k=0; k!=3; k++) {
+
+          // -i a_x phi^(x-1)
+          if (index[k]!=0) {
+            array<int,3> newindex = index;
+            newindex[k]--;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ - 1);
+            const size_t row = newindex[2]*(angular_number_) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[3+k]->element(row, column) = -dindex[k]*imag;
+          }
+
+          // +i 2alpha phi^(x+1)
+          {
+            array<int,3> newindex = index;
+            newindex[k]++;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ + 1);
+            const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[k]->element(row, column) = tialph;
+          }
+
+          // + 1/2 B_y phi^(z+1)
+          {
+            array<int,3> newindex = index;
+            newindex[back[k]]++;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ + 1);
+            const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[k]->element(row, column) = halfb[fwd[k]];
+          }
+
+          // - 1/2 B_z phi^(y+1)
+          {
+            array<int,3> newindex = index;
+            newindex[fwd[k]]++;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_ + 1);
+            const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[k]->element(row, column) = -halfb[back[k]];
+          }
+        }
+        column++;
+      }
+    }
+  }
+
+  array<shared_ptr<const ZMatrix>,6> out;
+  const int nblock = aux_decrement_ ? 6 : 3;
+  for (int i=0; i!=nblock; i++) mcart[i]->scale(complex<double>(0.0, -1.0));
+
+  // convert this block from cartesian to spherical
+  if (spherical_) for (int i=0; i!=nblock; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+  else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
+
+  return out;
+}
+
+
+array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
+
+  int norig;
+  int n;
+  norig = ( (angular_number_+1) * (angular_number_+2) / 2 );
+  const int ninc = norig + (angular_number_ + 2);
+  const int ndec = norig - (angular_number_ + 1);
+  n = ninc + ndec;
+  if (spherical_ ) norig = 2*angular_number_+1;
+
+  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2 );
+  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2 );
+  else assert (ndec == 0);
+  assert(aux_increment_->num_primitive() == num_primitive());
+  if(aux_decrement_)assert(aux_decrement_->num_primitive() == num_primitive());
+
+  // build the momentum transformation matrix for primitive functions
+  // each exponent gets 2 blocks, one for L+1 & one for L-1
+  array<shared_ptr<Matrix>,3> tmp;
+  for (int i=0; i!=3; i++) tmp[i] = make_shared<Matrix>(n*num_primitive(), norig*num_primitive(), true);
+  for (int j=0; j!=num_primitive(); j++) {
+    auto thisblock = mblock(exponents_[j]);
+    for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
+    if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
+  }
+
+  // build the contraction matrix
+  auto contract = make_shared<Matrix>(norig*num_primitive(), norig*num_contracted(), true);
+  for (int j=0; j!=num_contracted(); j++) {
+    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++) {
+      for (int l=0; l!=norig; l++) {
+        contract->element(k*norig+l, j*norig+l) = (contractions_[j])[k];
+      }
+    }
+  }
+
+  // contract
+  array<shared_ptr<const Matrix>,3> out;
+  for (int i=0; i!=3; i++) out[i] = make_shared<const Matrix>(*tmp[i] * *contract);
+  return out;
+}
+
+
+array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> magnetic_field) const {
+
+  int norig;
+  int n;
+  norig = ( (angular_number_+1) * (angular_number_+2) / 2 );
+  const int ninc = norig + (angular_number_ + 2);
+  const int ndec = norig - (angular_number_ + 1);
+  if (spherical_ ) norig = 2*angular_number_+1;
+  n = ninc + ndec;
+
+  assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2 );
+  if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2 );
+  else assert (ndec == 0);
+  assert(aux_increment_->num_primitive() == num_primitive());
+  if(aux_decrement_)assert(aux_decrement_->num_primitive() == num_primitive());
+
+  // build the momentum transformation matrix for primitive functions
+  // each exponent gets 2 blocks, one for L+1 & one for L-1
+  array<shared_ptr<ZMatrix>,3> tmp;
+  for (int i=0; i!=3; i++) tmp[i] = make_shared<ZMatrix>(n*num_primitive(), norig*num_primitive(), true);
+  for (int j=0; j!=num_primitive(); j++) {
+    auto thisblock = mblock(exponents_[j], magnetic_field);
+    for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
+    if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
+  }
+
+  // build the contraction matrix
+  auto contract = make_shared<ZMatrix>(norig*num_primitive(), norig*num_contracted(), true);
+  for (int j=0; j!=num_contracted(); j++) {
+    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++) {
+      for (int l=0; l!=norig; l++) {
+        contract->element(k*norig+l, j*norig+l) = (contractions_[j])[k];
+      }
+    }
+  }
+
+  // contract
+  array<shared_ptr<const ZMatrix>,3> out;
+  for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*tmp[i] * *contract);
+  return out;
 }

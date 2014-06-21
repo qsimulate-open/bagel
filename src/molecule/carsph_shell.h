@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: carsph_matrix.cc
+// Filename: carsph_shell.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@northwestern.edu>
@@ -24,15 +24,18 @@
 //
 
 
-#include <src/integral/carsph_matrix.h>
+#ifndef __SRC_MOLECULE_CARSPH_SHELL_H
+#define __SRC_MOLECULE_CARSPH_SHELL_H
 
-using namespace std;
-using namespace bagel;
+#include <memory>
+#include <src/math/matrix.h>
 
-shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
+namespace bagel {
+
+static std::shared_ptr<Matrix> carsph_matrix (const int i) {
   const int m = (i+1)*(i+2)/2;
   const int n = 2*i+1;
-  shared_ptr<Matrix> out = make_shared<Matrix> (m, n);
+  std::shared_ptr<Matrix> out = std::make_shared<Matrix> (m, n, true);
 
   constexpr double d0 = 0.8660254037844386;
   constexpr double d1 = 1.7320508075688772;
@@ -109,23 +112,23 @@ shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
   constexpr double i28 = 0.3125;
   constexpr double i29 = 0.9375;
 
-  static constexpr array<double,1> css = { 1.0 };
-  static constexpr array<double,9> csp = { 1.0, 0.0, 0.0,
+  static constexpr std::array<double,1> css = { 1.0 };
+  static constexpr std::array<double,9> csp = { 1.0, 0.0, 0.0,
                                            0.0, 1.0, 0.0,
                                            0.0, 0.0, 1.0 };
-  static constexpr array<double,30> csd = {  d0, 0.0, -d0, 0.0, 0.0, 0.0,
+  static constexpr std::array<double,30> csd = {  d0, 0.0, -d0, 0.0, 0.0, 0.0,
                                             0.0,  d1, 0.0, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0,  d1, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0,  d1, 0.0,
                                             -d2, 0.0, -d2, 0.0, 0.0, 1.0 };
-  static constexpr array<double,170> csf = { f0, 0.0, -f1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  static constexpr std::array<double,170> csf = { f0, 0.0, -f1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                             0.0,  f1, 0.0, -f0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0,  f2, 0.0, -f2, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0, 0.0,  f3, 0.0, 0.0, 0.0, 0.0,
                                             -f5, 0.0, -f5, 0.0, 0.0, 0.0, 0.0,  f4, 0.0, 0.0,
                                             0.0, -f5, 0.0, -f5, 0.0, 0.0, 0.0, 0.0,  f4, 0.0,
                                             0.0, 0.0, 0.0, 0.0, -f6, 0.0, -f6, 0.0, 0.0, 1.0 };
-  static constexpr array<double,135> csg = {  g0, 0.0, -g1, 0.0,  g0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  static constexpr std::array<double,135> csg = {  g0, 0.0, -g1, 0.0,  g0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0,  g2, 0.0, -g2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0,  g3, 0.0, -g4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  g4, 0.0, -g3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -134,7 +137,7 @@ shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
                                              0.0, 0.0, 0.0, 0.0, 0.0, -g10, 0.0, -g10, 0.0, 0.0, 0.0, 0.0,  g9, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -g10, 0.0, -g10, 0.0, 0.0, 0.0, 0.0,  g9, 0.0,
                                              g12, 0.0, g13, 0.0, g12, 0.0, 0.0, 0.0, 0.0, -g11, 0.0, -g11, 0.0, 0.0, 1.0 };
-  static constexpr array<double,231> csh = {  h0, 0.0, -h1, 0.0,  h2, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,
+  static constexpr std::array<double,231> csh = {  h0, 0.0, -h1, 0.0,  h2, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0,  h2, 0.0, -h1, 0.0,  h0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,   h3, 0.0, -h4, 0.0,  h3,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0,  h5, 0.0, -h5, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,
@@ -145,7 +148,7 @@ shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
                                              h15, 0.0, h16, 0.0, h15, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  -h14, 0.0, -h14, 0.0, 0.0,  0.0, 0.0, h13, 0.0, 0.0,
                                              0.0, h15, 0.0, h16, 0.0, h15,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, -h14, 0.0, -h14, 0.0,  0.0, 0.0, 0.0, h13, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  h18, 0.0, h19, 0.0, h18,  0.0, 0.0, 0.0, 0.0, -h17,  0.0, -h17, 0.0, 0.0, 1.0 };
-  static constexpr array<double,364> csi = {  i0, 0.0, -i1, 0.0,  i1, 0.0,  -i0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  static constexpr std::array<double,364> csi = {  i0, 0.0, -i1, 0.0,  i1, 0.0,  -i0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0,  i2, 0.0, -i3, 0.0,  i2,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0,  i4, 0.0, -i5, 0.0,   i6, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0,  i6, 0.0, -i5,  0.0,  i4, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -187,13 +190,16 @@ shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
       assert( m*n == 364);
       // Current integral codes cannot handle j-type integrals.  If this is ever fixed, please verify csi carefully.
       // One strategy is to ensure 0.5*Small1e<OverlapBatch> can reproduce the results of KineticBatch
-      throw runtime_error("Relativistic calculations cannot use i-type primary basis functions (because j-type would be needed for the small component");
+      throw std::runtime_error("Relativistic calculations cannot use i-type primary basis functions (because j-type would be needed for the small component");
       out->copy_block(0, 0, m, n, csi.data());
       break;
     default :
-      throw runtime_error("Angular momentum index not recognized");
+      throw std::runtime_error("Angular momentum index not recognized");
   }
 
   return out;
 }
 
+}
+
+#endif
