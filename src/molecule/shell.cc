@@ -42,16 +42,6 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
  : Shell_base(sph, _position, _ang),
    exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), vector_potential_(_vector_potential) {
 
-#if 0
-  vector_potential_ = {{ 0.0, 0.0, 0.0 }};
-  cout << "Caution:  Using Gaussian orbitals with common gauge origin." << endl;
-#endif
-#if 0
-  vector_potential_ = {{ 0.072, -0.05, 0.18 }};
-  cout << "Caution:  Using a constant phase factor in Shell - for debugging only." << endl;
-  // Remember to also turn on the version for the dummy atoms.
-#endif
-
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
   for (auto piter = _range.begin(); piter != _range.end(); ++piter) {
@@ -69,10 +59,6 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
                                contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
-#if 0
-  vector_potential_ = {{ 0.072, -0.05, 0.18 }};
-  cout << "Caution:  Using a constant phase factor in Shell - for debugging only." << endl;
-#endif
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -196,25 +182,7 @@ void Shell::init_relativistic() {
   aux_increment_ = kinetic_balance_uncont<1>();
 
   // small is a transformation matrix (x,y,z components)
-#if 0
-  // overlap = S^-1 between auxiliary functions
-  shared_ptr<const Matrix> overlap = overlap_compute_();
-  small_ = moment_compute(overlap);
-  //array<shared_ptr<const Matrix>,3> comparison = new_moment_compute();
-#else
-  small_ = new_moment_compute();
-  //array<shared_ptr<const Matrix>,3> comparison = moment_compute(overlap);
-#endif
-
-  /*
-  array<shared_ptr<const Matrix>,3> difference;
-  for (int i=0; i!=3; i++) difference[i] = make_shared<Matrix>( *(comparison[i]) - *(small_[i]) );
-
-  cout << scientific << "angular_number = " << angular_number_ << ", nprim = " << num_primitive() << ", ncont = " << num_contracted() << endl;
-  cout << "x error = " << difference[0]->rms() << ", relative error = " << (difference[0]->rms()/small_[0]->rms()) << endl;
-  cout << "y error = " << difference[1]->rms() << ", relative error = " << (difference[1]->rms()/small_[1]->rms()) << endl;
-  cout << "z error = " << difference[2]->rms() << ", relative error = " << (difference[2]->rms()/small_[2]->rms()) << endl;
-  */
+  small_ = moment_compute();
 }
 
 
@@ -224,178 +192,9 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
 
-  // small is a transformation matrix (x,y,z components)
-#if 0
-  // overlap = S^-1 between auxiliary functions
-  shared_ptr<const ZMatrix> overlap = make_shared<const ZMatrix>(*overlap_compute_(), 1.0);
-  zsmall_ = moment_compute(overlap, magnetic_field);
+  // zsmall is a transformation matrix (x,y,z components)
+  zsmall_ = moment_compute(magnetic_field);
   for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
-  //array<shared_ptr<const ZMatrix>,3> comparison = new_moment_compute(magnetic_field);
-#else
-  zsmall_ = new_moment_compute(magnetic_field);
-  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
-  //array<shared_ptr<const ZMatrix>,3> comparison = moment_compute(overlap, magnetic_field);
-#endif
-
-  /*
-  array<shared_ptr<const ZMatrix>,3> difference;
-  for (int i=0; i!=3; i++) difference[i] = make_shared<ZMatrix>( *(comparison[i]) - *(zsmall_[i]) );
-
-  cout << scientific << "angular_number = " << angular_number_ << ", nprim = " << num_primitive() << ", ncont = " << num_contracted() << endl;
-  cout << "x error = " << difference[0]->rms() << ", relative error = " << (difference[0]->rms()/zsmall_[0]->rms()) << endl;
-  cout << "y error = " << difference[1]->rms() << ", relative error = " << (difference[1]->rms()/zsmall_[1]->rms()) << endl;
-  cout << "z error = " << difference[2]->rms() << ", relative error = " << (difference[2]->rms()/zsmall_[2]->rms()) << endl;
-  */
-
-  // to turn off magnetic balance
-  //array<shared_ptr<const Matrix>,3> moment = moment_compute(overlap_compute_());
-  //for (int i=0; i!=3; i++) { zsmall_[i] = make_shared<ZMatrix>(*moment[i], 1.0); }
-  //for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
-
-}
-
-
-shared_ptr<const Matrix> Shell::overlap_compute_() const {
-
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto overlap = make_shared<Matrix>(a,a, true);
-
-  {
-    OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_increment_}});
-    ovl.compute();
-    for (int i = 0; i != aux_increment_->nbasis(); ++i)
-      copy_n(ovl.data() + i*asize_inc, asize_inc, overlap->element_ptr(0,i));
-  }
-  if (aux_decrement_) {
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_decrement_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        copy_n(ovl.data() + i*asize_dec, asize_dec, overlap->element_ptr(asize_inc, i+asize_inc));
-    }
-    {
-      OverlapBatch ovl(array<shared_ptr<const Shell>,2>{{aux_increment_, aux_decrement_}});
-      ovl.compute();
-      for (int i = 0; i != asize_dec; ++i)
-        for (int j = 0; j != asize_inc; ++j)
-          overlap->element(j,i+asize_inc) = overlap->element(i+asize_inc,j) = *(ovl.data()+j+asize_inc*i);
-    }
-  }
-
-  return overlap;
-}
-
-
-array<shared_ptr<const Matrix>,3> Shell::moment_compute(const shared_ptr<const Matrix> overlap) const {
-  const int ssize = nbasis();
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto coeff0 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_increment_}});
-  coeff0->compute();
-
-  shared_ptr<MomentumBatch> coeff1;
-  if (aux_decrement_) {
-    coeff1 = make_shared<MomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_decrement_}});
-    coeff1->compute();
-  } else {
-    // just to run. coeff1 is not referenced in the code
-    coeff1 = coeff0;
-  }
-
-  const double* carea0 = coeff0->data();
-  const double* carea1 = coeff1->data();
-
-  auto tmparea = make_shared<Matrix>(ssize,a, true);
-  array<shared_ptr<const Matrix>,3> out;
-
-  const static CarSphList carsphlist;
-  for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
-    if (spherical_) {
-      const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-      const int nloop = num_contracted() * asize_inc;
-      carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
-    } else {
-      const size_t size = coeff0->asize_final()*num_contracted()*num_primitive();
-      assert(size == asize_inc*ssize);
-      copy(carea0, carea0+size, tmparea->data());
-    }
-    if (aux_decrement_) {
-      if (spherical_) {
-        const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-        const int nloop = num_contracted() * asize_dec;
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
-      } else {
-        const size_t size = coeff1->asize_final()*num_contracted()*num_primitive();
-        assert(size == asize_dec*ssize);
-        copy(carea1, carea1+size, tmparea->data()+asize_inc*ssize);
-        }
-    }
-
-    out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
-  }
-  return out;
-}
-
-
-array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const shared_ptr<const ZMatrix> overlap, const array<double, 3> magnetic_field) const {
-  const int ssize = nbasis();
-  const int asize_inc = aux_increment_->nbasis();
-  const int asize_dec = aux_decrement_ ? aux_decrement_->nbasis() : 0;
-  const int a = asize_inc + asize_dec;
-
-  auto coeff0 = make_shared<ComplexMomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_increment_}}, magnetic_field);
-  coeff0->compute();
-
-  shared_ptr<ComplexMomentumBatch> coeff1;
-  if (aux_decrement_) {
-    coeff1 = make_shared<ComplexMomentumBatch>(array<shared_ptr<const Shell>,2>{{cartesian_shell(), aux_decrement_}}, magnetic_field);
-    coeff1->compute();
-  } else {
-    // just to run. coeff1 is not referenced in the code
-    coeff1 = coeff0;
-  }
-
-  const complex<double>* carea0 = coeff0->data();
-  const complex<double>* carea1 = coeff1->data();
-
-  auto tmparea = make_shared<ZMatrix>(ssize,a, true);
-  array<shared_ptr<const ZMatrix>,3> out;
-
-  const static CCarSphList carsphlist;
-  for (int i = 0; i != 3; ++i, carea0 += coeff0->size_block(), carea1 += coeff1->size_block()) {
-    if (spherical_) {
-      const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-      const int nloop = num_contracted() * asize_inc;
-      carsphlist.carsphfunc_call(carsphindex, nloop, carea0, tmparea->data());
-    } else {
-      const size_t size = coeff0->asize_final()*num_contracted()*num_primitive();
-      assert(size == asize_inc*ssize);
-      copy(carea0, carea0+size, tmparea->data());
-    }
-    if (aux_decrement_) {
-      if (spherical_) {
-        const int carsphindex = angular_number_ * ANG_HRR_END + 0; // only transform shell
-        const int nloop = num_contracted() * asize_dec;
-        carsphlist.carsphfunc_call(carsphindex, nloop, carea1, tmparea->data()+asize_inc*ssize);
-      } else {
-        const size_t size = coeff1->asize_final()*num_contracted()*num_primitive();
-        assert(size == asize_dec*ssize);
-        copy(carea1, carea1+size, tmparea->data()+asize_inc*ssize);
-        }
-    }
-
-    const complex<double> ii (0.0, 1.0);
-    tmparea->scale(ii);
-
-    out[i] = tmparea->transpose_conjg()->solve(overlap, overlap->ndim());
-
-  }
-  return out;
 }
 
 
@@ -712,7 +511,7 @@ array<shared_ptr<const ZMatrix>,6> Shell::mblock(const double exponent, const ar
 }
 
 
-array<shared_ptr<const Matrix>,3> Shell::new_moment_compute() const {
+array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
 
   int norig;
   int n;
@@ -755,7 +554,7 @@ array<shared_ptr<const Matrix>,3> Shell::new_moment_compute() const {
 }
 
 
-array<shared_ptr<const ZMatrix>,3> Shell::new_moment_compute(const array<double,3> magnetic_field) const {
+array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> magnetic_field) const {
 
   int norig;
   int n;
