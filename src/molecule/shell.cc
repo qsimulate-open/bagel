@@ -175,6 +175,7 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 }
 
 void Shell::init_relativistic() {
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
@@ -188,6 +189,7 @@ void Shell::init_relativistic() {
 
 
 void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
+  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
