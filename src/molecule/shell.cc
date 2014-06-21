@@ -25,7 +25,7 @@
 
 
 #include <src/molecule/shell.h>
-#include <src/integral/carsph_matrix.h>
+#include <src/molecule/carsph_shell.h>
 #include <src/integral/carsphlist.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/integral/os/momentumbatch.h>
