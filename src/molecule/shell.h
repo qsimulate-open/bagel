@@ -52,8 +52,8 @@ class Shell : public Shell_base {
     std::array<std::shared_ptr<const Matrix>,3> small_;
     std::shared_ptr<const Shell> aux_increment_;
     std::shared_ptr<const Shell> aux_decrement_;
-    std::shared_ptr<const Matrix> overlap_compute_() const;
-    std::array<std::shared_ptr<const Matrix>,3> moment_compute_(const std::shared_ptr<const Matrix> overlap) const;
+    std::array<std::shared_ptr<const Matrix>,3> moment_compute() const;
+    std::array<std::shared_ptr<const Matrix>,6> mblock(const double exponent) const;
 
     // magnetism
     std::array<double,3> vector_potential_;
