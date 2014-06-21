@@ -32,7 +32,7 @@ using namespace bagel;
 shared_ptr<Matrix> bagel::carsph_matrix (const int i) {
   const int m = (i+1)*(i+2)/2;
   const int n = 2*i+1;
-  shared_ptr<Matrix> out = make_shared<Matrix> (m, n);
+  shared_ptr<Matrix> out = make_shared<Matrix> (m, n, true);
 
   constexpr double d0 = 0.8660254037844386;
   constexpr double d1 = 1.7320508075688772;
