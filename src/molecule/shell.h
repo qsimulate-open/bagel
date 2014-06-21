@@ -56,11 +56,15 @@ class Shell : public Shell_base {
     std::shared_ptr<const Shell> aux_decrement_;
     std::shared_ptr<const Matrix> overlap_compute_() const;
     std::array<std::shared_ptr<const Matrix>,3> moment_compute(const std::shared_ptr<const Matrix> overlap) const;
+    std::array<std::shared_ptr<const Matrix>,3> new_moment_compute() const;
+    std::array<std::shared_ptr<const Matrix>,6> mblock(const double exponent) const;
 
     // TODO Refactor - These next few are essentially the same as above, but for London integrals only
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
     std::array<std::shared_ptr<const ZMatrix>,3> moment_compute(const std::shared_ptr<const ZMatrix> zoverlap, const std::array<double,3> magnetic_field) const;
+    std::array<std::shared_ptr<const ZMatrix>,3> new_moment_compute(const std::array<double,3> magnetic_field) const;
+    std::array<std::shared_ptr<const ZMatrix>,6> mblock(const double exponent, const std::array<double,3> magnetic_field) const;
 
     // magnetism
     std::array<double,3> vector_potential_;
