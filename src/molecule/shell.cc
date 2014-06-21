@@ -196,8 +196,8 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
   shared_ptr<const ZMatrix> overlap = make_shared<const ZMatrix>(*overlap_compute_(), 1.0);
 
   // small is a transformation matrix (x,y,z components)
-  zsmallc_ = moment_compute_(overlap, magnetic_field);
-  for (int i=0; i!=3; i++) zsmall_[i] = zsmallc_[i]->get_conjg();
+  zsmall_ = moment_compute(overlap, magnetic_field);
+  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 
@@ -337,10 +337,11 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const shared_ptr<const 
 
     //out[i] = tmparea->transpose()->solve(overlap, overlap->ndim());
 
-    /*** TODO Multiplying by sqrt(-1) here - not sure it's quite right, but allows us to reproduce the correct zero-field behavior ***/
-    shared_ptr<const ZMatrix> moment = tmparea->transpose()->solve(overlap, overlap->ndim());
     const complex<double> ii (0.0, 1.0);
-    out[i] = make_shared<const ZMatrix>(*moment * ii);
+    tmparea->scale(ii);
+
+    shared_ptr<const ZMatrix> moment = tmparea->transpose_conjg()->solve(overlap, overlap->ndim());
+    out[i] = make_shared<const ZMatrix>(*moment);
 
   }
   return out;
