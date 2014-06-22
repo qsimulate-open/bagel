@@ -294,6 +294,23 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
     const int nneg2 = ctmp->mdim()/4;
     move_one(           0, nneg2, nocc+nvnr);
     move_one(nocc + nvirt, nneg2, nocc+nvnr);
+    { // DEBUG : TR Symmetric coeff ? 
+      shared_ptr<ZMatrix> ctmp2 = ctmp->copy();
+      { // rows: {L+, L-, S+, S-} -> {L+, S+, L-, S-}
+        assert(ctmp2->ndim() % 4 == 0);
+        const int n = ctmp2->ndim()/4;
+        const int m = ctmp2->mdim();
+        shared_ptr<ZMatrix> scratch = ctmp2->get_submatrix(n, 0, n*2, m);
+        ctmp2->copy_block(n,   0, n, m, scratch->get_submatrix(n, 0, n, m));
+        ctmp2->copy_block(n*2, 0, n, m, scratch->get_submatrix(0, 0, n, m));
+        cout << setprecision(8) << scientific << " coeff diag tr symm rms = " <<
+          (*ctmp2->get_submatrix(0,0,n*2,m/2) - *ctmp2->get_submatrix(n*2, ctmp2->mdim()/2, n*2, m/2)->get_conjg()).rms() << endl;
+        cout << setprecision(8) << scientific << " coeff off-diag tr symm rms = " <<
+          (*ctmp2->get_submatrix(n*2,0,n*2,m/2) + *ctmp2->get_submatrix(0, ctmp2->mdim()/2, n*2, m/2)->get_conjg()).rms() << endl;
+      }
+    }
+    coeff_ = make_shared<const ZMatrix>(*ctmp);
+
     auto tmp = coeff->clone();
     tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
     tmp->copy_block(0, coeff->mdim()/2, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(ctmp->mdim()/2 + nstart/2, ctmp->mdim()/2 + nstart/2+coeff->mdim()/2));
