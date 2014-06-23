@@ -142,8 +142,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
         std::shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
 
-        hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
-        hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+        if (block) {
+          hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
+          hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+        }
       }
     }
     std::cout << "  o Computing off-diagonal blocks - time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;

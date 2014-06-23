@@ -96,9 +96,10 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
 
   switch(term_type) {
     case Coupling::none :
-      out = std::make_shared<Matrix>(space1->dimerstates(), space2->dimerstates()); break;
+      out = std::shared_ptr<Matrix>(); break;
     case Coupling::diagonal :
-      out = compute_inter_2e(*space1, *space2); break;
+      out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+      compute_inter_2e(*out, *space1, *space2); break;
     case Coupling::aET :
       out = compute_aET(*space1, *space2); break;
     case Coupling::bET :

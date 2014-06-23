@@ -64,12 +64,9 @@ void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::sh
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
+void MultiExcitonHamiltonian<VecType>::compute_intra(Matrix& block, const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
   const int nstatesA = AB.template nstates<0>();
   const int nstatesB = AB.template nstates<1>();
-  const int dimerstates = AB.dimerstates();
-
-  auto out = std::make_shared<Matrix>(dimerstates, dimerstates);
 
   // first H^{AA}_{AA}
   for(int stateA = 0; stateA < nstatesA; ++stateA) {
@@ -78,14 +75,14 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DS
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
         const int stateAB = AB.dimerindex(stateA, stateB);
-        out->element(stateAB, stateApB) += value;
-        out->element(stateApB, stateAB) += value;
+        block(stateAB, stateApB) += value;
+        block(stateApB, stateAB) += value;
       }
     }
     const double value = AB.template sigma<0>()->element(stateA, stateA);
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      out->element(stateAB,stateAB) += value;
+      block(stateAB,stateAB) += value;
     }
   }
 
@@ -96,20 +93,18 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DS
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
         const int stateABp = AB.dimerindex(stateA, stateBp);
-        out->element(stateAB, stateABp) += value;
-        out->element(stateABp, stateAB) += value;
+        block(stateAB, stateABp) += value;
+        block(stateABp, stateAB) += value;
       }
     }
     const double value = AB.template sigma<1>()->element(stateB, stateB);
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      out->element(stateAB,stateAB) += value;
+      block(stateAB,stateAB) += value;
     }
   }
 
-  out->add_diag(diag);
-
-  return out;
+  block.add_diag(diag);
 }
 
 template <class VecType>
@@ -175,16 +170,17 @@ template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block(DSubSpace& subspace) {
   const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
-  // Would be better to allocate here and then send to subprocesses
-  std::shared_ptr<Matrix> out = compute_intra(subspace, jop_, core);
-  *out += *compute_inter_2e(subspace, subspace);
+  auto out = std::make_shared<Matrix>(subspace.dimerstates(), subspace.dimerstates());
+
+  compute_intra(*out, subspace, jop_, core);
+  compute_inter_2e(*out, subspace, subspace);
 
   return out;
 }
 
 // This term will couple off-diagonal blocks since it has no delta functions involved
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) {
+void MultiExcitonHamiltonian<VecType>::compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) {
   // alpha-alpha
   Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
   Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
@@ -202,12 +198,8 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubS
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  // sort: (A',A,B',B) --> (A,B,A',B')
-  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
-
-  return out;
+  // sort: (A',A,B',B) --> (A,B,A',B') + block(A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,1,1,1,1>(tmp.data(), block.data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 }
 
 #endif

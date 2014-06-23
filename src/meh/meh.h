@@ -126,7 +126,7 @@ class MultiExcitonHamiltonian : public MEH_base {
       // Diagonal block stuff
       void compute_pure_terms(DSubSpace& subspace, std::shared_ptr<const DimerJop> jop);
       std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
-      std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
+      void compute_intra(Matrix& block, const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
       virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
       virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
@@ -139,7 +139,7 @@ class MultiExcitonHamiltonian : public MEH_base {
       // Off-diagonal stuff
       std::shared_ptr<Matrix> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
-      std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp);
+      void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp);
