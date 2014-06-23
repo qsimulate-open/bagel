@@ -49,8 +49,10 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
       else {
         std::shared_ptr<const Matrix> block = couple_blocks(*iAB, *jAB);
 
-        dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
-        dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+        if (block) {
+          dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
+          dgemm_("T", "N", block->mdim(), nstates, block->ndim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(joff, 0), o.ndim());
+        }
       }
     }
 
