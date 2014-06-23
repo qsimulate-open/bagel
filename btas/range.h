@@ -137,7 +137,7 @@ namespace btas {
 
         /// \return The rank (number of dimensions) of this range
         /// \throw nothing
-        size_t rank() const {
+        constexpr size_t rank() const {
           return 1ul;
         }
 
@@ -382,7 +382,7 @@ namespace btas {
 
 
       /// Destructor
-      ~BaseRangeNd() { }
+      ~BaseRangeNd() = default;
 
       /// Copy assignment operator
 
@@ -422,15 +422,6 @@ namespace btas {
         return Range1d<typename index_type::value_type>(*(std::begin(lobound_)+d), *(std::begin(upbound_)+d));
       }
 
-      /// Rank accessor
-
-      /// \return The rank (number of dimensions) of this range
-      /// \throw nothing
-      size_t rank() const {
-        using btas::rank;
-        return rank(lobound_);
-      }
-
       /// Range lobound coordinate accessor
 
       /// \return A \c size_array that contains the lower bound of this range
@@ -449,6 +440,16 @@ namespace btas {
       /// \throw nothing
       const_reference_type upbound() const {
         return upbound_;
+      }
+
+      /// Rank accessor
+
+      /// \return The rank (number of dimensions) of this range
+      /// \throw nothing
+      //constexpr auto rank() const -> decltype(btas::rank(this->lobound())) {
+      constexpr size_t rank() const {
+        using btas::rank;
+        return rank(lobound_);
       }
 
       /// Range size accessor

@@ -10,6 +10,6 @@
 #include <btas/generic/gemv_impl.h>
 #include <btas/generic/gemm_impl.h>
 
-#include <btas/generic/contract.h>
+#include <btas/optimize/contract.h>
 
 #endif // __BTAS_BTAS_H

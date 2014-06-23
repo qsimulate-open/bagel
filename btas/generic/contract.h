@@ -2,7 +2,6 @@
 #define __BTAS_CONTRACT_H
 
 #include <algorithm>
-#include <memory>
 
 #include <btas/types.h>
 #include <btas/tensor_traits.h>
@@ -14,6 +13,7 @@
 #include <btas/generic/ger_impl.h>
 #include <btas/generic/gemm_impl.h>
 #include <btas/generic/permute.h>
+#include <btas/util/optional_ptr.h>
 
 namespace btas {
 
@@ -121,28 +121,22 @@ void contract(
    std::sort(std::begin(__sort_permute_indexC), std::end(__sort_permute_indexC));
    assert(std::equal(std::begin(__sort_permute_indexC), std::end(__sort_permute_indexC), std::begin(__sort_indexC)));
 
-   // permute A
-   std::shared_ptr<const _TensorA> __refA;
+   optional_ptr<const _TensorA> __refA;
+   __refA.set_external(&A);
+   // permute A if necessary
    if(!std::equal(std::begin(aA), std::end(aA), std::begin(__permute_indexA)))
    {
-      __refA = std::make_shared<const _TensorA>();
+      __refA.set_managed(new _TensorA());
       permute(A, aA, const_cast<_TensorA&>(*__refA), __permute_indexA);
    }
-   else
-   {
-      __refA.reset(&A, btas::nulldeleter());
-   }
 
-   // permute B
-   std::shared_ptr<const _TensorB> __refB;
+   optional_ptr<const _TensorB> __refB;
+   __refB.set_external(&B);
+   // permute B if necessary
    if(!std::equal(std::begin(aB), std::end(aB), std::begin(__permute_indexB)))
    {
-      __refB = std::make_shared<const _TensorB>();
+      __refB.set_managed(new _TensorB());
       permute(B, aB, const_cast<_TensorB&>(*__refB), __permute_indexB);
-   }
-   else
-   {
-      __refB.reset(&B, btas::nulldeleter());
    }
 
    bool __C_to_permute = false;
@@ -156,21 +150,18 @@ void contract(
       C.resize(__zero_shape);
    }
 
-   // permute C
-   std::shared_ptr<_TensorC> __refC;
+   optional_ptr<_TensorC> __refC;
+   __refC.set_external(&C);
+   // permute C if necessary
    if(!std::equal(std::begin(aC), std::end(aC), std::begin(__permute_indexC)))
    {
-      __refC = std::make_shared<_TensorC>();
+      __refC.set_managed(new _TensorC());
       permute(C, aC, *__refC, __permute_indexC);
       __C_to_permute = true;
    }
-   else
-   {
-      __refC.reset(&C, btas::nulldeleter());
-   }
 
    // call BLAS functions
-   if     (rank(A) == k && rank(B) == k)
+   if(rank(A) == k && rank(B) == k)
    {
       assert(false); // dot should be called instead
    }

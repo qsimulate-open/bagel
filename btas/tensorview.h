@@ -74,7 +74,6 @@ namespace btas {
       {
       }
 
-      // TODO replace once there is a solution
       /// construct from \c range and \c storage
       template <typename S = _Storage>
       explicit

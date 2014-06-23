@@ -51,7 +51,7 @@ namespace btas {
   };
 
   template <typename T, size_t N>
-  std::size_t rank(const std::array<T, N>& x) {
+  constexpr std::size_t rank(const std::array<T, N>& x) noexcept {
     return N;
   }
 
@@ -73,7 +73,7 @@ namespace btas {
   };
 
   template <typename T, size_t N>
-  std::size_t rank(const T (&x)[N]) {
+  constexpr std::size_t rank(const T (&x)[N]) noexcept {
     return N;
   }
 

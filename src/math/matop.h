@@ -79,16 +79,16 @@ namespace impl {
           >
   Matrix multNN(const A& a, const B& b) {
     const int l = a.ndim();
-    const int m = a.mdim();
     assert(a.mdim() == b.ndim());
     const int n = b.mdim();
     Matrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.mdim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      dgemm_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
+      btas::contract(1.0, a, {0,2}, b, {2,1}, 0.0, out, {0,1});
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<double[]> locala = a.getlocal();
@@ -107,16 +107,16 @@ namespace impl {
           >
   Matrix multTN(const A& a, const B& b) {
     const int l = a.mdim();
-    const int m = a.ndim();
     assert(a.ndim() == b.ndim());
     const int n = b.mdim();
     Matrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.ndim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      dgemm_("T", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
+      btas::contract(1.0, a, {2,0}, b, {2,1}, 0.0, out, {0,1});
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<double[]> locala = a.getlocal();
@@ -137,17 +137,17 @@ namespace impl {
           >
   Matrix multNT(const A& a, const B& b) {
     const int l = a.ndim();
-    const int m = a.mdim();
     assert(a.mdim() == b.mdim());
     const int n = b.ndim();
 
     Matrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.mdim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      dgemm_("N", "T", l, n, m, 1.0, a.data(), l, b.data(), n, 0.0, out.data(), l);
+      btas::contract(1.0, a, {0,2}, b, {1,2}, 0.0, out, {0,1});
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<double[]> locala = a.getlocal();
