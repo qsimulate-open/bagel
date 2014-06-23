@@ -252,9 +252,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abET(DSubSpace
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -1.0;
 
-  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }
