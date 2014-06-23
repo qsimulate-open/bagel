@@ -265,12 +265,11 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 
   if (b1size() == o->b1size()) {
     target = make_shared<Matrix>(b2size(),o->b2size());
-    dgemm_("T", "N", b2size(), o->b2size(), asize()*b1size(), a, data(), asize()*b1size(), o->data(), asize()*b1size(), 0.0, target->data(), b2size());
+    btas::contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1});
   } else {
     assert(b2size() == o->b2size());
     target = make_shared<Matrix>(b1size(),o->b1size());
-    for (int i = 0; i != b2size(); ++i)
-      dgemm_("T", "N", b1size(), o->b1size(), asize(), a, data()+i*asize()*b1size(), asize(), o->data()+i*asize()*o->b1size(), asize(), 1.0, target->data(), b1size());
+    btas::contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1});
   }
 
   return target;
@@ -297,7 +296,7 @@ shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::form_aux_2index");
   auto target = make_shared<Matrix>(asize(), o->asize());
-  dgemm_("N", "T", asize(), o->asize(), b1size()*b2size(), a, data(), asize(), o->data(), o->asize(), 0.0, target->data(), asize());
+  btas::contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1});
   return target;
 }
 
