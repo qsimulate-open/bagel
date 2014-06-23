@@ -309,7 +309,6 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
           (*ctmp2->get_submatrix(n*2,0,n*2,m/2) + *ctmp2->get_submatrix(0, ctmp2->mdim()/2, n*2, m/2)->get_conjg()).rms() << endl;
       }
     }
-    coeff_ = make_shared<const ZMatrix>(*ctmp);
 
     auto tmp = coeff->clone();
     tmp->copy_block(0, 0, ctmp->ndim(), coeff->mdim()/2, ctmp->slice(nstart/2, nstart/2+coeff->mdim()/2));
