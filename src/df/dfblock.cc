@@ -38,12 +38,11 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cma
   const int nocc = trans ? cmat->ndim() : cmat->mdim();
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
-  for (size_t i = 0; i != b2size(); ++i) {
-    if (!trans)
-      dgemm_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), b1size(), 0.0, out->data()+i*asize()*nocc, asize());
-    else
-      dgemm_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), nocc, 0.0, out->data()+i*asize()*nocc, asize());
-  }
+  if (!trans)
+    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+  else
+    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+
   return out;
 }
 
@@ -58,9 +57,9 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const MatView> cmat
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), b2size(), 0.0, out->data(), asize()*b1size());
+    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), nocc, 0.0, out->data(), asize()*b1size());
+    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -75,12 +74,11 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
   const int nocc = trans ? cmat->ndim() : cmat->mdim();
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
-  for (size_t i = 0; i != b2size(); ++i) {
-    if (!trans)
-      dgemm_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), b1size(), 0.0, out->data()+i*asize()*nocc, asize());
-    else
-      dgemm_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), cmat->data(), nocc, 0.0, out->data()+i*asize()*nocc, asize());
-  }
+  if (!trans)
+    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+  else
+    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+
   return out;
 }
 
@@ -95,9 +93,9 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    dgemm_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), b2size(), 0.0, out->data(), asize()*b1size());
+    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    dgemm_("N", "T", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), cmat->data(), nocc, 0.0, out->data(), asize()*b1size());
+    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -321,8 +319,8 @@ shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
 
 void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::contrib_apply_J");
-  dgemm_("N", "N", asize(), b1size()*b2size(), o->asize(), 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data(), o->asize(),
-                                                       1.0, data(), asize());
+  assert(astart_ == 0 && o->astart_ == 0);
+  btas::contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
 }
 
 

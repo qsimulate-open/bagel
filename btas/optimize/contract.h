@@ -13,7 +13,6 @@ template<typename _T, class _TensorA, class _TensorB, class _TensorC,
         >
 void contract_222(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& aA, const _TensorB& B, const btas::varray<_UB>& aB,
                   const _T& beta, _TensorC& C, const btas::varray<_UC>& aC) {
-  // first compute "N" and "T" things
   // TODO we do not consider complex matrixces yet.
   assert(aA.size() == 2 && aB.size() == 2 && aC.size() == 2);
   assert(A.range().ordinal().contiguous() && B.range().ordinal().contiguous() && C.range().ordinal().contiguous());
@@ -32,6 +31,63 @@ void contract_222(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     contract_222(alpha, B, aB, A, aA, beta, C, aC);
   }
 }
+
+
+template<typename _T, class _TensorA, class _TensorB, class _TensorC,
+         typename _UA, typename _UB, typename _UC
+        >
+void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& aA, const _TensorB& B, const btas::varray<_UB>& aB,
+                  const _T& beta, _TensorC& C, const btas::varray<_UC>& aC) {
+  assert(aA.size() == 3 && aB.size() == 2 && aC.size() == 3);
+  assert(A.range().ordinal().contiguous() && B.range().ordinal().contiguous() && C.range().ordinal().contiguous());
+
+  // TODO this function is limited to special cases where one of three indices of A will be replaced in C. Permuation is not considered so far.
+  // first idenfity which indices to be rotated
+  int irot = -1;
+  for (int i = 0; i != 3; ++i)
+    if (aA[i] != aC[i]) {
+      assert(irot < 0);
+      irot = i;
+    } else
+      assert(A.range(i).size() == C.range(i).size());
+
+  if (irot == 0) {
+    // in this case multiply from front
+    const bool notrans = aB.back() == aA.front();
+    assert(notrans || aB.front() == aA.front());
+    const auto cA = CblasNoTrans;
+    const auto cB = notrans ? CblasNoTrans : CblasTrans;
+    assert(notrans ? B.range(1).size() : B.range(0).size() == A.range(0).size());
+
+    gemm_impl<true>::call(CblasColMajor, cB, cA, C.range(0).size(), C.range(1).size()*C.range(2).size(), A.range(0).size(),
+                          alpha, B.data(), B.range(0).size(), A.data(), A.range(0).size(), beta, C.data(), C.range(0).size());
+  } else if (irot == 1) {
+    // in this case we loop over the last index of A
+    const bool notrans = aB.front() == aA[1];
+    assert(notrans || aB.back() == aA[1]);
+    const auto cA = CblasNoTrans;
+    const auto cB = notrans ? CblasNoTrans : CblasTrans;
+    assert(notrans ? B.range(0).size() : B.range(1).size() == A.range(1).size());
+    const size_t ablock = A.range(0).size()*A.range(1).size();
+    const size_t cblock = C.range(0).size()*C.range(1).size();
+
+    for (int i = 0; i != A.range(2).size(); ++i)
+      gemm_impl<true>::call(CblasColMajor, cA, cB, C.range(0).size(), C.range(1).size(), A.range(1).size(),
+                            alpha, A.data()+i*ablock, A.range(0).size(), B.data(), B.range(0).size(), beta, C.data()+i*cblock, C.range(0).size());
+  } else if (irot == 2) {
+    // in this case multiply from back
+    const bool notrans = aB.front() == aA[2];
+    assert(notrans || aB.back() == aA[2]);
+    const auto cA = CblasNoTrans;
+    const auto cB = notrans ? CblasNoTrans : CblasTrans;
+    assert(notrans ? B.range(0).size() : B.range(1).size() == A.range(2).size());
+    gemm_impl<true>::call(CblasColMajor, cA, cB, C.range(0).size()*C.range(1).size(), C.range(2).size(), A.range(2).size(),
+                          alpha, A.data(), A.range(0).size()*A.range(1).size(), B.data(), B.range(0).size(), beta, C.data(), C.range(0).size()*C.range(1).size());
+  } else {
+    assert(false);
+  }
+}
+
 
 template<
   typename _T,
@@ -57,6 +113,10 @@ void contract(
 
   if (A.rank() == 2 && B.rank() == 2 && C.rank() == 2) {
     contract_222(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
+  } else if (A.rank() == 3 && B.rank() == 2 && C.rank() == 3) {
+    contract_323(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
+  } else if (A.rank() == 2 && B.rank() == 3 && C.rank() == 3) {
+    contract_323(alpha, B, btas::varray<_UA>(aB), A, btas::varray<_UB>(aA), beta, C, btas::varray<_UC>(aC));
   } else {
     throw std::logic_error("not yet implemented");
   }
