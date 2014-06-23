@@ -157,15 +157,15 @@ void ZCASSCF::init() {
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
     mute_stdcout(/*fci*/true);
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_);
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
     resume_stdcout();
   }
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
-  // transform coefficient matrix to block format
-  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_);
-  coeff_ = make_shared<const ZMatrix>(*ctmp);
+//  // transform coefficient matrix to block format
+//  shared_ptr<ZMatrix> ctmp = format_coeff(nclosed_, nact_, nvirt_, coeff_);
+//  coeff_ = make_shared<const ZMatrix>(*ctmp);
 
 }
 

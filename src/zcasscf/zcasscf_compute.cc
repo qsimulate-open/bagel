@@ -71,7 +71,7 @@ void ZCASBFGS::compute() {
     ___debug___orbital_rotation(___debug___with_kramers);
 
   if (nact_)
-    fci_->update(coeff_);
+    fci_->update(coeff_, /*restricted*/true);
 
   auto cold = coeff_->clone();
     
@@ -83,7 +83,7 @@ void ZCASBFGS::compute() {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       mute_stdcout(/*fci*/true);
-      if (iter) fci_->update(coeff_);
+      if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;

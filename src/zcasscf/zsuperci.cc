@@ -48,7 +48,7 @@ void ZSuperCI::compute() {
   cout << setprecision(8) << " kramers restricted im part rms = " << coeff_->get_imag_part()->rms() << endl;
 
   if (nact_)
-    fci_->update(coeff_);
+    fci_->update(coeff_, /*restricted*/true);
 
   double gradient = 1.0e10;
 
@@ -68,7 +68,7 @@ void ZSuperCI::compute() {
     // first perform CASCI to obtain RDMs
     if (nact_) {
       mute_stdcout(/*fci*/true);
-      if (iter) fci_->update(coeff_);
+      if (iter) fci_->update(coeff_, /*restricted*/true);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
       cout << " Computing RDMs from FCI calculation " << endl;
@@ -182,7 +182,7 @@ void ZSuperCI::compute() {
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
-    fci_->update(coeff_);
+    fci_->update(coeff_, /*restricted*/true);
     fci_->compute();
     fci_->compute_rdm12();
   }
