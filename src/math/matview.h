@@ -89,8 +89,8 @@ class MatView_ : public btas::TensorView2<DataType> {
     MatView_(btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }
     MatView_(const btas::CRange<2>& r, const typename btas::Tensor2<DataType>::storage_type& s, const bool lo) : btas::TensorView2<DataType>(r, s), localized_(lo) { init(); }
 
-    int ndim() const { return this->range(0).size(); }
-    int mdim() const { return this->range(1).size(); }
+    int ndim() const { return this->extent(0); }
+    int mdim() const { return this->extent(1); }
     size_t size() const { return ndim() * mdim(); }
 
     DataType* data()             { assert(contiguous()); return &*this->begin(); }

@@ -80,7 +80,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
 
     void scale(const DataType& a) { btas::scal(a, *this); }
     size_t size() const { return this->storage().size(); }
-    int norb() const { return this->range(0).size(); }
+    int norb() const { return this->extent(0); }
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {

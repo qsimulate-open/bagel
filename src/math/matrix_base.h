@@ -246,8 +246,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     size_t size() const { return ndim()*mdim(); }
-    int ndim() const { return this->range(0).size(); }
-    int mdim() const { return this->range(1).size(); }
+    int ndim() const { return this->extent(0); }
+    int mdim() const { return this->extent(1); }
 
     virtual void fill_upper() {
       assert(ndim() == mdim());
@@ -279,7 +279,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       copy_block(nstart, mstart, nsize, msize, o->data());
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
-      assert(nsize == o->range(0).size() && msize == o->range(1).size());
+      assert(nsize == o->extent(0) && msize == o->extent(1));
       copy_block(nstart, mstart, nsize, msize, o->data());
     }
     void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
@@ -298,7 +298,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       add_block(a, nstart, mstart, nsize, msize, o->data());
     }
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
-      assert(nsize == o->range(0).size() && msize == o->range(1).size());
+      assert(nsize == o->extent(0) && msize == o->extent(1));
       add_block(a, nstart, mstart, nsize, msize, o->data());
     }
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {

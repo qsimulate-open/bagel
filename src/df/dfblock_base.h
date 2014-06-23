@@ -83,9 +83,9 @@ class DFBlock_base : public btas::Tensor3<DataType> {
     }
 
     // dimensions of the block
-    size_t asize() const { return this->range(0).size(); }
-    size_t b1size() const { return this->range(1).size(); }
-    size_t b2size() const { return this->range(2).size(); }
+    size_t asize() const { return this->extent(0); }
+    size_t b1size() const { return this->extent(1); }
+    size_t b2size() const { return this->extent(2); }
 
     size_t size() const { return asize()*b1size()*b2size(); }
     bool averaged() const { return averaged_; }

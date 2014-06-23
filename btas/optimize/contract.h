@@ -20,13 +20,13 @@ void contract_222(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     // then multiply A * B -> C
     const bool notrans  = aA.front() == aC.front();
     const auto   cA     = notrans ? CblasNoTrans : CblasTrans;
-    const size_t condim = notrans ? A.range(1).size() : A.range(0).size();
+    const size_t condim = notrans ? A.extent(1) : A.extent(0);
     assert(std::find(aB.begin(), aB.end(), aC.back()) != aB.end());
     const auto   cB     = aB.front() == aC.back() ? CblasTrans : CblasNoTrans;
     assert((cA == CblasNoTrans ? aA.back() : aA.front()) == (cB == CblasTrans ? aB.back() : aB.front()));
 
-    gemm_impl<true>::call(CblasColMajor, cA, cB, C.range(0).size(), C.range(1).size(), condim,
-                          alpha, A.data(), A.range(0).size(), B.data(), B.range(0).size(), beta, C.data(), C.range(0).size());
+    gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0), C.extent(1), condim,
+                          alpha, A.data(), A.extent(0), B.data(), B.extent(0), beta, C.data(), C.extent(0));
   } else {
     contract_222(alpha, B, aB, A, aA, beta, C, aC);
   }
@@ -49,7 +49,7 @@ void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
       assert(irot < 0);
       irot = i;
     } else
-      assert(A.range(i).size() == C.range(i).size());
+      assert(A.extent(i) == C.extent(i));
 
   if (irot == 0) {
     // in this case multiply from front
@@ -57,32 +57,32 @@ void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     assert(notrans || aB.front() == aA.front());
     const auto cA = CblasNoTrans;
     const auto cB = notrans ? CblasNoTrans : CblasTrans;
-    assert(notrans ? B.range(1).size() : B.range(0).size() == A.range(0).size());
+    assert(notrans ? B.extent(1) : B.extent(0) == A.extent(0));
 
-    gemm_impl<true>::call(CblasColMajor, cB, cA, C.range(0).size(), C.range(1).size()*C.range(2).size(), A.range(0).size(),
-                          alpha, B.data(), B.range(0).size(), A.data(), A.range(0).size(), beta, C.data(), C.range(0).size());
+    gemm_impl<true>::call(CblasColMajor, cB, cA, C.extent(0), C.extent(1)*C.extent(2), A.extent(0),
+                          alpha, B.data(), B.extent(0), A.data(), A.extent(0), beta, C.data(), C.extent(0));
   } else if (irot == 1) {
     // in this case we loop over the last index of A
     const bool notrans = aB.front() == aA[1];
     assert(notrans || aB.back() == aA[1]);
     const auto cA = CblasNoTrans;
     const auto cB = notrans ? CblasNoTrans : CblasTrans;
-    assert(notrans ? B.range(0).size() : B.range(1).size() == A.range(1).size());
-    const size_t ablock = A.range(0).size()*A.range(1).size();
-    const size_t cblock = C.range(0).size()*C.range(1).size();
+    assert(notrans ? B.extent(0) : B.extent(1) == A.extent(1));
+    const size_t ablock = A.extent(0)*A.extent(1);
+    const size_t cblock = C.extent(0)*C.extent(1);
 
-    for (int i = 0; i != A.range(2).size(); ++i)
-      gemm_impl<true>::call(CblasColMajor, cA, cB, C.range(0).size(), C.range(1).size(), A.range(1).size(),
-                            alpha, A.data()+i*ablock, A.range(0).size(), B.data(), B.range(0).size(), beta, C.data()+i*cblock, C.range(0).size());
+    for (int i = 0; i != A.extent(2); ++i)
+      gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0), C.extent(1), A.extent(1),
+                            alpha, A.data()+i*ablock, A.extent(0), B.data(), B.extent(0), beta, C.data()+i*cblock, C.extent(0));
   } else if (irot == 2) {
     // in this case multiply from back
     const bool notrans = aB.front() == aA[2];
     assert(notrans || aB.back() == aA[2]);
     const auto cA = CblasNoTrans;
     const auto cB = notrans ? CblasNoTrans : CblasTrans;
-    assert(notrans ? B.range(0).size() : B.range(1).size() == A.range(2).size());
-    gemm_impl<true>::call(CblasColMajor, cA, cB, C.range(0).size()*C.range(1).size(), C.range(2).size(), A.range(2).size(),
-                          alpha, A.data(), A.range(0).size()*A.range(1).size(), B.data(), B.range(0).size(), beta, C.data(), C.range(0).size()*C.range(1).size());
+    assert(notrans ? B.extent(0) : B.extent(1) == A.extent(2));
+    gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0)*C.extent(1), C.extent(2), A.extent(2),
+                          alpha, A.data(), A.extent(0)*A.extent(1), B.data(), B.extent(0), beta, C.data(), C.extent(0)*C.extent(1));
   } else {
     assert(false);
   }
@@ -104,42 +104,42 @@ void contract_332(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     const bool swap = aC[0] == aB[2];
     assert(swap || aC[0] == aA[2]);
     if (!swap) {
-      assert(A.range(0).size()*A.range(1).size() == B.range(0).size()*B.range(1).size() && A.range(2).size() == C.range(0).size() && B.range(2).size() == C.range(1).size());
-      gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.range(0).size(), C.range(1).size(), A.range(0).size()*A.range(1).size(),
-                            alpha, A.data(), A.range(0).size()*A.range(1).size(), B.data(), B.range(0).size()*B.range(1).size(), beta, C.data(), C.range(0).size());
+      assert(A.extent(0)*A.extent(1) == B.extent(0)*B.extent(1) && A.extent(2) == C.extent(0) && B.extent(2) == C.extent(1));
+      gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0)*A.extent(1),
+                            alpha, A.data(), A.extent(0)*A.extent(1), B.data(), B.extent(0)*B.extent(1), beta, C.data(), C.extent(0));
     } else {
-      assert(A.range(0).size()*A.range(1).size() == B.range(0).size()*B.range(1).size() && B.range(2).size() == C.range(0).size() && A.range(2).size() == C.range(1).size());
-      gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.range(0).size(), C.range(1).size(), A.range(0).size()*A.range(1).size(),
-                            alpha, B.data(), B.range(0).size()*B.range(1).size(), A.data(), A.range(0).size()*A.range(1).size(), beta, C.data(), C.range(0).size());
+      assert(A.extent(0)*A.extent(1) == B.extent(0)*B.extent(1) && B.extent(2) == C.extent(0) && A.extent(2) == C.extent(1));
+      gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0)*A.extent(1),
+                            alpha, B.data(), B.extent(0)*B.extent(1), A.data(), A.extent(0)*A.extent(1), beta, C.data(), C.extent(0));
     }
   } else if (front2) {
     const bool swap = aC[0] == aB[0];
     assert(swap || aC[0] == aA[0]);
     if (!swap) {
-      assert(A.range(1).size()*A.range(2).size() == B.range(1).size()*B.range(2).size() && A.range(0).size() == C.range(0).size() && B.range(0).size() == C.range(1).size());
-      gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.range(0).size(), C.range(1).size(), A.range(1).size()*A.range(2).size(),
-                            alpha, A.data(), A.range(0).size(), B.data(), B.range(0).size(), beta, C.data(), C.range(0).size());
+      assert(A.extent(1)*A.extent(2) == B.extent(1)*B.extent(2) && A.extent(0) == C.extent(0) && B.extent(0) == C.extent(1));
+      gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.extent(0), C.extent(1), A.extent(1)*A.extent(2),
+                            alpha, A.data(), A.extent(0), B.data(), B.extent(0), beta, C.data(), C.extent(0));
     } else {
-      assert(A.range(1).size()*A.range(2).size() == B.range(1).size()*B.range(2).size() && B.range(0).size() == C.range(0).size() && A.range(0).size() == C.range(1).size());
-      gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.range(0).size(), C.range(1).size(), A.range(1).size()*A.range(2).size(),
-                            alpha, B.data(), B.range(0).size(), A.data(), A.range(0).size(), beta, C.data(), C.range(0).size());
+      assert(A.extent(1)*A.extent(2) == B.extent(1)*B.extent(2) && B.extent(0) == C.extent(0) && A.extent(0) == C.extent(1));
+      gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.extent(0), C.extent(1), A.extent(1)*A.extent(2),
+                            alpha, B.data(), B.extent(0), A.data(), A.extent(0), beta, C.data(), C.extent(0));
     }
   } else if (mid2) {
     const bool swap = aC[0] == aB[1];
     assert(swap || aC[0] == aA[1]);
-    const size_t ablock = A.range(0).size()*A.range(1).size();
-    const size_t bblock = B.range(0).size()*B.range(1).size();
+    const size_t ablock = A.extent(0)*A.extent(1);
+    const size_t bblock = B.extent(0)*B.extent(1);
     C.scale(beta);
     if (!swap) {
-      assert(A.range(0).size() == B.range(0).size() && A.range(2).size() == B.range(2).size() && A.range(1).size() == C.range(0).size() && B.range(1).size() == C.range(1).size());
-      for (int i = 0; i != A.range(2).size(); ++i)
-        gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.range(0).size(), C.range(1).size(), A.range(0).size(),
-                              alpha, A.data()+i*ablock, A.range(0).size(), B.data()+i*bblock, B.range(0).size(), 1.0, C.data(), C.range(0).size());
+      assert(A.extent(0) == B.extent(0) && A.extent(2) == B.extent(2) && A.extent(1) == C.extent(0) && B.extent(1) == C.extent(1));
+      for (int i = 0; i != A.extent(2); ++i)
+        gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
+                              alpha, A.data()+i*ablock, A.extent(0), B.data()+i*bblock, B.extent(0), 1.0, C.data(), C.extent(0));
     } else {
-      assert(A.range(0).size() == B.range(0).size() && A.range(2).size() == B.range(2).size() && B.range(1).size() == C.range(0).size() && A.range(1).size() == C.range(1).size());
-      for (int i = 0; i != A.range(2).size(); ++i)
-        gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.range(0).size(), C.range(1).size(), A.range(0).size(),
-                              alpha, B.data()+i*bblock, B.range(0).size(), A.data()+i*ablock, A.range(0).size(), 1.0, C.data(), C.range(0).size());
+      assert(A.extent(0) == B.extent(0) && A.extent(2) == B.extent(2) && B.extent(1) == C.extent(0) && A.extent(1) == C.extent(1));
+      for (int i = 0; i != A.extent(2); ++i)
+        gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
+                              alpha, B.data()+i*bblock, B.extent(0), A.data()+i*ablock, A.extent(0), 1.0, C.data(), C.extent(0));
     }
   } else
     throw std::logic_error("not yet implemented");
