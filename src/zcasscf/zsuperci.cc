@@ -133,18 +133,8 @@ void ZSuperCI::compute() {
 #else
     kramers_adapt(amat, nvirtnr_);
 #endif
-
    amat->scale(sqrt(2.0));
-   // multiply multiply -i to make amat hermite (will be compensated), then make Exp(Kappa)
-   *amat *= 1.0 * complex<double>(0.0, -1.0);
-   unique_ptr<double[]> teig(new double[amat->ndim()]);
-   amat->diagonalize(teig.get());
-   shared_ptr<ZMatrix> amat_sav = amat->copy();
-   for (int i = 0; i != amat->ndim(); ++i) {
-     complex<double> ex = exp(complex<double>(0.0, teig[i]));
-     for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
-   }
-   auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+   shared_ptr<ZMatrix> expa = amat->exp();
 
 #ifdef BOTHSPACES
    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
