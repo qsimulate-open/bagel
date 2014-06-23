@@ -30,45 +30,9 @@
 
 template <class VecType>
 MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DimerCISpace_base<VecType>> cispace) :
-  ref_(dimer->sref()), cispace_(cispace),
-  dimerbasis_(dimer->dimerbasis()), dimerclosed_(dimer->sref()->nclosed()), dimeractive_(dimer->sref()->nact()),
-  nact_(dimer->nact()), nbasis_(dimer->nbasis())
+  MEH_base(input, dimer), cispace_(cispace)
 {
-  nstates_ = input->get<int>("nstates", 10);
-  max_iter_ = input->get<int>("max_iter", 50);
-  davidson_subspace_ = input->get<int>("davidson_subspace", 10);
-  nguess_ = input->get<int>("nguess", 10*nstates_);
-  dipoles_ = input->get<bool>("dipoles", false);
-  thresh_ = input->get<double>("thresh", 1.0e-7);
-  print_thresh_ = input->get<double>("print_thresh", 0.01);
-  store_matrix_ = input->get<bool>("store_matrix", false);
-  charge_ = input->get<int>("charge", 0);
-  nspin_ = input->get<int>("spin", 0);
-
-  std::shared_ptr<const PTree> model_input = input->get_child_optional("models");
-  if (model_input) {
-    std::shared_ptr<const PTree> pruning_input = model_input->get_child_optional("pruned");
-    std::vector<int> pruned = (pruning_input ? model_input->get_vector<int>("pruned")
-                                             : std::vector<int>());
-    pruned.push_back(-1);
-
-    for (auto& p : pruned) {
-      std::vector<ModelBlock> this_model;
-      std::shared_ptr<const PTree> sblock_input = model_input->get_child("subblocks");
-      for (auto& b : *sblock_input) {
-        std::array<int,2> charges = b->get_array<int, 2>("charges");
-        std::array<int,2> spins = b->get_array<int, 2>("spins");
-        const int nstates = b->get<int>("nstates");
-        this_model.emplace_back( std::make_pair(spins[0],spins[1]), std::make_pair(charges[0],charges[1]), std::make_pair(p,p), nstates );
-      }
-      models_to_form_.emplace_back(std::move(this_model));
-    }
-  }
-
   Timer timer;
-
-  jop_ = std::make_shared<DimerJop>(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, ref_->coeff());
-  std::cout << "  o computing integrals: " << timer.tick() << std::endl;
 
   cispace_->complete();
   std::cout << "  o completing CI spin space: " << timer.tick() << std::endl;
@@ -92,7 +56,6 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   }
   max_spin_ = maxspin + 1;
 
-  energies_ = std::vector<double>(nstates_, 0.0);
   gammaforest_ = std::make_shared<GammaForest<VecType, 2>>();
 }
 
@@ -159,29 +122,6 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::s
   }
 
   return out;
-}
-
-
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::reorder_matrix(const double* source, double* target,
-  const int nA, const int nAp, const int nB, const int nBp) const
-{
-  const int nstatesAB = nA * nB;
-  const int nstatesAA = nA * nAp;
-
-  for (int Bp = 0; Bp < nBp; ++Bp) {
-    for (int Ap = 0; Ap < nAp; ++Ap) {
-      const int ABp = Ap + nAp * Bp;
-      for (int B = 0; B < nB; ++B) {
-        const int BBp = Bp + nBp * B;
-        for (int A = 0; A < nA; ++A) {
-          const int AAp = Ap + nAp * A;
-          const int AB = A + nA * B;
-          target[AB + nstatesAB * ABp] = source[AAp + nstatesAA * BBp];
-        }
-      }
-    }
-  }
 }
 
 

@@ -173,7 +173,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(co
 
 template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block(DSubSpace& subspace) {
-  const double core = ref_->geom()->nuclear_repulsion() + jop_->core_energy();
+  const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
 
   // Would be better to allocate here and then send to subprocesses
   std::shared_ptr<Matrix> out = compute_intra(subspace, jop_, core);
@@ -185,14 +185,6 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block
 // This term will couple off-diagonal blocks since it has no delta functions involved
 template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) {
-  const int nstatesA = AB.template nstates<0>();
-  const int nstatesB = AB.template nstates<1>();
-  const int nstates = nstatesA * nstatesB;
-
-  const int nstatesAp = ApBp.template nstates<0>();
-  const int nstatesBp = ApBp.template nstates<1>();
-  const int nstatesp = nstatesAp * nstatesBp;
-
   // alpha-alpha
   Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
   Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
@@ -205,15 +197,15 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_inter_2e(DSubS
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
   std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
-  Matrix tmp(nstatesA*nstatesAp, nstatesB*nstatesBp);
-
-  tmp += (gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta);
+  Matrix tmp((gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta));
 
   tmp -= gamma_AA_alpha * (*Kmatrix) ^ gamma_BB_alpha;
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
-  auto out = std::make_shared<Matrix>(nstates, nstatesp);
-  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
+  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+
+  // sort: (A',A,B',B) --> (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }

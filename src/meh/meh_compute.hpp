@@ -160,7 +160,8 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   if ( dipoles_ ) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
-    DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, ref_->coeff());
+    std::shared_ptr<const Reference> dimerref = dimer_->sref();
+    DimerDipole dipole = DimerDipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->nact().first, dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
     std::array<std::string,3> mu_labels = {{"x", "y", "z"}};
     for (int i = 0; i < 3; ++i) {
       std::string label("mu_");
