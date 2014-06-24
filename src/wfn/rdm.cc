@@ -91,10 +91,9 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
 
 template<>
 void RDM<1>::transform(const shared_ptr<Matrix>& coeff) {
-  const double* start = coeff->data();
-  unique_ptr<double[]> buf(new double[norb()*norb()]);
-  dgemm_("N", "N", norb(), norb(), norb(), 1.0, data(), norb(), start, norb(), 0.0, buf.get(), norb());
-  dgemm_("T", "N", norb(), norb(), norb(), 1.0, start, norb(), buf.get(), norb(), 0.0, data(), norb());
+  auto buf = clone();
+  btas::contract(1.0, *this, {0,1}, *coeff, {1,2}, 0.0, *buf, {0,2});
+  btas::contract(1.0, *coeff, {1,0}, *buf, {1,2}, 0.0, *this, {0,2});
 }
 
 
