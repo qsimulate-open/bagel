@@ -84,7 +84,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double micro_energy_;
 
     // internal function
-    void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nvirt) const;
     void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
@@ -107,6 +106,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const ZMatrix> semi_canonical_orb();
     // coeff format transformation is a static function!
     static std::shared_ptr<ZMatrix> format_coeff(const int nclosed, const int nact, const int nvirt, std::shared_ptr<const ZMatrix> coeff, const bool striped = true);
+    // kramers adapt for RotFile is a static function!
+    static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }

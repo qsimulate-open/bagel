@@ -487,9 +487,9 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
 
   cout << setprecision(8) << " a rms = " << a->rms() << endl;
   if (optimize_electrons) {
-    kramers_adapt(a, nvirtnr);
+    kramers_adapt(a, nclosed_, nact_, nvirtnr);
   } else {
-    kramers_adapt(a, nneg_/2);
+    kramers_adapt(a, nclosed_, nact_, nneg_/2);
   }
 //  a->scale(0.1);
   cout << setprecision(6) << "+++ STEP LENGTH   = " << a->norm() << endl;

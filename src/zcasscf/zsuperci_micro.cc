@@ -58,6 +58,7 @@ void ZSuperCIMicro::compute() {
 
     if (miter != 0) {
       sigma1 = form_sigma(cc1);
+      ZCASSCF::kramers_adapt(sigma1, nclosed, nact, nvirt);
       // projection to reference
       (*cc0)   (0,0) = 0.0;
       (*sigma0)(0,0) = grad_->dot_product(*cc1);
@@ -70,13 +71,13 @@ void ZSuperCIMicro::compute() {
     // enters davidson iteration
     auto ccp    = make_shared<ZSCIData>(cc0->copy(), cc1->copy());
     auto sigmap = make_shared<ZSCIData>(sigma0->copy(), sigma1->copy());
-//    ccp->synchronize();
-//    sigmap->synchronize();
+    ccp->synchronize();
+    sigmap->synchronize();
     const double mic_energy = davidson.compute(ccp, sigmap);
 
     // residual vector and error
     shared_ptr<ZSCIData> residual = davidson.residual().front();
-//    residual->synchronize();
+    residual->synchronize();
     const double error = residual->rms();
     assert(isnormal(error)); // check for nan's
 
@@ -90,6 +91,7 @@ void ZSuperCIMicro::compute() {
     // update cc0 and cc1
     cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();
     cc1->normalize();
+    ZCASSCF::kramers_adapt(cc1, nclosed, nact, nvirt);
     cc0 = cc0->clone();
   }
 
@@ -98,7 +100,8 @@ void ZSuperCIMicro::compute() {
   const complex<double> cref = result->first()->element(0,0);
   shared_ptr<ZRotFile> tmp = result->second()->copy();
   *tmp *= 1.0/cref;
-//  tmp->synchronize();
+  tmp->synchronize();
+  ZCASSCF::kramers_adapt(tmp, nclosed, nact, nvirt);
   cc_ = tmp;
 }
 

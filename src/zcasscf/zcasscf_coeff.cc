@@ -201,32 +201,32 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
 }
 
 
-void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nvirt) const {
-  for (int i = 0; i != nclosed_; ++i) {
+void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt) {
+  for (int i = 0; i != nclosed; ++i) {
     for (int j = 0; j != nvirt; ++j) {
-      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed_))) * 0.5;
-      o->ele_vc(j+nvirt, i+nclosed_) = conj(o->ele_vc(j, i));
+      o->ele_vc(j, i) = (o->ele_vc(j, i) + conj(o->ele_vc(j+nvirt, i+nclosed))) * 0.5;
+      o->ele_vc(j+nvirt, i+nclosed) = conj(o->ele_vc(j, i));
 
-      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed_))) * 0.5;
-      o->ele_vc(j, i+nclosed_) = - conj(o->ele_vc(j+nvirt, i));
+      o->ele_vc(j+nvirt, i) = (o->ele_vc(j+nvirt, i) - conj(o->ele_vc(j, i+nclosed))) * 0.5;
+      o->ele_vc(j, i+nclosed) = - conj(o->ele_vc(j+nvirt, i));
     }
   }
-  for (int i = 0; i != nact_; ++i) {
+  for (int i = 0; i != nact; ++i) {
     for (int j = 0; j != nvirt; ++j) {
-      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact_))) * 0.5;
-      o->ele_va(j+nvirt, i+nact_) = conj(o->ele_va(j, i));
+      o->ele_va(j, i) = (o->ele_va(j, i) + conj(o->ele_va(j+nvirt, i+nact))) * 0.5;
+      o->ele_va(j+nvirt, i+nact) = conj(o->ele_va(j, i));
 
-      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact_))) * 0.5;
-      o->ele_va(j, i+nact_) = - conj(o->ele_va(j+nvirt, i));
+      o->ele_va(j+nvirt, i) = (o->ele_va(j+nvirt, i) - conj(o->ele_va(j, i+nact))) * 0.5;
+      o->ele_va(j, i+nact) = - conj(o->ele_va(j+nvirt, i));
     }
   }
-  for (int i = 0; i != nact_; ++i) {
-    for (int j = 0; j != nclosed_; ++j) {
-      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed_, i+nact_))) * 0.5;
-      o->ele_ca(j+nclosed_, i+nact_) = conj(o->ele_ca(j, i));
+  for (int i = 0; i != nact; ++i) {
+    for (int j = 0; j != nclosed; ++j) {
+      o->ele_ca(j, i) = (o->ele_ca(j, i) + conj(o->ele_ca(j+nclosed, i+nact))) * 0.5;
+      o->ele_ca(j+nclosed, i+nact) = conj(o->ele_ca(j, i));
 
-      o->ele_ca(j+nclosed_, i) = (o->ele_ca(j+nclosed_, i) - conj(o->ele_ca(j, i+nact_))) * 0.5;
-      o->ele_ca(j, i+nact_) = - conj(o->ele_ca(j+nclosed_, i));
+      o->ele_ca(j+nclosed, i) = (o->ele_ca(j+nclosed, i) - conj(o->ele_ca(j, i+nact))) * 0.5;
+      o->ele_ca(j, i+nact) = - conj(o->ele_ca(j+nclosed, i));
     }
   }
 }

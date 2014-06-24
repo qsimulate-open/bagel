@@ -179,7 +179,7 @@ void ZCASBFGS::compute() {
     grad_ca(cfock, afock, qvec, rdm1, grad);
     *grad *= 2.0;
     if (!___debug___break_kramers)
-      kramers_adapt(grad, nvirt_);
+      kramers_adapt(grad, nclosed_, nact_, nvirt_);
 
     if (___debug___break_kramers) {
       ___debug___print_gradient(grad, ___debug___with_kramers);
@@ -196,12 +196,12 @@ void ZCASBFGS::compute() {
       cout << "+++ Optimizing electrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
       tie(ele_rot, ele_energy, grad, xlog) = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
-      kramers_adapt(ele_rot, nvirtnr_);
+      kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << "+++ Optimizing positrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
       tie(pos_rot, pos_energy, grad, xlog) = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
-      kramers_adapt(pos_rot, nneg_/2);
+      kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
 #endif
 
@@ -220,7 +220,7 @@ void ZCASBFGS::compute() {
     shared_ptr<ZRotFile> a = srbfgs->more_sorensen_extrapolate(grad, xlog);
     resume_stdcout();
     if (!___debug___break_kramers)
-      kramers_adapt(a, nvirt_);
+      kramers_adapt(a, nclosed_, nact_, nvirt_);
 #endif
 #ifdef BOTHSPACES
     shared_ptr<ZMatrix> amat = a->unpack<ZMatrix>();
