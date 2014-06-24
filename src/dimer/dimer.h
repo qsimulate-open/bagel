@@ -49,22 +49,14 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
       std::pair<Ref<Reference>, Ref<Reference>> refs_;
       std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_;
-      std::pair<Ref<Coeff>, Ref<Coeff>> coeffs_;
 
       std::shared_ptr<const Geometry>   sgeom_;
-      std::shared_ptr<Reference>  sref_;
-      std::shared_ptr<Coeff>      scoeff_;
-      std::shared_ptr<Coeff>      proj_coeff_; // Basically the same thing as scoeff_, except purposefully non-orthogonal
-
-      int dimerbasis_; // Basis size of both together
-      int nclosed_;
+      std::shared_ptr<const Reference>  sref_;
 
       std::pair<int, int> ncore_;
       std::pair<int, int> nact_;
       std::pair<int, int> nfilledactive_;
       std::pair<int, int> nvirt_;
-      std::pair<int, int> nbasis_;
-      std::pair<int, int> nele_;
 
       double active_thresh_;
 
@@ -77,27 +69,17 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
       // Return functions
       std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
-      std::pair<Ref<Coeff>, Ref<Coeff>> coeffs() const { return coeffs_; };
 
       std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
-      std::shared_ptr<Reference> sref() const { return sref_; };
-      std::shared_ptr<Coeff>   scoeff() const { return scoeff_; };
-      std::shared_ptr<Coeff>   proj_coeff() const { return proj_coeff_; };
+      std::shared_ptr<const Reference> sref() const { return sref_; };
 
-      void set_sref(std::shared_ptr<const Reference> ref) {
-        scoeff_ = std::make_shared<Coeff>(*ref->coeff());
-        sref_ = std::make_shared<Reference>(sgeom_, scoeff_, ref->nclosed(), ref->nact(), ref->nvirt());
-      }
       void set_coeff(std::shared_ptr<const Matrix> mat) {
-        scoeff_ = std::make_shared<Coeff>(*mat);
-        sref_->set_coeff(std::make_shared<const Coeff>(*mat));
+        sref_ = std::make_shared<const Reference>(sgeom_, std::make_shared<const Coeff>(*mat), sref_->nclosed(), sref_->nact(), sref_->nvirt());
       };
 
-      std::pair<const int, const int> nbasis() const { return nbasis_; }
       std::pair<const int, const int> ncore() const { return ncore_; }
       std::pair<const int, const int> nact() const { return nact_; }
       std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
-      int dimerbasis() const { return dimerbasis_; }
 
       // Utility
       void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
@@ -118,13 +100,15 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
 
    private:
       void construct_geometry();
-      void construct_coeff();
       void embed_refs();
+
+      std::shared_ptr<const Matrix> form_projected_coeffs();
+      std::shared_ptr<const Matrix> construct_coeff();
 };
 
 template<int unit>
 std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate) const {
-  const int nclosed = nclosed_;
+  const int nclosed = sref_->nclosed();
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const int nact = (unit == 0) ? nact_.first : nact_.second;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
@@ -152,7 +136,7 @@ std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PT
 
 template<int unit>
 std::shared_ptr<const DistDvec> Dimer::embedded_distcasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate) const {
-  const int nclosed = nclosed_;
+  const int nclosed = sref_->nclosed();
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const int nact = (unit == 0) ? nact_.first : nact_.second;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
@@ -181,7 +165,7 @@ std::shared_ptr<const DistDvec> Dimer::embedded_distcasci(const std::shared_ptr<
 
 template<int unit>
 std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
-  const int nclosed = nclosed_;
+  const int nclosed = sref_->nclosed();
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
 
@@ -222,7 +206,7 @@ std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const
 
 template<int unit>
 std::shared_ptr<const DistRASDvec> Dimer::embedded_distrasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
-  const int nclosed = nclosed_;
+  const int nclosed = sref_->nclosed();
   const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
   const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
 
