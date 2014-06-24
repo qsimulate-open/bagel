@@ -101,7 +101,7 @@ void ZCASSCF::init() {
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
   // get maxiter from the input
-  max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
   // get nstate from the input
   nstate_ = idata_->get<int>("nstate", 1);
 #if 0
