@@ -53,7 +53,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<const Geometry>   sgeom_;
       std::shared_ptr<const Reference>  sref_;
 
-      int dimerbasis_; // Basis size of both together
       int nclosed_;
 
       std::pair<int, int> ncore_;
@@ -86,7 +85,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::pair<const int, const int> ncore() const { return ncore_; }
       std::pair<const int, const int> nact() const { return nact_; }
       std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
-      int dimerbasis() const { return dimerbasis_; }
 
       // Utility
       void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
