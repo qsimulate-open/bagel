@@ -346,7 +346,7 @@ public:
 
    void deallocate() {
      if (!data_.empty())
-       allocator_traits::deallocate(alloc(), data_._M_start, data_.size());
+       allocator_traits::deallocate(alloc(), data_._M_start, capacity_);
      data_._M_start = data_._M_finish = nullptr;
      capacity_ = 0;
    }
