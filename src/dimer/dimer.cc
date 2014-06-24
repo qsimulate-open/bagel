@@ -65,14 +65,13 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   geoms_ = make_pair(A->geom(), geomB);
   construct_geometry();
 
-  coeffs_ = make_pair(A->coeff(), A->coeff());
   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
       A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
   refs_ = make_pair(A, tmpref);
   nclosed_ = 2*A->nclosed();
-  construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+  shared_ptr<const Matrix> coeff = construct_coeff();
 
-  sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, 2*A->nact(), 2*A->nvirt());
+  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), nclosed_, 2*A->nact(), 2*A->nvirt());
 }
 
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input),
@@ -81,97 +80,13 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   geoms_ = make_pair(A->geom(), B->geom());
   construct_geometry();
 
-  coeffs_ = make_pair(A->coeff(), B->coeff());
   refs_ = make_pair(A, B);
   nclosed_ = A->nclosed() + B->nclosed();
-  construct_coeff(); // Constructs projected coefficients and stores them in proj_coeff;
+  shared_ptr<const Matrix> coeff = construct_coeff();
 
-  sref_ = make_shared<Reference>(sgeom_, scoeff_, nclosed_, A->nact() + B->nact(), A->nvirt() + B->nvirt());
+  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), nclosed_, A->nact() + B->nact(), A->nvirt() + B->nvirt());
 }
 
-#if 0
-Dimer::Dimer(shared_ptr<const Reference> superref, pair<int,int> regions) : sgeom_(superref->geom()), dimerbasis_(superref->geom()->nbasis())
-{
-  /************************************************************
-   *  Set up variables that will contain the organized info    *
-   ************************************************************/
-  int nbasisA = 0;
-  int neleA = 0;
-  for (int i = 0; i < regions.first; ++i) {
-    const auto& atom = sgeom_->atoms(i);
-    nbasisA += atom->nbasis();
-    neleA += atom->atom_number();
-  }
-
-  int nbasisB = 0;
-  int neleB = 0;
-  for (int i = regions.first; i < regions.first + regions.second; ++i) {
-    const auto& atom = sgeom_->atoms(i);
-    nbasisB += atom->nbasis();
-    neleB += atom->atom_number();
-  }
-
-  assert(nbasisA + nbasisB == dimerbasis_);
-  nbasis_ = make_pair(nbasisA, nbasisB);
-
-  const int nele = neleA + neleB;
-  nele_ = make_pair(neleA, neleB);
-
-  const int nocc = nele/2;
-  const int noccA = neleA/2;
-  const int noccB = neleB/2;
-
-  const int nclosed = superref->nclosed();
-  const int nact = superref->nact();
-
-  vector<int> sizes = {{regions.first, regions.second}}; // a little bit of a hack but can be improved later
-  shared_ptr<Matrix> tmpcoeff = superref->coeff()->slice(nclosed, nclosed + nact);
-  auto localization = make_shared<RegionLocalization>(make_shared<PTree>(), sgeom_, tmpcoeff, sizes, nact, 0, 0);
-  auto local_active = localization->localize();
-  auto local_coeff = make_shared<Coeff>(*superref->coeff());
-  copy_n(local_active->element_ptr(0, 0), dimerbasis_*nact, local_coeff->element_ptr(0,nclosed));
-
-  nclosed_ = nclosed;
-  vector<int> act_regions = localization->region_orbitals(0);
-  nact_ = make_pair(act_regions.at(0), act_regions.at(1));
-  //nfilledactive_ = make_pair(noccA - ncore_.first, noccB - ncore_.second);
-
-  auto density = superref->coeff()->form_density_rhf(nocc);
-
-  shared_ptr<const Matrix> hcore(new Hcore(sgeom_));
-  shared_ptr<Matrix> fock(new Fock<1>(sgeom_, hcore, density, superref->coeff()));
-  Matrix intermediate((*local_coeff) % (*fock) * (*local_coeff));
-
-  Matrix transform(dimerbasis_, dimerbasis_); transform.unit();
-
-  const int subsize = nclosed_ + nact_.first + nact_.second;
-  vector<int> subsizes = {nclosed_, nact_.first, nact_.second};
-  vector<double> subeigs(dimerbasis_, 0.0);
-
-  shared_ptr<Matrix> diag_blocks = intermediate.get_submatrix(0, 0, subsize, subsize)->diagonalize_blocks(subeigs.data(), subsizes);
-  transform.copy_block(0,0,subsize,subsize,diag_blocks);
-
-  multimap<double, int> active_fock;
-  for (int i = nclosed_; i < nact + nclosed_; ++i) {
-    active_fock.insert(make_pair(subeigs.at(i), i));
-  }
-
-  int filledA = 0;
-  int filledB = 0;
-  auto iactive = active_fock.begin();
-  for ( int totalfilledactive = nocc - nclosed_; totalfilledactive != 0; --totalfilledactive, ++iactive ) {
-    int imo = iactive->second;
-    if ( (nclosed_ <= imo) && (imo < nclosed_ + nact_.first) ) ++filledA;
-    else ++filledB;
-  }
-  nfilledactive_ = make_pair(filledA, filledB);
-
-  shared_ptr<Matrix> ncoeff(new Matrix(*local_coeff * transform));
-  scoeff_ = make_shared<Coeff>(*ncoeff);
-  sref_ = make_shared<Reference>(superref, scoeff_);
-  sref_->set_eig(subeigs);
-}
-#endif
 
 void Dimer::construct_geometry() {
   cout << " ===== Constructing Dimer geometry ===== " << endl;
@@ -195,15 +110,53 @@ void Dimer::construct_geometry() {
   sgeom_ = make_shared<Geometry>(geo_vec);
 }
 
-void Dimer::construct_coeff() {
+/// Takes monomer references, projections them onto the supergeom basis, and arranges the
+/// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
+shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
+  shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
+  shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
+
+  shared_ptr<Matrix> projected = projectedA->merge(projectedB);
+
+  const int ncloA = ncore_.first;
+  const int ncloB = ncore_.second;
+
+  const int nactA = nact_.first;
+  const int nactB = nact_.second;
+
+  const int nvirtA = nvirt_.first;
+  const int nvirtB = nvirt_.second;
+
+  assert(refs_.first->coeff()->mdim()  == ncloA + nactA + nvirtA);
+  assert(refs_.second->coeff()->mdim() == ncloB + nactB + nvirtB);
+
+  const size_t Amos = refs_.first->coeff()->mdim();
+
+  // form "projected" coefficients
+  const int dimerbasis = dimerbasis_;
+  auto out = projected->clone();
+
+  size_t current = 0;
+  auto cp_block = [&current, &out, &dimerbasis] (const size_t msize, const double* source) {
+    out->copy_block(0, current, dimerbasis, msize, source); current += msize;
+  };
+
+  cp_block(ncloA, projected->element_ptr(0,0));
+  cp_block(ncloB, projected->element_ptr(0, Amos));
+  cp_block(nactA, projected->element_ptr(0, ncloA));
+  cp_block(nactB, projected->element_ptr(0, Amos + ncloB));
+  cp_block(nvirtA, projected->element_ptr(0, ncloA + nactA));
+  cp_block(nvirtB, projected->element_ptr(0, Amos + ncloB + nactB));
+
+  return out;
+}
+
+shared_ptr<const Matrix> Dimer::construct_coeff() {
   cout << " ===== Constructing Dimer reference =====" << endl;
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
   if (mdata) {
-    shared_ptr<Reference> refA = refs_.first->project_coeff(geoms_.first);
-    shared_ptr<Reference> refB = refs_.second->project_coeff(geoms_.second);
-    refs_ = make_pair(refA, refB);
-    coeffs_ = make_pair(refA->coeff(), refB->coeff());
+    refs_ = make_pair(refs_.first->project_coeff(geoms_.first), refs_.second->project_coeff(geoms_.second));
   }
 
   if(refs_.first) {
@@ -215,53 +168,17 @@ void Dimer::construct_coeff() {
     // Round nele up for number of orbitals
     ncore_ = make_pair( (nele_.first - 1)/2 + 1, (nele_.second - 1)/2 + 1);
     nact_ = make_pair(0, 0);
-    nvirt_ = make_pair(coeffs_.first->mdim() - ncore_.first, coeffs_.second->mdim() - ncore_.second);
+    nvirt_ = make_pair(refs_.first->coeff()->mdim() - ncore_.first, refs_.second->coeff()->mdim() - ncore_.second);
   }
 
-  {
-    shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
-    shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
-
-    shared_ptr<Matrix> projected = projectedA->merge(projectedB);
-    proj_coeff_ = make_shared<Coeff>(move(*projected));
-  }
-
-  const int ncloA = ncore_.first;
-  const int ncloB = ncore_.second;
-
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
-
-  const int nvirtA = nvirt_.first;
-  const int nvirtB = nvirt_.second;
-
-  assert(coeffs_.first->mdim()  == ncloA + nactA + nvirtA);
-  assert(coeffs_.second->mdim() == ncloB + nactB + nvirtB);
-
-  const size_t Amos = coeffs_.first->mdim();
-
-  // form "projected" coefficients
-  const int dimerbasis = dimerbasis_;
-  auto tmpcoeff = proj_coeff_->clone();
-
-  size_t current = 0;
-  auto cp_block = [&current, &tmpcoeff, &dimerbasis] (const size_t msize, const double* source) {
-    tmpcoeff->copy_block(0, current, dimerbasis, msize, source); current += msize;
-  };
-
-  cp_block(ncloA, proj_coeff_->element_ptr(0,0));
-  cp_block(ncloB, proj_coeff_->element_ptr(0, Amos));
-  cp_block(nactA, proj_coeff_->element_ptr(0, ncloA));
-  cp_block(nactB, proj_coeff_->element_ptr(0, Amos + ncloB));
-  cp_block(nvirtA, proj_coeff_->element_ptr(0, ncloA + nactA));
-  cp_block(nvirtB, proj_coeff_->element_ptr(0, Amos + ncloB + nactB));
+  shared_ptr<const Matrix> projected = form_projected_coeffs();
 
   // orthonormalize the "projected" coefficients
-  shared_ptr<Matrix> atomic_ovlp = make_shared<Overlap>(sgeom_);
-  auto S_invhalf = make_shared<Matrix>((*tmpcoeff) % (*atomic_ovlp) * (*tmpcoeff));
+  shared_ptr<Matrix> S = make_shared<Overlap>(sgeom_);
+  auto S_invhalf = make_shared<Matrix>((*projected) % (*S) * (*projected));
   S_invhalf->inverse_half();
 
-  scoeff_ = make_shared<Coeff>(*tmpcoeff * *S_invhalf);
+  return make_shared<Matrix>(*projected * *S_invhalf);
 }
 
 void Dimer::embed_refs() {
@@ -274,11 +191,13 @@ void Dimer::embed_refs() {
   const int nactA = nact_.first;
   const int nactB = nact_.second;
 
+  shared_ptr<const Matrix> scoeff = sref_->coeff();
+
   { // Move occupied orbitals of unit B to form the core orbitals
     auto Amatrix = make_shared<Matrix>(dimerbasis_, nclosed + filled_activeB + nactA);
-    Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
-    Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff_->element_ptr(0,nclosed + nactA)); // FilledActive B
-    Amatrix->copy_block(0, nclosed + filled_activeB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed)); // Active A
+    Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff->element_ptr(0,0)); // Total closed space
+    Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff->element_ptr(0,nclosed + nactA)); // FilledActive B
+    Amatrix->copy_block(0, nclosed + filled_activeB, dimerbasis_, nactA, scoeff->element_ptr(0,nclosed)); // Active A
     auto Acoeff = make_shared<Coeff>(move(*Amatrix));
 
     // Set up variables for this fci
@@ -290,9 +209,9 @@ void Dimer::embed_refs() {
 
   { // Move occupied orbitals of unit A to form core of unit B
     auto Bmatrix = make_shared<Matrix>(dimerbasis_, nclosed + filled_activeA + nactB);
-    Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
-    Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff_->element_ptr(0,nclosed)); // FilledActive A
-    Bmatrix->copy_block(0, nclosed + filled_activeA, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA)); // Active B
+    Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff->element_ptr(0,0)); // Total closed space
+    Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff->element_ptr(0,nclosed)); // FilledActive A
+    Bmatrix->copy_block(0, nclosed + filled_activeA, dimerbasis_, nactB, scoeff->element_ptr(0,nclosed + nactA)); // Active B
     auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
 
     // Set up variables for this fci
@@ -331,7 +250,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
   vector<set<int>> ambiguous_subsets;
 
   if (localize_first)
-    assert(scoeff_->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
+    assert(sref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
                                [] (unsigned long long o, const pair<int,int>& p) { return o + p.second - p.first; }));
 
   Matrix ShalfC = static_cast<Matrix>(Overlap(sgeom_));
@@ -502,7 +421,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   Overlap S(sgeom_);
 
-  shared_ptr<Matrix> out_coeff = scoeff_->copy();
+  shared_ptr<Matrix> out_coeff = sref_->coeff()->copy();
   size_t closed_position = 0;
   size_t active_position = nclosed_;
   size_t virt_position = nclosed_ + nact;
@@ -514,7 +433,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     const string set_name = get<3>(subset);
     const bool closed = get<4>(subset);
 
-    shared_ptr<Matrix> subcoeff = scoeff_->slice_copy(bounds.first, bounds.second);
+    shared_ptr<Matrix> subcoeff = sref_->coeff()->slice_copy(bounds.first, bounds.second);
 
     const Matrix overlaps( active % S * *subcoeff );
 
@@ -589,7 +508,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
   nfilledactive_ = make_pair( nfilledA, nfilledB );
 
-  set_sref(out);
+  sref_ = out;
 }
 
 // RHF and then localize
@@ -600,11 +519,11 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
   shared_ptr<SCF> rhf = dynamic_pointer_cast<SCF>(construct_method("hf", hfdata, sgeom_, sref_));
   rhf->compute();
-  set_sref(rhf->conv_to_ref());
+  sref_ = rhf->conv_to_ref();
   dimertime.tick_print("Dimer SCF");
 
   shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
-  shared_ptr<const Matrix> dimercoeff = scoeff_->slice_copy(0,nclosed_);
+  shared_ptr<const Matrix> dimercoeff = sref_->coeff()->slice_copy(0,nclosed_);
 
   // Explanation of schemes:
   //   localize_first           - fragment localizes, then picks the active space within each fragment (recommended)
@@ -614,10 +533,10 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
   if (scheme == "active_only" || scheme == "active_first") {
     // Set active space based on overlap
-    if (proj_coeff_)
+    if (refs_.first && refs_.second)
       set_active(idata, /*localize_first*/ false);
     else
-      throw runtime_error("For Dimer::driver, Dimer must be constructed from a HF reference");
+      throw runtime_error("For Dimer::driver, Dimer must be constructed from HF references");
 
     if (scheme == "active_first") {
       shared_ptr<const PTree> localize_data = idata->get_child_optional("localization");
@@ -642,12 +561,14 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     set_active(idata, /*localize_first*/ true);
 
-    Matrix active_mos = *scoeff_->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
+    Matrix active_mos = *sref_->coeff()->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
     Matrix fock_mo(active_mos % *fock * active_mos);
     vector<double> eigs(active_mos.mdim(), 0.0);
     shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
     active_mos *= *active_transformation;
-    scoeff_->copy_block(0, nclosed_, scoeff_->ndim(), active_mos.mdim(), active_mos);
+    shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
+    scoeff->copy_block(0, nclosed_, scoeff->ndim(), active_mos.mdim(), active_mos);
+    set_coeff(scoeff);
   }
 }
 
