@@ -223,7 +223,7 @@ void Dimer::construct_coeff() {
     shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
 
     shared_ptr<Matrix> projected = projectedA->merge(projectedB);
-    proj_coeff_ = make_shared<Coeff>(*projected);
+    proj_coeff_ = make_shared<Coeff>(move(*projected));
   }
 
   const int ncloA = ncore_.first;
@@ -279,7 +279,7 @@ void Dimer::embed_refs() {
     Amatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Amatrix->copy_block(0, nclosed, dimerbasis_, filled_activeB, scoeff_->element_ptr(0,nclosed + nactA)); // FilledActive B
     Amatrix->copy_block(0, nclosed + filled_activeB, dimerbasis_, nactA, scoeff_->element_ptr(0,nclosed)); // Active A
-    auto Acoeff = make_shared<Coeff>(*Amatrix);
+    auto Acoeff = make_shared<Coeff>(move(*Amatrix));
 
     // Set up variables for this fci
     const int ncore = nclosed + filled_activeB;
@@ -293,7 +293,7 @@ void Dimer::embed_refs() {
     Bmatrix->copy_block(0, 0, dimerbasis_, nclosed, scoeff_->element_ptr(0,0)); // Total closed space
     Bmatrix->copy_block(0, nclosed, dimerbasis_, filled_activeA, scoeff_->element_ptr(0,nclosed)); // FilledActive A
     Bmatrix->copy_block(0, nclosed + filled_activeA, dimerbasis_, nactB, scoeff_->element_ptr(0,nclosed + nactA)); // Active B
-    auto Bcoeff = make_shared<Coeff>(*Bmatrix);
+    auto Bcoeff = make_shared<Coeff>(move(*Bmatrix));
 
     // Set up variables for this fci
     const int ncore = nclosed + filled_activeA;

@@ -40,6 +40,10 @@ Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
 }
 
 
+Coeff::Coeff(Matrix&& inp) : Matrix(move(inp)) {
+}
+
+
 Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
   double* cdata = data();

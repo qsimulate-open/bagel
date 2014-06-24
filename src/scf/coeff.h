@@ -32,9 +32,6 @@
 namespace bagel {
 
 class Coeff : public Matrix {
-  protected:
-    std::shared_ptr<const Geometry> geom_;
-
   private:
     int num_basis(std::vector<std::shared_ptr<const Coeff>> coeff_vec) const;
 
@@ -44,16 +41,15 @@ class Coeff : public Matrix {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix>(*this) & geom_;
+      ar & boost::serialization::base_object<Matrix>(*this);
     }
 
   public:
     Coeff() { }
     Coeff(const Matrix&);
+    Coeff(Matrix&&);
     Coeff(std::vector<std::shared_ptr<const Coeff>> coeff_vec);
-    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {}
-
-    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
+    Coeff(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()) {}
 
     std::shared_ptr<Matrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> split(const int, const int) const;

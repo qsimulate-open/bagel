@@ -52,7 +52,7 @@ namespace bagel {
         void read();
 
         MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
-        MoldenIn& operator>> (std::shared_ptr<Coeff>& coeff);
+        MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>>);
   };
 }
 
