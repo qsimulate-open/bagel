@@ -225,9 +225,9 @@ class DFFullDist : public ParallelDF {
     // special function for RHF
     std::shared_ptr<DFFullDist> apply_closed_2RDM(const double scale_ex = 1.0) const;
     // special function for UHF
-    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
+    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const btas::Tensor2<double>& rdma, const btas::Tensor2<double>& rdmb) const;
     // general case with closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 

@@ -192,7 +192,7 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
   shared_ptr<const RDM<2>> irdm = rdm2->get_imag_part();
 
   shared_ptr<DFFullDist> r  =  dffull_[0]->apply_2rdm(*rrdm);
-  r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(*irdm);
+  r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(*irdm));
 
   shared_ptr<DFFullDist> i  =  dffull_[1]->apply_2rdm(*rrdm);
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));

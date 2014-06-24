@@ -112,7 +112,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
+  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(*ref_->rdm1(1), *ref_->rdm1(2)); // 1 and 2: alpha and beta
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -137,7 +137,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
+  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(*ref_->rdm1(1), *ref_->rdm1(2)); // 1 and 2: alpha and beta
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -192,7 +192,7 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
+  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), ref_->nclosed(), ref_->nact());
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -216,7 +216,7 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
+  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), ref_->nclosed(), ref_->nact());
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 

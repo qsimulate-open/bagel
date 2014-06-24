@@ -239,7 +239,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
     shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
     shared_ptr<const DFHalfDist> tmp1 = geom_->df()->compute_half_transform(ocz0)->apply_J();
     tmp0->ax_plus_y(1.0, tmp1);
-    shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
     shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
     const Matrix cbuf(*coeff_ % *buf);
     sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, cbuf);
@@ -248,7 +248,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
   shared_ptr<DFFullDist> fullz = half->compute_second_transform(ocz0);
   fullz->symmetrize();
   {
-    shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
     shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
     // mo transformation of s
     const Matrix cbuf(*coeff_ % *buf);
