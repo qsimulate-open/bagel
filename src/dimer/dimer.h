@@ -53,7 +53,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<const Geometry>   sgeom_;
       std::shared_ptr<const Reference>  sref_;
 
-      std::pair<int, int> ncore_;
       std::pair<int, int> nact_;
       std::pair<int, int> nfilledactive_;
       std::pair<int, int> nvirt_;
@@ -77,7 +76,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
         sref_ = std::make_shared<const Reference>(sgeom_, std::make_shared<const Coeff>(*mat), sref_->nclosed(), sref_->nact(), sref_->nvirt());
       };
 
-      std::pair<const int, const int> ncore() const { return ncore_; }
       std::pair<const int, const int> nact() const { return nact_; }
       std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
 

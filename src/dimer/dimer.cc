@@ -107,8 +107,8 @@ shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
 
   shared_ptr<Matrix> projected = projectedA->merge(projectedB);
 
-  const int ncloA = ncore_.first;
-  const int ncloB = ncore_.second;
+  const int ncloA = refs_.first->nclosed();
+  const int ncloB = refs_.second->nclosed();
 
   const int nactA = nact_.first;
   const int nactB = nact_.second;
@@ -149,15 +149,14 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
   }
 
   if(refs_.first) {
-    ncore_ = make_pair(refs_.first->nclosed(), refs_.second->nclosed());
     nact_ = make_pair(refs_.first->nact(), refs_.second->nact());
     nvirt_ = make_pair(refs_.first->nvirt(), refs_.second->nvirt());
   }
   else {
     // Round nele up for number of orbitals
-    ncore_ = make_pair( (geoms_.first->nele() - 1)/2 + 1, (geoms_.second->nele() - 1)/2 + 1);
+    pair<int, int> ncore = make_pair( (geoms_.first->nele() - 1)/2 + 1, (geoms_.second->nele() - 1)/2 + 1);
     nact_ = make_pair(0, 0);
-    nvirt_ = make_pair(refs_.first->coeff()->mdim() - ncore_.first, refs_.second->coeff()->mdim() - ncore_.second);
+    nvirt_ = make_pair(refs_.first->coeff()->mdim() - ncore.first, refs_.second->coeff()->mdim() - ncore.second);
   }
 
   shared_ptr<const Matrix> projected = form_projected_coeffs();
@@ -298,8 +297,8 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
 
   // explicitly assuming that there are only closed and virtual spaces and no ambiguous orbitals.
   nvirt_ = make_pair(
-    accumulate(subsets_B.begin(), subsets_B.end(), local_coeff->mdim() - ncore_.first, [](int o, const set<int>& s) {return o - s.size();}),
-    accumulate(subsets_A.begin(), subsets_A.end(), local_coeff->mdim() - ncore_.second, [](int o, const set<int>& s) {return o - s.size();})
+    accumulate(subsets_B.begin(), subsets_B.end(), local_coeff->mdim() - refs_.first->nclosed(), [](int o, const set<int>& s) {return o - s.size();}),
+    accumulate(subsets_A.begin(), subsets_A.end(), local_coeff->mdim() - refs_.second->nclosed(), [](int o, const set<int>& s) {return o - s.size();})
   );
 
   auto out_coeff = local_coeff->copy();
@@ -359,8 +358,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
         make_pair(refs_.first->set_active(Alist), refs_.second->set_active(Blist));
 
   // Hold onto old occupation data
-  const int noccA = ncore_.first;
-  const int noccB = ncore_.second;
+  const int noccA = refs_.first->nclosed();
+  const int noccB = refs_.second->nclosed();
 
   const int nexternA = nvirt_.first;
   const int nexternB = nvirt_.second;
