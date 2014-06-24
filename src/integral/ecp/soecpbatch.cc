@@ -74,7 +74,7 @@ void SOECPBatch::compute() {
   double* current_data1 = intermediate_c + size_c;
   double* current_data2 = intermediate_c + size_c;
 
-  int i = 0; // we want to get data1_, data2_, data_ here
+  int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
   for (int iyA = 0; iyA <= ang0_ - izA; ++iyA) {
     const int ixA = ang0_ - izA - iyA;
@@ -89,10 +89,9 @@ void SOECPBatch::compute() {
         for (auto& aiter : mol_->atoms()) {
           shared_ptr<const SOECP> aiter_ecp = aiter->so_parameters();
 
-// have to integrate x y z components here
           SOBatch radint(aiter_ecp, basisinfo_, contA, contC, lA, lC, true, max_iter_, integral_thresh_);
-//        radint.integrate();
-//        tmp = radint.integral();
+          radint.integrate();
+          tmp = radint.integral();
         }
         const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
         current_data[index] = tmp[0];

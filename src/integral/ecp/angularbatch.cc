@@ -65,7 +65,7 @@ double AngularBatch::integrate3SHs(array<pair<int, int>, 3> lm) const {
 
 void AngularBatch::map_angular_number() {
 
-  for (int l = 0; l != ANG_HRR_END; ++l) {
+  for (int l = 0; l != ANG_HRR_END*2-1; ++l) {
     map<int, array<int, 3>> mapl;
     int key = 0;
     for (int z = 0; z <= l; ++z) {
@@ -114,7 +114,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
         const int lk = kx + ky + kz;
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         const double coeff = c0_[index] * pow(-1.0, lk - l0_);
-        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
+        for (int ld = max(l-lk, 0); ld <= l+lk; ++ld) {
           if ((l + lk - ld) % 2 == 0) {
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
@@ -179,7 +179,7 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
         const int lk = kx + ky + kz;
         const int index = kx * ANG_HRR_END * ANG_HRR_END + ky * ANG_HRR_END + kz;
         const double coeff = c1_[index] * pow(-1.0, lk - l1_);
-        for (int ld = abs(l-lk); ld <= l+lk; ++ld) {
+        for (int ld = max(l-lk, 0); ld <= l+lk; ++ld) {
           if ((l + lk - ld) % 2 == 0) {
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {

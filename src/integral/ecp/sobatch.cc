@@ -91,8 +91,8 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
       assert (pj != map_[l].end());
       const array<int, 3> kj = pj->second;
 
-      for (int a = abs(h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
-        for (int b = abs(h-a-ang0_[2]); a <= min(ang0_[1], h-a); ++b) {
+      for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
+        for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
           const double coeff = c0_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
@@ -135,8 +135,8 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
       assert (pj != map_[l].end());
       const array<int, 3> kj = pj->second;
 
-      for (int a = abs(h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
-        for (int b = abs(h-a-ang1_[2]); a <= min(ang1_[1], h-a); ++b) {
+      for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
+        for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
           const double coeff = c0_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
@@ -209,8 +209,8 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
 
   vector<double> out(3*r.size(), 0.0);
 
-  for (int ld0 = abs(l-l0_); ld0 <= l+l0_; ++ld0) {
-    for (int ld1 = abs(l-l1_); ld1 <= l+l1_; ++ld1) {
+  for (int ld0 = max(0, l-l0_); ld0 <= l+l0_; ++ld0) {
+    for (int ld1 = max(0, l-l1_); ld1 <= l+l1_; ++ld1) {
       const int c0 = l0_ - (l0_ - abs(ld0-l))%2;
       const int c1 = l1_ - (l1_ - abs(ld1-l))%2;
 
