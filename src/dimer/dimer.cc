@@ -65,10 +65,9 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
       A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
   refs_ = make_pair(A, tmpref);
-  nclosed_ = 2*A->nclosed();
   shared_ptr<const Matrix> coeff = construct_coeff();
 
-  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), nclosed_, 2*A->nact(), 2*A->nvirt());
+  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
 
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input) {
@@ -76,10 +75,9 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   construct_geometry();
 
   refs_ = make_pair(A, B);
-  nclosed_ = A->nclosed() + B->nclosed();
   shared_ptr<const Matrix> coeff = construct_coeff();
 
-  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), nclosed_, A->nact() + B->nact(), A->nvirt() + B->nvirt());
+  sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed() + B->nclosed(), A->nact() + B->nact(), A->nvirt() + B->nvirt());
 }
 
 
@@ -173,7 +171,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 }
 
 void Dimer::embed_refs() {
-  const int nclosed = nclosed_;
+  const int nclosed = sref_->nclosed();
 
   // filled_active is the number of orbitals in the active space that should be filled
   const int filled_activeA = nfilledactive_.first;
@@ -370,7 +368,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   // Update Dimer info
   const int nclosedA = active_refs.first->nclosed();
   const int nclosedB = active_refs.second->nclosed();
-  nclosed_ = nclosedA + nclosedB;
+  const int nclosed = nclosedA + nclosedB;
 
   const int nactA = active_refs.first->nact();
   const int nactB = active_refs.second->nact();
@@ -420,8 +418,8 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   shared_ptr<Matrix> out_coeff = sref_->coeff()->copy();
   size_t closed_position = 0;
-  size_t active_position = nclosed_;
-  size_t virt_position = nclosed_ + nact;
+  size_t active_position = nclosed;
+  size_t virt_position = nclosed + nact;
 
   for (auto& subset : svd_info) {
     const Matrix& active = *get<0>(subset);
@@ -499,7 +497,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     }
   }
 
-  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed_, nact, nexternA+nexternB - (nclosed_+nact));
+  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 
   const int nfilledA = geoms_.first->nele()/2 - nclosedA;
   const int nfilledB = geoms_.second->nele()/2 - nclosedB;
@@ -519,8 +517,10 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
   sref_ = rhf->conv_to_ref();
   dimertime.tick_print("Dimer SCF");
 
-  shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed_);
-  shared_ptr<const Matrix> dimercoeff = sref_->coeff()->slice_copy(0,nclosed_);
+  const int nclosed = sref_->nclosed();
+
+  shared_ptr<const Matrix> dimerdensity = sref_->coeff()->form_density_rhf(nclosed);
+  shared_ptr<const Matrix> dimercoeff = sref_->coeff()->slice_copy(0,nclosed);
 
   // Explanation of schemes:
   //   localize_first           - fragment localizes, then picks the active space within each fragment (recommended)
@@ -558,13 +558,13 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     set_active(idata, /*localize_first*/ true);
 
-    Matrix active_mos = *sref_->coeff()->slice(nclosed_, nclosed_ + nact_.first + nact_.second);
+    Matrix active_mos = *sref_->coeff()->slice(nclosed, nclosed + nact_.first + nact_.second);
     Matrix fock_mo(active_mos % *fock * active_mos);
     vector<double> eigs(active_mos.mdim(), 0.0);
     shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
     active_mos *= *active_transformation;
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
-    scoeff->copy_block(0, nclosed_, scoeff->ndim(), active_mos.mdim(), active_mos);
+    scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
     set_coeff(scoeff);
   }
 }
