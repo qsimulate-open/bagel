@@ -60,8 +60,7 @@ OrbitalLocalization::OrbitalLocalization(shared_ptr<const PTree> input, shared_p
   // if there, take eigenvalues out of Reference to reorder subspaces later on
   // TODO: would more flexibility in defining the reordering criterion be helpful?
   if (!ref->eig().empty()) {
-    diagonals_.resize(coeff_->mdim(), 0.0);
-    copy(ref->eig().begin(), ref->eig().end(), diagonals_.begin());
+    diagonals_ = ref->eig();
   }
 }
 
@@ -145,7 +144,7 @@ void RegionLocalization::common_init(vector<int> sizes) {
   sqrt_S_ = S->copy(); sqrt_S_->sqrt();
   S_inverse_half_ = S->copy();
   if (!S_inverse_half_->inverse_half()) {
-    throw runtime_error("Region Localization does not currently handle linear dependencies. Sorry!");
+    throw runtime_error("Region Localization does not handle linear dependencies. Use PM localization.");
   }
 }
 

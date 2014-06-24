@@ -361,9 +361,8 @@ void Matrix::sqrt() {
     diagonalize(vec.get());
 
     for (int i = 0; i != n; ++i) {
-      if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-      double s = std::sqrt(std::sqrt(vec[i]));
-      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+      if (vec[i] < -numerical_zero__) throw std::runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      blas::scale_n(std::sqrt(std::sqrt(std::abs(vec[i]))), element_ptr(0,i), n);
     }
 
     *this = *this ^ *this;
