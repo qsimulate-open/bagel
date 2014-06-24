@@ -42,8 +42,7 @@ using namespace bagel;
 /************************************************************************************
  *  Single reference plus translation vector constructors                            *
  ************************************************************************************/
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : input_(input),
-  nbasis_(A->nbasis(), A->nbasis()) {
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : input_(input) {
     array<double, 3> translation = input->get_array<double, 3>("translate");
     if (input->get<bool>("angstrom", false))
       for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
@@ -53,9 +52,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : inpu
     construct_geometry();
   }
 
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input),
-  nbasis_(A->geom()->nbasis(), A->geom()->nbasis())
-{
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input) {
   array<double, 3> translation = input->get_array<double, 3>("translate");
   if (input->get<bool>("angstrom", false))
     for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
@@ -74,9 +71,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), nclosed_, 2*A->nact(), 2*A->nvirt());
 }
 
-Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input),
-  nbasis_(A->geom()->nbasis(), B->geom()->nbasis())
-{
+Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input) {
   geoms_ = make_pair(A->geom(), B->geom());
   construct_geometry();
 
@@ -96,9 +91,6 @@ void Dimer::construct_geometry() {
     Muffle hide_cout;
     geoms_ = make_pair(make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata));
   }
-
-  nele_ = make_pair(geoms_.first->nele(), geoms_.second->nele());
-  nbasis_ = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
 
   vector<shared_ptr<const Geometry>> geo_vec = {{ geoms_.first, geoms_.second }};
   shared_ptr<const PTree> env_data = input_->get_child_optional("environment");
@@ -165,7 +157,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
   }
   else {
     // Round nele up for number of orbitals
-    ncore_ = make_pair( (nele_.first - 1)/2 + 1, (nele_.second - 1)/2 + 1);
+    ncore_ = make_pair( (geoms_.first->nele() - 1)/2 + 1, (geoms_.second->nele() - 1)/2 + 1);
     nact_ = make_pair(0, 0);
     nvirt_ = make_pair(refs_.first->coeff()->mdim() - ncore_.first, refs_.second->coeff()->mdim() - ncore_.second);
   }
@@ -250,6 +242,8 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
   vector<set<int>> subsets_B;
   vector<set<int>> ambiguous_subsets;
 
+  pair<int, int> nbasis = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
+
   if (localize_first)
     assert(sref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
                                [] (unsigned long long o, const pair<int,int>& p) { return o + p.second - p.first; }));
@@ -267,13 +261,13 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
 
     {
       Matrix Q_A(nsuborbs, nsuborbs);
-      dgemm_("T", "N", nsuborbs, nsuborbs, nbasis_.first, 1.0, ShalfC.element_ptr(0,subspace.first), ShalfC.ndim(),
-                                                               ShalfC.element_ptr(0,subspace.first), ShalfC.ndim(),
-                                                          0.0, Q_A.data(), Q_A.ndim());
+      dgemm_("T", "N", nsuborbs, nsuborbs, nbasis.first, 1.0, ShalfC.element_ptr(0,subspace.first), ShalfC.ndim(),
+                                                              ShalfC.element_ptr(0,subspace.first), ShalfC.ndim(),
+                                                         0.0, Q_A.data(), Q_A.ndim());
       Matrix Q_B(nsuborbs, nsuborbs);
-      dgemm_("T", "N", nsuborbs, nsuborbs, nbasis_.second, 1.0, ShalfC.element_ptr(nbasis_.first,subspace.first), ShalfC.ndim(),
-                                                                ShalfC.element_ptr(nbasis_.first,subspace.first), ShalfC.ndim(),
-                                                           0.0, Q_B.data(), Q_B.ndim());
+      dgemm_("T", "N", nsuborbs, nsuborbs, nbasis.second, 1.0, ShalfC.element_ptr(nbasis.first,subspace.first), ShalfC.ndim(),
+                                                               ShalfC.element_ptr(nbasis.first,subspace.first), ShalfC.ndim(),
+                                                          0.0, Q_B.data(), Q_B.ndim());
       for (int i = 0; i < nsuborbs; ++i) {
         lowdin_A[i] = Q_A(i,i) * Q_A(i,i);
         lowdin_B[i] = Q_B(i,i) * Q_B(i,i);
