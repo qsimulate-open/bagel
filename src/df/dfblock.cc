@@ -252,9 +252,15 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm, const double* rdm1, c
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_2RDM(const double* rdm) const {
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm) const {
   shared_ptr<DFBlock> out = clone();
-  dgemm_("N", "T", asize(), b1size()*b2size(), b1size()*b2size(), 1.0, data(), asize(), rdm, b1size()*b2size(), 0.0, out->data(), asize());
+
+  using btas::group;
+  auto outv = group(*out,  1, 3);
+  auto dfv  = group(*this, 1, 3);
+  auto rdmv = group(group(rdm,  2, 4), 0, 2);
+
+  btas::contract(1.0, dfv, {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
   return out;
 }
 

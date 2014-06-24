@@ -338,7 +338,7 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm, const double* r
 }
 
 
-shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const double* rdm) const {
+shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const btas::Tensor4<double>& rdm) const {
   auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
   for (auto& i : block_)
     out->add_block(i->apply_2RDM(rdm));

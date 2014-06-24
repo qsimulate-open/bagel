@@ -68,7 +68,7 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<DFBlock> apply_rhf_2RDM(const double scale_exch) const;
     std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const;
     std::shared_ptr<DFBlock> apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
-    std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
+    std::shared_ptr<DFBlock> apply_2RDM(const btas::Tensor4<double>& rdm) const;
 
     // Form 2- and 4-index integrals
     std::shared_ptr<Matrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;

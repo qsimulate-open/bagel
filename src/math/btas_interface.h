@@ -34,6 +34,7 @@
 
 #include <btas/btas.h>
 #include <btas/tensor.h>
+#include <btas/tensor_func.h>
 #include <src/math/btas_varray.h>
 
 namespace btas {

@@ -282,7 +282,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
   // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
-  auto D1 = make_shared<Matrix>(nocc*nall, nocc*nall);
+  auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
   {
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
     for (int s = 0; s != nall; ++s) // extend
@@ -290,7 +290,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
         for (int t = 0; t != nall; ++t) // extend
           for (int l = ncore_; l != nocc; ++l) {
             if (t >= nclosed && s >= nclosed) {
-              D1->element(l+nocc*t, k+nocc*s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
+              (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
             }
           }
   }
@@ -300,7 +300,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // 2 Y4 =  2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lj) D0_(lj,ki) +  2 (kr|lt) D1_(lt,ks)
     // construct stepwise, D1 part
-    fullks = full->apply_2rdm(D1->data());
+    fullks = full->apply_2rdm(*D1);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
     shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target_)->data(), ref_->rdm1(target_)->data(), nclosed, nact);

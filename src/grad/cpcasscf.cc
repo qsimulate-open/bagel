@@ -358,7 +358,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   // Half transformed DF vector
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*rdm2);
   amat->add_block(prefactor, 0, nclosed, nmobasis, nact, *coeff_ % *half->form_2index(fulld, 1.0));
 
   // additing f^z_ri contribution
@@ -478,7 +478,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
     shared_ptr<DFFullDist> fulla = halfa->compute_second_transform(acoeff);
     {
-      shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(rdm2_av->data());
+      shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(*rdm2_av);
       shared_ptr<Matrix> jop = zhalf->form_2index(fullaj, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *jop);
     }
@@ -487,7 +487,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
       shared_ptr<RDM<2>> rdm2_av_exch = rdm2_av->clone();
       shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(acoeff)->apply_JJ();
       zfull->symmetrize();
-      zfull = zfull->apply_2rdm(rdm2_av->data());
+      zfull = zfull->apply_2rdm(*rdm2_av);
       shared_ptr<Matrix> kop = halfa->form_2index(zfull, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *kop);
     }

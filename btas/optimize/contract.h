@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <cassert>
 #include <btas/generic/gemm_impl.h>
+#include <btas/generic/scal_impl.h>
 
 namespace btas {
 
@@ -26,7 +27,7 @@ void contract_222(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     assert((cA == CblasNoTrans ? aA.back() : aA.front()) == (cB == CblasTrans ? aB.back() : aB.front()));
 
     gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0), C.extent(1), condim,
-                          alpha, A.data(), A.extent(0), B.data(), B.extent(0), beta, C.data(), C.extent(0));
+                          alpha, &*A.begin(), A.extent(0), &*B.begin(), B.extent(0), beta, &*C.begin(), C.extent(0));
   } else {
     contract_222(alpha, B, aB, A, aA, beta, C, aC);
   }
@@ -60,7 +61,7 @@ void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     assert(notrans ? B.extent(1) : B.extent(0) == A.extent(0));
 
     gemm_impl<true>::call(CblasColMajor, cB, cA, C.extent(0), C.extent(1)*C.extent(2), A.extent(0),
-                          alpha, B.data(), B.extent(0), A.data(), A.extent(0), beta, C.data(), C.extent(0));
+                          alpha, &*B.begin(), B.extent(0), &*A.begin(), A.extent(0), beta, &*C.begin(), C.extent(0));
   } else if (irot == 1) {
     // in this case we loop over the last index of A
     const bool notrans = aB.front() == aA[1];
@@ -73,7 +74,7 @@ void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
 
     for (int i = 0; i != A.extent(2); ++i)
       gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0), C.extent(1), A.extent(1),
-                            alpha, A.data()+i*ablock, A.extent(0), B.data(), B.extent(0), beta, C.data()+i*cblock, C.extent(0));
+                            alpha, &*A.begin()+i*ablock, A.extent(0), &*B.begin(), B.extent(0), beta, &*C.begin()+i*cblock, C.extent(0));
   } else if (irot == 2) {
     // in this case multiply from back
     const bool notrans = aB.front() == aA[2];
@@ -82,7 +83,7 @@ void contract_323(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     const auto cB = notrans ? CblasNoTrans : CblasTrans;
     assert(notrans ? B.extent(0) : B.extent(1) == A.extent(2));
     gemm_impl<true>::call(CblasColMajor, cA, cB, C.extent(0)*C.extent(1), C.extent(2), A.extent(2),
-                          alpha, A.data(), A.extent(0)*A.extent(1), B.data(), B.extent(0), beta, C.data(), C.extent(0)*C.extent(1));
+                          alpha, &*A.begin(), A.extent(0)*A.extent(1), &*B.begin(), B.extent(0), beta, &*C.begin(), C.extent(0)*C.extent(1));
   } else {
     assert(false);
   }
@@ -106,11 +107,11 @@ void contract_332(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     if (!swap) {
       assert(A.extent(0)*A.extent(1) == B.extent(0)*B.extent(1) && A.extent(2) == C.extent(0) && B.extent(2) == C.extent(1));
       gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0)*A.extent(1),
-                            alpha, A.data(), A.extent(0)*A.extent(1), B.data(), B.extent(0)*B.extent(1), beta, C.data(), C.extent(0));
+                            alpha, &*A.begin(), A.extent(0)*A.extent(1), &*B.begin(), B.extent(0)*B.extent(1), beta, &*C.begin(), C.extent(0));
     } else {
       assert(A.extent(0)*A.extent(1) == B.extent(0)*B.extent(1) && B.extent(2) == C.extent(0) && A.extent(2) == C.extent(1));
       gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0)*A.extent(1),
-                            alpha, B.data(), B.extent(0)*B.extent(1), A.data(), A.extent(0)*A.extent(1), beta, C.data(), C.extent(0));
+                            alpha, &*B.begin(), B.extent(0)*B.extent(1), &*A.begin(), A.extent(0)*A.extent(1), beta, &*C.begin(), C.extent(0));
     }
   } else if (front2) {
     const bool swap = aC[0] == aB[0];
@@ -118,28 +119,28 @@ void contract_332(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& a
     if (!swap) {
       assert(A.extent(1)*A.extent(2) == B.extent(1)*B.extent(2) && A.extent(0) == C.extent(0) && B.extent(0) == C.extent(1));
       gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.extent(0), C.extent(1), A.extent(1)*A.extent(2),
-                            alpha, A.data(), A.extent(0), B.data(), B.extent(0), beta, C.data(), C.extent(0));
+                            alpha, &*A.begin(), A.extent(0), &*B.begin(), B.extent(0), beta, &*C.begin(), C.extent(0));
     } else {
       assert(A.extent(1)*A.extent(2) == B.extent(1)*B.extent(2) && B.extent(0) == C.extent(0) && A.extent(0) == C.extent(1));
       gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, C.extent(0), C.extent(1), A.extent(1)*A.extent(2),
-                            alpha, B.data(), B.extent(0), A.data(), A.extent(0), beta, C.data(), C.extent(0));
+                            alpha, &*B.begin(), B.extent(0), &*A.begin(), A.extent(0), beta, &*C.begin(), C.extent(0));
     }
   } else if (mid2) {
     const bool swap = aC[0] == aB[1];
     assert(swap || aC[0] == aA[1]);
     const size_t ablock = A.extent(0)*A.extent(1);
     const size_t bblock = B.extent(0)*B.extent(1);
-    C.scale(beta);
+    scal(C.size(), beta, &*C.begin(), 1);
     if (!swap) {
       assert(A.extent(0) == B.extent(0) && A.extent(2) == B.extent(2) && A.extent(1) == C.extent(0) && B.extent(1) == C.extent(1));
       for (int i = 0; i != A.extent(2); ++i)
         gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
-                              alpha, A.data()+i*ablock, A.extent(0), B.data()+i*bblock, B.extent(0), 1.0, C.data(), C.extent(0));
+                              alpha, &*A.begin()+i*ablock, A.extent(0), &*B.begin()+i*bblock, B.extent(0), 1.0, &*C.begin(), C.extent(0));
     } else {
       assert(A.extent(0) == B.extent(0) && A.extent(2) == B.extent(2) && B.extent(1) == C.extent(0) && A.extent(1) == C.extent(1));
       for (int i = 0; i != A.extent(2); ++i)
         gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, C.extent(0), C.extent(1), A.extent(0),
-                              alpha, B.data()+i*bblock, B.extent(0), A.data()+i*ablock, A.extent(0), 1.0, C.data(), C.extent(0));
+                              alpha, &*B.begin()+i*bblock, B.extent(0), &*A.begin()+i*ablock, A.extent(0), 1.0, &*C.begin(), C.extent(0));
     }
   } else
     throw std::logic_error("not yet implemented");

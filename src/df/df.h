@@ -229,7 +229,7 @@ class DFFullDist : public ParallelDF {
     // general case with closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
 

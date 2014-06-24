@@ -39,6 +39,10 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     constexpr const static int N = rank*2;
   public:
     using btas::TensorN<DataType, N>::data;
+    using btas::TensorN<DataType, N>::begin;
+    using btas::TensorN<DataType, N>::end;
+    using btas::TensorN<DataType, N>::cbegin;
+    using btas::TensorN<DataType, N>::cend;
 
   private:
     friend class boost::serialization::access;
@@ -103,6 +107,28 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     std::vector<DataType> diag() const {
       throw std::logic_error("RDM<N>::diag() should not be called with N>1");
       return std::vector<DataType>();
+    }
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T,std::complex<double>>::value>::type
+            >
+    std::shared_ptr<RDM<rank,double>> get_real_part() const {
+      auto out = std::make_shared<RDM<rank,double>>(norb());
+      auto i = out->begin();
+      for (auto& d : *this)
+        *i++ = std::real(d);
+      return out;
+    }
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T,std::complex<double>>::value>::type
+            >
+    std::shared_ptr<RDM<rank,double>> get_imag_part() const {
+      auto out = std::make_shared<RDM<rank,double>>(norb());
+      auto i = out->begin();
+      for (auto& d : *this)
+        *i++ = std::imag(d);
+      return out;
     }
 
     void print(const double thresh = 1.0e-3) const { throw std::logic_error("RDM<N>::print() (N>3) not implemented yet"); }
