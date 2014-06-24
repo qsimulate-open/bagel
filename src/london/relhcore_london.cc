@@ -73,12 +73,28 @@ void RelHcore_London::compute_() {
 
   //zeeman->add_block( rh, 0, 0, n, n, (*smalloverlap_)[0]);
   //zeeman->add_block( rh, n, n, n, n, (*smalloverlap_)[0]);
-  zeeman->add_block(  ih, 0, 0, n, n, (*smalloverlap_)[1]);
-  zeeman->add_block( -ih, n, n, n, n, (*smalloverlap_)[1]);
-  zeeman->add_block(  ih, 0, n, n, n, (*smalloverlap_)[2]);
-  zeeman->add_block(  ih, n, 0, n, n, (*smalloverlap_)[2]);
-  zeeman->add_block(  rh, 0, n, n, n, (*smalloverlap_)[3]);
-  zeeman->add_block( -rh, n, 0, n, n, (*smalloverlap_)[3]);
+  {
+    /*
+    zeeman->add_block(  ih, 0, 0, n, n, (*smalloverlap_)[1]);
+    zeeman->add_block( -ih, n, n, n, n, (*smalloverlap_)[1]);
+    zeeman->add_block( -ih, 0, n, n, n, (*smalloverlap_)[2]);
+    zeeman->add_block( -ih, n, 0, n, n, (*smalloverlap_)[2]);
+    zeeman->add_block(  rh, 0, n, n, n, (*smalloverlap_)[3]);
+    zeeman->add_block( -rh, n, 0, n, n, (*smalloverlap_)[3]);
+    */
+  }
+  {
+    ///*
+    const complex<double> r2 (0.5);
+    const complex<double> i2 (0.0, r2.real());
+    zeeman->add_block( -r2*geom_->magnetic_field(2), 0, 0, n, n, overlap_);
+    zeeman->add_block(  r2*geom_->magnetic_field(2), n, n, n, n, overlap_);
+    zeeman->add_block( -r2*geom_->magnetic_field(0), 0, n, n, n, overlap_);
+    zeeman->add_block( -r2*geom_->magnetic_field(0), n, 0, n, n, overlap_);
+    zeeman->add_block(  i2*geom_->magnetic_field(1), 0, n, n, n, overlap_);
+    zeeman->add_block( -i2*geom_->magnetic_field(1), n, 0, n, n, overlap_);
+    //*/
+  }
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
   zero();

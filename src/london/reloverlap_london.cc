@@ -37,11 +37,22 @@ void RelOverlap_London::compute_() {
   copy_block(n, n, n, n, overlap_);
   copy_block(2*n, 2*n, n, n, scalekinetic);
   copy_block(3*n, 3*n, n, n, scalekinetic);
+
+  const complex<double> r2 (0.25 / (c__*c__));
+  const complex<double> i2 (0.0, r2.real());
+  add_block(  r2*mol_->magnetic_field(2), 2*n, 2*n, n, n, overlap_);
+  add_block( -r2*mol_->magnetic_field(2), 3*n, 3*n, n, n, overlap_);
+  add_block(  r2*mol_->magnetic_field(0), 2*n, 3*n, n, n, overlap_);
+  add_block(  r2*mol_->magnetic_field(0), 3*n, 2*n, n, n, overlap_);
+  add_block( -i2*mol_->magnetic_field(1), 2*n, 3*n, n, n, overlap_);
+  add_block( +i2*mol_->magnetic_field(1), 3*n, 2*n, n, n, overlap_);
 }
 
 
 shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   shared_ptr<ZMatrix> tildeo = overlap_->tildex(thresh);
+
+/*
   shared_ptr<ZMatrix> k = make_shared<ZMatrix>(*tildeo % *kinetic_ * *tildeo);
   const bool nosing = k->inverse_half(thresh*1.0e2);
   if (!nosing)
@@ -49,14 +60,33 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   shared_ptr<ZMatrix> tildek = make_shared<ZMatrix>(*tildeo * *k);
 
   *tildek *= (c__/sqrt(0.5));
+*/
   const int n = tildeo->ndim();
   const int m = tildeo->mdim();
+
+  const int j = mol_->nbasis();
+  auto soverlap = make_shared<ZMatrix>(2*j, 2*j);
+  auto scalekinetic = make_shared<ZMatrix>(*kinetic_ * (0.5/(c__*c__)));
+  soverlap->copy_block(0, 0, n, n, scalekinetic);
+  soverlap->copy_block(n, n, n, n, scalekinetic);
+  const complex<double> r2 (0.25 / (c__*c__));
+  const complex<double> i2 (0.0, r2.real());
+  soverlap->add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, overlap_);
+  soverlap->add_block( -r2*mol_->magnetic_field(2), n, n, n, n, overlap_);
+  soverlap->add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, overlap_);
+  soverlap->add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, overlap_);
+  soverlap->add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, overlap_);
+  soverlap->add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, overlap_);
+  shared_ptr<ZMatrix> tildes = soverlap->tildex(thresh/(c__*c__));
+  if (tildes->ndim() != 2*n || tildes->mdim() != 2*m)
+    throw logic_error("positive and negative energy states have different linear dependency");
 
   auto out = make_shared<ZMatrix>(4*n, 4*m);
   out->copy_block(0, 0, n, m, tildeo);
   out->copy_block(n, m, n, m, tildeo);
-  out->copy_block(2*n, 2*m, n, m, tildek);
-  out->copy_block(3*n, 3*m, n, m, tildek);
+  //out->copy_block(2*n, 2*m, n, m, tildek);
+  //out->copy_block(3*n, 3*m, n, m, tildek);
+  out->copy_block(2*n, 2*m, 2*n, 2*m, tildes);
   return out;
 }
 
@@ -65,13 +95,33 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   shared_ptr<ZMatrix> out = clone();
   ZMatrix oinv(*overlap_);
   oinv.inverse();
+  /*
   ZMatrix kinv(*kinetic_);
   kinv.inverse();
   kinv *= (2*(c__*c__));
+  */
   const int n = oinv.ndim();
+
+  auto soverlap = make_shared<ZMatrix>(2*n, 2*n);
+  auto scalekinetic = make_shared<ZMatrix>(*kinetic_ * (0.5/(c__*c__)));
+  soverlap->copy_block(0, 0, n, n, scalekinetic);
+  soverlap->copy_block(n, n, n, n, scalekinetic);
+  const complex<double> r2 (0.25 / (c__*c__));
+  const complex<double> i2 (0.0, r2.real());
+  soverlap->add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, overlap_);
+  soverlap->add_block( -r2*mol_->magnetic_field(2), n, n, n, n, overlap_);
+  soverlap->add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, overlap_);
+  soverlap->add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, overlap_);
+  soverlap->add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, overlap_);
+  soverlap->add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, overlap_);
+  soverlap->inverse();
+  if (soverlap->ndim() != 2*oinv.ndim())
+    throw logic_error("positive and negative energy states have different linear dependency");
+
   out->copy_block(0, 0, n, n, oinv);
   out->copy_block(n, n, n, n, oinv);
-  out->copy_block(2*n, 2*n, n, n, kinv);
-  out->copy_block(3*n, 3*n, n, n, kinv);
+  //out->copy_block(2*n, 2*n, n, n, kinv);
+  //out->copy_block(3*n, 3*n, n, n, kinv);
+  out->copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
   return out;
 }
