@@ -178,12 +178,12 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
       const RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
       const RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
 
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D.data(), dd.data(), nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact));
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }
     {
-      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
@@ -303,7 +303,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     fullks = full->apply_2rdm(*D1);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(ref_->rdm2(target_)->data(), ref_->rdm1(target_)->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
   }
 
