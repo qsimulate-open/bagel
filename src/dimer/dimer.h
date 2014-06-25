@@ -72,10 +72,6 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<const Reference> sref() const { return sref_; };
 
-      void set_coeff(std::shared_ptr<const Matrix> mat) {
-        sref_ = std::make_shared<const Reference>(sgeom_, std::make_shared<const Coeff>(*mat), sref_->nclosed(), sref_->nact(), sref_->nvirt());
-      };
-
       // Utility
       void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
       void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);

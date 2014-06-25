@@ -310,7 +310,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     }
   }
 
-  set_coeff(make_shared<Coeff>(*out_coeff));
+  sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
 
 // localize_first flag defined as above.
@@ -545,7 +545,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     active_mos *= *active_transformation;
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
-    set_coeff(scoeff);
+    sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
   }
 }
 
