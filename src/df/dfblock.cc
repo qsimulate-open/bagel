@@ -204,17 +204,19 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
 
   // act-act part
   // compress
-  unique_ptr<double[]> buf(new double[nact*nact*asize()]);
-  unique_ptr<double[]> buf2(new double[nact*nact*asize()]);
-  for (int i = 0; i != nact; ++i)
-    for (int j = 0; j != nact; ++j)
-      copy_n(data()+asize()*(j+nclosed+b1size()*(i+nclosed)), asize(), buf.get()+asize()*(j+nact*i));
-  // multiply
-  dgemm_("N", "N", asize(), nact*nact, nact*nact, 1.0, buf.get(), asize(), rdm.data(), nact*nact, 0.0, buf2.get(), asize());
+  auto low = {0, nclosed, nclosed};
+  auto up = {static_cast<int>(asize()), nclosed+nact, nclosed+nact};
+  Tensor3<double> buf = TensorView3<double>(range().slice(low, up), storage());
+  Tensor3<double> buf2(asize(), nact, nact);
+  {
+    auto rdm2v = group(group(rdm,2,4),0,2);
+    auto buf2v = group(buf2,1,3);
+    btas::contract(1.0, group(buf,1,3), {0,1}, rdm2v, {1,2}, 0.0, buf2v, {0,2});
+  }
   // slot in
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
-      copy_n(buf2.get()+asize()*(j+nact*i), asize(), out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)));
+      copy_n(buf2.data()+asize()*(j+nact*i), asize(), out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)));
 
   // closed-act part
   // coulomb contribution G^ia_ia = 2*gamma_ab
@@ -227,10 +229,11 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
       for (int j = 0; j != nact; ++j)
         daxpy_(asize(), 2.0*rdm1(j, i), diagsum.get(), 1, out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)), 1);
   }
-  unique_ptr<double[]> diagsum2(new double[asize()]);
-  dgemv_("N", asize(), nact*nact, 1.0, buf.get(), asize(), rdm1.data(), 1, 0.0, diagsum2.get(), 1);
+  VectorB diagsum2(asize());
+  btas::contract(1.0, group(buf,1,3), {0,1}, btas::group(rdm1,0,2), {1}, 0.0, diagsum2, {0});
+
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize(), 2.0, diagsum2.get(), 1, out->data()+asize()*(i+b1size()*i), 1);
+    daxpy_(asize(), 2.0, diagsum2.data(), 1, out->data()+asize()*(i+b1size()*i), 1);
   // exchange contribution
   if (natural) {
     for (int i = 0; i != nact; ++i)
@@ -252,13 +255,10 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
 
 shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm) const {
   shared_ptr<DFBlock> out = clone();
-
   using btas::group;
-  auto outv = group(*out,  1, 3);
-  auto dfv  = group(*this, 1, 3);
   auto rdmv = group(group(rdm,  2, 4), 0, 2);
-
-  btas::contract(1.0, dfv, {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
+  auto outv = group(*out,1,3);
+  btas::contract(1.0, group(*this,1,3), {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
   return out;
 }
 
