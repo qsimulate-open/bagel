@@ -64,7 +64,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
 
   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
       A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
-  refs_ = make_pair(A, tmpref);
+  isolated_refs_ = make_pair(A, tmpref);
   shared_ptr<const Matrix> coeff = construct_coeff();
 
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
@@ -74,7 +74,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, share
   geoms_ = make_pair(A->geom(), B->geom());
   construct_geometry();
 
-  refs_ = make_pair(A, B);
+  isolated_refs_ = make_pair(A, B);
   shared_ptr<const Matrix> coeff = construct_coeff();
 
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed() + B->nclosed(), A->nact() + B->nact(), A->nvirt() + B->nvirt());
@@ -102,24 +102,24 @@ void Dimer::construct_geometry() {
 /// Takes monomer references, projections them onto the supergeom basis, and arranges the
 /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
 shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
-  shared_ptr<const Matrix> projectedA = refs_.first->project_coeff(sgeom_)->coeff();
-  shared_ptr<const Matrix> projectedB = refs_.second->project_coeff(sgeom_)->coeff();
+  shared_ptr<const Matrix> projectedA = isolated_refs_.first->project_coeff(sgeom_)->coeff();
+  shared_ptr<const Matrix> projectedB = isolated_refs_.second->project_coeff(sgeom_)->coeff();
 
   shared_ptr<Matrix> projected = projectedA->merge(projectedB);
 
-  const int ncloA = refs_.first->nclosed();
-  const int ncloB = refs_.second->nclosed();
+  const int ncloA = isolated_refs_.first->nclosed();
+  const int ncloB = isolated_refs_.second->nclosed();
 
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
+  const int nactA = isolated_refs_.first->nact();
+  const int nactB = isolated_refs_.second->nact();
 
-  const int nvirtA = nvirt_.first;
-  const int nvirtB = nvirt_.second;
+  const int nvirtA = isolated_refs_.first->nvirt();
+  const int nvirtB = isolated_refs_.second->nvirt();
 
-  assert(refs_.first->coeff()->mdim()  == ncloA + nactA + nvirtA);
-  assert(refs_.second->coeff()->mdim() == ncloB + nactB + nvirtB);
+  assert(isolated_refs_.first->coeff()->mdim()  == ncloA + nactA + nvirtA);
+  assert(isolated_refs_.second->coeff()->mdim() == ncloB + nactB + nvirtB);
 
-  const size_t Amos = refs_.first->coeff()->mdim();
+  const size_t Amos = isolated_refs_.first->coeff()->mdim();
 
   // form "projected" coefficients
   const int dimerbasis = sgeom_->nbasis();
@@ -145,18 +145,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
   if (mdata) {
-    refs_ = make_pair(refs_.first->project_coeff(geoms_.first), refs_.second->project_coeff(geoms_.second));
-  }
-
-  if(refs_.first) {
-    nact_ = make_pair(refs_.first->nact(), refs_.second->nact());
-    nvirt_ = make_pair(refs_.first->nvirt(), refs_.second->nvirt());
-  }
-  else {
-    // Round nele up for number of orbitals
-    pair<int, int> ncore = make_pair( (geoms_.first->nele() - 1)/2 + 1, (geoms_.second->nele() - 1)/2 + 1);
-    nact_ = make_pair(0, 0);
-    nvirt_ = make_pair(refs_.first->coeff()->mdim() - ncore.first, refs_.second->coeff()->mdim() - ncore.second);
+    isolated_refs_ = make_pair(isolated_refs_.first->project_coeff(geoms_.first), isolated_refs_.second->project_coeff(geoms_.second));
   }
 
   shared_ptr<const Matrix> projected = form_projected_coeffs();
@@ -170,14 +159,15 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 }
 
 void Dimer::embed_refs() {
+  Timer timer;
   const int nclosed = sref_->nclosed();
 
   // filled_active is the number of orbitals in the active space that should be filled
-  const int filled_activeA = nfilledactive_.first;
-  const int filled_activeB = nfilledactive_.second;
+  const int filled_activeA = isolated_refs_.first->nclosed() - active_refs_.first->nclosed();
+  const int filled_activeB = isolated_refs_.second->nclosed() - active_refs_.second->nclosed();
 
-  const int nactA = nact_.first;
-  const int nactB = nact_.second;
+  const int nactA = active_refs_.first->nact();
+  const int nactB = active_refs_.second->nact();
 
   shared_ptr<const Matrix> scoeff = sref_->coeff();
 
@@ -295,12 +285,6 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     ambiguous_subsets.emplace_back(move(ambiguous));
   }
 
-  // explicitly assuming that there are only closed and virtual spaces and no ambiguous orbitals.
-  nvirt_ = make_pair(
-    accumulate(subsets_B.begin(), subsets_B.end(), local_coeff->mdim() - refs_.first->nclosed(), [](int o, const set<int>& s) {return o - s.size();}),
-    accumulate(subsets_A.begin(), subsets_A.end(), local_coeff->mdim() - refs_.second->nclosed(), [](int o, const set<int>& s) {return o - s.size();})
-  );
-
   auto out_coeff = local_coeff->copy();
 
   const int dimerbasis = sgeom_->nbasis();
@@ -354,28 +338,26 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   if (!Bi.empty()) Blist = Bi;
 
   // Make new References
-  pair<shared_ptr<const Reference>, shared_ptr<const Reference>> active_refs =
-        make_pair(refs_.first->set_active(Alist), refs_.second->set_active(Blist));
+  active_refs_ = make_pair(isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist));
 
   // Hold onto old occupation data
-  const int noccA = refs_.first->nclosed();
-  const int noccB = refs_.second->nclosed();
+  const int noccA = isolated_refs_.first->nclosed();
+  const int noccB = isolated_refs_.second->nclosed();
 
-  const int nexternA = nvirt_.first;
-  const int nexternB = nvirt_.second;
+  const int nexternA = isolated_refs_.first->nvirt();
+  const int nexternB = isolated_refs_.second->nvirt();
 
   // Update Dimer info
-  const int nclosedA = active_refs.first->nclosed();
-  const int nclosedB = active_refs.second->nclosed();
+  const int nclosedA = active_refs_.first->nclosed();
+  const int nclosedB = active_refs_.second->nclosed();
   const int nclosed = nclosedA + nclosedB;
 
-  const int nactA = active_refs.first->nact();
-  const int nactB = active_refs.second->nact();
-  nact_ = make_pair(nactA, nactB);
+  const int nactA = active_refs_.first->nact();
+  const int nactB = active_refs_.second->nact();
   const int nact = nactA + nactB;
 
-  const int nactvirtA = refs_.first->nvirt() - active_refs.first->nvirt();
-  const int nactvirtB = refs_.second->nvirt() - active_refs.second->nvirt();
+  const int nactvirtA = isolated_refs_.first->nvirt() - active_refs_.first->nvirt();
+  const int nactvirtB = isolated_refs_.second->nvirt() - active_refs_.second->nvirt();
 
   const int nbasisA = geoms_.first->nbasis();
   const int nbasisB = geoms_.second->nbasis();
@@ -394,20 +376,20 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   if (localize_first) {
     auto activeA = make_shared<Matrix>(dimerbasis, nactA);
-    activeA->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
+    activeA->copy_block(0, 0, nbasisA, nactA, active_refs_.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
     svd_info.emplace_back(activeA, make_pair(0, noccA), noccA - nclosedA, "A", true);
     svd_info.emplace_back(activeA, make_pair(noccA+noccB, noccA+noccB+nexternA), nactvirtA, "A", false);
 
     auto activeB = make_shared<Matrix>(dimerbasis, nactB);
-    activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
+    activeB->copy_block(nbasisA, 0, nbasisB, nactB, active_refs_.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
     svd_info.emplace_back(activeB, make_pair(noccA, noccA+noccB), noccB - nclosedB, "B", true);
     svd_info.emplace_back(activeB, make_pair(noccA+noccB+nexternA, noccA+noccB+nexternA+nexternB), nactvirtB, "B", false);
   }
   else {
     auto active = make_shared<Matrix>(dimerbasis, nact);
 
-    active->copy_block(0, 0, nbasisA, nactA, active_refs.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
-    active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
+    active->copy_block(0, 0, nbasisA, nactA, active_refs_.first->coeff()->get_submatrix(0, nclosedA, nbasisA, nactA));
+    active->copy_block(nbasisA, nactA, nbasisB, nactB, active_refs_.second->coeff()->get_submatrix(0, nclosedB, nbasisB, nactB));
 
     svd_info.emplace_back(active, make_pair(0, noccA + noccB), noccA + noccB - (nclosedA + nclosedB), "dimer", true);
     svd_info.emplace_back(active, make_pair(noccA + noccB, nbasisA + nbasisB), nactvirtA + nactvirtB, "dimer", false);
@@ -498,9 +480,6 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
 
   auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 
-  const int nfilledA = geoms_.first->nele()/2 - nclosedA;
-  const int nfilledB = geoms_.second->nele()/2 - nclosedB;
-  nfilledactive_ = make_pair( nfilledA, nfilledB );
 
   sref_ = out;
 }
@@ -529,7 +508,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
   if (scheme == "active_only" || scheme == "active_first") {
     // Set active space based on overlap
-    if (refs_.first && refs_.second)
+    if (isolated_refs_.first && isolated_refs_.second)
       set_active(idata, /*localize_first*/ false);
     else
       throw runtime_error("For Dimer::driver, Dimer must be constructed from HF references");
@@ -557,10 +536,12 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     set_active(idata, /*localize_first*/ true);
 
-    Matrix active_mos = *sref_->coeff()->slice(nclosed, nclosed + nact_.first + nact_.second);
+    const int nactA = active_refs_.first->nact();
+    const int nactB = active_refs_.second->nact();
+    Matrix active_mos = *sref_->coeff()->slice(nclosed, nclosed + nactA + nactB);
     Matrix fock_mo(active_mos % *fock * active_mos);
     vector<double> eigs(active_mos.mdim(), 0.0);
-    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nact_.first, nact_.second}});
+    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nactA, nactB}});
     active_mos *= *active_transformation;
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);
@@ -571,11 +552,12 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
 shared_ptr<DimerCAS> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
-  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> nelea = make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  pair<int,int> neleb = nelea;
 
-  auto d1 = make_shared<Determinants>(nact().first, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
-  auto d2 = make_shared<Determinants>(nact().second, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d1 = make_shared<Determinants>(active_refs_.first->nact(), nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d2 = make_shared<Determinants>(active_refs_.second->nact(), nelea.second, neleb.second, /*compress*/false, /*mute*/true);
   auto out = make_shared<DimerCAS>(make_pair(d1, d2), nelea, neleb);
 
   vector<vector<int>> spaces_A;
@@ -637,11 +619,12 @@ shared_ptr<DimerCAS> Dimer::compute_cispace(const std::shared_ptr<const PTree> i
 
 shared_ptr<DimerDistCAS> Dimer::compute_distcispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
-  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> nelea = make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  pair<int,int> neleb = nelea;
 
-  auto d1 = make_shared<Determinants>(nact().first, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
-  auto d2 = make_shared<Determinants>(nact().second, nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d1 = make_shared<Determinants>(active_refs_.first->nact(), nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d2 = make_shared<Determinants>(active_refs_.second->nact(), nelea.second, neleb.second, /*compress*/false, /*mute*/true);
   auto out = make_shared<DimerDistCAS>(make_pair(d1, d2), nelea, neleb);
 
   vector<vector<int>> spaces_A;
@@ -703,8 +686,9 @@ shared_ptr<DimerDistCAS> Dimer::compute_distcispace(const std::shared_ptr<const 
 
 shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
-  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> nelea = make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  pair<int,int> neleb = nelea;
 
   // { {nras1, nras2, nras3}, max holes, max particles }
   pair<tuple<array<int, 3>, int, int>, tuple<array<int, 3>, int, int>> ras_desc;
@@ -794,8 +778,9 @@ shared_ptr<DimerRAS> Dimer::compute_rcispace(const std::shared_ptr<const PTree> 
 
 shared_ptr<DimerDistRAS> Dimer::compute_distrcispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  pair<int,int> nelea = make_pair(nfilledactive().first, nfilledactive().second);
-  pair<int,int> neleb = make_pair(nfilledactive().first, nfilledactive().second);
+  pair<int,int> nelea = make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  pair<int,int> neleb = nelea;
 
   // { {nras1, nras2, nras3}, max holes, max particles }
   pair<tuple<array<int, 3>, int, int>, tuple<array<int, 3>, int, int>> ras_desc;
