@@ -99,8 +99,6 @@ void Dimer::construct_geometry() {
   sgeom_ = make_shared<Geometry>(geo_vec);
 }
 
-/// Takes monomer references, projections them onto the supergeom basis, and arranges the
-/// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
 shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
   shared_ptr<const Matrix> projectedA = isolated_refs_.first->project_coeff(sgeom_)->coeff();
   shared_ptr<const Matrix> projectedB = isolated_refs_.second->project_coeff(sgeom_)->coeff();

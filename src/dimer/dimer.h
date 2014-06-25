@@ -36,9 +36,8 @@
 
 namespace bagel {
 
-/************************************************************************************
-*  This class describes a homodimer.                                                *
-************************************************************************************/
+/// Contains geometries and references for isolated and joined dimers.
+/// Used to prepare an MEH calculation and to start the requisite CI calculations
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
    template <class T> using Ref = std::shared_ptr<const T>;
@@ -46,22 +45,24 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
    protected:
       std::shared_ptr<const PTree> input_;
 
-      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
-      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs_; ///< References of the isolated monomers BEFORE active spaces have been chosen
-      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< References for monomers with the other monomer included as an embedding
-      std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< References of the isolated monomers AFTER the active spaces have been chosen
+      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;            ///< Geometry objects of isolated monomers
+      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs_; ///< Reference objects of the isolated monomers BEFORE active spaces have been chosen
+      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
+      std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
 
-      std::shared_ptr<const Geometry>   sgeom_;
+      std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
+      /// Superreference, i.e., Reference of dimer
+      /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
       std::shared_ptr<const Reference>  sref_;
 
-      double active_thresh_;
+      double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
 
    public:
       // Constructors
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a); ///< Duplicates provided Geometry according to translation vector specified in input
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
 
       // Return functions
       std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
@@ -72,28 +73,42 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
       std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<const Reference> sref() const { return sref_; };
 
-      // Utility
+      // Utility functions
+      /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
       void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
+      /// Localizes active space and uses the given Fock matrix to diagonalize the subspaces
       void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
 
       // Calculations
-      void scf(std::shared_ptr<const PTree> idata); // SCF on dimer and then localize
-      template <int unit> Ref<Dvec> embedded_casci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
-      template <int unit> Ref<DistDvec> embedded_distcasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
+      void scf(std::shared_ptr<const PTree> idata); ///< Driver for preparation of dimer for MultiExcitonHamiltonian or CI calculation
+
+      /// Computes nstates Monomer states for <unit> with specified charge and spin using FCI
+      template <int unit> std::shared_ptr<const Dvec> embedded_casci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
+      /// Computes nstates Monomer states for <unit> with specified charge and spin using DistFCI
+      template <int unit> std::shared_ptr<const DistDvec> embedded_distcasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
+      /// Driver to prepare DimerCISpace using FCI
       std::shared_ptr<DimerCAS> compute_cispace(std::shared_ptr<const PTree> idata);
+      /// Driver to prepare DimerCISpace using DistFCI
       std::shared_ptr<DimerDistCAS> compute_distcispace(std::shared_ptr<const PTree> idata);
 
-      template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
-      template <int unit> Ref<DistRASDvec> embedded_distrasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
-
+      /// Computes nstates Monomer states for <unit> with specified charge and spin using RASCI
+      template <int unit> std::shared_ptr<const RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
+      /// Computes nstates Monomer states for <unit> with specified charge and spin using DistRASCI
+      template <int unit> std::shared_ptr<const DistRASDvec> embedded_distrasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
+      /// Driver to prepare DimerCISpace using RASCI
       std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
+      /// Driver to prepare DimerCISpace using DistRASCI
       std::shared_ptr<DimerDistRAS> compute_distrcispace(std::shared_ptr<const PTree> idata);
 
    private:
-      void construct_geometry();
-      void embed_refs();
+      void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
+      void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
 
+      /// Takes monomer references, projections them onto the supergeom basis, and arranges the
+      /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
       std::shared_ptr<const Matrix> form_projected_coeffs();
+
+      /// Lowdin orthogonalizes the result of form_projected_coeffs
       std::shared_ptr<const Matrix> construct_coeff();
 };
 
