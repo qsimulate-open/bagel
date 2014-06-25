@@ -26,7 +26,6 @@
 #ifndef __SRC_DIMER_DIMER_H
 #define __SRC_DIMER_DIMER_H
 
-#include <src/fci/harrison.h>
 #include <src/fci/distfci.h>
 #include <src/ras/rasci.h>
 #include <src/ras/distrasci.h>
@@ -103,6 +102,8 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
    private:
       void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
       void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
+      /// Reads information on monomer subspaces from input
+      void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
 
       /// Takes monomer references, projections them onto the supergeom basis, and arranges the
       /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
