@@ -292,10 +292,11 @@ shared_ptr<ZMatrix> DFBlock_London::form_aux_2index(const shared_ptr<const DFBlo
 }
 
 
-unique_ptr<complex<double>[]> DFBlock_London::form_vec(const shared_ptr<const ZMatrix> den) const {
-  unique_ptr<complex<double>[]> out(new complex<double>[asize()]);
-  assert(den->ndim() == b1size() && den->mdim() == b2size());
-  zgemv_("N", asize(), b1size()*b2size(), 1.0, data(), asize(), den->data(), 1, 0.0, out.get(), 1);
+shared_ptr<ZVectorB> DFBlock_London::form_vec(const shared_ptr<const ZMatrix> den) const {
+  auto out = make_shared<ZVectorB>(asize());
+  auto dfv = btas::group(*this,  1, 3);
+  auto denv = btas::group(*den, 0, 2);
+  btas::contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
   return out;
 }
 

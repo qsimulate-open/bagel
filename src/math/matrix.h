@@ -71,6 +71,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<MatView> slice(const int mstart, const int mend) const {
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
+      assert(mstart >= 0 && mend <= mdim());
       return std::make_shared<MatView>(this->range().slice(low, up), this->storage(), localized_);
     }
 

@@ -112,9 +112,9 @@ shared_ptr<btas::Tensor3<double>> ParallelDF::get_block(const int i, const int i
 }
 
 
-shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const Matrix> tmp0) const {
+shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const VectorB> tmp0) const {
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0->data()+block_[0]->astart());
+  shared_ptr<Matrix> out = block_[0]->form_mat(*tmp0->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
   // all reduce
   if (!serial_)
     out->allreduce();
@@ -122,23 +122,23 @@ shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const Matrix> tmp0
 }
 
 
-shared_ptr<Matrix> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<VectorB> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2_;
 
-  auto tmp0 = make_shared<Matrix>(naux_, 1, true);
+  auto tmp0 = make_shared<VectorB>(naux_);
 
   // D = (D|rs)*d_rs
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  unique_ptr<double[]> tmp = block_[0]->form_vec(den);
-  copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
+  shared_ptr<VectorB> tmp = block_[0]->form_vec(den);
+  copy_n(tmp->data(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
   // All reduce
   if (!serial_)
     tmp0->allreduce();
 
-  tmp0 = make_shared<Matrix>(*dat2 * *tmp0);
+  *tmp0 = *dat2 * *tmp0;
   if (!onlyonce)
-    tmp0 = make_shared<Matrix>(*dat2 * *tmp0);
+    *tmp0 = *dat2 * *tmp0;
   return tmp0;
 }
 
@@ -150,7 +150,7 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) c
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const Matrix> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const VectorB> tmp0 = o->compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }

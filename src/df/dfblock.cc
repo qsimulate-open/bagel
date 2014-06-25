@@ -113,8 +113,8 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 }
 
 
-void DFBlock::add_direct_product(const shared_ptr<const Matrix> a, const shared_ptr<const Matrix> b, const double fac) {
-  assert(asize() == a->ndim() && b1size()*b2size() == b->size());
+void DFBlock::add_direct_product(const shared_ptr<const VectorB> a, const shared_ptr<const Matrix> b, const double fac) {
+  assert(asize() == a->size() && b1size()*b2size() == b->size());
   dger_(asize(), b1size()*b2size(), fac, a->data(), 1, b->data(), 1, data(), asize());
 }
 
@@ -137,12 +137,11 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
   // exchange contributions
   out->ax_plus_y(-2.0*scale_exch, *this);
   // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[asize()]);
-  fill_n(diagsum.get(), asize(), 0.0);
+  VectorB diagsum(asize());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(1.0, data()+asize()*(i+nocc*i), asize(), diagsum.get());
+    blas::ax_plus_y_n(1.0, data()+asize()*(i+nocc*i), asize(), diagsum.data());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(4.0, diagsum.get(), asize(), out->data()+asize()*(i+nocc*i));
+    blas::ax_plus_y_n(4.0, diagsum.data(), asize(), out->data()+asize()*(i+nocc*i));
   return out;
 }
 
@@ -155,25 +154,24 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const btas::Tensor2<double>& amat, c
   const int nocc = b1size();
   shared_ptr<DFBlock> out = clone();
   {
-    unique_ptr<double[]> d2(new double[size()]);
+    auto d2 = clone();
     // exchange contributions
-    dgemm_("N", "N", asize()*nocc, nocc, nocc, 1.0, data(), asize()*nocc, amat.data(), nocc, 0.0, d2.get(), asize()*nocc);
-    for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize(), nocc, nocc, -1.0, d2.get()+asize()*nocc*i, asize(), amat.data(), nocc, 0.0, out->data()+asize()*nocc*i, asize());
-    dgemm_("N", "N", asize()*nocc, nocc, nocc, 1.0, data(), asize()*nocc, bmat.data(), nocc, 0.0, d2.get(), asize()*nocc);
-    for (int i = 0; i != nocc; ++i)
-      dgemm_("N", "N", asize(), nocc, nocc, -1.0, d2.get()+asize()*nocc*i, asize(), bmat.data(), nocc, 1.0, out->data()+asize()*nocc*i, asize());
+    btas::contract( 1.0, *this, {0,1,2}, amat, {2,3}, 0.0,  *d2, {0,1,3});
+    btas::contract(-1.0,   *d2, {0,1,2}, amat, {1,3}, 0.0, *out, {0,3,2});
+    btas::contract( 1.0, *this, {0,1,2}, bmat, {2,3}, 0.0,  *d2, {0,1,3});
+    btas::contract(-1.0,   *d2, {0,1,2}, bmat, {1,3}, 1.0, *out, {0,3,2});
   }
 
-  unique_ptr<double[]> sum(new double[nocc]);
-  for (int i = 0; i != nocc; ++i) sum[i] = amat(i,i) + bmat(i,i);
+  VectorB sum(nocc);
+  for (int i = 0; i != nocc; ++i)
+    sum[i] = amat(i,i) + bmat(i,i);
+
   // coulomb contributions (diagonal to diagonal)
-  unique_ptr<double[]> diagsum(new double[asize()]);
-  fill_n(diagsum.get(), asize(), 0.0);
+  VectorB diagsum(asize());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], data()+asize()*(i+nocc*i), asize(), diagsum.get());
+    blas::ax_plus_y_n(sum[i], data()+asize()*(i+nocc*i), asize(), diagsum.data());
   for (int i = 0; i != nocc; ++i)
-    blas::ax_plus_y_n(sum[i], diagsum.get(), asize(), out->data()+asize()*(i+nocc*i));
+    blas::ax_plus_y_n(sum[i], diagsum.data(), asize(), out->data()+asize()*(i+nocc*i));
   return out;
 }
 
@@ -307,17 +305,20 @@ shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, c
 }
 
 
-unique_ptr<double[]> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
-  unique_ptr<double[]> out(new double[asize()]);
-  assert(den->ndim() == b1size() && den->mdim() == b2size());
-  dgemv_("N", asize(), b1size()*b2size(), 1.0, data(), asize(), den->data(), 1, 0.0, out.get(), 1);
+shared_ptr<VectorB> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
+  auto out = make_shared<VectorB>(asize());
+  auto dfv = btas::group(*this,  1, 3);
+  auto denv = btas::group(*den, 0, 2);
+  btas::contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
   return out;
 }
 
 
-shared_ptr<Matrix> DFBlock::form_mat(const double* fit) const {
-  auto out = make_shared<Matrix>(b1size(),b2size());
-  dgemv_("T", asize(), b1size()*b2size(), 1.0, data(), asize(), fit, 1, 0.0, out->data(), 1);
+shared_ptr<Matrix> DFBlock::form_mat(const btas::Tensor1<double>& fit) const {
+  auto out = make_shared<Matrix>(b1size(), b2size());
+  auto outv = btas::group(*out, 0, 2);
+  auto dfv = btas::group(*this,  1, 3);
+  btas::contract(1.0, dfv, {1,0}, fit, {1}, 0.0, outv, {0});
   return out;
 }
 

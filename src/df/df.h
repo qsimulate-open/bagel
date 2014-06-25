@@ -64,9 +64,9 @@ class DFDist : public ParallelDF {
     size_t nbasis1() const { return nindex1_; }
     size_t naux() const { return naux_; }
 
-    void add_direct_product(std::shared_ptr<const Matrix> a, std::shared_ptr<const Matrix> b, const double fac)
-       { add_direct_product(std::vector<std::shared_ptr<const Matrix>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
-    void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
+    void add_direct_product(std::shared_ptr<const VectorB> a, std::shared_ptr<const Matrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const VectorB>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
+    void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<const MatView> c) const;

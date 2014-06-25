@@ -361,8 +361,8 @@ void Matrix::sqrt() {
     diagonalize(vec.get());
 
     for (int i = 0; i != n; ++i) {
-      if (vec[i] < -numerical_zero__) throw std::runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-      blas::scale_n(std::sqrt(std::sqrt(std::abs(vec[i]))), element_ptr(0,i), n);
+      if (vec[i] < -numerical_zero__) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      blas::scale_n(std::sqrt(std::sqrt(fabs(vec[i]))), element_ptr(0,i), n);
     }
 
     *this = *this ^ *this;
@@ -381,7 +381,7 @@ void Matrix::sqrt() {
 }
 
 // CAUTION: assumes no orbital is rotated twice
-void Matrix::rotate(std::vector<std::tuple<int, int, double>>& rotations) {
+void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
   if (rotations.size() > 6*resources__->max_num_threads()) {
     TaskQueue<function<void(void)>> tq(rotations.size());
     for (auto& irot : rotations)

@@ -199,11 +199,11 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
     shared_ptr<const Matrix> d0ao = make_shared<Matrix>(*ocoeff * *d0occ ^ *ocoeff);
     shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff * *d1bas ^ *coeff);
-    shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
-    shared_ptr<const Matrix> cd1 = geom_->df()->compute_cd(d1ao);
+    shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
+    shared_ptr<const VectorB> cd1 = geom_->df()->compute_cd(d1ao);
 
     // three-index derivatives (seperable part)...
-    vector<shared_ptr<const Matrix>> cd {cd0, cd1};
+    vector<shared_ptr<const VectorB>> cd {cd0, cd1};
     vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);

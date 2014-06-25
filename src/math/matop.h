@@ -26,6 +26,7 @@
 #ifndef __SRC_MATH_MATOP_H
 #define __SRC_MATH_MATOP_H
 
+#include <src/math/vectorb.h>
 #include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
 #include <src/math/matview.h>
@@ -41,6 +42,14 @@ inline Matrix&  operator-=(Matrix& a,  const Matrix& b)  { assert(a.size() == b.
 inline Matrix&  operator-=(Matrix& a,  const MatView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 inline MatView& operator-=(MatView& a, const Matrix& b)  { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 inline MatView& operator-=(MatView& a, const MatView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline VectorB& operator+=(VectorB& a, const VectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline VectorB& operator+=(VectorB& a, const VecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline VecView& operator+=(VecView& a, const VectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline VecView& operator+=(VecView& a, const VecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline VectorB& operator-=(VectorB& a, const VectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline VectorB& operator-=(VectorB& a, const VecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline VecView& operator-=(VecView& a, const VectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline VecView& operator-=(VecView& a, const VecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 
 inline ZMatrix&  operator+=(ZMatrix& a,  const ZMatrix& b)  { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
 inline ZMatrix&  operator+=(ZMatrix& a,  const ZMatView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
@@ -50,6 +59,14 @@ inline ZMatrix&  operator-=(ZMatrix& a,  const ZMatrix& b)  { assert(a.size() ==
 inline ZMatrix&  operator-=(ZMatrix& a,  const ZMatView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 inline ZMatView& operator-=(ZMatView& a, const ZMatrix& b)  { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 inline ZMatView& operator-=(ZMatView& a, const ZMatView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVectorB& operator+=(ZVectorB& a, const ZVectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVectorB& operator+=(ZVectorB& a, const ZVecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVecView& operator+=(ZVecView& a, const ZVectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVecView& operator+=(ZVecView& a, const ZVecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n( 1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVectorB& operator-=(ZVectorB& a, const ZVectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVectorB& operator-=(ZVectorB& a, const ZVecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVecView& operator-=(ZVecView& a, const ZVectorB& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
+inline ZVecView& operator-=(ZVecView& a, const ZVecView& b) { assert(a.size() == b.size()); blas::ax_plus_y_n(-1.0, b.data(), a.size(), a.data()); return a; }
 
 // operator+ and -
 inline Matrix operator+(const Matrix& a,  const Matrix& b)  { Matrix out(a); out += b; return out; }
@@ -60,6 +77,14 @@ inline Matrix operator-(const Matrix& a,  const Matrix& b)  { Matrix out(a); out
 inline Matrix operator-(const Matrix& a,  const MatView& b) { Matrix out(a); out -= b; return out; }
 inline Matrix operator-(const MatView& a, const Matrix& b)  { Matrix out(a); out -= b; return out; }
 inline Matrix operator-(const MatView& a, const MatView& b) { Matrix out(a); out -= b; return out; }
+inline VectorB operator+(const VectorB& a, const VectorB& b) { VectorB out(a); out += b; return out; }
+inline VectorB operator+(const VectorB& a, const VecView& b) { VectorB out(a); out += b; return out; }
+inline VectorB operator+(const VecView& a, const VectorB& b) { VectorB out(a); out += b; return out; }
+inline VectorB operator+(const VecView& a, const VecView& b) { VectorB out(a); out += b; return out; }
+inline VectorB operator-(const VectorB& a, const VectorB& b) { VectorB out(a); out -= b; return out; }
+inline VectorB operator-(const VectorB& a, const VecView& b) { VectorB out(a); out -= b; return out; }
+inline VectorB operator-(const VecView& a, const VectorB& b) { VectorB out(a); out -= b; return out; }
+inline VectorB operator-(const VecView& a, const VecView& b) { VectorB out(a); out -= b; return out; }
 
 inline ZMatrix operator+(const ZMatrix& a,  const ZMatrix& b)  { ZMatrix out(a); out += b; return out; }
 inline ZMatrix operator+(const ZMatrix& a,  const ZMatView& b) { ZMatrix out(a); out += b; return out; }
@@ -69,15 +94,25 @@ inline ZMatrix operator-(const ZMatrix& a,  const ZMatrix& b)  { ZMatrix out(a);
 inline ZMatrix operator-(const ZMatrix& a,  const ZMatView& b) { ZMatrix out(a); out -= b; return out; }
 inline ZMatrix operator-(const ZMatView& a, const ZMatrix& b)  { ZMatrix out(a); out -= b; return out; }
 inline ZMatrix operator-(const ZMatView& a, const ZMatView& b) { ZMatrix out(a); out -= b; return out; }
+inline ZVectorB operator+(const ZVectorB& a, const ZVectorB& b) { ZVectorB out(a); out += b; return out; }
+inline ZVectorB operator+(const ZVectorB& a, const ZVecView& b) { ZVectorB out(a); out += b; return out; }
+inline ZVectorB operator+(const ZVecView& a, const ZVectorB& b) { ZVectorB out(a); out += b; return out; }
+inline ZVectorB operator+(const ZVecView& a, const ZVecView& b) { ZVectorB out(a); out += b; return out; }
+inline ZVectorB operator-(const ZVectorB& a, const ZVectorB& b) { ZVectorB out(a); out -= b; return out; }
+inline ZVectorB operator-(const ZVectorB& a, const ZVecView& b) { ZVectorB out(a); out -= b; return out; }
+inline ZVectorB operator-(const ZVecView& a, const ZVectorB& b) { ZVectorB out(a); out -= b; return out; }
+inline ZVectorB operator-(const ZVecView& a, const ZVecView& b) { ZVectorB out(a); out -= b; return out; }
 
 namespace impl {
 
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, double>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   Matrix multNN(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
     assert(a.mdim() == b.ndim());
     const int n = b.mdim();
@@ -103,9 +138,11 @@ namespace impl {
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, double>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   Matrix multTN(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.mdim();
     assert(a.ndim() == b.ndim());
     const int n = b.mdim();
@@ -133,9 +170,11 @@ namespace impl {
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, double>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   Matrix multNT(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
     assert(a.mdim() == b.mdim());
     const int n = b.ndim();
@@ -164,9 +203,11 @@ namespace impl {
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, std::complex<double>>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   ZMatrix multNN(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
     const int m = a.mdim();
     assert(a.mdim() == b.ndim());
@@ -192,9 +233,11 @@ namespace impl {
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, std::complex<double>>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   ZMatrix multTN(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.mdim();
     const int m = a.ndim();
     assert(a.ndim() == b.ndim());
@@ -221,9 +264,11 @@ namespace impl {
   template<class A, class B,
            class = typename std::enable_if<std::is_same<typename A::value_type, typename B::value_type>::value
                                        and std::is_same<typename A::value_type, std::complex<double>>::value
+                                       and btas::is_boxtensor<A>::value and btas::is_boxtensor<B>::value
                                           >::type
           >
   ZMatrix multNT(const A& a, const B& b) {
+    assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
     const int m = a.mdim();
     assert(a.mdim() == b.mdim());
@@ -286,6 +331,40 @@ inline Matrix& operator*=(Matrix& a,  const MatView& b) { a = a*b; return a; }
 inline ZMatrix& operator*=(ZMatrix& a,  const ZMatrix& b)  { a = a*b; return a; }
 inline ZMatrix& operator*=(ZMatrix& a,  const ZMatView& b) { a = a*b; return a; }
 
+// operator % between vectors (which will return dot products).
+inline double operator%(const VectorB& a, const VectorB& b) { return btas::dotc(a, b); }
+inline double operator%(const VectorB& a, const VecView& b) { return btas::dotc(a, b); }
+inline double operator%(const VecView& a, const VectorB& b) { return btas::dotc(a, b); }
+inline double operator%(const VecView& a, const VecView& b) { return btas::dotc(a, b); }
+inline std::complex<double> operator%(const ZVectorB& a, const ZVectorB& b) { return btas::dotc(a, b); }
+inline std::complex<double> operator%(const ZVectorB& a, const ZVecView& b) { return btas::dotc(a, b); }
+inline std::complex<double> operator%(const ZVecView& a, const ZVectorB& b) { return btas::dotc(a, b); }
+inline std::complex<double> operator%(const ZVecView& a, const ZVecView& b) { return btas::dotc(a, b); }
+
+// operator * and % between Matrix and VectorB
+inline VectorB operator*(const Matrix& a, const VectorB& b)  { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator*(const Matrix& a, const VecView& b)  { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator*(const MatView& a, const VectorB& b) { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator*(const MatView& a, const VecView& b) { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const Matrix& a, const VectorB& b)  { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const Matrix& a, const VecView& b)  { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const MatView& a, const VectorB& b) { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const MatView& a, const VecView& b) { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const VectorB& a, const Matrix& b)  { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const VecView& a, const Matrix& b)  { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const VectorB& a, const MatView& b) { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
+inline VectorB operator%(const VecView& a, const MatView& b) { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
+inline Matrix  operator^(const VectorB& a, const VectorB& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
+inline Matrix  operator^(const VectorB& a, const VecView& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
+inline Matrix  operator^(const VecView& a, const VectorB& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
+inline Matrix  operator^(const VecView& a, const VecView& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
+
+inline ZVectorB operator*(const ZMatrix& a, const ZVectorB& b)  { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline ZVectorB operator*(const ZMatrix& a, const ZVecView& b)  { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline ZVectorB operator*(const ZMatView& a, const ZVectorB& b) { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+inline ZVectorB operator*(const ZMatView& a, const ZVecView& b) { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
+// TODO % and ^ operators require specification of complex conjugate
+
 // operator* with scalar 
 inline Matrix&  operator*=(Matrix& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
 inline MatView& operator*=(MatView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
@@ -298,6 +377,16 @@ inline MatView& operator/=(MatView& a, const double b) { blas::scale_n(1.0/b, a.
 inline Matrix operator/(const Matrix& a, const double b)  { Matrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
 inline Matrix operator/(const MatView& a, const double b) { Matrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
 
+inline ZMatrix&  operator*=(ZMatrix& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZMatView& operator*=(ZMatView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZMatrix operator*(const ZMatrix& a, const double b)  { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const ZMatView& a, const double b) { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const double b, const ZMatrix& a)  { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix operator*(const double b, const ZMatView& a) { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZMatrix&  operator/=(ZMatrix& a, const double b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZMatView& operator/=(ZMatView& a, const double b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZMatrix operator/(const ZMatrix& a, const double b)  { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline ZMatrix operator/(const ZMatView& a, const double b) { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
 inline ZMatrix&  operator*=(ZMatrix& a, const std::complex<double> b)  { blas::scale_n(b, a.data(), a.size()); return a; }
 inline ZMatView& operator*=(ZMatView& a, const std::complex<double> b) { blas::scale_n(b, a.data(), a.size()); return a; }
 inline ZMatrix operator*(const ZMatrix& a, const std::complex<double> b)  { ZMatrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }

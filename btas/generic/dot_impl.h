@@ -74,7 +74,7 @@ struct dotc_impl<float>
    static return_type call (
       const unsigned long& Nsize,
       const float* itrX, const typename std::iterator_traits<float*>::difference_type& incX,
-            float* itrY, const typename std::iterator_traits<float*>::difference_type& incY)
+      const float* itrY, const typename std::iterator_traits<float*>::difference_type& incY)
    {
 #ifdef _HAS_CBLAS
       return cblas_sdot(Nsize, itrX, incX, itrY, incY);
@@ -97,7 +97,7 @@ struct dotc_impl<double>
    static return_type call (
       const unsigned long& Nsize,
       const double* itrX, const typename std::iterator_traits<double*>::difference_type& incX,
-            double* itrY, const typename std::iterator_traits<double*>::difference_type& incY)
+      const double* itrY, const typename std::iterator_traits<double*>::difference_type& incY)
    {
 #ifdef _HAS_CBLAS
       return cblas_ddot(Nsize, itrX, incX, itrY, incY);
@@ -120,7 +120,7 @@ struct dotc_impl<std::complex<float>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
-            std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
+      const std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
@@ -144,7 +144,7 @@ struct dotu_impl<std::complex<float>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<float>* itrX, const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
-            std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
+      const std::complex<float>* itrY, const typename std::iterator_traits<std::complex<float>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
@@ -168,7 +168,7 @@ struct dotc_impl<std::complex<double>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
-            std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
+      const std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
@@ -192,7 +192,7 @@ struct dotu_impl<std::complex<double>>
    static return_type call (
       const unsigned long& Nsize,
       const std::complex<double>* itrX, const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
-            std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
+      const std::complex<double>* itrY, const typename std::iterator_traits<std::complex<double>*>::difference_type& incY)
    {
       return_type val;
 #ifdef _HAS_CBLAS
@@ -269,7 +269,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dotc (const _TensorX& X, _TensorY& Y)
+dotc (const _TensorX& X, const _TensorY& Y)
 {
    typedef typename _TensorX::value_type value_type;
    static_assert(std::is_same<value_type, typename _TensorY::value_type>::value, "value type of Y must be the same as that of X");
@@ -295,7 +295,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dotu (const _TensorX& X, _TensorY& Y)
+dotu (const _TensorX& X, const _TensorY& Y)
 {
    typedef typename _TensorX::value_type value_type;
    static_assert(std::is_same<value_type, typename _TensorY::value_type>::value, "value type of Y must be the same as that of X");
@@ -321,7 +321,7 @@ template<
    >::type
 >
 typename __dot_result_type<typename _TensorX::value_type>::type
-dot (const _TensorX& X, _TensorY& Y)
+dot (const _TensorX& X, const _TensorY& Y)
 {
    return dotc(X, Y);
 }

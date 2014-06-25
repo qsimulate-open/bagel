@@ -29,6 +29,7 @@
 #include <src/math/zmatrix.h>
 #include <src/df/dfblock_base.h>
 #include <src/math/btas_interface.h>
+#include <src/math/matop.h>
 
 namespace bagel {
 
@@ -78,7 +79,7 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     std::shared_ptr<ZMatrix> form_4index_1fixed(const std::shared_ptr<const DFBlock_London> o, const double a, const size_t n) const;
     std::shared_ptr<ZMatrix> form_aux_2index(const std::shared_ptr<const DFBlock_London> o, const double a) const;
 
-    std::unique_ptr<std::complex<double>[]> form_vec(const std::shared_ptr<const ZMatrix> den) const;
+    std::shared_ptr<ZVectorB> form_vec(const std::shared_ptr<const ZMatrix> den) const;
     std::shared_ptr<ZMatrix> form_mat(const std::complex<double>* fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock_London> o, const std::shared_ptr<const ZMatrix> mat);

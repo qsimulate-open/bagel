@@ -186,7 +186,6 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
         }
       }
     }
-    cd->localize();
 
     // (5) compute (gamma|ij)
     list<shared_ptr<RelDFFull>> dffull;
@@ -203,7 +202,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
 
     // (6) two-index gamma
-    shared_ptr<Matrix> cdr = cd->get_real_part();
+    shared_ptr<VectorB> cdr = cd->get_real_part();
     assert(cd->get_imag_part()->rms() < 1.0e-10); // by symmetry the imaginary part is zero
     auto gamma2 = make_shared<const Matrix>((*cdr ^ *cdr) - *dffull.front()->form_aux_2index_real());
 

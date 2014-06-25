@@ -83,8 +83,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_Jop(const std::shared_ptr<const ParallelDF> o, const std::shared_ptr<const Matrix> den, const bool onlyonce = false) const;
-    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const Matrix> cd) const;
-    std::shared_ptr<Matrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+    std::shared_ptr<Matrix> compute_Jop_from_cd(std::shared_ptr<const VectorB> cd) const;
+    std::shared_ptr<VectorB> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {
       Timer time;

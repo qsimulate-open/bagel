@@ -2,12 +2,27 @@
 #ifndef BTAS_OPTIMIZE_CONTRACT_H
 #define BTAS_OPTIMIZE_CONTRACT_H
 
+#include <sstream>
 #include <stdexcept>
 #include <cassert>
 #include <btas/generic/gemm_impl.h>
 #include <btas/generic/scal_impl.h>
 
 namespace btas {
+
+template<typename _T, class _TensorA, class _TensorB, class _TensorC,
+         typename _UA, typename _UB, typename _UC
+        >
+void contract_211(const _T& alpha, const _TensorA& A, const btas::varray<_UA>& aA, const _TensorB& B, const btas::varray<_UB>& aB,
+                  const _T& beta, _TensorC& C, const btas::varray<_UC>& aC) {
+  assert(aA.size() == 2 && aB.size() == 1 && aC.size() == 1);
+  assert(A.range().ordinal().contiguous() && B.range().ordinal().contiguous() && C.range().ordinal().contiguous());
+
+  auto cA = aB[0] == aA[1] ? CblasNoTrans : CblasTrans;
+  assert((cA == CblasNoTrans && aA[0] == aC[0]) || (aB[0] == aA[0] && aA[1] == aC[0]));
+  gemv_impl<true>::call(CblasColMajor, cA, A.extent(0), A.extent(1), 1.0, &*A.begin(), A.extent(0), &*B.begin(), 1, 0.0, &*C.begin(), 1);
+}
+
 
 template<typename _T, class _TensorA, class _TensorB, class _TensorC,
          typename _UA, typename _UB, typename _UC
@@ -169,7 +184,15 @@ void contract(
   const _T& beta,
         _TensorC& C, std::initializer_list<_UC> aC) {
 
-  if (A.rank() == 2 && B.rank() == 2 && C.rank() == 2) {
+  assert(A.rank() == aA.size());
+  assert(B.rank() == aB.size());
+  assert(C.rank() == aC.size());
+
+  if (A.rank() == 2 && B.rank() == 1 && C.rank() == 1) {
+    contract_211(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
+  } else if (A.rank() == 1 && B.rank() == 2 && C.rank() == 1) {
+    contract_211(alpha, B, btas::varray<_UA>(aB), A, btas::varray<_UB>(aA), beta, C, btas::varray<_UC>(aC));
+  } else if (A.rank() == 2 && B.rank() == 2 && C.rank() == 2) {
     contract_222(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
   } else if (A.rank() == 3 && B.rank() == 2 && C.rank() == 3) {
     contract_323(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
@@ -178,7 +201,8 @@ void contract(
   } else if (A.rank() == 3 && B.rank() == 3 && C.rank() == 2) {
     contract_332(alpha, A, btas::varray<_UA>(aA), B, btas::varray<_UB>(aB), beta, C, btas::varray<_UC>(aC));
   } else {
-    throw std::logic_error("not yet implemented");
+    std::stringstream ss; ss << "not yet implemented: rank(A): " << A.rank() << " rank(B): " << B.rank() << " rank(C): " << C.rank();
+    throw std::logic_error(ss.str());
   }
 }
 

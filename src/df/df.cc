@@ -50,13 +50,13 @@ shared_ptr<DFDist> DFDist::clone() const {
 }
 
 
-void DFDist::add_direct_product(const vector<shared_ptr<const Matrix>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
+void DFDist::add_direct_product(const vector<shared_ptr<const VectorB>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
   if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
 
   auto d = dd.begin();
   for (auto& c : cd) {
-    shared_ptr<const Matrix> aslice = c->get_submatrix(block_[0]->astart(), 0, block_[0]->asize(), 1);
+    auto aslice = make_shared<VectorB>(*c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
     block_[0]->add_direct_product(aslice, *d++, a);
   }
   assert(d == dd.end());

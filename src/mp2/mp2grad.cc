@@ -206,12 +206,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto dbarao = make_shared<Matrix>(*dtotao - *d0ao*0.5);
 
   // size of naux
-  shared_ptr<const Matrix> cd0 = geom_->df()->compute_cd(d0ao);
-  shared_ptr<const Matrix> cdbar = geom_->df()->compute_cd(dbarao);
+  shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
+  shared_ptr<const VectorB> cdbar = geom_->df()->compute_cd(dbarao);
 
 
   // three-index derivatives (seperable part)...
-  vector<shared_ptr<const Matrix>> cd {cd0, cdbar};
+  vector<shared_ptr<const VectorB>> cd {cd0, cdbar};
   vector<shared_ptr<const Matrix>> dd {dbarao, d0ao};
 
   shared_ptr<DFHalfDist> sepd = halfjj->apply_density(dbarao);

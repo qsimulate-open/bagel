@@ -59,7 +59,7 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
 
     // add ab^+  to this.
-    void add_direct_product(const std::shared_ptr<const Matrix> a, const std::shared_ptr<const Matrix> b, const double fac);
+    void add_direct_product(const std::shared_ptr<const VectorB> a, const std::shared_ptr<const Matrix> b, const double fac);
 
     // exchange b1 and b2
     std::shared_ptr<DFBlock> swap() const;
@@ -77,8 +77,8 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
-    std::unique_ptr<double[]> form_vec(const std::shared_ptr<const Matrix> den) const;
-    std::shared_ptr<Matrix> form_mat(const double* fit) const;
+    std::shared_ptr<VectorB> form_vec(const std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> form_mat(const btas::Tensor1<double>& fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock> o, const std::shared_ptr<const Matrix> mat);
 

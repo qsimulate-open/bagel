@@ -110,7 +110,7 @@ shared_ptr<btas::Tensor3<std::complex<double>>> ParallelDF_London::get_block(con
 }
 
 
-shared_ptr<ZMatrix> ParallelDF_London::compute_Jop_from_cd(shared_ptr<const ZMatrix> tmp0) const {
+shared_ptr<ZMatrix> ParallelDF_London::compute_Jop_from_cd(shared_ptr<const ZVectorB> tmp0) const {
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
   shared_ptr<ZMatrix> out = block_[0]->form_mat(tmp0->data()+block_[0]->astart());
   // all reduce
@@ -120,23 +120,23 @@ shared_ptr<ZMatrix> ParallelDF_London::compute_Jop_from_cd(shared_ptr<const ZMat
 }
 
 
-shared_ptr<ZMatrix> ParallelDF_London::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const ZMatrix> dat2, const bool onlyonce) const {
+shared_ptr<ZVectorB> ParallelDF_London::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const ZMatrix> dat2, const bool onlyonce) const {
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2();
 
-  auto tmp0 = make_shared<ZMatrix>(naux_, 1, true);
+  auto tmp0 = make_shared<ZVectorB>(naux_);
 
   // D = (D|rs)*d_rs
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  unique_ptr<complex<double>[]> tmp = block_[0]->form_vec(den);
-  copy_n(tmp.get(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
+  shared_ptr<const ZVectorB> tmp = block_[0]->form_vec(den);
+  copy_n(tmp->data(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
   // All reduce
   if (!serial_)
     tmp0->allreduce();
 
-  tmp0 = make_shared<ZMatrix>(*dat2 * *tmp0);
+  *tmp0 = *dat2 * *tmp0;
   if (!onlyonce)
-    tmp0 = make_shared<ZMatrix>(*dat2 * *tmp0);
+    *tmp0 = *dat2 * *tmp0;
   return tmp0;
 }
 
@@ -148,7 +148,7 @@ shared_ptr<ZMatrix> ParallelDF_London::compute_Jop(const shared_ptr<const ZMatri
 
 shared_ptr<ZMatrix> ParallelDF_London::compute_Jop(const shared_ptr<const ParallelDF_London> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZMatrix> tmp0 = o->compute_cd(den, data2(), onlyonce);
+  shared_ptr<const ZVectorB> tmp0 = o->compute_cd(den, data2(), onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }
