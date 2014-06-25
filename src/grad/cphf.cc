@@ -43,8 +43,8 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
   const size_t nocca = ref_->nocc();
   const size_t nvirt = nmobasis - nocca;
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(nocca, nmobasis);
+  shared_ptr<const MatView> ocoeff = ref_->coeff()->slice(0, nocca);
+  shared_ptr<const MatView> vcoeff = ref_->coeff()->slice(nocca, nmobasis);
 
   auto t = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)

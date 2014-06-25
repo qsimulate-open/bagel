@@ -58,14 +58,21 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     Matrix(const int n, const int m, const bool localized = true);
 #endif
     Matrix(const Matrix&);
+    Matrix(const MatView&);
     Matrix(Matrix&&);
     Matrix() { }
     virtual ~Matrix() { }
 
-    std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim_); }
-    std::shared_ptr<Matrix> slice(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim_, mend-mstart); }
+    std::shared_ptr<Matrix> cut(const int nstart, const int nend) const { return get_submatrix(nstart, 0, nend-nstart, mdim()); }
+    std::shared_ptr<Matrix> slice_copy(const int mstart, const int mend) const { return get_submatrix(0, mstart, ndim(), mend-mstart); }
     std::shared_ptr<Matrix> resize(const int n, const int m) const { return this->resize_impl<Matrix>(n, m); }
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix> o) const { return this->merge_impl<Matrix>(o); }
+
+    std::shared_ptr<MatView> slice(const int mstart, const int mend) const {
+      auto low = {0, mstart};
+      auto up  = {ndim(), mend};
+      return std::make_shared<MatView>(this->range().slice(low, up), this->storage(), localized_);
+    }
 
     // antisymmetrize
     void antisymmetrize();
@@ -85,42 +92,20 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     void sqrt();
 
     using Matrix_base<double>::copy_block;
-    using Matrix_base<double>::get_block;
     using Matrix_base<double>::add_block;
-
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
-      assert(o.ndim() == nsize && o.mdim() == msize);
-      this->copy_block(nstart, mstart, nsize, msize, o.data());
-    }
-    void add_block(const double a, const int nstart, const int mstart, const int nsize, const int msize, const Matrix& o) {
-      assert(o.ndim() == nsize && o.mdim() == msize);
-      this->add_block(a, nstart, mstart, nsize, msize, o.data());
-    }
 
     std::shared_ptr<Matrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
       return this->get_submatrix_impl<Matrix>(nstart, mstart, ndim, mdim);
     }
     std::shared_ptr<Matrix> swap_columns(const int n, const int nblock, const int m, const int mblock) const;
 
-    Matrix operator*(const Matrix&) const;
-    Matrix& operator*=(const Matrix&);
-    Matrix operator*(const double& a) const;
-    Matrix operator/(const double& a) const;
-    Matrix& operator*=(const double& a);
-    Matrix& operator/=(const double& a);
-    Matrix operator%(const Matrix&) const; // caution
-    Matrix operator^(const Matrix&) const; // caution
-    Matrix operator+(const Matrix&) const;
-    Matrix operator-(const Matrix&) const;
-    Matrix& operator+=(const Matrix&);
-    Matrix& operator-=(const Matrix&);
-    Matrix& operator=(const Matrix&);
-    Matrix& operator=(Matrix&&);
+    Matrix& operator=(const Matrix& o) { Matrix_base<double>::operator=(o); return *this; }
+    Matrix& operator=(Matrix&& o)      { Matrix_base<double>::operator=(o); return *this; }
 
     Matrix& operator/=(const Matrix&);
     Matrix operator/(const Matrix&) const;
 
-    std::shared_ptr<Matrix> clone() const { return std::make_shared<Matrix>(ndim_, mdim_, localized_); }
+    std::shared_ptr<Matrix> clone() const { return std::make_shared<Matrix>(ndim(), mdim(), localized_); }
     std::shared_ptr<Matrix> copy() const { return std::make_shared<Matrix>(*this); }
 
     // returns exp(*this)
@@ -136,7 +121,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     double dot_product(const Matrix& o) const { return this->dot_product_impl(o); }
 
     double orthog(const std::list<std::shared_ptr<const Matrix>> o) { return this->orthog_impl(o); }
-    void rotate(const int i, const int j, const double c, const double s) { drot_(ndim_, element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
+    void rotate(const int i, const int j, const double c, const double s) { drot_(ndim(), element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
     void rotate(const int i, const int j, const double gamma) { rotate(i, j, cos(gamma), sin(gamma)); }
     void rotate(std::vector<std::tuple<int, int, double>>& rotations);
 
@@ -147,7 +132,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 
-    virtual void print(const std::string in = "", const size_t size = 10) const;
+    virtual void print(const std::string in = "", const int size = 10) const;
 
 #ifdef HAVE_SCALAPACK
     // return a shared pointer to this ifndef HAVE_SCALAPACK

@@ -51,7 +51,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0,nocc);
+  shared_ptr<const MatView> ocoeff = ref_->coeff()->slice(0,nocc);
 
   // state-averaged density matrices
   shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
@@ -76,7 +76,7 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
   // 2) two-electron contribution
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(ref_->rdm2(target)->data(), ref_->rdm1(target)->data(), nclosed, nact);
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(target), *ref_->rdm1(target), nclosed, nact);
   shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
 
@@ -139,12 +139,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
       const RDM<2> D(*ref_->rdm2(target)+*zrdm2);
       const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
 
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D.data(), dd.data(), nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact));
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }
     {
-      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }

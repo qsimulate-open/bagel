@@ -28,6 +28,7 @@
 
 #include <src/math/zmatrix.h>
 #include <src/df/dfblock_base.h>
+#include <src/math/btas_interface.h>
 
 namespace bagel {
 
@@ -40,6 +41,17 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     template<typename... Types>
     DFBlock_London(Types&&... args) : DFBlock_base<std::complex<double>>(std::forward<Types>(args)...) { }
 
+    DFBlock_London(const DFBlock_London& o) : DFBlock_base<std::complex<double>>(o) { }
+    DFBlock_London(DFBlock_London&& o)      : DFBlock_base<std::complex<double>>(std::move(o)) { }
+
+    DFBlock_London& operator=(const DFBlock_London& o) { DFBlock_base<std::complex<double>>::operator=(o); return *this; }
+    DFBlock_London& operator=(DFBlock_London&& o)      { DFBlock_base<std::complex<double>>::operator=(std::move(o)); return *this; }
+    DFBlock_London& operator+=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator+=(o); return *this; }
+    DFBlock_London& operator-=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator-=(o); return *this; }
+
+    std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const ZMatView> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const ZMatView> c, const bool trans = false) const;
+    // TODO will be deprecated
     std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const ZMatrix> c, const bool trans = false) const;
     std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const ZMatrix> c, const bool trans = false) const;
 
@@ -75,13 +87,11 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     std::shared_ptr<ZMatrix> form_Dj(const std::shared_ptr<const ZMatrix> o, const int jdim) const;
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns complex<double>[] whose size is i*j*k
-    std::shared_ptr<ZMatrix> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
     // get_block returns (j|cd), while get_block_conj returns (j*|cd)
-    std::shared_ptr<ZMatrix> get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<btas::Tensor3<std::complex<double>>> get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
-    // use with caution
-    std::unique_ptr<std::complex<double>[]> release_data() { return std::move(data_); }
 };
 
 }

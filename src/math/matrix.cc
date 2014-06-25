@@ -30,6 +30,7 @@
 #include <src/util/f77.h>
 #include <src/math/algo.h>
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
@@ -49,6 +50,8 @@ Matrix::Matrix(const int n, const int m , const bool loc) : Matrix_base<double>(
 Matrix::Matrix(const Matrix& o) : Matrix_base<double>(o) {
 }
 
+Matrix::Matrix(const MatView& o) : Matrix_base<double>(o) {
+}
 
 Matrix::Matrix(Matrix&& o) : Matrix_base<double>(move(o)) {
 }
@@ -61,159 +64,6 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()) {
 #endif
 
 
-Matrix Matrix::operator+(const Matrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  Matrix out(*this);
-  out.ax_plus_y(1.0, o);
-  return out;
-}
-
-
-Matrix& Matrix::operator+=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(1.0, o);
-  return *this;
-}
-
-
-Matrix& Matrix::operator-=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  ax_plus_y(-1.0, o);
-  return *this;
-}
-
-
-Matrix& Matrix::operator=(const Matrix& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  copy_n(o.data(), ndim_*mdim_, data());
-  return *this;
-}
-
-
-Matrix& Matrix::operator=(Matrix&& o) {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  data_ = move(o.data_);
-  return *this;
-}
-
-
-Matrix Matrix::operator-(const Matrix& o) const {
-  assert(ndim_ == o.ndim_ && mdim_ == o.mdim_);
-  Matrix out(*this);
-  out.ax_plus_y(-1.0, o);
-  return out;
-}
-
-
-Matrix Matrix::operator*(const Matrix& o) const {
-  const int l = ndim_;
-  const int m = mdim_;
-  assert(mdim_ == o.ndim());
-  const int n = o.mdim();
-  Matrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    dgemm_("N", "N", l, n, m, 1.0, data_, l, o.data_, o.ndim_, 0.0, out.data_, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<double[]> locala = getlocal();
-    unique_ptr<double[]> localb = o.getlocal();
-    unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("N", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
-Matrix& Matrix::operator*=(const Matrix& o) {
-  *this = *this * o;
-  return *this;
-}
-
-
-Matrix Matrix::operator*(const double& a) const {
-  Matrix out(*this);
-  out *= a;
-  return out;
-}
-
-
-Matrix Matrix::operator/(const double& a) const {
-  Matrix out(*this);
-  out /= a;
-  return out;
-}
-
-
-Matrix& Matrix::operator*=(const double& a) {
-  scale(a);
-  return *this;
-}
-Matrix& Matrix::operator/=(const double& a) {
-  *this *= 1.0/a;
-  return *this;
-}
-
-
-Matrix Matrix::operator%(const Matrix& o) const {
-  const int l = mdim_;
-  const int m = ndim_;
-  assert(ndim_ == o.ndim());
-  const int n = o.mdim();
-  Matrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    dgemm_("T", "N", l, n, m, 1.0, data_, m, o.data_, o.ndim_, 0.0, out.data_, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<double[]> locala = getlocal();
-    unique_ptr<double[]> localb = o.getlocal();
-    unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
-Matrix Matrix::operator^(const Matrix& o) const {
-  const int l = ndim_;
-  const int m = mdim_;
-  assert(mdim_ == o.mdim());
-  const int n = o.ndim();
-
-  Matrix out(l, n, localized_);
-
-#ifdef HAVE_SCALAPACK
-  assert(localized_ == o.localized_);
-  if (localized_ || min(min(l,m),n) < blocksize__) {
-#endif
-    dgemm_("N", "T", l, n, m, 1.0, data_, ndim_, o.data_, o.ndim_, 0.0, out.data_, l);
-#ifdef HAVE_SCALAPACK
-  } else {
-    unique_ptr<double[]> locala = getlocal();
-    unique_ptr<double[]> localb = o.getlocal();
-    unique_ptr<double[]> localc = out.getlocal();
-    pdgemm_("N", "T", l, n, m, 1.0, locala.get(), desc_.data(), localb.get(), o.desc_.data(), 0.0, localc.get(), out.desc_.data());
-    out.setlocal_(localc);
-  }
-#endif
-
-  return out;
-}
-
-
 Matrix Matrix::operator/(const Matrix& o) const {
   Matrix out(*this);
   out /= o;
@@ -222,7 +72,7 @@ Matrix Matrix::operator/(const Matrix& o) const {
 
 
 Matrix& Matrix::operator/=(const Matrix& o) {
-  assert(ndim_ == o.ndim_); assert(mdim_ == o.mdim_);
+  assert(ndim() == o.ndim()); assert(mdim() == o.mdim());
   auto oiter = o.cbegin();
   for (auto& i : *this) {
     i /= *oiter++;
@@ -232,8 +82,8 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 
 
 void Matrix::diagonalize(double* eig) {
-  if (ndim_ != mdim_) throw logic_error("illegal call of Matrix::diagonalize(double*)");
-  const int n = ndim_;
+  if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diagonalize(double*)");
+  const int n = ndim();
   int info;
 
   // assume that the matrix is symmetric
@@ -271,16 +121,16 @@ void Matrix::diagonalize(double* eig) {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd(double* sing) {
-  auto U = make_shared<Matrix>(ndim_, ndim_);
-  auto V = make_shared<Matrix>(mdim_, mdim_);
+  auto U = make_shared<Matrix>(ndim(), ndim());
+  auto V = make_shared<Matrix>(mdim(), mdim());
 
-  const int lwork = 10*max(ndim_, mdim_);
+  const int lwork = 10*max(ndim(), mdim());
   unique_ptr<double[]> work(new double[lwork]);
 
   // If singular values are not requested
   unique_ptr<double[]> S;
   if (!sing) {
-    S = unique_ptr<double[]>(new double[min(ndim_, mdim_)]);
+    S = unique_ptr<double[]>(new double[min(ndim(), mdim())]);
     sing = S.get();
   }
 /*
@@ -291,7 +141,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd(double* sing) {
   double* ublock = U->data();
   double* vblock = V->data();
   int info = 0;
-  dgesvd_("A", "A", ndim_, mdim_, cblock, ndim_, sing, ublock, ndim_, vblock, mdim_, work.get(), lwork, info);
+  dgesvd_("A", "A", ndim(), mdim(), cblock, ndim(), sing, ublock, ndim(), vblock, mdim(), work.get(), lwork, info);
   if (info != 0) throw runtime_error("dgesvd failed in Matrix::svd");
 
   return make_tuple(U,V);
@@ -299,32 +149,32 @@ tuple<shared_ptr<Matrix>, shared_ptr<Matrix>> Matrix::svd(double* sing) {
 
 
 shared_ptr<Matrix> Matrix::exp(const int deg) const {
-  auto out = make_shared<Matrix>(ndim_, mdim_);
+  auto out = make_shared<Matrix>(ndim(), mdim());
   Matrix buf(*this);
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
 
   for (int i = deg; i != 1; --i) {
     const double inv = 1.0/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
+    for (int j = 0; j != ndim(); ++j) buf(j,j) += 1.0;
     *out = (*this)*buf;
     if (i != 1) buf = *out;
   }
-  for (int j = 0; j != ndim_; ++j) out->element(j,j) += 1.0;
+  for (int j = 0; j != ndim(); ++j) out->element(j,j) += 1.0;
   return out;
 }
 
 
 shared_ptr<Matrix> Matrix::log(const int deg) const {
-  auto out = make_shared<Matrix>(ndim_, mdim_);
+  auto out = make_shared<Matrix>(ndim(), mdim());
   Matrix buf(*this);
-  for (int j = 0; j != ndim_; ++j) buf(j,j) -= 1.0;
-  assert(ndim_ == mdim_);
+  for (int j = 0; j != ndim(); ++j) buf(j,j) -= 1.0;
+  assert(ndim() == mdim());
 
   for (int i = deg; i != 1; --i) {
     const double inv = -static_cast<double>(i-1)/static_cast<double>(i);
     buf *= inv;
-    for (int j = 0; j != ndim_; ++j) buf(j,j) += 1.0;
+    for (int j = 0; j != ndim(); ++j) buf(j,j) += 1.0;
     *out = (*this)*buf - buf;
     if (i != 1) buf = *out;
   }
@@ -333,14 +183,14 @@ shared_ptr<Matrix> Matrix::log(const int deg) const {
 
 
 shared_ptr<Matrix> Matrix::transpose(const double factor) const {
-  auto out = make_shared<Matrix>(mdim_, ndim_, localized_);
-  blas::transpose(data(), ndim_, mdim_, out->data(), factor);
+  auto out = make_shared<Matrix>(mdim(), ndim(), localized_);
+  blas::transpose(data(), ndim(), mdim(), out->data(), factor);
   return out;
 }
 
 
 void Matrix::antisymmetrize() {
-  assert(ndim_ == mdim_);
+  assert(ndim() == mdim());
   shared_ptr<Matrix> trans = transpose();
   *this -= *trans;
   *this *= 0.5;
@@ -348,20 +198,20 @@ void Matrix::antisymmetrize() {
 
 
 void Matrix::purify_unitary() {
-  assert(ndim_ == mdim_);
-  for (int i = 0; i != ndim_; ++i) {
+  assert(ndim() == mdim());
+  for (int i = 0; i != ndim(); ++i) {
     for (int j = 0; j != i; ++j) {
-      const double a = blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,j));
-      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim_, element_ptr(0,i));
+      const double a = blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,j));
+      blas::ax_plus_y_n(-a, element_ptr(0,j), ndim(), element_ptr(0,i));
     }
-    const double b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim_, element_ptr(0,i)));
+    const double b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](double& a) { a *= b; });
   }
 }
 
 
 void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
-  assert(ndim_ == mdim_ && nclosed + nact + nvirt == ndim_);
+  assert(ndim() == mdim() && nclosed + nact + nvirt == ndim());
   for (int g = 0; g != nclosed; ++g)
     for (int h = 0; h != nclosed; ++h)
       element(h,g)=0.0;
@@ -371,7 +221,7 @@ void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvi
   for (int g = 0; g != nvirt; ++g)
     for (int h = 0; h != nvirt; ++h)
       element(h+nclosed+nact,g+nclosed+nact)=0.0;
-  for (int i = 0; i != ndim_; ++i) {
+  for (int i = 0; i != ndim(); ++i) {
     for (int j = 0; j != i; ++j) {
       const double ele = (element(j,i) - element(i,j)) * 0.5;
       element(j,i) = ele;
@@ -388,8 +238,8 @@ void Matrix::purify_idempotent(const Matrix& s) {
 
 // in-place matrix inverse (practically we use buffer area)
 void Matrix::inverse() {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
+  assert(ndim() == mdim());
+  const int n = ndim();
   shared_ptr<Matrix> buf = this->clone();
   buf->unit();
 
@@ -419,8 +269,8 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 
 // compute S^{-1} using diagonalization
 bool Matrix::inverse_symmetric(const double thresh) {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
+  assert(ndim() == mdim());
+  const int n = ndim();
   unique_ptr<double[]> vec(new double[n]);
   diagonalize(vec.get());
 
@@ -444,8 +294,8 @@ bool Matrix::inverse_symmetric(const double thresh) {
 
 // compute S^{-1/2}
 bool Matrix::inverse_half(const double thresh) {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
+  assert(ndim() == mdim());
+  const int n = ndim();
   unique_ptr<double[]> vec(new double[n]);
 
 #ifdef HAVE_SCALAPACK
@@ -486,24 +336,24 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
     // use canonical orthogonalization. Start over
     cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
-    unique_ptr<double[]> eig(new double[ndim_]);
+    unique_ptr<double[]> eig(new double[ndim()]);
     out->diagonalize(eig.get());
     int m = 0;
-    for (int i = 0; i != mdim_; ++i) {
+    for (int i = 0; i != mdim(); ++i) {
       if (eig[i] > thresh) {
         const double e = 1.0/std::sqrt(eig[i]);
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
       }
     }
-    out = out->slice(0,m);
+    out = out->slice_copy(0,m);
   }
   return out;
 }
 
 // compute Hermitian square root, S^{1/2}
 void Matrix::sqrt() {
-  assert(ndim_ == mdim_);
-  const int n = ndim_;
+  assert(ndim() == mdim());
+  const int n = ndim();
   unique_ptr<double[]> vec(new double[n]);
 #ifdef HAVE_SCALAPACK
   if (localized_) {
@@ -511,9 +361,8 @@ void Matrix::sqrt() {
     diagonalize(vec.get());
 
     for (int i = 0; i != n; ++i) {
-      if (vec[i] < 0.0) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-      double s = std::sqrt(std::sqrt(vec[i]));
-      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+      if (vec[i] < -numerical_zero__) throw std::runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      blas::scale_n(std::sqrt(std::sqrt(std::abs(vec[i]))), element_ptr(0,i), n);
     }
 
     *this = *this ^ *this;
@@ -546,12 +395,12 @@ void Matrix::rotate(std::vector<std::tuple<int, int, double>>& rotations) {
 }
 
 
-void Matrix::print(const string name, const size_t size) const {
+void Matrix::print(const string name, const int size) const {
 
   cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size,ndim_); ++i) {
-    for (int j = 0; j != min(size,mdim_); ++j) {
-      cout << fixed << setw(12) << setprecision(9) << data_[j * ndim_ + i]  << " ";
+  for (int i = 0; i != min(size, ndim()); ++i) {
+    for (int j = 0; j != min(size, mdim()); ++j) {
+      cout << fixed << setw(12) << setprecision(9) << element(i, j)  << " ";
     }
     cout << endl;
   }
@@ -572,7 +421,7 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 
 
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
-  shared_ptr<const Matrix> tmp = this->slice(offset, offset+n);
+  shared_ptr<const MatView> tmp = this->slice(offset, offset+n);
   auto out = make_shared<Matrix>(*tmp ^ *tmp);
   *out *= 2.0;
   return out;
@@ -583,10 +432,10 @@ shared_ptr<Matrix> Matrix::swap_columns(const int n, const int nblock, const int
   assert(m > n);
   assert(nblock > 0 && mblock > 0);
   shared_ptr<Matrix> out = this->clone();
-  out->copy_block(0, 0,                 ndim_,                n-1, this->slice(0, n)->data());
-  out->copy_block(0, n-1,               ndim_,             mblock, this->slice(m-1, m-1+mblock)->data());
-  out->copy_block(0, n-1+mblock,        ndim_,         m-n-nblock, this->slice(n-1+nblock, m-1)->data());
-  out->copy_block(0, m-1+mblock-nblock, ndim_,             nblock, this->slice(n-1, n-1+nblock)->data());
-  out->copy_block(0, m-1+mblock,        ndim_, mdim_-(m-1+mblock), this->slice(m-1+mblock, mdim_)->data());
+  out->copy_block(0, 0,                 ndim(),                n-1, this->slice(0, n)->data());
+  out->copy_block(0, n-1,               ndim(),             mblock, this->slice(m-1, m-1+mblock)->data());
+  out->copy_block(0, n-1+mblock,        ndim(),         m-n-nblock, this->slice(n-1+nblock, m-1)->data());
+  out->copy_block(0, m-1+mblock-nblock, ndim(),             nblock, this->slice(n-1, n-1+nblock)->data());
+  out->copy_block(0, m-1+mblock,        ndim(), mdim()-(m-1+mblock), this->slice(m-1+mblock, mdim())->data());
   return out;
 }

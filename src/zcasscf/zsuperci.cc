@@ -219,7 +219,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
 #endif
     // closed Fock - same as inactive fock
     if (!nact_) {
-      shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
+      shared_ptr<const ZMatrix> cfockao = nclosed_ ? make_shared<const DFock>(geom_, hcore_, coeff_->slice_copy(0,nclosed_*2), gaunt_, breit_, /*store half*/false, /*robust*/breit_) : hcore_;
       cfock = make_shared<ZMatrix>(*coefftmp % *cfockao * *coefftmp);
     } else {
       cfock = make_shared<const ZMatrix>(*coefftmp % *fci_->jop()->core_fock() * *coefftmp);

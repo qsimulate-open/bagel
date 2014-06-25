@@ -171,7 +171,7 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
     if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<Matrix> coeffs = spin->slice(start, end);
+    shared_ptr<const MatView> coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
     hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
@@ -183,8 +183,8 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
       cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
 #endif
 
-    coeffs = (*coeffs * *hamiltonian).slice(0, nstate_);
-    mpi__->broadcast(coeffs->data(), coeffs->ndim() * coeffs->mdim(), 0);
+    auto coeffs1 = (*coeffs * *hamiltonian).slice_copy(0, nstate_);
+    mpi__->broadcast(coeffs1->data(), coeffs1->ndim() * coeffs1->mdim(), 0);
     const size_t lenb = det_->lenb();
     for (int i = 0; i < nguess; ++i) {
       size_t ia = det_->lexical<0>(basis[i].first);
@@ -192,7 +192,7 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
         ia -= denom_->astart();
         const size_t ib = det_->lexical<1>(basis[i].second);
         for (int j = 0; j < nstate_; ++j)
-          out[j]->local(ib + ia*lenb) = coeffs->element(i, j);
+          out[j]->local(ib + ia*lenb) = coeffs1->element(i, j);
       }
     }
   }

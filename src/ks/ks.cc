@@ -56,7 +56,7 @@ void KS::compute() {
     // add xc
     shared_ptr<const Matrix> xc;
     double exc;
-    tie(xc, exc) = grid_->compute_xc(func_, coeff_->slice(0, nocc_));
+    tie(xc, exc) = grid_->compute_xc(func_, coeff_->slice_copy(0, nocc_));
 
     energy_ = 0.5*((*hcore_+ *fock) * *aodensity_).trace() + exc + geom_->nuclear_repulsion();
 

@@ -71,7 +71,7 @@ void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Ma
     trialsize = end - start;
 
     if (trialsize >= nstates) {
-      basis = (*basis * *spn).slice(start, end);
+      basis = (*basis * *spn).slice_copy(start, end);
 
       std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_);
       auto H = std::make_shared<Matrix>(*sigma % *basis);
@@ -142,8 +142,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
         std::shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
 
-        hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
-        hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+        if (block) {
+          hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);
+          hamiltonian_->add_block(1.0, joff, ioff, block->mdim(), block->ndim(), block->transpose());
+        }
       }
     }
     std::cout << "  o Computing off-diagonal blocks - time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;
@@ -160,7 +162,8 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   if ( dipoles_ ) { // TODO Redo to make better use of memory
     std::cout << "  o Computing properties" << std::endl;
-    DimerDipole dipole = DimerDipole(ref_, dimerclosed_, dimerclosed_ + nact_.first, dimerclosed_ + dimeractive_, ref_->coeff());
+    std::shared_ptr<const Reference> dimerref = dimer_->sref();
+    DimerDipole dipole = DimerDipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->nact().first, dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
     std::array<std::string,3> mu_labels = {{"x", "y", "z"}};
     for (int i = 0; i < 3; ++i) {
       std::string label("mu_");

@@ -64,9 +64,15 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e
   Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
 
-  if ( (neleA % 2) == 1 ) out->scale(-1.0);
+  if ((neleA % 2) == 1) {
+    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
+  else {
+    // sort: (A',A,B',B) --> (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
 
   return out;
 }
@@ -90,9 +96,10 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
 
   switch(term_type) {
     case Coupling::none :
-      out = std::make_shared<Matrix>(space1->dimerstates(), space2->dimerstates()); break;
+      out = std::shared_ptr<Matrix>(); break;
     case Coupling::diagonal :
-      out = compute_inter_2e(*space1, *space2); break;
+      out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+      compute_inter_2e(*out, *space1, *space2); break;
     case Coupling::aET :
       out = compute_aET(*space1, *space2); break;
     case Coupling::bET :
@@ -152,10 +159,15 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_aET(DSubSpace&
     tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
 
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
   const int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
-  if ((neleA % 2) == 1) out->scale(-1.0);
+  if ((neleA % 2) == 1) {
+    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
+  else {
+    // sort: (A',A,B',B) --> (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
 
   return out;
 }
@@ -199,24 +211,23 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_bET(DSubSpace&
     tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
   }
 
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
   const int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
-  if ((neleA % 2) == 1) out->scale(-1.0);
+  if ((neleA % 2) == 1) {
+    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
+  else {
+    // sort: (A',A,B',B) --> (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  }
 
   return out;
 }
 
 
-// Currently defined as an alpha->beta flip in A and a beta->alpha flip in B
 template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abFlip(DSubSpace& AB, DSubSpace& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  const int nstatesA = AB.template nstates<0>();
-  const int nstatesAp = ApBp.template nstates<0>();
-  const int nstatesB = AB.template nstates<1>();
-  const int nstatesBp = ApBp.template nstates<1>();
 
   Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
   Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
@@ -224,9 +235,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abFlip(DSubSpa
   std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp = gamma_A * (*Kmatrix) ^ gamma_B;
-  tmp *= -1.0;
 
-  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
+  // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }
@@ -242,9 +253,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abET(DSubSpace
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -1.0;
 
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
+  // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }
@@ -260,9 +271,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_aaET(DSubSpace
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -0.5;
 
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
+  // sort: (A',A,B',B) --> -0.5 * (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,-1,2>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }
@@ -278,9 +289,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_bbET(DSubSpace
   std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -0.5;
 
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
+  // sort: (A',A,B',B) --> -0.5 * (A,B,A',B')
+  SMITH::sort_indices<1,3,0,2,0,1,-1,2>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
 
   return out;
 }

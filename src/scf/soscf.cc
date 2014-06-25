@@ -76,7 +76,7 @@ void SOSCF::compute() {
   DIIS<Matrix> diis(diis_size_);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    shared_ptr<const Matrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
+    shared_ptr<const Matrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice_copy(0, nocc_ * 2));
     energy_ = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
     auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ -
                                                   *sooverlap_ * *aodensity_ * *sofock);

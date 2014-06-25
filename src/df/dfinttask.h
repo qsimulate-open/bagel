@@ -57,7 +57,7 @@ class DFIntTask {
         const size_t nbin = dfblocks_[i]->b1size();
         const size_t naux = dfblocks_[i]->asize();
         const DataType* ppt = p->data(i);
-        DataType* const data = dfblocks_[i]->get();
+        DataType* const data = dfblocks_[i]->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
             std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j1+nbin*j0));

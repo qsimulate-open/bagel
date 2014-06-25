@@ -30,7 +30,6 @@
 #include <src/df/dfinttask_old.h>
 #include <src/df/dfinttask.h>
 #include <src/df/dfblock.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
@@ -76,7 +75,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     void scale(const double a);
     void symmetrize();
 
-    std::shared_ptr<Matrix> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
+    std::shared_ptr<btas::Tensor3<double>> get_block(const int i, const int id, const int j, const int jd, const int k, const int kd) const;
 
     const std::shared_ptr<const ParallelDF> df() const { return df_; }
     std::shared_ptr<const Matrix> data2() const { return data2_; }

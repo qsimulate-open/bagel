@@ -43,8 +43,8 @@ Fock_base_London::Fock_base_London(const shared_ptr<const Geometry_London> geom,
 
 void Fock_base_London::fock_one_electron_part() {
 
-  //const int nbasis = ndim_;
-  assert(ndim_ == mdim_);
+  //const int nbasis = ndim();
+  assert(ndim() == mdim());
 
   const int nirrep = cgeom_->nirrep();
   if (nirrep != 1) throw std::runtime_error("London-based methods currently cannot make use of symmetry.");
@@ -74,7 +74,7 @@ void Fock_base_London::computebatch(const array<shared_ptr<const Shell>,2>& inpu
 
   for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
     for (int j = offsetb1; j != dimb1 + offsetb1; ++j) {
-      data_[i*ndim_+j] = 0.0;
+      element(j, i) = 0.0;
     }
   }
 }

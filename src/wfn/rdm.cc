@@ -33,32 +33,40 @@ using namespace std;
 
 template<>
 bool RDM<1>::natural_orbitals() const {
-  const double a = ddot_(norb_*norb_, data_, 1, data_, 1);
-  const double b = ddot_(norb_, data_, norb_+1, data_, norb_+1);
+  const double a = ddot_(norb()*norb(), data(), 1, data(), 1);
+  const double b = ddot_(norb(), data(), norb()+1, data(), norb()+1);
   return fabs(a-b) < 1.0e-12;
 }
 
 
 template<>
-pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() const {
-  auto buf = make_shared<Matrix>(dim_,dim_,true);
-  buf->add_diag(2.0);
-  daxpy_(dim_*dim_, -1.0, data(), 1, buf->data(), 1);
+vector<double> RDM<1>::diag() const {
+  std::vector<double> out(norb());
+  for (int i = 0; i != norb(); ++i) out[i] = element(i,i);
+  return out;
+}
 
-  vector<double> vec(dim_);
+
+template<>
+pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() const {
+  auto buf = make_shared<Matrix>(norb(),norb(),true);
+  buf->add_diag(2.0);
+  daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
+
+  vector<double> vec(norb());
   buf->diagonalize(vec.data());
 
   for (auto& i : vec) i = 2.0-i;
 
   map<int,int> emap;
-  auto buf2 = make_shared<Matrix>(dim_,dim_,true);
-  vector<double> vec2(dim_);
+  auto buf2 = buf->clone();
+  vector<double> vec2(norb());
   // sort eigenvectors so that buf is close to a unit matrix
   // target column
-  for (int i = 0; i != dim_; ++i) {
+  for (int i = 0; i != norb(); ++i) {
     // first find the source column
     tuple<int, double> max = make_tuple(-1, 0.0);
-    for (int j = 0; j != dim_; ++j)
+    for (int j = 0; j != norb(); ++j)
       if (fabs(buf->element(i,j)) > get<1>(max))
         max = make_tuple(j, fabs(buf->element(i,j)));
 
@@ -67,14 +75,14 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
     emap.insert(make_pair(get<0>(max), i));
 
     // copy to the target
-    copy_n(buf->element_ptr(0,get<0>(max)), dim_, buf2->element_ptr(0,i));
+    copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
     vec2[i] = vec[get<0>(max)];
   }
 
   // fix the phase
-  for (int i = 0; i != dim_; ++i) {
+  for (int i = 0; i != norb(); ++i) {
     if (buf2->element(i,i) < 0.0)
-      blas::scale_n(-1.0, buf2->element_ptr(0,i), dim_);
+      blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
   }
 
   return make_pair(buf2, vec2);
@@ -83,39 +91,39 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
 
 template<>
 void RDM<1>::transform(const shared_ptr<Matrix>& coeff) {
-  const double* start = coeff->data();
-  unique_ptr<double[]> buf(new double[dim_*dim_]);
-  dgemm_("N", "N", dim_, dim_, dim_, 1.0, data(), dim_, start, dim_, 0.0, buf.get(), dim_);
-  dgemm_("T", "N", dim_, dim_, dim_, 1.0, start, dim_, buf.get(), dim_, 0.0, data(), dim_);
+  auto buf = clone();
+  btas::contract(1.0, *this, {0,1}, *coeff, {1,2}, 0.0, *buf, {0,2});
+  btas::contract(1.0, *coeff, {1,0}, *buf, {1,2}, 0.0, *this, {0,2});
 }
 
 
 template<>
 void RDM<2>::transform(const shared_ptr<Matrix>& coeff) {
   const double* start = coeff->data();
-  unique_ptr<double[]> buf(new double[dim_*dim_]);
+  const int dim = norb()*norb();
+  unique_ptr<double[]> buf(new double[dim*dim]);
   // first half transformation
-  dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, data(), dim_*norb_, start, norb_, 0.0, buf.get(), dim_*norb_);
-  for (int i = 0; i != norb_; ++i)
-    dgemm_("N", "N", dim_, norb_, norb_, 1.0, buf.get()+i*dim_*norb_, dim_, start, norb_, 0.0, data()+i*dim_*norb_, dim_);
+  dgemm_("N", "N", dim*norb(), norb(), norb(), 1.0, data(), dim*norb(), start, norb(), 0.0, buf.get(), dim*norb());
+  for (int i = 0; i != norb(); ++i)
+    dgemm_("N", "N", dim, norb(), norb(), 1.0, buf.get()+i*dim*norb(), dim, start, norb(), 0.0, data()+i*dim*norb(), dim);
   // then tranpose
-  blas::transpose(data(), dim_, dim_, buf.get());
+  blas::transpose(data(), dim, dim, buf.get());
   // and do it again
-  dgemm_("N", "N", dim_*norb_, norb_, norb_, 1.0, buf.get(), dim_*norb_, start, norb_, 0.0, data(), dim_*norb_);
-  for (int i = 0; i != norb_; ++i)
-    dgemm_("N", "N", dim_, norb_, norb_, 1.0, data()+i*dim_*norb_, dim_, start, norb_, 0.0, buf.get()+i*dim_*norb_, dim_);
+  dgemm_("N", "N", dim*norb(), norb(), norb(), 1.0, buf.get(), dim*norb(), start, norb(), 0.0, data(), dim*norb());
+  for (int i = 0; i != norb(); ++i)
+    dgemm_("N", "N", dim, norb(), norb(), 1.0, data()+i*dim*norb(), dim, start, norb(), 0.0, buf.get()+i*dim*norb(), dim);
   // to make sure for non-symmetric density matrices (and anyway this should be cheap).
-  blas::transpose(buf.get(), dim_, dim_, data());
+  blas::transpose(buf.get(), dim, dim, data());
 }
 
 
 template<>
 shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
-  auto out = make_shared<Matrix>(nclosed+norb_, nclosed+norb_);
+  auto out = make_shared<Matrix>(nclosed+norb(), nclosed+norb());
   if (all)
     for (int i = 0; i != nclosed; ++i) out->element(i,i) = 2.0;
-  for (int i = 0; i != norb_; ++i)
-    for (int j = 0; j != norb_; ++j)
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
       out->element(j+nclosed, i+nclosed) = element(j,i);
   return out;
 }
@@ -123,20 +131,20 @@ shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
 
 template<>
 void RDM<1>::print(const double thresh) const {
-  const double* ptr = data_.get();
-  for (int i = 0; i != norb_; ++i)
-    for (int j = 0; j != norb_; ++j)
+  const double* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
       cout << setw(12) << setprecision(7) << *ptr++ << endl;
 }
 
 
 template<>
 void RDM<2>::print(const double thresh) const {
-  const double* ptr = data_.get();
-  for (int i = 0; i != norb_; ++i)
-    for (int j = 0; j != norb_; ++j)
-      for (int k = 0; k != norb_; ++k)
-        for (int l = 0; l != norb_; ++l, ++ptr)
+  const double* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l, ++ptr)
           if (fabs(*ptr) > thresh)
             cout << setw(3) << l << setw(3)
                       << k << setw(3) << j << setw(3) << i
@@ -146,13 +154,13 @@ void RDM<2>::print(const double thresh) const {
 
 template<>
 void RDM<3>::print(const double thresh) const {
-  const double* ptr = data_.get();
-  for (int i = 0; i != norb_; ++i)
-    for (int j = 0; j != norb_; ++j)
-      for (int k = 0; k != norb_; ++k)
-        for (int l = 0; l != norb_; ++l)
-        for (int m = 0; m != norb_; ++m)
-        for (int n = 0; n != norb_; ++n, ++ptr)
+  const double* ptr = data();
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      for (int k = 0; k != norb(); ++k)
+        for (int l = 0; l != norb(); ++l)
+        for (int m = 0; m != norb(); ++m)
+        for (int n = 0; n != norb(); ++n, ++ptr)
           if (fabs(*ptr) > thresh)
             cout << setw(3) << n << setw(3) << m << setw(3) << l << setw(3)
                  << k << setw(3) << j << setw(3) << i

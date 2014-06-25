@@ -29,123 +29,62 @@
 
 #include <type_traits>
 #include <src/wfn/geometry.h>
-#include <src/math/matrix.h>
 
 namespace bagel {
 
-template<typename DataType>
-class RDM_base {
-  protected:
-    int norb_;
-    size_t dim_;
-    int rank_;
-
-    std::unique_ptr<DataType[]> data_;
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << norb_ << dim_ << rank_ << make_array(data(), size());
-    }
-
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      ar >> norb_ >> dim_ >> rank_;
-      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      ar >> make_array(data(), size());
-    }
-
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
-      boost::serialization::split_member(ar, *this, file_version);
-    }
-
-  public:
-    RDM_base() : norb_(0), dim_(0) { }
-
-    RDM_base(const int n, const int rank) : norb_(n), rank_(rank) {
-      assert(rank > 0);
-      dim_ = 1lu;
-      for (int i = 0; i != rank; ++i) dim_ *= n;
-      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      std::fill_n(data(), size(), static_cast<DataType>(0.0));
-    }
-
-    RDM_base(const RDM_base<DataType>& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_) {
-      data_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-      std::copy_n(o.data(), size(), data());
-    }
-
-    RDM_base(RDM_base<DataType>&& o) : norb_(o.norb_), dim_(o.dim_), rank_(o.rank_), data_(std::move(o.data_)) {
-    }
-
-    DataType* first() { return data(); }
-    DataType* data() { return data_.get(); }
-    const DataType* data() const { return data_.get(); }
-
-    void zero() { std::fill(data(), data()+dim_*dim_, static_cast<DataType>(0.0)); }
-    void ax_plus_y(const DataType a, const RDM_base<DataType>& o) {
-      assert(size() == o.size());
-      std::transform(o.data(), o.data()+size(), data(), data(), [&a](DataType p, DataType q){ return q+a*p;});
-    }
-    void ax_plus_y(const DataType& a, const std::shared_ptr<RDM_base<DataType>>& o) { this->ax_plus_y(a, *o); }
-    void scale(const DataType& a) { std::for_each(data(), data()+size(), [&a](DataType& p){ p *= a; }); }
-    size_t size() const { return dim_*dim_; }
-
-    int norb() const { return norb_; }
-    size_t dim() const { return dim_; }
-
-};
-
 
 template <int rank, typename DataType = double>
-class RDM : public RDM_base<DataType> {
-  protected:
-    // T should be able to be multiplied by norb_
-    template<int i, typename T, typename ...args>
-    size_t address_(const T& head, const args&... tail) const {
-      static_assert(i >= 0 && std::is_integral<T>::value, "address_ called with a wrong template variable");
-      T out = head;
-      for (int j = 0; j != i; ++j) out *= this->norb_;
-      return out + address_<i+1>(tail...);
-    }
-    template<int i, typename T>
-    size_t address_(const T& head) const {
-      static_assert(i+1 == rank*2 && std::is_integral<T>::value, "address_(const T&) called with a wrong template variable");
-      T out = head;
-      for (int j = 0; j != i; ++j) out *= this->norb_;
-      return out;
-    }
+class RDM : public btas::TensorN<DataType, rank*2> {
+  private:
+    constexpr const static int N = rank*2;
+  public:
+    using btas::TensorN<DataType, N>::data;
+    using btas::TensorN<DataType, N>::begin;
+    using btas::TensorN<DataType, N>::end;
+    using btas::TensorN<DataType, N>::cbegin;
+    using btas::TensorN<DataType, N>::cend;
 
   private:
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<RDM_base<DataType>>(*this);
+// TODO
     }
 
   public:
     RDM() { }
-    RDM(const int n) : RDM_base<DataType>(n, rank) { }
-    RDM(const RDM<rank,DataType>& o) : RDM_base<DataType>(o) { }
-    RDM(RDM<rank,DataType>&& o) : RDM_base<DataType>(std::move(o)) { }
 
-    std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb_); }
+    RDM(const int n) : btas::TensorN<DataType, N>(btas::CRange<N>(btas::Range1(n),N)) {
+    }
+
+    RDM(const RDM<rank,DataType>& o) : btas::TensorN<DataType, N>(o) {
+    }
+
+    RDM(RDM<rank,DataType>&& o) : btas::TensorN<DataType, N>(std::move(o)) {
+    }
+
+    std::shared_ptr<RDM<rank,DataType>> clone() const { return std::make_shared<RDM<rank,DataType>>(this->norb()); }
     std::shared_ptr<RDM<rank,DataType>> copy() const { return std::make_shared<RDM<rank,DataType>>(*this); }
 
     template<typename ...args>
-    DataType& element(const args&... index) { return this->data_[address_<0>(index...)]; }
+    DataType& element(const args&... index) { return (*this)(index...); }
 
     template<typename ...args>
-    const DataType& element(const args&... index) const { return this->data_[address_<0>(index...)]; }
+    const DataType& element(const args&... index) const { return (*this)(index...); }
 
     RDM<rank,DataType>& operator+=(const RDM<rank,DataType>& o) { this->ax_plus_y(1.0, o); return *this; }
     RDM<rank,DataType>& operator-=(const RDM<rank,DataType>& o) { this->ax_plus_y(-1.0, o); return *this; }
-    RDM<rank,DataType> operator+(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(1.0, o); return out; }
-    RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out.ax_plus_y(-1.0, o); return out; }
+    RDM<rank,DataType> operator+(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out += o; return out; }
+    RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out -= o; return out; }
+
+    void zero() { this->fill(0.0); }
+
+    void ax_plus_y(const DataType a, const btas::TensorN<DataType,N>& o) { btas::axpy(a, o, *this); }
+    void ax_plus_y(const DataType& a, const std::shared_ptr<const btas::TensorN<DataType,N>>& o) { this->ax_plus_y(a, *o); }
+
+    void scale(const DataType& a) { btas::scal(a, *this); }
+    size_t size() const { return this->storage().size(); }
+    int norb() const { return this->extent(0); }
 
     // returns if this is natural orbitals - only for rank 1
     bool natural_orbitals() const {
@@ -166,8 +105,29 @@ class RDM : public RDM_base<DataType> {
     void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
 
     std::vector<DataType> diag() const {
-      std::vector<DataType> out(this->dim_);
-      for (int i = 0; i != this->dim_; ++i) out[i] = element(i,i);
+      throw std::logic_error("RDM<N>::diag() should not be called with N>1");
+      return std::vector<DataType>();
+    }
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T,std::complex<double>>::value>::type
+            >
+    std::shared_ptr<RDM<rank,double>> get_real_part() const {
+      auto out = std::make_shared<RDM<rank,double>>(norb());
+      auto i = out->begin();
+      for (auto& d : *this)
+        *i++ = std::real(d);
+      return out;
+    }
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T,std::complex<double>>::value>::type
+            >
+    std::shared_ptr<RDM<rank,double>> get_imag_part() const {
+      auto out = std::make_shared<RDM<rank,double>>(norb());
+      auto i = out->begin();
+      for (auto& d : *this)
+        *i++ = std::imag(d);
       return out;
     }
 
@@ -178,6 +138,7 @@ template <int rank>
 using ZRDM = RDM<rank, std::complex<double>>;
 
 template<> bool RDM<1,double>::natural_orbitals() const;
+template<> std::vector<double> RDM<1,double>::diag() const;
 
 template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1,double>::generate_natural_orbitals() const;
 

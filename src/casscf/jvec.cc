@@ -33,7 +33,7 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
 
   shared_ptr<const DFDist> df = fci->geom()->df();
   const size_t nocc = nclosed+nact;
-  shared_ptr<const Matrix> cc = coeff->slice(0, nocc);
+  shared_ptr<const MatView> cc = coeff->slice(0, nocc);
 
   shared_ptr<RDM<1>> rdm1_av = fci->rdm1_av();
   shared_ptr<RDM<2>> rdm = fci->rdm2_av();
@@ -47,21 +47,21 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
 
     // TODO this is not a very efficient implementation, obviously
     // for the time being, I form the entire 2RDM
-    unique_ptr<double[]> rdm2all(new double[nocc*nocc*nocc*nocc]);
-    fill_n(rdm2all.get(), nocc*nocc*nocc*nocc, 0.0);
+    RDM<2> rdm2all(nocc);
+    rdm2all.fill(0.0);
     {
       // closed-closed
       for (int i = 0; i != nclosed; ++i) {
         for (int j = 0; j != nclosed; ++j) {
-          rdm2all[j+nocc*(j+nocc*(i+nocc*i))] += 4.0;
-          rdm2all[j+nocc*(i+nocc*(i+nocc*j))] -= 2.0;
+          rdm2all(j, j, i, i) += 4.0;
+          rdm2all(j, i, i, j) -= 2.0;
         }
       }
       // active-active
       for (int i = 0; i != nact; ++i) {
         for (int j = 0; j != nact; ++j) {
           for (int k = 0; k != nact; ++k) {
-            copy_n(rdm->data()+nact*(k+nact*(j+nact*i)), nact, rdm2all.get()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))));
+            copy_n(rdm->data()+nact*(k+nact*(j+nact*i)), nact, rdm2all.data()+nclosed+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i+nclosed))));
           }
         }
       }
@@ -69,16 +69,16 @@ Jvec::Jvec(shared_ptr<FCI> fci, shared_ptr<const Coeff> coeff, const size_t nclo
       for (int i = 0; i != nclosed; ++i) {
         for (int j = 0; j != nact; ++j) {
           for (int k = 0; k != nact; ++k) {
-            rdm2all[i+nocc*(i+nocc*(k+nclosed+nocc*(j+nclosed)))] += rdm1_av->element(k,j) * 2.0;
-            rdm2all[k+nclosed+nocc*(j+nclosed+nocc*(i+nocc*(i)))] += rdm1_av->element(k,j) * 2.0;
-            rdm2all[i+nocc*(k+nclosed+nocc*(j+nclosed+nocc*(i)))] -= rdm1_av->element(k,j);
-            rdm2all[k+nclosed+nocc*(i+nocc*(i+nocc*(j+nclosed)))] -= rdm1_av->element(k,j);
+            rdm2all(i, i, k+nclosed, j+nclosed) += rdm1_av->element(k,j) * 2.0;
+            rdm2all(k+nclosed, j+nclosed, i, i) += rdm1_av->element(k,j) * 2.0;
+            rdm2all(i, k+nclosed, j+nclosed, i) -= rdm1_av->element(k,j);
+            rdm2all(k+nclosed, i, i, j+nclosed) -= rdm1_av->element(k,j);
           }
         }
       }
     }
-    jvec_ = in->apply_2rdm(rdm2all.get())->apply_J();
-    rdm2_all_ = move(rdm2all);
+    jvec_ = in->apply_2rdm(rdm2all)->apply_J();
+    rdm2_all_ = make_shared<RDM<2>>(move(rdm2all));
 #if 0
 double* d = rdm2_all_.get();
 for (int i = 0; i != nocc; ++i) {

@@ -31,33 +31,12 @@
 #include <src/dimer/dimer_prop.h>
 #include <src/math/davidson.h>
 #include <src/meh/gamma_forest.h>
-#include <src/meh/meh_spin.h>
+#include <src/meh/meh_base.h>
+#include <src/smith/prim_op.h>
 
 namespace bagel {
 
-/************************************************************************************
-*  This class computes the Hamiltonian matrix for multiexciton states described by  *
-* CAS calculations                                                                  *
-************************************************************************************/
-
-enum class Coupling {
-  none = 0,
-  diagonal = 1,
-  aET = 2,
-  inv_aET = -2,
-  bET = 3,
-  inv_bET = -3,
-  abFlip = 4,
-  baFlip = -4,
-  abET = 5,
-  inv_abET = -5,
-  aaET = 6,
-  inv_aaET = -6,
-  bbET = 7,
-  inv_bbET = -7
-};
-
-// wrapper for monomer CI wavefunctions that includes extra helpful information
+/// Wrapper for monomer CI wavefunctions that includes extra helpful information
 template <class VecType>
 struct MonomerSubspace_base {
   const int S_;
@@ -69,18 +48,9 @@ struct MonomerSubspace_base {
     S_(S), ms_(ms), charge_(charge), monomerci_(monomerci) {}
 };
 
-struct ModelBlock {
-  std::pair<int, int> S_;
-  std::pair<int, int> charge_;
-  std::pair<int, int> M_;
-  int nstates_;
-
-  ModelBlock(std::pair<int, int> S, std::pair<int, int> q, std::pair<int, int> M, const int nstates) :
-    S_(S), charge_(q), M_(M), nstates_(nstates) {}
-};
-
+/// Contains all of the information for a product of two monomer spaces
 template <class VecType>
-class DimerSubspace_base { // until I come up with a better name
+class DimerSubspace_base {
   protected:
     const int offset_;
     const int nstatesA_;
@@ -118,80 +88,32 @@ class DimerSubspace_base { // until I come up with a better name
 
 };
 
+/// Template for MEH (to be renamed ASD)
 template <class VecType>
-class MultiExcitonHamiltonian {
+class MultiExcitonHamiltonian : public MEH_base {
    protected: using DSubSpace = DimerSubspace_base<VecType>;
    protected: using DCISpace = DimerCISpace_base<VecType>;
    protected: using CiType = typename VecType::Ci;
 
    protected:
-      std::shared_ptr<const Dimer> dimer_;
-      std::shared_ptr<const Reference> ref_;
-
-      std::shared_ptr<DimerJop> jop_;
-
       std::shared_ptr<DCISpace> cispace_;
       std::shared_ptr<GammaForest<VecType, 2>> gammaforest_;
       std::vector<DSubSpace> subspaces_;
 
-      std::unique_ptr<double[]> denom_;
-
-      std::shared_ptr<Matrix> hamiltonian_;
-      std::shared_ptr<Matrix> adiabats_; // Eigenvectors of adiabatic states
-      std::vector<std::pair<std::string, std::shared_ptr<Matrix>>> properties_;
-
-      int max_spin_;
-      std::shared_ptr<MEHSpin> spin_;
-
-      std::vector<double> energies_; // Adiabatic energies
-
-      // Total system quantities
-      const int dimerbasis_;
-      const int dimerclosed_;
-      const int dimeractive_;
-      int dimerstates_;
-
-      // Localized quantities
-      std::pair<const int, const int> nact_;
-      std::pair<const int, const int> nbasis_;
-
-      // Options
-      int nstates_;
-      int nspin_;
-      int charge_;
-      int max_iter_;
-      int nguess_;
-      int davidson_subspace_;
-
-      bool store_matrix_;
-      bool dipoles_;
-
-      double thresh_;
-      double print_thresh_;
-
-      std::vector<std::vector<ModelBlock>> models_to_form_;
-      std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_;
+      void modelize();
 
    public:
       MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
-      std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
-
-      void compute();
-      void modelize();
-
-      std::vector<double> energy() const { return energies_; }
-      double energy(const int i) const { return energies_.at(i); }
+      void compute() override;
 
       void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
       void print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh = 0.01, const std::string title = "Adiabats") const;
       void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
       void print(const double thresh = 0.01) const;
 
-      const Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
-
    private:
-      void reorder_matrix(const double* source, double* target, const int nA, const int nAp, const int nB, const int nBp) const;
+      const Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
 
       void generate_initial_guess(std::shared_ptr<Matrix> cc, std::vector<DSubSpace>& subspace, const int nstates);
       std::shared_ptr<Matrix> apply_hamiltonian(const Matrix& o, std::vector<DSubSpace>& subspaces);
@@ -204,7 +126,7 @@ class MultiExcitonHamiltonian {
       // Diagonal block stuff
       void compute_pure_terms(DSubSpace& subspace, std::shared_ptr<const DimerJop> jop);
       std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
-      std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
+      void compute_intra(Matrix& block, const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
       virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
       virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
@@ -217,7 +139,7 @@ class MultiExcitonHamiltonian {
       // Off-diagonal stuff
       std::shared_ptr<Matrix> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
-      std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp);
+      void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp);
       std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp);

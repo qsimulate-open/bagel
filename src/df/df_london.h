@@ -73,9 +73,13 @@ class DFDist_London : public ParallelDF_London {
     void add_direct_product(std::vector<std::shared_ptr<const ZMatrix>> a, std::vector<std::shared_ptr<const ZMatrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
+    std::shared_ptr<DFHalfDist_London> compute_half_transform(std::shared_ptr<const ZMatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist_London> compute_half_transform(const std::shared_ptr<const ZMatrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
+    std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(std::shared_ptr<const ZMatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const;
 
     std::shared_ptr<DFDist_London> copy() const;
@@ -180,6 +184,9 @@ class DFHalfDist_London : public ParallelDF_London {
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
+    std::shared_ptr<DFFullDist_London> compute_second_transform(std::shared_ptr<const ZMatView> c) const;
+    std::shared_ptr<DFDist_London> back_transform(std::shared_ptr<const ZMatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFFullDist_London> compute_second_transform(const std::shared_ptr<const ZMatrix> c) const;
     std::shared_ptr<DFDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
@@ -213,6 +220,8 @@ class DFFullDist_London : public ParallelDF_London {
     std::shared_ptr<DFFullDist_London> copy() const;
     std::shared_ptr<DFFullDist_London> clone() const;
 
+    std::shared_ptr<DFHalfDist_London> back_transform(std::shared_ptr<const ZMatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist_London> back_transform(const std::shared_ptr<const ZMatrix> c) const;
 
     void rotate_occ1(const std::shared_ptr<const ZMatrix> d);

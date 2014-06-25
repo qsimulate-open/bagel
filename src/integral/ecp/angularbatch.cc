@@ -82,6 +82,7 @@ void AngularBatch::map_angular_number() {
 }
 
 vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, const vector<double> r) {
+  const static MSphBesselI msbessel;
 
   vector<vector<double>> rbessel(r.size());
 
@@ -94,8 +95,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
       const double exp0  = basisinfo_[0]->exponents(i0);
       const double fac = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
       for (int i = 0; i <= l0_+l; ++i) {
-        MSphBesselI msbessel(i);
-        bessel[i] += fac * msbessel.compute(2.0 * exp0 * dAB_ * r[ir]);
+        bessel[i] += fac * msbessel.compute(i, 2.0 * exp0 * dAB_ * r[ir]);
       }
     }
     rbessel[ir] = bessel;
@@ -119,8 +119,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              vector<double> usp1;
-              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
               double sAB = 0.0;
               for (int i = 0; i != usp1.size(); ++i) {
                 if (usp1[i] != 0.0) {
@@ -148,6 +147,7 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
 }
 
 vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, const vector<double> r) {
+  const static MSphBesselI msbessel;
 
   vector<vector<double>> rbessel(r.size());
 
@@ -160,8 +160,7 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
       const double exp1  = basisinfo_[1]->exponents(i1);
       const double fac = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
       for (int i = 0; i <= l1_+l; ++i) {
-        MSphBesselI msbessel(i);
-        bessel[i] += fac * msbessel.compute(2.0 * exp1 * dCB_ * r[ir]);
+        bessel[i] += fac * msbessel.compute(i, 2.0 * exp1 * dCB_ * r[ir]);
       }
     }
     rbessel[ir] = bessel;
@@ -185,8 +184,7 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
             double smu = 0.0;
             for (int mu = 0; mu <= 2 * ld; ++mu) {
 
-              vector<double> usp1;
-              sphusplist.sphuspfunc_call(ld, mu-ld, usp1);
+              const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
               double sCB = 0.0;
               for (int i = 0; i != usp1.size(); ++i) {
                 if (usp1[i] != 0.0) {
@@ -222,8 +220,7 @@ vector<double> AngularBatch::compute(const vector<double> r) {
     const int l = ishecp->angular_number();
     if (l != ecp_->ecp_maxl()) {
       for (int m = 0; m <= 2*l; ++m) {
-        vector<double> usp;
-        sphusplist.sphuspfunc_call(l, m-l, usp);
+        const vector<double> usp = sphusplist.sphuspfunc_call(l, m-l);
         vector<double> pA = project_AB(l, usp, r);
         vector<double> pC = project_CB(l, usp, r);
         for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
@@ -252,7 +249,7 @@ void AngularBatch::init() {
   c0_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
   c1_.resize(ANG_HRR_END*ANG_HRR_END*ANG_HRR_END);
 
-  Comb c;
+  const static Comb c;
 
   for (int kx = 0; kx <= ang0_[0]; ++kx) {
     const double ckx = c(ang0_[0], kx) * pow(AB_[0], ang0_[0] - kx);
@@ -284,9 +281,9 @@ void AngularBatch::init() {
   for (int l = 0; l != max(l0_, l1_) + ecp_->ecp_maxl(); ++l) {
     vector<double> zAB_l(2*l+1, 0.0), zCB_l(2*l+1, 0.0);
     for (int m = 0; m <= 2*l; ++m) {
-      shared_ptr<SphHarmonics> shAB = make_shared<SphHarmonics>(l, m-l, AB_);
+      auto shAB = make_shared<SphHarmonics>(l, m-l, AB_);
       zAB_l[m] = (dAB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shAB->zlm());
-      shared_ptr<SphHarmonics> shCB = make_shared<SphHarmonics>(l, m-l, CB_);
+      auto shCB = make_shared<SphHarmonics>(l, m-l, CB_);
       zCB_l[m] = (dCB_ == 0 ? (1.0/sqrt(4.0*pi__)) : shCB->zlm());
     }
     zAB_.push_back(zAB_l);

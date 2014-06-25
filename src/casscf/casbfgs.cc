@@ -78,14 +78,13 @@ void CASBFGS::compute() {
 
     // compute one-body operators
     // * preparation
-    shared_ptr<const Matrix> ccoeff = coeff_->slice(0, nclosed_);
-    shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocc_);
+    shared_ptr<const MatView> ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
     shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
     // first make a weighted coefficient
-    shared_ptr<Matrix> acoeff = coeff_->slice(nclosed_, nocc_);
+    shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
     for (int i = 0; i != nact_; ++i)
       blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
     // then make a AO density matrix

@@ -69,9 +69,13 @@ class DFDist : public ParallelDF {
     void add_direct_product(std::vector<std::shared_ptr<const Matrix>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
+    std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<const MatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> compute_half_transform(const std::shared_ptr<const Matrix> c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<const MatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> compute_half_transform_swap(const std::shared_ptr<const Matrix> c) const;
 
     std::shared_ptr<DFDist> copy() const;
@@ -175,6 +179,9 @@ class DFHalfDist : public ParallelDF {
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
+    std::shared_ptr<DFFullDist> compute_second_transform(std::shared_ptr<const MatView> c) const;
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const MatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFFullDist> compute_second_transform(const std::shared_ptr<const Matrix> c) const;
     std::shared_ptr<DFDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
@@ -208,6 +215,8 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> copy() const;
     std::shared_ptr<DFFullDist> clone() const;
 
+    std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<const MatView> c) const;
+    // TODO will be deprecated
     std::shared_ptr<DFHalfDist> back_transform(const std::shared_ptr<const Matrix> c) const;
 
     void rotate_occ1(const std::shared_ptr<const Matrix> d);
@@ -216,11 +225,11 @@ class DFFullDist : public ParallelDF {
     // special function for RHF
     std::shared_ptr<DFFullDist> apply_closed_2RDM(const double scale_ex = 1.0) const;
     // special function for UHF
-    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const double* rdma, const double* rdmb) const;
+    std::shared_ptr<DFFullDist> apply_uhf_2RDM(const btas::Tensor2<double>& rdma, const btas::Tensor2<double>& rdmb) const;
     // general case with closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
-    std::shared_ptr<DFFullDist> apply_2rdm(const double* rdm) const;
+    std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
 

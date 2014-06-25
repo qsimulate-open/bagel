@@ -37,6 +37,7 @@
 #include <src/fci/civec.h>
 #include <type_traits>
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>

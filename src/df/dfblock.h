@@ -27,6 +27,7 @@
 #define __SRC_DF_DFBLOCK_H
 
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 #include <src/df/dfblock_base.h>
 
 namespace bagel {
@@ -40,9 +41,20 @@ class DFBlock : public DFBlock_base<double> {
     template<typename... Types>
     DFBlock(Types&&... args) : DFBlock_base<double>(std::forward<Types>(args)...) { }
 
+    DFBlock(const DFBlock& o) : DFBlock_base<double>(o) { }
+    DFBlock(DFBlock&& o)      : DFBlock_base<double>(std::move(o)) { }
+
+    DFBlock& operator=(const DFBlock& o) { DFBlock_base<double>::operator=(o); return *this; }
+    DFBlock& operator=(DFBlock&& o)      { DFBlock_base<double>::operator=(std::move(o)); return *this; }
+    DFBlock& operator+=(const DFBlock& o){ DFBlock_base<double>::operator+=(o); return *this; }
+    DFBlock& operator-=(const DFBlock& o){ DFBlock_base<double>::operator-=(o); return *this; }
+
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 
+    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const MatView> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const MatView> c, const bool trans = false) const;
+    // TODO will be deprecated
     std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
 
@@ -54,9 +66,9 @@ class DFBlock : public DFBlock_base<double> {
 
     // 2RDM contractions
     std::shared_ptr<DFBlock> apply_rhf_2RDM(const double scale_exch) const;
-    std::shared_ptr<DFBlock> apply_uhf_2RDM(const double*, const double*) const;
-    std::shared_ptr<DFBlock> apply_2RDM(const double* rdm, const double* rdm1, const int nclosed, const int nact) const;
-    std::shared_ptr<DFBlock> apply_2RDM(const double* rdm) const;
+    std::shared_ptr<DFBlock> apply_uhf_2RDM(const btas::Tensor2<double>&, const btas::Tensor2<double>&) const;
+    std::shared_ptr<DFBlock> apply_2RDM(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
+    std::shared_ptr<DFBlock> apply_2RDM(const btas::Tensor4<double>& rdm) const;
 
     // Form 2- and 4-index integrals
     std::shared_ptr<Matrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
@@ -74,10 +86,8 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<Matrix> form_Dj(const std::shared_ptr<const Matrix> o, const int jdim) const;
 
     // CAUTION, ist, jst, and kst are absolute number (NOT relative to astart_, ...). Returns double[] whose size is i*j*k
-    std::shared_ptr<Matrix> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
+    std::shared_ptr<btas::Tensor3<double>> get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const;
 
-    // use with caution
-    std::unique_ptr<double[]> release_data() { return std::move(data_); }
 };
 
 }

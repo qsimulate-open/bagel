@@ -30,8 +30,9 @@
 using namespace std;
 using namespace bagel;
 
-void SphUSPList::sphusp_0(const int m, vector<double>& c) {
+vector<double> SphUSPList::sphusp_0(const int m) {
 
+  vector<double> c;
   constexpr double coeff[1] = {   2.820947917738781e-01};
 
   assert(abs(m) <= 0);
@@ -39,5 +40,6 @@ void SphUSPList::sphusp_0(const int m, vector<double>& c) {
   const int mu = m + 0;
   const int i0 = mu * size_c;
   for (int i = i0; i != i0 + size_c; ++i) c.push_back(coeff[i]);
+  return c;
 
 }

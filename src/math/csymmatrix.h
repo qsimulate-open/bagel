@@ -27,6 +27,7 @@
 #define __BAGEL_MATH_CSYMMATRIX_H
 
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 
 namespace bagel {
 

@@ -50,8 +50,6 @@ class Factorial {
     size_t operator()(const int i) const { assert(i >= 0 && i < max_); return f_[i]; }
 };
 
-}
-
 class DoubleFactorial {
     constexpr static int max_ = 18;
     std::array<size_t, max_> df_;
@@ -70,6 +68,8 @@ class DoubleFactorial {
       return df_[j];
     }
 };
+
+}
 
 #endif
 

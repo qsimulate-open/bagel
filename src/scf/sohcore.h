@@ -27,7 +27,6 @@
 #ifndef __SRC_SCF_SOHCORE_H
 #define __SRC_SCF_SOHCORE_H
 
-#include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/scf/sohcore_base.h>
 

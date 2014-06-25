@@ -31,6 +31,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
                    shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
@@ -47,7 +48,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
   const int nocc = ref_->nocc();
   const int nvirt = ref_->nvirt();
   const int nmobasis = coeff_->mdim();
-  shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
   shared_ptr<Matrix> fock;
@@ -101,7 +102,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   const int nact = ref_->nact();
   assert(nact + nclosed == nocca);
 
-  shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nocca);
+  shared_ptr<const MatView> ocoeff = coeff_->slice(0, nocca);
 
   // some DF vectors
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
@@ -238,7 +239,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
     shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
     shared_ptr<const DFHalfDist> tmp1 = geom_->df()->compute_half_transform(ocz0)->apply_J();
     tmp0->ax_plus_y(1.0, tmp1);
-    shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
     shared_ptr<const Matrix> buf = tmp0->form_2index(fulld, 2.0); // Factor of 2
     const Matrix cbuf(*coeff_ % *buf);
     sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, cbuf);
@@ -247,7 +248,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
   shared_ptr<DFFullDist> fullz = half->compute_second_transform(ocz0);
   fullz->symmetrize();
   {
-    shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(rdm2_av->data(), rdm1_av->data(), nclosed, nact);
+    shared_ptr<const DFFullDist> tmp = fullz->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
     shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
     // mo transformation of s
     const Matrix cbuf(*coeff_ % *buf);
@@ -326,7 +327,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
 
-  shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   // compute RDMs
   shared_ptr<const RDM<1>> rdm1t;
@@ -357,7 +358,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
   // Half transformed DF vector
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
   shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(rdm2->data());
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*rdm2);
   amat->add_block(prefactor, 0, nclosed, nmobasis, nact, *coeff_ % *half->form_2index(fulld, 1.0));
 
   // additing f^z_ri contribution
@@ -365,7 +366,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     shared_ptr<const Matrix> aden = make_shared<Matrix>(*acoeff * *rdm1mat ^ *acoeff);
     shared_ptr<const Matrix> adenj = make_shared<Matrix>(*rdm1mat ^ *acoeff);
 
-    shared_ptr<const Matrix> ocoeff = coeff_->slice(0, nclosed);
+    shared_ptr<const MatView> ocoeff = coeff_->slice(0, nclosed);
     // coulomb
     Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * *ocoeff);
     // exchange
@@ -391,14 +392,13 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
 
   shared_ptr<const Matrix> z0 = z->first();
   shared_ptr<const Dvec>   z1 = z->second();
-  shared_ptr<const Matrix> ccoeff = nclosed ? coeff_->slice(0, nclosed) : nullptr;
-  shared_ptr<const Matrix> acoeff = coeff_->slice(nclosed, nclosed+nact);
-  shared_ptr<const Matrix> ocoeff = coeff_->slice(      0, nclosed+nact);
+  shared_ptr<const MatView> ccoeff = nclosed ? coeff_->slice(0, nclosed) : nullptr;
+  shared_ptr<const MatView> acoeff = coeff_->slice(nclosed, nclosed+nact);
 
-  shared_ptr<const Matrix> az0 = z0->slice(nclosed, nocca);
-  shared_ptr<const Matrix> oz0 = z0->slice(0, nocca);
-  shared_ptr<const Matrix> cz0  = nclosed ? z0->slice(0, nclosed) : nullptr;
-  shared_ptr<const Matrix> ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * *cz0) : nullptr;
+  shared_ptr<const MatView> az0 = z0->slice(nclosed, nocca);
+  shared_ptr<const MatView> oz0 = z0->slice(0, nocca);
+  shared_ptr<const MatView> cz0  = nclosed ? z0->slice(0, nclosed) : nullptr;
+  shared_ptr<const Matrix>  ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * *cz0) : nullptr;
 
   shared_ptr<RDM<1>> rdm1_av = ref_->rdm1_av()->copy();
   shared_ptr<RDM<2>> rdm2_av = ref_->rdm2_av()->copy();
@@ -478,7 +478,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
     shared_ptr<DFFullDist> fulla = halfa->compute_second_transform(acoeff);
     {
-      shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(rdm2_av->data());
+      shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(*rdm2_av);
       shared_ptr<Matrix> jop = zhalf->form_2index(fullaj, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *jop);
     }
@@ -487,7 +487,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
       shared_ptr<RDM<2>> rdm2_av_exch = rdm2_av->clone();
       shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(acoeff)->apply_JJ();
       zfull->symmetrize();
-      zfull = zfull->apply_2rdm(rdm2_av->data());
+      zfull = zfull->apply_2rdm(*rdm2_av);
       shared_ptr<Matrix> kop = halfa->form_2index(zfull, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *kop);
     }

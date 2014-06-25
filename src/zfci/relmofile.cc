@@ -55,7 +55,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -68,7 +68,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   }
 
   // symmetrize one-electron AO matrices
-  { 
+  if (0) { 
     // local function to transform from kramers to quaternion format
     auto quaternion = [](shared_ptr<ZMatrix> o) {
       shared_ptr<ZMatrix> scratch = o->clone();
@@ -121,9 +121,9 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   // then compute Kramers adapated coefficient matrices
   auto overlap = make_shared<RelOverlap>(geom_);
 //  if (!restricted) {
-//    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice(nstart, nfence), overlap, hcore);
+//    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
 //  } else {
-    kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
+    kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
 //  }
 
   // calculate 1-e MO integrals
@@ -259,7 +259,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   {
     const int norb = geom_->nele();
     assert(norb <= coeff_->mdim());
-    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
+    focktmp = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, norb), gaunt_, breit_, /*store_half*/false, /*robust*/false);
   }
   quaternion(focktmp);
 
@@ -317,7 +317,8 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers_zquat(const int nstart, co
   }
 
   array<shared_ptr<const ZMatrix>,2> tmp;
-  tmp = {{ ctmp->slice(0, ctmp->mdim()/2), ctmp->slice(ctmp->mdim()/2, ctmp->mdim()) }};
+  tmp[0] = make_shared<const ZMatrix>(*ctmp->slice_copy(0, ctmp->mdim()/2));
+  tmp[1] = make_shared<const ZMatrix>(*ctmp->slice_copy(ctmp->mdim()/2, ctmp->mdim()));
 
   return tmp;
 }

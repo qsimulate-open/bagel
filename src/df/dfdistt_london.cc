@@ -55,11 +55,11 @@ DFDistT_London::DFDistT_London(std::shared_ptr<const ParallelDF_London> in, std:
     // first issue all the send and receive requests
     for (int i = 0; i != mpi__->size(); ++i) {
       if (i != myrank) {
-        srequest.push_back(mpi__->request_send(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, myrank));
+        srequest.push_back(mpi__->request_send(source->data()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), i, myrank));
         rrequest.push_back(mpi__->request_recv(buf->data()+adist->start(i)*bsize_, adist->size(i)*bsize_, i, i));
       } else {
         assert(source->asize()*dist_->size(i) == adist->size(i)*bsize_);
-        copy_n(source->get()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), buf->data()+adist->start(i)*bsize_);
+        copy_n(source->data()+source->asize()*dist_->start(i), source->asize()*dist_->size(i), buf->data()+adist->start(i)*bsize_);
       }
     }
     for (auto& i : rrequest) mpi__->wait(i);
@@ -133,7 +133,7 @@ void DFDistT_London::get_paralleldf(std::shared_ptr<ParallelDF_London> out) cons
     // first, issue all the receive requests
     for (int i = 0; i != mpi__->size(); ++i)
       if (i != myrank)
-        request.push_back(mpi__->request_recv(iblock->get()+iblock->asize()*dist_->start(i), iblock->asize()*dist_->size(i), i, i));
+        request.push_back(mpi__->request_recv(iblock->data()+iblock->asize()*dist_->start(i), iblock->asize()*dist_->size(i), i, i));
 
     // information on the data layout
     shared_ptr<const StaticDist> adist = df_->adist_now();
@@ -149,7 +149,7 @@ void DFDistT_London::get_paralleldf(std::shared_ptr<ParallelDF_London> out) cons
       if (i != myrank) {
         request.push_back(mpi__->request_send((*buf)->data()+adist->start(i)*bsize_, adist->size(i)*bsize_, i, myrank));
       } else {
-        copy_n((*buf)->data()+adist->start(i)*bsize_, out->block(0)->asize()*dist_->size(i), out->block(0)->get()+out->block(0)->asize()*dist_->start(i));
+        copy_n((*buf)->data()+adist->start(i)*bsize_, out->block(0)->asize()*dist_->size(i), out->block(0)->data()+out->block(0)->asize()*dist_->start(i));
       }
     }
     ++dat;
@@ -165,7 +165,7 @@ vector<shared_ptr<ZMatrix>> DFDistT_London::get_slice(const int start, const int
   assert(start >= bstart_ && end <= bstart_+bsize_);
   vector<shared_ptr<ZMatrix>> out;
   for (auto& i : data_)
-    out.push_back(i->slice(start-bstart_, end-bstart_));
+    out.push_back(i->slice_copy(start-bstart_, end-bstart_));
   return out;
 }
 

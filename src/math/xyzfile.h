@@ -28,6 +28,7 @@
 #define __SRC_MATH_XYZFILE_H
 
 #include <src/math/matrix.h>
+#include <src/math/matop.h>
 
 namespace bagel {
 
@@ -41,7 +42,7 @@ class XYZFile : public Matrix {
 
     std::shared_ptr<XYZFile> clone() const;
 
-    void print(const std::string in = "", const size_t dum = 0) const override;
+    void print(const std::string in = "", const int dum = 0) const override;
 
     // this function assumes that double[] has data_.size()*data_size() elements.
     std::shared_ptr<XYZFile> transform(const std::shared_ptr<const Matrix>, const bool transpose) const;
