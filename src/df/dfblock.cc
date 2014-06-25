@@ -307,18 +307,15 @@ shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, c
 
 shared_ptr<VectorB> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
   auto out = make_shared<VectorB>(asize());
-  auto dfv = btas::group(*this,  1, 3);
-  auto denv = btas::group(*den, 0, 2);
-  btas::contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
+  btas::contract(1.0, btas::group(*this,1,3), {0,1}, btas::group(*den,0,2), {1}, 0.0, *out, {0});
   return out;
 }
 
 
 shared_ptr<Matrix> DFBlock::form_mat(const btas::Tensor1<double>& fit) const {
   auto out = make_shared<Matrix>(b1size(), b2size());
-  auto outv = btas::group(*out, 0, 2);
-  auto dfv = btas::group(*this,  1, 3);
-  btas::contract(1.0, dfv, {1,0}, fit, {1}, 0.0, outv, {0});
+  auto outv = btas::group(*out,0,2);
+  btas::contract(1.0, btas::group(*this,1,3), {1,0}, fit, {1}, 0.0, outv, {0});
   return out;
 }
 
@@ -333,7 +330,7 @@ void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_pt
 shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int jdim) const {
   assert(o->size() == b1size()*b2size()*jdim);
   auto out = make_shared<Matrix>(asize(), jdim);
-  dgemm_("N", "N", asize(), jdim, b1size()*b2size(), 1.0, data(), asize(), o->data(), b1size()*b2size(), 0.0, out->data(), asize());
+  btas::contract(1.0, btas::group(*this,1,3), {0,1}, *o, {1,2}, 0.0, *out, {0,2});
   return out;
 }
 
