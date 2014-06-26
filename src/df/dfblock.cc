@@ -39,9 +39,9 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cma
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
   else
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -57,9 +57,9 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const MatView> cmat
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -75,9 +75,9 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
   else
-    btas::contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -93,9 +93,9 @@ shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat,
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    btas::contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -149,17 +149,17 @@ shared_ptr<DFBlock> DFBlock::apply_rhf_2RDM(const double scale_exch) const {
 // Caution
 //   o strictly assuming that we are using natural orbitals.
 //
-shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const btas::Tensor2<double>& amat, const btas::Tensor2<double>& bmat) const {
+shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const Tensor2<double>& amat, const Tensor2<double>& bmat) const {
   assert(b1size() == b2size());
   const int nocc = b1size();
   shared_ptr<DFBlock> out = clone();
   {
     auto d2 = clone();
     // exchange contributions
-    btas::contract( 1.0, *this, {0,1,2}, amat, {2,3}, 0.0,  *d2, {0,1,3});
-    btas::contract(-1.0,   *d2, {0,1,2}, amat, {1,3}, 0.0, *out, {0,3,2});
-    btas::contract( 1.0, *this, {0,1,2}, bmat, {2,3}, 0.0,  *d2, {0,1,3});
-    btas::contract(-1.0,   *d2, {0,1,2}, bmat, {1,3}, 1.0, *out, {0,3,2});
+    contract( 1.0, *this, {0,1,2}, amat, {2,3}, 0.0,  *d2, {0,1,3});
+    contract(-1.0,   *d2, {0,1,2}, amat, {1,3}, 0.0, *out, {0,3,2});
+    contract( 1.0, *this, {0,1,2}, bmat, {2,3}, 0.0,  *d2, {0,1,3});
+    contract(-1.0,   *d2, {0,1,2}, bmat, {1,3}, 1.0, *out, {0,3,2});
   }
 
   VectorB sum(nocc);
@@ -176,7 +176,7 @@ shared_ptr<DFBlock> DFBlock::apply_uhf_2RDM(const btas::Tensor2<double>& amat, c
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const {
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor2<double>& rdm1, const int nclosed, const int nact) const {
   assert(nclosed+nact == b1size() && b1size() == b2size());
   // checking if natural orbitals...
   bool natural = true;
@@ -211,7 +211,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
   {
     auto rdm2v = group(group(rdm,2,4),0,2);
     auto buf2v = group(buf2,1,3);
-    btas::contract(1.0, group(buf,1,3), {0,1}, rdm2v, {1,2}, 0.0, buf2v, {0,2});
+    contract(1.0, group(buf,1,3), {0,1}, rdm2v, {1,2}, 0.0, buf2v, {0,2});
   }
   // slot in
   for (int i = 0; i != nact; ++i)
@@ -230,7 +230,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
         daxpy_(asize(), 2.0*rdm1(j, i), diagsum.get(), 1, out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)), 1);
   }
   VectorB diagsum2(asize());
-  btas::contract(1.0, group(buf,1,3), {0,1}, btas::group(rdm1,0,2), {1}, 0.0, diagsum2, {0});
+  contract(1.0, group(buf,1,3), {0,1}, group(rdm1,0,2), {1}, 0.0, diagsum2, {0});
 
   for (int i = 0; i != nclosed; ++i)
     daxpy_(asize(), 2.0, diagsum2.data(), 1, out->data()+asize()*(i+b1size()*i), 1);
@@ -253,12 +253,11 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm, const 
 }
 
 
-shared_ptr<DFBlock> DFBlock::apply_2RDM(const btas::Tensor4<double>& rdm) const {
+shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm) const {
   shared_ptr<DFBlock> out = clone();
-  using btas::group;
   auto rdmv = group(group(rdm,  2, 4), 0, 2);
   auto outv = group(*out,1,3);
-  btas::contract(1.0, group(*this,1,3), {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
+  contract(1.0, group(*this,1,3), {0,2}, rdmv, {2,1}, 0.0, outv, {0,1});
   return out;
 }
 
@@ -269,11 +268,11 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 
   if (b1size() == o->b1size()) {
     target = make_shared<Matrix>(b2size(),o->b2size());
-    btas::contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1});
+    contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1});
   } else {
     assert(b2size() == o->b2size());
     target = make_shared<Matrix>(b1size(),o->b1size());
-    btas::contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1});
+    contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1});
   }
 
   return target;
@@ -283,7 +282,7 @@ shared_ptr<Matrix> DFBlock::form_2index(const shared_ptr<const DFBlock> o, const
 shared_ptr<Matrix> DFBlock::form_4index(const shared_ptr<const DFBlock> o, const double a) const {
   if (asize() != o->asize()) throw logic_error("illegal call of DFBlock::form_4index");
   auto target = make_shared<Matrix>(b1size()*b2size(), o->b1size()*o->b2size());
-  dgemm_("T", "N", b1size()*b2size(), o->b1size()*o->b2size(), asize(), a, data(), asize(), o->data(), asize(), 0.0, target->data(), b1size()*b2size());
+  contract(a, group(*this,1,3), {1,0}, group(*o,1,3), {1,2}, 0.0, *target, {0,2});
   return target;
 }
 
@@ -300,22 +299,22 @@ shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::form_aux_2index");
   auto target = make_shared<Matrix>(asize(), o->asize());
-  btas::contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1});
+  contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1});
   return target;
 }
 
 
 shared_ptr<VectorB> DFBlock::form_vec(const shared_ptr<const Matrix> den) const {
   auto out = make_shared<VectorB>(asize());
-  btas::contract(1.0, btas::group(*this,1,3), {0,1}, btas::group(*den,0,2), {1}, 0.0, *out, {0});
+  contract(1.0, group(*this,1,3), {0,1}, group(*den,0,2), {1}, 0.0, *out, {0});
   return out;
 }
 
 
-shared_ptr<Matrix> DFBlock::form_mat(const btas::Tensor1<double>& fit) const {
+shared_ptr<Matrix> DFBlock::form_mat(const Tensor1<double>& fit) const {
   auto out = make_shared<Matrix>(b1size(), b2size());
-  auto outv = btas::group(*out,0,2);
-  btas::contract(1.0, btas::group(*this,1,3), {1,0}, fit, {1}, 0.0, outv, {0});
+  auto outv = group(*out,0,2);
+  contract(1.0, group(*this,1,3), {1,0}, fit, {1}, 0.0, outv, {0});
   return out;
 }
 
@@ -323,14 +322,14 @@ shared_ptr<Matrix> DFBlock::form_mat(const btas::Tensor1<double>& fit) const {
 void DFBlock::contrib_apply_J(const shared_ptr<const DFBlock> o, const shared_ptr<const Matrix> d) {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::contrib_apply_J");
   assert(astart_ == 0 && o->astart_ == 0);
-  btas::contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
+  contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
 }
 
 
 shared_ptr<Matrix> DFBlock::form_Dj(const shared_ptr<const Matrix> o, const int jdim) const {
   assert(o->size() == b1size()*b2size()*jdim);
   auto out = make_shared<Matrix>(asize(), jdim);
-  btas::contract(1.0, btas::group(*this,1,3), {0,1}, *o, {1,2}, 0.0, *out, {0,2});
+  contract(1.0, group(*this,1,3), {0,1}, *o, {1,2}, 0.0, *out, {0,2});
   return out;
 }
 
