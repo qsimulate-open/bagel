@@ -398,6 +398,38 @@ inline ZMatView& operator/=(ZMatView& a, const std::complex<double> b) { blas::s
 inline ZMatrix operator/(const ZMatrix& a, const std::complex<double> b)  { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
 inline ZMatrix operator/(const ZMatView& a, const std::complex<double> b) { ZMatrix c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
 
+inline VectorB&  operator*=(VectorB& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline VecView& operator*=(VecView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline VectorB operator*(const VectorB& a, const double b)  { VectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline VectorB operator*(const VecView& a, const double b) { VectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline VectorB operator*(const double b, const VectorB& a)  { VectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline VectorB operator*(const double b, const VecView& a) { VectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline VectorB&  operator/=(VectorB& a, const double b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline VecView& operator/=(VecView& a, const double b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline VectorB operator/(const VectorB& a, const double b)  { VectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline VectorB operator/(const VecView& a, const double b) { VectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+
+inline ZVectorB&  operator*=(ZVectorB& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZVecView& operator*=(ZVecView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZVectorB operator*(const ZVectorB& a, const double b)  { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const ZVecView& a, const double b) { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const double b, const ZVectorB& a)  { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const double b, const ZVecView& a) { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB&  operator/=(ZVectorB& a, const double b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZVecView& operator/=(ZVecView& a, const double b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZVectorB operator/(const ZVectorB& a, const double b)  { ZVectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline ZVectorB operator/(const ZVecView& a, const double b) { ZVectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline ZVectorB&  operator*=(ZVectorB& a, const std::complex<double> b)  { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZVecView& operator*=(ZVecView& a, const std::complex<double> b) { blas::scale_n(b, a.data(), a.size()); return a; }
+inline ZVectorB operator*(const ZVectorB& a, const std::complex<double> b)  { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const ZVecView& a, const std::complex<double> b) { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const std::complex<double> b, const ZVectorB& a)  { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB operator*(const std::complex<double> b, const ZVecView& a) { ZVectorB c(a); blas::scale_n(b, c.data(), c.size()); return c; }
+inline ZVectorB&  operator/=(ZVectorB& a, const std::complex<double> b)  { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZVecView& operator/=(ZVecView& a, const std::complex<double> b) { blas::scale_n(1.0/b, a.data(), a.size()); return a; }
+inline ZVectorB operator/(const ZVectorB& a, const std::complex<double> b)  { ZVectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+inline ZVectorB operator/(const ZVecView& a, const std::complex<double> b) { ZVectorB c(a); blas::scale_n(1.0/b, c.data(), c.size()); return c; }
+
 }
 
 #endif

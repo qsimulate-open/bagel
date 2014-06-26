@@ -464,13 +464,13 @@ void NEVPT2::compute() {
       const int iv = i-nclosed_-nact_;
       shared_ptr<const MatView> rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
       shared_ptr<const Matrix> bac = make_shared<Matrix>(*rblock % *fullaa);
-      shared_ptr<Matrix> abc = make_shared<Matrix>(nact_*nact_*nact_, 1, true);
+      auto abc = make_shared<VectorB>(nact_*nact_*nact_);
       SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
-      shared_ptr<Matrix> heff = make_shared<Matrix>(nact_, 1, true);
+      auto heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
-        heff->element(a,0) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
-      const double norm = abc->dot_product(*ardm3_sorted % *abc) + 2.0*heff->dot_product(*ardm2_sorted % *abc) + heff->dot_product(*rdm1_ % *heff);
-      const double denom = abc->dot_product(*amat3_ % *abc) + heff->dot_product(*bmat2_ % *abc) + heff->dot_product(*cmat2_ * *abc) + heff->dot_product(*dmat1_ % *heff);
+        (*heff)(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
+      const double norm = *abc % (*ardm3_sorted % *abc) + *heff % (2.0 * *ardm2_sorted % *abc + *rdm1_ % *heff);
+      const double denom = *abc % (*amat3_ % *abc) + *heff % (*bmat2_ % *abc + *cmat2_ * *abc + *dmat1_ % *heff);
       if (norm > norm_thresh_)
         energy[sect.at("(-1)'")] += norm / (-denom/norm - veig[iv]);
 
@@ -529,13 +529,13 @@ void NEVPT2::compute() {
       SMITH::sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       shared_ptr<const Matrix> bac = make_shared<Matrix>(*iablock % *fullaa);
-      shared_ptr<Matrix> abc = make_shared<Matrix>(nact_*nact_*nact_, 1, true);
+      shared_ptr<VectorB> abc = make_shared<VectorB>(nact_*nact_*nact_);
       SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
-      shared_ptr<Matrix> heff = make_shared<Matrix>(nact_, 1, true);
+      shared_ptr<VectorB> heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
-        heff->element(a,0) = fock_c->element(a+nclosed_, i);
-      const double norm = abc->dot_product(*ardm3_sorted % *abc) + 2.0*heff->dot_product(*ardm2_sorted % *abc) + heff->dot_product(*hrdm1_ % *heff);
-      const double denom = abc->dot_product(*amat3t_ % *abc) + heff->dot_product(*bmat2t_ % *abc) + heff->dot_product(*cmat2t_ * *abc) + heff->dot_product(*dmat1t_ % *heff);
+        (*heff)(a) = fock_c->element(a+nclosed_, i);
+      const double norm  = *abc % (*ardm3_sorted % *abc) + *heff % (2.0 * *ardm2_sorted % *abc + *hrdm1_ % *heff);
+      const double denom = *abc % (*amat3t_ % *abc)      + *heff % (*bmat2t_ % *abc + *cmat2t_ * *abc + *dmat1t_ % *heff);
       energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig[i]);
     }
   }

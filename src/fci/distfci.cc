@@ -334,16 +334,16 @@ void DistFCI::update(shared_ptr<const Matrix> c) {
 // same as HZ::const_denom except that denom_ is also distributed
 void DistFCI::const_denom() {
   Timer denom_t;
-  auto h = make_shared<Matrix>(norb_, 1);
+  auto h = make_shared<VectorB>(norb_);
   auto jop = make_shared<Matrix>(norb_, norb_);
   auto kop = make_shared<Matrix>(norb_, norb_);
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j <= i; ++j) {
-      jop->element(i,j) = jop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, i, j);
-      kop->element(i,j) = kop->element(j,i) = 0.5*jop_->mo2e_hz(i, j, j, i);
+      (*jop)(i,j) = (*jop)(j,i) = 0.5*jop_->mo2e_hz(i, j, i, j);
+      (*kop)(i,j) = (*kop)(j,i) = 0.5*jop_->mo2e_hz(i, j, j, i);
     }
-    h->element(i,0) = jop_->mo1e(i,i);
+    (*h)(i) = jop_->mo1e(i,i);
   }
   denom_t.tick_print("jop, kop");
 
