@@ -67,64 +67,13 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
     core_energy_ = 0.0;
   }
 
-  // symmetrize one-electron AO matrices
-  if (0) { 
-    // local function to transform from kramers to quaternion format
-    auto quaternion = [](shared_ptr<ZMatrix> o) {
-      shared_ptr<ZMatrix> scratch = o->clone();
-      const int n = o->ndim()/4;
-      const int m = o->mdim()/4;
-      map<int, int> trans {{0,0}, {1,2}, {2,1}, {3,3}};
-      for (auto& i : trans)
-        for (auto& j : trans)
-          scratch->copy_block(i.first*n, j.first*m, n, m, o->get_submatrix(i.second*n, j.second*m, n, m));
-      *o = *scratch;
-    };
-    shared_ptr<ZMatrix> ctmp = core_fock_->copy();
-    quaternion(ctmp);
-    { // symmetrizing core_fock
-      const int n2 = ctmp->ndim()/2;
-      ctmp->add_block(1.0, 0, 0, n2, n2, ctmp->get_submatrix(n2,n2,n2,n2)->transpose_conjg());
-      ctmp->add_block(-1.0, n2, 0, n2, n2, ctmp->get_submatrix(0,n2,n2,n2)->transpose_conjg());
-      ctmp->copy_block(n2,n2,n2,n2, ctmp->get_submatrix(0, 0, n2, n2));
-      ctmp->copy_block(0,n2,n2,n2, ctmp->get_submatrix(n2, 0, n2, n2));
-      ctmp->scale(0.5);
-      cout << setprecision(8) << scientific << " core fock hermiticity rms = " << 
-        (   *ctmp->get_submatrix(0, 0, ctmp->ndim()/2, ctmp->ndim()/2) 
-          - *ctmp->get_submatrix(ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2)->transpose_conjg()).rms() << endl;
-      cout << setprecision(8) << scientific << " core fock kramers rms = " << 
-        (   *ctmp->get_submatrix(ctmp->ndim()/2, 0, ctmp->ndim()/2, ctmp->ndim()/2) 
-          + *ctmp->get_submatrix(0, ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2)->transpose_conjg()).rms() << endl;
-      quaternion(ctmp);
-      core_fock_ = make_shared<const ZMatrix>(*ctmp);
-    }
-    ctmp = hcore->copy();
-    quaternion(ctmp);
-    { // symmetrizing hcore
-      const int n2 = ctmp->ndim()/2;
-      ctmp->add_block(1.0, 0, 0, n2, n2, ctmp->get_submatrix(n2,n2,n2,n2)->transpose_conjg());
-      ctmp->add_block(-1.0, n2, 0, n2, n2, ctmp->get_submatrix(0,n2,n2,n2)->transpose_conjg());
-      ctmp->copy_block(n2,n2,n2,n2, ctmp->get_submatrix(0, 0, n2, n2));
-      ctmp->copy_block(0,n2,n2,n2, ctmp->get_submatrix(n2, 0, n2, n2));
-      ctmp->scale(0.5);
-      cout << setprecision(8) << scientific << " hcore hermiticity rms = " << 
-        (   *ctmp->get_submatrix(0, 0, ctmp->ndim()/2, ctmp->ndim()/2) 
-          - *ctmp->get_submatrix(ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2)->transpose_conjg()).rms() << endl;
-      cout << setprecision(8) << scientific << " hcore kramers rms = " << 
-        (   *ctmp->get_submatrix(ctmp->ndim()/2, 0, ctmp->ndim()/2, ctmp->ndim()/2) 
-          + *ctmp->get_submatrix(0, ctmp->ndim()/2, ctmp->ndim()/2, ctmp->ndim()/2)->transpose_conjg()).rms() << endl;
-      quaternion(ctmp);
-      hcore = ctmp;
-    }
-  }
-
   // then compute Kramers adapated coefficient matrices
   auto overlap = make_shared<RelOverlap>(geom_);
-//  if (!restricted) {
-//    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
-//  } else {
+  if (!restricted) {
+    kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
+  } else {
     kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
-//  }
+  }
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
