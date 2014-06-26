@@ -49,7 +49,7 @@ SOBatch::SOBatch(const std::shared_ptr<const SOECP> _so, const std::array<std::s
 
 void SOBatch::map_angular_number() {
 
-  for (int l = 0; l != ANG_HRR_END; ++l) {
+  for (int l = 0; l != ANG_HRR_END*2-1; ++l) {
     map<int, array<int, 3>> mapl;
     int key = 0;
     for (int z = 0; z <= l; ++z) {
@@ -67,7 +67,7 @@ void SOBatch::map_angular_number() {
 
 bool SOBatch::delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
 
-array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { // <lm0 | lz, l+, l- | lm1>
+array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* <lm0 | lz, l+, l- | lm1> */
 
   assert(l > 0);
   assert(abs(m0) <= l && abs(m1) <=l);
@@ -138,7 +138,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
       for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
         for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-          const double coeff = c0_[index];
+          const double coeff = c1_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
 
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
@@ -220,21 +220,20 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
         array<double, 3> sum = {{0.0, 0.0, 0.0}};
 
         for (int m0 = 0; m0 <= 2*l; ++m0) {
-          for (int m1 = 0; m1 <= l+m0-1; ++m1) {
+          for (int m1 = 0; m1 <= m0-1; ++m1) {
             const array<double, 3> fm = fm0lm1(l, m0-l, m1-l);
             const int hmin = max(abs(ld0-l), g - c1);
             const int hmax = min(c0, g - abs(ld1-l));
             for (int h = hmin; h <= hmax; h += 2) {
-              for (int id = 0; id != 3; ++id)
-              sum[id] +=(angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1])
-                       - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0])) * fm[id];
-
+              const double ABBC = angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]);
+              for (int id = 0; id != 3; ++id) sum[id] += ABBC * fm[id];
             }
           }
         }
-
-        for (int id = 0; id != 3; ++id)
-          for (int ir = 0; ir != r.size(); ++ir) out[id*r.size() + ir] += sum[id] * rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
+        for (int ir = 0; ir != r.size(); ++ir) {
+          const double p = rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
+          for (int id = 0; id != 3; ++id) out[id*r.size() + ir] += sum[id] * p;
+        }
 
       }
     }
@@ -253,11 +252,15 @@ vector<double> SOBatch::compute(const vector<double> r) {
     const int l = ishso->angular_number();
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
-      if (ishso->ecp_coefficients(i) != 0)
-      for (int ir = 0; ir != r.size(); ++ir)
-        for (int id = 0; id != 3; ++id)
-          out[id*r.size() + ir] += 16.0 * pi__ * pi__ * ishso->ecp_coefficients(i) * pow(r[ir], ishso->ecp_r_power(i))
-                                 * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]) * p[ir];
+      if (ishso->ecp_coefficients(i) != 0) {
+        const double coeff = ishso->ecp_coefficients(i)*2/(2*l+1); /* 2/(2l+1) may or may not be necessary */
+        for (int ir = 0; ir != r.size(); ++ir)
+          for (int id = 0; id != 3; ++id) {
+            const int index = id*r.size() + ir;
+            out[index] += 16.0 * pi__ * pi__ * coeff * pow(r[ir], ishso->ecp_r_power(i))
+                               * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]) * p[index];
+          }
+      }
   }
 
   return out;
