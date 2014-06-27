@@ -986,6 +986,8 @@ ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> fi
 
 complex<double> get_nai_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
 
+  if (C_.exponent != 0.0) return 0.0; // Finite nucleus - this function should not run
+
   polynomial<complex<double>> III = get_NAI_III (field, A_, B_, C_);
   const int nroot = ( III.rank/2 + 1 );
 

@@ -409,6 +409,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared
   vector<nucleus> atoms = {};
   for (int i=0; i!=natom; i++) {
     const double Z = mol->atoms(i)->atom_charge();
+    const double exp = mol->atoms(i)->atom_exponent();
     const int Zi = Z;
     const double Zd = Zi;
     assert ( Zd == Z );
@@ -416,7 +417,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_NAI (const array<shared
     for (int j=0; j!=3; j++) {
       coords[j] = mol->atoms(i)->position(j);
     }
-    nucleus current (Zi, coords);
+    nucleus current (Zi, coords, exp);
     atoms.push_back(current);
   }
 
@@ -1078,6 +1079,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_smallNAI (const array<s
   vector<nucleus> atoms = {};
   for (int i=0; i!=natom; i++) {
     const double Z = mol->atoms(i)->atom_charge();
+    const double exp = mol->atoms(i)->atom_exponent();
     const int Zi = Z;
     const double Zd = Zi;
     assert ( Zd == Z );
@@ -1085,7 +1087,7 @@ vector<pair<vector<int>,complex<double>>> get_comparison_smallNAI (const array<s
     for (int j=0; j!=3; j++) {
       coords[j] = mol->atoms(i)->position(j);
     }
-    nucleus current (Zi, coords);
+    nucleus current (Zi, coords, exp);
     atoms.push_back(current);
   }
 

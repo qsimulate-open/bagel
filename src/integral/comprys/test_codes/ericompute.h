@@ -77,13 +77,15 @@ class nucleus {
 
   public:
   int charge;
+  double exponent;
   double position[3];
 
   //constructor
-  nucleus (int Z, std::vector<double> coords) {
+  nucleus (int Z, std::vector<double> coords, double exp) {
     if (Z<1) throw std::runtime_error ("Nucleus should have a positive charge.  Check that inputs are being read properly.");
     charge = Z;
     for (int i=0; i!=3; i++) position[i] = coords[i];
+    exponent = exp;
   }
 };
 
