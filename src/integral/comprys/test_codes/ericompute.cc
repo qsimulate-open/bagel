@@ -1338,8 +1338,8 @@ complex<double> get_smallnai_matrix_element (const vector<double> field, atomic_
   const array<int,3> bck = {{ 2, 0, 1 }};
 
   const array<int,5> xinc = {{ -1, 1, 0, 0, 0 }};
-  const array<int,5> yinc = {{  0, 0, 1, 0, 0 }};
-  const array<int,5> zinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> yinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> zinc = {{  0, 0, 1, 0, 0 }};
   const array<array<int,5>,3> ang = {{ xinc, yinc, zinc }};
 
   const double alpha = A.exponent;
