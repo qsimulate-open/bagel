@@ -41,7 +41,6 @@ class SmallInts1e_London {
 
     const std::shared_ptr<const Molecule> mol_;
     const std::array<std::shared_ptr<const Shell>,2> shells_;
-    bool conj_; // TODO Probably the correct approach is to use either zsmall or zsmallc in all cases
 
     const size_t size_block_;
 
@@ -55,8 +54,6 @@ class SmallInts1e_London {
       for (int n = 0; n != N; ++n) {
         std::array<std::shared_ptr<ZMatrix>,3> ints;
         for (int i = 0; i != 3; ++i) {
-          //if (conj_) ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmallc(i) % *unc[n]);
-          //else ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmall(i) % *unc[n]);
           ints[i] = std::make_shared<ZMatrix>(*shells_[0]->zsmall(i) % *unc[n]);
         }
 
@@ -70,24 +67,16 @@ class SmallInts1e_London {
 
         // -1 because <m|p|n>^dagger = -<n|p|m>  (can be proven by integration by part)
         for (int i = 0; i != 3; ++i) {
-          //if (conj_){
-          //  *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmallc(i);
-          //  *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmallc(i);
-          //  *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmallc(i);
-          //} else {
-            *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmall(i);
-            *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmall(i);
-            *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmall(i);
-          //}
+          *data_[4*n+0]    += *ints[i]      * *shells_[1]->zsmall(i);
+          *data_[4*n+b[i]] += *ints[b[i]-1] * *shells_[1]->zsmall(i);
+          *data_[4*n+i+1]  -= *ints[f[i]-1] * *shells_[1]->zsmall(i);
         }
       }
     }
 
   public:
-    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, bool conjg)
+    SmallInts1e_London(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol)
       : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()) {
-
-      conj_ = conjg;
 
       for (int i = 0; i != Nblocks(); ++i)
         data_[i] = std::make_shared<ZMatrix>(shells_[0]->nbasis(), shells_[1]->nbasis(), true);

@@ -55,10 +55,10 @@ class RelHcore_London : public ZMatrix {
             hcore_(std::make_shared<ZHcore>(geom_)),
             nai_(std::make_shared<ZMatrix>(*hcore_ - *kinetic_)),
             overlap_(std::make_shared<ZOverlap>(geom_)) {
-      smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_, false);
-      smalloverlap_ = std::make_shared<Small1e_London<ComplexOverlapBatch>>(geom_, true);
+      smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_);
+      smalloverlap_ = std::make_shared<Small1e_London<ComplexOverlapBatch>>(geom_);
       if (geom_->has_finite_nucleus()) {
-        smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_, false));
+        smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_));
       }
       compute_();
     }
