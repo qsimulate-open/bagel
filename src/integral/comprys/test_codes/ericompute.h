@@ -135,6 +135,8 @@ std::vector<std::complex<double>> momentum (const std::vector<double> field, ato
 // Used for small component integrals
 std::complex<double> compute_smallnai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei, const int ia, const int ib);
 std::complex<double> get_smallnai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_, const int ia, const int ib);
+std::complex<double> compute_smalloverlap (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis, const int ia, const int ib);
+std::complex<double> get_smalloverlap_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, const int ia, const int ib);
 
 }
 

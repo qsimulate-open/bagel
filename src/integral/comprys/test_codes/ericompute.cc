@@ -1383,4 +1383,76 @@ complex<double> get_smallnai_matrix_element (const vector<double> field, atomic_
 }
 
 
+complex<double> compute_smalloverlap (vector<double> field, molecular_orbital A_, molecular_orbital B_, vector<atomic_orbital> basis, const int ia, const int ib) {
+  const int nbasis = basis.size();
+  complex<double> coeff_prod;
+  complex<double> current_term;
+  complex<double> Full_overlap = 0.0;
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      coeff_prod = conj(A_.coefficient[i]) * B_.coefficient[j];
+      if (abs(coeff_prod)) {
+        current_term = get_smalloverlap_matrix_element(field, basis[i], basis[j], ia, ib);
+        Full_overlap += (coeff_prod * current_term);
+      }
+    }
+  }
+  return Full_overlap;
+}
+
+
+complex<double> get_smalloverlap_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, const int ia, const int ib) {
+
+  atomic_orbital A = A_;
+  atomic_orbital B = B_;
+  const complex<double> imag (0.0, 1.0);
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+
+  const array<int,5> xinc = {{ -1, 1, 0, 0, 0 }};
+  const array<int,5> yinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> zinc = {{  0, 0, 1, 0, 0 }};
+  const array<array<int,5>,3> ang = {{ xinc, yinc, zinc }};
+
+  const double alpha = A.exponent;
+  const double beta = B.exponent;
+  const array<double,3> Ax = {{ A.position[0], A.position[1], A.position[2] }};
+  const array<double,3> Bx = {{ B.position[0], B.position[1], B.position[2] }};
+  const array<int,3> ax = {{ A.angular_momentum[0], A.angular_momentum[1], A.angular_momentum[2] }};
+  const array<int,3> bx = {{ B.angular_momentum[0], B.angular_momentum[1], B.angular_momentum[2] }};
+  array<double,3> axd;
+  array<double,3> bxd;
+  for (int i=0; i!=3; i++) axd[i] = ax[i];
+  for (int i=0; i!=3; i++) bxd[i] = bx[i];
+
+#if 0
+  const int nterms = 5;  // For Gaussian orbitals (common origin)
+#else
+  const int nterms = 4;  // For London orbitals
+#endif
+
+  const array<complex<double>,5> Acoeff = {{  axd[ia]*imag, -2*alpha*imag, 0.5*field[fwd[ia]], -0.5*field[bck[ia]], 0.5*(field[fwd[ia]]*Ax[bck[ia]] - field[bck[ia]]*Ax[fwd[ia]]) }};
+  const array<complex<double>,5> Bcoeff = {{ -bxd[ib]*imag,  2*beta*imag,  0.5*field[fwd[ib]], -0.5*field[bck[ib]], 0.5*(field[fwd[ib]]*Bx[bck[ib]] - field[bck[ib]]*Bx[fwd[ib]]) }};
+
+  complex<double> out = 0.0;
+  for (int a=0; a!=nterms; a++) {
+    for (int b=0; b!=nterms; b++) {
+      array<int,3> newa;
+      array<int,3> newb;
+      newa[ia] = ang[0][a];
+      newa[fwd[ia]] = ang[1][a];
+      newa[bck[ia]] = ang[2][a];
+      newb[ib] = ang[0][b];
+      newb[fwd[ib]] = ang[1][b];
+      newb[bck[ib]] = ang[2][b];
+      A.change_angular( ax[0]+newa[0], ax[1]+newa[1], ax[2]+newa[2] );
+      B.change_angular( bx[0]+newb[0], bx[1]+newb[1], bx[2]+newb[2] );
+      const complex<double> coef = Acoeff[a] * Bcoeff[b];
+      if (coef != 0.0) out += coef * overlap(field, A, B);
+    }
+  }
+  return out;
+}
+
+
 }
