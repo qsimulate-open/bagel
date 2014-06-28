@@ -1477,7 +1477,7 @@ complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<mo
       for (int j = 0; j!=nbasis; j++) {
 
         coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j];
-        if (abs(coeff_prod)) {
+        if (abs(coeff_prod)!=0.0 && nuclei[k].exponent!=0.0) {
           current_term = get_small_finitenai_matrix_element (field, basis[i], basis[j], nuclei[k], ia, ib);
           thisnai += (coeff_prod * current_term);
 #if 0
