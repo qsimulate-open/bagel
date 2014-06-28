@@ -1332,7 +1332,6 @@ complex<double> compute_smallnai (vector<atomic_orbital> basis, vector<molecular
 
 complex<double> get_smallnai_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_, const int ia, const int ib) {
 
-
   atomic_orbital A = A_;
   atomic_orbital B = B_;
   const complex<double> imag (0.0, 1.0);
@@ -1569,9 +1568,79 @@ complex<double> get_small_finitenai_matrix_element (const vector<double> field, 
       B.change_angular( bx[0]+newb[0], bx[1]+newb[1], bx[2]+newb[2] );
       const complex<double> coef = Acoeff[a] * Bcoeff[b];
       if (coef != 0.0) out += coef * get_eri_matrix_element(field, A, B, C, D);
-      cout << "                    out = " << scientific << out << endl;
+      //cout << "                    out = " << scientific << out << endl;
     }
   }
+  return out;
+}
+
+
+complex<double> compute_finite_nai (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, vector<nucleus> nuclei) {
+  // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
+  const int natom = nuclei.size();
+  complex<double> Full_NAI = 0.0;
+  complex<double> current_term;
+  complex<double> coeff_prod;
+
+#if 0
+  cout << "MO 1 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[0].coefficient[i] << endl;
+  cout << "MO 2 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[1].coefficient[i] << endl;
+#endif
+
+  for (int k = 0; k!=natom; k++) {
+    complex<double> thisnai = 0.0;
+    for (int i = 0; i!=nbasis; i++) {
+      for (int j = 0; j!=nbasis; j++) {
+
+        coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j];
+        if (abs(coeff_prod)) {
+          current_term = get_finite_nai_matrix_element (field, basis[i], basis[j], nuclei[k]);
+          thisnai += (coeff_prod * current_term);
+#if 0
+          cout << "   orbital coeffs = " << input[0].coefficient[i] << ", " << input[1].coefficient[j] << endl;
+          cout << "   coefficient for this term = " << coeff_prod << endl;
+          cout << "indices = " << i << j << k << endl;
+          cout << "current_term = " << current_term << endl;
+          cout << "Scaled matrix element = " << coeff_prod * current_term << endl;
+          cout << "Magnitude = " << abs(coeff_prod * current_term) << endl;
+          cout << "Phase = " << arg(coeff_prod * current_term) << endl << endl;
+#endif
+        }
+      }
+    }
+    const double charge = nuclei[k].charge;
+    const double Zfac = -charge*pow((nuclei[k].exponent/3.14159265897932385),1.5);
+    thisnai *= Zfac;
+    Full_NAI += thisnai;
+    //cout << "Full NAI= " << scientific << Full_NAI << endl;
+  }
+#if 0
+  cout << "Full NAI = " << Full_NAI << endl;
+  cout << "Magnitude = " << abs(Full_NAI) << endl;
+  cout << "Phase = " << arg(Full_NAI) << endl;
+#endif
+
+  return Full_NAI;
+}
+
+
+complex<double> get_finite_nai_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_) {
+
+  const int idummy[3] = { 0, 0, 0 };
+  const double ddummy[3] = { 0.0, 0.0, 0.0 };
+  const vector<double> nofield = {{ 0.0, 0.0, 0.0 }};
+
+  atomic_orbital C; // Finite nuclear charge
+  atomic_orbital D; // Dummy orbital
+  C.set_data(C_.position, C_.exponent, idummy, nofield);
+  D.set_data(ddummy, ddummy[0], idummy, nofield);
+  //const double charge = C_.charge;
+
+  const complex<double> out = get_eri_matrix_element(field, A_, B_, C, D);
+
   return out;
 }
 

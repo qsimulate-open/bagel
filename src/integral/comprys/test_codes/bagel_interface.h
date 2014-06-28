@@ -37,6 +37,7 @@ namespace ryan {
 
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_ERI (const std::array<std::shared_ptr<const bagel::Shell>,4>& basisinfo, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_NAI (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Molecule> mol, const std::array<double,3> magnetic_field);
+std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_finiteNAI(const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::shared_ptr<const bagel::Atom> atom, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_overlap (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_kinetic (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);
 std::vector<std::pair<std::vector<int>,std::complex<double>>> get_comparison_momentum (const std::array<std::shared_ptr<const bagel::Shell>,2>& basisinfo, const std::array<double,3> magnetic_field);

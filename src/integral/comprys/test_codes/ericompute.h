@@ -124,6 +124,8 @@ std::complex<double> compute_eri (std::vector<atomic_orbital> basis, std::vector
 std::pair<std::complex<double>,std::complex<double>> compute_ss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 std::complex<double> get_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 std::complex<double> compute_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
+std::complex<double> compute_finite_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
+std::complex<double> get_finite_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
 ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
