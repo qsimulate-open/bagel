@@ -241,10 +241,10 @@ ryan::polynomial<std::complex<double>> get_ERI_Ix (const int dimension, const st
       Bbar.real(B_.position[dimension]);
       Cbar.real(C_.position[dimension]);
       Dbar.real(D_.position[dimension]);
-      Abar.imag(-0.5*A_.vector_potential[dimension]/alpha);
-      Bbar.imag(-0.5*B_.vector_potential[dimension]/beta);
-      Cbar.imag(-0.5*C_.vector_potential[dimension]/gamma);
-      Dbar.imag(-0.5*D_.vector_potential[dimension]/delta);
+      Abar.imag((alpha==0)?0.0:(-0.5*A_.vector_potential[dimension]/alpha));
+      Bbar.imag((beta==0)?0.0:(-0.5*B_.vector_potential[dimension]/beta));
+      Cbar.imag((gamma==0)?0.0:(-0.5*C_.vector_potential[dimension]/gamma));
+      Dbar.imag((delta==0)?0.0:(-0.5*D_.vector_potential[dimension]/delta));
     }
     const std::complex<double> Pbar = (alpha*conj(Abar) + beta*Bbar)/p;
     const std::complex<double> Qbar = (gamma*conj(Cbar) + delta*Dbar)/q;
@@ -363,21 +363,21 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   complex<double> Qbar[3];
   for (int i=0; i!=3; i++) {
     Abar[i].real(A[i]);
-    Abar[i].imag(-0.5*A_A[i]/alpha);
+    Abar[i].imag((alpha==0)?0.0:(-0.5*A_A[i]/alpha));
     Bbar[i].real(B[i]);
-    Bbar[i].imag(-0.5*A_B[i]/beta);
+    Bbar[i].imag((beta==0)?0.0:(-0.5*A_B[i]/beta));
     Cbar[i].real(C[i]);
-    Cbar[i].imag(-0.5*A_C[i]/gamma);
+    Cbar[i].imag((gamma==0)?0.0:(-0.5*A_C[i]/gamma));
     Dbar[i].real(D[i]);
-    Dbar[i].imag(-0.5*A_D[i]/delta);
+    Dbar[i].imag((delta==0)?0.0:(-0.5*A_D[i]/delta));
     Pbar[i] = (alpha*conj(Abar[i]) + beta*Bbar[i])/p;
     Qbar[i] = (gamma*conj(Cbar[i]) + delta*Dbar[i])/q;
   }
 
-  const complex<double> X_A = std::polar ( std::exp( -1.0/(4.0*alpha)*(A_A[0]*A_A[0] + A_A[1]*A_A[1] + A_A[2]*A_A[2]) ) , (-1.0*( A[0]*A_A[0] + A[1]*A_A[1] + A[2]*A_A[2] ) ) );
-  const complex<double> X_B = std::polar ( std::exp( -1.0/(4.0*beta )*(A_B[0]*A_B[0] + A_B[1]*A_B[1] + A_B[2]*A_B[2]) ) , (-1.0*( B[0]*A_B[0] + B[1]*A_B[1] + B[2]*A_B[2] ) ) );
-  const complex<double> X_C = std::polar ( std::exp( -1.0/(4.0*gamma)*(A_C[0]*A_C[0] + A_C[1]*A_C[1] + A_C[2]*A_C[2]) ) , (-1.0*( C[0]*A_C[0] + C[1]*A_C[1] + C[2]*A_C[2] ) ) );
-  const complex<double> X_D = std::polar ( std::exp( -1.0/(4.0*delta)*(A_D[0]*A_D[0] + A_D[1]*A_D[1] + A_D[2]*A_D[2]) ) , (-1.0*( D[0]*A_D[0] + D[1]*A_D[1] + D[2]*A_D[2] ) ) );
+  const complex<double> X_A = (alpha==0) ? 1.0 : std::polar ( std::exp( -1.0/(4.0*alpha)*(A_A[0]*A_A[0] + A_A[1]*A_A[1] + A_A[2]*A_A[2]) ) , (-1.0*( A[0]*A_A[0] + A[1]*A_A[1] + A[2]*A_A[2] ) ) );
+  const complex<double> X_B = (beta ==0) ? 1.0 : std::polar ( std::exp( -1.0/(4.0*beta )*(A_B[0]*A_B[0] + A_B[1]*A_B[1] + A_B[2]*A_B[2]) ) , (-1.0*( B[0]*A_B[0] + B[1]*A_B[1] + B[2]*A_B[2] ) ) );
+  const complex<double> X_C = (gamma==0) ? 1.0 : std::polar ( std::exp( -1.0/(4.0*gamma)*(A_C[0]*A_C[0] + A_C[1]*A_C[1] + A_C[2]*A_C[2]) ) , (-1.0*( C[0]*A_C[0] + C[1]*A_C[1] + C[2]*A_C[2] ) ) );
+  const complex<double> X_D = (delta==0) ? 1.0 : std::polar ( std::exp( -1.0/(4.0*delta)*(A_D[0]*A_D[0] + A_D[1]*A_D[1] + A_D[2]*A_D[2]) ) , (-1.0*( D[0]*A_D[0] + D[1]*A_D[1] + D[2]*A_D[2] ) ) );
 
   assert (std::abs( X_A.imag()) < 3e-16 );
   assert (std::abs( X_B.imag()) < 3e-16 );
@@ -1451,6 +1451,125 @@ complex<double> get_smalloverlap_matrix_element (const vector<double> field, ato
       B.change_angular( bx[0]+newb[0], bx[1]+newb[1], bx[2]+newb[2] );
       const complex<double> coef = Acoeff[a] * Bcoeff[b];
       if (coef != 0.0) out += coef * overlap(field, A, B);
+    }
+  }
+  return out;
+}
+
+
+complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, vector<nucleus> nuclei, const int ia, const int ib) {
+  // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
+  const int natom = nuclei.size();
+  complex<double> Full_NAI = 0.0;
+  complex<double> current_term;
+  complex<double> coeff_prod;
+
+#if 0
+  cout << "MO 1 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[0].coefficient[i] << endl;
+  cout << "MO 2 coefficients: " << endl;
+  for (int i=0; i!=nbasis; i++) cout << input[1].coefficient[i] << endl;
+#endif
+
+  for (int k = 0; k!=natom; k++) {
+    complex<double> thisnai = 0.0;
+    for (int i = 0; i!=nbasis; i++) {
+      for (int j = 0; j!=nbasis; j++) {
+
+        coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j];
+        if (abs(coeff_prod)) {
+          current_term = get_small_finitenai_matrix_element (field, basis[i], basis[j], nuclei[k], ia, ib);
+          thisnai += (coeff_prod * current_term);
+#if 0
+          cout << "   orbital coeffs = " << input[0].coefficient[i] << ", " << input[1].coefficient[j] << endl;
+          cout << "   coefficient for this term = " << coeff_prod << endl;
+          cout << "indices = " << i << j << k << endl;
+          cout << "current_term = " << current_term << endl;
+          cout << "Scaled matrix element = " << coeff_prod * current_term << endl;
+          cout << "Magnitude = " << abs(coeff_prod * current_term) << endl;
+          cout << "Phase = " << arg(coeff_prod * current_term) << endl << endl;
+#endif
+          cout << "      this term = " << scientific << Full_NAI << endl;
+        }
+      }
+    }
+    const double charge = nuclei[k].charge;
+    const double Zfac = -charge*pow((nuclei[k].exponent/3.14159265897932385),1.5);
+    thisnai *= Zfac;
+    Full_NAI += thisnai;
+    cout << "Full NAI= " << scientific << Full_NAI << endl;
+  }
+#if 0
+  cout << "Full NAI = " << Full_NAI << endl;
+  cout << "Magnitude = " << abs(Full_NAI) << endl;
+  cout << "Phase = " << arg(Full_NAI) << endl;
+#endif
+
+  cout << endl << endl;
+  return Full_NAI;
+}
+
+
+complex<double> get_small_finitenai_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_, const int ia, const int ib) {
+
+  atomic_orbital A = A_;
+  atomic_orbital B = B_;
+  const complex<double> imag (0.0, 1.0);
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+
+  const array<int,5> xinc = {{ -1, 1, 0, 0, 0 }};
+  const array<int,5> yinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> zinc = {{  0, 0, 1, 0, 0 }};
+  const array<array<int,5>,3> ang = {{ xinc, yinc, zinc }};
+
+  const double alpha = A.exponent;
+  const double beta = B.exponent;
+  const array<double,3> Ax = {{ A.position[0], A.position[1], A.position[2] }};
+  const array<double,3> Bx = {{ B.position[0], B.position[1], B.position[2] }};
+  const array<int,3> ax = {{ A.angular_momentum[0], A.angular_momentum[1], A.angular_momentum[2] }};
+  const array<int,3> bx = {{ B.angular_momentum[0], B.angular_momentum[1], B.angular_momentum[2] }};
+  array<double,3> axd;
+  array<double,3> bxd;
+  for (int i=0; i!=3; i++) axd[i] = ax[i];
+  for (int i=0; i!=3; i++) bxd[i] = bx[i];
+
+#if 0
+  const int nterms = 5;  // For Gaussian orbitals (common origin)
+#else
+  const int nterms = 4;  // For London orbitals
+#endif
+
+  const int idummy[3] = { 0, 0, 0 };
+  const double ddummy[3] = { 0.0, 0.0, 0.0 };
+  const vector<double> nofield = {{ 0.0, 0.0, 0.0 }};
+
+  atomic_orbital C; // Finite nuclear charge
+  atomic_orbital D; // Dummy orbital
+  C.set_data(C_.position, C_.exponent, idummy, nofield);
+  D.set_data(ddummy, ddummy[0], idummy, nofield);
+  //const double charge = C_.charge;
+
+  const array<complex<double>,5> Acoeff = {{  axd[ia]*imag, -2*alpha*imag, 0.5*field[fwd[ia]], -0.5*field[bck[ia]], 0.5*(field[fwd[ia]]*Ax[bck[ia]] - field[bck[ia]]*Ax[fwd[ia]]) }};
+  const array<complex<double>,5> Bcoeff = {{ -bxd[ib]*imag,  2*beta*imag,  0.5*field[fwd[ib]], -0.5*field[bck[ib]], 0.5*(field[fwd[ib]]*Bx[bck[ib]] - field[bck[ib]]*Bx[fwd[ib]]) }};
+
+  complex<double> out = 0.0;
+  for (int a=0; a!=nterms; a++) {
+    for (int b=0; b!=nterms; b++) {
+      array<int,3> newa;
+      array<int,3> newb;
+      newa[ia] = ang[0][a];
+      newa[fwd[ia]] = ang[1][a];
+      newa[bck[ia]] = ang[2][a];
+      newb[ib] = ang[0][b];
+      newb[fwd[ib]] = ang[1][b];
+      newb[bck[ib]] = ang[2][b];
+      A.change_angular( ax[0]+newa[0], ax[1]+newa[1], ax[2]+newa[2] );
+      B.change_angular( bx[0]+newb[0], bx[1]+newb[1], bx[2]+newb[2] );
+      const complex<double> coef = Acoeff[a] * Bcoeff[b];
+      if (coef != 0.0) out += coef * get_eri_matrix_element(field, A, B, C, D);
+      cout << "                    out = " << scientific << out << endl;
     }
   }
   return out;
