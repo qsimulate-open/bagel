@@ -173,7 +173,7 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 #endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
-        unc[n]->copy_block(0, 0, a0size_inc, a1size_inc, uncc->data(n));
+        unc[n]->add_block(1.0, 0, 0, a0size_inc, a1size_inc, uncc->data(n));
     }
     if (shells_[0]->aux_decrement() && shells_[1]->aux_decrement()) {
 #ifdef LIBINT_INTERFACE
@@ -183,7 +183,7 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 #endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
-        unc[n]->copy_block(a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
+        unc[n]->add_block(1.0, a0size_inc, a1size_inc, a0size_dec, a1size_dec, uncc->data(n));
     }
     if (shells_[0]->aux_decrement()) {
 #ifdef LIBINT_INTERFACE
@@ -193,7 +193,7 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 #endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
-        unc[n]->copy_block(a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
+        unc[n]->add_block(1.0, a0size_inc, 0, a0size_dec, a1size_inc, uncc->data(n));
     }
     if (shells_[1]->aux_decrement()) {
 #ifdef LIBINT_INTERFACE
@@ -203,7 +203,7 @@ void SmallInts1e<ERIBatch>::compute(const Value& nshells) {
 #endif
       uncc->compute();
       for (int n = 0; n != N; ++n)
-        unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
+        unc[n]->add_block(1.0, 0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
     }
   }
 
