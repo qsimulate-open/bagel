@@ -140,7 +140,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
         const int joff = jAB->offset();
 
-        std::shared_ptr<Matrix> block = couple_blocks(*iAB, *jAB);
+        std::shared_ptr<Matrix> block = couple_blocks<true>(*iAB, *jAB);
 
         if (block) {
           hamiltonian_->add_block(1.0, ioff, joff, block->ndim(), block->mdim(), block);

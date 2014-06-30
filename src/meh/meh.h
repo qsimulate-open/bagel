@@ -88,12 +88,41 @@ class DimerSubspace_base {
 
 };
 
+
+// forward declaration
+template <class VecType>
+class MultiExcitonHamiltonian;
+
+namespace asd {
+// implementation class. true = Hamiltonian, false = RDM.
+template <bool _N>
+struct ASD_impl {
+  template <class VecType>
+  static void compute_inter_2e(MultiExcitonHamiltonian<VecType>*, Matrix& block, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_aET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp)  { assert(false); return nullptr; }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_bET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp)  { assert(false); return nullptr; }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_abFlip(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_abET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_aaET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  template <class VecType>
+  static std::shared_ptr<Matrix> compute_bbET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+};
+}
+
 /// Template for MEH (to be renamed ASD)
 template <class VecType>
 class MultiExcitonHamiltonian : public MEH_base {
   protected: using DSubSpace = DimerSubspace_base<VecType>;
   protected: using DCISpace = DimerCISpace_base<VecType>;
   protected: using CiType = typename VecType::Ci;
+
+  template <bool>
+  friend class asd::ASD_impl;
 
   protected:
     std::shared_ptr<DCISpace> cispace_;
@@ -138,15 +167,23 @@ class MultiExcitonHamiltonian : public MEH_base {
     void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
     // Off-diagonal stuff
+    template <bool>
     std::shared_ptr<Matrix> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
-    void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_abET(DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_aaET(DSubSpace& AB, DSubSpace& ApBp);
-    std::shared_ptr<Matrix> compute_bbET(DSubSpace& AB, DSubSpace& ApBp);
+    template <bool _N>
+    void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, block, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp)  { return asd::ASD_impl<_N>::compute_aET(this, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp)  { return asd::ASD_impl<_N>::compute_bET(this, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_abFlip(this, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_abET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_abET(this, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_aaET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_aaET(this, AB, ApBp); }
+    template <bool _N>
+    std::shared_ptr<Matrix> compute_bbET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_bbET(this, AB, ApBp); }
 };
 
 // Locks to make sure the following files are not included on their own

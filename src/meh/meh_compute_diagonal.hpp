@@ -173,25 +173,26 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block
   auto out = std::make_shared<Matrix>(subspace.dimerstates(), subspace.dimerstates());
 
   compute_intra(*out, subspace, jop_, core);
-  compute_inter_2e(*out, subspace, subspace);
+  compute_inter_2e<true>(*out, subspace, subspace);
 
   return out;
 }
 
 // This term will couple off-diagonal blocks since it has no delta functions involved
+template <>
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) {
+void asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me, Matrix& block, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
   // alpha-alpha
-  Matrix gamma_AA_alpha = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_AA_alpha = *(me->gammaforest_)->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *(me->gammaforest_)->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_AA_beta = *(me->gammaforest_)->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *(me->gammaforest_)->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
-  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
-  std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
+  std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,1,0,1>();
+  std::shared_ptr<const Matrix> Kmatrix = me->jop_->template coulomb_matrix<0,1,1,0>();
 
   Matrix tmp((gamma_AA_alpha + gamma_AA_beta) * (*Jmatrix) ^ (gamma_BB_alpha + gamma_BB_beta));
 

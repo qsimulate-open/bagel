@@ -30,6 +30,9 @@
 
 template<typename VecType>
 void MultiExcitonHamiltonian<VecType>::compute_rdm() const {
+// given zeta and eta, we compute 1 and 2RDM
+
+
 }
 
 #endif
