@@ -173,7 +173,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block
   auto out = std::make_shared<Matrix>(subspace.dimerstates(), subspace.dimerstates());
 
   compute_intra(*out, subspace, jop_, core);
-  compute_inter_2e<true>(*out, subspace, subspace);
+  *out += *compute_inter_2e<true>(subspace, subspace);
 
   return out;
 }
@@ -181,7 +181,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block
 // This term will couple off-diagonal blocks since it has no delta functions involved
 template <>
 template <class VecType>
-void asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me, Matrix& block, DSb<VecType>& AB, DSb<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
+  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+
   // alpha-alpha
   Matrix gamma_AA_alpha = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
   Matrix gamma_BB_alpha = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
@@ -200,7 +202,8 @@ void asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me,
   tmp -= gamma_AA_beta * (*Kmatrix) ^ gamma_BB_beta;
 
   // sort: (A',A,B',B) --> (A,B,A',B') + block(A,B,A',B')
-  SMITH::sort_indices<1,3,0,2,1,1,1,1>(tmp.data(), block.data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
+  return out;
 }
 
 #endif

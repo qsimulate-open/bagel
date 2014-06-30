@@ -101,7 +101,7 @@ struct ASD_impl {
   using DSb = DimerSubspace_base<T>;
   using return_type = typename std::conditional<_N, Matrix, RDM<2>>::type;
   template <class VecType>
-  static void compute_inter_2e(MultiExcitonHamiltonian<VecType>*, return_type& block, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); }
+  static std::shared_ptr<return_type> compute_inter_2e(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
   template <class VecType>
   static std::shared_ptr<return_type> compute_aET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)  { assert(false); return nullptr; }
   template <class VecType>
@@ -174,7 +174,7 @@ class MultiExcitonHamiltonian : public MEH_base {
     std::shared_ptr<return_type> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
     template <bool _N>
-    void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, block, AB, ApBp); }
+    std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, AB, ApBp); }
     template <bool _N>
     std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp)  { return asd::ASD_impl<_N>::compute_aET(this, AB, ApBp); }
     template <bool _N>
