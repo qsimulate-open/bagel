@@ -181,14 +181,14 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block
 // This term will couple off-diagonal blocks since it has no delta functions involved
 template <>
 template <class VecType>
-void asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me, Matrix& block, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+void asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamiltonian<VecType>* me, Matrix& block, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   // alpha-alpha
-  Matrix gamma_AA_alpha = *(me->gammaforest_)->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *(me->gammaforest_)->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_AA_alpha = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *(me->gammaforest_)->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *(me->gammaforest_)->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_AA_beta = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
   std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,1,0,1>();

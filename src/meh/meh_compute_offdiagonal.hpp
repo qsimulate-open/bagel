@@ -78,9 +78,19 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e
 }
 
 
+namespace {
+  template<typename T>
+  void transpose_call(std::shared_ptr<T>& o) { assert(false); }
+  template<>
+  void transpose_call(std::shared_ptr<Matrix>& o) { o = o->transpose(); }
+  template<>
+  void transpose_call(std::shared_ptr<RDM<2>>& o) { /* doing nothing */ }
+}
+
 template <class VecType>
-template <bool _N>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpace& AB, DSubSpace& ApBp) {
+template <bool _N, typename return_type>
+std::shared_ptr<return_type> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpace& AB, DSubSpace& ApBp) {
+
   Coupling term_type = coupling_type(AB, ApBp);
 
   DSubSpace* space1 = &AB;
@@ -93,13 +103,13 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
     std::swap(space1,space2);
   }
 
-  std::shared_ptr<Matrix> out;
+  std::shared_ptr<return_type> out;
 
   switch(term_type) {
     case Coupling::none :
-      out = std::shared_ptr<Matrix>(); break;
+      out = nullptr; break;
     case Coupling::diagonal :
-      out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+      out = std::make_shared<return_type>(AB.dimerstates(), ApBp.dimerstates());
       compute_inter_2e<_N>(*out, *space1, *space2); break;
     case Coupling::aET :
       out = compute_aET<_N>(*space1, *space2); break;
@@ -117,7 +127,8 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
 
-  if (flip) out = out->transpose();
+  /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
+  if (flip) transpose_call(out);
 
   return out;
 }
@@ -125,7 +136,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   Matrix tmp(AB.template nstates<0>() * ApBp.template nstates<0>(), AB.template nstates<1>() * ApBp.template nstates<1>());
 
@@ -177,7 +188,7 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   Matrix tmp(AB.template nstates<0>() * ApBp.template nstates<0>(), AB.template nstates<1>() * ApBp.template nstates<1>());
 
@@ -230,7 +241,7 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abFlip(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abFlip(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
@@ -249,7 +260,7 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abFlip(MultiExcitonHamilton
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abET(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
@@ -268,7 +279,7 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abET(MultiExcitonHamiltonia
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aaET(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aaET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
@@ -287,7 +298,7 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aaET(MultiExcitonHamiltonia
 
 template <>
 template <class VecType>
-std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bbET(MultiExcitonHamiltonian<VecType>* me, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) {
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bbET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);

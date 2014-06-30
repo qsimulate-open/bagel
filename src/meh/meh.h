@@ -97,20 +97,23 @@ namespace asd {
 // implementation class. true = Hamiltonian, false = RDM.
 template <bool _N>
 struct ASD_impl {
+  template<typename T>
+  using DSb = DimerSubspace_base<T>;
+  using return_type = typename std::conditional<_N, Matrix, RDM<2>>::type;
   template <class VecType>
-  static void compute_inter_2e(MultiExcitonHamiltonian<VecType>*, Matrix& block, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); }
+  static void compute_inter_2e(MultiExcitonHamiltonian<VecType>*, return_type& block, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_aET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp)  { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_aET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)  { assert(false); return nullptr; }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_bET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp)  { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_bET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)  { assert(false); return nullptr; }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_abFlip(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_abFlip(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_abET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_abET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_aaET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_aaET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
   template <class VecType>
-  static std::shared_ptr<Matrix> compute_bbET(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base<VecType>& AB, DimerSubspace_base<VecType>& ApBp) { assert(false); return nullptr; }
+  static std::shared_ptr<return_type> compute_bbET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
 };
 }
 
@@ -167,8 +170,8 @@ class MultiExcitonHamiltonian : public MEH_base {
     void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 
     // Off-diagonal stuff
-    template <bool>
-    std::shared_ptr<Matrix> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
+    template <bool _N, typename return_type = typename std::conditional<_N, Matrix, RDM<2>>::type>
+    std::shared_ptr<return_type> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
     template <bool _N>
     void compute_inter_2e(Matrix& block, DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, block, AB, ApBp); }

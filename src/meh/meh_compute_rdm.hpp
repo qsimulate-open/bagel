@@ -30,8 +30,26 @@
 
 template<typename VecType>
 void MultiExcitonHamiltonian<VecType>::compute_rdm() const {
-// given zeta and eta, we compute 1 and 2RDM
+  const int norbA = cispace_->template norb<0>();
+  const int norbB = cispace_->template norb<1>();
+  RDM<2> rdm(norbA+norbB);
+  // compute transformed gammas
 
+#if 0
+  // diagonal term
+  for (auto& subspace : subspaces_) {
+    compute_pure_terms(subspace, jop_);
+    std::shared_ptr<Matrix> block = compute_diagonal_block(subspace);
+  }
+#endif
+  // off diagonal term
+#if 0
+  for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
+    for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
+      rdm += *couple_blocks<false>(*iAB, *jAB);
+    }
+  }
+#endif
 
 }
 

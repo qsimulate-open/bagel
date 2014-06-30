@@ -92,6 +92,7 @@ class DimerCISpace_base {
     template<int unit> int neleb() const { return (unit == 0 ? neleb_.first : neleb_.second); }
     template<int unit> int nstates() const { return (unit == 0 ? nstates_.first : nstates_.second); }
     template<int unit> std::shared_ptr<const DetType> bdet() const { return (unit == 0 ? bdet_.first : bdet_.second); }
+    template<int unit> int norb() const { return unit == 0 ? detspaceA_.cbegin()->second->norb() : detspaceB_.cbegin()->second->norb(); }
 
     std::pair<int, int> nelea() const { return nelea_; }
     std::pair<int, int> neleb() const { return neleb_; }
