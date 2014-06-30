@@ -45,6 +45,7 @@ Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(),
 
   soab_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soab_->zero();
   soba_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soba_->zero();
+  soaa_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soaa_->zero();
 }
 
 

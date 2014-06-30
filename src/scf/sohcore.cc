@@ -39,7 +39,10 @@ SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const S
 void SOHcore::form_sohcore() {
 
   add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_);
+  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_->soaa());
+
   add_block(1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_);
+  add_block(-1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soaa());
 
   add_block(1.0, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soab());
   add_block(1.0, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->soba());

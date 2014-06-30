@@ -92,7 +92,7 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
         SOECPBatch soecp(input, mol);
         soecp.compute();
 
-        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+        soaa_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
         soab_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
         soba_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
       }

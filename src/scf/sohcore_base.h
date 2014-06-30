@@ -41,6 +41,7 @@ class SOHcore_base : public Matrix1e {
 
     std::shared_ptr<const Matrix> soab() const { return soab_;}
     std::shared_ptr<const Matrix> soba() const { return soba_;}
+    std::shared_ptr<const Matrix> soaa() const { return soaa_;}
 };
 
 }

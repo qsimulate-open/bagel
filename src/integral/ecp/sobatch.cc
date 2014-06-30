@@ -67,14 +67,14 @@ void SOBatch::map_angular_number() {
 
 bool SOBatch::delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
 
-array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* <lm0 | lz, l+, l- | lm1> */
+array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* <lm0 | lz, l-, l+ | lm1> */
 
   assert(l > 0);
   assert(abs(m0) <= l && abs(m1) <=l);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
   out[0] = (delta(m0, m1)) ?  m0 : 0.0;
-  out[1] = (delta(m0+1, m1)) ? pow(-1, m0) * sqrt((l-m0)*(l+m0+1)*0.5) : 0.0;
-  out[2] = (delta(m0-1, m1)) ? pow(-1, m0) * sqrt((l+m0)*(l-m0+1)*0.5) : 0.0;
+  out[1] = (delta(m0-1, m1)) ? pow(-1, m0) * sqrt((l+m0)*(l-m0+1)*0.5) : 0.0;
+  out[2] = (delta(m0+1, m1)) ? pow(-1, m0) * sqrt((l-m0)*(l+m0+1)*0.5) : 0.0;
 
   return out;
 }
