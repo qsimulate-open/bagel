@@ -73,7 +73,8 @@
 },
 
 {
-  "title" : "meh-cas",
+  "title" : "meh",
+  "method" : "cas",
   "store_matrix" : true,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 3},

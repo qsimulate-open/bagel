@@ -65,7 +65,7 @@ MEH_base::MEH_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 
   shared_ptr<const Reference> dimerref = dimer_->sref();
 
-  jop_ = make_shared<DimerJop>(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->nact().first, dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
+  jop_ = make_shared<DimerJop>(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
   cout << "  o computing integrals: " << timer.tick() << endl;
 
   energies_ = vector<double>(nstates_, 0.0);

@@ -26,8 +26,9 @@
 #ifndef __SRC_DIMER_DIMER_H
 #define __SRC_DIMER_DIMER_H
 
-#include <src/fci/harrison.h>
 #include <src/fci/distfci.h>
+#include <src/fci/knowles.h>
+#include <src/fci/harrison.h>
 #include <src/ras/rasci.h>
 #include <src/ras/distrasci.h>
 #include <src/dimer/dimer_cispace.h>
@@ -36,9 +37,8 @@
 
 namespace bagel {
 
-/************************************************************************************
-*  This class describes a homodimer.                                                *
-************************************************************************************/
+/// Contains geometries and references for isolated and joined dimers.
+/// Used to prepare an MEH calculation and to start the requisite CI calculations
 
 class Dimer : public std::enable_shared_from_this<Dimer> {
    template <class T> using Ref = std::shared_ptr<const T>;
@@ -46,204 +46,256 @@ class Dimer : public std::enable_shared_from_this<Dimer> {
    protected:
       std::shared_ptr<const PTree> input_;
 
-      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;
-      std::pair<Ref<Reference>, Ref<Reference>> refs_;
-      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_;
+      std::pair<Ref<Geometry>,Ref<Geometry>> geoms_;            ///< Geometry objects of isolated monomers
+      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs_; ///< Reference objects of the isolated monomers BEFORE active spaces have been chosen
+      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs_; ///< Reference objects for monomers with the other monomer included as an embedding
+      std::pair<Ref<Reference>, Ref<Reference>> active_refs_;   ///< Reference objects of the isolated monomers AFTER the active spaces have been chosen
 
-      std::shared_ptr<const Geometry>   sgeom_;
+      std::shared_ptr<const Geometry>   sgeom_;                 ///< Supergeometry, i.e., Geometry of dimer
+      /// Superreference, i.e., Reference of dimer
+      /// sref_->coeff() is organized such that the MOs run as (closedA, closedB, activeA, activeB, virtA, virtB)
       std::shared_ptr<const Reference>  sref_;
 
-      std::pair<int, int> ncore_;
-      std::pair<int, int> nact_;
-      std::pair<int, int> nfilledactive_;
-      std::pair<int, int> nvirt_;
-
-      double active_thresh_;
+      double active_thresh_;                                    ///< overlap threshold for inclusion in the active space
 
    public:
       // Constructors
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B);
-      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a);
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a, Ref<Geometry> b); ///< Conjoins the provided Geometry objects
+      Dimer(std::shared_ptr<const PTree> input, Ref<Geometry> a); ///< Duplicates provided Geometry according to translation vector specified in input
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> A, Ref<Reference> B); ///< Conjoins the provided Reference objects
+      Dimer(std::shared_ptr<const PTree> input, Ref<Reference> a); ///< Duplicates provided Reference according to translation vector specified in input
 
       // Return functions
       std::pair<Ref<Geometry>, Ref<Geometry>> geoms() const { return geoms_; };
+      std::pair<Ref<Reference>, Ref<Reference>> isolated_refs() const { return isolated_refs_; }
+      std::pair<Ref<Reference>, Ref<Reference>> embedded_refs() const { return embedded_refs_; }
+      std::pair<Ref<Reference>, Ref<Reference>> active_refs() const { return active_refs_; }
 
       std::shared_ptr<const Geometry> sgeom() const { return sgeom_; };
       std::shared_ptr<const Reference> sref() const { return sref_; };
 
-      void set_coeff(std::shared_ptr<const Matrix> mat) {
-        sref_ = std::make_shared<const Reference>(sgeom_, std::make_shared<const Coeff>(*mat), sref_->nclosed(), sref_->nact(), sref_->nvirt());
-      };
-
-      std::pair<const int, const int> ncore() const { return ncore_; }
-      std::pair<const int, const int> nact() const { return nact_; }
-      std::pair<const int, const int> nfilledactive() const {return nfilledactive_; }
-
-      // Utility
+      // Utility functions
+      /// Sets active space of sref_ using overlaps with isolated_ref_ active spaces
       void set_active(std::shared_ptr<const PTree> idata, const bool localize_first);
+      /// Localizes active space and uses the given Fock matrix to diagonalize the subspaces
       void localize(std::shared_ptr<const PTree> idata, std::shared_ptr<const Matrix> fock, const bool localize_first);
 
       // Calculations
-      void scf(std::shared_ptr<const PTree> idata); // SCF on dimer and then localize
-      template <int unit> Ref<Dvec> embedded_casci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
-      template <int unit> Ref<DistDvec> embedded_distcasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates) const;
-      std::shared_ptr<DimerCAS> compute_cispace(std::shared_ptr<const PTree> idata);
-      std::shared_ptr<DimerDistCAS> compute_distcispace(std::shared_ptr<const PTree> idata);
+      void scf(std::shared_ptr<const PTree> idata); ///< Driver for preparation of dimer for MultiExcitonHamiltonian or CI calculation
 
-      template <int unit> Ref<RASDvec> embedded_rasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
-      template <int unit> Ref<DistRASDvec> embedded_distrasci(std::shared_ptr<const PTree> idata, const int charge, const int spin, const int nstates, std::tuple<std::array<int, 3>, int, int> desc) const;
-
-      std::shared_ptr<DimerRAS> compute_rcispace(std::shared_ptr<const PTree> idata);
-      std::shared_ptr<DimerDistRAS> compute_distrcispace(std::shared_ptr<const PTree> idata);
+      /// Driver to run monomer CAS calculations used in MEH
+      template <class VecType>
+      std::shared_ptr<DimerCISpace_base<VecType>> compute_cispace(std::shared_ptr<const PTree> idata);
+      /// Driver to run monomer RAS calculations used in MEH
+      template <class VecType>
+      std::shared_ptr<DimerCISpace_base<VecType>> compute_rcispace(std::shared_ptr<const PTree> idata);
 
    private:
-      void construct_geometry();
-      void embed_refs();
+      void construct_geometry(); ///< Forms super geometry (sgeom_) and optionally projects isolated geometries and supergeometry to a specified basis
+      void embed_refs();         ///< Forms two references to be used in CI calculations where the inactive monomer is included as "embedding"
+      /// Reads information on monomer subspaces from input
+      void get_spaces(std::shared_ptr<const PTree> idata, std::vector<std::vector<int>>& spaces_A, std::vector<std::vector<int>>& spaces_B);
 
+      /// Takes monomer references, projections them onto the supergeom basis, and arranges the
+      /// to follow (closedA, closedB, activeA, activeB, virtA, virtB) and returns the result
       std::shared_ptr<const Matrix> form_projected_coeffs();
+
+      /// Lowdin orthogonalizes the result of form_projected_coeffs
       std::shared_ptr<const Matrix> construct_coeff();
+
+      /// Runs a single set of monomer CAS/RAS calculations as specified
+      template <class CIMethod, class VecType>
+      std::shared_ptr<const VecType> embedded_ci(std::shared_ptr<const PTree> idata, std::shared_ptr<const Reference> ref,
+                                                  const int charge, const int nspin, const int nstate, std::string label);
 };
 
-template<int unit>
-std::shared_ptr<const Dvec> Dimer::embedded_casci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate) const {
-  const int nclosed = sref_->nclosed();
-  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
-  const int nact = (unit == 0) ? nact_.first : nact_.second;
-  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
-
-  // Make new input data, set charge, spin to what I want
+template<class CIMethod, class VecType>
+std::shared_ptr<const VecType> Dimer::embedded_ci(std::shared_ptr<const PTree> idata, std::shared_ptr<const Reference> ref,
+                                              const int charge, const int nspin, const int nstate, std::string label)
+{
   auto input = std::make_shared<PTree>(*idata);
 
   input->erase("charge"); input->put("charge", lexical_cast<std::string>(charge));
   input->erase("nspin"); input->put("nspin", lexical_cast<std::string>(nspin));
-  input->erase("ncore"); input->put("ncore", lexical_cast<std::string>(ncore));
-  input->erase("norb"); input->put("norb", lexical_cast<std::string>(nact));
+  input->erase("ncore"); input->put("ncore", lexical_cast<std::string>(ref->nclosed()));
   input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
 
-  // Hiding normal cout
+  // Hiding cout
   std::stringstream outfilename;
-  outfilename << "meh_cas_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
+  outfilename << "meh_ci_" << label << "_c" << charge << "_s" << nspin;
   Muffle hide(outfilename.str());
 
-  std::shared_ptr<FCI> fci;
-  fci = std::dynamic_pointer_cast<FCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
-  fci->compute();
+  auto ci = std::make_shared<CIMethod>(input, ref->geom(), ref);
+  ci->compute();
 
-  return fci->civectors();
+  return ci->civectors();
 }
 
-template<int unit>
-std::shared_ptr<const DistDvec> Dimer::embedded_distcasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate) const {
-  const int nclosed = sref_->nclosed();
-  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
-  const int nact = (unit == 0) ? nact_.first : nact_.second;
-  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
+template <class VecType>
+std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
+  embed_refs();
+  std::pair<int,int> nelea = std::make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  std::pair<int,int> neleb = nelea;
 
-  // Make new input data, set charge, spin to what I want
-  auto input = std::make_shared<PTree>(*idata);
+  auto d1 = std::make_shared<Determinants>(active_refs_.first->nact(), nelea.first, neleb.first, /*compress*/false, /*mute*/true);
+  auto d2 = std::make_shared<Determinants>(active_refs_.second->nact(), nelea.second, neleb.second, /*compress*/false, /*mute*/true);
+  auto out = std::make_shared<DimerCISpace_base<VecType>>(std::make_pair(d1, d2), nelea, neleb);
 
-  input->erase("charge"); input->put("charge", lexical_cast<std::string>(charge));
-  input->erase("nspin"); input->put("nspin", lexical_cast<std::string>(nspin));
-  input->erase("ncore"); input->put("ncore", lexical_cast<std::string>(ncore));
-  input->erase("norb"); input->put("norb", lexical_cast<std::string>(nact));
-  input->erase("nstate"); input->put("nstate", lexical_cast<std::string>(nstate));
-  input->erase("algorithm"); input->put("algorithm", "dist");
+  std::vector<std::vector<int>> spaces_A, spaces_B;
+  get_spaces(idata, spaces_A, spaces_B);
 
-  // Hiding normal cout
-  std::stringstream outfilename;
-  outfilename << "meh_distcas_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
-  Muffle hide(outfilename.str());
+  Timer castime;
 
-  std::shared_ptr<DistFCI> fci;
-  fci = std::dynamic_pointer_cast<DistFCI>(construct_method("fci", input, embedded_ref->geom(), embedded_ref));
-  fci->compute();
+  std::shared_ptr<const PTree> fcidata = idata->get_child_optional("fci");
+  if (!fcidata) fcidata = std::make_shared<const PTree>();
 
-  return fci->civectors();
+  auto run_calculations = [this, &fcidata, &castime]
+    (std::vector<std::vector<int>> spaces, std::shared_ptr<const Reference> eref, std::shared_ptr<const Reference> aref, std::string label) {
+    std::cout << "    Starting embedded CAS-CI calculations on monomer " << label << std::endl;
+    std::vector<std::shared_ptr<const VecType>> results;
+    for (auto& ispace : spaces) {
+      if (ispace.size() != 3) throw std::runtime_error("Spaces should specify \"charge\", \"spin\", and \"nstate\"");
+
+      std::shared_ptr<PTree> input_copy = std::make_shared<PTree>(*fcidata);
+      input_copy->erase("norb"); input_copy->put("norb", lexical_cast<std::string>(aref->nact()));
+
+      std::string method = input_copy->get<std::string>("algorithm", "hz");
+      std::set<std::string> kh_options = {"kh", "knowles", "handy"};
+      std::set<std::string> hz_options = {"hz", "harrison", "zarrabian"};
+      std::set<std::string> dist_options = {"dist", "parallel"};
+
+      if ( std::find(kh_options.begin(), kh_options.end(), method) != kh_options.end() ) {
+        using CiType = typename VecType::Ci;
+        std::vector<std::shared_ptr<CiType>> tmp;
+        std::shared_ptr<const Dvec> vecs = embedded_ci<KnowlesHandy, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
+        for (auto& i : vecs->dvec())
+          tmp.push_back(std::make_shared<CiType>(*i));
+        results.push_back(std::make_shared<VecType>(tmp));
+      }
+      else if ( std::find(hz_options.begin(), hz_options.end(), method) != hz_options.end() ) {
+        using CiType = typename VecType::Ci;
+        std::vector<std::shared_ptr<CiType>> tmp;
+        std::shared_ptr<const Dvec> vecs = embedded_ci<HarrisonZarrabian, Dvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label);
+        for (auto& i : vecs->dvec())
+          tmp.push_back(std::make_shared<CiType>(*i));
+        results.push_back(std::make_shared<VecType>(tmp));
+      }
+      else if ( std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end() )
+        results.push_back(std::make_shared<VecType>(embedded_ci<DistFCI, DistDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
+      else
+        throw std::runtime_error("Unrecognized FCI type algorithm");
+
+      std::cout << "      - charge: " << ispace.at(0) << ", spin: " << ispace.at(1) << ", nstates: " << ispace.at(2)
+                                 << std::fixed << std::setw(10) << std::setprecision(2) << castime.tick() << std::endl;
+    }
+    return results;
+  };
+
+  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, active_refs_.first, "A"))
+    out->template insert<0>(i);
+
+  for (auto& i : run_calculations(spaces_B, embedded_refs_.second, active_refs_.second, "B"))
+    out->template insert<1>(i);
+
+  return out;
 }
 
-template<int unit>
-std::shared_ptr<const RASDvec> Dimer::embedded_rasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
-  const int nclosed = sref_->nclosed();
-  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
-  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
+template <class VecType>
+std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::shared_ptr<const PTree> idata) {
+  embed_refs();
+  std::pair<int,int> nelea = std::make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
+                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  std::pair<int,int> neleb = nelea;
 
-  // Make new input data, set charge, spin to what I want
-  auto input = std::make_shared<PTree>(*idata);
-  auto erase_put = [&input] ( std::string name, int data ) { input->erase(name); input->put(name, lexical_cast<std::string>(data)); };
+  // { {nras1, nras2, nras3}, max holes, max particles }
+  std::pair<std::tuple<std::array<int, 3>, int, int>, std::tuple<std::array<int, 3>, int, int>> ras_desc;
 
-  erase_put("charge", charge);
-  erase_put("nspin", nspin);
-  erase_put("ncore", ncore);
-  erase_put("nstate", nstate);
-  erase_put("max_holes", std::get<1>(desc));
-  erase_put("max_particles", std::get<2>(desc));
+  // Sample:
+  // "restricted" : [ { "orbitals" : [1, 2, 3], "max_holes" : 0, "max_particles" : 2 } ],
+  //  puts 1 orbital in RAS1 with no holes allowed, 2 orbital in RAS2, and 3 orbitals in RAS3 with up to 2 particles
+  auto restrictions = idata->get_child("restricted");
 
-  input->erase("active");
-  int current = ncore;
-  auto parent = std::make_shared<PTree>();
-  for (int i = 0; i < 3; ++i) {
-    auto tmp = std::make_shared<PTree>();
-    const int nras = std::get<0>(desc)[i];
-    for (int i = 0; i < nras; ++i, ++current)
-      tmp->push_back(current+1);
-    parent->push_back(tmp);
+  auto get_restricted_data = [] (std::shared_ptr<const PTree> i) {
+    return std::make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+  };
+
+  if (restrictions->size() == 1) {
+    ras_desc = std::make_pair( get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) );
   }
-  input->add_child("active", parent);
-
-  // Hiding normal cout
-  std::stringstream outfilename;
-  outfilename << "meh_ras_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
-  Muffle hide(outfilename.str());
-
-  std::shared_ptr<RASCI> rasci;
-  rasci = std::dynamic_pointer_cast<RASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
-  rasci->compute();
-
-  return rasci->civectors();
-}
-
-template<int unit>
-std::shared_ptr<const DistRASDvec> Dimer::embedded_distrasci(const std::shared_ptr<const PTree> idata, const int charge, const int nspin, const int nstate, std::tuple<std::array<int, 3>, int, int> desc) const {
-  const int nclosed = sref_->nclosed();
-  const int ncore = (unit == 0) ? nclosed + nfilledactive_.second : nclosed + nfilledactive_.first;
-  const std::shared_ptr<const Reference> embedded_ref = (unit == 0) ? embedded_refs_.first : embedded_refs_.second;
-
-  // Make new input data, set charge, spin to what I want
-  auto input = std::make_shared<PTree>(*idata);
-  auto erase_put = [&input] ( std::string name, int data ) { input->erase(name); input->put(name, lexical_cast<std::string>(data)); };
-
-  erase_put("charge", charge);
-  erase_put("nspin", nspin);
-  erase_put("ncore", ncore);
-  erase_put("nstate", nstate);
-  erase_put("max_holes", std::get<1>(desc));
-  erase_put("max_particles", std::get<2>(desc));
-
-  input->erase("active");
-  int current = ncore;
-  auto parent = std::make_shared<PTree>();
-  for (int i = 0; i < 3; ++i) {
-    auto tmp = std::make_shared<PTree>();
-    const int nras = std::get<0>(desc)[i];
-    for (int i = 0; i < nras; ++i, ++current)
-      tmp->push_back(current+1);
-    parent->push_back(tmp);
+  else if (restrictions->size() == 2) {
+    auto iter = restrictions->begin();
+    auto tmp1 = get_restricted_data(*iter++);
+    auto tmp2 = get_restricted_data(*iter);
+    ras_desc = std::make_pair(tmp1, tmp2);
   }
-  input->add_child("active", parent);
-  input->erase("algorithm"); input->put("algorithm", "parallel");
+  else throw std::logic_error("One or two sets of restrictions must be provided.");
 
-  // Hiding normal cout
-  std::stringstream outfilename;
-  outfilename << "meh_ras_" << (unit == 0 ? "A_c" : "B_c") << charge << "_s" << nspin;
-  Muffle hide(outfilename.str());
+  // This is less than ideal. It'd be better to have some sort of generator object that can be passed around.
+  auto d1 = std::make_shared<RASDeterminants>(std::get<0>(ras_desc.first), nelea.first, neleb.first, std::get<1>(ras_desc.first), std::get<2>(ras_desc.first), true);
+  auto d2 = std::make_shared<RASDeterminants>(std::get<0>(ras_desc.second), nelea.second, neleb.second, std::get<1>(ras_desc.second), std::get<2>(ras_desc.second), true);
 
-  std::shared_ptr<DistRASCI> rasci;
-  rasci = std::dynamic_pointer_cast<DistRASCI>(construct_method("ras", input, embedded_ref->geom(), embedded_ref));
-  rasci->compute();
+  auto out = std::make_shared<DimerCISpace_base<VecType>>(std::make_pair(d1, d2), nelea, neleb);
 
-  return rasci->civectors();
+  std::vector<std::vector<int>> spaces_A, spaces_B;
+  get_spaces(idata, spaces_A, spaces_B);
+
+  Timer rastime;
+
+  std::shared_ptr<const PTree> rasdata = idata->get_child_optional("ras");
+  if (!rasdata) rasdata = std::make_shared<const PTree>();
+
+  // Embedded RAS-CI calculations
+  auto run_calculations = [this, &rastime, &rasdata] (std::vector<std::vector<int>>& spaces, std::shared_ptr<const Reference> eref,
+                                                                                std::tuple<std::array<int, 3>, int, int> ras_desc, std::string label) {
+    std::cout << "    Starting embedded RAS-CI calculations on monomer " << label << std::endl;
+    std::vector<std::shared_ptr<const VecType>> results;
+
+    for (auto& ispace : spaces) {
+      if (ispace.size() != 3) throw std::runtime_error("Spaces should specify \"charge\", \"spin\", and \"nstate\"");
+
+      auto input_copy = std::make_shared<PTree>(*rasdata);
+      input_copy->erase("max_holes"); input_copy->put("max_holes", lexical_cast<std::string>(std::get<1>(ras_desc)));
+      input_copy->erase("max_particles"); input_copy->put("max_particles", lexical_cast<std::string>(std::get<2>(ras_desc)));
+
+      input_copy->erase("active");
+      int current = eref->nclosed();
+      auto parent = std::make_shared<PTree>();
+      for (int i = 0; i < 3; ++i) {
+        auto tmp = std::make_shared<PTree>();
+        const int nras = std::get<0>(ras_desc)[i];
+        for (int i = 0; i < nras; ++i, ++current)
+          tmp->push_back(current+1);
+        parent->push_back(tmp);
+      }
+      input_copy->add_child("active", parent);
+
+
+      std::string method = input_copy->get<std::string>("method", "local");
+      std::set<std::string> serial_options = {"local"};
+      std::set<std::string> dist_options = {"dist", "parallel"};
+
+      if ( std::find(serial_options.begin(), serial_options.end(), method) != serial_options.end() )
+        results.push_back(std::make_shared<VecType>(embedded_ci<RASCI, RASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
+      else if ( std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end() )
+        results.push_back(std::make_shared<VecType>(embedded_ci<DistRASCI, DistRASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
+      else
+        throw std::logic_error("Unrecognized RAS type algorithm");
+
+      std::cout << "      - charge: " << ispace.at(0) << ", spin: " << ispace.at(1) << ", nstates: " << ispace.at(2)
+                                      << std::fixed << std::setw(10) << std::setprecision(2) << rastime.tick() << std::endl;
+    }
+
+    return results;
+  };
+
+  for (auto& i : run_calculations(spaces_A, embedded_refs_.first, ras_desc.first, "A"))
+    out->template insert<0>(i);
+
+  for (auto& i : run_calculations(spaces_B, embedded_refs_.second, ras_desc.second, "B"))
+    out->template insert<1>(i);
+
+  return out;
 }
 
 }
