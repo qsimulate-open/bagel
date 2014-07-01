@@ -174,8 +174,8 @@ template <class VecType>
 std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_diagonal_block(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& subspace) {
   const double core = me->dimer_->sref()->geom()->nuclear_repulsion() + me->jop_->core_energy();
 
-  auto out = compute_intra(subspace, me->jop_, core);
-  *out += *compute_inter_2e<true>(subspace, subspace);
+  auto out = me->compute_intra(subspace, me->jop_, core);
+  *out += *compute_inter_2e(me, subspace, subspace);
 
   return out;
 }
