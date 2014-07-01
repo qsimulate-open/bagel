@@ -70,10 +70,10 @@ void ComplexSmallERIBatch::compute() {
   array<complex<double>* const,6> data = {{data_, data_+size_block_, data_+size_block_*2, data_+size_block_*3, data_+size_block_*4, data_+size_block_*5}};
 
   for (int i = 0; i != 3; ++i) {
-    zgemm3m_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->zsmallc(i)->data(), a2, 0.0, ints, s0size*a1);
+    zgemm3m_("N", "N", s0size*a1, s2size, a2, 1.0, eri, s0size*a1, shells_[2]->zsmall(i)->data(), a2, 0.0, ints, s0size*a1);
     for (int k = 0; k <= i; ++k) {
       for (int j = 0; j != s2size; ++j) {
-        zgemm3m_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->zsmall(k)->data(), a1, 0.0, data[k*(5-k)/2+i]+j*s0size*s1size, s0size);
+        zgemm3m_("N", "N", s0size, s1size, a1, 1.0, ints+j*s0size*a1, s0size, shells_[1]->zsmallc(k)->data(), a1, 0.0, data[k*(5-k)/2+i]+j*s0size*s1size, s0size);
       }
     }
   }
