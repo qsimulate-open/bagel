@@ -97,6 +97,10 @@ class DistCivector {
     }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
+    DistCivector(const Civector<DataType>& o) : DistCivector(o.det()) {
+      std::copy_n(o.element_ptr(0, astart()), size(), local());
+    }
+
     DistCivector<DataType>& operator=(const DistCivector<DataType>& o) {
       assert(o.size() == size());
       std::copy_n(o.local_.get(), alloc_, local_.get());

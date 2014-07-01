@@ -77,7 +77,7 @@ double meh_energy(std::string inp) {
       *geom = *dimer->sgeom();
       ref = dimer->sref();
     } else if (method == "meh-cas") {
-      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
+      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace<Dvec>(itree);
 
       auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
       meh->compute();
@@ -85,7 +85,7 @@ double meh_energy(std::string inp) {
       std::cout.rdbuf(backup_stream);
       return meh->energy(0);
     } else if (method == "meh-ras") {
-      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace<RASDvec>(itree);
 
       auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
       meh->compute();
@@ -152,7 +152,7 @@ std::vector<double> meh_models(std::string inp) {
       *geom = *dimer->sgeom();
       ref = dimer->sref();
     } else if (method == "meh-cas") {
-      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
+      std::shared_ptr<DimerCAS> cispace = dimer->compute_cispace<Dvec>(itree);
 
       auto meh = std::make_shared<MEH_CAS>(itree, dimer, cispace);
       meh->compute();
@@ -165,7 +165,7 @@ std::vector<double> meh_models(std::string inp) {
       models.insert(models.end(), ptmodel->data(), ptmodel->data()+ptmodel->size());
       models[5] = std::abs(models[5]); models[6] = std::abs(models[6]);
     } else if (method == "meh-ras") {
-      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+      std::shared_ptr<DimerRAS> cispace = dimer->compute_rcispace<RASDvec>(itree);
 
       auto meh = std::make_shared<MEH_RAS>(itree, dimer, cispace);
       meh->compute();

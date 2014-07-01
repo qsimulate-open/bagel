@@ -163,22 +163,22 @@ int main(int argc, char** argv) {
 throw logic_error("broken!");
 #endif
       } else if (title == "meh-cas") {
-          shared_ptr<DimerCAS> cispace = dimer->compute_cispace(itree);
+          shared_ptr<DimerCAS> cispace = dimer->compute_cispace<Dvec>(itree);
 
           auto meh = make_shared<MEH_CAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "meh-dist-cas") {
-          shared_ptr<DimerDistCAS> cispace = dimer->compute_distcispace(itree);
+          shared_ptr<DimerDistCAS> cispace = dimer->compute_cispace<DistDvec>(itree);
 
           auto meh = make_shared<MEH_DistCAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "meh-ras") { // Not the best solution, but it'll do for now
-          shared_ptr<DimerRAS> cispace = dimer->compute_rcispace(itree);
+          shared_ptr<DimerRAS> cispace = dimer->compute_rcispace<RASDvec>(itree);
 
           auto meh = make_shared<MEH_RAS>(itree, dimer, cispace);
           meh->compute();
       } else if (title == "meh-dist-ras") { // Not the best solution, but it'll do for now
-          shared_ptr<DimerDistRAS> cispace = dimer->compute_distrcispace(itree);
+          shared_ptr<DimerDistRAS> cispace = dimer->compute_rcispace<DistRASDvec>(itree);
 
           auto meh = make_shared<MEH_DistRAS>(itree, dimer, cispace);
           meh->compute();

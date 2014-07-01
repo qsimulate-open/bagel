@@ -191,3 +191,20 @@ void Dimer::embed_refs() {
     embedded_refs_.second = make_shared<Reference>(sgeom_, Bcoeff, ncore, norb, 0);
   }
 }
+
+void Dimer::get_spaces(shared_ptr<const PTree> idata, vector<vector<int>>& spaces_A, vector<vector<int>>& spaces_B) {
+  auto space = idata->get_child_optional("space");
+  if (space) {
+    for (auto& s : *space) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    spaces_B = spaces_A;
+  }
+  else {
+    auto spacea = idata->get_child_optional("space_a");
+    auto spaceb = idata->get_child_optional("space_b");
+    if (!(spacea && spaceb)) {
+      throw runtime_error("Must specify either space keywords or BOTH space_a and space_b");
+    }
+    for (auto& s : *spacea) { spaces_A.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+    for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
+  }
+}
