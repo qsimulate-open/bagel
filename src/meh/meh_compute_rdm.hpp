@@ -39,7 +39,7 @@ void MultiExcitonHamiltonian<VecType>::compute_rdm() const {
   // diagonal term
   for (auto& subspace : subspaces_) {
     compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block(subspace);
+    std::shared_ptr<Matrix> block = compute_diagonal_block<false>(subspace);
   }
 #endif
   // off diagonal term

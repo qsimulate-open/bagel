@@ -62,7 +62,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
                                                                         1.0, out->element_ptr(ioff, 0), out->ndim());
     }
     else {
-      std::shared_ptr<const Matrix> block = compute_diagonal_block(*iAB);
+      std::shared_ptr<const Matrix> block = compute_diagonal_block<true>(*iAB);
       dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), out->ndim());
     }
   }

@@ -101,6 +101,8 @@ struct ASD_impl {
   using DSb = DimerSubspace_base<T>;
   using return_type = typename std::conditional<_N, Matrix, RDM<2>>::type;
   template <class VecType>
+  static std::shared_ptr<return_type> compute_diagonal_block(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& subspace) { assert(false); return nullptr; }
+  template <class VecType>
   static std::shared_ptr<return_type> compute_inter_2e(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
   template <class VecType>
   static std::shared_ptr<return_type> compute_aET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)  { assert(false); return nullptr; }
@@ -158,8 +160,7 @@ class MultiExcitonHamiltonian : public MEH_base {
 
     // Diagonal block stuff
     void compute_pure_terms(DSubSpace& subspace, std::shared_ptr<const DimerJop> jop);
-    std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace);
-    void compute_intra(Matrix& block, const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
+    std::shared_ptr<Matrix> compute_intra(const DSubSpace& subspace, std::shared_ptr<const DimerJop> jop, const double diag);
 
     virtual std::shared_ptr<VecType> form_sigma(std::shared_ptr<const VecType> ccvec, std::shared_ptr<const MOFile> jop) const = 0;
     virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
@@ -173,20 +174,14 @@ class MultiExcitonHamiltonian : public MEH_base {
     template <bool _N, typename return_type = typename std::conditional<_N, Matrix, RDM<2>>::type>
     std::shared_ptr<return_type> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp)  { return asd::ASD_impl<_N>::compute_aET(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp)  { return asd::ASD_impl<_N>::compute_bET(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_abFlip(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_abET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_abET(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_aaET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_aaET(this, AB, ApBp); }
-    template <bool _N>
-    std::shared_ptr<Matrix> compute_bbET(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_bbET(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_diagonal_block(DSubSpace& subspace)      { return asd::ASD_impl<_N>::compute_diagonal_block(this, subspace); }
+    template <bool _N> std::shared_ptr<Matrix> compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) { return asd::ASD_impl<_N>::compute_inter_2e(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_aET(DSubSpace& AB, DSubSpace& ApBp)      { return asd::ASD_impl<_N>::compute_aET(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_bET(DSubSpace& AB, DSubSpace& ApBp)      { return asd::ASD_impl<_N>::compute_bET(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_abFlip(DSubSpace& AB, DSubSpace& ApBp)   { return asd::ASD_impl<_N>::compute_abFlip(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_abET(DSubSpace& AB, DSubSpace& ApBp)     { return asd::ASD_impl<_N>::compute_abET(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_aaET(DSubSpace& AB, DSubSpace& ApBp)     { return asd::ASD_impl<_N>::compute_aaET(this, AB, ApBp); }
+    template <bool _N> std::shared_ptr<Matrix> compute_bbET(DSubSpace& AB, DSubSpace& ApBp)     { return asd::ASD_impl<_N>::compute_bbET(this, AB, ApBp); }
 };
 
 // Locks to make sure the following files are not included on their own

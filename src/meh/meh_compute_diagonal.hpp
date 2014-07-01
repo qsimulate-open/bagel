@@ -64,7 +64,9 @@ void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::sh
 }
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::compute_intra(Matrix& block, const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
+std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
+  auto out = std::make_shared<Matrix>(AB.dimerstates(), AB.dimerstates());
+
   const int nstatesA = AB.template nstates<0>();
   const int nstatesB = AB.template nstates<1>();
 
@@ -75,14 +77,14 @@ void MultiExcitonHamiltonian<VecType>::compute_intra(Matrix& block, const DSubSp
       for(int stateB = 0; stateB < nstatesB; ++stateB) {
         const int stateApB = AB.dimerindex(stateAp, stateB);
         const int stateAB = AB.dimerindex(stateA, stateB);
-        block(stateAB, stateApB) += value;
-        block(stateApB, stateAB) += value;
+        (*out)(stateAB, stateApB) += value;
+        (*out)(stateApB, stateAB) += value;
       }
     }
     const double value = AB.template sigma<0>()->element(stateA, stateA);
     for(int stateB = 0; stateB < nstatesB; ++stateB) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      block(stateAB,stateAB) += value;
+      (*out)(stateAB,stateAB) += value;
     }
   }
 
@@ -93,18 +95,19 @@ void MultiExcitonHamiltonian<VecType>::compute_intra(Matrix& block, const DSubSp
       for(int stateA = 0; stateA < nstatesA; ++stateA) {
         const int stateAB = AB.dimerindex(stateA, stateB);
         const int stateABp = AB.dimerindex(stateA, stateBp);
-        block(stateAB, stateABp) += value;
-        block(stateABp, stateAB) += value;
+        (*out)(stateAB, stateABp) += value;
+        (*out)(stateABp, stateAB) += value;
       }
     }
     const double value = AB.template sigma<1>()->element(stateB, stateB);
     for(int stateA = 0; stateA < nstatesA; ++stateA) {
       const int stateAB = AB.dimerindex(stateA, stateB);
-      block(stateAB,stateAB) += value;
+      (*out)(stateAB,stateAB) += value;
     }
   }
 
-  block.add_diag(diag);
+  out->add_diag(diag);
+  return out;
 }
 
 template <class VecType>
@@ -166,13 +169,12 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(co
 }
 
 
+template <>
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_block(DSubSpace& subspace) {
-  const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
+std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_diagonal_block(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& subspace) {
+  const double core = me->dimer_->sref()->geom()->nuclear_repulsion() + me->jop_->core_energy();
 
-  auto out = std::make_shared<Matrix>(subspace.dimerstates(), subspace.dimerstates());
-
-  compute_intra(*out, subspace, jop_, core);
+  auto out = compute_intra(subspace, me->jop_, core);
   *out += *compute_inter_2e<true>(subspace, subspace);
 
   return out;

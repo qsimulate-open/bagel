@@ -126,7 +126,7 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   for (auto& subspace : subspaces_) {
     compute_pure_terms(subspace, jop_);
-    std::shared_ptr<Matrix> block = compute_diagonal_block(subspace);
+    std::shared_ptr<Matrix> block = compute_diagonal_block<true>(subspace);
     if (store_matrix_)
       hamiltonian_->add_block(1.0, subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
     const int n = block->ndim();
