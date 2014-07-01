@@ -54,7 +54,7 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 
 
 Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{make_pair(0,1)}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
+                               contraction_ranges_{{0,1}}, dummy_(true), vector_potential_{{0.0,0.0,0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
@@ -134,7 +134,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
       vector<pair<int,int>>  range;
       for (int i = nstart; i != nend; ++i) {
         contr.push_back(vector<double>(contractions_[i].begin()+smallest, contractions_[i].end()));
-        range.push_back(make_pair(contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest));
+        range.push_back({contraction_ranges_[i].first-smallest, contraction_ranges_[i].second-smallest});
       }
       out.push_back(make_shared<const Shell>(spherical_, position_, angular_number_, expo, contr, range, vector_potential_));
       smallest = *lower;
@@ -161,7 +161,7 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     vector<double> cont(exponents_.size(), 0);
     cont[i] = 1.0;
     conts.push_back(cont);
-    ranges.push_back(make_pair(i,i+1));
+    ranges.push_back({i,i+1});
   }
   return angular_number_+increment < 0 ? nullptr : make_shared<const Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges, vector_potential_);
 }

@@ -47,7 +47,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
   auto ai = geom_->aux_atoms().begin();
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) { ++ai; continue; }
-    if (atoms.find(make_pair(i->name(),i->basis())) == atoms.end()) {
+    if (atoms.find({i->name(),i->basis()}) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
@@ -62,12 +62,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
+      atoms.insert({make_pair(i->name(),i->basis()), compute_atomic(ga)});
 
       // restore cout
       cout.rdbuf(cout_orig);
     }
-    auto iter = atoms.find(make_pair(i->name(),i->basis()));
+    auto iter = atoms.find({i->name(),i->basis()});
     assert(iter != atoms.end());
     copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
     offset += i->nbasis();
@@ -92,7 +92,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry_London> g) : Mat
   auto ai = cgeom_->aux_atoms().begin();
   for (auto& i : cgeom_->atoms()) {
     if (i->dummy()) { ++ai; continue; }
-    if (atoms.find(make_pair(i->name(),i->basis())) == atoms.end()) {
+    if (atoms.find({i->name(),i->basis()}) == atoms.end()) {
       // dummy buffer to suppress the output
       stringstream ss;
       std::streambuf* cout_orig = cout.rdbuf();
@@ -107,12 +107,12 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry_London> g) : Mat
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert(make_pair(make_pair(i->name(),i->basis()), compute_atomic(ga)));
+      atoms.insert({make_pair(i->name(),i->basis()), compute_atomic(ga)});
 
       // restore cout
       cout.rdbuf(cout_orig);
     }
-    auto iter = atoms.find(make_pair(i->name(),i->basis()));
+    auto iter = atoms.find({i->name(),i->basis()});
     assert(iter != atoms.end());
     copy_block(offset, offset, i->nbasis(), i->nbasis(), iter->second);
     offset += i->nbasis();
@@ -199,7 +199,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     auto residual = make_shared<const Matrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     if (residual->rms() < 1.0e-2 || fabs(energy-prev_energy) < 1.0e-4) break;
     prev_energy = energy;
-    fock = diis.extrapolate(make_pair(fock, residual));
+    fock = diis.extrapolate({fock, residual});
 
     Matrix ints = *tildex % *fock * *tildex;
     ints = *ints.diagonalize_blocks(eig.get(), num);

@@ -73,7 +73,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   assert(full.size() == 4);
   unordered_map<bitset<2>, shared_ptr<RelDFFull>> full_d;
   for (auto& i : full)
-    full_d.insert(make_pair(i.first, i.second->clone()));
+    full_d.insert({i.first, i.second->clone()});
 
   // [2] compute [g|ji] = (g|kl)*G(ji|kl)
   // JEB : Contract 2RDM with 3idx integrals in kramers MO basis ; all indices active for 2RDM

@@ -65,8 +65,8 @@ class DimerSubspace_base {
   public:
     DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
       offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
-       ci_(std::make_pair(MonomerSubspace_base<VecType>(Akey.S, Akey.m_s, Akey.q, _ci.first),
-                     MonomerSubspace_base<VecType>(Bkey.S, Bkey.m_s, Bkey.q, _ci.second)))
+       ci_({MonomerSubspace_base<VecType>(Akey.S, Akey.m_s, Akey.q, _ci.first),
+            MonomerSubspace_base<VecType>(Bkey.S, Bkey.m_s, Bkey.q, _ci.second)})
     { _offset += dimerstates(); }
 
     const int offset() const { return offset_; }
@@ -81,9 +81,9 @@ class DimerSubspace_base {
     template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first.monomerci_ : ci_.second.monomerci_ ); }
     template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
 
-    std::pair<int,int> S() const { return std::make_pair(ci_.first.S_, ci_.second.S_); }
-    std::pair<int,int> ms() const { return std::make_pair(ci_.first.ms_, ci_.second.ms_); }
-    std::pair<int,int> charge() const { return std::make_pair(ci_.first.charge_, ci_.second.charge_); }
+    std::pair<int,int> S() const { return {ci_.first.S_, ci_.second.S_}; }
+    std::pair<int,int> ms() const { return {ci_.first.ms_, ci_.second.ms_}; }
+    std::pair<int,int> charge() const { return {ci_.first.charge_, ci_.second.charge_}; }
 
     template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 

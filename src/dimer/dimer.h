@@ -134,8 +134,7 @@ std::shared_ptr<const VecType> Dimer::embedded_ci(std::shared_ptr<const PTree> i
 template <class VecType>
 std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  std::pair<int,int> nelea = std::make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
-                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  std::pair<int,int> nelea {isolated_refs_.first->nclosed() - active_refs_.first->nclosed(), isolated_refs_.second->nclosed() - active_refs_.second->nclosed()};
   std::pair<int,int> neleb = nelea;
 
   auto d1 = std::make_shared<Determinants>(active_refs_.first->nact(), nelea.first, neleb.first, /*compress*/false, /*mute*/true);
@@ -204,8 +203,7 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
 template <class VecType>
 std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::shared_ptr<const PTree> idata) {
   embed_refs();
-  std::pair<int,int> nelea = std::make_pair(isolated_refs_.first->nclosed() - active_refs_.first->nclosed(),
-                                  isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
+  std::pair<int,int> nelea {isolated_refs_.first->nclosed() - active_refs_.first->nclosed(), isolated_refs_.second->nclosed() - active_refs_.second->nclosed()};
   std::pair<int,int> neleb = nelea;
 
   // { {nras1, nras2, nras3}, max holes, max particles }
@@ -221,13 +219,13 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
   };
 
   if (restrictions->size() == 1) {
-    ras_desc = std::make_pair( get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) );
+    ras_desc = { get_restricted_data(*restrictions->begin()), get_restricted_data(*restrictions->begin()) };
   }
   else if (restrictions->size() == 2) {
     auto iter = restrictions->begin();
     auto tmp1 = get_restricted_data(*iter++);
     auto tmp2 = get_restricted_data(*iter);
-    ras_desc = std::make_pair(tmp1, tmp2);
+    ras_desc = {tmp1, tmp2};
   }
   else throw std::logic_error("One or two sets of restrictions must be provided.");
 

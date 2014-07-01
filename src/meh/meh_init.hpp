@@ -61,15 +61,15 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 
 template <class VecType>
 const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const {
-  std::pair<int,int> neleaAB = std::make_pair(AB.template ci<0>()->det()->nelea(), AB.template ci<1>()->det()->nelea());
-  std::pair<int,int> nelebAB = std::make_pair(AB.template ci<0>()->det()->neleb(), AB.template ci<1>()->det()->neleb());
+  std::pair<int,int> neleaAB {AB.template ci<0>()->det()->nelea(), AB.template ci<1>()->det()->nelea()};
+  std::pair<int,int> nelebAB {AB.template ci<0>()->det()->neleb(), AB.template ci<1>()->det()->neleb()};
 
-  std::pair<int,int> neleaApBp = std::make_pair(ApBp.template ci<0>()->det()->nelea(), ApBp.template ci<1>()->det()->nelea());
-  std::pair<int,int> nelebApBp = std::make_pair(ApBp.template ci<0>()->det()->neleb(), ApBp.template ci<1>()->det()->neleb());
+  std::pair<int,int> neleaApBp {ApBp.template ci<0>()->det()->nelea(), ApBp.template ci<1>()->det()->nelea()};
+  std::pair<int,int> nelebApBp {ApBp.template ci<0>()->det()->neleb(), ApBp.template ci<1>()->det()->neleb()};
 
   // AlphaTransfer and BetaTransfer
-  std::pair<int,int> AT = std::make_pair(neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second);
-  std::pair<int,int> BT = std::make_pair(nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second);
+  std::pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
+  std::pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
 
   constexpr int stride = 8; // Should be sufficient
   auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };

@@ -144,7 +144,7 @@ void SCF::compute() {
     }
 
     if (diis_ || iter >= diis_start_) {
-      fock = diis_->extrapolate(make_pair(fock, error_vector));
+      fock = diis_->extrapolate({fock, error_vector});
       pdebug.tick_print("DIIS");
     }
 

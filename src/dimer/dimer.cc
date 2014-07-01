@@ -40,7 +40,7 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : inpu
       for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
     auto geomB = make_shared<const Geometry>((*A), translation);
 
-    geoms_ = make_pair(A, geomB);
+    geoms_ = {A, geomB};
     construct_geometry();
   }
 
@@ -51,22 +51,22 @@ Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : inp
 
   assert(A);
   auto geomB = make_shared<const Geometry>((*A->geom()), translation);
-  geoms_ = make_pair(A->geom(), geomB);
+  geoms_ = {A->geom(), geomB};
   construct_geometry();
 
   auto tmpref = make_shared<const Reference>(geomB, A->coeff(), A->nclosed(), A->nact(), A->nvirt(),
       A->energy(), A->rdm1(), A->rdm2(), A->rdm1_av(), A->rdm2_av() );
-  isolated_refs_ = make_pair(A, tmpref);
+  isolated_refs_ = {A, tmpref};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), 2*A->nclosed(), 2*A->nact(), 2*A->nvirt());
 }
 
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A, shared_ptr<const Reference> B) : input_(input) {
-  geoms_ = make_pair(A->geom(), B->geom());
+  geoms_ = {A->geom(), B->geom()};
   construct_geometry();
 
-  isolated_refs_ = make_pair(A, B);
+  isolated_refs_ = {A, B};
   shared_ptr<const Matrix> coeff = construct_coeff();
 
   sref_ = make_shared<Reference>(sgeom_, make_shared<const Coeff>(move(*coeff)), A->nclosed() + B->nclosed(), A->nact() + B->nact(), A->nvirt() + B->nvirt());
@@ -79,7 +79,7 @@ void Dimer::construct_geometry() {
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
   if (mdata) {
     Muffle hide_cout;
-    geoms_ = make_pair(make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata));
+    geoms_ = {make_shared<Geometry>(*geoms_.first, mdata), make_shared<Geometry>(*geoms_.second, mdata)};
   }
 
   vector<shared_ptr<const Geometry>> geo_vec = {{ geoms_.first, geoms_.second }};
@@ -135,7 +135,7 @@ shared_ptr<const Matrix> Dimer::construct_coeff() {
 
   const shared_ptr<const PTree> mdata = input_->get_child_optional("molecule");
   if (mdata) {
-    isolated_refs_ = make_pair(isolated_refs_.first->project_coeff(geoms_.first), isolated_refs_.second->project_coeff(geoms_.second));
+    isolated_refs_ = {isolated_refs_.first->project_coeff(geoms_.first), isolated_refs_.second->project_coeff(geoms_.second)};
   }
 
   shared_ptr<const Matrix> projected = form_projected_coeffs();

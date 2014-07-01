@@ -51,7 +51,7 @@ void MoldenIn::compute_transforms() {
         const int x = l - y - z;
         if (x < 0) continue;
         const int key = x + y * LARGE + z * LARGE * LARGE;
-        mapping.insert(make_pair(key, cnt));
+        mapping.insert({key, cnt});
         ++cnt;
       }
     }
@@ -82,7 +82,7 @@ void MoldenIn::compute_transforms() {
             map<int, int>::const_iterator current = mapping.find(xexp + yexp * LARGE + zexp * LARGE * LARGE);
             assert(current != mapping.end());
             const double coeff = Clmtuv / denom;
-            tuv.push_back(make_pair(current->second, coeff));
+            tuv.push_back({current->second, coeff});
           }
         }
       }

@@ -44,13 +44,13 @@ class FuncList {
     std::map<std::string, int> map_;
   public:
     FuncList() {
-      map_.insert(std::make_pair("slater",    XC_LDA_X));
-      map_.insert(std::make_pair("xalpha",    XC_LDA_C_XALPHA));
-      map_.insert(std::make_pair("pw92c",     XC_LDA_C_PW));
-      map_.insert(std::make_pair("pbex",      XC_GGA_X_PBE));
-      map_.insert(std::make_pair("pbec",      XC_GGA_C_PBE));
-      map_.insert(std::make_pair("b3lyp",     XC_HYB_GGA_XC_B3LYP));
-      map_.insert(std::make_pair("pbe0",      XC_HYB_GGA_XC_PBEH));
+      map_.insert({"slater",    XC_LDA_X});
+      map_.insert({"xalpha",    XC_LDA_C_XALPHA});
+      map_.insert({"pw92c",     XC_LDA_C_PW});
+      map_.insert({"pbex",      XC_GGA_X_PBE});
+      map_.insert({"pbec",      XC_GGA_C_PBE});
+      map_.insert({"b3lyp",     XC_HYB_GGA_XC_B3LYP});
+      map_.insert({"pbe0",      XC_HYB_GGA_XC_PBEH});
     }
     int num(const std::string& name) const {
       auto iter = map_.find(name);

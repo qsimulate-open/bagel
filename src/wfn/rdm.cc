@@ -72,7 +72,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
 
     // register to emap
     if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
-    emap.insert(make_pair(get<0>(max), i));
+    emap.insert({get<0>(max), i});
 
     // copy to the target
     copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
@@ -85,7 +85,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
       blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
   }
 
-  return make_pair(buf2, vec2);
+  return {buf2, vec2};
 }
 
 
