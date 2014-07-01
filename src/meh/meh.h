@@ -187,6 +187,7 @@ class MultiExcitonHamiltonian : public MEH_base {
 #include <src/meh/meh_diagonalize.hpp>
 #include <src/meh/meh_spin_coupling.hpp>
 #include <src/meh/meh_compute_rdm.hpp>
+#include <src/meh/asd_impl.hpp>
 #undef MEH_HEADERS
 
 }
