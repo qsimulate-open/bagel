@@ -31,6 +31,7 @@
 #include <src/dimer/dimer_prop.h>
 #include <src/math/davidson.h>
 #include <src/meh/gamma_forest.h>
+#include <src/meh/gamma_tensor.h>
 #include <src/meh/meh_base.h>
 #include <src/smith/prim_op.h>
 
