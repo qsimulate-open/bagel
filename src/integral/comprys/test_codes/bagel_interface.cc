@@ -1727,6 +1727,13 @@ vector<pair<vector<int>,complex<double>>> get_comparison_smallERI (const array<s
   exponents.resize(4);
   contraction_coefficients.resize(4);
 
+#if 1 // Check to ensure that A_ = dummy orbital, B_ = auxiliary function
+  for (int i=0; i!=3; i++) assert(basisinfo[0]->vector_potential(i) == 0.0);
+  for (int i=0; i!=3; i++) assert(basisinfo[1]->vector_potential(i) == 0.0);
+  for (int i=0; i!=3; i++) assert(basisinfo[0]->position(i) == 0.0);
+  assert(basisinfo[0]->angular_number() == 0);
+#endif
+
   // Pull input data from the four bagel::Shells
   for (int i=0; i!=4; i++) {
     spherical.push_back (basisinfo[i]->spherical());

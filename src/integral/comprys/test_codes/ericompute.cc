@@ -350,10 +350,18 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   const double p = alpha + beta;
   const double q = gamma + delta;
   const double rho = p*q/(p+q);
-  const double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
-  const double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
-  const double A_C[3] = { 0.5*(field[1]*C[2] - field[2]*C[1]), 0.5*(field[2]*C[0] - field[0]*C[2]), 0.5*(field[0]*C[1] - field[1]*C[0]) };
-  const double A_D[3] = { 0.5*(field[1]*D[2] - field[2]*D[1]), 0.5*(field[2]*D[0] - field[0]*D[2]), 0.5*(field[0]*D[1] - field[1]*D[0]) };
+  double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
+  double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
+  double A_C[3] = { 0.5*(field[1]*C[2] - field[2]*C[1]), 0.5*(field[2]*C[0] - field[0]*C[2]), 0.5*(field[0]*C[1] - field[1]*C[0]) };
+  double A_D[3] = { 0.5*(field[1]*D[2] - field[2]*D[1]), 0.5*(field[2]*D[0] - field[0]*D[2]), 0.5*(field[0]*D[1] - field[1]*D[0]) };
+  if (alpha == 0.0 || beta == 0.0) {
+    for (int i=0; i!=3; i++) A_A[i] = 0.0;
+    for (int i=0; i!=3; i++) A_B[i] = 0.0;
+  }
+  if (gamma == 0.0 || delta == 0.0) {
+    for (int i=0; i!=3; i++) A_C[i] = 0.0;
+    for (int i=0; i!=3; i++) A_D[i] = 0.0;
+  }
 
   complex<double> Abar[3];
   complex<double> Bbar[3];
@@ -1678,13 +1686,17 @@ complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_
   assert(A_.exponent == 0.0);
   assert(A_.prefactor == 1.0);
   for (int i=0; i!=3; i++) assert(A_.position[i] == 0.0);
-  for (int i=0; i!=3; i++) assert(A_.vector_potential[i] == 0.0);
   for (int i=0; i!=3; i++) assert(A_.angular_momentum[i] == 0);
-  for (int i=0; i!=3; i++) assert(B_.vector_potential[i] == 0.0);
   assert(B_.exponent != 0.0);
   assert(C_.exponent != 0.0);
   assert(D_.exponent != 0.0);
 #endif
+
+  atomic_orbital A;
+  atomic_orbital B;
+  const vector<double> nofield = {{ 0.0, 0.0, 0.0 }};
+  A.set_data(A_.position, A_.exponent, A_.angular_momentum, nofield);
+  B.set_data(B_.position, B_.exponent, B_.angular_momentum, nofield);
 
   atomic_orbital C = C_;
   atomic_orbital D = D_;
@@ -1746,7 +1758,7 @@ complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_
       C.change_angular( cx[0]+newc[0], cx[1]+newc[1], cx[2]+newc[2] );
       D.change_angular( dx[0]+newd[0], dx[1]+newd[1], dx[2]+newd[2] );
       const complex<double> coef = Ccoeff[c] * Dcoeff[d];
-      if (coef != 0.0) out += coef * get_eri_matrix_element(field, A_, B_, C, D);
+      if (coef != 0.0) out += coef * get_eri_matrix_element(field, A, B, C, D);
     }
   }
   return out;
