@@ -75,7 +75,7 @@ void ComplexMixedERIBatch::compute() {
 
   for (int k = 0; k != 3; ++k) {
     for (int j = 0; j != s2size; ++j) {
-      zgemm3m_("N", "N", s0size, s1size, a1, 1.0, eri+j*s0size*a1, s0size, shells_[1]->zsmall(k)->transpose()->transpose_conjg()->data(), a1, 0.0, data[k]+j*s0size*s1size, s0size);
+      zgemm3m_("N", "N", s0size, s1size, a1, 1.0, eri+j*s0size*a1, s0size, shells_[1]->zsmallc(k)->data(), a1, 0.0, data[k]+j*s0size*s1size, s0size);
     }
   }
 
