@@ -52,13 +52,13 @@ RelSpace::RelSpace(const int norb, const int nele, const bool mute, const bool l
   // make Nele determinants
   for (int i = 0; i <= norb; ++i) {
     if (nele-i >= 0 && nele-i <= norb) {
-      detmap_.insert(make_pair(key_(i, nele-i), make_shared<Determinants>(s.at(i), s.at(nele-i), false, mute)));
+      detmap_.insert({make_pair(i, nele-i), make_shared<Determinants>(s.at(i), s.at(nele-i), false, mute)});
 
       if (linkup) {
         if (i+1 <= norb)
-          detmap_.insert(make_pair(key_(i+1, nele-i), make_shared<Determinants>(s.at(i+1), s.at(nele-i), false, mute)));
+          detmap_.insert({make_pair(i+1, nele-i), make_shared<Determinants>(s.at(i+1), s.at(nele-i), false, mute)});
         if (nele-i+1 <= norb)
-          detmap_.insert(make_pair(key_(i, nele-i+1), make_shared<Determinants>(s.at(i), s.at(nele-i+1), false, mute)));
+          detmap_.insert({make_pair(i, nele-i+1), make_shared<Determinants>(s.at(i), s.at(nele-i+1), false, mute)});
       }
     }
   }
