@@ -1645,4 +1645,112 @@ complex<double> get_finite_nai_matrix_element (const vector<double> field, atomi
 }
 
 
+complex<double> compute_smalleri (vector<atomic_orbital> basis, vector<molecular_orbital> input, vector<double> field, const int ia, const int ib) {
+
+  // Use a four-fold summation to compute the ERI over MO_A, MO_B, MO_C, and MO_D
+  const int nbasis = basis.size();
+  complex<double> Full_ERI = 0.0;
+  complex<double> current_term;
+  complex<double> coeff_prod;
+
+  for (int i = 0; i!=nbasis; i++) {
+    for (int j = 0; j!=nbasis; j++) {
+      for (int k = 0; k!=nbasis; k++) {
+        for (int l = 0; l!=nbasis; l++) {
+          coeff_prod = conj(input[0].coefficient[i]) * input[1].coefficient[j] * conj(input[2].coefficient[k]) * input[3].coefficient[l];
+          if (abs(coeff_prod)) {
+            current_term = get_smalleri_matrix_element (field, basis[i], basis[j], basis[k], basis[l], ia, ib);
+            Full_ERI += (coeff_prod * current_term);
+          }
+        }
+      }
+    }
+  }
+
+  return Full_ERI;
+
+}
+
+
+complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_, const int ic, const int id) {
+
+#if 1 // Check to ensure that A_ = dummy orbital, B_ = auxiliary function, C_ and D_ = main basis functions
+  assert(A_.exponent == 0.0);
+  assert(A_.prefactor == 1.0);
+  for (int i=0; i!=3; i++) assert(A_.position[i] == 0.0);
+  for (int i=0; i!=3; i++) assert(A_.vector_potential[i] == 0.0);
+  for (int i=0; i!=3; i++) assert(A_.angular_momentum[i] == 0);
+  for (int i=0; i!=3; i++) assert(B_.vector_potential[i] == 0.0);
+  assert(B_.exponent != 0.0);
+  assert(C_.exponent != 0.0);
+  assert(D_.exponent != 0.0);
+#endif
+
+  atomic_orbital C = C_;
+  atomic_orbital D = D_;
+  const complex<double> imag (0.0, 1.0);
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+
+  const array<int,5> xinc = {{ -1, 1, 0, 0, 0 }};
+  const array<int,5> yinc = {{  0, 0, 0, 1, 0 }};
+  const array<int,5> zinc = {{  0, 0, 1, 0, 0 }};
+  const array<array<int,5>,3> ang = {{ xinc, yinc, zinc }};
+
+  const double gamma = C.exponent;
+  const double delta = D.exponent;
+  const array<double,3> Cx = {{ C.position[0], C.position[1], C.position[2] }};
+  const array<double,3> Dx = {{ D.position[0], D.position[1], D.position[2] }};
+  const array<int,3> cx = {{ C.angular_momentum[0], C.angular_momentum[1], C.angular_momentum[2] }};
+  const array<int,3> dx = {{ D.angular_momentum[0], D.angular_momentum[1], D.angular_momentum[2] }};
+  array<double,3> cxd;
+  array<double,3> dxd;
+  for (int i=0; i!=3; i++) cxd[i] = cx[i];
+  for (int i=0; i!=3; i++) dxd[i] = dx[i];
+
+#if 0
+  const int nterms = 5;  // For Gaussian orbitals (common origin)
+#else
+  const int nterms = 4;  // For London orbitals
+#endif
+
+  const array<complex<double>,5> Ccoeff = {{  cxd[ic]*imag, -2*gamma*imag, 0.5*field[fwd[ic]], -0.5*field[bck[ic]], 0.5*(field[fwd[ic]]*Cx[bck[ic]] - field[bck[ic]]*Cx[fwd[ic]]) }};
+  const array<complex<double>,5> Dcoeff = {{ -dxd[id]*imag,  2*delta*imag,  0.5*field[fwd[id]], -0.5*field[bck[id]], 0.5*(field[fwd[id]]*Dx[bck[id]] - field[bck[id]]*Dx[fwd[id]]) }};
+
+#if 0
+  cout << endl;
+  array<char,3> source = {{ 'x', 'y', 'z'}};
+  array<char,3> cdim;
+  array<char,3> ddim;
+  cdim[0] = source[ic];
+  cdim[1] = source[fwd[ic]];
+  cdim[2] = source[bck[ic]];
+  ddim[0] = source[id];
+  ddim[1] = source[fwd[id]];
+  ddim[2] = source[bck[id]];
+  cout << "ic = " << ic << " ... " << cdim[0] << " " << cdim[1] << " " << cdim[2] << endl;
+  cout << "id = " << id << " ... " << ddim[0] << " " << ddim[1] << " " << ddim[2] << endl;
+#endif
+
+  complex<double> out = 0.0;
+  for (int c=0; c!=nterms; c++) {
+    for (int d=0; d!=nterms; d++) {
+      array<int,3> newc;
+      array<int,3> newd;
+      newc[ic] = ang[0][c];
+      newc[fwd[ic]] = ang[1][c];
+      newc[bck[ic]] = ang[2][c];
+      newd[id] = ang[0][d];
+      newd[fwd[id]] = ang[1][d];
+      newd[bck[id]] = ang[2][d];
+      C.change_angular( cx[0]+newc[0], cx[1]+newc[1], cx[2]+newc[2] );
+      D.change_angular( dx[0]+newd[0], dx[1]+newd[1], dx[2]+newd[2] );
+      const complex<double> coef = Ccoeff[c] * Dcoeff[d];
+      if (coef != 0.0) out += coef * get_eri_matrix_element(field, A_, B_, C, D);
+    }
+  }
+  return out;
+}
+
+
 }
