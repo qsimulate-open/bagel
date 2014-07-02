@@ -46,12 +46,12 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_inter_2e(MultiExcitonHamilt
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
   // alpha-alpha
-  Matrix gamma_AA_alpha = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_BB_alpha = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_AA_alpha = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_BB_alpha = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
 
   // beta-beta
-  Matrix gamma_AA_beta = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_BB_beta = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_AA_beta = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_BB_beta = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
   // build J and K matrices
   std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,1,0,1>();
@@ -75,8 +75,8 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian
 
   // One-body aET
   {
-    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
-    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
+    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateAlpha);
+    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha);
 
     std::shared_ptr<const Matrix> Fmatrix = me->jop_->cross_mo1e();
 
@@ -85,9 +85,9 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian
 
   //Two-body aET, type 1
   {
-    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
-    Matrix gamma_B1 = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-    Matrix gamma_B2 = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
+    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateAlpha);
+    Matrix gamma_B1 = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
+    Matrix gamma_B2 = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
 
     std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,1,1,1>();
 
@@ -96,9 +96,9 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aET(MultiExcitonHamiltonian
 
   //Two-body aET, type 2
   {
-    Matrix gamma_A1 = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-    Matrix gamma_A2 = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
+    Matrix gamma_A1 = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
+    Matrix gamma_A2 = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
+    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha);
 
     std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,0,1,0>();
 
@@ -127,8 +127,8 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian
 
   // One-body bET
   {
-    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
-    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
+    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateBeta);
+    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta);
 
     std::shared_ptr<const Matrix> Fmatrix = me->jop_->cross_mo1e();
 
@@ -138,9 +138,9 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian
 
   //Two-body bET, type 1
   {
-    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
-    Matrix gamma_B1 = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
-    Matrix gamma_B2 = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+    Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateBeta);
+    Matrix gamma_B1 = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
+    Matrix gamma_B2 = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
 
     std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,1,1,1>();
 
@@ -149,9 +149,9 @@ std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bET(MultiExcitonHamiltonian
 
   //Two-body aET, type 2
   {
-    Matrix gamma_A1 = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta);
-    Matrix gamma_A2 = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
+    Matrix gamma_A1 = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta);
+    Matrix gamma_A2 = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
+    Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta);
 
     std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,0,1,0>();
 
@@ -177,8 +177,8 @@ template <class VecType>
 std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abFlip(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
-  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
+  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
+  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
 
   std::shared_ptr<const Matrix> Kmatrix = me->jop_->template coulomb_matrix<0,1,1,0>();
 
@@ -196,8 +196,8 @@ template <class VecType>
 std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_abET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
+  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
+  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
 
   std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,0,1,1>();
 
@@ -215,8 +215,8 @@ template <class VecType>
 std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_aaET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
+  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
+  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
 
   std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,0,1,1>();
 
@@ -234,8 +234,8 @@ template <class VecType>
 std::shared_ptr<Matrix> asd::ASD_impl<true>::compute_bbET(MultiExcitonHamiltonian<VecType>* me, DSb<VecType>& AB, DSb<VecType>& ApBp) {
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
 
-  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
+  Matrix gamma_A = *me->gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);
+  Matrix gamma_B = *me->gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
 
   std::shared_ptr<const Matrix> Jmatrix = me->jop_->template coulomb_matrix<0,0,1,1>();
 

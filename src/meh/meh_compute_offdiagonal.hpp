@@ -59,8 +59,8 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e
       return std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   }
 
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), operatorA);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), operatorB);
+  Matrix gamma_A = *gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), operatorA);
+  Matrix gamma_B = *gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), operatorB);
   Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
 
   auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());

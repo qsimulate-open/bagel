@@ -59,6 +59,9 @@ class SpaceKey {
       out = out + "(2S=" + std::to_string(S) + ";2m_s=" + std::to_string(m_s) + ")";
       return out;
     }
+
+    // unique tag
+    int tag() const { return (((S << 5) + m_s+S) << 5) + q; }
 };
 
 template <class VecType>
@@ -105,6 +108,12 @@ class DimerCISpace_base {
       SpaceMap& space = (unit == 0 ? cispaceA_ : cispaceB_);
       auto iter = space.find(key);
       return (iter != space.end() ? iter->second : nullptr);
+    }
+
+    template<int unit> std::set<SpaceKey> spacekeys() const {
+      std::set<SpaceKey> out;
+      for (auto& i : cispace<unit>()) out.insert(i.first);
+      return out;
     }
 
     template<int unit> std::shared_ptr<DetType> det(std::pair<const int, const int> p) { return det<unit>(p.first,p.second); }

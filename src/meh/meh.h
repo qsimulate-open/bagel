@@ -39,14 +39,14 @@ namespace bagel {
 
 /// Wrapper for monomer CI wavefunctions that includes extra helpful information
 template <class VecType>
-struct MonomerSubspace_base {
-  const int S_;
-  const int ms_;
-  const int charge_;
+struct MonomerSubspace_base : public SpaceKey {
   std::shared_ptr<const VecType> monomerci_;
 
+  MonomerSubspace_base(const SpaceKey& s, std::shared_ptr<const VecType> monomerci) :
+    SpaceKey(s), monomerci_(monomerci) {}
   MonomerSubspace_base(const int S, const int ms, const int charge, std::shared_ptr<const VecType> monomerci) :
-    S_(S), ms_(ms), charge_(charge), monomerci_(monomerci) {}
+    SpaceKey(S, ms, charge), monomerci_(monomerci) {}
+
 };
 
 /// Contains all of the information for a product of two monomer spaces
@@ -65,25 +65,26 @@ class DimerSubspace_base {
   public:
     DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
       offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
-       ci_({MonomerSubspace_base<VecType>(Akey.S, Akey.m_s, Akey.q, _ci.first),
-            MonomerSubspace_base<VecType>(Bkey.S, Bkey.m_s, Bkey.q, _ci.second)})
+       ci_({MonomerSubspace_base<VecType>(Akey, _ci.first), MonomerSubspace_base<VecType>(Bkey, _ci.second)})
     { _offset += dimerstates(); }
 
-    const int offset() const { return offset_; }
-    const int dimerstates() const { return nstatesA_ * nstatesB_; }
-    const int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA_); }
-    const std::string string(const int i, const int j) const {
+    int offset() const { return offset_; }
+
+    int dimerstates() const { return nstatesA_ * nstatesB_; }
+    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA_); }
+    std::string string(const int i, const int j) const {
       std::string out = stringA_ + lexical_cast<std::string>(i) + std::string(" ") + stringB_ + lexical_cast<std::string>(j);
       return out;
     }
 
-    template <int unit> const int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
+    template <int unit> int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
     template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first.monomerci_ : ci_.second.monomerci_ ); }
     template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
+    template <int unit> int tag() const { return unit == 0 ? ci_.first.tag() : ci_.second.tag(); }
 
-    std::pair<int,int> S() const { return {ci_.first.S_, ci_.second.S_}; }
-    std::pair<int,int> ms() const { return {ci_.first.ms_, ci_.second.ms_}; }
-    std::pair<int,int> charge() const { return {ci_.first.charge_, ci_.second.charge_}; }
+    std::pair<int,int> S() const { return {ci_.first.S, ci_.second.S}; }
+    std::pair<int,int> ms() const { return {ci_.first.m_s, ci_.second.m_s}; }
+    std::pair<int,int> charge() const { return {ci_.first.q, ci_.second.q}; }
 
     template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 
