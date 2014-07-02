@@ -138,7 +138,7 @@ void Dirac_London::compute() {
     }
 
     if (iter >= diis_start_) {
-      distfock = diis.extrapolate(make_pair(distfock, error_vector));
+      distfock = diis.extrapolate({distfock, error_vector});
       ptime.tick_print("DIIS");
     }
 
