@@ -29,7 +29,7 @@
 #define BAGEL_MEH_GAMMA_COUPLING
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp) {
+void MultiExcitonHamiltonian<VecType>::gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest) {
   Coupling term_type = coupling_type(AB, ApBp);
 
   DSubSpace* space1 = &AB;
@@ -58,55 +58,55 @@ void MultiExcitonHamiltonian<VecType>::gamma_couple_blocks(DSubSpace& AB, DSubSp
         assert(false); // Control should never be able to reach here
         break;
       case Coupling::diagonal :
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
         break;
       case Coupling::aET : // Alpha ET
         // One-body aET
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha});
 
         //Two-body aET, type 1
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
 
         //Two-body aET, type 2
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha});
         break;
       case Coupling::bET : // Beta ET
         // One-body bET
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta});
         //Two-body bET, type 1
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
         //Two-body aET, type 2
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta);
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta});
         break;
       case Coupling::abFlip :
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
         break;
       case Coupling::abET :
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
         break;
       case Coupling::aaET :
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
         break;
       case Coupling::bbET :
-        gammaforest_->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-        gammaforest_->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
+        gammaforest->template insert<0>(ket_A, ioffset[0], bra_A, joffset[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+        gammaforest->template insert<1>(ket_B, ioffset[1], bra_B, joffset[1], {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
         break;
       default :
         assert(false); break; // Control should never reach here

@@ -55,19 +55,37 @@ class GammaBranch {
   public:
     GammaBranch() : active_(false) {}
 
-    template <class ...GSQs>
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const GammaSQ first, const GSQs... rest) {
-      std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
+    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& gsq) {
+      if (gsq.empty()) {
+        bras_.emplace(offset,bra);
+      } else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
 
-      target->activate();
-      target->insert(bra, offset, rest...);
+        target->activate();
+        target->insert(bra, offset, rest);
+      }
     }
-    void insert(std::shared_ptr<const VecType> bra, const int offset) { bras_.emplace(offset,bra); }
 
-    template <class ...GSQs>
-    std::shared_ptr<const Matrix> search(const int offset, GammaSQ first, GSQs... rest) const { return branch(first)->search(offset, rest...); }
-    std::shared_ptr<const Matrix> search(const int offset) const {
-      assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& gsq) const {
+      if (gsq.empty()) {
+        assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+      } else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        return branch(first)->search(offset, rest);
+      }
+    }
+
+    bool exist(const int offset, const std::list<GammaSQ>& gsq) const {
+      if (gsq.empty())
+        return gammas_.find(offset) != gammas_.end();
+      else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        return branch(first) ? branch(first)->exist(offset, rest) : false;
+      }
     }
 
     void activate() { active_ = true; }
@@ -141,11 +159,9 @@ class GammaTree {
 
     std::shared_ptr<GammaBranch<VecType>> base() { return base_; }
 
-    template <class ...GSQs>
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const GSQs... ops) { base_->insert(bra, offset, ops...); }
-
-    template <class ...GSQs>
-    std::shared_ptr<const Matrix> search(const int offset, GSQs... address) const { return base_->search(offset, address...); }
+    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& ops) { base_->insert(bra, offset, ops); }
+    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& address) const { return base_->search(offset, address); }
+    bool exist(const int offset, const std::list<GammaSQ>& address) const { return base_->exist(offset, address); }
 
     std::shared_ptr<const VecType> ket() const { return ket_; }
 };
@@ -221,16 +237,25 @@ class GammaForest {
   public:
     GammaForest() {}
 
-    template <int unit, class ...operations>
-    void insert(std::shared_ptr<const VecType> ket, const int ioffset, std::shared_ptr<const VecType> bra, const int joffset, const operations... ops) {
+    template <int unit>
+    void insert(std::shared_ptr<const VecType> ket, const int ioffset, std::shared_ptr<const VecType> bra, const int joffset, const std::list<GammaSQ>& ops) {
       std::shared_ptr<GammaTree<VecType>> gtree = tree<unit>(ket, ioffset);
-      gtree->insert(bra, joffset, ops...);
+      gtree->insert(bra, joffset, ops);
     }
 
-    template <int unit, class ...operations>
-    std::shared_ptr<const Matrix> get(const int ioffset, const int joffset, const operations... ops) const {
+    template <int unit>
+    std::shared_ptr<const Matrix> get(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
       auto itree = forests_[unit].find(ioffset); assert(itree!=forests_[unit].end());
-      return itree->second->search(joffset, ops...);
+      return itree->second->search(joffset, ops);
+    }
+
+    template <int unit>
+    bool exist(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
+      auto itree = forests_[unit].find(ioffset);
+      if (itree == forests_[unit].end())
+        return false;
+      else
+        return itree->second->exist(joffset, ops);
     }
 
     template<class Func>

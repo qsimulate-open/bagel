@@ -100,14 +100,15 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   std::cout << "     -  charge: " << charge_ << std::endl;
   std::cout << "     -  dimer states: " << dimerstates_ << std::endl << std::endl;
 
+  auto gammaforest = std::make_shared<GammaForest<VecType, 2>>();
   {
     std::map<std::pair<int,int>, double> spinmap;
     for (auto iAB = subspaces_.begin(); iAB != subspaces_.end(); ++iAB) {
       for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
-        gamma_couple_blocks(*iAB, *jAB);
+        gamma_couple_blocks(*iAB, *jAB, gammaforest);
         spin_couple_blocks(*iAB, *jAB, spinmap);
       }
-      gamma_couple_blocks(*iAB, *iAB);
+      gamma_couple_blocks(*iAB, *iAB, gammaforest);
       compute_diagonal_spin_block(*iAB, spinmap);
     }
     spin_ = std::make_shared<MEHSpin>(dimerstates_, spinmap, max_spin_);
@@ -116,7 +117,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   std::cout << "  o Preparing Gamma trees and building spin operator - " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;
   std::cout << "    - spin elements: " << spin_->size() << std::endl;
 
-  gammaforest_->compute();
+  gammaforest->compute();
+gammaforest_ = gammaforest;
+  gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest_), subspaces_),
+                   std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest_), subspaces_) };
 
   std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;
 

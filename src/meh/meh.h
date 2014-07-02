@@ -31,65 +31,10 @@
 #include <src/dimer/dimer_prop.h>
 #include <src/math/davidson.h>
 #include <src/meh/gamma_forest.h>
-#include <src/meh/gamma_tensor.h>
 #include <src/meh/meh_base.h>
 #include <src/smith/prim_op.h>
 
 namespace bagel {
-
-/// Wrapper for monomer CI wavefunctions that includes extra helpful information
-template <class VecType>
-struct MonomerSubspace_base : public SpaceKey {
-  std::shared_ptr<const VecType> monomerci_;
-
-  MonomerSubspace_base(const SpaceKey& s, std::shared_ptr<const VecType> monomerci) :
-    SpaceKey(s), monomerci_(monomerci) {}
-  MonomerSubspace_base(const int S, const int ms, const int charge, std::shared_ptr<const VecType> monomerci) :
-    SpaceKey(S, ms, charge), monomerci_(monomerci) {}
-
-};
-
-/// Contains all of the information for a product of two monomer spaces
-template <class VecType>
-class DimerSubspace_base {
-  protected:
-    const int offset_;
-    const int nstatesA_;
-    const int nstatesB_;
-    const std::string stringA_;
-    const std::string stringB_;
-
-    std::pair<MonomerSubspace_base<VecType>, MonomerSubspace_base<VecType>> ci_;
-    std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
-
-  public:
-    DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
-      offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
-       ci_({MonomerSubspace_base<VecType>(Akey, _ci.first), MonomerSubspace_base<VecType>(Bkey, _ci.second)})
-    { _offset += dimerstates(); }
-
-    int offset() const { return offset_; }
-
-    int dimerstates() const { return nstatesA_ * nstatesB_; }
-    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA_); }
-    std::string string(const int i, const int j) const {
-      std::string out = stringA_ + lexical_cast<std::string>(i) + std::string(" ") + stringB_ + lexical_cast<std::string>(j);
-      return out;
-    }
-
-    template <int unit> int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
-    template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first.monomerci_ : ci_.second.monomerci_ ); }
-    template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
-    template <int unit> int tag() const { return unit == 0 ? ci_.first.tag() : ci_.second.tag(); }
-
-    std::pair<int,int> S() const { return {ci_.first.S, ci_.second.S}; }
-    std::pair<int,int> ms() const { return {ci_.first.m_s, ci_.second.m_s}; }
-    std::pair<int,int> charge() const { return {ci_.first.q, ci_.second.q}; }
-
-    template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
-
-};
-
 
 // forward declaration
 template <class VecType>
@@ -160,7 +105,7 @@ class MultiExcitonHamiltonian : public MEH_base {
     virtual std::shared_ptr<VecType> form_sigma_1e(std::shared_ptr<const VecType> ccvec, const double* modata) const = 0;
 
     // Gamma Tree building
-    void gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp);
+    void gamma_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::shared_ptr<GammaForest<VecType,2>> gammaforest);
     void spin_couple_blocks(DSubSpace& AB, DSubSpace& ApBp, std::map<std::pair<int, int>, double>& spinmap); // Off-diagonal driver for S^2
     void compute_diagonal_spin_block(DSubSpace& subspace, std::map<std::pair<int, int>, double>& spinmap);
 

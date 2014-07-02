@@ -30,6 +30,7 @@
 #include <src/dimer/dimer_jop.h>
 #include <src/dimer/dimer_prop.h>
 #include <src/meh/meh_spin.h>
+#include <src/meh/gamma_tensor.h>
 
 namespace bagel {
 
@@ -96,6 +97,9 @@ class MEH_base {
 
     double thresh_;
     double print_thresh_;
+
+    // Gamma Tensor
+    std::array<std::shared_ptr<const GammaTensor>,2> gammatensor_;
 
     std::vector<std::vector<ModelBlock>> models_to_form_; ///< Contains specifications to construct model spaces
     std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_; ///< models that have been built

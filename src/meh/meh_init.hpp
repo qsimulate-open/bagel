@@ -56,7 +56,6 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
   }
   max_spin_ = maxspin + 1;
 
-  gammaforest_ = std::make_shared<GammaForest<VecType, 2>>();
 }
 
 template <class VecType>

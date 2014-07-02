@@ -102,6 +102,7 @@ class DimerCISpace_base {
     std::pair<int, int> nstates() const { return nstates_; }
 
     template<int unit> SpaceMap& cispace() { return (unit == 0 ? cispaceA_ : cispaceB_); }
+    template<int unit> const SpaceMap& cispace() const { return (unit == 0 ? cispaceA_ : cispaceB_); }
 
     template<int unit> std::shared_ptr<VecType> ccvec(const int S, const int m_s, const int q) { return ccvec<unit>(SpaceKey(S,m_s,q)); }
     template<int unit> std::shared_ptr<VecType> ccvec(SpaceKey key) {
