@@ -65,8 +65,8 @@ template <class VecType>
 class DimerCISpace_base {
   using DetType = typename VecType::DetType;
 
-  using SpaceMap = std::multimap<SpaceKey, std::shared_ptr<VecType>>;
-  using DMap = std::multimap<std::pair<int,int>, std::shared_ptr<DetType>>;
+  using SpaceMap = std::map<SpaceKey, std::shared_ptr<VecType>>;
+  using DMap = std::map<std::pair<int,int>, std::shared_ptr<DetType>>;
 
   protected:
     // These are stored values of the neutral species
