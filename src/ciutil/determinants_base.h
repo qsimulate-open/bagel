@@ -138,8 +138,8 @@ template<int spin, typename StringType, class DetClass> void link(std::shared_pt
   std::shared_ptr<DetClass> det;
 
   const int de = spin == 0 ? mdet->nelea() - odet->nelea() : mdet->neleb() - odet->neleb();
-  if      (de ==  1) std::tie(det, plusdet) = make_pair(odet, mdet);
-  else if (de == -1) std::tie(det, plusdet) = make_pair(mdet, odet);
+  if      (de ==  1) std::tie(det, plusdet) = std::make_pair(odet, mdet);
+  else if (de == -1) std::tie(det, plusdet) = std::make_pair(mdet, odet);
   else throw std::logic_error("Determinants::link failed");
 
   const int fac = (spin == 1 && (mdet->nelea() & 1)) ? -1 : 1;

@@ -123,7 +123,7 @@ class PTree {
       assert(typeid(T) != typeid(std::shared_ptr<PTree>)); // there is a specialization for shared_ptr<PTree>
       boost::property_tree::ptree ch;
       ch.put("", lexical_cast<std::string>(o));
-      data_.push_back(std::make_pair("", ch));
+      data_.push_back({"", ch});
     }
 
     template<typename T> std::vector<T> get_vector(const std::string s, const int nexpected = 0) const;

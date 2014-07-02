@@ -588,7 +588,7 @@ class RASCivector : public RASCivector_base<RASBlock<DataType>> {
         for (auto& ia : *iblock->stringsa()) {
           for (auto& ib : *iblock->stringsb()) {
             if (std::abs(*i) > thr)
-              tmp.insert({-std::abs(*i), std::make_tuple(*i, ia, ib)});
+              tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
             ++i;
           }
         }

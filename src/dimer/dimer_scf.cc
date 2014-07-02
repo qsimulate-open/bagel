@@ -60,7 +60,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
   vector<set<int>> subsets_B;
   vector<set<int>> ambiguous_subsets;
 
-  pair<int, int> nbasis = make_pair(geoms_.first->nbasis(), geoms_.second->nbasis());
+  pair<int, int> nbasis {geoms_.first->nbasis(), geoms_.second->nbasis()};
 
   if (localize_first)
     assert(sref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
@@ -169,7 +169,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
   if (!Bi.empty()) Blist = Bi;
 
   // Make new References
-  active_refs_ = make_pair(isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist));
+  active_refs_ = {isolated_refs_.first->set_active(Alist), isolated_refs_.second->set_active(Blist)};
 
   // Hold onto old occupation data
   const int noccA = isolated_refs_.first->nclosed();

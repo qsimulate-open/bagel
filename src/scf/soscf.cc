@@ -93,7 +93,7 @@ void SOSCF::compute() {
     }
 
     if (iter >= diis_start_) {
-      sofock = diis.extrapolate(make_pair(sofock, error_vector));
+      sofock = diis.extrapolate({sofock, error_vector});
     }
 
     shared_ptr<Matrix> intermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);

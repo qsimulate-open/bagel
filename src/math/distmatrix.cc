@@ -183,7 +183,7 @@ void DistMatrix::rotate(vector<tuple<int, int, double>> rotations) {
       const int recvtag = rotate_tag + ( iloc ? j + i*ndim() : i + j*ndim() );
       const int srq = mpi__->request_send(sbuf->element_ptr(0,(iloc?0:1)), localrow, remoterank, sendtag);
       const int rrq = mpi__->request_recv(sbuf->element_ptr(0,(iloc?1:0)), localrow, remoterank, recvtag);
-      pair<double, double> fac = iloc ? make_pair(cos(gamma), sin(gamma)) : make_pair(-sin(gamma), cos(gamma));
+      pair<double, double> fac = iloc ? {cos(gamma), sin(gamma)} : {-sin(gamma), cos(gamma)};
       rot_tasks.emplace_back(sbuf, srq, rrq, localdata, fac);
     }
     else if ( (ipcol == mypcol) && (jpcol == mypcol) ) {

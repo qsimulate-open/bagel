@@ -80,9 +80,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   // small NAI part..
   map<int, shared_ptr<Sigma>> sigma;
-  sigma.insert({Comp::X, make_shared<Sigma>(Comp::X)});
-  sigma.insert({Comp::Y, make_shared<Sigma>(Comp::Y)});
-  sigma.insert({Comp::Z, make_shared<Sigma>(Comp::Z)});
+  sigma.emplace(Comp::X, make_shared<Sigma>(Comp::X));
+  sigma.emplace(Comp::Y, make_shared<Sigma>(Comp::Y));
+  sigma.emplace(Comp::Z, make_shared<Sigma>(Comp::Z));
   auto sp = make_shared<ZMatrix>(4,1,true); sp->element(2,0) = 1;
   auto sm = make_shared<ZMatrix>(4,1,true); sm->element(3,0) = 1;
   map<int, shared_ptr<ZMatrix>> XY{ make_pair(2, sp), make_pair(3, sm) };
@@ -93,7 +93,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   for (auto& i : xyz)
     for (auto& j : xyz)
       if (i <= j)
-        mat.insert({make_pair(i,j), make_shared<ZMatrix>(nbasis, nbasis)});
+        mat.emplace(make_pair(i,j), make_shared<ZMatrix>(nbasis, nbasis));
 
   for (auto& s0 : XY) { // bra
     for (auto& s1 : XY) { // ket
@@ -234,7 +234,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
         pair<int,int> key {Comp::L, Comp::L};
         auto iter = gamma3.find(key);
         if (iter == gamma3.end()) {
-          gamma3.insert({key, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])});
+          gamma3.emplace(key, half->back_transform(rocoeff[cbasis], iocoeff[cbasis]));
         } else {
           iter->second->ax_plus_y(1.0, half->back_transform(rocoeff[cbasis], iocoeff[cbasis])); // TODO redundant copy, but probably fine
         }
@@ -262,7 +262,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
                 pair<int,int> key {small, large};
                 auto iter = gamma3.find(key);
                 if (iter == gamma3.end()) {
-                  gamma3.insert({key, imag ? idf->copy() : rdf->copy()});
+                  gamma3.emplace(key, imag ? idf->copy() : rdf->copy());
                   gamma3[key]->scale(fac);
                 } else {
                   iter->second->ax_plus_y(fac, imag ? idf : rdf);
@@ -277,8 +277,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     // (9) direct product contributions
     map<pair<int,int>,shared_ptr<const Matrix>> wden;
     for (auto& r : mat)
-      wden.insert({r.first, r.second->get_real_part()});
-    wden.insert({make_pair(Comp::L,Comp::L), nden->get_real_part()}); // large-large case
+      wden.emplace(r.first, r.second->get_real_part());
+    wden.emplace(make_pair(Comp::L,Comp::L), nden->get_real_part()); // large-large case
     for (auto& w : wden) {
       auto iter = gamma3.find(w.first);
       assert(iter != gamma3.end());

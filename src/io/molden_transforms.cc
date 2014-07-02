@@ -51,7 +51,7 @@ void MoldenIn::compute_transforms() {
         const int x = l - y - z;
         if (x < 0) continue;
         const int key = x + y * LARGE + z * LARGE * LARGE;
-        mapping.insert({key, cnt});
+        mapping.emplace(key, cnt);
         ++cnt;
       }
     }

@@ -68,7 +68,7 @@ class K2ext {
         // virtual loop
         for (auto& i1 : blocks_[1]) {
           std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-          dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
+          dflist.emplace(generate_hash_key(i0, i1), df_full);
         }
       }
       return dflist;

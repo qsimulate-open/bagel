@@ -62,7 +62,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert({make_pair(i->name(),i->basis()), compute_atomic(ga)});
+      atoms.emplace(make_pair(i->name(),i->basis()), compute_atomic(ga));
 
       // restore cout
       cout.rdbuf(cout_orig);
@@ -107,7 +107,7 @@ AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry_London> g) : Mat
       auto atom = make_shared<const Atom>(i->spherical(), i->name(), array<double,3>{{0.0,0.0,0.0}}, basis, make_pair(defbasis, bdata), nullptr);
       // TODO geometry makes aux atoms, which is ugly
       auto ga = make_shared<const Geometry>(vector<shared_ptr<const Atom>>{atom}, geomop);
-      atoms.insert({make_pair(i->name(),i->basis()), compute_atomic(ga)});
+      atoms.emplace(make_pair(i->name(),i->basis()), compute_atomic(ga));
 
       // restore cout
       cout.rdbuf(cout_orig);

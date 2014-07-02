@@ -171,7 +171,7 @@ class DavidsonDiag {
               n = j;
             }
           }
-          remove.insert(std::make_pair(n, soff+remove.size()));
+          remove.emplace(n, soff+remove.size());
         }
         assert(newbasis.size() == remove.size());
         std::cout << "    ** throwing out " << remove.size() << " trial vectors **" << std::endl;

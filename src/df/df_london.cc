@@ -143,7 +143,7 @@ shared_ptr<const StaticDist> DFDist_London::make_table(const size_t astart) {
 pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> DFDist_London::compute_batch(array<shared_ptr<const Shell>,4>& input) {
   shared_ptr<RysIntegral<double, Int_t::Standard>> londoneribatch = make_shared<ERIBatch>(input, 2.0);
   londoneribatch->compute();
-  return make_pair(londoneribatch->data(), londoneribatch);
+  return {londoneribatch->data(), londoneribatch};
 }
 
 

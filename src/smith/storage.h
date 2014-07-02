@@ -57,7 +57,7 @@ class Storage_base {
       length_ = 0lu;
       size_t cnt = 0;
       for (auto i = size.begin(); i != size.end(); ++i, ++cnt) {
-        auto j = hashtable_.insert(std::make_pair(i->first, std::make_pair(cnt, i->second)));
+        auto j = hashtable_.emplace(i->first, std::make_pair(cnt, i->second));
         if (!j.second) throw std::logic_error("duplicated hash keys in Storage::Storage");
         length_ += i->second;
       }

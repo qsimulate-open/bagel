@@ -94,7 +94,7 @@ class Tensor {
             size *= j.size();
             h.push_back(j.key());
           }
-          hashmap.insert(std::make_pair(generate_hash_key(h), size));
+          hashmap.emplace(generate_hash_key(h), size);
           off += size;
         }
 

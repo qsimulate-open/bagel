@@ -54,13 +54,13 @@ class GammaTensor {
     // constructor that takes sparsity information
     GammaTensor(const SparseMap& o, const OperatorSize& op, const BlockSize& b) : opsize_(op), blocksize_(b) {
       for (auto& i : o)
-        sparse_.insert({i.first, i.second->clone()});
+        sparse_.emplace(i.first, i.second->clone());
     }
 
     // copy constructor
     GammaTensor(const GammaTensor& o) : opsize_(o.opsize_), blocksize_(o.blocksize_) {
       for (auto& i : o.sparse_)
-        sparse_.insert({i.first, i.second->copy()});
+        sparse_.emplace(i.first, i.second->copy());
     }
 
     std::shared_ptr<GammaTensor> clone() const { return std::make_shared<GammaTensor>(sparse_, opsize_, blocksize_); }

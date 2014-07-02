@@ -204,14 +204,14 @@ void FCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dvec> out
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> FCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   double* diter = denom_->data();
   for (auto& aiter : det()->string_bits_a()) {
     for (auto& biter : det()->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(biter, aiter)));
+        tmp.emplace(din, make_pair(biter, aiter));
         tmp.erase(tmp.begin());
       }
       ++diter;

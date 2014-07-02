@@ -138,14 +138,14 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
 
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   double* diter = denom_->find(cdet->nelea(), cdet->neleb())->data();
   for (auto& aiter : cdet->string_bits_a()) {
     for (auto& biter : cdet->string_bits_b()) {
       const double din = -(*diter);
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(biter, aiter)));
+        tmp.emplace(din, make_pair(biter, aiter));
         tmp.erase(tmp.begin());
       }
       ++diter;

@@ -129,7 +129,7 @@ class DimerCISpace_base {
       new_civec->set_det(det);
 
       SpaceMap& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
-      cispace.insert({SpaceKey(S,m_s,Q), new_civec});
+      cispace.emplace(SpaceKey(S,m_s,Q), new_civec);
 
       const int ij = new_civec->ij();
       ((unit == 0) ? nstates_.first : nstates_.second) += ij;
@@ -147,7 +147,7 @@ class DimerCISpace_base {
         std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
         std::shared_ptr<DetType> det = bdet<unit>()->clone(nelea, neleb);
 
-        detspace.insert({std::make_pair(qa,qb), det});
+        detspace.emplace(std::make_pair(qa,qb), det);
 
         idet = detspace.find({qa+1,qb});
         if (idet != detspace.end()) det->template link<0>(idet->second);

@@ -66,7 +66,7 @@ HZSpace::HZSpace(const int norb, const int nelea, const int neleb, const bool co
   // build determinants
   for (auto& a : lista)
     for (auto& b : listb)
-      detmap_.insert({make_pair(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true)});
+      detmap_.emplace(make_pair(a->nele(), b->nele()), make_shared<Determinants>(a, b, compress, true));
 
   // link determinants
   link();

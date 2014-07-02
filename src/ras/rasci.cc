@@ -210,7 +210,7 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
 // returns seed determinants for initial guess
 vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
   multimap<double, pair<bitset<nbit__>,bitset<nbit__>>> tmp;
-  for (int i = 0; i != ndet; ++i) tmp.insert(make_pair(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0))));
+  for (int i = 0; i != ndet; ++i) tmp.emplace(-1.0e10*(1+i), make_pair(bitset<nbit__>(0),bitset<nbit__>(0)));
 
   for (auto& iblock : denom_->blocks()) {
     if (!iblock) continue;
@@ -219,7 +219,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> RASCI::detseeds(const int ndet) {
       for (auto& biter : *iblock->stringsb()) {
         const double din = -(*diter);
         if (tmp.begin()->first < din) {
-          tmp.insert(make_pair(din, make_pair(biter, aiter)));
+          tmp.emplace(din, make_pair(biter, aiter));
           tmp.erase(tmp.begin());
         }
         ++diter;

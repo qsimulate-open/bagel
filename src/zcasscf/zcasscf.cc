@@ -267,7 +267,7 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
       // register to emap
       if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. make_natural_orbitals()");
-      emap.insert(make_pair(get<0>(max), i));
+      emap.emplace(get<0>(max), i);
 
       // copy to the target
       copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));

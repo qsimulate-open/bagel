@@ -53,28 +53,28 @@ class RelDvector {
     // make an empty Dvec
     RelDvector(std::shared_ptr<const Space_base> space, const size_t ij) : space_(space) {
       for (auto& isp : space->detmap())
-        dvecs_.insert({std::make_pair(isp.second->nelea(), isp.second->neleb()),
-                       std::make_shared<Dvector<DataType>>(isp.second, ij)});
+        dvecs_.emplace(std::make_pair(isp.second->nelea(), isp.second->neleb()),
+                       std::make_shared<Dvector<DataType>>(isp.second, ij));
     }
 
     RelDvector(const std::map<std::pair<int,int>, std::shared_ptr<Dvector<DataType>>>& o, std::shared_ptr<const Space_base> space) : dvecs_(o), space_(space) { }
 
     RelDvector(const RelDvector<DataType>& o) : space_(o.space_) {
       for (auto& i : o.dvecs_)
-        dvecs_.insert({i.first, i.second->copy()});
+        dvecs_.emplace(i.first, i.second->copy());
     }
 
     RelDvector(RelDvector<DataType>&& o) : dvecs_(o.dvecs_), space_(o.space_) { }
 
     RelDvector(std::shared_ptr<const RelDvector<DataType>> o) : space_(o->space_) {
       for (auto& i : o->dvecs_)
-        dvecs_.insert({i.first, std::make_shared<Dvector<DataType>>(i.second)});
+        dvecs_.emplace(i.first, std::make_shared<Dvector<DataType>>(i.second));
     }
 
     // combines (opposite of split())
     RelDvector(const std::vector<std::shared_ptr<RelDvector<DataType>>>& o) : space_(o.front()->space_) {
       for (auto& isp : space_->detmap())
-        dvecs_.insert({std::make_pair(isp.second->nelea(), isp.second->neleb()), std::make_shared<Dvector<DataType>>(isp.second, o.size())});
+        dvecs_.emplace(std::make_pair(isp.second->nelea(), isp.second->neleb()), std::make_shared<Dvector<DataType>>(isp.second, o.size()));
       int j = 0;
       for (auto& i : o)
         set_data(j++, i);
@@ -130,7 +130,7 @@ class RelDvector {
         // copy construct each of them
         for (auto& j : dvecs_) {
           std::vector<std::shared_ptr<Civector<DataType>>> tmp1 { std::make_shared<Civector<DataType>>(*j.second->data(i)) };
-          tmp.insert({j.first, std::make_shared<Dvector<DataType>>(tmp1)});
+          tmp.emplace(j.first, std::make_shared<Dvector<DataType>>(tmp1));
         }
         out.push_back(std::make_shared<RelDvector<DataType>>(tmp, space_));
       }

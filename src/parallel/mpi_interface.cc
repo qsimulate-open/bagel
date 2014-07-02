@@ -465,10 +465,9 @@ bool MPI_Interface::test(const int rq) {
 
 pair<int,int> MPI_Interface::numroc(const int ndim, const int ncol) const {
 #ifdef HAVE_SCALAPACK
-  return make_pair(numroc_(ndim, blocksize__, myprow_, 0, nprow_),
-                   numroc_(ncol, blocksize__, mypcol_, 0, npcol_));
+  return {numroc_(ndim, blocksize__, myprow_, 0, nprow_), numroc_(ncol, blocksize__, mypcol_, 0, npcol_)};
 #else
-  return make_pair(0,0);
+  return {0,0};
 #endif
 }
 

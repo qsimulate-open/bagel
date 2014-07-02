@@ -100,5 +100,5 @@ pair<shared_ptr<ZMatrix>, shared_ptr<ZMatrix>> ZCoeff::split(const int nrow1, co
     copy_n(source+nrow1, nrow2, data2);
   }
 
-  return make_pair(out1, out2);
+  return {out1, out2};
 }

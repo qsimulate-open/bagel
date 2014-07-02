@@ -147,7 +147,7 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
   shared_ptr<RysInt> eribatch = make_shared<ERIBatch>(input, 2.0);
 #endif
   eribatch->compute();
-  return make_pair(eribatch->data(), eribatch);
+  return {eribatch->data(), eribatch};
 }
 
 

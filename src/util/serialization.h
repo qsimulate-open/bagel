@@ -224,7 +224,7 @@ namespace boost {
         typename std::remove_cv<T>::type a;
         typename std::remove_cv<U>::type b;
         ar >> a >> b;
-        t.insert(std::make_pair(a, b));
+        t.emplace(a, b);
       }
     }
 

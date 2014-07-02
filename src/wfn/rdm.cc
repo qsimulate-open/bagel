@@ -72,7 +72,7 @@ pair<shared_ptr<Matrix>, vector<double>> RDM<1>::generate_natural_orbitals() con
 
     // register to emap
     if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
-    emap.insert({get<0>(max), i});
+    emap.emplace(get<0>(max), i);
 
     // copy to the target
     copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));

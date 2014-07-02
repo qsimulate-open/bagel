@@ -256,14 +256,14 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
 vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) {
   multimap<double, pair<size_t, size_t>> tmp;
   for (int i = 0; i != ndet; ++i)
-    tmp.insert(make_pair(-1.0e10*(1+i), make_pair(0,0)));
+    tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
   double* diter = denom_->local();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
       if (tmp.begin()->first < din) {
-        tmp.insert(make_pair(din, make_pair(ib, ia)));
+        tmp.emplace(din, make_pair(ib, ia));
         tmp.erase(tmp.begin());
       }
     }
@@ -289,7 +289,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   tmp.clear();
   for (int i = 0; i != aall.size(); ++i) {
-    tmp.insert(make_pair(eall[i], make_pair(ball[i], aall[i])));
+    tmp.emplace(eall[i], make_pair(ball[i], aall[i]));
   }
 
   // sync'ing to make sure the consistency
@@ -303,7 +303,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
 
   vector<pair<bitset<nbit__> , bitset<nbit__>>> out;
   for (int i = 0; i != ndet; ++i)
-    out.push_back(make_pair(det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])));
+    out.push_back({det_->string_bits_b(ball[i]), det_->string_bits_a(aall[i])});
 
   return out;
 }

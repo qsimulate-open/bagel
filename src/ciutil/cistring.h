@@ -130,7 +130,7 @@ class CIString_base_impl : public CIString_base {
       for (int i = 0; i != N; ++i) {
         const int a = *iter++;
         const int b = *iter++;
-        subspace_[i] = std::make_pair(a, b);
+        subspace_[i] = {a, b};
         graphs_[i] = std::make_shared<CIGraph>(a, b);
       }
       // setting to CIString_base

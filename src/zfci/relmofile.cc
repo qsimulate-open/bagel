@@ -183,7 +183,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
     bitset<4> s = mat.first;
     s[2] = mat.first[1];
     s[1] = mat.first[2];
-    mo2e_.insert(make_pair(s, tmp));
+    mo2e_.emplace(s, tmp);
   }
 }
 

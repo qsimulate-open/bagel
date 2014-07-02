@@ -750,7 +750,7 @@ class Civector {
       for (auto& ia : det_->string_bits_a()) {
         for (auto& ib : det_->string_bits_b()) {
           if (std::abs(*i) > thr)
-            tmp.insert(std::make_pair(-std::abs(*i), std::make_tuple(*i, ia, ib)));
+            tmp.emplace(-std::abs(*i), std::make_tuple(*i, ia, ib));
           ++i;
         }
       }

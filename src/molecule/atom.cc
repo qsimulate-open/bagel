@@ -327,7 +327,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         // and add the coefficients
         cont2.insert(cont2.end(), current.begin(), current.end());
         contractions.push_back(cont2);
-        contranges.push_back(make_pair(offset + zerostart, offset + current.size() - zeroend));
+        contranges.push_back({offset + zerostart, offset + current.size() - zeroend});
         assert(offset + zerostart <= offset + current.size() - zeroend);
       }
       const vector<double> exp = get<1>(*biter);

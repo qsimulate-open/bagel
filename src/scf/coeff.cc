@@ -104,5 +104,5 @@ pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const
     copy_n(source+nrow1, nrow2, data2);
   }
 
-  return make_pair(out1, out2);
+  return {out1, out2};
 }

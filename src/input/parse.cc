@@ -106,7 +106,7 @@ ptree BagelParser::parse() {
   ptree bageltree;
   for (auto& ibase : base_) {
     ibase.second.put("title", ibase.first);
-    bageltree.push_back(make_pair("",ibase.second));
+    bageltree.push_back({"",ibase.second});
   }
 
   ptree out;
@@ -126,14 +126,14 @@ void BagelParser::close_compound() {
   auto current = node_stack_.top();
 
   if (current.type() == NodeType::vector) {
-    current.data()->push_back(make_pair("", *finished.data()));
+    current.data()->push_back({"", *finished.data()});
   }
   else if (current.type() == NodeType::object) {
     current.data()->add_child(key_stack_.top(), *finished.data());
     key_stack_.pop();
   }
   else /* type() == NodeType::base */ {
-    base_.push_back(make_pair(key_stack_.top(), *finished.data()));
+    base_.push_back({key_stack_.top(), *finished.data()});
     key_stack_.pop();
   }
 }
@@ -147,12 +147,12 @@ void BagelParser::insert_value(string value) {
   else if (current.type() == NodeType::vector) {
     ptree child;
     child.put("", value);
-    current.data()->push_back(make_pair("", child));
+    current.data()->push_back({"", child});
   }
   else /* type() == NodeType::base */ {
     ptree child;
     child.put_value(value);
-    base_.push_back(make_pair(key_stack_.top(), child));
+    base_.push_back({key_stack_.top(), child});
     key_stack_.pop();
   }
 }

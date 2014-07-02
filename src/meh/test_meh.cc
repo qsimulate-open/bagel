@@ -84,7 +84,7 @@ double meh_energy(std::string inp) {
     }
 
     std::string saveref = itree->get<std::string>("saveref", "");
-    if (saveref != "") { saved.insert(std::make_pair(saveref, std::static_pointer_cast<const void>(ref))); }
+    if (saveref != "") { saved.emplace(saveref, std::static_pointer_cast<const void>(ref)); }
   }
   assert(false);
   return 0.0;
@@ -154,7 +154,7 @@ std::vector<double> meh_models(std::string inp) {
     }
 
     std::string saveref = itree->get<std::string>("saveref", "");
-    if (saveref != "") { saved.insert(std::make_pair(saveref, std::static_pointer_cast<const void>(ref))); }
+    if (saveref != "") { saved.emplace(saveref, std::static_pointer_cast<const void>(ref)); }
   }
 
   std::cout.rdbuf(backup_stream);
