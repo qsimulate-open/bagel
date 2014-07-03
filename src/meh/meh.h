@@ -63,7 +63,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 
   protected:
     std::shared_ptr<DCISpace> cispace_;
-    std::shared_ptr<GammaForest<VecType, 2>> gammaforest_;
     std::vector<DSubSpace> subspaces_;
 
     void modelize();

@@ -30,11 +30,16 @@
 
 template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const {
+  auto A = AB.template monomerkey<0>();
+  auto B = AB.template monomerkey<1>();
+  auto Ap = ApBp.template monomerkey<0>();
+  auto Bp = ApBp.template monomerkey<1>();
+
   Coupling term_type = coupling_type(AB,ApBp);
 
   GammaSQ operatorA;
   GammaSQ operatorB;
-  int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
+  int neleA = A.nelea() + A.neleb();
 
   switch(term_type) {
     case Coupling::aET :
@@ -59,11 +64,11 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e
       return std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
   }
 
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.template tag<0>(), ApBp.template tag<0>(), {operatorA});
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.template tag<1>(), ApBp.template tag<1>(), {operatorB});
-  Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
+  auto gamma_A = gammatensor_[0]->get_block(A, Ap, {operatorA});
+  auto gamma_B = gammatensor_[1]->get_block(B, Bp, {operatorB});
+  Matrix tmp = *gamma_A * (*hAB) ^ *gamma_B;
 
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
+  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
 
   if ((neleA % 2) == 1) {
     // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')

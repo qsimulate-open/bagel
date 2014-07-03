@@ -118,9 +118,8 @@ void MultiExcitonHamiltonian<VecType>::compute() {
   std::cout << "    - spin elements: " << spin_->size() << std::endl;
 
   gammaforest->compute();
-gammaforest_ = gammaforest;
-  gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest_), subspaces_),
-                   std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest_), subspaces_) };
+  gammatensor_ = { std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,0>(gammaforest), subspaces_),
+                   std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
 
   std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl;
 
