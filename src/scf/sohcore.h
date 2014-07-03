@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sohcore.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -27,13 +27,13 @@
 #ifndef __SRC_SCF_SOHCORE_H
 #define __SRC_SCF_SOHCORE_H
 
-#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 #include <src/wfn/geometry.h>
 #include <src/scf/sohcore_base.h>
 
 namespace bagel {
 
-class SOHcore : public Matrix {
+class SOHcore : public ZMatrix {
   protected:
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const SOHcore_base> hcore_;
@@ -45,7 +45,7 @@ class SOHcore : public Matrix {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix>(*this) & geom_ & hcore_;
+      ar & boost::serialization::base_object<ZMatrix>(*this) & geom_ & hcore_;
     }
 
   public:

@@ -43,9 +43,9 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)
 Matrix1e::Matrix1e(const shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
   zero();
 
-  soab_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soab_->zero();
-  soba_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soba_->zero();
-  soaa_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soaa_->zero();
+  soz_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soz_->zero();
+  sox_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    sox_->zero();
+  soy_ = make_shared<Matrix>(mol->nbasis(), mol->nbasis());    soy_->zero();
 }
 
 

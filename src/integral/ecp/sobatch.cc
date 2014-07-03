@@ -67,14 +67,25 @@ void SOBatch::map_angular_number() {
 
 bool SOBatch::delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
 
-array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* <lm0 | lz, l-, l+ | lm1> */
+array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* Im <lm0 | lz, lx, ly | lm1> */
 
   assert(l > 0);
   assert(abs(m0) <= l && abs(m1) <=l);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
-  out[0] = (delta(m0, m1)) ?  m0 : 0.0;
-  out[1] = (delta(m0-1, m1)) ? pow(-1, m0) * sqrt((l+m0)*(l-m0+1)*0.5) : 0.0;
-  out[2] = (delta(m0+1, m1)) ? pow(-1, m0) * sqrt((l-m0)*(l+m0+1)*0.5) : 0.0;
+
+  out[0] = delta(m0, m1) ? -m0 : 0.0;
+
+  if (m0 == 0 && m1 == -1) {
+    out[1] = - sqrt(0.5*l*(l+1));
+  } else if (m0 == 1 && m1 == 0) {
+    out[2] = - sqrt(0.5*l*(l+1));
+  } else if (m1 > 0 && m0==m1+1) {
+    out[2] = -0.5 * sqrt((l+m0)*(l-m0+1));
+  } else if (m1 < -1 && m0==m1+1) {
+    out[2] = 0.5 * sqrt((l+m0)*(l-m0+1));
+  } else if (m1 < -1 && m0==-(m1+1)) {
+    out[1] = 0.5 * sqrt((l-m0)*(l+m0+1));
+  }
 
   return out;
 }
@@ -253,7 +264,7 @@ vector<double> SOBatch::compute(const vector<double> r) {
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
       if (ishso->ecp_coefficients(i) != 0) {
-        const double coeff = ishso->ecp_coefficients(i)*2/(2*l+1); /* 2/(2l+1) may or may not be necessary */
+        const double coeff = ishso->ecp_coefficients(i); /* 2/(2l+1) may or may not be necessary */
         for (int ir = 0; ir != r.size(); ++ir)
           for (int id = 0; id != 3; ++id) {
             const int index = id*r.size() + ir;

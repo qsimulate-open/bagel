@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sohcore_base.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -92,9 +92,9 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
         SOECPBatch soecp(input, mol);
         soecp.compute();
 
-        soaa_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
-        soab_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
-        soba_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
+        soz_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+        sox_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
+        soy_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
       }
     }
   }

@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sohcore_base.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -39,9 +39,9 @@ class SOHcore_base : public Matrix1e {
     SOHcore_base() { }
     SOHcore_base(const std::shared_ptr<const Molecule>);
 
-    std::shared_ptr<const Matrix> soab() const { return soab_;}
-    std::shared_ptr<const Matrix> soba() const { return soba_;}
-    std::shared_ptr<const Matrix> soaa() const { return soaa_;}
+    std::shared_ptr<const Matrix> soz() const { return soz_;}
+    std::shared_ptr<const Matrix> sox() const { return sox_;}
+    std::shared_ptr<const Matrix> soy() const { return soy_;}
 };
 
 }

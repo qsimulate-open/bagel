@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sofock.h
-// Copyright (C) 2012 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -29,21 +29,22 @@
 
 #include <src/df/df.h>
 #include <src/integral/libint/libint.h>
-//#include <src/integral/rys/eribatch.h>
+#include <src/math/zmatrix.h>
 
 namespace bagel {
 
-class SOFock : public Matrix {
+class SOFock : public ZMatrix {
   protected:
     const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Matrix> previous_;
-    const std::shared_ptr<const Matrix> socoeff_;
+    const std::shared_ptr<const ZMatrix> previous_;
+    const std::shared_ptr<const ZMatrix> socoeff_;
     void form_sofock();
 
   public:
-    SOFock(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Matrix> previous,
-           const std::shared_ptr<const Matrix> socoeff) : Matrix(geom->nbasis() * 2, geom->nbasis() * 2), geom_(geom), previous_(previous),
-           socoeff_(socoeff) {
+    SOFock(const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const ZMatrix> previous,
+           const std::shared_ptr<const ZMatrix> socoeff) :
+      ZMatrix(geom->nbasis() * 2, geom->nbasis() * 2), geom_(geom), previous_(previous), socoeff_(socoeff)
+    {
       form_sofock();
     }
 
@@ -55,8 +56,9 @@ void SOFock::form_sofock() {
   int const nocc = socoeff_->mdim();
   int const nbasis = socoeff_->ndim() / 2;
 
-  std::shared_ptr<const Matrix> coeffa = socoeff_->get_submatrix(0, 0, nbasis, nocc);
-  std::shared_ptr<const Matrix> coeffb = socoeff_->get_submatrix(nbasis, 0, nbasis, nocc);
+  std::shared_ptr<const Matrix> rsocoeff = socoeff_->get_real_part();
+  std::shared_ptr<const Matrix> coeffa = rsocoeff->get_submatrix(0, 0, nbasis, nocc);
+  std::shared_ptr<const Matrix> coeffb = rsocoeff->get_submatrix(nbasis, 0, nbasis, nocc);
 
   auto coeffta = std::make_shared<const Matrix>(*coeffa->transpose());
   auto coefftb = std::make_shared<const Matrix>(*coeffb->transpose());
@@ -82,10 +84,11 @@ void SOFock::form_sofock() {
   *fockab += *half_a->form_2index(half_b, -1.0);
   *fockba += *fockab->transpose();
    
-  add_block(1.0, 0, 0, nbasis, nbasis, fockaa);
-  add_block(1.0, nbasis, nbasis, nbasis, nbasis, fockbb);
-  add_block(1.0, 0, nbasis, nbasis, nbasis, fockab);
-  add_block(1.0, nbasis, 0, nbasis, nbasis, fockba);
+  const std::complex<double> coeff(1.0, 0.0);
+  add_real_block(coeff, 0, 0, nbasis, nbasis, fockaa);
+  add_real_block(coeff, nbasis, nbasis, nbasis, nbasis, fockbb);
+  add_real_block(coeff, 0, nbasis, nbasis, nbasis, fockab);
+  add_real_block(coeff, nbasis, 0, nbasis, nbasis, fockba);
 }
 
 }

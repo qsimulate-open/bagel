@@ -94,9 +94,9 @@ void SOECPBatch::compute() {
           tmp = radint.integral();
         }
         const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
-        current_data[index] = tmp[0];
-        current_data1[index] = tmp[1];
-        current_data2[index] = tmp[2];
+        current_data[index]  = tmp[0];  // Im{lz}
+        current_data1[index] = tmp[1];  // Im{lx}
+        current_data2[index] = tmp[2];  // Im{ly}
       }
       ++i;
     }

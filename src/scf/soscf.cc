@@ -28,15 +28,6 @@
 #include <src/math/diis.h>
 #include <src/scf/atomicdensities.h>
 
-#include <iostream>
-#include <src/integral/rys/r0batch.h>
-#include <src/integral/rys/r1batch.h>
-#include <src/integral/rys/r2batch.h>
-#include <src/integral/rys/naibatch.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/molecule/mixedbasis.h>
-
-
 using namespace std;
 using namespace bagel;
 
@@ -53,13 +44,13 @@ SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
 }
 
 void SOSCF::initial_guess() {
-  sooverlap_ = SOSCF::sooverlap();
-  sotildex_ = SOSCF::sotildex();
+  sooverlap_ = sooverlap();
+  sotildex_ = sotildex();
 
-  shared_ptr<const Matrix> sofock = sohcore_;
-  shared_ptr<Matrix> intermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
+  shared_ptr<const ZMatrix> sofock = sohcore_;
+  shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
   intermediate->diagonalize(soeig_.get());
-  socoeff_ = make_shared<Coeff>(*sotildex_ * *intermediate);
+  socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
   aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
 }
 
@@ -73,14 +64,16 @@ void SOSCF::compute() {
   cout << endl;
   cout << indent << "=== SOSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
-  DIIS<Matrix> diis(diis_size_);
+  DIIS<DistZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    shared_ptr<const Matrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
-    energy_ = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
-    auto error_vector = make_shared<const Matrix>(*sofock * *aodensity_ * *sooverlap_ -
-                                                  *sooverlap_ * *aodensity_ * *sofock);
-    const double error = error_vector->rms();
+    shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
+    const complex<double> energy = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
+    assert(energy.imag() < 1e-12);
+    energy_ = energy.real();
+    auto error_vector = make_shared<const ZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);
+    auto real_error_vector = error_vector->get_real_part();
+    const double error = real_error_vector->rms();
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
@@ -92,30 +85,28 @@ void SOSCF::compute() {
       break;
     }
 
-    if (iter >= diis_start_) {
-      sofock = diis.extrapolate(make_pair(sofock, error_vector));
-    }
+    if (iter >= diis_start_) sofock = diis.extrapolate(make_pair(sofock, error_vector));
 
-    shared_ptr<Matrix> intermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
+    shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
     intermediate->diagonalize(soeig_.get());
-    socoeff_ = make_shared<Coeff>(*sotildex_ * *intermediate);
+    socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
     aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
   }
 }
 
-shared_ptr<const Matrix> SOSCF::sotildex() {
-  shared_ptr<Matrix> out = make_shared<Matrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
+shared_ptr<const ZMatrix> SOSCF::sotildex() {
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * tildex_->ndim(), 2 * tildex_->mdim());
   out->zero();
-  out->add_block(1.0, 0, 0, tildex_->ndim(), tildex_->mdim(), tildex_);
-  out->add_block(1.0, tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), tildex_);
+  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, tildex_->ndim(), tildex_->mdim(), tildex_);
+  out->add_real_block(complex<double>(1.0, 0.0), tildex_->ndim(), tildex_->mdim(), tildex_->ndim(), tildex_->mdim(), tildex_);
   return out;
 }
 
-shared_ptr<const Matrix> SOSCF::sooverlap() {
-  shared_ptr<Matrix> out = make_shared<Matrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
+shared_ptr<const ZMatrix> SOSCF::sooverlap() {
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2 * overlap_->ndim(), 2 * overlap_->mdim());
   out->zero();
-  out->add_block(1.0, 0, 0, overlap_->ndim(), overlap_->mdim(), overlap_);
-  out->add_block(1.0, overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), overlap_);
+  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap_->ndim(), overlap_->mdim(), overlap_);
+  out->add_real_block(complex<double>(1.0, 0.0), overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), overlap_);
   return out;
 }
 

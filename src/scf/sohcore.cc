@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: sohcore.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -32,18 +32,24 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore)
 
 SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const SOHcore_base> h)
-            : Matrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
+            : ZMatrix(2 * geom->nbasis(), 2 * geom->nbasis()), geom_(geom), hcore_(h) {
   form_sohcore();
 }
 
 void SOHcore::form_sohcore() {
 
-  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_);
-  add_block(1.0, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_->soaa());
+  const complex<double> real(1.0, 0.0);
+  const complex<double> imag(0.0, 1.0);
 
-  add_block(1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_);
-  add_block(-1.0, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soaa());
+  add_real_block(real, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_);
+  add_real_block(imag, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_->soz());
 
-  add_block(1.0, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soab());
-  add_block(1.0, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->soba());
+  add_real_block(real, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_);
+  add_real_block(-imag, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soz());
+
+  add_real_block( imag, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->sox());
+  add_real_block( real, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soy());
+
+  add_real_block( imag, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->sox());
+  add_real_block(-real, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->soy());
 }
