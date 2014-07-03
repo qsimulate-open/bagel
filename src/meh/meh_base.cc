@@ -442,3 +442,57 @@ shared_ptr<Matrix> MEH_base::compute_bbET<true>(const array<MonomerKey,4>& keys)
 }
 
 
+void MEH_base::print_hamiltonian(const string title, const int nstates) const {
+  hamiltonian_->print(title, nstates);
+}
+
+
+void MEH_base::print_states(const Matrix& cc, const vector<double>& energies, const double thresh, const string title) const {
+  const int nstates = cc.mdim();
+  shared_ptr<Matrix> spn = spin_->apply(cc);
+  cout << endl << " ===== " << title << " =====" << endl;
+  for (int istate = 0; istate < nstates; ++istate) {
+    cout << "   state  " << setw(3) << istate << ": "
+         << setprecision(8) << setw(17) << fixed << energies.at(istate)
+         << "   <S^2> = " << setw(4) << setprecision(4) << fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, cc.element_ptr(0,istate), 1) << endl;
+    const double *eigendata = cc.element_ptr(0,istate);
+    double printed = 0.0;
+    for (auto& subspace : subspaces_base()) {
+      const int nA = subspace.nstates<0>();
+      const int nB = subspace.nstates<1>();
+      for (int i = 0; i < nA; ++i) {
+        for (int j = 0; j < nB; ++j, ++eigendata) {
+          if ( (*eigendata)*(*eigendata) > thresh ) {
+            cout << "      " << subspace.string(i,j) << setprecision(12) << setw(20) << *eigendata << endl;
+            printed += (*eigendata)*(*eigendata);
+          }
+        }
+      }
+    }
+    cout << "    total weight of printed elements: " << setprecision(12) << setw(20) << printed << endl << endl;
+  }
+}
+
+
+void MEH_base::print_property(const string label, shared_ptr<const Matrix> property , const int nstates) const {
+  const string indent("   ");
+  const int nprint = min(nstates, property->ndim());
+
+  cout << indent << " " << label << "    |0>";
+  for (int istate = 1; istate < nprint; ++istate) cout << "         |" << istate << ">";
+  cout << endl;
+  for (int istate = 0; istate < nprint; ++istate) {
+    cout << indent << "<" << istate << "|";
+    for (int jstate = 0; jstate < nprint; ++jstate) {
+      cout << setw(12) << setprecision(6) << property->element(jstate, istate);
+    }
+    cout << endl;
+  }
+  cout << endl;
+}
+
+
+void MEH_base::print(const double thresh) const {
+  print_states(*adiabats_, energies_, thresh, "Adiabatic States");
+  if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
+}

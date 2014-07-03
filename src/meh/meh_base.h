@@ -129,6 +129,13 @@ class MEH_base {
     void generate_initial_guess(std::shared_ptr<Matrix> cc, const std::vector<DimerSubspace_base>& subspace, const int nstates);
     std::shared_ptr<Matrix> compute_intra(const DimerSubspace_base& subspace, std::shared_ptr<const DimerJop> jop, const double diag) const;
 
+    void modelize();
+
+    void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
+    void print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh = 0.01, const std::string title = "Adiabats") const;
+    void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
+    void print(const double thresh = 0.01) const;
+
   public:
     MEH_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 

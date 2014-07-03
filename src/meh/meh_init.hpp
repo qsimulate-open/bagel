@@ -83,62 +83,6 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::s
 }
 
 
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print_hamiltonian(const std::string title, const int nstates) const {
-  hamiltonian_->print(title, nstates);
-}
-
-
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh, const std::string title) const {
-  const int nstates = cc.mdim();
-  std::shared_ptr<Matrix> spn = spin_->apply(cc);
-  std::cout << std::endl << " ===== " << title << " =====" << std::endl;
-  for (int istate = 0; istate < nstates; ++istate) {
-    std::cout << "   state  " << std::setw(3) << istate << ": "
-         << std::setprecision(8) << std::setw(17) << std::fixed << energies.at(istate)
-         << "   <S^2> = " << std::setw(4) << std::setprecision(4) << std::fixed << ddot_(dimerstates_, spn->element_ptr(0,istate), 1, cc.element_ptr(0,istate), 1) << std::endl;
-    const double *eigendata = cc.element_ptr(0,istate);
-    double printed = 0.0;
-    for (auto& subspace : subspaces_) {
-      const int nA = subspace.template nstates<0>();
-      const int nB = subspace.template nstates<1>();
-      for (int i = 0; i < nA; ++i) {
-        for (int j = 0; j < nB; ++j, ++eigendata) {
-          if ( (*eigendata)*(*eigendata) > thresh ) {
-            std::cout << "      " << subspace.string(i,j) << std::setprecision(12) << std::setw(20) << *eigendata << std::endl;
-            printed += (*eigendata)*(*eigendata);
-          }
-        }
-      }
-    }
-    std::cout << "    total weight of printed elements: " << std::setprecision(12) << std::setw(20) << printed << std::endl << std::endl;
-  }
-}
-
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print_property(const std::string label, std::shared_ptr<const Matrix> property , const int nstates) const {
-  const std::string indent("   ");
-  const int nprint = std::min(nstates, property->ndim());
-
-  std::cout << indent << " " << label << "    |0>";
-  for (int istate = 1; istate < nprint; ++istate) std::cout << "         |" << istate << ">";
-  std::cout << std::endl;
-  for (int istate = 0; istate < nprint; ++istate) {
-    std::cout << indent << "<" << istate << "|";
-    for (int jstate = 0; jstate < nprint; ++jstate) {
-      std::cout << std::setw(12) << std::setprecision(6) << property->element(jstate, istate);
-    }
-    std::cout << std::endl;
-  }
-  std::cout << std::endl;
-}
-
-template <class VecType>
-void MultiExcitonHamiltonian<VecType>::print(const double thresh) const {
-  print_states(*adiabats_, energies_, thresh, "Adiabatic States");
-  if (dipoles_) {for (auto& prop : properties_) print_property(prop.first, prop.second, nstates_); }
-}
 
 #endif
 

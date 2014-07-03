@@ -36,21 +36,6 @@
 
 namespace bagel {
 
-// forward declaration
-template <class VecType>
-class MultiExcitonHamiltonian;
-
-namespace asd {
-// implementation class. true = Hamiltonian, false = RDM.
-template <bool _N>
-struct ASD_impl {
-  template<typename T>
-  using DSb = DimerSubspace<T>;
-  using return_type = std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type>;
-  template <class VecType> static return_type compute_diagonal_block(MultiExcitonHamiltonian<VecType>*, DimerSubspace_base& subspace)         { assert(false); return nullptr; }
-};
-}
-
 /// Template for MEH (to be renamed ASD)
 template <class VecType>
 class MultiExcitonHamiltonian : public MEH_base {
@@ -58,14 +43,9 @@ class MultiExcitonHamiltonian : public MEH_base {
   protected: using DCISpace = DimerCISpace_base<VecType>;
   protected: using CiType = typename VecType::Ci;
 
-  template <bool>
-  friend class asd::ASD_impl;
-
   protected:
     std::shared_ptr<DCISpace> cispace_;
     std::vector<DSubSpace> subspaces_;
-
-    void modelize();
 
     std::vector<DimerSubspace_base> subspaces_base() const override {
       std::vector<DimerSubspace_base> out; out.reserve(subspaces_.size());
@@ -78,11 +58,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 
     void compute() override;
     void compute_rdm() const override;
-
-    void print_hamiltonian(const std::string title = "MultiExciton Hamiltonian", const int nstates = 10) const;
-    void print_states(const Matrix& cc, const std::vector<double>& energies, const double thresh = 0.01, const std::string title = "Adiabats") const;
-    void print_property(const std::string label, std::shared_ptr<const Matrix>, const int size = 10) const ;
-    void print(const double thresh = 0.01) const;
 
   private:
 
@@ -109,7 +84,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 #include <src/meh/meh_compute_offdiagonal.hpp>
 #include <src/meh/meh_gamma_coupling.hpp>
 #include <src/meh/meh_init.hpp>
-#include <src/meh/meh_modelize.hpp>
 #include <src/meh/meh_spin_coupling.hpp>
 #include <src/meh/meh_compute_rdm.hpp>
 #undef MEH_HEADERS
