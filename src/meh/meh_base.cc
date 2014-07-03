@@ -73,8 +73,37 @@ MEH_base::MEH_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 }
 
 
+// This term will couple off-diagonal blocks since it has no delta functions involved
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const array<MonomerKey,4>& keys) {
+  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+
+  // alpha-alpha
+  auto gamma_AA_alpha = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+  auto gamma_BB_alpha = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
+
+  // beta-beta
+  auto gamma_AA_beta = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
+  auto gamma_BB_beta = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
+
+  // build J and K matrices
+  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,0,1>();
+  shared_ptr<const Matrix> Kmatrix = jop_->template coulomb_matrix<0,1,1,0>();
+
+  Matrix tmp((*gamma_AA_alpha + *gamma_AA_beta) * (*Jmatrix) ^ (*gamma_BB_alpha + *gamma_BB_beta));
+
+  tmp -= *gamma_AA_alpha * (*Kmatrix) ^ *gamma_BB_alpha;
+  tmp -= *gamma_AA_beta * (*Kmatrix) ^ *gamma_BB_beta;
+
+  // sort: (A',A,B',B) --> (A,B,A',B') + block(A,B,A',B')
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  return out;
+}
+
+
+template <>
+shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -83,7 +112,7 @@ std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,
     auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateAlpha});
     auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha});
 
-    std::shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
+    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
 
     tmp += *gamma_A * (*Fmatrix) ^ *gamma_B;
   }
@@ -94,7 +123,7 @@ std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,
     auto gamma_B1 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
 
-    std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
 
     tmp -= *gamma_A * (*Jmatrix) ^ (*gamma_B1 + *gamma_B2);
   }
@@ -105,13 +134,13 @@ std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,
     auto gamma_A2 = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
     auto gamma_B  = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha});
 
-    std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
 
     tmp += (*gamma_A1 + *gamma_A2) * (*Jmatrix) ^ *gamma_B;
   }
 
   const int neleA = A.nelea() + A.neleb();
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
     SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
@@ -125,7 +154,7 @@ std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,
 
 
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -134,7 +163,7 @@ std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,
     auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta});
     auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta});
 
-    std::shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
+    shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
 
     tmp += *gamma_A * (*Fmatrix) ^ *gamma_B;
   }
@@ -146,7 +175,7 @@ std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,
     auto gamma_B1 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
-    std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
 
     tmp -= *gamma_A * (*Jmatrix) ^ (*gamma_B1 + *gamma_B2);
   }
@@ -157,13 +186,13 @@ std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,
     auto gamma_A2 = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta});
     auto gamma_B  = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta});
 
-    std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
 
     tmp += (*gamma_A1 + *gamma_A2) * (*Jmatrix) ^ *gamma_B;
   }
 
   const int neleA = A.nelea() + A.neleb();
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   if ((neleA % 2) == 1) {
     // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
     SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
@@ -178,18 +207,18 @@ std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,
 
 
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
 
-  std::shared_ptr<const Matrix> Kmatrix = jop_->template coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Kmatrix = jop_->template coulomb_matrix<0,1,1,0>();
 
   Matrix tmp = *gamma_A * (*Kmatrix) ^ *gamma_B;
 
   // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
 
   return out;
@@ -197,18 +226,18 @@ std::shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const std::array<MonomerK
 
 
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_abET<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_abET<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
 
-  std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 
   // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
 
   return out;
@@ -216,17 +245,17 @@ std::shared_ptr<Matrix> MEH_base::compute_abET<true>(const std::array<MonomerKey
 
 
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_aaET<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_aaET<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
 
-  std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 
   // sort: (A',A,B',B) --> -0.5 * (A,B,A',B')
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   SMITH::sort_indices<1,3,0,2,0,1,-1,2>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
 
   return out;
@@ -234,17 +263,17 @@ std::shared_ptr<Matrix> MEH_base::compute_aaET<true>(const std::array<MonomerKey
 
 
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_bbET<true>(const std::array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_bbET<true>(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
 
-  std::shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 
   // sort: (A',A,B',B) --> -0.5 * (A,B,A',B')
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
   SMITH::sort_indices<1,3,0,2,0,1,-1,2>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
 
   return out;

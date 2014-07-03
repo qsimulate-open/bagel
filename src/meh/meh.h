@@ -48,7 +48,6 @@ struct ASD_impl {
   using DSb = DimerSubspace_base<T>;
   using return_type = std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type>;
   template <class VecType> static return_type compute_diagonal_block(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& subspace)         { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_inter_2e(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
 };
 }
 
@@ -108,7 +107,6 @@ class MultiExcitonHamiltonian : public MEH_base {
     std::shared_ptr<return_type> couple_blocks(DSubSpace& AB, DSubSpace& ApBp); // Off-diagonal driver for H
 
     template <bool _N> auto compute_diagonal_block(DSubSpace& subspace)      -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_diagonal_block(this, subspace); }
-    template <bool _N> auto compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_inter_2e(this, AB, ApBp); }
 };
 
 // Locks to make sure the following files are not included on their own

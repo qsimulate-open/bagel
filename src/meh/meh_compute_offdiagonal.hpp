@@ -111,7 +111,7 @@ std::shared_ptr<return_type> MultiExcitonHamiltonian<VecType>::couple_blocks(DSu
     case Coupling::none :
       out = nullptr; break;
     case Coupling::diagonal :
-      out = compute_inter_2e<_N>(*space1, *space2); break;
+      out = compute_inter_2e<_N>(keys); break;
     case Coupling::aET :
       out = compute_aET<_N>(keys); break;
     case Coupling::bET :
