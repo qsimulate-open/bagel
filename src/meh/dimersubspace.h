@@ -37,7 +37,6 @@ class MonomerKey : public SpaceKey {
     int nelea_;
     int neleb_;
   public:
-    MonomerKey(const int S, const int ms, const int charge, const int n, const int na, const int nb) : SpaceKey(S,ms,charge), nstates_(n), nelea_(na), neleb_(nb) { }
     MonomerKey(const SpaceKey& s, const int n, const int na, const int nb) : SpaceKey(s), nstates_(n), nelea_(na), neleb_(nb) { }
     int nstates() const { return nstates_; }
     int nelea() const { return nelea_; }

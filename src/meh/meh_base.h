@@ -140,7 +140,7 @@ class MEH_base {
     MEH_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 
     virtual void compute() = 0;
-    virtual void compute_rdm() const = 0;
+    void compute_rdm() const;
 
     std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> model(const int i) { return models_[i]; }
 

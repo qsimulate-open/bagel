@@ -57,7 +57,6 @@ class MultiExcitonHamiltonian : public MEH_base {
     MultiExcitonHamiltonian(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer, std::shared_ptr<DCISpace> cispace);
 
     void compute() override;
-    void compute_rdm() const override;
 
   private:
 
@@ -85,7 +84,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 #include <src/meh/meh_gamma_coupling.hpp>
 #include <src/meh/meh_init.hpp>
 #include <src/meh/meh_spin_coupling.hpp>
-#include <src/meh/meh_compute_rdm.hpp>
 #undef MEH_HEADERS
 
 }

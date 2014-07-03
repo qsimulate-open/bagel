@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_compute_rdm.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: meh_compute_rdm.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: NU theory
@@ -23,16 +23,15 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef MEH_HEADERS
+#include <src/meh/meh_base.h>
 
-#ifndef BAGEL_MEH_COMPUTE_RDM_H
-#define BAGEL_MEH_COMPUTE_RDM_H
+using namespace std;
+using namespace bagel;
 
-template<typename VecType>
-void MultiExcitonHamiltonian<VecType>::compute_rdm() const {
-  const int norbA = cispace_->template norb<0>();
-  const int norbB = cispace_->template norb<1>();
-  RDM<2> rdm(norbA+norbB);
+void MEH_base::compute_rdm() const {
+//const int norbA = cispace_->template norb<0>();
+//const int norbB = cispace_->template norb<1>();
+//RDM<2> rdm(norbA+norbB);
   // compute transformed gammas
 
 #if 0
@@ -52,7 +51,3 @@ void MultiExcitonHamiltonian<VecType>::compute_rdm() const {
 #endif
 
 }
-
-#endif
-#endif
-
