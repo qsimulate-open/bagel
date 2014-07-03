@@ -118,9 +118,61 @@ Coupling MEH_base::coupling_type(const std::array<MonomerKey,4>& keys) {
 }
 
 
+template <>
+std::shared_ptr<Matrix> MEH_base::compute_offdiagonal_1e<true>(const array<MonomerKey,4>& keys, std::shared_ptr<const Matrix> hAB) const {
+  auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
+
+  Coupling term_type = coupling_type(keys);
+
+  GammaSQ operatorA;
+  GammaSQ operatorB;
+  int neleA = A.nelea() + A.neleb();
+
+  auto out = make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
+
+  switch(term_type) {
+    case Coupling::aET :
+      operatorA = GammaSQ::CreateAlpha;
+      operatorB = GammaSQ::AnnihilateAlpha;
+      break;
+    case Coupling::inv_aET :
+      operatorA = GammaSQ::AnnihilateAlpha;
+      operatorB = GammaSQ::CreateAlpha;
+      --neleA;
+      break;
+    case Coupling::bET :
+      operatorA = GammaSQ::CreateBeta;
+      operatorB = GammaSQ::AnnihilateBeta;
+      break;
+    case Coupling::inv_bET :
+      operatorA = GammaSQ::AnnihilateBeta;
+      operatorB = GammaSQ::CreateBeta;
+      --neleA;
+      break;
+    default :
+      return out;
+  }
+
+  auto gamma_A = gammatensor_[0]->get_block(A, Ap, {operatorA});
+  auto gamma_B = gammatensor_[1]->get_block(B, Bp, {operatorB});
+  Matrix tmp = *gamma_A * (*hAB) ^ *gamma_B;
+
+  if ((neleA % 2) == 1) {
+    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  }
+  else {
+    // sort: (A',A,B',B) --> (A,B,A',B')
+    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), Ap.nstates(), A.nstates(), Bp.nstates(), B.nstates());
+  }
+
+  return out;
+}
+
+
 // This term will couple off-diagonal blocks since it has no delta functions involved
 template <>
-shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   // alpha-alpha
@@ -148,7 +200,7 @@ shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -199,7 +251,7 @@ shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   Matrix tmp(A.nstates()*Ap.nstates(), B.nstates()*Bp.nstates());
 
@@ -252,7 +304,7 @@ shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
@@ -271,7 +323,7 @@ shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const array<MonomerKey,4>& key
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_abET<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_abET<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
@@ -290,7 +342,7 @@ shared_ptr<Matrix> MEH_base::compute_abET<true>(const array<MonomerKey,4>& keys)
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_aaET<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_aaET<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
@@ -308,7 +360,7 @@ shared_ptr<Matrix> MEH_base::compute_aaET<true>(const array<MonomerKey,4>& keys)
 
 
 template <>
-shared_ptr<Matrix> MEH_base::compute_bbET<true>(const array<MonomerKey,4>& keys) {
+shared_ptr<Matrix> MEH_base::compute_bbET<true>(const array<MonomerKey,4>& keys) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});

@@ -86,7 +86,6 @@ class MultiExcitonHamiltonian : public MEH_base {
     std::vector<double> diagonalize(std::shared_ptr<Matrix>& cc, std::vector<DSubSpace>& subspace, const bool mute = false);
 
     std::shared_ptr<Matrix> compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const;
-    std::shared_ptr<Matrix> compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const;
     std::shared_ptr<Matrix> compute_diagonal_1e(const DSubSpace& subspace, const double* hAA, const double* hBB, const double diag) const;
 
     // Diagonal block stuff

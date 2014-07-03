@@ -28,61 +28,6 @@
 #ifndef BAGEL_MEH_COMPUTE_OFFDIAGONAL_H
 #define BAGEL_MEH_COMPUTE_OFFDIAGONAL_H
 
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const {
-  auto A = AB.template monomerkey<0>();
-  auto B = AB.template monomerkey<1>();
-  auto Ap = ApBp.template monomerkey<0>();
-  auto Bp = ApBp.template monomerkey<1>();
-
-  Coupling term_type = coupling_type(AB,ApBp);
-
-  GammaSQ operatorA;
-  GammaSQ operatorB;
-  int neleA = A.nelea() + A.neleb();
-
-  switch(term_type) {
-    case Coupling::aET :
-      operatorA = GammaSQ::CreateAlpha;
-      operatorB = GammaSQ::AnnihilateAlpha;
-      break;
-    case Coupling::inv_aET :
-      operatorA = GammaSQ::AnnihilateAlpha;
-      operatorB = GammaSQ::CreateAlpha;
-      --neleA;
-      break;
-    case Coupling::bET :
-      operatorA = GammaSQ::CreateBeta;
-      operatorB = GammaSQ::AnnihilateBeta;
-      break;
-    case Coupling::inv_bET :
-      operatorA = GammaSQ::AnnihilateBeta;
-      operatorB = GammaSQ::CreateBeta;
-      --neleA;
-      break;
-    default :
-      return std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  }
-
-  auto gamma_A = gammatensor_[0]->get_block(A, Ap, {operatorA});
-  auto gamma_B = gammatensor_[1]->get_block(B, Bp, {operatorB});
-  Matrix tmp = *gamma_A * (*hAB) ^ *gamma_B;
-
-  auto out = std::make_shared<Matrix>(A.nstates()*B.nstates(), Ap.nstates()*Bp.nstates());
-
-  if ((neleA % 2) == 1) {
-    // sort: (A',A,B',B) --> -1.0 * (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,-1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
-  }
-  else {
-    // sort: (A',A,B',B) --> (A,B,A',B')
-    SMITH::sort_indices<1,3,0,2,0,1,1,1>(tmp.data(), out->data(), ApBp.template nstates<0>(), AB.template nstates<0>(), ApBp.template nstates<1>(), AB.template nstates<1>());
-  }
-
-  return out;
-}
-
-
 namespace {
   template<typename T>
   void transpose_call(std::shared_ptr<T>& o) { assert(false); }

@@ -75,7 +75,9 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::s
     for (auto jAB = subspaces_.begin(); jAB != iAB; ++jAB) {
       const int joff = jAB->offset();
 
-      std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e(*iAB, *jAB, hAB);
+      std::array<MonomerKey,4> keys {{ iAB->template monomerkey<0>(), iAB->template monomerkey<1>(),
+                                       jAB->template monomerkey<0>(), jAB->template monomerkey<1>() }};
+      std::shared_ptr<Matrix> out_block = compute_offdiagonal_1e<true>(keys, hAB);
 
       out->add_block(1.0, ioff, joff, out_block->ndim(), out_block->mdim(), out_block);
       out->add_block(1.0, joff, ioff, out_block->mdim(), out_block->ndim(), out_block->transpose());
