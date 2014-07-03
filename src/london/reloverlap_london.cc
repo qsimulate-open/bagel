@@ -52,15 +52,6 @@ void RelOverlap_London::compute_() {
 shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   shared_ptr<ZMatrix> tildeo = overlap_->tildex(thresh);
 
-/*
-  shared_ptr<ZMatrix> k = make_shared<ZMatrix>(*tildeo % *kinetic_ * *tildeo);
-  const bool nosing = k->inverse_half(thresh*1.0e2);
-  if (!nosing)
-    throw logic_error("positive and negative energy states have different linear dependency");
-  shared_ptr<ZMatrix> tildek = make_shared<ZMatrix>(*tildeo * *k);
-
-  *tildek *= (c__/sqrt(0.5));
-*/
   const int n = tildeo->ndim();
   const int m = tildeo->mdim();
 
@@ -84,8 +75,6 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   auto out = make_shared<ZMatrix>(4*n, 4*m);
   out->copy_block(0, 0, n, m, tildeo);
   out->copy_block(n, m, n, m, tildeo);
-  //out->copy_block(2*n, 2*m, n, m, tildek);
-  //out->copy_block(3*n, 3*m, n, m, tildek);
   out->copy_block(2*n, 2*m, 2*n, 2*m, tildes);
   return out;
 }
@@ -95,11 +84,6 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   shared_ptr<ZMatrix> out = clone();
   ZMatrix oinv(*overlap_);
   oinv.inverse();
-  /*
-  ZMatrix kinv(*kinetic_);
-  kinv.inverse();
-  kinv *= (2*(c__*c__));
-  */
   const int n = oinv.ndim();
 
   auto soverlap = make_shared<ZMatrix>(2*n, 2*n);
@@ -120,8 +104,6 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
 
   out->copy_block(0, 0, n, n, oinv);
   out->copy_block(n, n, n, n, oinv);
-  //out->copy_block(2*n, 2*n, n, n, kinv);
-  //out->copy_block(3*n, 3*n, n, n, kinv);
   out->copy_block(2*n, 2*n, 2*n, 2*n, soverlap);
   return out;
 }

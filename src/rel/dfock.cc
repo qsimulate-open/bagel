@@ -137,7 +137,6 @@ list<shared_ptr<RelDF>> DFock::make_dfdists(vector<shared_ptr<const DFDist>> dfs
 
   list<shared_ptr<RelDF>> dfdists;
   if (!mixed) { // Regular DHF
-    const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)

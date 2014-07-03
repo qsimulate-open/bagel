@@ -86,7 +86,7 @@ void DFock_London::add_Jop_block(shared_ptr<const RelDF_London> dfdata, list<sha
     int j = 0;
     for (auto& i : swap->basis()) {
       add_block(i->fac(swap->cartesian())*scale, n*i->basis(0), n*i->basis(1), n, n, dat[j++]->transpose_conjg());
-      // conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero.
+      // Without magnetic field, conjg does not matter because (1) offdiagonal of Coulomb is real; (2) offdiagonal of Gaunt and Breit is zero.
       // (2) is due to [sigma_w, sigma_w']_+ = \delta_ww' -- tricky!
     }
   }
@@ -140,7 +140,6 @@ list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<cons
 
   list<shared_ptr<RelDF_London>> dfdists;
   if (!mixed) { // Regular DHF
-    const vector<int> alphaL = { Comp::L };
     auto k = dfs.begin();
     for (auto& i : xyz) {
       for (auto& j : xyz)
