@@ -127,6 +127,14 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     }
   }
 
+  if (noab && output1) {
+    // output area
+    shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
+
+    // (b^+ a) contribution
+    sigma_1e_ab(cc, sigma_1, jop, trans);
+  }
+
   if (!noaa) {
     shared_ptr<const Determinants> int_det = int_space_->finddet(nelea-2, neleb);
     auto d = make_shared<ZDvec>(int_det, ij);
