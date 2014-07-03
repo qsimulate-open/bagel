@@ -104,6 +104,8 @@ class MEH_base {
     std::vector<std::vector<ModelBlock>> models_to_form_; ///< Contains specifications to construct model spaces
     std::vector<std::pair<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>> models_; ///< models that have been built
 
+    static Coupling coupling_type(const std::array<MonomerKey,4>& keys);
+
   public:
     MEH_base(const std::shared_ptr<const PTree> input, std::shared_ptr<const Dimer> dimer);
 

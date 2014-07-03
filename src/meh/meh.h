@@ -79,7 +79,7 @@ class MultiExcitonHamiltonian : public MEH_base {
     void print(const double thresh = 0.01) const;
 
   private:
-    const Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
+    Coupling coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const;
 
     void generate_initial_guess(std::shared_ptr<Matrix> cc, std::vector<DSubSpace>& subspace, const int nstates);
     std::shared_ptr<Matrix> apply_hamiltonian(const Matrix& o, std::vector<DSubSpace>& subspaces);

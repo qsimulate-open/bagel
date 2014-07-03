@@ -59,47 +59,11 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 }
 
 template <class VecType>
-const Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const {
-  std::pair<int,int> neleaAB {AB.template ci<0>()->det()->nelea(), AB.template ci<1>()->det()->nelea()};
-  std::pair<int,int> nelebAB {AB.template ci<0>()->det()->neleb(), AB.template ci<1>()->det()->neleb()};
-
-  std::pair<int,int> neleaApBp {ApBp.template ci<0>()->det()->nelea(), ApBp.template ci<1>()->det()->nelea()};
-  std::pair<int,int> nelebApBp {ApBp.template ci<0>()->det()->neleb(), ApBp.template ci<1>()->det()->neleb()};
-
-  // AlphaTransfer and BetaTransfer
-  std::pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
-  std::pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
-
-  constexpr int stride = 8; // Should be sufficient
-  auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };
-
-  /************************************************************
-  *  BT\AT  | ( 0, 0) | (+1,-1) | (-1,+1) | (+2,-2) | (-2,+2) *
-  *-----------------------------------------------------------*
-  * ( 0, 0) |  diag   |  aET    |  -aET   |  aaET   | -aaET   *
-  * (+1,-1) |  bET    |  dABT   |  ABflp  |         |         *
-  * (-1,+1) | -bET    | BAflp   | -dABT   |         |         *
-  * (+2,-2) |  bbET   |         |         |         |         *
-  * (-2,+2) | -bbET   |         |         |         |         *
-  ************************************************************/
-
-  const int icouple = coupling_index(AT.first, AT.second, BT.first, BT.second);
-
-  if      ( icouple == coupling_index( 0, 0, 0, 0) ) return Coupling::diagonal;
-  else if ( icouple == coupling_index( 0, 0,+1,-1) ) return Coupling::bET;
-  else if ( icouple == coupling_index( 0, 0,-1,+1) ) return Coupling::inv_bET;
-  else if ( icouple == coupling_index(+1,-1, 0, 0) ) return Coupling::aET;
-  else if ( icouple == coupling_index(+1,-1,+1,-1) ) return Coupling::abET;
-  else if ( icouple == coupling_index(+1,-1,-1,+1) ) return Coupling::baFlip;
-  else if ( icouple == coupling_index(-1,+1, 0, 0) ) return Coupling::inv_aET;
-  else if ( icouple == coupling_index(-1,+1,+1,-1) ) return Coupling::abFlip;
-  else if ( icouple == coupling_index(-1,+1,-1,+1) ) return Coupling::inv_abET;
-  else if ( icouple == coupling_index(+2,-2, 0, 0) ) return Coupling::aaET;
-  else if ( icouple == coupling_index(-2,+2, 0, 0) ) return Coupling::inv_aaET;
-  else if ( icouple == coupling_index( 0, 0,+2,-2) ) return Coupling::bbET;
-  else if ( icouple == coupling_index( 0, 0,-2,+2) ) return Coupling::inv_bbET;
-  else                                               return Coupling::none;
+Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const {
+  std::array<MonomerKey,4> keys {{ AB.template monomerkey<0>(), AB.template monomerkey<1>(), ApBp.template monomerkey<0>(), ApBp.template monomerkey<1>()}};
+  return MEH_base::coupling_type(keys);
 }
+
 
 template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
