@@ -115,7 +115,20 @@ class MEH_base {
     std::vector<double> energy() const { return energies_; }
     double energy(const int i) const { return energies_.at(i); }
 
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_aET(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_bET(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_abFlip(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_abET(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_aaET(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
+    template <bool _N> std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type> compute_bbET(const std::array<MonomerKey,4>&) { assert(false); return nullptr; }
 };
+
+template<> std::shared_ptr<Matrix> MEH_base::compute_aET<true>(const std::array<MonomerKey,4>&);
+template<> std::shared_ptr<Matrix> MEH_base::compute_bET<true>(const std::array<MonomerKey,4>&);
+template<> std::shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const std::array<MonomerKey,4>&);
+template<> std::shared_ptr<Matrix> MEH_base::compute_abET<true>(const std::array<MonomerKey,4>&);
+template<> std::shared_ptr<Matrix> MEH_base::compute_aaET<true>(const std::array<MonomerKey,4>&);
+template<> std::shared_ptr<Matrix> MEH_base::compute_bbET<true>(const std::array<MonomerKey,4>&);
 
 }
 

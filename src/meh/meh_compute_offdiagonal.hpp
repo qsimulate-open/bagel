@@ -105,23 +105,25 @@ std::shared_ptr<return_type> MultiExcitonHamiltonian<VecType>::couple_blocks(DSu
 
   std::shared_ptr<return_type> out;
 
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+
   switch(term_type) {
     case Coupling::none :
       out = nullptr; break;
     case Coupling::diagonal :
       out = compute_inter_2e<_N>(*space1, *space2); break;
     case Coupling::aET :
-      out = compute_aET<_N>(*space1, *space2); break;
+      out = compute_aET<_N>(keys); break;
     case Coupling::bET :
-      out = compute_bET<_N>(*space1, *space2); break;
+      out = compute_bET<_N>(keys); break;
     case Coupling::abFlip :
-      out = compute_abFlip<_N>(*space1, *space2); break;
+      out = compute_abFlip<_N>(keys); break;
     case Coupling::abET :
-      out = compute_abET<_N>(*space1, *space2); break;
+      out = compute_abET<_N>(keys); break;
     case Coupling::aaET :
-      out = compute_aaET<_N>(*space1, *space2); break;
+      out = compute_aaET<_N>(keys); break;
     case Coupling::bbET :
-      out = compute_bbET<_N>(*space1, *space2); break;
+      out = compute_bbET<_N>(keys); break;
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }

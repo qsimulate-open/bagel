@@ -49,12 +49,6 @@ struct ASD_impl {
   using return_type = std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type>;
   template <class VecType> static return_type compute_diagonal_block(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& subspace)         { assert(false); return nullptr; }
   template <class VecType> static return_type compute_inter_2e(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp) { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_aET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)      { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_bET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)      { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_abFlip(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)   { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_abET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)     { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_aaET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)     { assert(false); return nullptr; }
-  template <class VecType> static return_type compute_bbET(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& AB, DSb<VecType>& ApBp)     { assert(false); return nullptr; }
 };
 }
 
@@ -115,12 +109,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 
     template <bool _N> auto compute_diagonal_block(DSubSpace& subspace)      -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_diagonal_block(this, subspace); }
     template <bool _N> auto compute_inter_2e(DSubSpace& AB, DSubSpace& ApBp) -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_inter_2e(this, AB, ApBp); }
-    template <bool _N> auto compute_aET(DSubSpace& AB, DSubSpace& ApBp)      -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_aET(this, AB, ApBp); }
-    template <bool _N> auto compute_bET(DSubSpace& AB, DSubSpace& ApBp)      -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_bET(this, AB, ApBp); }
-    template <bool _N> auto compute_abFlip(DSubSpace& AB, DSubSpace& ApBp)   -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_abFlip(this, AB, ApBp); }
-    template <bool _N> auto compute_abET(DSubSpace& AB, DSubSpace& ApBp)     -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_abET(this, AB, ApBp); }
-    template <bool _N> auto compute_aaET(DSubSpace& AB, DSubSpace& ApBp)     -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_aaET(this, AB, ApBp); }
-    template <bool _N> auto compute_bbET(DSubSpace& AB, DSubSpace& ApBp)     -> typename asd::ASD_impl<_N>::return_type { return asd::ASD_impl<_N>::compute_bbET(this, AB, ApBp); }
 };
 
 // Locks to make sure the following files are not included on their own

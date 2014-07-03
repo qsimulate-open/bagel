@@ -44,10 +44,9 @@ class GammaTensor {
   protected:
     using OperatorClass = std::list<GammaSQ>;
 
-    using BlockSize     = std::map<SpaceKey, int>;
     using OperatorSize  = std::map<OperatorClass, int>;
     // if blocks exist of not. TODO has to be generalized if there are more than 2 active spaces
-    using SparseMap     = std::map<std::tuple<OperatorClass, SpaceKey, SpaceKey>, std::shared_ptr<const Matrix>>;
+    using SparseMap     = std::map<std::tuple<OperatorClass, MonomerKey, MonomerKey>, std::shared_ptr<const Matrix>>;
 
     SparseMap    sparse_;
     std::list<std::list<GammaSQ>> oplist_;
@@ -77,7 +76,9 @@ class GammaTensor {
         {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta},
         {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta,  GammaSQ::CreateAlpha},
         {GammaSQ::AnnihilateBeta,  GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta},
+        {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta},
         {GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha},
+        {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateAlpha},
         {GammaSQ::AnnihilateBeta,  GammaSQ::CreateBeta,  GammaSQ::CreateBeta}
       };
       // initialize operator space
@@ -88,7 +89,7 @@ class GammaTensor {
             if (f->template exist<M>(i.template tag<M>(), j.template tag<M>(), o)) {
               std::shared_ptr<const Matrix> mat = f->template get<M>(i.template tag<M>(), j.template tag<M>(), o);
               if (dim != 0) assert(mat->ndim() == dim);
-              sparse_.emplace(std::make_tuple(o, i.template spacekey<M>(), j.template spacekey<M>()), mat);
+              sparse_.emplace(std::make_tuple(o, i.template monomerkey<M>(), j.template monomerkey<M>()), mat);
             }
       }
     }
@@ -108,9 +109,9 @@ class GammaTensor {
 
     std::shared_ptr<GammaTensor> clone() const { return std::make_shared<GammaTensor>(sparse_, opsize_, blocksize_); }
     std::shared_ptr<GammaTensor> copy() const { return std::make_shared<GammaTensor>(*this); }
-
-    std::shared_ptr<const Matrix> get_block(const SpaceKey& i, const SpaceKey& j, const std::initializer_list<GammaSQ>& o) const { return sparse_[std::make_tuple(std::vector<GammaSQ>(o), i, j)]; }
 #endif
+
+    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const { return sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j)); }
 
 };
 
