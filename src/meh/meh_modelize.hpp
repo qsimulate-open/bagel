@@ -45,11 +45,11 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       const int nstates = block.nstates_;
       std::cout << "  o S: (" << S_A << ", " << S_B << "), Q: (" << q_A << ", " << q_B << "), nstates: " << nstates << std::endl;
 
-      std::vector<DSubSpace> blocks_in_subspace;
-      for (auto& sp : subspaces_)
+      std::vector<DimerSubspace_base> blocks_in_subspace;
+      for (auto& sp : subspaces_base())
         if ( block.S_ == sp.S() && block.charge_ == sp.charge() )
           blocks_in_subspace.push_back(sp);
-      std::for_each(blocks_in_subspace.begin(), blocks_in_subspace.end(), [&space_bounds] (const DSubSpace& s) { space_bounds.push_back(s.offset()); });
+      std::for_each(blocks_in_subspace.begin(), blocks_in_subspace.end(), [&space_bounds] (const DimerSubspace_base& s) { space_bounds.push_back(s.offset()); });
 
       // diagonalize in subspace
       auto cc = std::make_shared<Matrix>(dimerstates_, nstates);
@@ -71,7 +71,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       offset += m->mdim();
     }
     print_states(*modelcc, diagonals, print_thresh_, "Model states");
-    std::shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_);
+    std::shared_ptr<Matrix> modelsigma = apply_hamiltonian(*modelcc, subspaces_base());
     auto model_hamiltonian = std::make_shared<Matrix>(*modelsigma % *modelcc);
 
     const double E0 = model_hamiltonian->element(0,0);
@@ -87,7 +87,7 @@ void MultiExcitonHamiltonian<VecType>::modelize() {
       for (int j = 0; j <= i; ++j) {
         const double Ej = diagonals[j];
         double perturb = 0;
-        for (auto& space : subspaces_) {
+        for (auto& space : subspaces_base()) {
           if (std::count(space_bounds.begin(), space_bounds.end(), space.offset()) == 1) continue;
           for (int k = 0; k < space.dimerstates(); ++k) {
             const int kk = k + space.offset();

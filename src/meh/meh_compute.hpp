@@ -29,69 +29,6 @@
 #define BAGEL_MEH_COMPUTE_H
 
 template <class VecType>
-void MultiExcitonHamiltonian<VecType>::generate_initial_guess(std::shared_ptr<Matrix> cc, std::vector<DSubSpace>& subspaces, int nstates) {
-  int trialsize = 0;
-  int nguess = nguess_;
-
-  const int subspace_states = std::accumulate(subspaces.begin(), subspaces.end(), 0,
-                                              [] (int x, const DSubSpace& s) { return s.dimerstates()+x; });
-
-  std::map<double, std::vector<int>> seeds;
-  for(auto& ispace : subspaces) {
-    for(int state = ispace.offset(); state < ispace.offset()+ispace.dimerstates(); ++state)
-      seeds[denom_[state]].push_back(state);
-  }
-
-  while (trialsize < nstates) {
-    std::vector<int> b;
-    b.reserve(nguess);
-
-    for (auto& i : seeds) {
-      b.insert(b.end(), i.second.begin(), i.second.end());
-      if (b.size() >= nguess) break;
-    }
-
-    // build matrix
-    auto basis = std::make_shared<Matrix>(dimerstates_, b.size());
-    for (int i = 0; i < b.size(); ++i)
-      basis->element(b[i], i) = 1.0;
-
-    // build spin operator
-    std::shared_ptr<Matrix> spn = spin_->apply(*basis);
-    spn = std::make_shared<Matrix>( *spn % *basis );
-    std::vector<double> spin_values(b.size(), 0.0);
-    spn->diagonalize(spin_values.data());
-    const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
-    int start, end;
-    for (start = 0; start < nguess; ++start)
-      if (std::fabs(spin_values[start] - expected_spin) < 1.0e-4) break;
-    for (end = start; end < nguess; ++end)
-      if (std::fabs(spin_values[end] - expected_spin) > 1.0e-4) break;
-
-    trialsize = end - start;
-
-    if (trialsize >= nstates) {
-      basis = (*basis * *spn).slice_copy(start, end);
-
-      std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_);
-      auto H = std::make_shared<Matrix>(*sigma % *basis);
-      std::vector<double> energies(trialsize, 0.0);
-      H->diagonalize(energies.data());
-
-      basis = std::make_shared<Matrix>(*basis * *H);
-      for (int i = 0; i < nstates; ++i)
-        std::copy_n(basis->element_ptr(0, i), basis->ndim(), cc->element_ptr(0, i));
-    }
-    else if (nguess >= subspace_states) {
-      throw std::runtime_error("Requesting more spin allowed states than exist in MEH space");
-    }
-    else {
-      nguess *= 2;
-    }
-  }
-}
-
-template <class VecType>
 void MultiExcitonHamiltonian<VecType>::compute() {
   Timer mehtime;
   std::cout << std::endl << " ===== Starting construction of dimer Hamiltonian " << std::endl;
@@ -156,10 +93,10 @@ void MultiExcitonHamiltonian<VecType>::compute() {
 
   std::cout << "  o Diagonalizing ME Hamiltonian with a Davidson procedure" << std::endl;
   auto cc = std::make_shared<Matrix>(dimerstates_, nstates_);
-  generate_initial_guess(cc, subspaces_, nstates_);
+  generate_initial_guess(cc, subspaces_base(), nstates_);
   std::cout << "    - initial guess time " << std::setw(9) << std::fixed << std::setprecision(2) << mehtime.tick() << std::endl << std::endl;
 
-  energies_ = diagonalize(cc, subspaces_);
+  energies_ = diagonalize(cc, subspaces_base());
 
   adiabats_ = cc->copy();
 

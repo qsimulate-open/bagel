@@ -64,53 +64,6 @@ void MultiExcitonHamiltonian<VecType>::compute_pure_terms(DSubSpace& AB, std::sh
 }
 
 template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_intra(const DSubSpace& AB, std::shared_ptr<const DimerJop> jop, const double diag) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), AB.dimerstates());
-
-  const int nstatesA = AB.template nstates<0>();
-  const int nstatesB = AB.template nstates<1>();
-
-  // first H^{AA}_{AA}
-  for(int stateA = 0; stateA < nstatesA; ++stateA) {
-    for(int stateAp = 0; stateAp < stateA; ++stateAp) {
-      const double value = AB.template sigma<0>()->element(stateAp, stateA);
-      for(int stateB = 0; stateB < nstatesB; ++stateB) {
-        const int stateApB = AB.dimerindex(stateAp, stateB);
-        const int stateAB = AB.dimerindex(stateA, stateB);
-        (*out)(stateAB, stateApB) += value;
-        (*out)(stateApB, stateAB) += value;
-      }
-    }
-    const double value = AB.template sigma<0>()->element(stateA, stateA);
-    for(int stateB = 0; stateB < nstatesB; ++stateB) {
-      const int stateAB = AB.dimerindex(stateA, stateB);
-      (*out)(stateAB,stateAB) += value;
-    }
-  }
-
-  // H^{BB}_{BB}
-  for(int stateB = 0; stateB < nstatesB; ++stateB) {
-    for(int stateBp = 0; stateBp < stateB; ++stateBp) {
-      const double value = AB.template sigma<1>()->element(stateBp, stateB);
-      for(int stateA = 0; stateA < nstatesA; ++stateA) {
-        const int stateAB = AB.dimerindex(stateA, stateB);
-        const int stateABp = AB.dimerindex(stateA, stateBp);
-        (*out)(stateAB, stateABp) += value;
-        (*out)(stateABp, stateAB) += value;
-      }
-    }
-    const double value = AB.template sigma<1>()->element(stateB, stateB);
-    for(int stateA = 0; stateA < nstatesA; ++stateA) {
-      const int stateAB = AB.dimerindex(stateA, stateB);
-      (*out)(stateAB,stateAB) += value;
-    }
-  }
-
-  out->add_diag(diag);
-  return out;
-}
-
-template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_diagonal_1e(const DSubSpace& AB, const double* hAA, const double* hBB, const double diag) const {
   std::shared_ptr<const VecType> ccvecA = AB.template ci<0>();
   std::shared_ptr<const VecType> ccvecB = AB.template ci<1>();

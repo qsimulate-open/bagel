@@ -73,18 +73,24 @@ MEH_base::MEH_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
 }
 
 
-Coupling MEH_base::coupling_type(const std::array<MonomerKey,4>& keys) {
+Coupling MEH_base::coupling_type(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
+  array<MonomerKey,4> keys {{ AB.monomerkey<0>(), AB.monomerkey<1>(), ApBp.monomerkey<0>(), ApBp.monomerkey<1>()}};
+  return MEH_base::coupling_type(keys);
+}
+
+
+Coupling MEH_base::coupling_type(const array<MonomerKey,4>& keys) {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
-  std::pair<int,int> neleaAB {A.nelea(), B.nelea()};
-  std::pair<int,int> nelebAB {A.neleb(), B.neleb()};
+  pair<int,int> neleaAB {A.nelea(), B.nelea()};
+  pair<int,int> nelebAB {A.neleb(), B.neleb()};
 
-  std::pair<int,int> neleaApBp {Ap.nelea(), Bp.nelea()};
-  std::pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
+  pair<int,int> neleaApBp {Ap.nelea(), Bp.nelea()};
+  pair<int,int> nelebApBp {Ap.neleb(), Bp.neleb()};
 
   // AlphaTransfer and BetaTransfer
-  std::pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
-  std::pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
+  pair<int,int> AT {neleaApBp.first - neleaAB.first, neleaApBp.second - neleaAB.second};
+  pair<int,int> BT {nelebApBp.first - nelebAB.first, nelebApBp.second - nelebAB.second};
 
   constexpr int stride = 8; // Should be sufficient
   auto coupling_index = [&stride] (const int a, const int b, const int c, const int d) { return a + b * stride + stride*stride * (c + d * stride); };
@@ -118,8 +124,67 @@ Coupling MEH_base::coupling_type(const std::array<MonomerKey,4>& keys) {
 }
 
 
+shared_ptr<Matrix> MEH_base::compute_intra(const DimerSubspace_base& AB, shared_ptr<const DimerJop> jop, const double diag) const {
+  auto out = make_shared<Matrix>(AB.dimerstates(), AB.dimerstates());
+
+  const int nstatesA = AB.nstates<0>();
+  const int nstatesB = AB.nstates<1>();
+
+  // first H^{AA}_{AA}
+  for(int stateA = 0; stateA < nstatesA; ++stateA) {
+    for(int stateAp = 0; stateAp < stateA; ++stateAp) {
+      const double value = AB.sigma<0>()->element(stateAp, stateA);
+      for(int stateB = 0; stateB < nstatesB; ++stateB) {
+        const int stateApB = AB.dimerindex(stateAp, stateB);
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        (*out)(stateAB, stateApB) += value;
+        (*out)(stateApB, stateAB) += value;
+      }
+    }
+    const double value = AB.sigma<0>()->element(stateA, stateA);
+    for(int stateB = 0; stateB < nstatesB; ++stateB) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      (*out)(stateAB,stateAB) += value;
+    }
+  }
+
+  // H^{BB}_{BB}
+  for(int stateB = 0; stateB < nstatesB; ++stateB) {
+    for(int stateBp = 0; stateBp < stateB; ++stateBp) {
+      const double value = AB.sigma<1>()->element(stateBp, stateB);
+      for(int stateA = 0; stateA < nstatesA; ++stateA) {
+        const int stateAB = AB.dimerindex(stateA, stateB);
+        const int stateABp = AB.dimerindex(stateA, stateBp);
+        (*out)(stateAB, stateABp) += value;
+        (*out)(stateABp, stateAB) += value;
+      }
+    }
+    const double value = AB.sigma<1>()->element(stateB, stateB);
+    for(int stateA = 0; stateA < nstatesA; ++stateA) {
+      const int stateAB = AB.dimerindex(stateA, stateB);
+      (*out)(stateAB,stateAB) += value;
+    }
+  }
+
+  out->add_diag(diag);
+  return out;
+}
+
+
 template <>
-std::shared_ptr<Matrix> MEH_base::compute_offdiagonal_1e<true>(const array<MonomerKey,4>& keys, std::shared_ptr<const Matrix> hAB) const {
+shared_ptr<Matrix> MEH_base::compute_diagonal_block<true>(const DimerSubspace_base& subspace) const {
+  const double core = dimer_->sref()->geom()->nuclear_repulsion() + jop_->core_energy();
+
+  auto out = compute_intra(subspace, jop_, core);
+  array<MonomerKey,4> keys {{ subspace.monomerkey<0>(), subspace.monomerkey<1>(), subspace.monomerkey<0>(), subspace.monomerkey<1>() }};
+  *out += *compute_inter_2e<true>(keys);
+
+  return out;
+}
+
+
+template <>
+shared_ptr<Matrix> MEH_base::compute_offdiagonal_1e<true>(const array<MonomerKey,4>& keys, shared_ptr<const Matrix> hAB) const {
   auto& A = keys[0]; auto& B = keys[1]; auto& Ap = keys[2]; auto& Bp = keys[3];
 
   Coupling term_type = coupling_type(keys);
@@ -184,8 +249,8 @@ shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const array<MonomerKey,4>& k
   auto gamma_BB_beta = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
   // build J and K matrices
-  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,0,1>();
-  shared_ptr<const Matrix> Kmatrix = jop_->template coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,0,1>();
+  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp((*gamma_AA_alpha + *gamma_AA_beta) * (*Jmatrix) ^ (*gamma_BB_alpha + *gamma_BB_beta));
 
@@ -220,7 +285,7 @@ shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
     auto gamma_B1 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
 
     tmp -= *gamma_A * (*Jmatrix) ^ (*gamma_B1 + *gamma_B2);
   }
@@ -231,7 +296,7 @@ shared_ptr<Matrix> MEH_base::compute_aET<true>(const array<MonomerKey,4>& keys) 
     auto gamma_A2 = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
     auto gamma_B  = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
 
     tmp += (*gamma_A1 + *gamma_A2) * (*Jmatrix) ^ *gamma_B;
   }
@@ -272,7 +337,7 @@ shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
     auto gamma_B1 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
     auto gamma_B2 = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,1,1,1>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
 
     tmp -= *gamma_A * (*Jmatrix) ^ (*gamma_B1 + *gamma_B2);
   }
@@ -283,7 +348,7 @@ shared_ptr<Matrix> MEH_base::compute_bET<true>(const array<MonomerKey,4>& keys) 
     auto gamma_A2 = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta});
     auto gamma_B  = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta});
 
-    shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,0>();
+    shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
 
     tmp += (*gamma_A1 + *gamma_A2) * (*Jmatrix) ^ *gamma_B;
   }
@@ -310,7 +375,7 @@ shared_ptr<Matrix> MEH_base::compute_abFlip<true>(const array<MonomerKey,4>& key
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha});
 
-  shared_ptr<const Matrix> Kmatrix = jop_->template coulomb_matrix<0,1,1,0>();
+  shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
 
   Matrix tmp = *gamma_A * (*Kmatrix) ^ *gamma_B;
 
@@ -329,7 +394,7 @@ shared_ptr<Matrix> MEH_base::compute_abET<true>(const array<MonomerKey,4>& keys)
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
 
-  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 
@@ -347,7 +412,7 @@ shared_ptr<Matrix> MEH_base::compute_aaET<true>(const array<MonomerKey,4>& keys)
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
 
-  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 
@@ -365,7 +430,7 @@ shared_ptr<Matrix> MEH_base::compute_bbET<true>(const array<MonomerKey,4>& keys)
   auto gamma_A = gammatensor_[0]->get_block(A, Ap, {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
   auto gamma_B = gammatensor_[1]->get_block(B, Bp, {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
 
-  shared_ptr<const Matrix> Jmatrix = jop_->template coulomb_matrix<0,0,1,1>();
+  shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
 
   Matrix tmp = *gamma_A * (*Jmatrix) ^ *gamma_B;
 

@@ -37,14 +37,13 @@ namespace {
   void transpose_call(std::shared_ptr<RDM<2>>& o) { /* doing nothing */ }
 }
 
-template <class VecType>
 template <bool _N, typename return_type>
-std::shared_ptr<return_type> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpace& AB, DSubSpace& ApBp) {
+std::shared_ptr<return_type> MEH_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
 
   Coupling term_type = coupling_type(AB, ApBp);
 
-  DSubSpace* space1 = &AB;
-  DSubSpace* space2 = &ApBp;
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
 
   bool flip = (static_cast<int>(term_type) < 0);
 

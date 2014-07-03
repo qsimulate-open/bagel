@@ -59,13 +59,6 @@ MultiExcitonHamiltonian<VecType>::MultiExcitonHamiltonian(const std::shared_ptr<
 }
 
 template <class VecType>
-Coupling MultiExcitonHamiltonian<VecType>::coupling_type(const DSubSpace& AB, const DSubSpace& ApBp) const {
-  std::array<MonomerKey,4> keys {{ AB.template monomerkey<0>(), AB.template monomerkey<1>(), ApBp.template monomerkey<0>(), ApBp.template monomerkey<1>()}};
-  return MEH_base::coupling_type(keys);
-}
-
-
-template <class VecType>
 std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_1e_prop(std::shared_ptr<const Matrix> hAA, std::shared_ptr<const Matrix> hBB, std::shared_ptr<const Matrix> hAB, const double core) const {
 
   auto out = std::make_shared<Matrix>(dimerstates_, dimerstates_);

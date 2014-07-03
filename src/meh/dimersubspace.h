@@ -49,6 +49,8 @@ class DimerSubspace_base {
     const int offset_;
     std::pair<MonomerKey, MonomerKey> key_;
 
+    std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
+
   public:
     DimerSubspace_base(const int o, const MonomerKey& a, const MonomerKey& b) : offset_(o), key_({a,b}) { }
 
@@ -77,6 +79,10 @@ class DimerSubspace_base {
     int offset() const { return offset_; }
 
     template <int unit> MonomerKey monomerkey() const { return unit == 0 ? MonomerKey(key_.first) : MonomerKey(key_.second); }
+
+    template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
+
+    template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 };
 
 
@@ -85,7 +91,6 @@ template <class VecType>
 class DimerSubspace : public DimerSubspace_base {
   protected:
     std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> ci_;
-    std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
 
   public:
     DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
@@ -94,10 +99,6 @@ class DimerSubspace : public DimerSubspace_base {
     { _offset += dimerstates(); }
 
     template <int unit> std::shared_ptr<const VecType> ci() const { return unit == 0 ? ci_.first : ci_.second; }
-    template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
-
-
-    template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 
 };
 

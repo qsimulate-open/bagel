@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: meh_diagonalize.h
+// Filename: meh_diagonalize.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -23,16 +23,79 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#ifdef MEH_HEADERS
+#include <src/meh/meh_base.h>
 
-#ifndef BAGEL_MEH_DIAGONALIZE_H
-#define BAGEL_MEH_DIAGONALIZE_H
+using namespace std;
+using namespace bagel;
 
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(const Matrix& o, std::vector<DSubSpace>& subspaces) {
+
+void MEH_base::generate_initial_guess(shared_ptr<Matrix> cc, const vector<DimerSubspace_base>& subspaces, int nstates) {
+  int trialsize = 0;
+  int nguess = nguess_;
+
+  const int subspace_states = accumulate(subspaces.begin(), subspaces.end(), 0,
+                                        [] (int x, const DimerSubspace_base& s) { return s.dimerstates()+x; });
+
+  map<double, std::vector<int>> seeds;
+  for(auto& ispace : subspaces) {
+    for(int state = ispace.offset(); state < ispace.offset()+ispace.dimerstates(); ++state)
+      seeds[denom_[state]].push_back(state);
+  }
+
+  while (trialsize < nstates) {
+    vector<int> b;
+    b.reserve(nguess);
+
+    for (auto& i : seeds) {
+      b.insert(b.end(), i.second.begin(), i.second.end());
+      if (b.size() >= nguess) break;
+    }
+
+    // build matrix
+    auto basis = make_shared<Matrix>(dimerstates_, b.size());
+    for (int i = 0; i < b.size(); ++i)
+      basis->element(b[i], i) = 1.0;
+
+    // build spin operator
+    shared_ptr<Matrix> spn = spin_->apply(*basis);
+    spn = make_shared<Matrix>( *spn % *basis );
+    vector<double> spin_values(b.size(), 0.0);
+    spn->diagonalize(spin_values.data());
+    const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
+    int start, end;
+    for (start = 0; start < nguess; ++start)
+      if (fabs(spin_values[start] - expected_spin) < 1.0e-4) break;
+    for (end = start; end < nguess; ++end)
+      if (fabs(spin_values[end] - expected_spin) > 1.0e-4) break;
+
+    trialsize = end - start;
+
+    if (trialsize >= nstates) {
+      basis = (*basis * *spn).slice_copy(start, end);
+
+      shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_base());
+      auto H = make_shared<Matrix>(*sigma % *basis);
+      vector<double> energies(trialsize, 0.0);
+      H->diagonalize(energies.data());
+
+      basis = make_shared<Matrix>(*basis * *H);
+      for (int i = 0; i < nstates; ++i)
+        copy_n(basis->element_ptr(0, i), basis->ndim(), cc->element_ptr(0, i));
+    }
+    else if (nguess >= subspace_states) {
+      throw runtime_error("Requesting more spin allowed states than exist in MEH space");
+    }
+    else {
+      nguess *= 2;
+    }
+  }
+}
+
+
+shared_ptr<Matrix> MEH_base::apply_hamiltonian(const Matrix& o, const vector<DimerSubspace_base>& subspaces) {
   const int nstates = o.mdim();
 
-  std::shared_ptr<Matrix> out = o.clone();
+  shared_ptr<Matrix> out = o.clone();
   for (auto iAB = subspaces.begin(); iAB != subspaces.end(); ++iAB) {
     const int ioff = iAB->offset();
     for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
@@ -47,7 +110,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
                                                                           1.0, out->element_ptr(joff, 0), out->ndim());
       }
       else {
-        std::shared_ptr<const Matrix> block = couple_blocks<true>(*iAB, *jAB);
+        shared_ptr<const Matrix> block = couple_blocks<true>(*iAB, *jAB);
 
         if (block) {
           dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(joff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), o.ndim());
@@ -62,7 +125,7 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
                                                                         1.0, out->element_ptr(ioff, 0), out->ndim());
     }
     else {
-      std::shared_ptr<const Matrix> block = compute_diagonal_block<true>(*iAB);
+      shared_ptr<const Matrix> block = compute_diagonal_block<true>(*iAB);
       dgemm_("N", "N", block->ndim(), nstates, block->mdim(), 1.0, block->data(), block->ndim(), o.element_ptr(ioff, 0), dimerstates_, 1.0, out->element_ptr(ioff, 0), out->ndim());
     }
   }
@@ -74,83 +137,78 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::apply_hamiltonian(cons
 //  - cc is initial guess on input, eigenvectors on exit
 //  - subspaces is the subspaces over which to apply the Hamiltonian
 //  - mute is whether to print convergence info
-template <class VecType>
-std::vector<double> MultiExcitonHamiltonian<VecType>::diagonalize(std::shared_ptr<Matrix>& cc, std::vector<DSubSpace>& subspaces, const bool mute) {
+vector<double> MEH_base::diagonalize(shared_ptr<Matrix>& cc, const vector<DimerSubspace_base>& subspaces, const bool mute) {
   Timer mehtime;
   const int nstates = cc->mdim();
 
   DavidsonDiag<Matrix> davidson(nstates, davidson_subspace_);
 
-  std::vector<bool> conv(nstates, false);
-  std::vector<double> out(nstates, 0.0);
+  vector<bool> conv(nstates, false);
+  vector<double> out(nstates, 0.0);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
-    std::shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc, subspaces);
+    shared_ptr<const Matrix> sigma = apply_hamiltonian(*cc, subspaces);
 
-    std::vector<std::shared_ptr<const Matrix>> sigman;
-    std::vector<std::shared_ptr<const Matrix>> ccn;
+    vector<shared_ptr<const Matrix>> sigman;
+    vector<shared_ptr<const Matrix>> ccn;
     for (int i = 0; i != nstates; ++i) {
       if (!conv[i]) {
         sigman.push_back(sigma->slice_copy(i,i+1));
         ccn.push_back(cc->slice_copy(i,i+1));
       }
       else {
-        sigman.push_back(std::shared_ptr<const Matrix>());
-        ccn.push_back(std::shared_ptr<const Matrix>());
+        sigman.push_back(shared_ptr<const Matrix>());
+        ccn.push_back(shared_ptr<const Matrix>());
       }
     }
-    const std::vector<double> energies = davidson.compute(ccn, sigman);
+    const vector<double> energies = davidson.compute(ccn, sigman);
 
     // residual
-    std::vector<std::shared_ptr<Matrix>> errvec = davidson.residual();
-    std::vector<double> errors;
+    vector<shared_ptr<Matrix>> errvec = davidson.residual();
+    vector<double> errors;
     for (int i = 0; i != nstates; ++i) {
       errors.push_back(errvec.at(i)->rms());
       conv.at(i) = errors.at(i) < thresh_;
     }
 
-    if (std::any_of(conv.begin(), conv.end(), [] (const bool t) { return (!t); })) {
+    if (any_of(conv.begin(), conv.end(), [] (const bool t) { return (!t); })) {
       for (int ist = 0; ist != nstates; ++ist) {
         if (conv.at(ist)) continue;
-        auto tmp_cc = std::make_shared<Matrix>(dimerstates_, 1);
+        auto tmp_cc = make_shared<Matrix>(dimerstates_, 1);
         double* target_array = tmp_cc->data();
         double* source_array = errvec.at(ist)->data();
         const double en = energies.at(ist);
         for (auto& space : subspaces) {
           for (int i = space.offset(); i != space.offset()+space.dimerstates(); ++i) {
-            target_array[i] = source_array[i] / std::min(en - denom_[i], -0.1);
+            target_array[i] = source_array[i] / min(en - denom_[i], -0.1);
           }
         }
-        std::list<std::shared_ptr<const Matrix>> tmp;
+        list<shared_ptr<const Matrix>> tmp;
         spin_->filter(*tmp_cc, nspin_);
         double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);
         tmp_cc->scale(scal);
-        std::copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
+        copy_n(tmp_cc->data(), dimerstates_, cc->element_ptr(0, ist));
       }
       cc->broadcast();
     }
 
     if (!mute) {
-      if (nstates != 1 && iter) std::cout << std::endl;
+      if (nstates != 1 && iter) cout << endl;
       for (int i = 0; i != nstates; ++i) {
-        std::cout << std::setw(7) << iter << std::setw(3) << i << std::setw(2) << (conv[i] ? "*" : " ")
-                                << std::setw(17) << std::fixed << std::setprecision(8) << energies[i] << "   "
-                                << std::setw(10) << std::scientific << std::setprecision(2) << errors[i] << "   "
-                                << std::fixed << std::setw(10) << std::setprecision(2) << mehtime.tick() << std::endl;
+        cout << setw(7) << iter << setw(3) << i << setw(2) << (conv[i] ? "*" : " ")
+                                << setw(17) << fixed << setprecision(8) << energies[i] << "   "
+                                << setw(10) << scientific << setprecision(2) << errors[i] << "   "
+                                << fixed << setw(10) << setprecision(2) << mehtime.tick() << endl;
       }
     }
-    std::copy(energies.begin(), energies.end(), out.begin());
-    if (std::all_of(conv.begin(), conv.end(), [] (const bool t) { return (t); })) break;
+    copy(energies.begin(), energies.end(), out.begin());
+    if (all_of(conv.begin(), conv.end(), [] (const bool t) { return (t); })) break;
   }
 
-  std::vector<std::shared_ptr<Matrix>> eigenstates = davidson.civec();
+  vector<shared_ptr<Matrix>> eigenstates = davidson.civec();
   for (int i = 0; i != nstates; ++i)
-    std::copy_n(eigenstates.at(i)->data(), dimerstates_, cc->element_ptr(0, i));
+    copy_n(eigenstates.at(i)->data(), dimerstates_, cc->element_ptr(0, i));
 
   return out;
 }
-
-#endif
-
-#endif
