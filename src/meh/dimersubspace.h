@@ -44,60 +44,58 @@ class MonomerKey : public SpaceKey {
     int neleb() const { return neleb_; }
 };
 
-/// Wrapper for monomer CI wavefunctions that includes extra helpful information
-template <class VecType>
-class MonomerSubspace_base : public MonomerKey {
+class DimerSubspace_base {
   protected:
-    std::shared_ptr<const VecType> monomerci_;
+    const int offset_;
+    std::pair<MonomerKey, MonomerKey> key_;
 
   public:
-    MonomerSubspace_base(const SpaceKey& s, const int nst, std::shared_ptr<const VecType> monomerci) :
-      MonomerKey(s, nst, monomerci->det()->nelea(), monomerci->det()->neleb()), monomerci_(monomerci) {}
-    MonomerSubspace_base(const int S, const int ms, const int charge, const int nst, std::shared_ptr<const VecType> monomerci) :
-      MonomerKey(S, ms, charge, nst,  monomerci->det()->nelea(), monomerci->det()->neleb()), monomerci_(monomerci) {}
+    DimerSubspace_base(const int o, const MonomerKey& a, const MonomerKey& b) : offset_(o), key_({a,b}) { }
 
-    std::shared_ptr<const VecType> monomerci() const { return monomerci_; }
+    int nstatesA() const { return key_.first.nstates(); }
+    int nstatesB() const { return key_.second.nstates(); }
+    template <int unit> int nstates() const { return unit == 0 ? nstatesA() : nstatesB(); }
+
+    std::string stringA() const { return key_.first.to_string(); }
+    std::string stringB() const { return key_.second.to_string(); }
+
+    int tagA() const { return key_.first.tag(); }
+    int tagB() const { return key_.second.tag(); }
+    template <int unit> int tag() const { return unit == 0 ? tagA() : tagB(); }
+
+    std::pair<int,int> S() const { return {key_.first.S, key_.second.S}; }
+    std::pair<int,int> ms() const { return {key_.first.m_s, key_.second.m_s}; }
+    std::pair<int,int> charge() const { return {key_.first.q, key_.second.q}; }
+
+    int dimerstates() const { return nstatesA() * nstatesB(); }
+    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA()); }
+    std::string string(const int i, const int j) const {
+      std::string out = stringA() + lexical_cast<std::string>(i) + std::string(" ") + stringB() + lexical_cast<std::string>(j);
+      return out;
+    }
+
+    int offset() const { return offset_; }
+
+    template <int unit> MonomerKey monomerkey() const { return unit == 0 ? MonomerKey(key_.first) : MonomerKey(key_.second); }
 };
 
 
 /// Contains all of the information for a product of two monomer spaces
 template <class VecType>
-class DimerSubspace_base {
+class DimerSubspace : public DimerSubspace_base {
   protected:
-    const int offset_;
-    const int nstatesA_;
-    const int nstatesB_;
-    const std::string stringA_;
-    const std::string stringB_;
-
-    std::pair<MonomerSubspace_base<VecType>, MonomerSubspace_base<VecType>> ci_;
+    std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> ci_;
     std::pair<std::shared_ptr<const CSymMatrix>, std::shared_ptr<const CSymMatrix>> sigma_;
 
   public:
-    DimerSubspace_base(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
-      offset_(_offset), nstatesA_(_ci.first->ij()), nstatesB_(_ci.second->ij()), stringA_(Akey.to_string()), stringB_(Bkey.to_string()),
-       ci_({MonomerSubspace_base<VecType>(Akey, nstatesA_, _ci.first), MonomerSubspace_base<VecType>(Bkey, nstatesB_, _ci.second)})
+    DimerSubspace(int& _offset, const SpaceKey Akey, const SpaceKey Bkey, std::pair<std::shared_ptr<const VecType>, std::shared_ptr<const VecType>> _ci) :
+      DimerSubspace_base(_offset, MonomerKey(Akey, _ci.first->ij(), _ci.first->det()->nelea(), _ci.first->det()->neleb()),
+                                  MonomerKey(Bkey, _ci.first->ij(), _ci.second->det()->nelea(), _ci.second->det()->neleb())), ci_({_ci.first, _ci.second})
     { _offset += dimerstates(); }
 
-    int offset() const { return offset_; }
-
-    int dimerstates() const { return nstatesA_ * nstatesB_; }
-    int dimerindex(const int iA, const int iB) const { return (iA + iB*nstatesA_); }
-    std::string string(const int i, const int j) const {
-      std::string out = stringA_ + lexical_cast<std::string>(i) + std::string(" ") + stringB_ + lexical_cast<std::string>(j);
-      return out;
-    }
-
-    template <int unit> int nstates() const { return ( unit == 0 ? nstatesA_ : nstatesB_ ); }
-    template <int unit> std::shared_ptr<const VecType> ci() const { return ( unit == 0 ? ci_.first.monomerci() : ci_.second.monomerci() ); }
+    template <int unit> std::shared_ptr<const VecType> ci() const { return unit == 0 ? ci_.first : ci_.second; }
     template <int unit> std::shared_ptr<const CSymMatrix> sigma() const { return ( unit == 0 ? sigma_.first : sigma_.second ); }
-    template <int unit> int tag() const { return unit == 0 ? ci_.first.tag() : ci_.second.tag(); }
 
-    std::pair<int,int> S() const { return {ci_.first.S, ci_.second.S}; }
-    std::pair<int,int> ms() const { return {ci_.first.m_s, ci_.second.m_s}; }
-    std::pair<int,int> charge() const { return {ci_.first.q, ci_.second.q}; }
-
-    template <int unit> MonomerKey monomerkey() const { return unit == 0 ? MonomerKey(ci_.first) : MonomerKey(ci_.second); }
 
     template <int unit> void set_sigma(std::shared_ptr<const CSymMatrix> s) { (unit == 0 ? sigma_.first : sigma_.second) = s; }
 

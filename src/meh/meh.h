@@ -45,7 +45,7 @@ namespace asd {
 template <bool _N>
 struct ASD_impl {
   template<typename T>
-  using DSb = DimerSubspace_base<T>;
+  using DSb = DimerSubspace<T>;
   using return_type = std::shared_ptr<typename std::conditional<_N, Matrix, RDM<2>>::type>;
   template <class VecType> static return_type compute_diagonal_block(MultiExcitonHamiltonian<VecType>*, DSb<VecType>& subspace)         { assert(false); return nullptr; }
 };
@@ -54,7 +54,7 @@ struct ASD_impl {
 /// Template for MEH (to be renamed ASD)
 template <class VecType>
 class MultiExcitonHamiltonian : public MEH_base {
-  protected: using DSubSpace = DimerSubspace_base<VecType>;
+  protected: using DSubSpace = DimerSubspace<VecType>;
   protected: using DCISpace = DimerCISpace_base<VecType>;
   protected: using CiType = typename VecType::Ci;
 

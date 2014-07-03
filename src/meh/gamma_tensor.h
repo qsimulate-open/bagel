@@ -54,7 +54,7 @@ class GammaTensor {
   public:
     // constructor that takes GammaForst
     template <typename T, int N, int M>
-    GammaTensor(asd::Wrap<GammaForest<T,N>,M> forest, const std::vector<DimerSubspace_base<T>>& sp) {
+    GammaTensor(asd::Wrap<GammaForest<T,N>,M> forest, const std::vector<DimerSubspace<T>>& sp) {
       std::shared_ptr<const GammaForest<T,N>> f = forest.f;
       // operator
       oplist_ = {
@@ -111,7 +111,8 @@ class GammaTensor {
     std::shared_ptr<GammaTensor> copy() const { return std::make_shared<GammaTensor>(*this); }
 #endif
 
-    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const { return sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j)); }
+    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const
+      { return sparse_.at(std::make_tuple(std::list<GammaSQ>(o), i, j)); }
 
 };
 
