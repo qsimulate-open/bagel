@@ -142,6 +142,7 @@ AC_CONFIG_FILES([Makefile
                  src/ciutil/Makefile
                  src/dimer/Makefile
                  src/meh/Makefile
+                 src/asd_dmrg/Makefile
                  src/wfn/Makefile
                  src/grad/Makefile
                  src/integral/Makefile

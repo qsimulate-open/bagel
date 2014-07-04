@@ -30,6 +30,7 @@
 #include <src/wfn/geometry_london.h>
 #include <src/molecule/localization.h>
 #include <src/meh/construct_meh.h>
+#include <src/asd_dmrg/rasd.h>
 #include <src/util/archive.h>
 
 // debugging
@@ -147,6 +148,9 @@ int main(int argc, char** argv) {
       } else if (title == "meh") {
           auto meh = construct_MEH(itree, dimer);
           meh->compute();
+      } else if (title == "asd_dmrg") {
+          auto asd = make_shared<RASD>(itree, dimer);
+          asd->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
