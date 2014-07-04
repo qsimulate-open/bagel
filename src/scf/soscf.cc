@@ -51,7 +51,7 @@ void SOSCF::initial_guess() {
   shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
   intermediate->diagonalize(soeig_.get());
   socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
-  aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
+  aodensity_ = aodensity();
 }
 
 void SOSCF::compute() {
@@ -90,7 +90,7 @@ void SOSCF::compute() {
     shared_ptr<ZMatrix> intermediate = make_shared<ZMatrix>(*sotildex_ % *sofock * *sotildex_);
     intermediate->diagonalize(soeig_.get());
     socoeff_ = make_shared<ZMatrix>(*sotildex_ * *intermediate);
-    aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
+    aodensity_ = aodensity();
   }
 }
 
@@ -107,6 +107,39 @@ shared_ptr<const ZMatrix> SOSCF::sooverlap() {
   out->zero();
   out->add_real_block(complex<double>(1.0, 0.0), 0, 0, overlap_->ndim(), overlap_->mdim(), overlap_);
   out->add_real_block(complex<double>(1.0, 0.0), overlap_->ndim(), overlap_->mdim(), overlap_->ndim(), overlap_->mdim(), overlap_);
+  return out;
+}
+
+std::shared_ptr<const ZMatrix> SOSCF::aodensity() {
+  const int n = geom_->nbasis();
+  shared_ptr<ZMatrix> out = make_shared<ZMatrix>(2*n, 2*n);
+  out->zero();
+
+  shared_ptr<const ZMatrix> coeffa = socoeff_->get_submatrix(0, 0, n, nocc_*2);
+  shared_ptr<const ZMatrix> coeffb = socoeff_->get_submatrix(n, 0, n, nocc_*2);
+
+  shared_ptr<const Matrix> rcoeffa = coeffa->get_real_part();
+  shared_ptr<const Matrix> icoeffa = coeffa->get_imag_part();
+  shared_ptr<const Matrix> rcoeffb = coeffb->get_real_part();
+  shared_ptr<const Matrix> icoeffb = coeffb->get_imag_part();
+
+  shared_ptr<const Matrix> reDaa = make_shared<const Matrix>((*rcoeffa ^ *rcoeffa) + (*icoeffa ^ *icoeffa));
+  shared_ptr<const Matrix> imDaa = make_shared<const Matrix>(((*rcoeffa ^ *icoeffa) * (-1.0)) + (*icoeffa ^ *rcoeffa));
+
+  out->add_real_block(complex<double>(1.0, 0.0), 0, 0, n , n, reDaa);
+  out->add_real_block(complex<double>(0.0, 1.0), 0, 0, n , n, imDaa);
+
+  out->add_real_block(complex<double>(1.0, 0.0), n, n, n , n, reDaa);
+  out->add_real_block(complex<double>(0.0,-1.0), 0, 0, n , n, imDaa);
+
+  shared_ptr<const Matrix> reDab = make_shared<const Matrix>((*rcoeffa ^ *rcoeffb) + (*icoeffa ^ *icoeffb));
+  shared_ptr<const Matrix> imDab = make_shared<const Matrix>(((*rcoeffa ^ *icoeffb) * (-1.0)) + (*icoeffa ^ *rcoeffb));
+
+  out->add_real_block(complex<double>(1.0, 0.0), 0, n, n , n, reDab);
+  out->add_real_block(complex<double>(0.0, 1.0), 0, n, n , n, imDab);
+  out->add_real_block(complex<double>(-1.0, 0.0), n, 0, n , n, reDab);
+  out->add_real_block(complex<double>(0.0, 1.0), n, 0, n , n, imDab);
+
   return out;
 }
 

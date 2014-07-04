@@ -54,6 +54,7 @@ class SOSCF : public SCF_base {
 
     std::shared_ptr<const ZMatrix> sooverlap();
     std::shared_ptr<const ZMatrix> sotildex();
+    std::shared_ptr<const ZMatrix> aodensity();
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
