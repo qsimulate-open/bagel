@@ -51,6 +51,35 @@ string ASD_DMRG::print_progress(const int position, const string left_symbol, co
   return out.str();
 }
 
-shared_ptr<PTree> ASD_DMRG::prepare_input(const int site, const bool growing) const {
+vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const {
+  vector<shared_ptr<PTree>> out;
+
+  shared_ptr<PTree> base_input = input_->get_child_optional(input_->get<string>("method"));
+  if (!base_input) base_input = make_shared<PTree>();
+
+  base_input->erase("charge");
+  base_input->erase("spin");
+  base_input->erase("nstate");
+
+  auto space = input_->get_child_optional("spaces");
+  if (!space)
+    throw runtime_error("spaces must be speciified");
+  for (auto& s : *space) {
+    auto tmp = make_shared<PTree>(*base_input);
+    for (auto& siter : *s) {
+      tmp->put("charge", siter->get<string>("charge"));
+      tmp->put("spin", siter->get<string>("spin"));
+      tmp->put("nstate", siter->get<string>("nstate"));
+    }
+    out.push_back(tmp);
+  }
+
+  if ( (out.size() != 1) && (out.size() != nsites_) )
+    throw runtime_error("Must specify either \"space\" or one per site");
+
+  return out;
+}
+
+shared_ptr<PTree> ASD_DMRG::prepare_sweeping_input(const int site) const {
   return nullptr;
 }

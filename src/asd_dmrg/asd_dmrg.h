@@ -60,9 +60,9 @@ class ASD_DMRG {
     std::string print_progress(const int position, const std::string left_symbol, const std::string right_symbol) const;
 
     /// Kicks off by doing a CAS calculation in the first site with the rest of the sites at mean-field
-    virtual std::shared_ptr<DMRG_Block> compute_first_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref) = 0;
+    virtual std::shared_ptr<DMRG_Block> compute_first_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref) = 0;
     /// Adds one site to the block
-    virtual std::shared_ptr<DMRG_Block> grow_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> left) = 0;
+    virtual std::shared_ptr<DMRG_Block> grow_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> left, const int site) = 0;
     /// Adds one site to the system block
     virtual std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment) = 0;
 
@@ -74,8 +74,10 @@ class ASD_DMRG {
     void compute();
 
   private:
-    /// Prepare input file corresponding to calculation on site
-    std::shared_ptr<PTree> prepare_input(const int site, const bool growing) const;
+    /// Prepare several input files used for growing the chain
+    std::vector<std::shared_ptr<PTree>> prepare_growing_input(const int site) const;
+    /// Prepare one input to be used during the sweep
+    std::shared_ptr<PTree> prepare_sweeping_input(const int site) const;
 };
 
 }
