@@ -208,3 +208,7 @@ void Dimer::get_spaces(shared_ptr<const PTree> idata, vector<vector<int>>& space
     for (auto& s : *spaceb) { spaces_B.push_back(vector<int>{s->get<int>("charge"), s->get<int>("spin"), s->get<int>("nstate")}); }
   }
 }
+
+shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> meanfield) const {
+  return nullptr;
+}
