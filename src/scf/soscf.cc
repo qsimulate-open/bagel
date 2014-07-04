@@ -68,7 +68,7 @@ void SOSCF::compute() {
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     shared_ptr<const ZMatrix> sofock = make_shared<const SOFock> (geom_, sohcore_, socoeff_->slice(0, nocc_ * 2));
-    const complex<double> energy = 0.25 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
+    const complex<double> energy = 0.5 * ((*sohcore_ + *sofock) * *aodensity_).trace() + geom_->nuclear_repulsion();
     assert(energy.imag() < 1e-12);
     energy_ = energy.real();
     auto error_vector = make_shared<const ZMatrix>(*sofock * *aodensity_ * *sooverlap_ - *sooverlap_ * *aodensity_ * *sofock);

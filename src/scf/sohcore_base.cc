@@ -39,7 +39,11 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore_base)
 
-SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) { init(mol); }
+SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+  init(mol);
+  fill_upper();
+}
+
 
 
 void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
