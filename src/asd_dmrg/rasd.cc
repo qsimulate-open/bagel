@@ -30,11 +30,12 @@ using namespace bagel;
 
 RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer) : ASD_DMRG(input, dimer) { }
 
-shared_ptr<DMRG_Block> RASD::compute_first_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref) {
+shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
+
   return nullptr;
 }
 
-shared_ptr<DMRG_Block> RASD::grow_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left) {
+shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
   return nullptr;
 }
 
