@@ -326,7 +326,6 @@ shared_ptr<ZMatrix> ZCASSCF::format_coeff(const int nclosed, const int nact, con
     }
   } else {
     // Transforms a coefficient matrix from block format to striped format : assumes ordering is (c,a,v,positrons)
-    cout << " block format in : striped format out " << endl;
     // striped format
     int n = coeff->ndim();
     int offset = nclosed;
