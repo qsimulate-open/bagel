@@ -116,9 +116,6 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
       // output area
       shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
 
-      // (b^+ a) contribution
-      sigma_1e_ab(cc, sigma_1, jop, trans);
-
       // (b^+b^+ b a) contribution
       sigma_2e_h<1,1,0,1>(d, e, jop, trans);
       pdebug.tick_print("task2ab-2 (+1)");
@@ -127,7 +124,7 @@ void ZHarrison::sigma_one(shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigm
     }
   }
 
-  if (noab && output1) {
+  if (output1) {
     // output area
     shared_ptr<ZCivec> sigma_1 = sigmavec->find(nelea-1, neleb+1)->data(istate);
 
