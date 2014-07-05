@@ -56,39 +56,63 @@ void SOFock::form_sofock() {
   int const nocc = socoeff_->mdim();
   int const nbasis = socoeff_->ndim() / 2;
 
-  std::shared_ptr<const Matrix> rsocoeff = socoeff_->get_real_part();
-  std::shared_ptr<const Matrix> coeffa = rsocoeff->get_submatrix(0, 0, nbasis, nocc);
-  std::shared_ptr<const Matrix> coeffb = rsocoeff->get_submatrix(nbasis, 0, nbasis, nocc);
+  std::shared_ptr<const ZMatrix> coeffa = socoeff_->get_submatrix(0, 0, nbasis, nocc);
+  std::shared_ptr<const ZMatrix> coeffb = socoeff_->get_submatrix(nbasis, 0, nbasis, nocc);
 
-  auto coeffta = std::make_shared<const Matrix>(*coeffa->transpose());
-  auto coefftb = std::make_shared<const Matrix>(*coeffb->transpose());
+  auto rcoeffa = std::make_shared<const Matrix>(*coeffa->get_real_part());
+  auto icoeffa = std::make_shared<const Matrix>(*coeffa->get_imag_part());
+  auto rcoeffb = std::make_shared<const Matrix>(*coeffb->get_real_part());
+  auto icoeffb = std::make_shared<const Matrix>(*coeffb->get_imag_part());
 
   std::shared_ptr<const DFDist> df = geom_->df();
 
-  std::shared_ptr<DFHalfDist> half_a = df->compute_half_transform(coeffa)->apply_J();
-  std::shared_ptr<DFHalfDist> half_b = df->compute_half_transform(coeffb)->apply_J();
+  std::shared_ptr<DFHalfDist> rhalf_a = df->compute_half_transform(rcoeffa)->apply_J();
+  std::shared_ptr<DFHalfDist> ihalf_a = df->compute_half_transform(icoeffa)->apply_J();
 
-  std::shared_ptr<Matrix> fockaa = std::make_shared<Matrix>(nbasis, nbasis);
-  std::shared_ptr<Matrix> fockbb = std::make_shared<Matrix>(nbasis, nbasis);
-  std::shared_ptr<Matrix> fockab = std::make_shared<Matrix>(nbasis, nbasis);
-  std::shared_ptr<Matrix> fockba = std::make_shared<Matrix>(nbasis, nbasis);
+  std::shared_ptr<DFHalfDist> rhalf_b = df->compute_half_transform(rcoeffb)->apply_J();
+  std::shared_ptr<DFHalfDist> ihalf_b = df->compute_half_transform(icoeffb)->apply_J();
 
-  *fockaa += *half_a->form_2index(half_a, -1.0);
-  *fockaa += *df->compute_Jop(half_a, coeffta, true);
-  *fockbb += *df->compute_Jop(half_a, coeffta, true);
+  std::shared_ptr<Matrix> J = std::make_shared<Matrix>(nbasis, nbasis);
+  *J += *df->compute_Jop(rhalf_a, rcoeffa->transpose(), true);
+  *J += *df->compute_Jop(ihalf_a, icoeffa->transpose(), true);
+  *J += *df->compute_Jop(rhalf_b, rcoeffb->transpose(), true);
+  *J += *df->compute_Jop(ihalf_b, icoeffb->transpose(), true);
 
-  *fockbb += *half_b->form_2index(half_b, -1.0);
-  *fockbb += *df->compute_Jop(half_b, coefftb, true);
-  *fockaa += *df->compute_Jop(half_b, coefftb, true);
+  std::shared_ptr<Matrix> rfockaa = std::make_shared<Matrix>(nbasis, nbasis);
+  std::shared_ptr<Matrix> ifockaa = std::make_shared<Matrix>(nbasis, nbasis);
+  *rfockaa += *rhalf_a->form_2index(rhalf_a, -1.0);
+  *rfockaa += *ihalf_a->form_2index(ihalf_a, -1.0);
+  *ifockaa += *ihalf_a->form_2index(rhalf_a, -1.0);
+  *ifockaa += *rhalf_a->form_2index(ihalf_a, -1.0);
 
-  *fockab += *half_a->form_2index(half_b, -1.0);
-  *fockba += *fockab->transpose();
-   
-  const std::complex<double> coeff(1.0, 0.0);
-  add_real_block(coeff, 0, 0, nbasis, nbasis, fockaa);
-  add_real_block(coeff, nbasis, nbasis, nbasis, nbasis, fockbb);
-  add_real_block(coeff, 0, nbasis, nbasis, nbasis, fockab);
-  add_real_block(coeff, nbasis, 0, nbasis, nbasis, fockba);
+  std::shared_ptr<Matrix> rfockbb = std::make_shared<Matrix>(nbasis, nbasis);
+  std::shared_ptr<Matrix> ifockbb = std::make_shared<Matrix>(nbasis, nbasis);
+  *rfockbb += *rhalf_b->form_2index(rhalf_b, -1.0);
+  *rfockbb += *ihalf_b->form_2index(ihalf_b, -1.0);
+  *ifockbb += *ihalf_b->form_2index(rhalf_b, -1.0);
+  *ifockbb += *rhalf_b->form_2index(ihalf_b, -1.0);
+
+  std::shared_ptr<Matrix> rfockab = std::make_shared<Matrix>(nbasis, nbasis);
+  std::shared_ptr<Matrix> ifockab = std::make_shared<Matrix>(nbasis, nbasis);
+  *rfockab += *rhalf_a->form_2index(rhalf_b, -1.0);
+  *rfockab += *ihalf_a->form_2index(ihalf_b, -1.0);
+  *ifockab += *ihalf_a->form_2index(rhalf_b, -1.0);
+  *ifockab += *rhalf_a->form_2index(ihalf_b, -1.0);
+
+  const std::complex<double> real(1.0, 0.0);
+  const std::complex<double> imag(0.0, 1.0);
+
+  add_real_block(real, 0, 0, nbasis, nbasis, rfockaa);
+  add_real_block(imag, 0, 0, nbasis, nbasis, ifockaa);
+  add_real_block(real, 0, 0, nbasis, nbasis, J);
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, rfockbb);
+  add_real_block(imag, nbasis, nbasis, nbasis, nbasis, ifockbb);
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, J);
+
+  add_real_block(real, 0, nbasis, nbasis, nbasis, rfockab);
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, ifockab);
+  add_real_block(real, nbasis, 0, nbasis, nbasis, rfockab->transpose());
+  add_real_block(-imag, nbasis, 0, nbasis, nbasis, ifockab->transpose());
 }
 
 }
