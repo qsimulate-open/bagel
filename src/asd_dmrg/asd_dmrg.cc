@@ -58,24 +58,29 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
   if (!base_input) base_input = make_shared<PTree>();
 
   base_input->erase("charge");
-  base_input->erase("spin");
+  base_input->erase("nspin");
   base_input->erase("nstate");
 
   auto space = input_->get_child_optional("spaces");
   if (!space)
     throw runtime_error("spaces must be speciified");
-  for (auto& s : *space) {
+  else if ( !(space->size()==1 || space->size()==nsites_) )
+    throw runtime_error("Must specify either one \"space\" object or one per site");
+
+  auto space_iter = space->begin();
+  if (space->size() == nsites_)
+    advance(space_iter, site);
+
+  // Quirk of PTree class requires this intermediate step
+  auto space_input = make_shared<PTree>(**space_iter);
+
+  for (auto& siter : *space_input) {
     auto tmp = make_shared<PTree>(*base_input);
-    for (auto& siter : *s) {
-      tmp->put("charge", siter->get<string>("charge"));
-      tmp->put("spin", siter->get<string>("spin"));
-      tmp->put("nstate", siter->get<string>("nstate"));
-    }
+    tmp->put("charge", siter->get<string>("charge"));
+    tmp->put("nspin", siter->get<string>("nspin"));
+    tmp->put("nstate", siter->get<string>("nstate"));
     out.push_back(tmp);
   }
-
-  if ( (out.size() != 1) && (out.size() != nsites_) )
-    throw runtime_error("Must specify either \"space\" or one per site");
 
   return out;
 }

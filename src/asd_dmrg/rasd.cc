@@ -25,6 +25,8 @@
 
 #include <src/asd_dmrg/rasd.h>
 
+#define DEBUG
+
 using namespace std;
 using namespace bagel;
 
@@ -66,24 +68,31 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
 
 shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
   map<SpaceKey, shared_ptr<const RASDvec>> states;
+  Timer rastime;
 
   for (auto& inp : inputs) {
     // finish preparing the input
-    inp->put("nclosed", 8);
-    read_restricted(inp, 0);
-    // RAS calculations
-    auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
-    ras->compute();
-    shared_ptr<const RASDvec> civecs = ras->civectors();
-
-    const int spin = inp->get<int>("spin");
+    const int spin = inp->get<int>("nspin");
     const int charge = inp->get<int>("charge");
-    states.emplace(SpaceKey(charge, spin, spin), civecs);
-    for (int i = 0; i < spin; ++i) {
-      const int ms = spin - 2*(i+1);
-      civecs = civecs->spin_lower();
-      states.emplace(SpaceKey(charge, spin, ms), civecs);
+    inp->put("nclosed", ref->nclosed());
+    read_restricted(inp, 0);
+    {
+      Muffle hide_cout;
+      // RAS calculations
+      auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
+      ras->compute();
+      shared_ptr<const RASDvec> civecs = ras->civectors();
+
+      states.emplace(SpaceKey(charge, spin, spin), civecs);
+      for (int i = 0; i < spin; ++i) {
+        const int ms = spin - 2*(i+1);
+        civecs = civecs->spin_lower();
+        states.emplace(SpaceKey(charge, spin, ms), civecs);
+      }
     }
+    const int nstates = inp->get<int>("nstate");
+    cout << "      - charge: " << charge << ", nspin: " << spin << ", nstates: " << nstates
+                                    << fixed << setw(10) << setprecision(2) << rastime.tick() << endl;
   }
 
 #if 0
