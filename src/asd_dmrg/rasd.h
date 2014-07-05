@@ -39,6 +39,9 @@ class RASD : public ASD_DMRG {
 
   public:
     RASD(const std::shared_ptr<const PTree> input, std::shared_ptr<Dimer> dimer);
+
+  private:
+    void read_restricted(std::shared_ptr<PTree> input, const int site) const;
 };
 
 }
