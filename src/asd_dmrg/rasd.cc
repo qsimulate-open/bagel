@@ -30,9 +30,67 @@ using namespace bagel;
 
 RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<Dimer> dimer) : ASD_DMRG(input, dimer) { }
 
-shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
+void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
+  auto restricted = input_->get_child("restricted");
 
+  auto read = [&input] (const shared_ptr<const PTree> inp, int current) {
+    array<int, 3> nras = inp->get_array<int, 3>("orbitals");
+    input->put("max_holes", inp->get<string>("max_holes"));
+    input->put("max_particles", inp->get<string>("max_particles"));
+
+    input->erase("active");
+    auto parent = std::make_shared<PTree>();
+    for (int i = 0; i < 3; ++i) {
+      auto tmp = std::make_shared<PTree>();
+      const int norb = nras[i];
+      for (int i = 0; i < norb; ++i, ++current)
+        tmp->push_back(current+1);
+      parent->push_back(tmp);
+    }
+    input->add_child("active", parent);
+#ifdef DEBUG
+    cout << "RAS[" << nras[0] << "," << nras[1] << "," << nras[2] << "](" << input->get<int>("max_holes") << "h" << input->get<int>("max_particles") << "p)" << endl;
+#endif
+  };
+
+  if (restricted->size() == 1)
+    read(*restricted->begin(), input->get<int>("nclosed"));
+  else if (restricted->size() == nsites_) {
+    auto iter = restricted->begin();
+    advance(iter, site);
+    read(*iter, input->get<int>("nclosed"));
+  }
+  else
+    throw runtime_error("Must specify either one set of restrictions for all sites, or one set per site");
+}
+
+shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
+  map<SpaceKey, shared_ptr<const RASDvec>> states;
+
+  for (auto& inp : inputs) {
+    // finish preparing the input
+    inp->put("nclosed", 8);
+    read_restricted(inp, 0);
+    // RAS calculations
+    auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
+    ras->compute();
+    shared_ptr<const RASDvec> civecs = ras->civectors();
+
+    const int spin = inp->get<int>("spin");
+    const int charge = inp->get<int>("charge");
+    states.emplace(SpaceKey(charge, spin, spin), civecs);
+    for (int i = 0; i < spin; ++i) {
+      const int ms = spin - 2*(i+1);
+      civecs = civecs->spin_lower();
+      states.emplace(SpaceKey(charge, spin, ms), civecs);
+    }
+  }
+
+#if 0
+  return make_shared<DMRG_Block>(states);
+#else
   return nullptr;
+#endif
 }
 
 shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
