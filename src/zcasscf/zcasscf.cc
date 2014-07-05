@@ -35,7 +35,6 @@ ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<
   if ((dynamic_pointer_cast<const RelReference>(ref))) {
       auto relref = dynamic_pointer_cast<const RelReference>(ref);
       coeff_ = relref->relcoeff();
-      no_kramers_init_ = true;
   } else {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
@@ -151,8 +150,13 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!no_kramers_init_)
-    init_kramers_coeff();
+  const bool bfgs_after_superci = idata_->get<bool>("bfgs_after_superci", false);
+  if (bfgs_after_superci) {
+    shared_ptr<ZMatrix> tmp = format_coeff(nclosed_, nact_, nvirt_, coeff_, /*striped*/true);
+    coeff_ = make_shared<const ZMatrix>(*tmp);
+  } else {
+    init_kramers_coeff(); // coeff_ now in block format
+  }
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_) {
