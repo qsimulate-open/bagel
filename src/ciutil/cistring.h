@@ -88,7 +88,7 @@ class CIString_base {
 };
 
 
-template<int N>
+template<int N, class Derived>
 class CIString_base_impl : public CIString_base {
   protected:
     int norb_;
@@ -103,7 +103,7 @@ class CIString_base_impl : public CIString_base {
     void init() {
       compute_strings();
     }
-    virtual void compute_strings() = 0;
+    void compute_strings() { static_cast<Derived*>(this)->compute_strings(); }
 
   private:
     friend class boost::serialization::access;
@@ -144,7 +144,7 @@ class CIString_base_impl : public CIString_base {
     }
 
     // copy construct with an offset update
-    CIString_base_impl(const CIString_base_impl<N>& o, const size_t offset)
+    CIString_base_impl(const CIString_base_impl<N,Derived>& o, const size_t offset)
       : norb_(o.norb_), nele_(o.nele_), offset_(offset), strings_(o.strings_), subspace_(o.subspace_),
         graphs_(o.graphs_), dist_(o.dist_) { }
 
@@ -169,17 +169,18 @@ class CIString_base_impl : public CIString_base {
 
     std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
-    virtual size_t lexical_zero(const std::bitset<nbit__>& bit) const = 0;
-    virtual size_t lexical_offset(const std::bitset<nbit__>& bit) const = 0;
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_zero(bit); }
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_offset(bit); }
 
-    virtual bool contains(const std::bitset<nbit__>& bit) const = 0;
-    virtual bool matches(const int, const int) const = 0;
+    bool contains(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->contains(bit); }
+    bool matches(const int i, const int j) const { return static_cast<const Derived*>(this)->matches(i,j); }
 };
 
 
-class RASString : public CIString_base_impl<3> {
+class RASString : public CIString_base_impl<3,RASString> {
+  friend class CIString_base_impl<3,RASString>;
   protected:
-    void compute_strings() override;
+    void compute_strings();
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {
@@ -193,23 +194,23 @@ class RASString : public CIString_base_impl<3> {
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<CIString_base_impl<3>>(*this);
+      ar & boost::serialization::base_object<CIString_base_impl<3,RASString>>(*this);
     }
 
   public:
     RASString() { }
     RASString(const size_t nele1, const size_t norb1, const size_t nele2, const size_t norb2, const size_t nele3, const size_t norb3, const size_t offset = 0);
-    RASString(const RASString& o, const size_t offset = 0) : CIString_base_impl<3>(o, offset) { }
+    RASString(const RASString& o, const size_t offset = 0) : CIString_base_impl<3,RASString>(o, offset) { }
 
     int nholes() const { return subspace_[0].second - subspace_[0].first; }
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
     int nparticles() const { return subspace_[2].first; }
 
-    size_t lexical_offset(const std::bitset<nbit__>& bit) const override {
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const {
       return lexical_zero(bit) + offset_;
     }
 
-    size_t lexical_zero(const std::bitset<nbit__>& bit) const override {
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const {
       const size_t r1 = subspace_[0].second;
       const size_t r2 = subspace_[1].second;
       const size_t r3 = subspace_[2].second;
@@ -241,44 +242,48 @@ class RASString : public CIString_base_impl<3> {
 };
 
 
-class FCIString : public CIString_base_impl<1> {
+class FCIString : public CIString_base_impl<1,FCIString> {
+  friend class CIString_base_impl<1,FCIString>;
   protected:
-    void compute_strings() override;
+    void compute_strings();
 
   private:
     friend class boost::serialization::access;
     template <class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<CIString_base_impl<1>>(*this);
+      ar & boost::serialization::base_object<CIString_base_impl<1,FCIString>>(*this);
     }
 
   public:
     FCIString() { }
     FCIString(const size_t nele1, const size_t norb1, const size_t offset = 0);
-    FCIString(const FCIString& o, const size_t offset = 0) : CIString_base_impl<1>(o, offset) { }
+    FCIString(const FCIString& o, const size_t offset = 0) : CIString_base_impl<1,FCIString>(o, offset) { }
 
     size_t lexical(const std::bitset<nbit__>& bit) const {
       assert(contains(bit));
       return graphs_[0]->lexical(0, norb_, bit);
     }
-    size_t lexical_offset(const std::bitset<nbit__>& bit) const override { return lexical(bit)+offset_; }
-    size_t lexical_zero(const std::bitset<nbit__>& bit) const override { return lexical(bit); }
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const { return lexical(bit)+offset_; }
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const { return lexical(bit); }
 
     bool contains(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
     bool matches(const int n, const int m) const { return true; }
 
 };
 
+using FCIString_base = CIString_base_impl<1,FCIString>;
+using RASString_base = CIString_base_impl<3,RASString>;
+
 }
 
-extern template class bagel::CIString_base_impl<1>;
-extern template class bagel::CIString_base_impl<3>;
+extern template class bagel::CIString_base_impl<1,bagel::FCIString>;
+extern template class bagel::CIString_base_impl<3,bagel::RASString>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::CIGraph)
 BOOST_CLASS_EXPORT_KEY(bagel::CIString_base)
-BOOST_CLASS_EXPORT_KEY(bagel::CIString_base_impl<1>)
-BOOST_CLASS_EXPORT_KEY(bagel::CIString_base_impl<3>)
+BOOST_CLASS_EXPORT_KEY(bagel::RASString_base)
+BOOST_CLASS_EXPORT_KEY(bagel::FCIString_base)
 BOOST_CLASS_EXPORT_KEY(bagel::RASString)
 BOOST_CLASS_EXPORT_KEY(bagel::FCIString)
 
