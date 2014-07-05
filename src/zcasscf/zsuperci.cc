@@ -55,7 +55,6 @@ void ZSuperCI::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     if (iter >= diis_start_ && gradient < 1.0e-2 && diis == nullptr) {
-      cout << "+++ STARTING DIIS on iteration " << iter << " +++ " << endl;
       shared_ptr<ZMatrix> tmp = make_shared<ZMatrix>(coeff_->ndim(),coeff_->mdim()/2);
       tmp->copy_block(0, 0, coeff_->ndim(), nocc_*2, coeff_->slice(0, nocc_*2));
       tmp->copy_block(0, nocc_*2, coeff_->ndim(), nvirtnr_, coeff_->slice(nocc_*2,nocc_*2+nvirtnr_));
@@ -121,9 +120,11 @@ void ZSuperCI::compute() {
   // ============================
     shared_ptr<const ZRotFile> cc;
     {
+      mute_stdcout(/*fci*/true);
       ZSuperCIMicro micro(shared_from_this(), grad, denom, f, fact, factp, gaa);
       micro.compute();
       cc = micro.cc();
+      resume_stdcout();
     }
 
    // orbital rotation matrix
