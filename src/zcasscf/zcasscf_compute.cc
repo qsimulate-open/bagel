@@ -192,15 +192,16 @@ void ZCASBFGS::compute() {
     shared_ptr<ZRotFile> xlog;
     shared_ptr<ZRotFile> ele_rot;
     shared_ptr<ZRotFile> pos_rot;
+    bool reset;
     if (optimize_electrons) {
       cout << "+++ Optimizing electrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(ele_x->log(4), nclosed_*2, nact_*2, nvirtnr_*2);
-      tie(ele_rot, ele_energy, grad, xlog) = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
+      tie(ele_rot, ele_energy, grad, xlog, reset) = ___debug___optimize_subspace_rotations(ele_energy, grad, xlog, ele_srbfgs, cold, optimize_electrons);
       kramers_adapt(ele_rot, nclosed_, nact_, nvirtnr_);
     } else {
       cout << "+++ Optimizing positrons +++ " << endl;
       xlog    = make_shared<ZRotFile>(pos_x->log(4), nclosed_*2, nact_*2, nneg_);
-      tie(pos_rot, pos_energy, grad, xlog) = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
+      tie(pos_rot, pos_energy, grad, xlog, reset) = ___debug___optimize_subspace_rotations(pos_energy, grad, xlog, pos_srbfgs, cold, optimize_electrons);
       kramers_adapt(pos_rot, nclosed_, nact_, nneg_/2);
     }
 #endif

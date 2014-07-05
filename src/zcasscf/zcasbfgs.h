@@ -111,7 +111,7 @@ class ZCASBFGS : public ZCASSCF {
    // returns matrix of orbital rotation parameters
    std::shared_ptr<ZRotFile> ___debug___microiterations(std::shared_ptr<ZRotFile> xlog, std::shared_ptr<ZRotFile> grad, std::shared_ptr<SRBFGS<ZRotFile>> bfgs, double trust_radius, const int iter) const;
    // function to optimize only the electronic-electronic or electronic-positronic type rotations
-   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>> ___debug___optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, std::shared_ptr<ZMatrix> cold, bool optimize_electrons = true);
+   std::tuple<std::shared_ptr<ZRotFile>, std::vector<double>, std::shared_ptr<ZRotFile>, std::shared_ptr<ZRotFile>, bool> ___debug___optimize_subspace_rotations(std::vector<double> energy, std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> rot, std::shared_ptr<SRBFGS<ZRotFile>> srbfgs, std::shared_ptr<ZMatrix> cold, bool optimize_electrons = true);
    // function to copy electronic rotations from a rotation file TODO: make lambda
    std::shared_ptr<ZRotFile> ___debug___copy_electronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
    // function to copy positronic rotations from a rotation file TODO: make lambda
