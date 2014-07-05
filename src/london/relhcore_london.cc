@@ -53,48 +53,16 @@ void RelHcore_London::compute_() {
   zsnai->add_block(  w, 0, n, n, n, (*smallnai_)[3]);
   zsnai->add_block( -w, n, 0, n, n, (*smallnai_)[3]);
 
-  // TODO If careful, we should be able to get smalloverlap[0] from ComplexKineticBatch
-  //      and smalloverlap[1-3] from ComplexOverlapBatch & magnetic field
   const complex<double> rh (-0.5);
   const complex<double> ih (0.0, rh.real());
   auto zeeman = make_shared<ZMatrix>(2*n, 2*n);
-  zeeman->zero();
 
-  //(*(*smalloverlap_)[0]*0.5 - *kinetic_).print("Difference between Kinetic integral and SmallOverlap mimicry", 100);
-  //(*(*smalloverlap_)[1]*0.5 - *overlap_*ih*geom_->magnetic_field(2)).print("Difference between Bz-scaled overlap integral and SmallOverlap mimicry", 100);
-  //(*(*smalloverlap_)[2]*0.5 - *overlap_*ih*geom_->magnetic_field(0)).print("Difference between Bx-scaled overlap integral and SmallOverlap mimicry", 100);
-  //(*(*smalloverlap_)[3]*0.5 - *overlap_*ih*geom_->magnetic_field(1)).print("Difference between By-scaled overlap integral and SmallOverlap mimicry", 100);
-  //kinetic_->print("Kinetic energy Matrix", 100);
-  //overlap_->print("Overlap Matrix", 100);
-  //(*(*smalloverlap_)[0]*0.5).print("Small integral overlap (Zeeman?) Matrix - part 0 (xx + yy + zz)", 100);
-  //(*(*smalloverlap_)[1]*0.5).print("Small integral overlap (Zeeman?) Matrix - part 1 (xy - yx)", 100);
-  //(*(*smalloverlap_)[2]*0.5).print("Small integral overlap (Zeeman?) Matrix - part 2 (yz - zy)", 100);
-  //(*(*smalloverlap_)[3]*0.5).print("Small integral overlap (Zeeman?) Matrix - part 3 (zx - xz)", 100);
-
-  //zeeman->add_block( rh, 0, 0, n, n, (*smalloverlap_)[0]);
-  //zeeman->add_block( rh, n, n, n, n, (*smalloverlap_)[0]);
-  {
-    /*
-    zeeman->add_block(  ih, 0, 0, n, n, (*smalloverlap_)[1]);
-    zeeman->add_block( -ih, n, n, n, n, (*smalloverlap_)[1]);
-    zeeman->add_block( -ih, 0, n, n, n, (*smalloverlap_)[2]);
-    zeeman->add_block( -ih, n, 0, n, n, (*smalloverlap_)[2]);
-    zeeman->add_block(  rh, 0, n, n, n, (*smalloverlap_)[3]);
-    zeeman->add_block( -rh, n, 0, n, n, (*smalloverlap_)[3]);
-    */
-  }
-  {
-    ///*
-    const complex<double> r2 (0.5);
-    const complex<double> i2 (0.0, r2.real());
-    zeeman->add_block( -r2*geom_->magnetic_field(2), 0, 0, n, n, overlap_);
-    zeeman->add_block(  r2*geom_->magnetic_field(2), n, n, n, n, overlap_);
-    zeeman->add_block( -r2*geom_->magnetic_field(0), 0, n, n, n, overlap_);
-    zeeman->add_block( -r2*geom_->magnetic_field(0), n, 0, n, n, overlap_);
-    zeeman->add_block(  i2*geom_->magnetic_field(1), 0, n, n, n, overlap_);
-    zeeman->add_block( -i2*geom_->magnetic_field(1), n, 0, n, n, overlap_);
-    //*/
-  }
+  zeeman->add_block(  rh*geom_->magnetic_field(2), 0, 0, n, n, overlap_);
+  zeeman->add_block( -rh*geom_->magnetic_field(2), n, n, n, n, overlap_);
+  zeeman->add_block(  rh*geom_->magnetic_field(0), 0, n, n, n, overlap_);
+  zeeman->add_block(  rh*geom_->magnetic_field(0), n, 0, n, n, overlap_);
+  zeeman->add_block( -ih*geom_->magnetic_field(1), 0, n, n, n, overlap_);
+  zeeman->add_block(  ih*geom_->magnetic_field(1), n, 0, n, n, overlap_);
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
   zero();

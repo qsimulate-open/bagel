@@ -47,7 +47,7 @@ double london_energy(std::string filename) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
-      cgeom = std::make_shared<Geometry_London>(itree);
+      cgeom = cgeom ? std::make_shared<Geometry_London>(*cgeom, itree) : std::make_shared<Geometry_London>(itree);
     } else if (method == "hf") {
       auto scf = std::make_shared<SCF_London>(itree, cgeom, ref_);
       scf->compute();
@@ -69,8 +69,8 @@ BOOST_AUTO_TEST_SUITE(TEST_LONDON)
 BOOST_AUTO_TEST_CASE(LONDON) {
   BOOST_CHECK(compare(london_energy("hf_svp_london_hf"),      -99.70397733));
   BOOST_CHECK(compare(london_energy("hf_svp_london_dfhf"),    -99.70391005));
-//  BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"), -99.82459461));
-//  BOOST_CHECK(compare(london_energy("hcl_svp_london_coulomb"), -458.35543900));
+  BOOST_CHECK(compare(london_energy("hf_svp_london_coulomb"), -99.82461004));
+  BOOST_CHECK(compare(london_energy("hcl_svp_london_coulomb"), -461.37730038));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

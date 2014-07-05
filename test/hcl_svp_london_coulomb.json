@@ -7,12 +7,27 @@
   "df_basis" : "svp-jkfit",
   "basis_type" : "london",
   "tesla" : "false",
-  "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ],
   "angstrom" : "false",
   "geometry" : [
     { "atom" : "Cl",  "xyz" : [ -1.200000,      2.500000,      2.720616], "exponent" : 3.8463852873E+08 },
     { "atom" : "H",   "xyz" : [ -1.200000,      2.500000,      0.305956], "exponent" : 2.1248239171E+09 }
   ]
+},
+
+{
+  "title" : "hf",
+  "thresh" : "1.0e-7"
+},
+
+{
+  "title" : "dhf",
+  "gaunt" : "false",
+  "breit" : "false"
+},
+
+{
+  "title" : "molecule",
+  "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ]
 },
 
 {

@@ -44,7 +44,7 @@ class RelHcore_London : public ZMatrix {
     const std::shared_ptr<const ZMatrix> nai_;
     const std::shared_ptr<const ZMatrix> overlap_;
     std::shared_ptr<Small1e_London<ComplexNAIBatch>> smallnai_;
-    std::shared_ptr<Small1e_London<ComplexOverlapBatch>> smalloverlap_;
+    //std::shared_ptr<Small1e_London<ComplexOverlapBatch>> smalloverlap_;
 
     void compute_();
 
@@ -56,7 +56,7 @@ class RelHcore_London : public ZMatrix {
             nai_(std::make_shared<ZMatrix>(*hcore_ - *kinetic_)),
             overlap_(std::make_shared<ZOverlap>(geom_)) {
       smallnai_ = std::make_shared<Small1e_London<ComplexNAIBatch>>(geom_);
-      smalloverlap_ = std::make_shared<Small1e_London<ComplexOverlapBatch>>(geom_);
+      //smalloverlap_ = std::make_shared<Small1e_London<ComplexOverlapBatch>>(geom_);
       if (geom_->has_finite_nucleus()) {
         smallnai_->ax_plus_y(1.0, *std::make_shared<Small1e_London<ComplexERIBatch>>(geom_));
       }
