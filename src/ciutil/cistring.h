@@ -103,7 +103,7 @@ class CIString_base_impl : public CIString_base {
     void init() {
       compute_strings();
     }
-    void compute_strings() { static_cast<Derived*>(this)->compute_strings(); }
+    void compute_strings() { static_cast<Derived*>(this)->compute_strings_impl(); }
 
   private:
     friend class boost::serialization::access;
@@ -169,18 +169,47 @@ class CIString_base_impl : public CIString_base {
 
     std::shared_ptr<const StaticDist> dist() const { return dist_; }
 
-    size_t lexical_zero(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_zero(bit); }
-    size_t lexical_offset(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_offset(bit); }
+    size_t lexical_zero(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_zero_impl(bit); }
+    size_t lexical_offset(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->lexical_offset_impl(bit); }
 
-    bool contains(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->contains(bit); }
-    bool matches(const int i, const int j) const { return static_cast<const Derived*>(this)->matches(i,j); }
+    bool contains(const std::bitset<nbit__>& bit) const { return static_cast<const Derived*>(this)->contains_impl(bit); }
+    bool matches(const int i, const int j) const { return static_cast<const Derived*>(this)->matches_impl(i,j); }
 };
 
 
 class RASString : public CIString_base_impl<3,RASString> {
   friend class CIString_base_impl<3,RASString>;
   protected:
-    void compute_strings();
+    void compute_strings_impl();
+
+    bool contains_impl(const std::bitset<nbit__>& bit) const {
+      assert(bit.count() == nele_);
+      return nholes(bit) == nholes() && nparticles(bit) == nparticles();
+    }
+
+    bool matches_impl(const int nh, const int np) const {
+      return nh == nholes() && np == nparticles();
+    }
+
+    size_t lexical_offset_impl(const std::bitset<nbit__>& bit) const {
+      return lexical_zero(bit) + offset_;
+    }
+
+    size_t lexical_zero_impl(const std::bitset<nbit__>& bit) const {
+      const size_t r1 = subspace_[0].second;
+      const size_t r2 = subspace_[1].second;
+      const size_t r3 = subspace_[2].second;
+
+      const size_t n2 = graphs_[1]->size();
+      const size_t n1 = graphs_[0]->size();
+
+      size_t out = 0;
+      out += graphs_[1]->lexical(r1, r1+r2, bit);
+      out += n2 * graphs_[0]->lexical(0, r1, bit);
+      out += n2 * n1 * graphs_[2]->lexical(r1+r2, r1+r2+r3, bit);
+
+      return out;
+    }
 
     // helper functions
     int nholes(const std::bitset<nbit__>& bit) const {
@@ -206,46 +235,24 @@ class RASString : public CIString_base_impl<3,RASString> {
     int nele2() const { return nele_ - subspace_[0].first - subspace_[2].first; }
     int nparticles() const { return subspace_[2].first; }
 
-    size_t lexical_offset(const std::bitset<nbit__>& bit) const {
-      return lexical_zero(bit) + offset_;
-    }
-
-    size_t lexical_zero(const std::bitset<nbit__>& bit) const {
-      const size_t r1 = subspace_[0].second;
-      const size_t r2 = subspace_[1].second;
-      const size_t r3 = subspace_[2].second;
-
-      const size_t n2 = graphs_[1]->size();
-      const size_t n1 = graphs_[0]->size();
-
-      size_t out = 0;
-      out += graphs_[1]->lexical(r1, r1+r2, bit);
-      out += n2 * graphs_[0]->lexical(0, r1, bit);
-      out += n2 * n1 * graphs_[2]->lexical(r1+r2, r1+r2+r3, bit);
-
-      return out;
-    }
-
     template <int S> const std::pair<const int, const int> ras() const {
       static_assert(S == 0 || S == 1 || S == 2, "illegal call of RAString::ras");
       return std::get<S>(subspace_);
     }
 
-    bool contains(const std::bitset<nbit__>& bit) const {
-      assert(bit.count() == nele_);
-      return nholes(bit) == nholes() && nparticles(bit) == nparticles();
-    }
-
-    bool matches(const int nh, const int np) const {
-      return nh == nholes() && np == nparticles();
-    }
 };
 
 
 class FCIString : public CIString_base_impl<1,FCIString> {
   friend class CIString_base_impl<1,FCIString>;
   protected:
-    void compute_strings();
+    void compute_strings_impl();
+
+    bool contains_impl(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
+    bool matches_impl(const int n, const int m) const { return true; }
+
+    size_t lexical_offset_impl(const std::bitset<nbit__>& bit) const { return lexical(bit)+offset_; }
+    size_t lexical_zero_impl(const std::bitset<nbit__>& bit) const { return lexical(bit); }
 
   private:
     friend class boost::serialization::access;
@@ -263,12 +270,6 @@ class FCIString : public CIString_base_impl<1,FCIString> {
       assert(contains(bit));
       return graphs_[0]->lexical(0, norb_, bit);
     }
-    size_t lexical_offset(const std::bitset<nbit__>& bit) const { return lexical(bit)+offset_; }
-    size_t lexical_zero(const std::bitset<nbit__>& bit) const { return lexical(bit); }
-
-    bool contains(const std::bitset<nbit__>& bit) const { assert(bit.count() == nele_); return true; }
-    bool matches(const int n, const int m) const { return true; }
-
 };
 
 using FCIString_base = CIString_base_impl<1,FCIString>;

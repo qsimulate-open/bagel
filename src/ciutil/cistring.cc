@@ -75,7 +75,7 @@ RASString::RASString(const size_t nele1, const size_t norb1, const size_t nele2,
 }
 
 
-void RASString::compute_strings() {
+void RASString::compute_strings_impl() {
   const size_t size = graphs_[0]->size()*graphs_[1]->size()*graphs_[2]->size();
   // Lexical ordering done, now fill in all the strings
   strings_ = vector<bitset<nbit__>>(size, bitset<nbit__>(0ul));
@@ -118,7 +118,7 @@ FCIString::FCIString(const size_t nele1, const size_t norb1, const size_t offset
 }
 
 
-void FCIString::compute_strings() {
+void FCIString::compute_strings_impl() {
   vector<int> data(norb_);
   iota(data.begin(), data.end(), 0);
   // Lexical ordering done, now fill in all the strings
