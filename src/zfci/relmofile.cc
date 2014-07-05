@@ -293,6 +293,7 @@ unordered_map<bitset<2>, shared_ptr<const ZMatrix>> RelJop::compute_mo1e(const a
 
   for (size_t i = 0; i != 4; ++i)
     out[bitset<2>(i)] = make_shared<ZMatrix>(*coeff[i/2] % *core_fock_ * *coeff[i%2]);
+  out[bitset<2>("11")] = out[bitset<2>("00")]->get_conjg();
 
   assert(out.size() == 4);
   // symmetry requirement
