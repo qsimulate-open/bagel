@@ -8,7 +8,7 @@
 #ifndef BTAS_TENSOR_FUNC_H_
 #define BTAS_TENSOR_FUNC_H_
 
-#include "btas/tensorview.h"
+#include <btas/tensorview.h>
 
 namespace btas {
 

@@ -32,12 +32,14 @@
 #define _HAS_INTEL_MKL
 #endif
 
+#include <complex>
 #include <btas/btas.h>
 #include <btas/tensor.h>
 #include <btas/tensor_func.h>
 #include <src/math/btas_varray.h>
 
 namespace btas {
+  // int N is not nessesary, but leave it so that we can switch to fixed-rank tensors in the future
   template<int N>
   using CRange = RangeNd<CblasColMajor>;
 
@@ -64,5 +66,8 @@ namespace btas {
   template<typename T, int N>
   using TensorViewN = TensorView<T, CRange<N>, bagel::varray<T>>;
 }
+
+extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
+extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
 
 #endif

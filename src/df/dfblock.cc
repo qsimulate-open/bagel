@@ -29,13 +29,13 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
+shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const TensorView2<double>> cmat, const bool trans) const {
+  assert(trans ? cmat->extent(1) : cmat->extent(0) == b1size());
   assert(cmat->range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   if (!trans)
@@ -47,49 +47,13 @@ shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const MatView> cma
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const MatView> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
+shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const TensorView2<double>> cmat, const bool trans) const {
+  assert(trans ? cmat->extent(1) : cmat->extent(0) == b2size());
   assert(cmat->range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
-  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
-
-  if (!trans)
-    contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
-  else  // trans -> back transform
-    contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
-
-  return out;
-}
-
-
-// TODO will be deprecated
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const Matrix> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
-
-  // so far I only consider the following case
-  assert(b1start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
-  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
-
-  if (!trans)
-    contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
-  else
-    contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
-
-  return out;
-}
-
-
-// TODO will be deprecated
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const Matrix> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
-
-  // so far I only consider the following case
-  assert(b2start_ == 0);
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)

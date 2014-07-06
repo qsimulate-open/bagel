@@ -41,6 +41,8 @@ struct dotc_impl
             _IteratorY itrY, const typename std::iterator_traits<_IteratorY>::difference_type& incY)
    {
       return_type val = dotc(*itrX, *itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += dotc(*itrX, *itrY);
@@ -80,6 +82,8 @@ struct dotc_impl<float>
       return cblas_sdot(Nsize, itrX, incX, itrY, incY);
 #else
       return_type val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += (*itrX) * (*itrY);
@@ -102,7 +106,10 @@ struct dotc_impl<double>
 #ifdef _HAS_CBLAS
       return cblas_ddot(Nsize, itrX, incX, itrY, incY);
 #else
+      int count = 1;
       return_type val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += (*itrX) * (*itrY);
@@ -126,7 +133,9 @@ struct dotc_impl<std::complex<float>>
 #ifdef _HAS_CBLAS
       cblas_cdotc_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
-      val = (*itrX) * (*itrY);
+      val = std::conj(*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += std::conj(*itrX) * (*itrY);
@@ -151,6 +160,8 @@ struct dotu_impl<std::complex<float>>
       cblas_cdotu_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
       val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += *itrX * (*itrY);
@@ -174,7 +185,9 @@ struct dotc_impl<std::complex<double>>
 #ifdef _HAS_CBLAS
       cblas_zdotc_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
-      val = (*itrX) * (*itrY);
+      val = std::conj(*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += std::conj(*itrX) * (*itrY);
@@ -199,6 +212,8 @@ struct dotu_impl<std::complex<double>>
       cblas_zdotu_sub(Nsize, itrX, incX, itrY, incY, &val);
 #else
       val = (*itrX) * (*itrY);
+      itrX += incX;
+      itrY += incY;
       for (unsigned long i = 1; i < Nsize; ++i, itrX += incX, itrY += incY)
       {
          val += *itrX * (*itrY);

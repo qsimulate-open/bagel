@@ -1,4 +1,4 @@
-// I implement these things for BAGEL first, and will make it generic
+// TODO Only ColMajor so far.
 #ifndef BTAS_OPTIMIZE_CONTRACT_H
 #define BTAS_OPTIMIZE_CONTRACT_H
 

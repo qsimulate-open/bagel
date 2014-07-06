@@ -28,7 +28,7 @@ namespace btas {
            class _Storage = btas::DEFAULT::storage<_T>,
            class = typename std::enable_if<std::is_same<_T, typename _Storage::value_type>::value>::type
           >
-  class Tensor {
+  class Tensor : public TensorView<_T,_Range,_Storage> {
 
     public:
 
@@ -79,20 +79,24 @@ namespace btas {
       template<typename... _args>
       explicit
       Tensor (const size_type& first, const _args&... rest) :
-      range_(range_type(first, rest...))
+      TensorView<_T,_Range,_Storage>(range_type(first, rest...))
       {
         // TODO make this disablable in all constructors
         //assert(range_.ordinal(range_.lobound()) == 0);
         array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// construct from \c range, allocate data, but not initialized
       template <typename Range>
       explicit
       Tensor (const Range& range, typename std::enable_if<btas::is_boxrange<Range>::value>::type* = 0) :
-      range_(range.lobound(), range.upbound())
+      TensorView<_T,_Range,_Storage>(range_type(range.lobound(), range.upbound()))
       {
         array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// construct from \c range object, set all elements to \c v
@@ -101,10 +105,12 @@ namespace btas {
       Tensor (const Range& range,
               value_type v,
               typename std::enable_if<btas::is_boxrange<Range>::value>::type* = 0) :
-              range_(range.lobound(), range.upbound())
+              TensorView<_T,_Range,_Storage>(range_type(range.lobound(), range.upbound()))
       {
         array_adaptor<storage_type>::resize(storage_, range_.area());
         std::fill(begin(), end(), v);
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// construct from \c range and \c storage
@@ -116,40 +122,48 @@ namespace btas {
                                       not std::is_same<Range,range_type>::value &
                                       not std::is_same<Storage,storage_type>::value
                                      >::type* = 0) :
-      range_(range.lobound(), range.upbound()), storage_(storage)
+      TensorView<_T,_Range,_Storage>(range_type(range.lobound(), range.upbound())), storage_(storage)
       {
         if (storage_.size() != range_.area())
           array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// copy-copy-construct from \c range and \c storage
       explicit
       Tensor (const range_type& range, const storage_type& storage) :
-      range_(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound())),
+      TensorView<_T,_Range,_Storage>(range_type(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound()))),
       storage_(storage)
       {
         if (storage_.size() != range_.area())
           array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// copy-move-construct from \c range and \c storage
       explicit
       Tensor (const range_type& range, storage_type&& storage) :
-      range_(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound())),
+      TensorView<_T,_Range,_Storage>(range_type(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound()))),
       storage_(storage)
       {
         if (storage_.size() != range_.area())
           array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// move-construct from \c range and \c storage
       explicit
       Tensor (range_type&& range, storage_type&& storage) :
-      range_(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound())),
+      TensorView<_T,_Range,_Storage>(range_type(range.ordinal(*range.begin()) == 0 ? range : range_type(range.lobound(), range.upbound()))),
       storage_(storage)
       {
         if (storage_.size() != range_.area())
           array_adaptor<storage_type>::resize(storage_, range_.area());
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// Construct an evaluated tensor
@@ -167,11 +181,13 @@ namespace btas {
       explicit
       Tensor (const Range& range, InIter it, const Op& op,
               typename std::enable_if<btas::is_boxrange<Range>::value>::type* = 0) :
-              range_(range.lobound(), range.upbound())
+              TensorView<_T,_Range,_Storage>(range_type(range.lobound(), range.upbound()))
       {
         auto size = range_.area();
         array_adaptor<storage_type>::resize(storage_, size);
         std::transform(it, it+size, begin(), op);
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// copy constructor
@@ -179,22 +195,28 @@ namespace btas {
       template<class _Tensor, class = typename std::enable_if<is_boxtensor<_Tensor>::value>::type>
       Tensor (const _Tensor& x)
         :
-        range_ (x.range().lobound(), x.range().upbound()),
+        TensorView<_T,_Range,_Storage>(range_type(x.range().lobound(), x.range().upbound())),
         storage_(x.cbegin(),x.cend())
       {
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// copy constructor
       explicit
       Tensor (const Tensor& x)
-      : range_ (x.range()), storage_(x.storage_)
+      : TensorView<_T,_Range,_Storage>(range_type(x.range())), storage_(x.storage_)
       {
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// move constructor
       Tensor (Tensor&& x)
-      : range_ (x.range()), storage_(x.storage_)
+      : TensorView<_T,_Range,_Storage>(range_type(x.range())), storage_(x.storage_)
       {
+        // setting storage_ref to the base
+        this->set_storage(storage_);
       }
 
       /// copy assignment operator
@@ -346,12 +368,7 @@ namespace btas {
         return std::numeric_limits<size_type>::max();
       }
 
-      /// test whether Tensor is empty
-      bool
-      empty() const
-      {
-        return range_.area() == 0;
-      }
+      using TensorView<_T,_Range,_Storage>::empty;
 
       /// swap this and x
       void
@@ -614,7 +631,7 @@ namespace btas {
 
     private:
 
-      range_type range_;///< range object
+      using TensorView<_T,_Range,_Storage>::range_;///< range object
       storage_type storage_;///< data
 
   }; // end of Tensor

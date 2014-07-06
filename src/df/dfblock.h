@@ -52,11 +52,8 @@ class DFBlock : public DFBlock_base<double> {
     std::shared_ptr<DFBlock> clone() const;
     std::shared_ptr<DFBlock> copy() const;
 
-    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const MatView> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const MatView> c, const bool trans = false) const;
-    // TODO will be deprecated
-    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const Matrix> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const Matrix> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_second(std::shared_ptr<const btas::TensorView2<double>> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock> transform_third(std::shared_ptr<const btas::TensorView2<double>> c, const bool trans = false) const;
 
     // add ab^+  to this.
     void add_direct_product(const std::shared_ptr<const VectorB> a, const std::shared_ptr<const Matrix> b, const double fac);
