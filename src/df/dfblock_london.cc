@@ -32,51 +32,38 @@
 
 using namespace bagel;
 using namespace std;
+using namespace btas;
 
+shared_ptr<DFBlock_London> DFBlock_London::transform_second(shared_ptr<const TensorView2<complex<double>>> cmat, const bool trans) const {
+  assert(trans ? cmat->extent(1) : cmat->extent(0) == b1size());
 
-// TODO this is a temp fix
-shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatView> cmat2, const bool trans) const {
-  auto c2 = make_shared<ZMatrix>(*cmat2);
-  return transform_second(c2, trans);
-}
-
-
-shared_ptr<DFBlock_London> DFBlock_London::transform_third(std::shared_ptr<const ZMatView> cmat2, const bool trans) const {
-  auto c2 = make_shared<ZMatrix>(*cmat2);
-  return transform_third(c2, trans);
-}
-
-
-shared_ptr<DFBlock_London> DFBlock_London::transform_second(std::shared_ptr<const ZMatrix> cmat2, const bool trans) const {
-  /*****/
-  // We need the conjugate of the coefficient here, because we're transforming the index in the bra.  This should not be needed for transform_third
-  shared_ptr<const ZMatrix> intermediate = cmat2->transpose();
-  shared_ptr<const ZMatrix> cmat = intermediate->transpose_conjg();
-  /*****/
-
-  assert(trans ? cmat->mdim() : cmat->ndim() == b1size());
-
-  const complex<double>* const c = cmat->data();
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
 
   // so far I only consider the following case
   assert(b1start_ == 0);
   auto out = make_shared<DFBlock_London>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   for (size_t i = 0; i != b2size(); ++i) {
-    if (!trans)
+    if (!trans) {
+      // Need to take the conjugate
+      Tensor2<complex<double>> tmp(*cmat);
+      for (auto& i : tmp) i = conj(i);
+      const complex<double>* const c = tmp.data();
+
       zgemm3m_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, b1size(), 0.0, out->data()+i*asize()*nocc, asize());
-    else
-      zgemm3m_("N", "C", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, nocc, 0.0, out->data()+i*asize()*nocc, asize());
+    } else {
+      const complex<double>* const c = &*cmat->begin();
+      zgemm3m_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, nocc, 0.0, out->data()+i*asize()*nocc, asize());
+    }
   }
   return out;
 }
 
 
-shared_ptr<DFBlock_London> DFBlock_London::transform_third(std::shared_ptr<const ZMatrix> cmat, const bool trans) const {
-  assert(trans ? cmat->mdim() : cmat->ndim() == b2size());
-  const complex<double>* const c = cmat->data();
-  const int nocc = trans ? cmat->ndim() : cmat->mdim();
+shared_ptr<DFBlock_London> DFBlock_London::transform_third(shared_ptr<const TensorView2<complex<double>>> cmat, const bool trans) const {
+  assert(trans ? cmat->extent(1) : cmat->extent(0) == b2size());
+  const complex<double>* const c = &*cmat->begin();
+  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
 
   // so far I only consider the following case
   assert(b2start_ == 0);
@@ -294,9 +281,9 @@ shared_ptr<ZMatrix> DFBlock_London::form_aux_2index(const shared_ptr<const DFBlo
 
 shared_ptr<ZVectorB> DFBlock_London::form_vec(const shared_ptr<const ZMatrix> den) const {
   auto out = make_shared<ZVectorB>(asize());
-  auto dfv = btas::group(*this,  1, 3);
-  auto denv = btas::group(*den, 0, 2);
-  btas::contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
+  auto dfv = group(*this,  1, 3);
+  auto denv = group(*den, 0, 2);
+  contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
   return out;
 }
 
@@ -323,7 +310,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_Dj(const shared_ptr<const ZMatrix> o, c
 }
 
 
-shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<Tensor3<complex<double>>> DFBlock_London::get_block(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   const int ista = ist - astart_;
   const int jsta = jst - b1start_;
   const int ksta = kst - b2start_;
@@ -334,7 +321,7 @@ shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block(const 
     throw logic_error("illegal call of DFBlock_London::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<btas::Tensor3<std::complex<double>>>(i, j*k);
+  auto out = make_shared<Tensor3<complex<double>>>(i, j*k);
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj)
       for (int ii = ista; ii != ifen; ++ii)
@@ -344,7 +331,7 @@ shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block(const 
 }
 
 
-shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
+shared_ptr<Tensor3<complex<double>>> DFBlock_London::get_block_conj(const int ist, const int i, const int jst, const int j, const int kst, const int k) const {
   if (ist != 0 || jst != 0 || kst != 0 || astart_ != 0 || b1start_ != 0 || b2start_ != 0) throw logic_error("DFBlock_London::get_block_conj currently is not designed to work with >1 block");
   if (b1size() != b2size()) throw logic_error ("DFBLock_London::get_block_conj assumes b1 and b2 contain the same set of basis functions");
 
@@ -358,7 +345,7 @@ shared_ptr<btas::Tensor3<std::complex<double>>> DFBlock_London::get_block_conj(c
     throw logic_error("illegal call of DFBlock_London::get_block");
 
   // TODO we need 3-index tensor class here!
-  auto out = make_shared<btas::Tensor3<std::complex<double>>>(i, j, k);
+  auto out = make_shared<Tensor3<complex<double>>>(i, j, k);
 
   for (int kk = ksta; kk != kfen; kk++)
     for (int jj = jsta; jj != jfen; jj++)

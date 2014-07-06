@@ -49,11 +49,8 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     DFBlock_London& operator+=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator+=(o); return *this; }
     DFBlock_London& operator-=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator-=(o); return *this; }
 
-    std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const ZMatView> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const ZMatView> c, const bool trans = false) const;
-    // TODO will be deprecated
-    std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const ZMatrix> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const ZMatrix> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const btas::TensorView2<std::complex<double>>> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const btas::TensorView2<std::complex<double>>> c, const bool trans = false) const;
 
     std::shared_ptr<DFBlock_London> clone() const;
     std::shared_ptr<DFBlock_London> copy() const;
