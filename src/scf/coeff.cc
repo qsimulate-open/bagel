@@ -32,6 +32,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
 
