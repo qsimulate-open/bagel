@@ -26,13 +26,8 @@
 #ifndef __MEH_MEH_H
 #define __MEH_MEH_H
 
-#include <src/dimer/dimer.h>
-#include <src/dimer/dimer_jop.h>
-#include <src/dimer/dimer_prop.h>
-#include <src/math/davidson.h>
-#include <src/meh/gamma_forest.h>
 #include <src/meh/meh_base.h>
-#include <src/smith/prim_op.h>
+#include <src/dimer/dimer_prop.h>
 
 namespace bagel {
 
@@ -80,7 +75,6 @@ class MultiExcitonHamiltonian : public MEH_base {
 #define MEH_HEADERS
 #include <src/meh/meh_compute.hpp>
 #include <src/meh/meh_compute_diagonal.hpp>
-#include <src/meh/meh_compute_offdiagonal.hpp>
 #include <src/meh/meh_gamma_coupling.hpp>
 #include <src/meh/meh_init.hpp>
 #include <src/meh/meh_spin_coupling.hpp>

@@ -23,12 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <tuple>
-
 #include <src/dimer/dimer.h>
 #include <src/scf/fock.h>
 #include <src/molecule/localization.h>
-#include <src/util/string.h>
 
 using namespace std;
 using namespace bagel;

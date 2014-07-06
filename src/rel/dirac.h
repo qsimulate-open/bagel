@@ -27,10 +27,7 @@
 #ifndef __SRC_REL_DIRAC_H
 #define __SRC_REL_DIRAC_H
 
-#include <string>
-#include <map>
 #include <src/wfn/method.h>
-#include <src/wfn/geometry.h>
 #include <src/rel/relhcore.h>
 #include <src/rel/reloverlap.h>
 #include <src/rel/reldfhalf.h>

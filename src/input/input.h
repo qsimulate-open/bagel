@@ -26,9 +26,6 @@
 #ifndef __SRC_INPUT_INPUT_H
 #define __SRC_INPUT_INPUT_H
 
-#include <array>
-#include <sstream>
-#include <memory>
 #include <vector>
 #include <src/util/string.h>
 #include <src/util/serialization.h>

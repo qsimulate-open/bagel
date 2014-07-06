@@ -27,7 +27,6 @@
 #define __MEH_MEH_CAS_H
 
 #include <src/meh/meh.h>
-#include <src/fci/dvec.h>
 
 namespace bagel {
 

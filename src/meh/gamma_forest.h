@@ -26,9 +26,7 @@
 #ifndef __meh_gamma_forest_h
 #define __meh_gamma_forest_h
 
-#include <array>
 #include <set>
-
 #include <src/fci/dvec.h>
 #include <src/ras/civector.h>
 #include <src/math/matrix.h>

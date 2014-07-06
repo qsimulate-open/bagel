@@ -27,12 +27,8 @@
 #ifndef BAGEL_CIUTIL_STRINGSPACE_H
 #define BAGEL_CIUTIL_STRINGSPACE_H
 
-#include <vector>
-#include <array>
-#include <memory>
 #include <bitset>
 #include <algorithm>
-
 #include <src/util/constants.h>
 #include <src/parallel/staticdist.h>
 #include <src/parallel/mpi_interface.h>

@@ -23,8 +23,6 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <tuple>
-
 #include <src/dimer/dimer.h>
 #include <src/molecule/overlap.h>
 
@@ -35,14 +33,14 @@ using namespace bagel;
  *  Single reference plus translation vector constructors                            *
  ************************************************************************************/
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Geometry> A) : input_(input) {
-    array<double, 3> translation = input->get_array<double, 3>("translate");
-    if (input->get<bool>("angstrom", false))
-      for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
-    auto geomB = make_shared<const Geometry>((*A), translation);
+  array<double, 3> translation = input->get_array<double, 3>("translate");
+  if (input->get<bool>("angstrom", false))
+    for_each(translation.begin(), translation.end(), [] (double& p) { p/= au2angstrom__; });
+  auto geomB = make_shared<const Geometry>((*A), translation);
 
-    geoms_ = {A, geomB};
-    construct_geometry();
-  }
+  geoms_ = {A, geomB};
+  construct_geometry();
+}
 
 Dimer::Dimer(shared_ptr<const PTree> input, shared_ptr<const Reference> A) : input_(input) {
   array<double, 3> translation = input->get_array<double, 3>("translate");

@@ -29,7 +29,6 @@
 
 #include <src/df/df.h>
 #include <src/molecule/molecule.h>
-#include <src/input/input.h>
 
 namespace bagel {
 

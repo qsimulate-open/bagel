@@ -29,7 +29,6 @@
 
 #include <src/meh/meh_base.h>
 #include <src/dimer/dimer.h>
-#include <src/input/input.h>
 
 namespace bagel {
   extern std::shared_ptr<MEH_base> construct_MEH(std::shared_ptr<const PTree> itree, std::shared_ptr<Dimer> dimer);

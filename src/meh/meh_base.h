@@ -28,7 +28,6 @@
 
 #include <src/dimer/dimer.h>
 #include <src/dimer/dimer_jop.h>
-#include <src/dimer/dimer_prop.h>
 #include <src/meh/meh_spin.h>
 #include <src/meh/gamma_tensor.h>
 
@@ -148,6 +147,10 @@ class MEH_base {
     double energy(const int i) const { return energies_.at(i); }
 
 };
+
+#define MEH_HEADERS
+#include <src/meh/meh_compute_offdiagonal.hpp>
+#undef MEH_HEADERS
 
 template<> std::shared_ptr<Matrix> MEH_base::compute_offdiagonal_1e<true>(const std::array<MonomerKey,4>&, std::shared_ptr<const Matrix>) const;
 template<> std::shared_ptr<Matrix> MEH_base::compute_inter_2e<true>(const std::array<MonomerKey,4>&) const;

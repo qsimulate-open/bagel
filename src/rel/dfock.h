@@ -27,12 +27,8 @@
 #ifndef __SRC_REL_DFOCK_H
 #define __SRC_REL_DFOCK_H
 
-#include <src/wfn/reference.h>
-#include <src/wfn/geometry.h>
-#include <src/math/zmatrix.h>
 #include <src/rel/reldf.h>
 #include <src/rel/relhcore.h>
-#include <src/rel/cdmatrix.h>
 
 namespace bagel {
 

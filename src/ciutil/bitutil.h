@@ -30,8 +30,6 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <cassert>
-#include <tuple>
 #include <src/util/constants.h>
 
 namespace bagel {

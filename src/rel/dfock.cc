@@ -23,11 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
-#include <src/util/constants.h>
 #include <src/rel/dfock.h>
-#include <src/math/matrix.h>
-#include <src/rel/cdmatrix.h>
 
 using namespace std;
 using namespace bagel;

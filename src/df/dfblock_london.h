@@ -28,7 +28,6 @@
 
 #include <src/math/zmatrix.h>
 #include <src/df/dfblock_base.h>
-#include <src/math/btas_interface.h>
 #include <src/math/matop.h>
 
 namespace bagel {

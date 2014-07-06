@@ -30,7 +30,6 @@
 #include <src/molecule/shell.h>
 #include <src/math/xyzfile.h>
 #include <src/parallel/resources.h>
-#include <src/math/btas_interface.h>
 
 namespace bagel {
 

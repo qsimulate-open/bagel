@@ -28,11 +28,6 @@
 
 #include <src/df/paralleldf.h>
 #include <src/molecule/atom.h>
-#include <src/parallel/resources.h>
-#include <src/df/dfinttask_old.h>
-#include <src/df/dfinttask.h>
-#include <src/util/timer.h>
-#include <src/util/taskqueue.h>
 
 namespace bagel {
 

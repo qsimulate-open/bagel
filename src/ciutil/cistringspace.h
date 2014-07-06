@@ -28,8 +28,6 @@
 
 #include <unordered_map>
 #include <src/util/serialization.h>
-#include <src/ciutil/bitutil.h>
-#include <src/ciutil/cistringmap.h>
 #include <src/ciutil/cistringset.h>
 
 namespace bagel {

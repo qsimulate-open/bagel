@@ -28,7 +28,6 @@
 #define __SRC_CIUTIL_DETERMINANTS_BASE_H
 
 #include <src/ciutil/ciblock.h>
-#include <src/ciutil/cistringset.h>
 #include <src/ciutil/cistringspace.h>
 
 namespace bagel {

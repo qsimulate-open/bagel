@@ -25,7 +25,6 @@
 
 
 #include <src/meh/construct_meh.h>
-#include <src/dimer/dimer.h>
 
 double meh_energy(std::string inp) {
   auto ofs = std::make_shared<std::ofstream>(inp + ".testout", std::ios::trunc);

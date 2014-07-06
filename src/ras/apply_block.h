@@ -26,8 +26,6 @@
 #ifndef __SRC_RAS_APPLY_BLOCK_H
 #define __SRC_RAS_APPLY_BLOCK_H
 
-#include <bitset>
-#include <src/util/constants.h>
 #include <src/math/algo.h>
 #include <src/ciutil/citraits.h>
 
