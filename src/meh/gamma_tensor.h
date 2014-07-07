@@ -118,6 +118,18 @@ class GammaTensor {
     std::shared_ptr<GammaTensor> clone() const { return std::make_shared<GammaTensor>(blocks()); }
     std::shared_ptr<GammaTensor> copy() const { return std::make_shared<GammaTensor>(*this); }
 
+    auto begin() -> decltype(sparse_.begin()) { return sparse_.begin(); }
+    auto end() -> decltype(sparse_.end()) { return sparse_.end(); }
+    auto begin() const -> decltype(sparse_.cbegin()) { return sparse_.cbegin(); }
+    auto end() const -> decltype(sparse_.cend()) { return sparse_.cend(); }
+    auto cbegin() const -> decltype(sparse_.cbegin()) { return sparse_.cbegin(); }
+    auto cend() const -> decltype(sparse_.cend()) { return sparse_.cend(); }
+
+    int nblocks() const { return sparse_.size(); }
+
+    template <typename... Args>
+    auto emplace(Args... args) -> decltype(sparse_.emplace(std::forward<Args>(args)...)) { return sparse_.emplace(std::forward<Args>(args)...); }
+
     std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
       return sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
     }
