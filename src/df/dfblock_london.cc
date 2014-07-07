@@ -34,10 +34,10 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
-shared_ptr<DFBlock_London> DFBlock_London::transform_second(shared_ptr<const TensorView2<complex<double>>> cmat, const bool trans) const {
-  assert(trans ? cmat->extent(1) : cmat->extent(0) == b1size());
+shared_ptr<DFBlock_London> DFBlock_London::transform_second(const ZMatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b1size());
 
-  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
 
   // so far I only consider the following case
   assert(b1start_ == 0);
@@ -46,13 +46,13 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_second(shared_ptr<const Ten
   for (size_t i = 0; i != b2size(); ++i) {
     if (!trans) {
       // Need to take the conjugate
-      Tensor2<complex<double>> tmp(*cmat);
+      Tensor2<complex<double>> tmp(cmat);
       for (auto& i : tmp) i = conj(i);
       const complex<double>* const c = tmp.data();
 
       zgemm3m_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, b1size(), 0.0, out->data()+i*asize()*nocc, asize());
     } else {
-      const complex<double>* const c = &*cmat->begin();
+      const complex<double>* const c = &*cmat.begin();
       zgemm3m_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, nocc, 0.0, out->data()+i*asize()*nocc, asize());
     }
   }
@@ -60,10 +60,10 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_second(shared_ptr<const Ten
 }
 
 
-shared_ptr<DFBlock_London> DFBlock_London::transform_third(shared_ptr<const TensorView2<complex<double>>> cmat, const bool trans) const {
-  assert(trans ? cmat->extent(1) : cmat->extent(0) == b2size());
-  const complex<double>* const c = &*cmat->begin();
-  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
+shared_ptr<DFBlock_London> DFBlock_London::transform_third(const ZMatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b2size());
+  const complex<double>* const c = &*cmat.begin();
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
 
   // so far I only consider the following case
   assert(b2start_ == 0);

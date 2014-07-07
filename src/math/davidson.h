@@ -135,7 +135,7 @@ class DavidsonDiag {
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
       eig_->diagonalize(vec_.data());
-      eig_ = std::make_shared<MatType>(*ovlp_scr * *eig_->slice(0,nstate_));
+      eig_ = std::make_shared<MatType>(*ovlp_scr * eig_->slice(0,nstate_));
 
       // first basis vector is always the current best guess
       std::vector<std::shared_ptr<T>> cv = civec();
@@ -177,12 +177,12 @@ class DavidsonDiag {
         std::cout << "    ** throwing out " << remove.size() << " trial vectors **" << std::endl;
         for (auto m : remove) {
           basis_[m.first] = basis_[m.second];
-          mat_->copy_block(0, m.first, size_, 1, mat_->get_submatrix(0, m.second, size_, 1));
-          mat_->copy_block(m.first, 0, 1, size_, mat_->get_submatrix(m.second, 0, 1, size_));
-          overlap_->copy_block(0, m.first, size_, 1, overlap_->get_submatrix(0, m.second, size_, 1));
-          overlap_->copy_block(m.first, 0, 1, size_, overlap_->get_submatrix(m.second, 0, 1, size_));
+          mat_->copy_block(0, m.first, size_, 1, *mat_->get_submatrix(0, m.second, size_, 1));
+          mat_->copy_block(m.first, 0, 1, size_, *mat_->get_submatrix(m.second, 0, 1, size_));
+          overlap_->copy_block(0, m.first, size_, 1, *overlap_->get_submatrix(0, m.second, size_, 1));
+          overlap_->copy_block(m.first, 0, 1, size_, *overlap_->get_submatrix(m.second, 0, 1, size_));
 
-          trans->copy_block(m.first, 0, 1, nstate_, trans->get_submatrix(m.second, 0, 1, nstate_));
+          trans->copy_block(m.first, 0, 1, nstate_, *trans->get_submatrix(m.second, 0, 1, nstate_));
         }
         basis_ = std::vector<std::shared_ptr<BasisPair>>(basis_.begin(), basis_.end()-remove.size());
         size_ = basis_.size();

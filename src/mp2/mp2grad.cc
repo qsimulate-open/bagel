@@ -60,10 +60,10 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   const size_t nvirt = nmobasis - nocca;
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
-  shared_ptr<const MatView> ccmat = ref_->coeff()->slice(0, ncore);
-  shared_ptr<const MatView> ocmat = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const MatView> vcmat = ref_->coeff()->slice(nocca, nmobasis);
-  shared_ptr<const MatView> acmat = ref_->coeff()->slice(ncore, nocca);
+  const MatView ccmat = ref_->coeff()->slice(0, ncore);
+  const MatView ocmat = ref_->coeff()->slice(0, nocca);
+  const MatView vcmat = ref_->coeff()->slice(nocca, nmobasis);
+  const MatView acmat = ref_->coeff()->slice(ncore, nocca);
 
   // first compute half transformed integrals
   shared_ptr<DFHalfDist> half;
@@ -139,7 +139,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // L''aq = 2 Gia(D|ia) (D|iq)
   shared_ptr<const Matrix> laq = gia->form_2index(half, 2.0);
-  const Matrix lai = *laq * *ocmat;
+  const Matrix lai = *laq * ocmat;
 
   // Gip = Gia(D|ia) C+_ap
   shared_ptr<DFHalfDist> gip = gia->back_transform(vcmat);
@@ -148,9 +148,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   Matrix lif(nocc, max(1lu,ncore));
   shared_ptr<const Matrix> lip = gip->form_2index(cgeom->df(), 2.0);
   {
-    lia.add_block(1.0, ncore, 0, nocc, nvirt, *lip * *vcmat);
+    lia.add_block(1.0, ncore, 0, nocc, nvirt, *lip * vcmat);
     if (ncore)
-      lif = *lip * *ccmat;
+      lif = *lip * ccmat;
   }
 
   // core-occ density matrix elements
@@ -160,9 +160,9 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // 2*J_al(d_rs)
   auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
-  const Matrix jai = *vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * *ocmat * 2.0;
+  const Matrix jai = vcmat % *geom_->df()->compute_Jop(dmp2ao_part) * ocmat * 2.0;
   // -1*K_al(d_rs)
-  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * *vcmat;
+  const Matrix kia = *halfjj->compute_Kop_1occ(dmp2ao_part, -1.0) * vcmat;
 
   auto grad = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
@@ -249,11 +249,11 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (int j = 0; j != nvirt; ++j)
       wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
   // Liq + Laq
-  wd->add_block(1.0, ncore, 0, nocc, nocca, *lip * *ocmat);
-  wd->add_block(1.0, nocca, 0, nvirt, nocca, *laq * *ocmat * 2.0);
-  wd->add_block(1.0, nocca, nocca, nvirt, nvirt, *laq * *vcmat);
-  wd->add_block(1.0, 0, 0, nocca, nocca, (*ocmat % *geom_->df()->compute_Jop(dmp2ao) * *ocmat * 2.0));
-  wd->add_block(1.0, 0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao, -1.0) * *ocmat));
+  wd->add_block(1.0, ncore, 0, nocc, nocca, *lip * ocmat);
+  wd->add_block(1.0, nocca, 0, nvirt, nocca, *laq * ocmat * 2.0);
+  wd->add_block(1.0, nocca, nocca, nvirt, nvirt, *laq * vcmat);
+  wd->add_block(1.0, 0, 0, nocca, nocca, (ocmat % *geom_->df()->compute_Jop(dmp2ao) * ocmat * 2.0));
+  wd->add_block(1.0, 0, 0, nocca, nocca, (*halfjj->compute_Kop_1occ(dmp2ao, -1.0) * ocmat));
 
   wd->symmetrize();
   auto wdao = make_shared<Matrix>(*ref_->coeff() * *wd ^ *ref_->coeff());

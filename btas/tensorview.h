@@ -75,13 +75,6 @@ namespace btas {
       {
       }
 
-      /// construct from \c range. \c storage will be set later
-      explicit
-      TensorView (const range_type& range)
-      : range_(range)
-      {
-      }
-
       /// construct from \c range and \c storage
       template <typename S = _Storage>
       explicit
@@ -94,13 +87,6 @@ namespace btas {
       explicit
       TensorView (range_type&& range, storage_type&& storage) :
       range_(range), storageref_(storage)
-      {
-      }
-
-      /// construct from \c range. \c storage will be set later
-      explicit
-      TensorView (range_type&& range)
-      : range_(range)
       {
       }
 
@@ -414,16 +400,10 @@ namespace btas {
       }
 #endif
 
-    protected:
+    private:
 
       range_type range_;///< range object
       storageref_type storageref_;///< dataref
-
-      /// set storage object
-      template <typename _S = _Storage>
-      void set_storage(_S& storage) {
-        storageref_ = storage;
-      }
 
   }; // end of TensorView
 

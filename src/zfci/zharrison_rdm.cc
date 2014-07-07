@@ -280,9 +280,9 @@ void ZHarrison::compute_rdm12() {
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
   auto rdm1_tot = make_shared<ZMatrix>(norb_*2, norb_*2);
-  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00")->data());
-  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11")->data());
-  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10")->data());
+  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
+  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
+  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
   rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
 
   auto coeff_tot = coeff()->get_conjg();

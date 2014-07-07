@@ -92,8 +92,8 @@ class RelMOFile {
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
     std::shared_ptr<const ZMatrix> coeff() const {
       auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_[0]->ndim(), nocc_*2);
-      coeff_tot->copy_block(0,     0, kramers_coeff_[0]->ndim(), nocc_, kramers_coeff_[0]);
-      coeff_tot->copy_block(0, nocc_, kramers_coeff_[1]->ndim(), nocc_, kramers_coeff_[1]);
+      coeff_tot->copy_block(0,     0, kramers_coeff_[0]->ndim(), nocc_, *kramers_coeff_[0]);
+      coeff_tot->copy_block(0, nocc_, kramers_coeff_[1]->ndim(), nocc_, *kramers_coeff_[1]);
       return coeff_tot;
     }
     std::shared_ptr<const ZMatrix> coeff_input() const { return coeff_; }

@@ -29,7 +29,6 @@
 #include <src/math/vectorb.h>
 #include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
-#include <src/math/matview.h>
 
 namespace bagel {
 

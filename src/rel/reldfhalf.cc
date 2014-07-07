@@ -41,11 +41,11 @@ RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const Sp
   auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
 
   if (df->swapped()) {
-    dfhalf_[0] = df->df()->compute_half_transform_swap(rcoeff[index]);
-    dfhalf_[1] = df->df()->compute_half_transform_swap(icoeff_scaled);
+    dfhalf_[0] = df->df()->compute_half_transform_swap(*rcoeff[index]);
+    dfhalf_[1] = df->df()->compute_half_transform_swap(*icoeff_scaled);
   } else {
-    dfhalf_[0] = df->df()->compute_half_transform(rcoeff[index]);
-    dfhalf_[1] = df->df()->compute_half_transform(icoeff_scaled);
+    dfhalf_[0] = df->df()->compute_half_transform(*rcoeff[index]);
+    dfhalf_[1] = df->df()->compute_half_transform(*icoeff_scaled);
   }
 }
 
@@ -63,7 +63,7 @@ RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.cartesian_) {
 
 
 shared_ptr<RelDFHalf> RelDFHalf::apply_J() const {
-  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_); 
+  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_);
 }
 
 
@@ -140,11 +140,11 @@ list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
 shared_ptr<DFDist> RelDFHalfB::back_transform(shared_ptr<const Matrix> r, shared_ptr<const Matrix> i, const bool imag) const {
   shared_ptr<DFDist> out;
   if (!imag) {
-    out = dfhalf_[0]->back_transform(r);
-    out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(i)); 
+    out = dfhalf_[0]->back_transform(*r);
+    out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(*i));
   } else {
-    out = dfhalf_[0]->back_transform(i);
-    out->ax_plus_y(1.0, dfhalf_[1]->back_transform(r));
+    out = dfhalf_[0]->back_transform(*i);
+    out->ax_plus_y(1.0, dfhalf_[1]->back_transform(*r));
   }
   return out;
 }

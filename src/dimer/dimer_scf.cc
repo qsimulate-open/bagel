@@ -366,7 +366,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
     const int nactA = active_refs_.first->nact();
     const int nactB = active_refs_.second->nact();
-    Matrix active_mos = *sref_->coeff()->slice(nclosed, nclosed + nactA + nactB);
+    Matrix active_mos = sref_->coeff()->slice(nclosed, nclosed + nactA + nactB);
     Matrix fock_mo(active_mos % *fock * active_mos);
     vector<double> eigs(active_mos.mdim(), 0.0);
     shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nactA, nactB}});

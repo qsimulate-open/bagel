@@ -34,7 +34,10 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
+
+#define MATRIX_BASE
 #include <src/math/matview.h>
+#undef MATRIX_BASE
 
 namespace bagel {
 
@@ -144,7 +147,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
         if (block_size == 0) continue;
         auto submat = get_submatrix_impl<T>(location, location, block_size, block_size);
         submat->diagonalize(eig + location);
-        out->copy_block(location, location, block_size, block_size, submat);
+        out->copy_block(location, location, block_size, block_size, *submat);
         location += block_size;
       }
       return out;
@@ -274,40 +277,27 @@ class Matrix_base : public btas::Tensor2<DataType> {
       for (size_t i = mstart, j = 0; i != mstart + msize; ++i, ++j)
         std::copy_n(o + j*nsize, nsize, data() + nstart + i*ndim());
     }
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
-      assert(nsize == o->ndim() && msize == o->mdim());
-      copy_block(nstart, mstart, nsize, msize, o->data());
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const btas::TensorView2<DataType> o) {
+      assert(nsize == o.extent(0) && msize == o.extent(1) && o.range().ordinal().contiguous());
+      copy_block(nstart, mstart, nsize, msize, &*o.begin());
     }
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
-      assert(nsize == o->extent(0) && msize == o->extent(1));
-      copy_block(nstart, mstart, nsize, msize, o->data());
-    }
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
-      copy_block(nstart, mstart, nsize, msize, o.get());
-    }
-    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, const Matrix_base<DataType>& o) {
-      copy_block(nstart, mstart, nsize, msize, o.data());
+    template <typename T>
+    void copy_block(const int nstart, const int mstart, const int nsize, const int msize, std::shared_ptr<T> o) {
+      copy_block(nstart, mstart, nsize, msize, *o);
     }
 
     void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const DataType* o) {
       for (size_t i = mstart, j = 0; i != mstart + msize ; ++i, ++j)
         blas::ax_plus_y_n(a, o+j*nsize, nsize, element_ptr(nstart, i));
     }
-    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const Matrix_base<DataType>> o) {
-      assert(nsize == o->ndim() && msize == o->mdim());
-      add_block(a, nstart, mstart, nsize, msize, o->data());
+    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const btas::TensorView2<DataType> o) {
+      assert(nsize == o.extent(0) && msize == o.extent(1) && o.range().ordinal().contiguous());
+      add_block(a, nstart, mstart, nsize, msize, &*o.begin());
     }
-    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::shared_ptr<const MatView_<DataType>> o) {
-      assert(nsize == o->extent(0) && msize == o->extent(1));
-      add_block(a, nstart, mstart, nsize, msize, o->data());
+    template <typename T>
+    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, std::shared_ptr<T> o) {
+      add_block(a, nstart, mstart, nsize, msize, *o);
     }
-    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const std::unique_ptr<DataType[]>& o) {
-      add_block(a, nstart, mstart, nsize, msize, o.get());
-    }
-    void add_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize, const Matrix_base<DataType>& o) {
-      add_block(a, nstart, mstart, nsize, msize, o.data());
-    }
-
 
     void add_strided_block(const DataType a, const int nstart, const int mstart, const int nsize, const int msize,
                             const int ld, const DataType* o) {

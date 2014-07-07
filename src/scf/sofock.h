@@ -63,8 +63,8 @@ void SOFock::form_sofock() {
 
   std::shared_ptr<const DFDist> df = geom_->df();
 
-  std::shared_ptr<DFHalfDist> half_a = df->compute_half_transform(coeffa)->apply_J();
-  std::shared_ptr<DFHalfDist> half_b = df->compute_half_transform(coeffb)->apply_J();
+  std::shared_ptr<DFHalfDist> half_a = df->compute_half_transform(*coeffa)->apply_J();
+  std::shared_ptr<DFHalfDist> half_b = df->compute_half_transform(*coeffb)->apply_J();
 
   std::shared_ptr<Matrix> fockaa = std::make_shared<Matrix>(nbasis, nbasis);
   std::shared_ptr<Matrix> fockbb = std::make_shared<Matrix>(nbasis, nbasis);

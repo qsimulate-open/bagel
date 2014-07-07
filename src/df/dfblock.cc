@@ -29,37 +29,37 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
-shared_ptr<DFBlock> DFBlock::transform_second(std::shared_ptr<const TensorView2<double>> cmat, const bool trans) const {
-  assert(trans ? cmat->extent(1) : cmat->extent(0) == b1size());
-  assert(cmat->range().ordinal().contiguous());
+shared_ptr<DFBlock> DFBlock::transform_second(const MatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b1size());
+  assert(cmat.range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b1start_ == 0);
-  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
   if (!trans)
-    contract(1.0, *this, {0,3,2}, *cmat, {3,1}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, cmat, {3,1}, 0.0, *out, {0,1,2});
   else
-    contract(1.0, *this, {0,3,2}, *cmat, {1,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,3,2}, cmat, {1,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
 
 
-shared_ptr<DFBlock> DFBlock::transform_third(std::shared_ptr<const TensorView2<double>> cmat, const bool trans) const {
-  assert(trans ? cmat->extent(1) : cmat->extent(0) == b2size());
-  assert(cmat->range().ordinal().contiguous());
+shared_ptr<DFBlock> DFBlock::transform_third(const MatView cmat, const bool trans) const {
+  assert(trans ? cmat.extent(1) : cmat.extent(0) == b2size());
+  assert(cmat.range().ordinal().contiguous());
 
   // so far I only consider the following case
   assert(b2start_ == 0);
-  const int nocc = trans ? cmat->extent(0) : cmat->extent(1);
+  const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    contract(1.0, *this, {0,1,3}, *cmat, {3,2}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, cmat, {3,2}, 0.0, *out, {0,1,2});
   else  // trans -> back transform
-    contract(1.0, *this, {0,1,3}, *cmat, {2,3}, 0.0, *out, {0,1,2});
+    contract(1.0, *this, {0,1,3}, cmat, {2,3}, 0.0, *out, {0,1,2});
 
   return out;
 }
@@ -170,7 +170,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
   // compress
   auto low = {0, nclosed, nclosed};
   auto up = {static_cast<int>(asize()), nclosed+nact, nclosed+nact};
-  Tensor3<double> buf = TensorView3<double>(range().slice(low, up), storage());
+  Tensor3<double> buf(range().slice(low, up), storage());
   Tensor3<double> buf2(asize(), nact, nact);
   {
     auto rdm2v = group(group(rdm,2,4),0,2);

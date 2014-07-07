@@ -127,10 +127,10 @@ void FCI::model_guess(shared_ptr<Dvec> out) {
     if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<const MatView> coeffs = spin->slice(start, end);
+    const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
-    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
     hamiltonian->diagonalize(eigs.data());
 
 #if 0
@@ -139,7 +139,7 @@ void FCI::model_guess(shared_ptr<Dvec> out) {
       cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
 #endif
 
-    auto coeffs1 = make_shared<Matrix>(*coeffs * *hamiltonian);
+    auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
     for (int i = 0; i < nguess; ++i) {
       const size_t ia = det_->lexical<0>(basis[i].first);
       const size_t ib = det_->lexical<1>(basis[i].second);

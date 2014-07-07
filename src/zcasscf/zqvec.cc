@@ -140,13 +140,13 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   // I need overlap..
   // JEB : Transform from NaturalOrbs to standard MOs for index i
   auto overlap = make_shared<const RelOverlap>(geom);
-  shared_ptr<const ZMatView> ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
+  const ZMatView ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
 
   // JEB : conjugate needed since the above lines build up the conjugated matrix products per comment [3]
   qri[bitset<1>("0")] = qri[bitset<1>("0")]->get_conjg();
   qri[bitset<1>("1")] = qri[bitset<1>("1")]->get_conjg();
 
-  *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * *ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * *ocoeff);
+  *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * ocoeff);
 
 #if 0
   complex<double> en = 0.0;

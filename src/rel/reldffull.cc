@@ -38,11 +38,11 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
   const int index = basis_.front()->basis(1);
 
   // TODO this could be cheaper by using a zgemm3m-type algorithm
-  dffull_[0] = df->get_real()->compute_second_transform(rcoeff[index]);
-  dffull_[0]->ax_plus_y(-1.0, df->get_imag()->compute_second_transform(icoeff[index]));
+  dffull_[0] = df->get_real()->compute_second_transform(*rcoeff[index]);
+  dffull_[0]->ax_plus_y(-1.0, df->get_imag()->compute_second_transform(*icoeff[index]));
 
-  dffull_[1] = df->get_imag()->compute_second_transform(rcoeff[index]);
-  dffull_[1]->ax_plus_y( 1.0, df->get_real()->compute_second_transform(icoeff[index]));
+  dffull_[1] = df->get_imag()->compute_second_transform(*rcoeff[index]);
+  dffull_[1]->ax_plus_y( 1.0, df->get_real()->compute_second_transform(*icoeff[index]));
 
 }
 
@@ -133,11 +133,11 @@ list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Ma
   for (int i = 0; i != 4; ++i) {
     // Note that icoeff should be scaled by -1.0 !!
 
-    shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(rcoeff[i]);
-    real->ax_plus_y( 1.0, dffull_[1]->back_transform(icoeff[i]));
+    shared_ptr<DFHalfDist> real = dffull_[0]->back_transform(*rcoeff[i]);
+    real->ax_plus_y( 1.0, dffull_[1]->back_transform(*icoeff[i]));
 
-    shared_ptr<DFHalfDist> imag = dffull_[1]->back_transform(rcoeff[i]);
-    imag->ax_plus_y(-1.0, dffull_[0]->back_transform(icoeff[i]));
+    shared_ptr<DFHalfDist> imag = dffull_[1]->back_transform(*rcoeff[i]);
+    imag->ax_plus_y(-1.0, dffull_[0]->back_transform(*icoeff[i]));
 
     out.push_back(make_shared<RelDFHalfB>(array<shared_ptr<DFHalfDist>,2>{{real, imag}}, i, alpha));
   }

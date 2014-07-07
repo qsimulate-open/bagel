@@ -23,15 +23,20 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifdef MATRIX_BASE
 #ifndef __SRC_MATH_MATVIEW_H
 #define __SRC_MATH_MATVIEW_H
 
 #include <complex>
 #include <src/math/btas_interface.h>
+#include <src/math/matrix_base.h>
 
 namespace bagel {
 
-template<typename DataType>
+template <typename DataType>
+class Matrix_base;
+
+template <typename DataType>
 class MatView_ : public btas::TensorView2<DataType> {
   protected:
     bool localized_;
@@ -84,10 +89,13 @@ class MatView_ : public btas::TensorView2<DataType> {
     }
 
   public:
+    MatView_() { }
     MatView_(const MatView_& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
     MatView_(const btas::TensorView2<DataType>& o, const bool lo) : btas::TensorView2<DataType>(o), localized_(lo) { init(); }
     MatView_(btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }
     MatView_(const btas::CRange<2>& r, const typename btas::Tensor2<DataType>::storage_type& s, const bool lo) : btas::TensorView2<DataType>(r, s), localized_(lo) { init(); }
+    MatView_(Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
+    MatView_(const Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
 
     int ndim() const { return this->extent(0); }
     int mdim() const { return this->extent(1); }
@@ -152,4 +160,5 @@ using ZMatView = MatView_<std::complex<double>>;
 
 }
 
+#endif
 #endif

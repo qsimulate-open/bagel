@@ -76,8 +76,6 @@ void NEVPT2::compute() {
   shared_ptr<Matrix> acoeff =            ref_->coeff()->slice_copy(ncore_+nclosed_, ncore_+nclosed_+nact_);
   shared_ptr<Matrix> vcoeff = nvirt_   ? ref_->coeff()->slice_copy(ncore_+nclosed_+nact_, ncore_+nclosed_+nact_+nvirt_) : nullptr;
 
-  shared_ptr<const MatView> ocoeff = ncore_+nclosed_ ? ref_->coeff()->slice(0, ncore_+nclosed_) : nullptr;
-
   // obtain particle RDMs
   compute_rdm();
   // compute auxiliary RDMs
@@ -102,7 +100,7 @@ void NEVPT2::compute() {
   {
     // * core Fock operator
     shared_ptr<const Matrix> hcore = make_shared<Hcore>(geom_);
-    shared_ptr<const Matrix> ofockao = nclosed_+ncore_ ? make_shared<Fock<1>>(geom_, hcore, nullptr, ocoeff, /*store*/false, /*rhf*/true) : hcore;
+    shared_ptr<const Matrix> ofockao = nclosed_+ncore_ ?  make_shared<Fock<1>>(geom_, hcore, nullptr, ref_->coeff()->slice(0, ncore_+nclosed_), /*store*/false, /*rhf*/true) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     shared_ptr<Matrix> rdm1_mat = rdm1_->copy();
@@ -137,7 +135,7 @@ void NEVPT2::compute() {
     fock_c = make_shared<Matrix>(*coeffall % *ofockao * *coeffall);
 
     // h'eff (only 1/2 exchange in the active space)
-    auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), make_shared<Matrix>(*acoeff * (1.0/sqrt(2.0))), /*store*/false, /*rhf*/false);
+    auto fockao_p = make_shared<Fock<1>>(geom_, ofockao, ofockao->clone(), *acoeff*(1.0/sqrt(2.0)), /*store*/false, /*rhf*/false);
     fockact_p_ = make_shared<Matrix>(*acoeff % *fockao_p * *acoeff);
     fockact_p_->localize();
     fock_p = make_shared<Matrix>(*coeffall % *fockao_p * *coeffall);
@@ -179,8 +177,8 @@ void NEVPT2::compute() {
     shared_ptr<DFHalfDist> half, halfa;
     if (abasis_.empty()) {
       if (nclosed_)
-        half = geom_->df()->compute_half_transform(ccoeff_);
-      halfa = geom_->df()->compute_half_transform(acoeff_);
+        half = geom_->df()->compute_half_transform(*ccoeff_);
+      halfa = geom_->df()->compute_half_transform(*acoeff_);
       // used later to determine the cache size
       memory_size = geom_->df()->block(0)->size() * 2;
       mpi__->broadcast(&memory_size, 1, 0);
@@ -188,8 +186,8 @@ void NEVPT2::compute() {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       if (nclosed_)
-        half = cgeom->df()->compute_half_transform(ccoeff_);
-      halfa = cgeom->df()->compute_half_transform(acoeff_);
+        half = cgeom->df()->compute_half_transform(*ccoeff_);
+      halfa = cgeom->df()->compute_half_transform(*acoeff_);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
       mpi__->broadcast(&memory_size, 1, 0);
@@ -198,14 +196,14 @@ void NEVPT2::compute() {
     // second transform for virtual index and rearrange data
     if (nclosed_) {
       // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
-      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff_)->apply_J()->swap();
+      shared_ptr<DFFullDist> full = half->compute_second_transform(*vcoeff_)->apply_J()->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullvi = make_shared<DFDistT>(full, dist);
       fullvi->discard_df();
       assert(fullvi->nblocks() == 1);
     }
     {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(coeffall)->apply_J();
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(*coeffall)->apply_J();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
       auto fullax_all = make_shared<DFDistT>(full, dist);
       shared_ptr<const Matrix> fullax = fullax_all->replicate();
@@ -381,10 +379,10 @@ void NEVPT2::compute() {
       const Matrix mat(*iblock % *jblock);
 
       // active part
-      shared_ptr<const MatView> iablock = fullai->slice(i*nact_, (i+1)*nact_);
-      shared_ptr<const MatView> jablock = fullai->slice(j*nact_, (j+1)*nact_);
-      const Matrix mat_va(*iblock % *jablock);
-      const Matrix mat_av(*iablock % *jblock);
+      const MatView iablock = fullai->slice(i*nact_, (i+1)*nact_);
+      const MatView jablock = fullai->slice(j*nact_, (j+1)*nact_);
+      const Matrix mat_va(*iblock % jablock);
+      const Matrix mat_av(iablock % *jblock);
       // hole density matrix
       const Matrix mat_vaR(mat_va * *hrdm1_);
       const Matrix mat_avR(*hrdm1_ % mat_av);
@@ -393,7 +391,7 @@ void NEVPT2::compute() {
       const Matrix mat_avKp(*kmatp_ % mat_av);
 
       // S(2)ij,rs sector
-      const Matrix mat_aa(*iablock % *jablock);
+      const Matrix mat_aa(iablock % jablock);
       Matrix mat_aaR(nact_, nact_, true);
       Matrix mat_aaK(nact_, nact_, true);
       dgemv_("N", nact_*nact_, nact_*nact_, 1.0,  hrdm2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
@@ -443,9 +441,9 @@ void NEVPT2::compute() {
       // S(-2)rs sector
       const int iv = i-nclosed_-nact_;
       const int jv = j-nclosed_-nact_;
-      shared_ptr<const MatView> iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
-      shared_ptr<const MatView> jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
-      Matrix mat_aa(*iablock % *jablock);
+      const MatView iablock = fullav->slice(iv*nact_, (iv+1)*nact_);
+      const MatView jablock = fullav->slice(jv*nact_, (jv+1)*nact_);
+      Matrix mat_aa(iablock % jablock);
       Matrix mat_aaR(nact_, nact_, true);
       Matrix mat_aaK(nact_, nact_, true);
       dgemv_("N", nact_*nact_, nact_*nact_, 1.0,  rdm2_->data(), nact_*nact_, mat_aa.data(), 1, 0.0, mat_aaR.data(), 1);
@@ -462,10 +460,10 @@ void NEVPT2::compute() {
       SMITH::sort_indices<1,2,0,3,    0,1,1,1>(ardm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(ardm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
       const int iv = i-nclosed_-nact_;
-      shared_ptr<const MatView> rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
-      shared_ptr<const Matrix> bac = make_shared<Matrix>(*rblock % *fullaa);
+      const MatView rblock = fullav->slice(iv*nact_, (iv+1)*nact_);
+      const Matrix bac = rblock % *fullaa;
       auto abc = make_shared<VectorB>(nact_*nact_*nact_);
-      SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
+      SMITH::sort_indices<1,0,2,0,1,1,1>(bac.data(), abc->data(), nact_, nact_, nact_);
       auto heff = make_shared<VectorB>(nact_);
       for (int a = 0; a != nact_; ++a)
         (*heff)(a) = (2.0*fock_p->element(a+nclosed_, i) - fock_c->element(a+nclosed_, i));
@@ -478,25 +476,25 @@ void NEVPT2::compute() {
       // (g|vi) with i fixed
       shared_ptr<const Matrix> iblock = cache.at(i);
       // (g|ai) with i fixed
-      shared_ptr<const MatView> iablock = fullai->slice(i*nact_, (i+1)*nact_);
+      const MatView iablock = fullai->slice(i*nact_, (i+1)*nact_);
       // reordered srdm
       Matrix srdm2_p(nact_*nact_, nact_*nact_);
       SMITH::sort_indices<0,2,1,3,0,1,1,1>(srdm2_->data(), srdm2_p.data(), nact_, nact_, nact_, nact_);
 
       for (int r = 0; r != nvirt_; ++r) {
-        shared_ptr<const MatView> ibr = iblock->slice(r, r+1);
-        shared_ptr<const MatView> rblock = fullav->slice(r*nact_, (r+1)*nact_);
+        const MatView ibr = iblock->slice(r, r+1);
+        const MatView rblock = fullav->slice(r*nact_, (r+1)*nact_);
 
         // S(-1)rs sector
         for (int s = r; s != nvirt_; ++s) {
-          shared_ptr<const MatView> ibs = iblock->slice(s, s+1);
-          shared_ptr<const MatView> sblock = fullav->slice(s*nact_, (s+1)*nact_);
-          const Matrix mat1(*ibs % *rblock); // (vi|ar) (i, r fixed)
-          const Matrix mat2(*ibr % *sblock); // (vi|as) (i, s fixed)
-          const Matrix mat1R(*ibs % *rblock * *rdm1_); // (vi|ar) (i, r fixed)
-          const Matrix mat2R(*ibr % *sblock * *rdm1_); // (vi|as) (i, s fixed)
-          const Matrix mat1K(*ibs % *rblock * *kmat_); // (vi|ar) (i, r fixed)
-          const Matrix mat2K(*ibr % *sblock * *kmat_); // (vi|as) (i, s fixed)
+          const MatView ibs = iblock->slice(s, s+1);
+          const MatView sblock = fullav->slice(s*nact_, (s+1)*nact_);
+          const Matrix mat1(ibs % rblock); // (vi|ar) (i, r fixed)
+          const Matrix mat2(ibr % sblock); // (vi|as) (i, s fixed)
+          const Matrix mat1R(ibs % rblock * *rdm1_); // (vi|ar) (i, r fixed)
+          const Matrix mat2R(ibr % sblock * *rdm1_); // (vi|as) (i, s fixed)
+          const Matrix mat1K(ibs % rblock * *kmat_); // (vi|ar) (i, r fixed)
+          const Matrix mat2K(ibr % sblock * *kmat_); // (vi|as) (i, s fixed)
           const double norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
           const double denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
           if (norm > norm_thresh_)
@@ -504,8 +502,8 @@ void NEVPT2::compute() {
         }
 
         // S(0)ir sector
-        const Matrix mat1(*ibr % *fullaa); // (ir|ab)  as (1,nact_*nact_)
-        const Matrix mat2(*rblock % *iablock); // (ra|bi) as (nact_, nact_)
+        const Matrix mat1(ibr % *fullaa); // (ir|ab)  as (1,nact_*nact_)
+        const Matrix mat2(rblock % iablock); // (ra|bi) as (nact_, nact_)
         const Matrix mat1S(mat1 * *srdm2_);
         const Matrix mat1A(mat1 * *amat2_);
         const Matrix mat1Ssym(mat1S + (mat1 ^ *srdm2_));
@@ -528,7 +526,7 @@ void NEVPT2::compute() {
       shared_ptr<Matrix> ardm2_sorted = make_shared<Matrix>(nact_*nact_*nact_, nact_, true);
       SMITH::sort_indices<1,2,0,3,    0,1,1,1>(srdm2_->data(), ardm2_sorted->data(), nact_, nact_, nact_, nact_);
       SMITH::sort_indices<1,2,0,4,3,5,0,1,1,1>(srdm3_->data(), ardm3_sorted->data(), nact_, nact_, nact_, nact_, nact_, nact_);
-      shared_ptr<const Matrix> bac = make_shared<Matrix>(*iablock % *fullaa);
+      shared_ptr<const Matrix> bac = make_shared<Matrix>(iablock % *fullaa);
       shared_ptr<VectorB> abc = make_shared<VectorB>(nact_*nact_*nact_);
       SMITH::sort_indices<1,0,2,0,1,1,1>(bac->data(), abc->data(), nact_, nact_, nact_);
       shared_ptr<VectorB> heff = make_shared<VectorB>(nact_);
