@@ -63,7 +63,7 @@ class GammaTensor {
       }
     };
 
-    using SparseMap     = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<Matrix>>;
+    using SparseMap = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<btas::Tensor3<double>>>;
     SparseMap sparse_;
     int norb_;
 
@@ -73,7 +73,8 @@ class GammaTensor {
     // default constructor
     GammaTensor() { }
 
-    // constructor that takes GammaForst
+    // constructor that takes GammaForst.
+    // *** CAUTION *** this constructor moves the data! (one can instead copy construct - if needed change the lines below).
     template <typename T, int N, int M>
     GammaTensor(asd::Wrap<GammaForest<T,N>,M> forest, const std::vector<DimerSubspace<T>>& sp) {
       std::shared_ptr<GammaForest<T,N>> f = forest.f;
@@ -85,12 +86,17 @@ class GammaTensor {
           for (auto& j : sp)
             if (f->template exist<M>(i.template tag<M>(), j.template tag<M>(), o)) {
               std::shared_ptr<Matrix> mat = f->template get<M>(i.template tag<M>(), j.template tag<M>(), o);
+              btas::CRange<3> range(i.template monomerkey<M>().nstates(), j.template monomerkey<M>().nstates(), std::lrint(std::pow(norb_, o.size())));
               // checking ndim
-              assert(mat->ndim() == i.template monomerkey<M>().nstates()*j.template monomerkey<M>().nstates());
+              assert(mat->ndim() == range.extent(0)*range.extent(1));
               // checking mdim
-              assert(mat->mdim() == std::lrint(std::pow(norb_, o.size())));
+              assert(mat->mdim() == range.extent(2));
+              // internal check
+              assert(mat->storage().size() == range.area());
+              // convert this matrix to 3-tensor
+              auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
               // add matrix
-              sparse_.emplace(std::make_tuple(listGammaSQ(o, mat->mdim()), i.template monomerkey<M>(), j.template monomerkey<M>()), mat);
+              sparse_.emplace(std::make_tuple(listGammaSQ(o, mat->mdim()), i.template monomerkey<M>(), j.template monomerkey<M>()), tensor);
             }
       }
     }
@@ -107,7 +113,7 @@ class GammaTensor {
     // copy constructor
     GammaTensor(const GammaTensor& o) : norb_(o.norb_) {
       for (auto& i : o.sparse_)
-        sparse_.emplace(i.first, i.second->copy());
+        sparse_.emplace(i.first, std::make_shared<btas::Tensor3<double>>(*i.second));
     }
     // move constructor
     GammaTensor(GammaTensor&& o) : norb_(o.norb_) {
@@ -134,8 +140,14 @@ class GammaTensor {
     template <typename... Args>
     auto emplace(Args... args) -> decltype(sparse_.emplace(std::forward<Args>(args)...)) { return sparse_.emplace(std::forward<Args>(args)...); }
 
-    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
+    std::shared_ptr<const btas::Tensor3<double>> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
       return sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
+    }
+
+    MatView get_block_as_matview(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
+      auto tensor = sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
+      btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), tensor->extent(2));
+      return MatView(range, tensor->storage(), /*localized*/false);
     }
 
     std::list<std::tuple<listGammaSQ, MonomerKey, MonomerKey>> blocks() const {
