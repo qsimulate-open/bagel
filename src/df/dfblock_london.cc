@@ -36,25 +36,19 @@ using namespace btas;
 
 shared_ptr<DFBlock_London> DFBlock_London::transform_second(const ZMatView cmat, const bool trans) const {
   assert(trans ? cmat.extent(1) : cmat.extent(0) == b1size());
-
   const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
 
   // so far I only consider the following case
   assert(b1start_ == 0);
   auto out = make_shared<DFBlock_London>(adist_shell_, adist_, asize(), nocc, b2size(), astart_, 0, b2start_, averaged_);
 
-  for (size_t i = 0; i != b2size(); ++i) {
-    if (!trans) {
-      // Need to take the conjugate
-      Tensor2<complex<double>> tmp(cmat);
-      for (auto& i : tmp) i = conj(i);
-      const complex<double>* const c = tmp.data();
-
-      zgemm3m_("N", "N", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, b1size(), 0.0, out->data()+i*asize()*nocc, asize());
-    } else {
-      const complex<double>* const c = &*cmat.begin();
-      zgemm3m_("N", "T", asize(), nocc, b1size(), 1.0, data()+i*asize()*b1size(), asize(), c, nocc, 0.0, out->data()+i*asize()*nocc, asize());
-    }
+  if (!trans) {
+    // Need to take the conjugate
+    Tensor2<complex<double>> tmp(cmat);
+    for (auto& i : tmp) i = conj(i);
+    contract(1.0, *this, {0,3,2}, tmp , {3,1}, 0.0, *out, {0,1,2}, false, false);
+  } else {
+    contract(1.0, *this, {0,3,2}, cmat, {1,3}, 0.0, *out, {0,1,2}, false, false);
   }
   return out;
 }
@@ -62,7 +56,6 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_second(const ZMatView cmat,
 
 shared_ptr<DFBlock_London> DFBlock_London::transform_third(const ZMatView cmat, const bool trans) const {
   assert(trans ? cmat.extent(1) : cmat.extent(0) == b2size());
-  const complex<double>* const c = &*cmat.begin();
   const int nocc = trans ? cmat.extent(0) : cmat.extent(1);
 
   // so far I only consider the following case
@@ -70,9 +63,9 @@ shared_ptr<DFBlock_London> DFBlock_London::transform_third(const ZMatView cmat, 
   auto out = make_shared<DFBlock_London>(adist_shell_, adist_, asize(), b1size(), nocc, astart_, b1start_, 0, averaged_);
 
   if (!trans)
-    zgemm3m_("N", "N", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), c, b2size(), 0.0, out->data(), asize()*b1size());
+    contract(1.0, *this, {0,1,3}, cmat, {3,2}, 0.0, *out, {0,1,2}, false, false);
   else  // trans -> back transform
-    zgemm3m_("N", "C", asize()*b1size(), nocc, b2size(), 1.0, data(), asize()*b1size(), c, nocc, 0.0, out->data(), asize()*b1size());
+    contract(1.0, *this, {0,1,3}, cmat, {2,3}, 0.0, *out, {0,1,2}, false, true);
   return out;
 }
 
@@ -242,12 +235,11 @@ shared_ptr<ZMatrix> DFBlock_London::form_2index(const shared_ptr<const DFBlock_L
 
   if (b1size() == o->b1size()) {
     target = make_shared<ZMatrix>(b2size(),o->b2size());
-    zgemm3m_("C", "N", b2size(), o->b2size(), asize()*b1size(), a, data(), asize()*b1size(), o->data(), asize()*b1size(), 0.0, target->data(), b2size());
+    contract(a, *this, {2,3,0}, *o, {2,3,1}, 0.0, *target, {0,1}, true, false);
   } else {
     assert(b2size() == o->b2size());
     target = make_shared<ZMatrix>(b1size(),o->b1size());
-    for (int i = 0; i != b2size(); ++i)
-      zgemm3m_("C", "N", b1size(), o->b1size(), asize(), a, data()+i*asize()*b1size(), asize(), o->data()+i*asize()*o->b1size(), asize(), 1.0, target->data(), b1size());
+    contract(a, *this, {2,0,3}, *o, {2,1,3}, 0.0, *target, {0,1}, true, false);
   }
 
   return target;
@@ -257,7 +249,7 @@ shared_ptr<ZMatrix> DFBlock_London::form_2index(const shared_ptr<const DFBlock_L
 shared_ptr<ZMatrix> DFBlock_London::form_4index(const shared_ptr<const DFBlock_London> o, const double a) const {
   if (asize() != o->asize()) throw logic_error("illegal call of DFBlock_London::form_4index");
   auto target = make_shared<ZMatrix>(b1size()*b2size(), o->b1size()*o->b2size());
-  zgemm3m_("C", "N", b1size()*b2size(), o->b1size()*o->b2size(), asize(), a, data(), asize(), o->data(), asize(), 0.0, target->data(), b1size()*b2size());
+  contract(a, group(*this,1,3), {1,0}, group(*o,1,3), {1,2}, 0.0, *target, {0,2}, true, false);
   return target;
 }
 
@@ -274,38 +266,36 @@ shared_ptr<ZMatrix> DFBlock_London::form_4index_1fixed(const shared_ptr<const DF
 shared_ptr<ZMatrix> DFBlock_London::form_aux_2index(const shared_ptr<const DFBlock_London> o, const double a) const {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock_London::form_aux_2index");
   auto target = make_shared<ZMatrix>(asize(), o->asize());
-  zgemm3m_("N", "C", asize(), o->asize(), b1size()*b2size(), a, data(), asize(), o->data(), o->asize(), 0.0, target->data(), asize());
+  contract(a, *this, {0,2,3}, *o, {1,2,3}, 0.0, *target, {0,1}, false, true);
   return target;
 }
 
 
 shared_ptr<ZVectorB> DFBlock_London::form_vec(const shared_ptr<const ZMatrix> den) const {
   auto out = make_shared<ZVectorB>(asize());
-  auto dfv = group(*this,  1, 3);
-  auto denv = group(*den, 0, 2);
-  contract(1.0, dfv, {0,1}, denv, {1}, 0.0, *out, {0});
+  contract(1.0, group(*this,1,3), {0,1}, group(*den,0,2), {1}, 0.0, *out, {0});
   return out;
 }
 
 
-shared_ptr<ZMatrix> DFBlock_London::form_mat(const complex<double>* fit) const {
-  auto out = make_shared<ZMatrix>(b1size(),b2size());
-  zgemv_("T", asize(), b1size()*b2size(), 1.0, data(), asize(), fit, 1, 0.0, out->data(), 1);
+shared_ptr<ZMatrix> DFBlock_London::form_mat(const Tensor1<complex<double>>& fit) const {
+  auto out = make_shared<ZMatrix>(b1size(), b2size());
+  auto outv = group(*out,0,2);
+  contract(1.0, group(*this,1,3), {1,0}, fit, {1}, 0.0, outv, {0});
   return out;
 }
 
 
 void DFBlock_London::contrib_apply_J(const shared_ptr<const DFBlock_London> o, const shared_ptr<const ZMatrix> d) {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock_London::contrib_apply_J");
-  zgemm3m_("N", "N", asize(), b1size()*b2size(), o->asize(), 1.0, d->element_ptr(astart_, o->astart_), d->ndim(), o->data(), o->asize(),
-                                                         1.0, data(), asize());
+  contract(1.0, *d, {0,3}, *o, {3,1,2}, 1.0, *this, {0,1,2});
 }
 
 
 shared_ptr<ZMatrix> DFBlock_London::form_Dj(const shared_ptr<const ZMatrix> o, const int jdim) const {
   assert(o->size() == b1size()*b2size()*jdim);
   auto out = make_shared<ZMatrix>(asize(), jdim);
-  zgemm3m_("N", "N", asize(), jdim, b1size()*b2size(), 1.0, data(), asize(), o->data(), b1size()*b2size(), 0.0, out->data(), asize());
+  contract(1.0, group(*this,1,3), {0,1}, *o, {1,2}, 0.0, *out, {0,2});
   return out;
 }
 

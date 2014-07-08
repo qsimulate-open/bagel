@@ -208,7 +208,6 @@ namespace impl {
   ZMatrix multNN(const A& a, const B& b) {
     assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
-    const int m = a.mdim();
     assert(a.mdim() == b.ndim());
     const int n = b.mdim();
     ZMatrix out(l, n, a.localized());
@@ -217,7 +216,7 @@ namespace impl {
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      zgemm3m_("N", "N", l, n, m, 1.0, a.data(), l, b.data(), m, 0.0, out.data(), l);
+      contract(1.0, a, {0,1}, b, {1,2}, 0.0, out, {0,2}, false, false);
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<std::complex<double>[]> locala = a.getlocal();
@@ -238,7 +237,6 @@ namespace impl {
   ZMatrix multTN(const A& a, const B& b) {
     assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.mdim();
-    const int m = a.ndim();
     assert(a.ndim() == b.ndim());
     const int n = b.mdim();
     ZMatrix out(l, n, a.localized());
@@ -247,7 +245,7 @@ namespace impl {
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      zgemm3m_("C", "N", l, n, m, 1.0, a.data(), m, b.data(), m, 0.0, out.data(), l);
+      contract(1.0, a, {1,0}, b, {1,2}, 0.0, out, {0,2}, true, false);
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<std::complex<double>[]> locala = a.getlocal();
@@ -269,7 +267,6 @@ namespace impl {
   ZMatrix multNT(const A& a, const B& b) {
     assert(a.rank() == 2 && b.rank() == 2);
     const int l = a.ndim();
-    const int m = a.mdim();
     assert(a.mdim() == b.mdim());
     const int n = b.ndim();
     ZMatrix out(l, n, a.localized());
@@ -278,7 +275,7 @@ namespace impl {
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
-      zgemm3m_("N", "C", l, n, m, 1.0, a.data(), l, b.data(), n, 0.0, out.data(), l);
+      contract(1.0, a, {0,1}, b, {2,1}, 0.0, out, {0,2}, false, true);
 #ifdef HAVE_SCALAPACK
     } else {
       std::unique_ptr<std::complex<double>[]> locala = a.getlocal();

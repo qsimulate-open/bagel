@@ -76,7 +76,7 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     std::shared_ptr<ZMatrix> form_aux_2index(const std::shared_ptr<const DFBlock_London> o, const double a) const;
 
     std::shared_ptr<ZVectorB> form_vec(const std::shared_ptr<const ZMatrix> den) const;
-    std::shared_ptr<ZMatrix> form_mat(const std::complex<double>* fit) const;
+    std::shared_ptr<ZMatrix> form_mat(const btas::Tensor1<std::complex<double>>& fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock_London> o, const std::shared_ptr<const ZMatrix> mat);
 
