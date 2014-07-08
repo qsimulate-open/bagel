@@ -74,9 +74,13 @@ class DFDist_London : public ParallelDF_London {
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist_London> compute_half_transform(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist_London> compute_half_transform(std::shared_ptr<T> c) const { return compute_half_transform(*c); }
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
     std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist_London> compute_half_transform_swap(std::shared_ptr<T> c) const { return compute_half_transform_swap(*c); }
 
     std::shared_ptr<DFDist_London> copy() const;
     std::shared_ptr<DFDist_London> clone() const;
@@ -181,7 +185,12 @@ class DFHalfDist_London : public ParallelDF_London {
     size_t nbasis() const { return nindex2_; }
 
     std::shared_ptr<DFFullDist_London> compute_second_transform(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFFullDist_London> compute_second_transform(std::shared_ptr<T> c) const { return compute_second_transform(*c); }
+
     std::shared_ptr<DFDist_London> back_transform(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFDist_London> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     std::shared_ptr<DFHalfDist_London> copy() const;
     std::shared_ptr<DFHalfDist_London> clone() const;
@@ -214,6 +223,8 @@ class DFFullDist_London : public ParallelDF_London {
     std::shared_ptr<DFFullDist_London> clone() const;
 
     std::shared_ptr<DFHalfDist_London> back_transform(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist_London> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     void rotate_occ1(const std::shared_ptr<const ZMatrix> d);
 

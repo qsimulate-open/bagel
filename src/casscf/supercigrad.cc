@@ -140,12 +140,12 @@ std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
       const RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
 
       shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(*ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }
     {
       shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
-      qri->ax_plus_y(2.0, qijd2->back_transform(*ztrans));
+      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
 

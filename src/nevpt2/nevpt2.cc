@@ -177,8 +177,8 @@ void NEVPT2::compute() {
     shared_ptr<DFHalfDist> half, halfa;
     if (abasis_.empty()) {
       if (nclosed_)
-        half = geom_->df()->compute_half_transform(*ccoeff_);
-      halfa = geom_->df()->compute_half_transform(*acoeff_);
+        half = geom_->df()->compute_half_transform(ccoeff_);
+      halfa = geom_->df()->compute_half_transform(acoeff_);
       // used later to determine the cache size
       memory_size = geom_->df()->block(0)->size() * 2;
       mpi__->broadcast(&memory_size, 1, 0);
@@ -186,8 +186,8 @@ void NEVPT2::compute() {
       auto info = make_shared<PTree>(); info->put("df_basis", abasis_);
       auto cgeom = make_shared<Geometry>(*geom_, info, false);
       if (nclosed_)
-        half = cgeom->df()->compute_half_transform(*ccoeff_);
-      halfa = cgeom->df()->compute_half_transform(*acoeff_);
+        half = cgeom->df()->compute_half_transform(ccoeff_);
+      halfa = cgeom->df()->compute_half_transform(acoeff_);
       // used later to determine the cache size
       memory_size = cgeom->df()->block(0)->size();
       mpi__->broadcast(&memory_size, 1, 0);
@@ -196,14 +196,14 @@ void NEVPT2::compute() {
     // second transform for virtual index and rearrange data
     if (nclosed_) {
       // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
-      shared_ptr<DFFullDist> full = half->compute_second_transform(*vcoeff_)->apply_J()->swap();
+      shared_ptr<DFFullDist> full = half->compute_second_transform(vcoeff_)->apply_J()->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullvi = make_shared<DFDistT>(full, dist);
       fullvi->discard_df();
       assert(fullvi->nblocks() == 1);
     }
     {
-      shared_ptr<DFFullDist> full = halfa->compute_second_transform(*coeffall)->apply_J();
+      shared_ptr<DFFullDist> full = halfa->compute_second_transform(coeffall)->apply_J();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
       auto fullax_all = make_shared<DFDistT>(full, dist);
       shared_ptr<const Matrix> fullax = fullax_all->replicate();

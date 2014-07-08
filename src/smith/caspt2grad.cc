@@ -179,17 +179,17 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
       const RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
 
       shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(*ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }
     {
       shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
-      qri->ax_plus_y(2.0, qijd2->back_transform(*ztrans));
+      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
   }
 
   // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
-  qri->ax_plus_y(2.0, fulld1->apply_J()->back_transform(*coeff));
+  qri->ax_plus_y(2.0, fulld1->apply_J()->back_transform(coeff));
 
   // contributions from non-separable part
   shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
@@ -245,7 +245,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
   auto dmr = make_shared<Matrix>(*dm1);
 
-  shared_ptr<const DFFullDist> full = halfj->compute_second_transform(*coeff_);
+  shared_ptr<const DFFullDist> full = halfj->compute_second_transform(coeff_);
   shared_ptr<const DFFullDist> fullo = halfj->compute_second_transform(ocmat);
 
   // Y_rs = 2[Y1 + Y2 + Y3(ri) + Y4 + Y5(ri)]
@@ -310,7 +310,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // 2 Y5 = 2 Y5_ri = 2 Ybar (Gyorffy)  = 2 (rs|tj) D^ij_st = 2 (rl|jk) D0_(il,jk) + 2 (rs|tj) D1_(is,jt)]
     // construct stepwise, D1 part
-    shared_ptr<const DFHalfDist> dfback = fullks->apply_J()->back_transform(*coeff_);
+    shared_ptr<const DFHalfDist> dfback = fullks->apply_J()->back_transform(coeff_);
     auto y5ri_ao = ref_->geom()->df()->form_2index(dfback, 1.0);
     out->add_block(2.0, 0, 0, nmobasis, nocc, *coeff_ % *y5ri_ao);
   }

@@ -147,7 +147,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
         if (block_size == 0) continue;
         auto submat = get_submatrix_impl<T>(location, location, block_size, block_size);
         submat->diagonalize(eig + location);
-        out->copy_block(location, location, block_size, block_size, *submat);
+        out->copy_block(location, location, block_size, block_size, submat);
         location += block_size;
       }
       return out;

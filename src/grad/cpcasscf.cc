@@ -236,7 +236,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
   // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
   // (D|jx) -> (D|jS)
   {
-    shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(*cz0cinv);
+    shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
     shared_ptr<const DFHalfDist> tmp1 = geom_->df()->compute_half_transform(ocz0)->apply_J();
     tmp0->ax_plus_y(1.0, tmp1);
     shared_ptr<const DFFullDist> fulld = fullb->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
@@ -439,7 +439,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
   // TODO halfc is redundant
   if (nclosed) {
     shared_ptr<DFHalfDist> halfc = geom_->df()->compute_half_transform(ccoeff);
-    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(*ccz0);
+    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(ccz0);
 
     {
       shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
@@ -464,7 +464,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     // closed-active
     if (nclosed) {
       shared_ptr<const Matrix> acz0 = make_shared<Matrix>(*coeff_ * az0 * *rdm1av_mat);
-      shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(*acz0);
+      shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
       shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
       shared_ptr<DFFullDist> fullaj = halfa->compute_second_transform(ccoeff)->apply_JJ();
       Matrix kmat(*zhalf->form_2index(fullaj, 1.0) + *halfa->form_2index(zfull, 1.0));
@@ -475,7 +475,7 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     // active-active
     // coulomb term
     shared_ptr<const Matrix> acz0 = make_shared<Matrix>(*coeff_ * az0);
-    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(*acz0);
+    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
     shared_ptr<DFFullDist> fulla = halfa->compute_second_transform(acoeff);
     {
       shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(*rdm2_av);

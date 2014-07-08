@@ -69,7 +69,7 @@ class DIIS {
 
       if (data_.size() > ndiis_) {
         data_.pop_front();
-        matrix_->copy_block(0, 0, ndiis_-1, ndiis_-1, *matrix_->get_submatrix(1, 1, ndiis_-1, ndiis_-1));
+        matrix_->copy_block(0, 0, ndiis_-1, ndiis_-1, matrix_->get_submatrix(1, 1, ndiis_-1, ndiis_-1));
       }
       const int cnum = data_.size();
       auto data_iter = data_.begin();

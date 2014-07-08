@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 void NEVPT2::compute_ints() {
-  shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(*acoeff_)->apply_J();
+  shared_ptr<const DFFullDist> full = casscf_->fci()->jop()->mo2e_1ext()->compute_second_transform(acoeff_)->apply_J();
   // integrals (ij|kl) and <ik|jl>
   shared_ptr<const Matrix> ints = full->form_4index(full, 1.0);
   auto tmp = make_shared<Matrix>(nact_*nact_, nact_*nact_, true);

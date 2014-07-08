@@ -68,7 +68,7 @@ class Small1e : public Matrix1eArray<4*Batch::Nblocks()> {
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
-        this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, *batch[i]);
+        this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
     }
 
     void print(const std::string name = "") const override {
