@@ -48,6 +48,8 @@ class VecView_ : public btas::TensorView1<DataType> {
     VecView_(const VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(const btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(VecView_&& o) : btas::TensorView1<DataType>(std::move(o)) { }
+    VecView_(Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(const Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_() { }
     virtual ~VecView_() { }
 
