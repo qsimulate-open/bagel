@@ -48,6 +48,7 @@ class SOBatch : public RadialInt {
 
     int l0_, l1_;
     std::vector<std::vector<double>> zAB_, zCB_;
+    std::vector<std::vector<std::tuple<int, int, int, double>>> fm0lm1_; // li, m0, m1, fmm
 
     void map_angular_number();
     bool delta(const int i, const int j);
