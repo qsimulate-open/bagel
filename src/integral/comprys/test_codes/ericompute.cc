@@ -1502,7 +1502,7 @@ complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<mo
       }
     }
     const double charge = nuclei[k].charge;
-    const double Zfac = -charge*pow((nuclei[k].exponent/3.14159265897932385),1.5);
+    const double Zfac = -charge*pow((nuclei[k].exponent/3.1415926535897932385),1.5);
     thisnai *= Zfac;
     Full_NAI += thisnai;
     cout << "Full NAI= " << scientific << Full_NAI << endl;
