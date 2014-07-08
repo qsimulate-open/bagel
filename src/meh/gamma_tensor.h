@@ -57,6 +57,10 @@ class GammaTensor {
         assert(std::fabs(o - n) < 1.0e-15);
         return n;
       }
+      void print() const {
+        for (auto& i : list) std::cout << i << " ";
+        std::cout << "size: " << size << std::endl;
+      }
     };
 
     using SparseMap     = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<Matrix>>;

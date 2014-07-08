@@ -41,6 +41,16 @@ enum class GammaSQ {
   AnnihilateBeta = 3
 };
 
+inline std::ostream& operator<<(std::ostream& out, const GammaSQ value){
+  static std::map<GammaSQ, std::string> strings;
+  if (strings.size() == 0) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(GammaSQ::CreateAlpha); INSERT_ELEMENT(GammaSQ::AnnihilateAlpha); INSERT_ELEMENT(GammaSQ::CreateBeta); INSERT_ELEMENT(GammaSQ::AnnihilateBeta);
+#undef INSERT_ELEMENT
+  }
+  return out << std::setw(25) << std::left << strings[value] << std::right;
+}
+
 template <typename VecType>
 class GammaBranch {
   protected:
