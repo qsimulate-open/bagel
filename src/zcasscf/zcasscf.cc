@@ -267,10 +267,10 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
     vector<double> vec2(tmp->ndim());
     // sort eigenvectors so that buf is close to a unit matrix
     // target column
-    for (int i = 0; i != tmp->ndim(); ++i) {
+    for (int i = 0; i != tmp->ndim()/2; ++i) {
       // first find the source column
       tuple<int, double> max = make_tuple(-1, 0.0);
-      for (int j = 0; j != tmp->ndim(); ++j)
+      for (int j = 0; j != tmp->ndim()/2; ++j)
         if (sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))) > get<1>(max))
           max = make_tuple(j, sqrt(real(tmp->element(i,j)*tmp->get_conjg()->element(i,j))));
 
@@ -280,7 +280,9 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
 
       // copy to the target
       copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), buf2->element_ptr(0,i));
+      copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), buf2->element_ptr(0,i+tmp->ndim()/2));
       vec2[i] = vec[get<0>(max)];
+      vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
     }
 
     // fix the phase
@@ -288,9 +290,6 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
       if (real(buf2->element(i,i)) < 0.0)
         blas::scale_n(-1.0, buf2->element_ptr(0,i), tmp->ndim());
     }
-    // copy eigenvalues TODO: change to blas
-    for (int i=0; i!=tmp->ndim()/2; ++i)
-      vec2[tmp->ndim()/2 + i] = vec2[i];
     occup_ = vec2;
     coeff_ = update_coeff(coeff_, buf2);
     return buf2;
