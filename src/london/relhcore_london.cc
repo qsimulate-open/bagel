@@ -23,9 +23,7 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/util/constants.h>
 #include <src/london/relhcore_london.h>
-#include <src/integral/compos/complexoverlapbatch.h>
 
 using namespace std;
 using namespace bagel;
@@ -64,7 +62,7 @@ void RelHcore_London::compute_() {
   zeeman->add_block( -ih*geom_->magnetic_field(1), 0, n, n, n, overlap_);
   zeeman->add_block(  ih*geom_->magnetic_field(1), n, 0, n, n, overlap_);
 
-  // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
+  // RMB hcore: all 1-electron integrals over magnetically balanced 2-spinors
   zero();
   copy_block(0,   0, 2*n, 2*n, nai);
   copy_block(0, 2*n, 2*n, 2*n, kinetic);

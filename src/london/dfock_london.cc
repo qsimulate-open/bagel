@@ -115,8 +115,6 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<
 
   const bool diagonal = diag || dfc1 == dfc2;
 
-  // TODO Is this right?  Probably should refactor the preceeding 15 lines
-  //auto a = make_shared<ZMatrix>(*r + (*i * complex<double>(0.0, 1.0)));
   auto a = make_shared<ZMatrix>(*r, *i);
   for (auto& i1 : dfc1->basis()) {
     for (auto& i2 : dfc2->basis()) {

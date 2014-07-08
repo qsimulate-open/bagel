@@ -37,7 +37,8 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
   const int index = basis_.front()->basis(0);
   for (auto& i : basis_)
     if (i->basis(0) != index) throw logic_error("basis should have the same first index");
-  // -1 due to dagger
+
+  // -1 due to dagger (We are transforming the bra.)
   auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
 
   // TODO Using 4-multiplication - switch to 3

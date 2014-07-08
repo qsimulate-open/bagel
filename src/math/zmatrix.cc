@@ -486,6 +486,7 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   bool nolindep = out->inverse_half(thresh);
   if (!nolindep) {
     // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
     unique_ptr<double[]> eig(new double[ndim_]);
     out->diagonalize(eig.get());
