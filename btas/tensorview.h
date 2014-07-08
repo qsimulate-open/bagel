@@ -75,6 +75,7 @@ namespace btas {
       {
       }
 
+      // TODO dangerous hack
       /// construct from \c range and \c storage
       template <typename S = _Storage>
       explicit
@@ -92,7 +93,7 @@ namespace btas {
 
       /// conversion from Tensor
       template<class _Tensor, class = typename std::enable_if<is_boxtensor<_Tensor>::value>::type>
-      explicit
+//    explicit
       TensorView (const _Tensor& x)
       : range_ (x.range()),
       // TODO this can be optimized to bitewise copy if x::value_type and my value_type are equal, and storage is linear
@@ -102,7 +103,7 @@ namespace btas {
 
       /// conversion from Tensor
       template<class _Tensor, class = typename std::enable_if<is_boxtensor<_Tensor>::value>::type>
-      explicit
+//    explicit
       TensorView (_Tensor& x)
       : range_ (x.range()),
       // TODO this can be optimized to bitewise copy if x::value_type and my value_type are equal, and storage is linear

@@ -36,6 +36,12 @@ namespace btas {
                  : begin_(stor.begin()), end_(stor.end())
                  { }
 
+      // TODO dangerous hack
+      template <typename S = _Storage>
+      StorageRef(const S& stor)
+                 : begin_(const_cast<S*>(&stor)->begin()), end_(const_cast<S*>(&stor)->end())
+                 { }
+
       template <typename Iter1, typename Iter2>
       StorageRef(Iter1 b, Iter2 e) : begin_(b), end_(e) {}
 
