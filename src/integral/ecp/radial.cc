@@ -59,7 +59,7 @@ void RadialInt::integrate() {
     sigma1.resize(n1);
     f.resize(n1*nc_);
     for (int ic = nc_-1; ic > 0; --ic)
-      for (int i = n0-1; i >= 0; --i) f[ic*n1+i] = f[ic*n0+i];
+      for (int i = 0; i < n0; ++i) f[ic*n1+i] = f[ic*n0+i];
 
     vector<double> rr(n0+1);
     for (int i = 0; i != n0; ++i) {
@@ -71,8 +71,8 @@ void RadialInt::integrate() {
     rr[n0] = r_[2*n0];
 
     vector<double> tmp = compute(rr);
-    for (int i = 0; i <= n0; ++i)
-      for (int ic = 0; ic != nc_; ++ic) f[ic*n1+n0+i] = tmp[ic*n0+i]; //wrong!!!
+    for (int ic = 0; ic != nc_; ++ic)
+      for (int i = 0; i <= n0; ++i) f[ic*n1+n0+i] = tmp[ic*(n0+1)+i];
 
     vector<double> ans(nc_, 0.0);
     for (int ic = 0; ic != nc_; ++ic)
@@ -84,20 +84,19 @@ void RadialInt::integrate() {
       error[ic] = fabs(ans[ic] - previous[ic]);
       if (error[ic] > maxerror) maxerror = error[ic];
     }
-#if 0
     if (print_intermediate_) {
        cout << "Iter = " << setw(5) << iter << setw(10) << "npts = " << setw(10) << n1 << endl;
        for (int ic = 0; ic != nc_; ++ic)
-         cout << setw(10) << "ans = " << setw(20) << setprecision(10) << ans[0]
-              << setw(10) << "err = " << setw(20) << setprecision(10) << error[0] << endl;
+         cout << setw(10) << "ans[" << ic << "] = " << setw(20) << setprecision(10) << ans[ic]
+              << setw(10) << "err[" << ic << "] = " << setw(20) << setprecision(10) << error[ic] << endl;
     }
-#endif
     if (maxerror <= thresh_int_) {
       if (print_intermediate_) {
-//      cout << "Integration converged..." << endl;
-//      cout << " Radial integral = ";
-        for (int ic = 0; ic != nc_; ++ic) if (fabs(ans[ic]) > 1e-5) cout << "ic = " << ic << setw(20) << setprecision(1) << ans[ic] << endl;
-//      cout << "Radial time = " << radialtime.tick() << endl;
+        cout << "Integration converged..." << endl;
+        cout << "Radial integral:";
+        for (int ic = 0; ic != nc_; ++ic) cout << setw(20) << setprecision(9) << "[" << ic << "] = " << ans[ic] << ",  ";
+        cout << endl;
+        cout << "Radial time = " << radialtime.tick() << endl;
       }
       for (int ic = 0; ic != nc_; ++ic)  integral_[ic] = ans[ic];
       break;

@@ -71,20 +71,17 @@ array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* I
 
   assert(l > 0);
   assert(abs(m0) <= l && abs(m1) <=l);
+  assert(m1 < m0);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
 
-  out[0] = delta(m0, m1) ? -m0 : 0.0;
-
-  if (m0 == 0 && m1 == -1) {
-    out[1] = - sqrt(0.5*l*(l+1));
-  } else if (m0 == 1 && m1 == 0) {
-    out[2] = - sqrt(0.5*l*(l+1));
-  } else if (m1 > 0 && m0==m1+1) {
-    out[2] = -0.5 * sqrt((l+m0)*(l-m0+1));
-  } else if (m1 < -1 && m0==m1+1) {
-    out[2] = 0.5 * sqrt((l+m0)*(l-m0+1));
-  } else if (m1 < -1 && m0==-(m1+1)) {
-    out[1] = 0.5 * sqrt((l-m0)*(l+m0+1));
+  if (m0*m1 > 0) {
+    out[2] = delta(m0-1, m1) ? -0.5*sqrt((l+m0)*(l-m0+1)) : 0.0;
+  } else if (m0*m1 == 0) {
+    out[1] = delta(m1, -1) ? -sqrt(0.5*l*(l+1)) : 0.0;
+  } else {
+    if (delta(m0, -m1)) out[0] = -m0;
+    if (delta(m0, -m1+1)) out[1] = -0.5*sqrt((l+m0)*(l-m0+1));
+    if (delta(m0, -m1-1)) out[1] = -0.5*sqrt((l-m0)*(l+m0+1));
   }
 
   return out;

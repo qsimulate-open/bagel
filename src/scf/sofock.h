@@ -83,21 +83,21 @@ void SOFock::form_sofock() {
   *rfockaa += *rhalf_a->form_2index(rhalf_a, -1.0);
   *rfockaa += *ihalf_a->form_2index(ihalf_a, -1.0);
   *ifockaa += *ihalf_a->form_2index(rhalf_a, -1.0);
-  *ifockaa += *rhalf_a->form_2index(ihalf_a, -1.0);
+  *ifockaa += *rhalf_a->form_2index(ihalf_a,  1.0);
 
   std::shared_ptr<Matrix> rfockbb = std::make_shared<Matrix>(nbasis, nbasis);
   std::shared_ptr<Matrix> ifockbb = std::make_shared<Matrix>(nbasis, nbasis);
   *rfockbb += *rhalf_b->form_2index(rhalf_b, -1.0);
   *rfockbb += *ihalf_b->form_2index(ihalf_b, -1.0);
   *ifockbb += *ihalf_b->form_2index(rhalf_b, -1.0);
-  *ifockbb += *rhalf_b->form_2index(ihalf_b, -1.0);
+  *ifockbb += *rhalf_b->form_2index(ihalf_b,  1.0);
 
   std::shared_ptr<Matrix> rfockab = std::make_shared<Matrix>(nbasis, nbasis);
   std::shared_ptr<Matrix> ifockab = std::make_shared<Matrix>(nbasis, nbasis);
   *rfockab += *rhalf_a->form_2index(rhalf_b, -1.0);
   *rfockab += *ihalf_a->form_2index(ihalf_b, -1.0);
   *ifockab += *ihalf_a->form_2index(rhalf_b, -1.0);
-  *ifockab += *rhalf_a->form_2index(ihalf_b, -1.0);
+  *ifockab += *rhalf_a->form_2index(ihalf_b,  1.0);
 
   const std::complex<double> real(1.0, 0.0);
   const std::complex<double> imag(0.0, 1.0);
