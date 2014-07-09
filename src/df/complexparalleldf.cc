@@ -80,29 +80,29 @@ shared_ptr<ZMatrix> ComplexParallelDF::compute_Jop(const shared_ptr<const ZMatri
 
 shared_ptr<ZMatrix> ComplexParallelDF::compute_Jop(const shared_ptr<const ComplexParallelDF> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZMatrix> tmp0 = o->compute_cd(den, data2_real(), onlyonce);
+  shared_ptr<const ZVectorB> tmp0 = o->compute_cd(den, data2_real(), onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }
 
 
 // TODO Using 4-multiplication
-shared_ptr<ZMatrix> ComplexParallelDF::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<ZVectorB> ComplexParallelDF::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   const shared_ptr<Matrix> dr = den->get_real_part();
   const shared_ptr<Matrix> di = den->get_imag_part();
-  shared_ptr<Matrix> outr = dfdata_[0]->compute_cd(dr, dat2, onlyonce);
-  shared_ptr<Matrix> outi = dfdata_[0]->compute_cd(di, dat2, onlyonce);
+  shared_ptr<VectorB> outr = dfdata_[0]->compute_cd(dr, dat2, onlyonce);
+  shared_ptr<VectorB> outi = dfdata_[0]->compute_cd(di, dat2, onlyonce);
   *outr -= *dfdata_[1]->compute_cd(di, dat2, onlyonce);
   *outi += *dfdata_[1]->compute_cd(dr, dat2, onlyonce);
-  return make_shared<ZMatrix> (*outr, *outi);
+  return make_shared<ZVectorB> (*outr, *outi);
 }
 
 
 // TODO Using 4-multiplication
-shared_ptr<ZMatrix> ComplexParallelDF::compute_Jop_from_cd(shared_ptr<const ZMatrix> tmp0) const {
+shared_ptr<ZMatrix> ComplexParallelDF::compute_Jop_from_cd(shared_ptr<const ZVectorB> tmp0) const {
   if (nblock_ != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  const shared_ptr<Matrix> tmpr = tmp0->get_real_part();
-  const shared_ptr<Matrix> tmpi = tmp0->get_imag_part();
+  const shared_ptr<VectorB> tmpr = tmp0->get_real_part();
+  const shared_ptr<VectorB> tmpi = tmp0->get_imag_part();
   shared_ptr<Matrix> outr = dfdata_[0]->compute_Jop_from_cd(tmpr);
   shared_ptr<Matrix> outi = dfdata_[0]->compute_Jop_from_cd(tmpi);
   *outr -= *dfdata_[1]->compute_Jop_from_cd(tmpi);

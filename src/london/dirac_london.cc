@@ -99,7 +99,7 @@ void Dirac_London::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    auto fock = make_shared<DFock_London>(cgeom_, hcore_, coeff->matrix()->slice(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
+    auto fock = make_shared<DFock_London>(cgeom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
 
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
@@ -187,7 +187,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
   } else if (dynamic_pointer_cast<const RelReference_London>(ref_)) {
     // Relativistic, GIAO-based reference
     auto relref = dynamic_pointer_cast<const RelReference_London>(ref_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock_London>(cgeom_, hcore_, relref->relcoeff()->slice(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock_London>(cgeom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);

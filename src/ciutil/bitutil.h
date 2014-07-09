@@ -28,6 +28,7 @@
 
 #include <bitset>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <algorithm>
 #include <src/util/constants.h>

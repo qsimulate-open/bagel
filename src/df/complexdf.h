@@ -59,10 +59,10 @@ class ComplexDFDist : public ComplexParallelDF {
     size_t naux() const { return naux_; }
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<ComplexDFHalfDist> compute_half_transform(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<ComplexDFHalfDist> compute_half_transform(const ZMatView c) const;
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<ComplexDFHalfDist> compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const;
+    std::shared_ptr<ComplexDFHalfDist> compute_half_transform_swap(const ZMatView c) const;
 
     // split up smalleri integrals into 6 dfdist objects
     std::vector<std::shared_ptr<const ComplexDFDist>> split_blocks() const {

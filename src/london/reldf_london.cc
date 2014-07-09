@@ -76,12 +76,12 @@ vector<shared_ptr<RelDFHalf_London>> RelDF_London::compute_half_transform(array<
 
 vector<shared_ptr<ZMatrix>> RelDF_London::compute_Jop(list<shared_ptr<const CDMatrix_London>>& cd) const {
 
-  vector<shared_ptr<ZMatrix>> sum;
+  vector<shared_ptr<ZVectorB>> sum;
   for (auto& b : basis_) {
     sum.push_back(cd.front()->clone());
     for (auto& i : cd) {
       if(b->alpha_comp() == i->alpha_comp())
-        sum.back()->ax_plus_y(1.0, *i);
+        *sum.back() += *i;
     }
   }
 

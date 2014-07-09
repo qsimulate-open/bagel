@@ -64,8 +64,8 @@ class ComplexDFIntTask {
         const size_t naux = dfblocks_[i2]->asize();
 
         const std::complex<double>* ppt = p->data(i);
-        double* const data_r = dfblocks_[i2]->get();
-        double* const data_i = dfblocks_[i2+1]->get();
+        double* const data_r = dfblocks_[i2]->data();
+        double* const data_i = dfblocks_[i2+1]->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
             for (int n=0; n!=shell_[1]->nbasis(); n++) data_r[offset_[2]+naux*(j1+nbin*j0)+n] = std::real(ppt[n]);

@@ -148,9 +148,10 @@ pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> ComplexDFD
 
 
 // Note that we are transforming the bra index, so we need the complex conjugate
-shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const std::shared_ptr<const ZMatrix> c) const {
-  const std::shared_ptr<Matrix> cr = c->get_real_part();
-  const std::shared_ptr<Matrix> ci = c->get_imag_part();
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const ZMatView c) const {
+  auto cmat = make_shared<const ZMatrix> (c);
+  const std::shared_ptr<Matrix> cr = cmat->get_real_part();
+  const std::shared_ptr<Matrix> ci = cmat->get_imag_part();
   auto rpart = dynamic_pointer_cast<const DFDist>(dfdata_[0]);
   auto ipart = dynamic_pointer_cast<const DFDist>(dfdata_[1]);
   assert(rpart && ipart);
@@ -162,10 +163,11 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const std::s
 }
 
 
-shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform_swap(const std::shared_ptr<const ZMatrix> c) const {
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform_swap(const ZMatView c) const {
   throw runtime_error("ComplexDFDist::compute_half_transform_swap has not been verified - use caution.");
-  const std::shared_ptr<Matrix> cr = c->get_real_part();
-  const std::shared_ptr<Matrix> ci = c->get_imag_part();
+  auto cmat = make_shared<const ZMatrix> (c);
+  const std::shared_ptr<Matrix> cr = cmat->get_real_part();
+  const std::shared_ptr<Matrix> ci = cmat->get_imag_part();
   auto rpart = dynamic_pointer_cast<const DFDist>(dfdata_[0]);
   auto ipart = dynamic_pointer_cast<const DFDist>(dfdata_[1]);
   assert(rpart && ipart);

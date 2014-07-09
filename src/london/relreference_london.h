@@ -49,7 +49,7 @@ class RelReference_London : public Reference_London {
     RelReference_London() { }
     RelReference_London(std::shared_ptr<const Geometry_London> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc,
                         const int nvirt, const bool ga, const bool br)
-     : Reference_London(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice(nneg_, c->mdim())), relcoeff_full_(c) {
+     : Reference_London(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c) {
     }
 
     const std::shared_ptr<const ZCoeff> zcoeff() const override { throw std::logic_error("RelReference_London::zcoeff() should not be called"); }

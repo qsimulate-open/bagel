@@ -65,9 +65,9 @@ class MixedBasis : public MatType {
 
     void print(const std::string in = "", const int size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
-      for (int i = 0; i != std::min(size, ndim()); ++i) {
-        for (int j = 0; j != std::min(size, mdim()); ++j) {
-          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << element(i, j) << " ";
+      for (int i = 0; i != std::min(size, this->ndim()); ++i) {
+        for (int j = 0; j != std::min(size, this->mdim()); ++j) {
+          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << this->element(i, j) << " ";
         }
         std::cout << std::endl;
       }
