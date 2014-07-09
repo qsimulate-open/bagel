@@ -89,7 +89,7 @@ class MatView_ : public btas::TensorView2<DataType> {
     }
 
   public:
-    MatView_() { }
+    MatView_() : localized_(true) { }
     MatView_(const MatView_& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
     MatView_(const btas::TensorView2<DataType>& o, const bool lo) : btas::TensorView2<DataType>(o), localized_(lo) { init(); }
     MatView_(btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }

@@ -220,7 +220,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
 #endif
     }
 
-    Matrix_base() : localized_(false) { }
+    Matrix_base() : localized_(true) { }
 
     virtual ~Matrix_base() { }
 
@@ -340,7 +340,12 @@ class Matrix_base : public btas::Tensor2<DataType> {
     }
 
     // if we use this matrix within node, or in parallel
-    void delocalize() { localized_ = false; }
+    void delocalize() { localized_ = false;
+#ifdef HAVE_SCALAPACK
+      desc_ = mpi__->descinit(ndim(), mdim());
+      localsize_ = mpi__->numroc(ndim(), mdim());
+#endif
+    }
     void localize() { localized_ = true; }
     bool localized() const { return localized_; }
 
