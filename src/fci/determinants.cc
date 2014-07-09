@@ -53,6 +53,7 @@ Determinants::Determinants(shared_ptr<const FCIStringSet> ast, shared_ptr<const 
   compress_    = compress;
   alphaspaces_ = ast;
   betaspaces_  = bst;
+  size_        = lena() * lenb();
 
   for (auto& a : *alphaspaces_)
     for (auto& b : *betaspaces_)
