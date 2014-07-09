@@ -24,6 +24,7 @@
 //
 
 #include <src/asd_dmrg/rasd.h>
+#include <src/asd_dmrg/gamma_forest_asd.h>
 
 #define DEBUG
 
@@ -68,6 +69,7 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
 
 shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
   map<SpaceKey, shared_ptr<const RASDvec>> states;
+  map<SpaceKey, shared_ptr<const Matrix>> h_2e;
   Timer rastime;
 
   for (auto& inp : inputs) {
@@ -82,12 +84,19 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
       auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
       ras->compute();
       shared_ptr<const RASDvec> civecs = ras->civectors();
+      shared_ptr<const Matrix> hamiltonian_2e = ras->compute_sigma2e();
+      hamiltonian_2e->print();
 
-      states.emplace(SpaceKey(charge, spin, spin), civecs);
+      states.emplace(SpaceKey(spin, spin, charge), civecs);
+      h_2e.emplace(SpaceKey(spin, spin, charge), hamiltonian_2e);
       for (int i = 0; i < spin; ++i) {
         const int ms = spin - 2*(i+1);
-        civecs = civecs->spin_lower();
-        states.emplace(SpaceKey(charge, spin, ms), civecs);
+        shared_ptr<RASDvec> tmpvec = civecs->spin_lower();
+        for (auto& vec : tmpvec->dvec())
+          vec->normalize();
+        states.emplace(SpaceKey(spin, ms, charge), tmpvec);
+        h_2e.emplace(SpaceKey(spin, ms, charge), hamiltonian_2e);
+        civecs = tmpvec;
       }
     }
     const int nstates = inp->get<int>("nstate");
@@ -95,8 +104,9 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
                                     << fixed << setw(10) << setprecision(2) << rastime.tick() << endl;
   }
 
+  GammaForestASD<RASDvec> forest(states);
 #if 0
-  return make_shared<DMRG_Block>(states);
+  return make_shared<DMRG_Block>(forest, h_2e);
 #else
   return nullptr;
 #endif

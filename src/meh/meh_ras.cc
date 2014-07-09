@@ -39,7 +39,12 @@ shared_ptr<RASDvec> MEH_RAS::form_sigma(shared_ptr<const RASDvec> ccvec, shared_
   return form(ccvec, jop, conv);
 }
 
+
+// Would be better to pass a Matrix
 shared_ptr<RASDvec> MEH_RAS::form_sigma_1e(shared_ptr<const RASDvec> ccvec, const double* modata) const {
   FormSigmaRAS form;
-  return form(ccvec, modata);
+  const int norb = ccvec->det()->norb();
+  auto mo1e = make_shared<Matrix>(norb, norb);
+  copy_n(modata, norb*norb, mo1e->data());
+  return form(ccvec, mo1e, nullptr, vector<int>(ccvec->ij(), static_cast<int>(false)));
 }

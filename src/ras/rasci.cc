@@ -349,3 +349,16 @@ void RASCI::compute() {
   }
 #endif
 }
+
+shared_ptr<Matrix> RASCI::compute_sigma2e() const {
+  assert(cc_->ij() == nstate_);
+  FormSigmaRAS form_sigma(batchsize_);
+  shared_ptr<const RASDvec> sigma = form_sigma(cc_, nullptr, jop_->mo2e(), vector<int>(nstate_, static_cast<int>(false)));
+  auto out = make_shared<Matrix>(nstate_, nstate_);
+  for (int i = 0; i < nstate_; ++i) {
+    for (int j = 0; j < i; ++j)
+      out->element(i,j) = out->element(j,i) = cc_->data(i)->dot_product(*sigma->data(j));
+    out->element(i,i) = cc_->data(i)->dot_product(*sigma->data(i));
+  }
+  return out;
+}

@@ -38,33 +38,52 @@ using namespace bagel;
 // This is how this is accessed from RASCI
 shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const {
+
+  return operator()(ccvec, jop->mo1e()->matrix(), jop->mo2e(), conv);
+}
+
+shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, shared_ptr<const Matrix> mo1e, shared_ptr<const Matrix> mo2e, const vector<int>& conv) const {
   const int nstate = ccvec->ij();
   shared_ptr<const RASDeterminants> det = ccvec->det();
-
   const int norb = det->norb();
-  Matrix g(norb, norb);
-  for (int k = 0, kl = 0; k < norb; ++k) {
-    for (int l = 0; l < k; ++l, ++kl) {
-      { // g_kl
-        double val = jop->mo1e(kl) - jop->mo2e_hz(k, k, k, l);
-        for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,l);
-        g(l,k) = val;
-      }
 
-      { // g_lk
-        double val = jop->mo1e(kl);
-        for (int j = 0; j < l; ++j) val -= jop->mo2e_hz(l,j,j,k);
-        g(k,l) = val;
+  auto mo2e_hz = [&norb, &mo2e] (const int i, const int j, const int k, const int l) { return mo2e->element(i + norb*j, k + norb*l); };
+
+  Matrix g(norb, norb);
+  if (mo1e)
+    g += *mo1e;
+
+  if (mo2e) {
+    for (int k = 0, kl = 0; k < norb; ++k) {
+      for (int l = 0; l < k; ++l, ++kl) {
+        { // g_kl
+          double val = -mo2e_hz(k, k, k, l);
+            for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,l);
+          g(l,k) += val;
+        }
+
+        { // g_lk
+          double val = 0.0;
+          for (int j = 0; j < l; ++j) val -= mo2e_hz(l,j,j,k);
+          g(k,l) += val;
+        }
       }
+      // g_kk
+      double val = -0.5*mo2e_hz(k,k,k,k);
+      for (int j = 0; j < k; ++j) val -= mo2e_hz(k,j,j,k);
+      g(k,k) += val;
+      ++kl;
     }
-    // g_kk
-    double val = jop->mo1e(kl) - 0.5*jop->mo2e_hz(k,k,k,k);
-    for (int j = 0; j < k; ++j) val -= jop->mo2e_hz(k,j,j,k);
-    g(k,k) = val;
-    ++kl;
   }
 
   auto sigmavec = make_shared<RASDvec>(det, nstate);
+
+  // Not sure why you would ever do this, but just in case
+  if (!mo1e && !mo2e)
+    return sigmavec;
+
+  // Bit of a temporary hack to make life easier if no mo2e is provided
+  shared_ptr<const Matrix> twoelectron = ( !mo2e ? make_shared<Matrix>(norb*norb, norb*norb) : mo2e );
 
   for (int istate = 0; istate != nstate; ++istate) {
     if (conv[istate]) continue;
@@ -76,15 +95,16 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
       shared_ptr<RASCivec> sigma = sigmavec->data(istate);
 
       // (taskaa)
-      sigma_aa(cc, sigma, g.data(), jop->mo2e_ptr());
+      sigma_aa(cc, sigma, g.data(), twoelectron->data());
       pdebug.tick_print("taskaa");
 
       // (taskbb)
-      sigma_bb(cc, sigma, g.data(), jop->mo2e_ptr());
+      sigma_bb(cc, sigma, g.data(), twoelectron->data());
       pdebug.tick_print("taskbb");
 
       // (taskab) alpha-beta contributions
-      sigma_ab(cc, sigma, jop->mo2e_ptr());
+      if (mo2e)
+        sigma_ab(cc, sigma, twoelectron->data());
       pdebug.tick_print("taskab");
 #ifdef HAVE_MPI_H
     }
@@ -97,31 +117,6 @@ shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, sh
       mpi__->broadcast(sigmavec->data(istate)->data(), sigmavec->data(istate)->size(), istate % mpi__->size());
   }
 #endif
-
-  return sigmavec;
-}
-
-// A bit of a temporary hack for 1e terms
-shared_ptr<RASDvec> FormSigmaRAS::operator()(shared_ptr<const RASDvec> ccvec, const double* mo1e) const {
-  const int nstate = ccvec->ij();
-  shared_ptr<const RASDeterminants> det = ccvec->det();
-  const int norb = det->norb();
-
-  auto sigmavec = make_shared<RASDvec>(det, nstate);
-
-  unique_ptr<double[]> blank2e(new double[norb*norb*norb*norb]);
-  fill_n(blank2e.get(), norb*norb*norb*norb, 0.0);
-
-  for (int istate = 0; istate != nstate; ++istate) {
-    shared_ptr<const RASCivec> cc = ccvec->data(istate);
-    shared_ptr<RASCivec> sigma = sigmavec->data(istate);
-
-    // (taskaa)
-    sigma_aa(cc, sigma, mo1e, blank2e.get());
-
-    // (taskbb)
-    sigma_bb(cc, sigma, mo1e, blank2e.get());
-  }
 
   return sigmavec;
 }

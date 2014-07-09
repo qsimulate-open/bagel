@@ -380,6 +380,7 @@ class RASTask {
   public:
     RASTask(const int h, const int p) : holes_(h), particles_(p) {}
     virtual std::shared_ptr<const RASString> stringspace(const int, const int, const int, const int , const int, const int) = 0;
+
     std::shared_ptr<RASBlock<double>> next_block(std::shared_ptr<Branch> branch, std::shared_ptr<const RASBlock<double>> base_block,
                                                  const int& orbital, const bool& action, const bool& spin) {
       std::shared_ptr<const RASString> sa = base_block->stringsa();

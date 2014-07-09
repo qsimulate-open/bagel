@@ -130,6 +130,8 @@ class RASCI : public Method {
     template <int space> int ras() const { return std::get<space>(ras_); }
     double core_energy() const { return jop_->core_energy(); }
 
+    std::shared_ptr<Matrix> compute_sigma2e() const;
+
     //virtual int nij() const { return norb_*(norb_+1)/2; }
 
     //double weight(const int i) const { return weight_[i]; }
