@@ -98,52 +98,15 @@ tuple<int, vector<shared_ptr<const Shell>>> ComplexDFDist::get_ashell(const vect
 
 
 void ComplexDFDist::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const double throverlap, const bool compute_inverse) {
-  Timer time;
 
-  // generates a task of integral evaluations
-  TaskQueue<DFIntTask_OLD<ComplexDFDist>> tasks(ashell.size()*ashell.size());
+  auto tmp = dynamic_pointer_cast<DFDist>(dfdata_[0]);
+  if (!tmp) throw runtime_error("Illegal call of ComplexDFDist::compute_2index");
 
-  data2_ = make_shared<Matrix>(naux_, naux_, serial_);
-  auto b3 = make_shared<const Shell>(ashell.front()->spherical());
+  tmp->compute_2index(ashell, throverlap, compute_inverse);
+  dfdata_[1]->data2_ = tmp->data2_;
+  data2_ = tmp->data2_;
 
-  // naive static distribution
-  int u = 0;
-  int o0 = 0;
-  for (auto& b0 : ashell) {
-    int o1 = 0;
-    for (auto& b1 : ashell) {
-      if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()) || serial_))
-        tasks.emplace_back(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, array<int,2>{{o0, o1}}, this);
-      o1 += b1->nbasis();
-    }
-    o0 += b0->nbasis();
-  }
-
-  // these shell loops will be distributed across threads
-  tasks.compute();
-
-  if (!serial_)
-    data2_->allreduce();
-
-  time.tick_print("2-index ints");
-
-  if (compute_inverse) {
-    data2_->inverse_half(throverlap);
-    // will use data2_ within node
-    data2_->localize();
-    time.tick_print("computing inverse");
-  }
-
-  dfdata_[0]->data2_ = data2_;
-  dfdata_[1]->data2_ = data2_;
-
-}
-
-
-pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> ComplexDFDist::compute_batch(array<shared_ptr<const Shell>,4>& input) {
-  shared_ptr<RysIntegral<double, Int_t::Standard>> eribatch = make_shared<ERIBatch>(input, 2.0);
-  eribatch->compute();
-  return make_pair(eribatch->data(), eribatch);
+  assert(dfdata_[0]->data2_ == dfdata_[1]->data2_);
 }
 
 

@@ -31,17 +31,13 @@
 #include <src/df/complexdfinttask.h>
 #include <src/df/complexparalleldf.h>
 #include <src/math/zmatrix.h>
-//#include <src/df/complexdfhalf.h>
 
 namespace bagel {
 
 class ComplexDFHalfDist;
 
 class ComplexDFDist : public ComplexParallelDF {
-  friend class DFIntTask_OLD<ComplexDFDist>;
   protected:
-
-    std::pair<const double*, std::shared_ptr<RysIntegral<double, Int_t::Standard>>> compute_batch(std::array<std::shared_ptr<const Shell>,4>& input);
     std::shared_ptr<const StaticDist> make_table(const size_t nmax);
     std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
     void compute_2index(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
