@@ -55,14 +55,14 @@ void ZHarrison::compute_rdm12() {
       const int nri = int_det->lena() * int_det->lenb();
 
       if (nelea+1 <= norb_ && neleb+1 <= norb_) {
-        auto cc = cc_->find(nelea+1, neleb+1)->data(istate);
+        shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb+1)->data(istate);
         auto d = make_shared<ZDvec>(int_det, ij);
         sigma_2e_annih_ab(cc, d);
         intermediates["01"] = d;
       }
       if (neleb+2 <= norb_) {
         // transpose the civec
-        auto cc = cc_->find(nelea, neleb+2)->data(istate);
+        shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+2)->data(istate);
         auto tmp = make_shared<ZDvec>(int_space_->finddet(neleb, nelea), ij);
         sigma_2e_annih_aa(cc->transpose(), tmp);
         // transpose back
@@ -76,7 +76,7 @@ void ZHarrison::compute_rdm12() {
       }
       if (nelea+2 <= norb_) {
         // to be implemeneted
-        auto cc = cc_->find(nelea+2, neleb)->data(istate);
+        shared_ptr<const ZCivec> cc = cc_->find(nelea+2, neleb)->data(istate);
         auto d = make_shared<ZDvec>(int_det, ij);
         sigma_2e_annih_aa(cc, d);
         intermediates["00"] = d;
@@ -112,7 +112,7 @@ void ZHarrison::compute_rdm12() {
       const int nri = int_det->lena() * int_det->lenb();
 
       if (nelea+1 <= norb_) {
-        auto cc = cc_->find(nelea+1, neleb)->data(istate);
+        shared_ptr<const ZCivec> cc = cc_->find(nelea+1, neleb)->data(istate);
         auto d = make_shared<ZDvec>(int_det, norb_);
         const int lenb = int_det->lenb();
         for (auto& s : int_det->string_bits_a()) {
@@ -128,7 +128,7 @@ void ZHarrison::compute_rdm12() {
         intermediates["0"] = d;
       }
       if (neleb+1 <= norb_) {
-        auto cc = cc_->find(nelea, neleb+1)->data(istate);
+        shared_ptr<const ZCivec> cc = cc_->find(nelea, neleb+1)->data(istate);
         auto d = make_shared<ZDvec>(int_det, norb_);
         const int lenbt = int_det->lenb();
         const int lenbs = cc->det()->lenb();
