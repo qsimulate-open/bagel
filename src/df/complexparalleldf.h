@@ -27,7 +27,6 @@
 #ifndef __SRC_DF_COMPLEXPARALLELDF_H
 #define __SRC_DF_COMPLEXPARALLELDF_H
 
-#include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
 #include <src/df/paralleldf.h>
 
@@ -88,8 +87,8 @@ class ComplexParallelDF : public std::enable_shared_from_this<ComplexParallelDF>
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
     std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexParallelDF> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
-    std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZMatrix> cd) const;
-    std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const;
+    std::shared_ptr<ZVectorB> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
     //std::shared_ptr<ZMatrix> compute_cd(const std::shared_ptr<const Matrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
     void average_3index() {

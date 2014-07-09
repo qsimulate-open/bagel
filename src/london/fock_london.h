@@ -39,7 +39,7 @@ template<int DF>
 class Fock_London : public Fock_base_London {
   protected:
     void fock_two_electron_part(std::shared_ptr<const ZMatrix> den = nullptr);
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
+    void fock_two_electron_part_with_coeff(const ZMatView coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested
     bool store_half_;
@@ -58,11 +58,15 @@ class Fock_London : public Fock_base_London {
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
     Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
-         const std::shared_ptr<const ZMatrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+                const ZMatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base_London(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
+    // same as above
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
+                std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock_London(a,b,c,*o,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
@@ -111,7 +115,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 
       double cmax = 0.0;
       for (int ii = ioffset; ii != ioffset + isize; ++ii) {
-        const int iin = ii * ndim_;
+        const int iin = ii * ndim();
         for (int jj = joffset; jj != joffset + jsize; ++jj) {
           cmax = std::max(cmax, std::abs(density_data[iin + jj]));
         }
@@ -189,7 +193,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
             eribatch.compute();
             const std::complex<double>* eridata = eribatch.data();
             for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-              const int j0n = j0 * ndim_;
+              const int j0n = j0 * ndim();
 
               for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
                 //const unsigned int nj01 = (j0 << shift) + j1;
@@ -201,7 +205,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 
                 //const bool eqlj0j1 = (j0 == j1);
                 //const double scal01 = (eqlj0j1 ? 0.5 : 1.0) * static_cast<double>(ijkl);
-                const int j1n = j1 * ndim_;
+                const int j1n = j1 * ndim();
 
                 for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                   //const int maxj1j2 = std::max(j1, j2);
@@ -211,7 +215,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                   //const int maxj0j2 = std::max(j0, j2);
                   //const int minj0j2 = std::min(j0, j2);
                   //const int minj0j2n = minj0j2 * ndim_;
-                  const int j2n = j2 * ndim_;
+                  const int j2n = j2 * ndim();
 
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     //const bool skipj2j3 = (j2 > j3);
@@ -226,7 +230,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     //std::complex<double> intval = *eridata * scal01 * (j2 == j3 ? 0.5 : 1.0) * (nj01 == nj23 ? 0.25 : 0.5); // 1/2 in the Hamiltonian absorbed here
                     //const std::complex<double> intval4 = 4.0 * intval;
 
-                    const int j3n = j3 * ndim_;
+                    const int j3n = j3 * ndim();
                     std::complex<double> intval = *eridata * 0.5; // 1/2 in the Hamiltonian absorbed here
 
                     if (j0 + j1 <  j2 + j3) continue;
@@ -235,17 +239,17 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
                     if (j0 + j2 == j1 + j3) intval *= 0.5;
                     const std::complex<double> intval2 = intval * 2.0;
 
-                    data_[j0n + j1] += density_data[j3n + j2] * intval2; // Coulomb  (ab|cd)
-                    data_[j0n + j3] -= density_data[j1n + j2] * intval;  // Exchange (ad|cb)
+                    element(j1, j0) += density_data[j3n + j2] * intval2; // Coulomb  (ab|cd)
+                    element(j3, j0) -= density_data[j1n + j2] * intval;  // Exchange (ad|cb)
 
-                    data_[j2n + j3] += density_data[j1n + j0] * intval2; // Coulomb  (cd|ab)
-                    data_[j2n + j1] -= density_data[j3n + j0] * intval;  // Exchange (cb|ad)
+                    element(j3, j2) += density_data[j1n + j0] * intval2; // Coulomb  (cd|ab)
+                    element(j1, j2) -= density_data[j3n + j0] * intval;  // Exchange (cb|ad)
 
-                    data_[j1n + j0] += density_data[j2n + j3] * std::conj(intval2); // Coulomb  (ba|dc)
-                    data_[j3n + j0] -= density_data[j2n + j1] * std::conj(intval);  // Exchange (da|bc)
+                    element(j0, j1) += density_data[j2n + j3] * std::conj(intval2); // Coulomb  (ba|dc)
+                    element(j0, j3) -= density_data[j2n + j1] * std::conj(intval);  // Exchange (da|bc)
 
-                    data_[j3n + j2] += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
-                    data_[j1n + j2] -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
+                    element(j2, j3) += density_data[j0n + j1] * std::conj(intval2); // Coulomb  (dc|ba)
+                    element(j2, j1) -= density_data[j0n + j3] * std::conj(intval);  // Exchange (bc|dz)
 
                     /*
                     data_[j0n + j1] += density_data[j2n + j3] * intval4;
@@ -277,7 +281,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::shared_ptr<const ComplexDFDist> df = cgeom_->df();
 
     // some constants
-    assert(ndim_ == df->nbasis0());
+    assert(ndim() == df->nbasis0());
 
     Timer pdebug(3);
 
@@ -285,9 +289,9 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     *coeff *= -1.0;
     int nocc = 0;
     {
-      std::unique_ptr<double[]> vec(new double[ndim_]);
+      std::unique_ptr<double[]> vec(new double[ndim()]);
       coeff->diagonalize(vec.get());
-      for (int i = 0; i != ndim_; ++i) {
+      for (int i = 0; i != ndim(); ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
           const double fac = std::sqrt(-vec[i]);
@@ -314,7 +318,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 }
 
 template<int DF>
-void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf, const double scale_exchange) {
+void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock_London<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
 #if 1
@@ -333,7 +337,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      auto coeff = std::make_shared<const ZMatrix>(*ocoeff->transpose()*2.0);
+      auto oc = std::make_shared<ZMatrix>(ocoeff);
+      auto coeff = std::make_shared<const ZMatrix>(*oc->transpose()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

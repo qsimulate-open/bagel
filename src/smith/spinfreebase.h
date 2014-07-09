@@ -827,7 +827,7 @@ class SpinFreeMethod {
         auto fockact = std::make_shared<Matrix>(nact, nact);
         for (auto& i1 : active_)
           for (auto& i0 : active_)
-            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1));
+            fockact->copy_block(i0.offset()-nclo, i1.offset()-nclo, i0.size(), i1.size(), this->f1_->get_block(i0, i1).get());
 
         auto rdm1 = std::make_shared<RDM<1>>(*ref_->rdm1(ref_->target()));
         auto rdm2 = std::make_shared<RDM<2>>(*ref_->rdm2(ref_->target()));

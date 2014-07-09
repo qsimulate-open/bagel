@@ -27,12 +27,9 @@
 #ifndef __SRC_INTEGRAL_ECP_ECPBATCH_H
 #define __SRC_INTEGRAL_ECP_ECPBATCH_H
 
-#include <tuple>
 #include <src/parallel/resources.h>
 #include <src/molecule/molecule.h>
-#include <src/util/constants.h>
 #include <src/integral/integral.h>
-#include <src/integral/ecp/radial.h>
 #include <src/integral/ecp/angularbatch.h>
 
 namespace bagel {
@@ -50,15 +47,11 @@ class ECPBatch : public Integral {
 
     double* data_;
 
-    int ang0_, ang1_, cont0_, cont1_, prim0_, prim1_;
+    int ang0_, ang1_, cont0_, cont1_;
     int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
     bool swap01_;
     size_t size_alloc_;
     double* stack_save_;
-
-    void perform_contraction(const int, const double*, const int, const int, double*,
-                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int,
-                             const std::vector<std::vector<double>>&, const std::vector<std::pair<int, int>>&, const int);
 
     bool allocated_here_;
     std::shared_ptr<StackMem> stack_;
@@ -70,13 +63,10 @@ class ECPBatch : public Integral {
                    std::shared_ptr<StackMem> = nullptr);
     ~ECPBatch();
 
-    void integrate_angular();
-
     double* data() { return data_; }
     virtual double* data(const int i) override { assert(i == 0); return data_; }
 
     bool swap01() const { return swap01_; }
-
 
     void compute() override;
 

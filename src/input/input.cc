@@ -82,7 +82,7 @@ PTreeReverseIterator PTree::rend()   const { return PTreeReverseIterator(data_.r
 
 namespace bagel {
 template <> void PTree::push_back<shared_ptr<PTree>>(const shared_ptr<PTree>& pt) {
-  data_.push_back(make_pair("", pt->data_));
+  data_.push_back({"", pt->data_});
 }
 }
 

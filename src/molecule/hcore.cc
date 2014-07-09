@@ -68,7 +68,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
   }
 
-  if (mol->atoms(0)->use_ecp_basis()) {
+  if (mol->atoms().front()->use_ecp_basis()) {
     {
       R0Batch r0(input, mol);
       r0.compute();
@@ -122,9 +122,9 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     int cnt = 0;
     for (int i = offsetb0; i != dimb0 + offsetb0; ++i) {
       for (int j = offsetb1; j != dimb1 + offsetb1; ++j, ++cnt) {
-        data_[i*ndim_ + j] += dip[cnt        ]*mol->external(0);
-        data_[i*ndim_ + j] += dip[cnt+block  ]*mol->external(1);
-        data_[i*ndim_ + j] += dip[cnt+block*2]*mol->external(2);
+        element(j, i) += dip[cnt        ]*mol->external(0);
+        element(j, i) += dip[cnt+block  ]*mol->external(1);
+        element(j, i) += dip[cnt+block*2]*mol->external(2);
       }
     }
   }

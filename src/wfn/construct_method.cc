@@ -35,19 +35,19 @@
 #include <src/casscf/superci.h>
 #if 0
 #include <src/casscf/werner.h>
-#include <src/casscf/casbfgs.h>
 #endif
+#include <src/casscf/cashybrid.h>
+#include <src/casscf/casbfgs.h>
 #include <src/nevpt2/nevpt2.h>
 #include <src/zcasscf/zcasscf.h>
+#include <src/zcasscf/zcasbfgs.h>
+#include <src/zcasscf/zsuperci.h>
 #include <src/rel/dirac.h>
 #include <src/rel/dmp2.h>
 #include <src/mp2/mp2.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/london/scf_london.h>
-#include <src/london/fci_london.h>
-#include <src/london/zharrison_london.h>
-//#include <src/london/debug_london.h>
 #include <src/london/dirac_london.h>
 #include <src/wfn/construct_method.h>
 
@@ -100,12 +100,14 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     string algorithm = itree->get<string>("algorithm", "");
     if (algorithm == "superci" || algorithm == "")
       out = make_shared<SuperCI>(itree, geom, ref);
+    else if (algorithm == "hybrid")
+      out = make_shared<CASHYBRID>(itree, geom, ref);
 #if 0
     else if (algorithm == "werner" || algorithm == "knowles")
       out = make_shared<WernerKnowles>(itree, geom, ref);
+#endif
     else if (algorithm == "bfgs")
       out = make_shared<CASBFGS>(itree, geom, ref);
-#endif
     else
       throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
   }
@@ -114,7 +116,15 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     out = make_shared<CASPT2Grad>(itree, geom, ref);
   }
   else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
-  else if (title == "zcasscf") out = make_shared<ZCASSCF>(itree, geom, ref);
+  else if (title == "zcasscf") {
+    string algorithm = itree->get<string>("algorithm", "");
+    if (algorithm == "bfgs" || algorithm == "")
+      out = make_shared<ZCASBFGS>(itree, geom, ref);
+    else if (algorithm == "superci")
+      out = make_shared<ZSuperCI>(itree, geom, ref);
+    else
+      cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+  }
 
   return out;
 }
@@ -124,9 +134,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   shared_ptr<Method> out;
   if (title == "hf")              out = make_shared<SCF_London>(itree, cgeom, ref);
   else if (title == "dhf")        out = make_shared<Dirac_London>(itree, cgeom, ref);
-  else if (title == "fci")        out = make_shared<FCI_London>(itree, cgeom, ref);
-  else if (title == "zfci")       out = make_shared<ZHarrison_London>(itree, cgeom, ref);
-//  else if (title == "debug")      out = make_shared<Debug_London>(itree, cgeom, ref);
+  else if (title == "fci")        throw runtime_error("FCI method has not been implemented with a London orbital basis set.");
   else if (title == "ks")         throw runtime_error("KS method has not been implemented with a London orbital basis set.");
   else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with a London orbital basis set.");
   else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with a London orbital basis set.");
@@ -134,6 +142,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
   else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with a London orbital basis set.");
   else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with a London orbital basis set.");
   else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with a London orbital basis set.");
+  else if (title == "zfci")       throw runtime_error("ZFCI method has not been implemented with a London orbital basis set.");
   else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with a London orbital basis set.");
   else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with a London orbital basis set.");
   else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with a London orbital basis set.");

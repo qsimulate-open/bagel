@@ -78,7 +78,7 @@ class Atom {
   public:
     Atom() { }
     Atom(std::shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const std::pair<std::string, std::shared_ptr<const PTree>> defbas,
-         std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field, const bool aux=false);
+         std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field, const bool aux=false, const bool ecp=false);
 
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const std::string bas,
          const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem, const std::array<double,3> magnetic_field = {{0.0,0.0,0.0}});
@@ -87,7 +87,7 @@ class Atom {
          const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
-                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore);
+                                                        const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore, const int maxl);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::shared_ptr<const ECP> ecp_param);
 
@@ -109,7 +109,7 @@ class Atom {
     const std::vector<std::shared_ptr<const Shell>>& shells() const { return shells_; }
     int nshell() const { return shells_.size(); }
 
-    const bool use_ecp_basis() const { return use_ecp_basis_; }
+    bool use_ecp_basis() const { return use_ecp_basis_; }
     const std::shared_ptr<const ECP>& ecp_parameters() const { return ecp_parameters_; }
 
     bool dummy() const { return atom_number_ == 0; }

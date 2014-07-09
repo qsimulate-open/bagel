@@ -90,9 +90,9 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) {
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    for (auto& a : *atoms) {
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
-    }
+    const bool use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
+    for (auto& a : *atoms)
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_, false, use_ecp_basis_));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
   for (auto& i : atoms_)

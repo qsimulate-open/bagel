@@ -187,16 +187,14 @@ shared_ptr<ZMatrix> RelDFFull::form_2index(shared_ptr<const RelDFFull> a, const 
 }
 
 
-shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> inp) const {
-  shared_ptr<ZMatrix> rdm2 = make_shared<ZMatrix>(inp->dim(), inp->dim());
-  copy_n(inp->data(), inp->size(), rdm2->data());
-  shared_ptr<const Matrix> rrdm = rdm2->get_real_part();
-  shared_ptr<const Matrix> irdm = rdm2->get_imag_part();
+shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) const {
+  shared_ptr<const RDM<2>> rrdm = rdm2->get_real_part();
+  shared_ptr<const RDM<2>> irdm = rdm2->get_imag_part();
 
-  shared_ptr<DFFullDist> r  =  dffull_[0]->apply_2rdm(rrdm->data());
-  r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(irdm->data()));
+  shared_ptr<DFFullDist> r  =  dffull_[0]->apply_2rdm(*rrdm);
+  r->ax_plus_y(-1.0, dffull_[1]->apply_2rdm(*irdm));
 
-  shared_ptr<DFFullDist> i  =  dffull_[1]->apply_2rdm(rrdm->data());
-  i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(irdm->data()));
+  shared_ptr<DFFullDist> i  =  dffull_[1]->apply_2rdm(*rrdm);
+  i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));
   return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }

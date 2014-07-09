@@ -73,38 +73,38 @@ struct LebedevList  {
 
   public:
     LebedevList() {
-      rfunc[0] = &ld0006; map_.insert(std::make_pair(6, 0));
-      rfunc[1] = &ld0014; map_.insert(std::make_pair(14, 1));
-      rfunc[2] = &ld0026; map_.insert(std::make_pair(26, 2));
-      rfunc[3] = &ld0038; map_.insert(std::make_pair(38, 3));
-      rfunc[4] = &ld0050; map_.insert(std::make_pair(50, 4));
-      rfunc[5] = &ld0074; map_.insert(std::make_pair(74, 5));
-      rfunc[6] = &ld0086; map_.insert(std::make_pair(86, 6));
-      rfunc[7] = &ld0110; map_.insert(std::make_pair(110, 7));
-      rfunc[8] = &ld0146; map_.insert(std::make_pair(146, 8));
-      rfunc[9] = &ld0170; map_.insert(std::make_pair(170, 9));
-      rfunc[10] = &ld0194; map_.insert(std::make_pair(194, 10));
-      rfunc[11] = &ld0230; map_.insert(std::make_pair(230, 11));
-      rfunc[12] = &ld0266; map_.insert(std::make_pair(266, 12));
-      rfunc[13] = &ld0302; map_.insert(std::make_pair(302, 13));
-      rfunc[14] = &ld0350; map_.insert(std::make_pair(350, 14));
-      rfunc[15] = &ld0434; map_.insert(std::make_pair(434, 15));
-      rfunc[16] = &ld0590; map_.insert(std::make_pair(590, 16));
-      rfunc[17] = &ld0770; map_.insert(std::make_pair(770, 17));
-      rfunc[18] = &ld0974; map_.insert(std::make_pair(974, 18));
-      rfunc[19] = &ld1202; map_.insert(std::make_pair(1202, 19));
-      rfunc[20] = &ld1454; map_.insert(std::make_pair(1454, 20));
-      rfunc[21] = &ld1730; map_.insert(std::make_pair(1730, 21));
-      rfunc[22] = &ld2030; map_.insert(std::make_pair(2030, 22));
-      rfunc[23] = &ld2354; map_.insert(std::make_pair(2354, 23));
-      rfunc[24] = &ld2702; map_.insert(std::make_pair(2702, 24));
-      rfunc[25] = &ld3074; map_.insert(std::make_pair(3074, 25));
-      rfunc[26] = &ld3470; map_.insert(std::make_pair(3470, 26));
-      rfunc[27] = &ld3890; map_.insert(std::make_pair(3890, 27));
-      rfunc[28] = &ld4334; map_.insert(std::make_pair(4334, 28));
-      rfunc[29] = &ld4802; map_.insert(std::make_pair(4802, 29));
-      rfunc[30] = &ld5294; map_.insert(std::make_pair(5294, 30));
-      rfunc[31] = &ld5810; map_.insert(std::make_pair(5810, 31));
+      rfunc[0] = &ld0006; map_.emplace(6, 0);
+      rfunc[1] = &ld0014; map_.emplace(14, 1);
+      rfunc[2] = &ld0026; map_.emplace(26, 2);
+      rfunc[3] = &ld0038; map_.emplace(38, 3);
+      rfunc[4] = &ld0050; map_.emplace(50, 4);
+      rfunc[5] = &ld0074; map_.emplace(74, 5);
+      rfunc[6] = &ld0086; map_.emplace(86, 6);
+      rfunc[7] = &ld0110; map_.emplace(110, 7);
+      rfunc[8] = &ld0146; map_.emplace(146, 8);
+      rfunc[9] = &ld0170; map_.emplace(170, 9);
+      rfunc[10] = &ld0194; map_.emplace(194, 10);
+      rfunc[11] = &ld0230; map_.emplace(230, 11);
+      rfunc[12] = &ld0266; map_.emplace(266, 12);
+      rfunc[13] = &ld0302; map_.emplace(302, 13);
+      rfunc[14] = &ld0350; map_.emplace(350, 14);
+      rfunc[15] = &ld0434; map_.emplace(434, 15);
+      rfunc[16] = &ld0590; map_.emplace(590, 16);
+      rfunc[17] = &ld0770; map_.emplace(770, 17);
+      rfunc[18] = &ld0974; map_.emplace(974, 18);
+      rfunc[19] = &ld1202; map_.emplace(1202, 19);
+      rfunc[20] = &ld1454; map_.emplace(1454, 20);
+      rfunc[21] = &ld1730; map_.emplace(1730, 21);
+      rfunc[22] = &ld2030; map_.emplace(2030, 22);
+      rfunc[23] = &ld2354; map_.emplace(2354, 23);
+      rfunc[24] = &ld2702; map_.emplace(2702, 24);
+      rfunc[25] = &ld3074; map_.emplace(3074, 25);
+      rfunc[26] = &ld3470; map_.emplace(3470, 26);
+      rfunc[27] = &ld3890; map_.emplace(3890, 27);
+      rfunc[28] = &ld4334; map_.emplace(4334, 28);
+      rfunc[29] = &ld4802; map_.emplace(4802, 29);
+      rfunc[30] = &ld5294; map_.emplace(5294, 30);
+      rfunc[31] = &ld5810; map_.emplace(5810, 31);
     }
 
     void root(const int ngrid, double* a1, double* a2, double* a3, double* a4) const {

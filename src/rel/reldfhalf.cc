@@ -63,7 +63,7 @@ RelDFHalf::RelDFHalf(const RelDFHalf& o) : RelDFBase(o.cartesian_) {
 
 
 shared_ptr<RelDFHalf> RelDFHalf::apply_J() const {
-  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_); 
+  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{dfhalf_[0]->apply_J(), dfhalf_[1]->apply_J()}}, cartesian_, basis_);
 }
 
 
@@ -141,7 +141,7 @@ shared_ptr<DFDist> RelDFHalfB::back_transform(shared_ptr<const Matrix> r, shared
   shared_ptr<DFDist> out;
   if (!imag) {
     out = dfhalf_[0]->back_transform(r);
-    out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(i)); 
+    out->ax_plus_y(-1.0, dfhalf_[1]->back_transform(i));
   } else {
     out = dfhalf_[0]->back_transform(i);
     out->ax_plus_y(1.0, dfhalf_[1]->back_transform(r));

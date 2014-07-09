@@ -27,7 +27,6 @@
 #define __MEH_MEH_RAS_H
 
 #include <src/meh/meh.h>
-#include <src/ras/civector.h>
 
 namespace bagel {
 

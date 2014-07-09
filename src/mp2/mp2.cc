@@ -38,6 +38,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 MP2::MP2(const shared_ptr<const PTree> input, const shared_ptr<const Geometry> g, const shared_ptr<const Reference> ref) : Method(input, g, ref) {
 
@@ -68,8 +69,8 @@ void MP2::compute() {
   if (nvirt < 1) throw runtime_error("no virtuals orbitals");
 
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
+  const MatView ocoeff = ref_->coeff()->slice(ncore_, ncore_+nocc);
+  const MatView vcoeff = ref_->coeff()->slice(ncore_+nocc, ncore_+nocc+nvirt);
 
   Timer timer;
   // compute transformed integrals

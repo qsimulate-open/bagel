@@ -28,56 +28,22 @@
 #ifndef BAGEL_MEH_COMPUTE_OFFDIAGONAL_H
 #define BAGEL_MEH_COMPUTE_OFFDIAGONAL_H
 
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_offdiagonal_1e(const DSubSpace& AB, const DSubSpace& ApBp, std::shared_ptr<const Matrix> hAB) const {
-  Coupling term_type = coupling_type(AB,ApBp);
-
-  GammaSQ operatorA;
-  GammaSQ operatorB;
-  int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
-
-  switch(term_type) {
-    case Coupling::aET :
-      operatorA = GammaSQ::CreateAlpha;
-      operatorB = GammaSQ::AnnihilateAlpha;
-      break;
-    case Coupling::inv_aET :
-      operatorA = GammaSQ::AnnihilateAlpha;
-      operatorB = GammaSQ::CreateAlpha;
-      --neleA;
-      break;
-    case Coupling::bET :
-      operatorA = GammaSQ::CreateBeta;
-      operatorB = GammaSQ::AnnihilateBeta;
-      break;
-    case Coupling::inv_bET :
-      operatorA = GammaSQ::AnnihilateBeta;
-      operatorB = GammaSQ::CreateBeta;
-      --neleA;
-      break;
-    default :
-      return std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  }
-
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), operatorA);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), operatorB);
-  Matrix tmp = gamma_A * (*hAB) ^ gamma_B;
-
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
-  if ( (neleA % 2) == 1 ) out->scale(-1.0);
-
-  return out;
+namespace {
+  template<typename T>
+  void transpose_call(std::shared_ptr<T>& o) { assert(false); }
+  template<>
+  void transpose_call(std::shared_ptr<Matrix>& o) { o = o->transpose(); }
+  template<>
+  void transpose_call(std::shared_ptr<RDM<2>>& o) { /* doing nothing */ }
 }
 
+template <bool _N, typename return_type>
+std::shared_ptr<return_type> MEH_base::couple_blocks(const DimerSubspace_base& AB, const DimerSubspace_base& ApBp) {
 
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpace& AB, DSubSpace& ApBp) {
   Coupling term_type = coupling_type(AB, ApBp);
 
-  DSubSpace* space1 = &AB;
-  DSubSpace* space2 = &ApBp;
+  const DimerSubspace_base* space1 = &AB;
+  const DimerSubspace_base* space2 = &ApBp;
 
   bool flip = (static_cast<int>(term_type) < 0);
 
@@ -86,201 +52,33 @@ std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::couple_blocks(DSubSpac
     std::swap(space1,space2);
   }
 
-  std::shared_ptr<Matrix> out;
+  std::shared_ptr<return_type> out;
+
+  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
 
   switch(term_type) {
     case Coupling::none :
-      out = std::make_shared<Matrix>(space1->dimerstates(), space2->dimerstates()); break;
+      out = nullptr; break;
     case Coupling::diagonal :
-      out = compute_inter_2e(*space1, *space2); break;
+      out = compute_inter_2e<_N>(keys); break;
     case Coupling::aET :
-      out = compute_aET(*space1, *space2); break;
+      out = compute_aET<_N>(keys); break;
     case Coupling::bET :
-      out = compute_bET(*space1, *space2); break;
+      out = compute_bET<_N>(keys); break;
     case Coupling::abFlip :
-      out = compute_abFlip(*space1, *space2); break;
+      out = compute_abFlip<_N>(keys); break;
     case Coupling::abET :
-      out = compute_abET(*space1, *space2); break;
+      out = compute_abET<_N>(keys); break;
     case Coupling::aaET :
-      out = compute_aaET(*space1, *space2); break;
+      out = compute_aaET<_N>(keys); break;
     case Coupling::bbET :
-      out = compute_bbET(*space1, *space2); break;
+      out = compute_bbET<_N>(keys); break;
     default :
       throw std::logic_error("Asking for a coupling type that has not been written.");
   }
 
-  if (flip) out = out->transpose();
-
-  return out;
-}
-
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_aET(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  Matrix tmp(AB.template nstates<0>() * ApBp.template nstates<0>(), AB.template nstates<1>() * ApBp.template nstates<1>());
-
-  // One-body aET
-  {
-    Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
-    Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
-
-    std::shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
-
-    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
-  }
-
-  //Two-body aET, type 1
-  {
-    Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha);
-    Matrix gamma_B1 = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha);
-    Matrix gamma_B2 = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
-
-    std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
-
-    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
-  }
-
-  //Two-body aET, type 2
-  {
-    Matrix gamma_A1 = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-    Matrix gamma_A2 = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-    Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha);
-
-    std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
-
-    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
-  }
-
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
-  const int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
-  if ((neleA % 2) == 1) out->scale(-1.0);
-
-  return out;
-}
-
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_bET(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-  Matrix tmp(AB.template nstates<0>() * ApBp.template nstates<0>(), AB.template nstates<1>() * ApBp.template nstates<1>());
-
-  // One-body bET
-  {
-    Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
-    Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
-
-    std::shared_ptr<const Matrix> Fmatrix = jop_->cross_mo1e();
-
-    tmp += gamma_A * (*Fmatrix) ^ gamma_B;
-  }
-
-
-  //Two-body bET, type 1
-  {
-    Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta);
-    Matrix gamma_B1 = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
-    Matrix gamma_B2 = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta);
-
-    std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,1,1,1>();
-
-    tmp -= gamma_A * (*Jmatrix) ^ (gamma_B1 + gamma_B2);
-  }
-
-  //Two-body aET, type 2
-  {
-    Matrix gamma_A1 = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateAlpha, GammaSQ::CreateBeta);
-    Matrix gamma_A2 = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-    Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta);
-
-    std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,0>();
-
-    tmp += (gamma_A1 + gamma_A2) * (*Jmatrix) ^ gamma_B;
-  }
-
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
-  const int neleA = AB.template ci<0>()->det()->nelea() + AB.template ci<0>()->det()->neleb();
-  if ((neleA % 2) == 1) out->scale(-1.0);
-
-  return out;
-}
-
-
-// Currently defined as an alpha->beta flip in A and a beta->alpha flip in B
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abFlip(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  const int nstatesA = AB.template nstates<0>();
-  const int nstatesAp = ApBp.template nstates<0>();
-  const int nstatesB = AB.template nstates<1>();
-  const int nstatesBp = ApBp.template nstates<1>();
-
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::CreateBeta);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::CreateAlpha);
-
-  std::shared_ptr<const Matrix> Kmatrix = jop_->coulomb_matrix<0,1,1,0>();
-
-  Matrix tmp = gamma_A * (*Kmatrix) ^ gamma_B;
-  tmp *= -1.0;
-
-  reorder_matrix(tmp.data(), out->data(), nstatesA, nstatesAp, nstatesB, nstatesBp);
-
-  return out;
-}
-
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_abET(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateAlpha);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha);
-
-  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
-
-  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -1.0;
-
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
-  return out;
-}
-
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_aaET(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateAlpha, GammaSQ::CreateAlpha);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha);
-
-  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
-
-  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -0.5;
-
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
-
-  return out;
-}
-
-
-template <class VecType>
-std::shared_ptr<Matrix> MultiExcitonHamiltonian<VecType>::compute_bbET(DSubSpace& AB, DSubSpace& ApBp) {
-  auto out = std::make_shared<Matrix>(AB.dimerstates(), ApBp.dimerstates());
-
-  Matrix gamma_A = *gammaforest_->template get<0>(AB.offset(), ApBp.offset(), GammaSQ::CreateBeta, GammaSQ::CreateBeta);
-  Matrix gamma_B = *gammaforest_->template get<1>(AB.offset(), ApBp.offset(), GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta);
-
-  std::shared_ptr<const Matrix> Jmatrix = jop_->coulomb_matrix<0,0,1,1>();
-
-  Matrix tmp = gamma_A * (*Jmatrix) ^ gamma_B;
-  tmp *= -0.5;
-
-  reorder_matrix(tmp.data(), out->data(), AB.template nstates<0>(), ApBp.template nstates<0>(), AB.template nstates<1>(), ApBp.template nstates<1>());
+  /* if we are computing the Hamiltonian and flip = true, then we tranpose the output (see above) */
+  if (flip) transpose_call(out);
 
   return out;
 }

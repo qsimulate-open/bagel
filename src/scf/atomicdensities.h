@@ -26,7 +26,6 @@
 #ifndef __SRC_SCF_ATOMICDENSITIES_H
 #define __SRC_SCF_ATOMICDENSITIES_H
 
-#include <src/math/matrix.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/geometry_london.h>
 

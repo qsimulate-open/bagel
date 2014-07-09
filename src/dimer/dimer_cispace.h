@@ -59,14 +59,17 @@ class SpaceKey {
       out = out + "(2S=" + std::to_string(S) + ";2m_s=" + std::to_string(m_s) + ")";
       return out;
     }
+
+    // unique tag
+    int tag() const { return (((S << 5) + m_s+S) << 5) + q; }
 };
 
 template <class VecType>
 class DimerCISpace_base {
   using DetType = typename VecType::DetType;
 
-  using SpaceMap = std::multimap<SpaceKey, std::shared_ptr<VecType>>;
-  using DMap = std::multimap<std::pair<int,int>, std::shared_ptr<DetType>>;
+  using SpaceMap = std::map<SpaceKey, std::shared_ptr<VecType>>;
+  using DMap = std::map<std::pair<int,int>, std::shared_ptr<DetType>>;
 
   protected:
     // These are stored values of the neutral species
@@ -92,12 +95,14 @@ class DimerCISpace_base {
     template<int unit> int neleb() const { return (unit == 0 ? neleb_.first : neleb_.second); }
     template<int unit> int nstates() const { return (unit == 0 ? nstates_.first : nstates_.second); }
     template<int unit> std::shared_ptr<const DetType> bdet() const { return (unit == 0 ? bdet_.first : bdet_.second); }
+    template<int unit> int norb() const { return unit == 0 ? detspaceA_.cbegin()->second->norb() : detspaceB_.cbegin()->second->norb(); }
 
     std::pair<int, int> nelea() const { return nelea_; }
     std::pair<int, int> neleb() const { return neleb_; }
     std::pair<int, int> nstates() const { return nstates_; }
 
     template<int unit> SpaceMap& cispace() { return (unit == 0 ? cispaceA_ : cispaceB_); }
+    template<int unit> const SpaceMap& cispace() const { return (unit == 0 ? cispaceA_ : cispaceB_); }
 
     template<int unit> std::shared_ptr<VecType> ccvec(const int S, const int m_s, const int q) { return ccvec<unit>(SpaceKey(S,m_s,q)); }
     template<int unit> std::shared_ptr<VecType> ccvec(SpaceKey key) {
@@ -106,10 +111,16 @@ class DimerCISpace_base {
       return (iter != space.end() ? iter->second : nullptr);
     }
 
+    template<int unit> std::set<SpaceKey> spacekeys() const {
+      std::set<SpaceKey> out;
+      for (auto& i : cispace<unit>()) out.insert(i.first);
+      return out;
+    }
+
     template<int unit> std::shared_ptr<DetType> det(std::pair<const int, const int> p) { return det<unit>(p.first,p.second); }
     template<int unit> std::shared_ptr<DetType> det(const int qa, const int qb) {
       DMap& dets = (unit == 0 ? detspaceA_ : detspaceB_);
-      auto iter = dets.find(std::make_pair(qa, qb));
+      auto iter = dets.find({qa, qb});
       return (iter != dets.end() ? iter->second : nullptr);
     }
 
@@ -128,7 +139,7 @@ class DimerCISpace_base {
       new_civec->set_det(det);
 
       SpaceMap& cispace = (unit == 0 ? cispaceA_ : cispaceB_);
-      cispace.insert(std::make_pair(SpaceKey(S,m_s,Q), new_civec));
+      cispace.emplace(SpaceKey(S,m_s,Q), new_civec);
 
       const int ij = new_civec->ij();
       ((unit == 0) ? nstates_.first : nstates_.second) += ij;
@@ -137,7 +148,7 @@ class DimerCISpace_base {
     template<int unit> std::shared_ptr<DetType> add_det(const int qa, const int qb) {
       DMap& detspace = (unit == 0 ? detspaceA_ : detspaceB_);
 
-      typename DMap::iterator idet = detspace.find(std::make_pair(qa,qb));
+      typename DMap::iterator idet = detspace.find({qa,qb});
       if ( idet != detspace.end()) {
         return idet->second;
       }
@@ -146,18 +157,18 @@ class DimerCISpace_base {
         std::tie(nelea, neleb) = detunkey<unit>(qa,qb);
         std::shared_ptr<DetType> det = bdet<unit>()->clone(nelea, neleb);
 
-        detspace.insert(std::make_pair(std::make_pair(qa,qb), det));
+        detspace.emplace(std::make_pair(qa,qb), det);
 
-        idet = detspace.find(std::make_pair(qa+1,qb));
+        idet = detspace.find({qa+1,qb});
         if (idet != detspace.end()) det->template link<0>(idet->second);
 
-        idet = detspace.find(std::make_pair(qa-1,qb));
+        idet = detspace.find({qa-1,qb});
         if (idet != detspace.end()) det->template link<0>(idet->second);
 
-        idet = detspace.find(std::make_pair(qa,qb+1));
+        idet = detspace.find({qa,qb+1});
         if (idet != detspace.end()) det->template link<1>(idet->second);
 
-        idet = detspace.find(std::make_pair(qa,qb-1));
+        idet = detspace.find({qa,qb-1});
         if (idet != detspace.end()) det->template link<1>(idet->second);
 
         return det;
@@ -262,14 +273,14 @@ class DimerCISpace_base {
     template<int unit> std::pair<int, int> detkey(const int S, const int m_s, const int q) {
       const int nS = m_s - (nelea<unit>() - neleb<unit>());
 
-      return std::make_pair( (q - nS)/2, (q + nS)/2 );
+      return {(q - nS)/2, (q + nS)/2};
     }
     template<int unit> std::pair<int, int> detkey(const int nea, const int neb) const {
-      return std::make_pair(nelea<unit>() - nea, neleb<unit>() - neb);
+      return {nelea<unit>() - nea, neleb<unit>() - neb};
     }
 
     template<int unit> std::pair<int, int> detunkey(const int qa, const int qb) const {
-      return std::make_pair(nelea<unit>() - qa, neleb<unit>() - qb);
+      return {nelea<unit>() - qa, neleb<unit>() - qb};
     }
 
     template<int unit> int charge(const int nea, const int neb) const { return ( (nelea<unit>() + neleb<unit>()) - (nea + neb) ); }

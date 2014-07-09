@@ -31,18 +31,9 @@
 using namespace std;
 using namespace bagel;
 
-template<typename T>
-static string tostring(const T i) {
-  stringstream ss;
-  ss << i;
-  return ss.str();
-};
 
 CASSCF::CASSCF(std::shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
-
-  // TODO coefficient projection is not working properly.
-  ref_ = nullptr;
 
   if (!ref_) {
     auto scf = make_shared<SCF>(idat, geom);
@@ -68,7 +59,7 @@ void CASSCF::common_init() {
 #endif
 
   // get maxiter from the input
-  max_iter_ = idata_->get<int>("maxiter", 100);
+  max_iter_ = idata_->get<int>("maxiter", 50);
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
@@ -198,7 +189,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
 
     finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
-    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
     f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
   }
   {
@@ -293,20 +284,20 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
   rdm1mat->sqrt();
   rdm1mat->scale(1.0/sqrt(2.0));
-  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : nullptr;
+  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : MatView();
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nbasis_);
 
   unique_ptr<double[]> eig(new double[coeff_->mdim()]);
-  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
   Matrix trans(nbasis_, nbasis_);
   trans.unit();
   if (nclosed_) {
-    Matrix ofock = *ocoeff % fock * *ocoeff;
+    Matrix ofock = ocoeff % fock * ocoeff;
     ofock.diagonalize(eig.get());
     trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
   }
-  Matrix vfock = *vcoeff % fock * *vcoeff;
+  Matrix vfock = vcoeff % fock * vcoeff;
   vfock.diagonalize(eig.get());
   trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
   return make_shared<Coeff>(*coeff_ * trans);
@@ -318,7 +309,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
                                     fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 
   // TODO
-  // compute one-boedy operators
+  // compute one-body operators
   shared_ptr<Matrix> f;
   shared_ptr<Matrix> fact, factp, gaa;
   shared_ptr<RotFile>  denom;

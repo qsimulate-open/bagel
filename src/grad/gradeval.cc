@@ -40,8 +40,8 @@ shared_ptr<GradFile> GradEval<SCF>::compute() {
 #endif
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
 #ifdef LOCAL_TIMING
@@ -104,15 +104,15 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
+  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(*ref_->rdm1(1), *ref_->rdm1(2)); // 1 and 2: alpha and beta
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -129,15 +129,15 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat(0) ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
   assert(erdm1 != nullptr);
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(ref_->rdm1(1)->data(), ref_->rdm1(2)->data()); // 1 and 2: alpha and beta
+  shared_ptr<const DFFullDist> qijd = qij->apply_uhf_2RDM(*ref_->rdm1(1), *ref_->rdm1(2)); // 1 and 2: alpha and beta
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -154,8 +154,8 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->coeff()->form_weighted_density_rhf(ref_->nocc(), ref_->eig());
 
   //- TWO ELECTRON PART -//
@@ -169,7 +169,7 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
   //- Exchange-correlation part -//
-  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), coeff_occ);
+  shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), make_shared<Matrix>(coeff_occ));
   *grad += *ggrad;
 
   grad->print();
@@ -185,14 +185,14 @@ shared_ptr<GradFile> GradEval<WernerKnowles>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
+  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), ref_->nclosed(), ref_->nact());
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
@@ -209,14 +209,14 @@ shared_ptr<GradFile> GradEval<SuperCI>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//
-  shared_ptr<const Matrix> coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(*coeff_occ * *ref_->rdm1_mat() ^ *coeff_occ);
+  const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
+  shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
   shared_ptr<const Matrix> erdm1 = ref_->erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
   shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(ref_->rdm2(0)->data(), ref_->rdm1(0)->data(), ref_->nclosed(), ref_->nact());
+  shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), ref_->nclosed(), ref_->nact());
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 

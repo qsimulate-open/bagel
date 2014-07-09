@@ -157,7 +157,7 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const ZMatrix> coeff_zcas = nullptr);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
@@ -186,10 +186,12 @@ class ZHarrison : public Method {
 
     void compute_rdm12();
 
-    std::shared_ptr<const ZRDM<1>> rdm1_av(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
-    std::shared_ptr<const ZRDM<1>> rdm1_av(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
-    std::shared_ptr<const ZRDM<2>> rdm2_av(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
+    std::shared_ptr<const ZMatrix> rdm1_av() const;
+    std::shared_ptr<const ZMatrix> rdm2_av() const;
+    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(std::string&& b) const { return rdm1_av_.at(std::bitset<2>(b)); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(std::string&& b) const { return rdm2_av_.at(std::bitset<4>(b)); }
+    std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const std::bitset<2>& b) const { return rdm1_av_.at(b); }
+    std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const std::bitset<4>& b) const { return rdm2_av_.at(b); }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }

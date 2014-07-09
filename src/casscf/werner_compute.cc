@@ -130,7 +130,7 @@ shared_ptr<Matrix> WernerKnowles::compute_bvec(const shared_ptr<const Jvec> jvec
   if (t->norm() > 1.0e-15) {
     Matrix Tmat(*cc * *t);
     // TODO this slice might not be needed - check
-    shared_ptr<const DFFullDist> full = jvec->half()->compute_second_transform(Tmat.slice(0,nocc_))->apply_2rdm(jvec->rdm2_all());
+    shared_ptr<const DFFullDist> full = jvec->half()->compute_second_transform(Tmat.slice(0,nocc_))->apply_2rdm(*jvec->rdm2_all());
     *tmp += *jvec->half()->form_2index(full, 4.0);
   }
 

@@ -42,7 +42,8 @@
 },
 
 {
-  "title" : "meh-cas",
+  "title" : "meh",
+  "method" : "cas",
   "store_matrix" : false,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 3},

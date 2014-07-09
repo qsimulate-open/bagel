@@ -92,7 +92,10 @@ void SuperCI::compute() {
 
     // setting error of macro iteration
     gradient = grad->rms();
-    if (gradient < thresh_) break;
+    if (gradient < thresh_) {
+      rms_grad_ = gradient;
+      break;
+    }
 
     shared_ptr<const RotFile> cc;
     {
@@ -124,10 +127,16 @@ void SuperCI::compute() {
     // print out...
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+
+    if (iter == max_iter_-1) {
+      rms_grad_ = gradient;
+      cout << " " << endl;
+      if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
+      cout << "    * Max iteration reached in the CASSCF macro interations. *     " << endl << endl;
+//      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
+    }
     mute_stdcout();
 
-    if (iter == max_iter_-1)
-      throw runtime_error("Max iteration reached in the CASSCF macro interation.");
   }
   // ============================
   // macro iteration to here

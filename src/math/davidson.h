@@ -135,8 +135,7 @@ class DavidsonDiag {
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
       eig_->diagonalize(vec_.data());
-      eig_ = std::make_shared<MatType>(*ovlp_scr * *eig_);
-      eig_ = eig_->slice(0,nstate_);
+      eig_ = std::make_shared<MatType>(*ovlp_scr * eig_->slice(0,nstate_));
 
       // first basis vector is always the current best guess
       std::vector<std::shared_ptr<T>> cv = civec();
@@ -172,7 +171,7 @@ class DavidsonDiag {
               n = j;
             }
           }
-          remove.insert(std::make_pair(n, soff+remove.size()));
+          remove.emplace(n, soff+remove.size());
         }
         assert(newbasis.size() == remove.size());
         std::cout << "    ** throwing out " << remove.size() << " trial vectors **" << std::endl;

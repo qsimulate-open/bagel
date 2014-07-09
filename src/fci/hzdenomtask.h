@@ -40,11 +40,11 @@ class HZDenomTask {
     const std::shared_ptr<const Determinants> det_;
     const std::shared_ptr<const Matrix> jop_;
     const std::shared_ptr<const Matrix> kop_;
-    const std::shared_ptr<const Matrix> h_;
+    const std::shared_ptr<const VectorB> h_;
 
   public:
     HZDenomTask(double* o, const std::bitset<nbit__>& a, const std::shared_ptr<const Determinants>& det, std::shared_ptr<const Matrix> j, std::shared_ptr<const Matrix> k,
-                std::shared_ptr<const Matrix> diag)
+                std::shared_ptr<const VectorB> diag)
       : out_(o), a_(a), det_(det), jop_(j), kop_(k), h_(diag) { }
 
     void compute() {
@@ -67,9 +67,9 @@ class HZDenomTask {
             const int njb = ib[j];
             const int Nj = (nja ^ njb);
             const int addj = niab * (nja + njb);
-            *iter += jop_->element(j, i) * 2.0 * addj - kop_->element(j, i) * (F*Ni*Nj + addj);
+            *iter += (*jop_)(j, i) * 2.0 * addj - (*kop_)(j, i) * (F*Ni*Nj + addj);
           }
-          *iter += h_->element(i, 0) * niab - kop_->element(i, i) * 0.5 * (Ni - niab*niab);
+          *iter += (*h_)(i) * niab - (*kop_)(i, i) * 0.5 * (Ni - niab*niab);
         }
         ++iter;
       }

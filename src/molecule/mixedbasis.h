@@ -63,11 +63,11 @@ class MixedBasis : public MatType {
       }
     }
 
-    void print(const std::string in = "", const size_t size = 10) const {
+    void print(const std::string in = "", const int size = 10) const {
       std::cout << "++++ " << in << " ++++" << std::endl;
-      for (int i = 0; i != std::min(size,static_cast<size_t>(this->ndim_)); ++i) {
-        for (int j = 0; j != std::min(size,static_cast<size_t>(this->mdim_)); ++j) {
-          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << this->data_[j*this->ndim_+i]  << " ";
+      for (int i = 0; i != std::min(size, ndim()); ++i) {
+        for (int j = 0; j != std::min(size, mdim()); ++j) {
+          std::cout << std::fixed << std::setw(12) << std::setprecision(9) << element(i, j) << " ";
         }
         std::cout << std::endl;
       }

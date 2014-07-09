@@ -38,32 +38,42 @@ namespace bagel {
 class MSphBesselI {
 
   private:
-    int l_;
+    const Factorial f;
 
-     double R_l(const double x) const {
-       Factorial f;
-       double sum = 0.0;
-       for (int i = 0; i <= l_; ++i) {
-         sum += f(l_ + i) / f(i) / f(l_ -  i) / pow(2.0 * x, i);
-       }
-       return sum;
-     }
+    double R_l(const double x, const int l) const {
+      double sum = 0.0;
+      for (int i = 0; i <= l; ++i) sum += f(l + i) / (f(i) * f(l -  i) * std::pow(2.0 * x, i));
+      return sum;
+    }
 
   public:
+    MSphBesselI() : f() {}
+    ~MSphBesselI() {}
 
-     MSphBesselI(const int l) : l_(l) {}
-     ~MSphBesselI() {}
+    double compute(const int l, const double x) const {
 
-     double compute(const double x) const {
-       Factorial f;
-       if (x < 1e-7) {
-         return (1.0 - x) * pow(2.0 * x, l_) * f(l_) / f(2 * l_);
-       } else if (x > 16) {
-         return 0.5 * R_l(-x) / x;
-       } else {
-         return 0.5 * (R_l(-x) - pow(-1.0, l_) * R_l(x) * exp(-2.0 * x)) / x;
-       }
-     }
+      double bessel = 0.0;
+
+      if (x < 1e-7) {
+        bessel = (1.0 - x) * std::pow(2.0 * x, l) * f(l) / f(2 * l);
+      } else if (x > 16) {
+        bessel = 0.5 * R_l(-x, l) / x;
+      } else {
+        const double halfxsq = 0.5 * x * x;
+        double current = std::exp(-x);
+        if (l != 0)
+          for (int ll = 1; ll <= l; ++ll) current *= x / (2*ll+1);
+
+        int j = 0;
+        do {
+            bessel += current;
+            ++j;
+            current *= halfxsq / (j*(2*l + 2*j + 1));
+        } while (std::fabs(current) > std::numeric_limits<double>::epsilon());
+      }
+
+      return bessel;
+    }
 
 };
 

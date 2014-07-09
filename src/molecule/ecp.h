@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: ecp.h
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -28,7 +28,9 @@
 #define __SRC_MOLECULE_ECP_H
 
 #include <vector>
-#include <src/molecule/shell_ECP.h>
+#include <memory>
+#include <algorithm>
+#include <src/molecule/shellecp.h>
 
 namespace bagel {
 
@@ -36,48 +38,36 @@ class ECP {
 
   protected:
     int ecp_ncore_;
+    int ecp_maxl_;
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp_;
     int ishell_maxl_;
-    int maxl_;
     int nshell_;
+    std::array<int, 3> nr_;
 
   public:
-    ECP(const int ncore, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp)
-     : ecp_ncore_(ncore), shells_ecp_(shells_ecp) {
-      get_shell_maxl_ecp();
-    }
+    ECP();
+    ECP(const int ncore, const int maxl, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp);
     ~ECP() {}
 
     std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp() const { return shells_ecp_; }
     std::shared_ptr<const Shell_ECP> shell_ecp(const int i) const { return shells_ecp_[i]; }
 
-    void get_shell_maxl_ecp() {
-      maxl_ = 0;
-      int index = 0;
-      nshell_ = 0;
-      for (auto& ish : shells_ecp_) {
-        ++nshell_;
-        if (ish->angular_number() >= maxl_) {
-          maxl_ = ish->angular_number();
-          ishell_maxl_ = index;
-        }
-        ++index;
-      }
+    void get_shell_maxl_ecp();
 
-    }
-
-    std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const { return shells_ecp_[ishell_maxl_]; }
-    const int maxl() const { return maxl_; }
+    std::shared_ptr<const Shell_ECP> shell_maxl_ecp() const;
+    const int ecp_maxl() const { return ecp_maxl_; }
 
     const int ecp_ncore() const { return ecp_ncore_; }
 
     const int nshell() const { return nshell_; }
 
-    void print() const {
-      std::cout << "+++ ECP Parameters +++" << std::endl;
-      std::cout << "Number of core electrons = " << ecp_ncore_ << std::endl;
-      for (auto& i : shells_ecp_) std::cout << i->show() << std::endl;
-    }
+    const std::array<int, 3> nr() { return nr_; }
+    const int nr(const int i) const { return nr_[i]; }
+
+    double position(const int i) const { return shells_ecp_[0]->position(i); };
+    const std::array<double,3>& position() const { return shells_ecp_[0]->position(); };
+
+    void print() const;
 
 };
 

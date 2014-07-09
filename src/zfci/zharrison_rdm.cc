@@ -25,6 +25,7 @@
 
 #include <src/zfci/zharrison.h>
 #include <src/smith/prim_op.h>
+#include <src/rel/reloverlap.h>
 
 using namespace std;
 using namespace bagel;
@@ -235,16 +236,16 @@ void ZHarrison::compute_rdm12() {
   auto tmp0101 = jop_->mo2e(bitset<4>("0101"))->copy();
   SMITH::sort_indices<1,0,2,3,1,1,-1,1>(jop_->mo2e(bitset<4>("1001"))->data(), tmp0101->data(), norb_, norb_, norb_, norb_);
 
-  const int n = norb_;
+//  const int n = norb_;
   auto trace1 = [this](const string st) {
     shared_ptr<const ZMatrix> a = jop_->mo1e(bitset<2>(st));
-    shared_ptr<const ZRDM<1>> b = rdm1_av(bitset<2>(st));
+    shared_ptr<const ZRDM<1>> b = rdm1_av_kramers(bitset<2>(st));
     return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
                          std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
   };
   auto trace2 = [this](const string st) {
     shared_ptr<const ZMatrix> a = jop_->mo2e(bitset<4>(st));
-    shared_ptr<const ZRDM<2>> b = rdm2_av(bitset<4>(st));
+    shared_ptr<const ZRDM<2>> b = rdm2_av_kramers(bitset<4>(st));
     return inner_product(a->data(), a->data()+a->size(), b->data(), complex<double>(0.0),
                          std::plus<complex<double>>(), [](const complex<double>& i, const complex<double>& j){ return i*j; });
   };
@@ -252,7 +253,7 @@ void ZHarrison::compute_rdm12() {
   const double recomp_energy =
           (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core
         + (trace2("0000")*0.5 + trace2("1111")*0.5
-            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av(bitset<4>("0101"))->data(), 1)
+            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
             + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
   cout << "    *  recalculated FCI energy (state averaged)" << endl;
   cout << setw(29) << setprecision(8) << recomp_energy << endl;
@@ -273,4 +274,65 @@ void ZHarrison::compute_rdm12() {
 #endif
 #endif
 
+}
+
+
+shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
+  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
+  auto rdm1_tot = make_shared<ZMatrix>(norb_*2, norb_*2);
+  rdm1_tot->copy_block(    0,     0, norb_, norb_, rdm1_av_kramers("00"));
+  rdm1_tot->copy_block(norb_, norb_, norb_, norb_, rdm1_av_kramers("11"));
+  rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10"));
+  rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
+
+  auto coeff_tot = coeff()->get_conjg();
+
+  // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
+  // TODO compute RelOverlap only once (this is comptued also in zqvec)
+  auto overlap = make_shared<const RelOverlap>(geom_);
+  shared_ptr<const ZMatrix> ocoeff = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
+  const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
+  return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
+}
+
+
+shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
+  // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
+
+  // forming transformation matrices
+  auto coeff_tot = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
+  auto overlap = make_shared<const RelOverlap>(geom_);
+  unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
+  for (int i = 0; i != 2; ++i) {
+    shared_ptr<const ZMatrix> ocoeff = jop_->kramers_coeff(i)->get_conjg();
+    auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
+    bitset<1> b(i);
+    trans.emplace(b, co);
+  }
+
+  // loop over each component
+  auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
+  auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
+  for (auto& irdm : rdm2_av_) {
+    bitset<4> ib = irdm.first;
+    shared_ptr<const ZRDM<2>> rdm2 = irdm.second;
+    // TODO to be updated once the Tensor branch comes out
+    const int norb2 = norb_*norb_;
+    const int norb3 = norb2*norb_;
+    const int norb4 = norb3*norb_;
+    unique_ptr<complex<double>[]> tmp1(new complex<double>[2*norb4]);
+    unique_ptr<complex<double>[]> tmp2(new complex<double>[4*norb4]);
+    unique_ptr<complex<double>[]> tmp3(new complex<double>[8*norb4]);
+    zgemm3m_("N", "N", 2*norb_, norb3, norb_, 1.0, trans[ib[3] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, rdm2->data(), norb_, 0.0, tmp1.get(), 2*norb_);
+    for (int i = 0; i != norb2; ++i)
+      zgemm3m_("N", "T", 2*norb_, 2*norb_, norb_, 1.0, tmp1.get()+i*2*norb2, 2*norb_, trans[ib[2] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp2.get()+i*4*norb2, 2*norb_);
+    for (int i = 0; i != norb_; ++i)
+      zgemm3m_("N", "C", 4*norb2, 2*norb_, norb_, 1.0, tmp2.get()+i*4*norb3, 4*norb2, trans[ib[1] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 0.0, tmp3.get()+i*8*norb3, 4*norb2);
+    zgemm3m_("N", "C", 8*norb3, 2*norb_, norb_, 1.0, tmp3.get(),           8*norb3, trans[ib[0] ? bitset<1>(1) : bitset<1>(0)]->data(), 2*norb_, 1.0, ikjl->data()         , 8*norb3);
+  }
+
+  // sort indices : G(ik|jl) -> G(ij|kl)
+  SMITH::sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
+
+  return out;
 }

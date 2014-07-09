@@ -322,7 +322,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
         for (auto& iphiblock : det->phib_ij(ij)) {
           vector<shared_ptr<const RASString>> allowed_spaces = det->allowed_spaces<1>(iphiblock.space());
           for (auto& mult_space : allowed_spaces) {
-            shared_ptr<Matrix> Cp_block = Cp_map.at(make_pair(mult_space->offset(), iphiblock.offset()));
+            shared_ptr<Matrix> Cp_block = Cp_map.at({mult_space->offset(), iphiblock.offset()});
             shared_ptr<SparseMatrix> Ft_block = Fmap[mult_space->offset() + get<0>(bounds_map[mult_space->offset()])].second;
             if (Ft_block) {
               auto Vt_block = make_shared<Matrix>(*Ft_block * *Cp_block);

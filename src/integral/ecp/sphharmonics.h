@@ -68,11 +68,11 @@ class SphHarmonics {
     double zlm() const;
     double zlm(const int l, const int m) const;
 
-    void print();
+    void print() const;
 
     double sph_to_USP(const int lx, const int ly) const;
-    std::vector<std::pair<double, int>> sph_to_USPs_expansion();
-    void sph_to_USPs_expansion_print();
+    std::vector<std::pair<double, int>> sph_to_USPs_expansion() const;
+    void sph_to_USPs_expansion_print() const;
 
 };
 

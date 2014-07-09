@@ -68,7 +68,7 @@ class K2ext {
         // virtual loop
         for (auto& i1 : blocks_[1]) {
           std::shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-          dflist.insert(make_pair(generate_hash_key(i0, i1), df_full));
+          dflist.emplace(generate_hash_key(i0, i1), df_full);
         }
       }
       return dflist;
@@ -163,13 +163,13 @@ class MOFock {
 
       std::shared_ptr<const Matrix> fock1;
       {
-        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice(ncore, nocc);
+        std::shared_ptr<Matrix> weighted_coeff = coeff_->slice_copy(ncore, nocc);
         if (nact) {
           Matrix tmp(nact, nact);
           std::copy_n(ref_->rdm1(r->target())->data(), tmp.size(), tmp.data());
           tmp.sqrt();
           tmp.scale(1.0/std::sqrt(2.0));
-          weighted_coeff->copy_block(0, nclosed, nbasis, nact, *weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
+          weighted_coeff->copy_block(0, nclosed, nbasis, nact, weighted_coeff->slice(nclosed, nclosed+nact) * tmp);
         }
         fock1 = std::make_shared<Fock<1>>(r->geom(), hcore, nullptr, weighted_coeff, false, true);
       }
@@ -180,12 +180,12 @@ class MOFock {
       if (nclosed > 1) {
         std::shared_ptr<Matrix> fcl = forig.get_submatrix(ncore, ncore, nclosed, nclosed);
         fcl->diagonalize(eig.get());
-        coeff_->copy_block(0, ncore, nbasis, nclosed, *coeff_->slice(ncore, ncore+nclosed) * *fcl);
+        coeff_->copy_block(0, ncore, nbasis, nclosed, coeff_->slice(ncore, ncore+nclosed) * *fcl);
       }
       if (nvirt > 1) {
         std::shared_ptr<Matrix> fvirt = forig.get_submatrix(nocc, nocc, nvirt, nvirt);
         fvirt->diagonalize(eig.get());
-        coeff_->copy_block(0, nocc, nbasis, nvirt, *coeff_->slice(nocc, nocc+nvirt) * *fvirt);
+        coeff_->copy_block(0, nocc, nbasis, nvirt, coeff_->slice(nocc, nocc+nvirt) * *fvirt);
       }
       const Matrix f = *coeff_ % *fock1 * *coeff_;
       const Matrix hc = *coeff_ % *hcore * *coeff_;
@@ -193,11 +193,15 @@ class MOFock {
       for (auto& i0 : blocks_[0]) {
         for (auto& i1 : blocks_[1]) {
           {
-            std::unique_ptr<double[]> target = f.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            data_->put_block(target, i1, i0);
+            std::shared_ptr<const Matrix> target = f.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
+            std::unique_ptr<double[]> tmp(new double[target->size()]);
+            std::copy_n(target->data(), target->size(), tmp.get());
+            data_->put_block(tmp, i1, i0);
           } {
-            std::unique_ptr<double[]> target = hc.get_block(i1.offset(), i0.offset(), i1.size(), i0.size());
-            hcore_->put_block(target, i1, i0);
+            std::shared_ptr<const Matrix> target = hc.get_submatrix(i1.offset(), i0.offset(), i1.size(), i0.size());
+            std::unique_ptr<double[]> tmp(new double[target->size()]);
+            std::copy_n(target->data(), target->size(), tmp.get());
+            hcore_->put_block(tmp, i1, i0);
           }
         }
       }

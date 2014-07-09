@@ -32,13 +32,13 @@ using namespace bagel;
 
 
 shared_ptr<XYZFile> XYZFile::clone() const {
-  return make_shared<XYZFile>(mdim_);
+  return make_shared<XYZFile>(mdim());
 }
 
 
-void XYZFile::print(const string in, const size_t dummy) const {
+void XYZFile::print(const string in, const int dummy) const {
   cout << endl << "  * Nuclear energy gradient" << (in.empty() ? "" : (" " + in)) << endl << endl;
-  for (int i = 0; i != mdim_; ++i) {
+  for (int i = 0; i != mdim(); ++i) {
     cout << "    o Atom " << setw(3) << i << endl;
     cout << "        x  " << setprecision(10) << setw(20) << fixed << element(0,i) << endl;
     cout << "        y  " << setprecision(10) << setw(20) << fixed << element(1,i) << endl;

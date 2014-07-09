@@ -57,28 +57,23 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   // [1] compute (g|kl) on full
   unordered_map<bitset<2>, shared_ptr<const RelDFFull>> full;
   {
-    array<array<shared_ptr<const Matrix>,4>,2> rocoeff; // JEB : array to hold real part of the four component AO basis with two blocks for the kramers basis
-    array<array<shared_ptr<const Matrix>,4>,2> iocoeff; // JEB : array to hold imag part of the four component AO basis with two blocks for the kramers basis
+    array<array<shared_ptr<const Matrix>,4>,2> rocoeff;
+    array<array<shared_ptr<const Matrix>,4>,2> iocoeff;
     for (int k = 0; k != 2; ++k) {
       for (int i = 0; i != 4; ++i) {
         shared_ptr<const ZMatrix> oc = kcoeff[k]->get_submatrix(i*geom->nbasis(), 0, geom->nbasis(), nact);
-        // JEB : double operator construct means take the kth element of rocoeff, then extract the ith element of the result.
-        //       in this case then, the k-index runs over kramers pairs, and the i index runs over the 4 components of the AO basis
-        //      e.g. for k=0, i=2 the result would be S^+ for the first kramers pair (in addition to the real and imaginary parts)
         rocoeff[k][i] = oc->get_real_part();
         iocoeff[k][i] = oc->get_imag_part();
       }
     }
-    // JEB : result of compute_full is to return a three idx ERI in the kramers MO basis (with re and im parts), e.g. a transformation of Eq. (36) in KS_JCP13 to all MO
-    // JEB : full(g,kl) = J^-1_{gg'} * (g'|kl) ; complex result with kl in the krammers basis
+    // full(g,kl) = J^-1_{gg'} * (g'|kl) ; complex result with kl in the krammers basis
     full = RelMOFile::compute_full(rocoeff, iocoeff, half_coulomb, /*apply_J*/false, /*apply_JJ*/true);
   }
 
-  // JEB : copy over the size,dimensions,bitsets of full to full_d, but no values
-  assert(full.size() == 4); // JEB: full is size 4 from kramers*complex quantity
+  assert(full.size() == 4);
   unordered_map<bitset<2>, shared_ptr<RelDFFull>> full_d;
   for (auto& i : full)
-    full_d.insert(make_pair(i.first, i.second->clone()));
+    full_d.emplace(i.first, i.second->clone());
 
   // [2] compute [g|ji] = (g|kl)*G(ji|kl)
   // JEB : Contract 2RDM with 3idx integrals in kramers MO basis ; all indices active for 2RDM
@@ -91,7 +86,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
       // JEB : read the above as if each index was a creation/annihilation operator for target and source indices
       b[3] = t.first[1]; b[2] = s.first[1]; b[1] = t.first[0]; b[0] = s.first[0];
       // JEB : take the bitset b, and return the 2rdm_av value for specified bitset
-      shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av(b);
+      shared_ptr<const ZRDM<2>> rdmbuf = fci->rdm2_av_kramers(b);
       // JEB : after swapping the indices order will be :
       // t^+ t s^+ s
       shared_ptr<ZRDM<2>> rdm = rdmbuf->clone();
@@ -132,7 +127,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
       if (i.first[0] == j.first[1]) {
         shared_ptr<ZMatrix> tmp = i.second->form_2index(j.second, 1.0, false); // JEB : contract full_d with fullia
         bitset<1> target; target[0] = j.first[0];
-        // JEB : if this is the first time the kramers index apperas, put the value of form_2indx on qri, otherwise add onto previous value
         if (qri.find(target) == qri.end()) {
           qri[target] = tmp;
         } else {
@@ -146,13 +140,13 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   // I need overlap..
   // JEB : Transform from NaturalOrbs to standard MOs for index i
   auto overlap = make_shared<const RelOverlap>(geom);
-  shared_ptr<const ZMatrix> ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
+  const ZMatView ocoeff = coeff->slice(nclosed*2, nclosed*2+nact*2);
 
   // JEB : conjugate needed since the above lines build up the conjugated matrix products per comment [3]
   qri[bitset<1>("0")] = qri[bitset<1>("0")]->get_conjg();
   qri[bitset<1>("1")] = qri[bitset<1>("1")]->get_conjg();
 
-  *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * *ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * *ocoeff);
+  *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * ocoeff);
 
 #if 0
   complex<double> en = 0.0;

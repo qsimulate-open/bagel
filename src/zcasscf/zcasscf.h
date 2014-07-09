@@ -30,25 +30,30 @@
 #include <src/casscf/rotfile.h>
 #include <src/wfn/method.h>
 #include <src/rel/reloverlap.h>
+#include <src/math/bfgs.h>
+#include <src/math/step_restrict_bfgs.h>
 
 namespace bagel {
 
-class ZCASSCF : public Method {
+class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
   protected:
     int nneg_;
     int nocc_;
     int nclosed_;
     int nact_;
     int nvirt_;
+    int nvirtnr_;
     int nbasis_;
 
     int charge_;
 
     bool gaunt_;
     bool breit_;
+    bool no_kramers_init_;
 
     double thresh_;
     double thresh_micro_;
+    std::complex<double> level_shift_;
 
     int nstate_;
 
@@ -56,63 +61,69 @@ class ZCASSCF : public Method {
     int max_micro_iter_;
 
     std::shared_ptr<const ZMatrix> coeff_;
+    std::shared_ptr<const Matrix>  nr_coeff_;
+    std::shared_ptr<const ZMatrix> hcore_;
+    std::shared_ptr<const RelOverlap> overlap_;
+    std::vector<double> occup_;
 
     void print_header() const;
     void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
 
     void init();
-    void init_kramers_coeff(std::shared_ptr<const ZMatrix> hcore, std::shared_ptr<const RelOverlap> overlap);
+    void init_kramers_coeff();
 
-    void mute_stdcout() const;
+    void mute_stdcout(const bool fci) const;
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
-    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>) const;
+    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix>, const bool with_hcore = false) const;
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 
     // energy
     std::vector<double> energy_;
+    double micro_energy_;
 
     // internal function
-    void grad_vc(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<ZRotFile> sigma) const;
-    void grad_va(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> qxr,   std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
-    void grad_ca(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr,
-                 std::shared_ptr<const ZMatrix> rdm1, std::shared_ptr<ZRotFile> sigma) const;
+    void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nvirt) const;
+    void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
 
-    std::shared_ptr<const ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
-                                                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
+    void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
-    void kramers_adapt(std::shared_ptr<ZRotFile> o) const;
-    void kramers_adapt(std::shared_ptr<ZMatrix> o) const;
+    std::shared_ptr<ZMatrix> nonrel_to_relcoeff(const bool stripes = true) const;
 
   public:
-    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
+    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr);
 
-    void compute();
+    virtual void compute() override = 0;
 
-    // TODO
-    std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+    // TODO : add FCI quantities to reference
+    std::shared_ptr<const Reference> conv_to_ref() const override;
 
-  private:
-    // TODO debug only. All implemented in zcasscf_debug.cc. Will be removed once everything works.
-    void ___debug___orbital_rotation(const bool kramers);
-    void ___debug___print_gradient(std::shared_ptr<const ZRotFile> grad, const bool kramers) const;
-    void ___debug___compute_hessian(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, const bool kramers) const;
-    // returns [x,y] = (xx|yy) (x is an index of coeffa, and y is an index of coeffi)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-    // returns [x,y] = (xy|yx) (x is an index of coeffa, and y is an index of coeffi)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-    // returns [x,y] = (xx'|y'y) (x is an index of coeffa, and y is an index of coeffi)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-    // returns [x,y] = (xy|y'x') (x is an index of coeffa, and y is an index of coeffi)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_kramers(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    std::shared_ptr<ZMatrix> make_natural_orbitals(std::shared_ptr<const ZMatrix> rdm1);
+    std::shared_ptr<const ZMatrix> natorb_rdm1_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<const ZMatrix> natorb_rdm2_transform(const std::shared_ptr<ZMatrix> coeff, std::shared_ptr<const ZMatrix> rdm2) const;
+    std::shared_ptr<const ZMatrix> update_coeff(std::shared_ptr<const ZMatrix> cold, std::shared_ptr<const ZMatrix> natorb) const;
+    std::shared_ptr<const ZMatrix> update_qvec(std::shared_ptr<const ZMatrix> qold, std::shared_ptr<const ZMatrix> natorb) const;
+    std::shared_ptr<const ZMatrix> semi_canonical_orb();
+    std::shared_ptr<ZMatrix> coeff_stripe_to_block(std::shared_ptr<const ZMatrix> coeff) const;
 
-    // returns [x,t,u] = (xx|tu) (x is an index of coeffa, and coeffi should be active)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_coulomb_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
-    // returns [x,t,u] = (xu|tx) (x is an index of coeffa, and coeffi should be active)
-    std::shared_ptr<ZMatrix> ___debug___diagonal_integrals_exchange_active(std::shared_ptr<const ZMatrix> coeffa, std::shared_ptr<const ZMatrix> coeffi) const;
+    // functions to retrieve protected members
+    int nocc() const { return nocc_; }
+    int nclosed() const { return nclosed_; }
+    int nact() const { return nact_; }
+    int nvirt() const { return nvirt_; }
+    int nvirtnr() const { return nvirtnr_; }
+    int nbasis() const { return nbasis_; }
+    int nstate() const { return nstate_; }
+    int max_iter() const { return max_iter_; }
+    int max_micro_iter() const { return max_micro_iter_; }
+    double thresh() const { return thresh_; }
+    double thresh_micro() const { return thresh_micro_; }
+    double occup(const int i) const { return occup_[i]; }
 
 };
+
+static const double zoccup_thresh = 1.0e-10;
 
 }
 

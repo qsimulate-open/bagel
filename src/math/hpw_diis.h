@@ -40,11 +40,13 @@
 
 namespace bagel {
 
-template<class T>
+template<class T, class Mat = Matrix,
+         class = typename std::enable_if<std::is_same<typename Mat::data_type, typename T::data_type>::value>::type
+        >
 class HPW_DIIS  {
   using RefT = std::shared_ptr<const T>;
   protected:
-    DIIS<T> diis_;
+    DIIS<T,Mat> diis_;
     RefT base_;
     const RefT orig_;
     const bool testing_;
@@ -64,7 +66,7 @@ class HPW_DIIS  {
         err = std::make_shared<T>(prev_ != nullptr ? (*expo-*prev_) : (*expo));
       }
 
-      std::shared_ptr<T> extrap = diis_.extrapolate(std::make_pair(expo, err))->exp(100);
+      std::shared_ptr<T> extrap = diis_.extrapolate({expo, err})->exp(100);
       // this is important
       extrap->purify_unitary();
       base_ = extrap;

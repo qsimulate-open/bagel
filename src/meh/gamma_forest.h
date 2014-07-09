@@ -26,9 +26,7 @@
 #ifndef __meh_gamma_forest_h
 #define __meh_gamma_forest_h
 
-#include <array>
 #include <set>
-
 #include <src/fci/dvec.h>
 #include <src/ras/civector.h>
 #include <src/math/matrix.h>
@@ -43,6 +41,16 @@ enum class GammaSQ {
   AnnihilateBeta = 3
 };
 
+inline std::ostream& operator<<(std::ostream& out, const GammaSQ value){
+  static std::map<GammaSQ, std::string> strings;
+  if (strings.size() == 0) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+    INSERT_ELEMENT(GammaSQ::CreateAlpha); INSERT_ELEMENT(GammaSQ::AnnihilateAlpha); INSERT_ELEMENT(GammaSQ::CreateBeta); INSERT_ELEMENT(GammaSQ::AnnihilateBeta);
+#undef INSERT_ELEMENT
+  }
+  return out << std::setw(25) << std::left << strings[value] << std::right;
+}
+
 template <typename VecType>
 class GammaBranch {
   protected:
@@ -55,19 +63,47 @@ class GammaBranch {
   public:
     GammaBranch() : active_(false) {}
 
-    template <class ...GSQs>
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const GammaSQ first, const GSQs... rest) {
-      std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
+    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& gsq) {
+      if (gsq.empty()) {
+        bras_.emplace(offset,bra);
+      } else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
 
-      target->activate();
-      target->insert(bra, offset, rest...);
+        target->activate();
+        target->insert(bra, offset, rest);
+      }
     }
-    void insert(std::shared_ptr<const VecType> bra, const int offset) { bras_.emplace(offset,bra); }
 
-    template <class ...GSQs>
-    std::shared_ptr<const Matrix> search(const int offset, GammaSQ first, GSQs... rest) const { return branch(first)->search(offset, rest...); }
-    std::shared_ptr<const Matrix> search(const int offset) const {
-      assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& gsq) const {
+      if (gsq.empty()) {
+        assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+      } else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        return branch(first)->search(offset, rest);
+      }
+    }
+
+    std::shared_ptr<Matrix> search(const int offset, const std::list<GammaSQ>& gsq) {
+      if (gsq.empty()) {
+        assert(gammas_.find(offset)!=gammas_.end()); return gammas_.find(offset)->second;
+      } else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        return branch(first)->search(offset, rest);
+      }
+    }
+
+    bool exist(const int offset, const std::list<GammaSQ>& gsq) const {
+      if (gsq.empty())
+        return gammas_.find(offset) != gammas_.end();
+      else {
+        auto first = gsq.front();
+        auto rest = gsq; rest.pop_front();
+        return branch(first) ? branch(first)->exist(offset, rest) : false;
+      }
     }
 
     void activate() { active_ = true; }
@@ -141,13 +177,14 @@ class GammaTree {
 
     std::shared_ptr<GammaBranch<VecType>> base() { return base_; }
 
-    template <class ...GSQs>
-    void insert(std::shared_ptr<const VecType> bra, const int offset, const GSQs... ops) { base_->insert(bra, offset, ops...); }
-
-    template <class ...GSQs>
-    std::shared_ptr<const Matrix> search(const int offset, GSQs... address) const { return base_->search(offset, address...); }
+    void insert(std::shared_ptr<const VecType> bra, const int offset, const std::list<GammaSQ>& ops) { base_->insert(bra, offset, ops); }
+    std::shared_ptr<      Matrix> search(const int offset, const std::list<GammaSQ>& address)       { return base_->search(offset, address); }
+    std::shared_ptr<const Matrix> search(const int offset, const std::list<GammaSQ>& address) const { return base_->search(offset, address); }
+    bool exist(const int offset, const std::list<GammaSQ>& address) const { return base_->exist(offset, address); }
 
     std::shared_ptr<const VecType> ket() const { return ket_; }
+
+    int norb() const { return ket()->det()->norb(); }
 };
 
 template <typename VecType>
@@ -162,7 +199,7 @@ class GammaTask {
 
     void compute() {
       constexpr int nops = 4;
-      const int norb = tree_->ket()->det()->norb();
+      const int norb = tree_->norb();
 
       auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
       auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };
@@ -221,17 +258,34 @@ class GammaForest {
   public:
     GammaForest() {}
 
-    template <int unit, class ...operations>
-    void insert(std::shared_ptr<const VecType> ket, const int ioffset, std::shared_ptr<const VecType> bra, const int joffset, const operations... ops) {
+    template <int unit>
+    void insert(std::shared_ptr<const VecType> ket, const int ioffset, std::shared_ptr<const VecType> bra, const int joffset, const std::list<GammaSQ>& ops) {
       std::shared_ptr<GammaTree<VecType>> gtree = tree<unit>(ket, ioffset);
-      gtree->insert(bra, joffset, ops...);
+      gtree->insert(bra, joffset, ops);
     }
 
-    template <int unit, class ...operations>
-    std::shared_ptr<const Matrix> get(const int ioffset, const int joffset, const operations... ops) const {
+    template <int unit>
+    std::shared_ptr<Matrix> get(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) {
       auto itree = forests_[unit].find(ioffset); assert(itree!=forests_[unit].end());
-      return itree->second->search(joffset, ops...);
+      return itree->second->search(joffset, ops);
     }
+
+    template <int unit>
+    std::shared_ptr<const Matrix> get(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
+      auto itree = forests_[unit].find(ioffset); assert(itree!=forests_[unit].end());
+      return itree->second->search(joffset, ops);
+    }
+
+    template <int unit>
+    bool exist(const int ioffset, const int joffset, const std::list<GammaSQ>& ops) const {
+      auto itree = forests_[unit].find(ioffset);
+      if (itree == forests_[unit].end())
+        return false;
+      else
+        return itree->second->exist(joffset, ops);
+    }
+
+    int norb() const { return forests_[0].begin()->second->norb(); }
 
     template<class Func>
     void for_each_branch(Func func) {
@@ -268,7 +322,7 @@ class GammaForest {
         for (auto& itreemap : iforest) {
           std::shared_ptr<GammaTree<VecType>> itree = itreemap.second;
           const int nA = itree->ket()->ij();
-          const int norb = itree->ket()->det()->norb();
+          const int norb = itree->norb();
 
           // Allocation sweep
           for (int i = 0; i < nops; ++i) {
@@ -318,7 +372,7 @@ class GammaForest {
         for (auto& itreemap : iforest) {
           std::shared_ptr<GammaTree<VecType>> itree = itreemap.second;
 
-          const int norb = itree->ket()->det()->norb();
+          const int norb = itree->norb();
           for (int i = 0; i < nops; ++i) {
             std::shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
             if (!first->active()) continue;
@@ -452,7 +506,7 @@ class GammaTask<RASDvec> : public RASTask<GammaBranch<RASDvec>> {
 
     void compute() {
       constexpr int nops = 4;
-      const int norb = tree_->ket()->det()->norb();
+      const int norb = tree_->norb();
 
       auto action = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::CreateBeta); };
       auto spin = [] (const int op) { return (GammaSQ(op)==GammaSQ::CreateAlpha || GammaSQ(op)==GammaSQ::AnnihilateAlpha); };

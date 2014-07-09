@@ -42,7 +42,8 @@
 },
 
 {
-  "title" : "meh-ras",
+  "title" : "meh",
+  "method" : "ras",
   "store_matrix" : true,
   "space" : [
     { "charge" : 0, "spin" : 0, "nstate" : 3},

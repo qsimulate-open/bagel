@@ -55,7 +55,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
   shared_ptr<const ZMatrix> hcore = make_shared<RelHcore>(geom_);
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -69,7 +69,7 @@ void RelMOFile::init(const int nstart, const int nfence) {
 
   // then compute Kramers adapated coefficient matrices
   auto overlap = make_shared<RelOverlap>(geom_);
-  kramers_coeff_ = kramers(coeff_->slice(nstart, nfence), overlap, core_fock_);
+  kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
 
   // calculate 1-e MO integrals
   unordered_map<bitset<2>, shared_ptr<const ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
@@ -142,9 +142,9 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
     // off diagonal
     const int m = n/2;
     cnow->add_block(-1.0, nb, 0, nb, m, cnow->get_submatrix(0, m, nb, m)->get_conjg());
-    cnow->copy_block(0, m, nb, m, (*cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->copy_block(0, m, nb, m, *cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0));
     cnow->add_block(-1.0, nb*3, 0, nb, m, cnow->get_submatrix(nb*2, m, nb, m)->get_conjg());
-    cnow->copy_block(nb*2, m, nb, m, (*cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0)));
+    cnow->copy_block(nb*2, m, nb, m, *cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0));
 
     // diagonal
     cnow->add_block(1.0, 0, 0, nb, m, cnow->get_submatrix(nb, m, nb, m)->get_conjg());
@@ -183,7 +183,7 @@ void RelMOFile::compress_and_set(unordered_map<bitset<2>,shared_ptr<const ZMatri
     bitset<4> s = mat.first;
     s[2] = mat.first[1];
     s[1] = mat.first[2];
-    mo2e_.insert(make_pair(s, tmp));
+    mo2e_.emplace(s, tmp);
   }
 }
 

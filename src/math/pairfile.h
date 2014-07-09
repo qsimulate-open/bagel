@@ -33,8 +33,15 @@
 #include <list>
 #include <src/math/algo.h>
 
-template<class T, class U>
+namespace bagel {
+
+template<class T, class U,
+         class = typename std::enable_if<std::is_same<typename T::data_type, typename U::data_type>::value>::type
+        >
 class PairFile {
+  public:
+    using data_type = typename T::data_type;
+
   protected:
     std::shared_ptr<T> file0_;
     std::shared_ptr<U> file1_;
@@ -76,11 +83,11 @@ class PairFile {
     PairFile<T, U>& operator/=(const PairFile<T, U>& o) { *first()/=*o.first(); *second()/=*o.second(); return *this; }
 
     // lapack functions
-    void ax_plus_y(const double a, const std::shared_ptr<const PairFile<T, U>> o) { first()->ax_plus_y(a, o->first()); second()->ax_plus_y(a, o->second()); }
-    double dot_product(const PairFile<T, U>& o) const { return first()->dot_product(*o.first()) + second()->dot_product(*o.second()); }
-    double dot_product(const std::shared_ptr<const PairFile<T, U>> o) const { return dot_product(*o); }
-    double norm() const { return std::sqrt(dot_product(*this)); }
-    double rms() const { return std::sqrt(dot_product(*this)/size()); }
+    void ax_plus_y(const data_type a, const std::shared_ptr<const PairFile<T, U>> o) { first()->ax_plus_y(a, o->first()); second()->ax_plus_y(a, o->second()); }
+    auto dot_product(const PairFile<T, U>& o) const -> data_type { return first()->dot_product(*o.first()) + second()->dot_product(*o.second()); }
+    auto dot_product(const std::shared_ptr<const PairFile<T, U>> o) const -> data_type { return dot_product(*o); }
+    double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return std::sqrt(detail::real(dot_product(*this))/size()); }
     size_t size() const { return file0_->size() + file1_->size(); }
     void scale(const double a) { first()->scale(a); second()->scale(a); }
     void synchronize() { first()->synchronize(); second()->synchronize(); }
@@ -101,5 +108,7 @@ class PairFile {
     }
 
 };
+
+}
 
 #endif

@@ -36,14 +36,14 @@ class Jvec {
   protected:
     std::shared_ptr<const DFHalfDist> half_;
     std::shared_ptr<const DFFullDist> jvec_;
-    std::unique_ptr<double[]> rdm2_all_;
+    std::shared_ptr<const RDM<2>> rdm2_all_;
 
   public:
     Jvec(std::shared_ptr<FCI> fci, std::shared_ptr<const Coeff> c, const size_t, const size_t, const size_t);
 
     const std::shared_ptr<const DFHalfDist> half() const { return half_; }
     const std::shared_ptr<const DFFullDist> jvec() const { return jvec_; }
-    const double* rdm2_all() const { return rdm2_all_.get(); }
+    const std::shared_ptr<const RDM<2>> rdm2_all() const { return rdm2_all_; }
 
 };
 

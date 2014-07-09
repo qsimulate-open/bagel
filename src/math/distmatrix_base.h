@@ -71,7 +71,7 @@ class DistMatrix_base {
       const int prow = (i - rowstride * istride) / blocksize__;
       const int off = i - rowstride * istride - prow * blocksize__ + istride * blocksize__;
 
-      return std::make_pair(prow, off);
+      return {prow, off};
     }
 
     std::pair<int, int> locate_column(const int j) { // Returns pcol and local col offset for jth col
@@ -81,7 +81,7 @@ class DistMatrix_base {
       const int pcol = (j - colstride * jstride) / blocksize__;
       const int off = j - colstride * jstride - pcol * blocksize__ + jstride * blocksize__;
 
-      return std::make_pair(pcol, off);
+      return {pcol, off};
     }
 
   public:
@@ -174,7 +174,7 @@ class DistMatrix_base {
           blas::scale_n(vec[mypcol+mblock*mstride+id], c, blocksize__);
         }
         DataType* c = local_.get()+nblock*blocksize__+localrow*(mblock*blocksize__+id);
-        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__); 
+        blas::scale_n(vec[mypcol+mblock*mstride+id], c, localrow%blocksize__);
       }
       for (int i = 0; i != mblock; ++i)
         for (int id = 0; id != blocksize__; ++id) {

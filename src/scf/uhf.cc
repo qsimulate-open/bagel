@@ -100,8 +100,8 @@ void UHF::compute() {
     }
 
     if (iter >= diis_start_) {
-      fockA = diis.extrapolate(make_pair(fockA, error_vector));
-      fockB = diisB.extrapolate(make_pair(fockB, error_vector));
+      fockA = diis.extrapolate({fockA, error_vector});
+      fockB = diisB.extrapolate({fockB, error_vector});
     }
 
     {

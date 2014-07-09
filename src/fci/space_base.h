@@ -37,8 +37,6 @@ class Space_base {
   protected:
     std::map<std::pair<int, int>, std::shared_ptr<Determinants>> detmap_;
 
-    std::pair<int,int> key_(const int a, const int b) const { return std::make_pair(a, b); }
-
   private:
     friend class boost::serialization::access;
     template<class Archive>
@@ -54,8 +52,8 @@ class Space_base {
     static const int Alpha = 0;
     static const int Beta = 1;
 
-    std::shared_ptr<Determinants> finddet(const int i, const int j) { return detmap_.at(key_(i,j)); }
-    std::shared_ptr<const Determinants> finddet(const int i, const int j) const { return detmap_.at(key_(i,j)); }
+    std::shared_ptr<Determinants> finddet(const int i, const int j) { return detmap_.at({i,j}); }
+    std::shared_ptr<const Determinants> finddet(const int i, const int j) const { return detmap_.at({i,j}); }
 
     const std::map<std::pair<int,int>, std::shared_ptr<Determinants>>& detmap() const { return detmap_; }
 };

@@ -151,5 +151,5 @@ pair<vector<tuple<bitset<nbit__>, bitset<nbit__>, int>>, double> RASDeterminants
 
   // scale to make the vector normalized
   const double factor = 1.0/sqrt(static_cast<double>(icnt));
-  return make_pair(out, factor);
+  return {out, factor};
 }

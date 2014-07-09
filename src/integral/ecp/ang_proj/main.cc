@@ -6,6 +6,8 @@
 
 #include "radial.h"
 #include "test.h"
+#include <gsl/gsl_sf_bessel.h>
+
 //#include "src/integral/carsphlist.h"
 
 double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_ptr<CartesianGauss> gB) {
@@ -16,7 +18,7 @@ double overlap_ss(const std::shared_ptr<CartesianGauss> gA, const std::shared_pt
 
   for (int i = 0; i != 3; ++i) {
     std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gP(i, gA, gB);
-    Radial_Int<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> overlap(max_iter, thresh_int, gP);
+    RadialInt<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> overlap(gP, true, max_iter, thresh_int);
     ((i == 0) ? overlapss = 2.0 * overlap.integral() : overlapss *= 2.0 * overlap.integral());
   }
 
@@ -28,15 +30,21 @@ using namespace std;
 
 int main() {
 
-// Test Bessel function
-  const double x = 1.2e-4;
+// Test Bessel function (Boost can only do very small x)
+double x = 1e-3;
+for (int i = 0; i != 100; ++i) {
   const double sbessel = boost::math::sph_bessel(0, x) * std::exp(-x);
   Modified_Spherical_Bessel_Iexp msbessel(0);
   cout << "                             x = " << setw(20) << setprecision(12) << x << endl;
-  cout << "boost:sph_bessel               = " << setw(20) << setprecision(12) << sbessel << endl;
-  cout << "Modified_Spherical_Bessel_Iexp = " << setw(20) << setprecision(12) << msbessel.compute(x).toDouble() << endl;
+  cout << "boost:sph_bessel               = " << setw(20) << setprecision(12)
+                                              << sbessel << endl;
+  cout << "Modified_Spherical_Bessel_Iexp = " << setw(20) << setprecision(12)
+                                              << msbessel.compute(x).toDouble() << endl;
+  cout << "gsl_sf_bessel_i0_scaled        = " << setw(20) << setprecision(12)
+                                              << gsl_sf_bessel_i0_scaled(x) << endl;
   cout << endl;
-  // Boost can only do very small x
+  x += 0.01;
+}
 
 #if 0
   cout << " Expansion of a Gaussian about a different centre " << endl;
@@ -110,16 +118,17 @@ for (int iz = 0; iz <= maxl; ++iz) {
 
   const double r = 1.0;
 
+  cout << "Using unnormalized gaussian..." << endl;
   std::shared_ptr<ProjectionInt> projAB = std::make_shared<ProjectionInt>(cargaussA, rsh);
   const double int1 = projAB->compute(r);
-  cout << " < phi_A | lm_B >(r)  =  " << int1 << endl;
+  cout << " < phi_A | lm_B >(r = " << r << ")  =  " << int1 << endl;
 
   std::shared_ptr<ProjectionInt> projCB = std::make_shared<ProjectionInt>(cargaussC, rsh);
   const double int2 = projCB->compute(r);
-  cout << " < phi_C | lm_B >(r)  =  " << int2 << endl;
+  cout << " < phi_C | lm_B >(r = " << r << ")  =  " << int2 << endl;
 
   cout << endl;
-  cout << " < phi_A | lm_B > < lm_B | phi_C >(r) =  " << int1 * int2 << endl;
+  cout << " < phi_A | lm_B > < lm_B | phi_C >(r = " << r << ") =  " << int1 * int2 << endl;
 #endif
 
 #if 0
@@ -147,20 +156,20 @@ for (int iz = 0; iz <= maxl; ++iz) {
   const int nkl = -2;
   const double zeta = 1.0;
 
-#if 0
+#if 1
   cout << " Test Radial Integration " << endl;
-  Radial_Int<Gaussian_Int, const double> radial(max_iter, thresh_int, exp);
+  RadialInt<Gaussian_Int, const double> radial(exp, true, max_iter, thresh_int);
   cout << "Analytic = " << std::sqrt(pi / exp) / 2.0 << endl;
 #endif
 
 #if 0
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projs(projAB, projCB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(max_iter, thresh_int, projs);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecp(projs, true, max_iter, thresh_int);
 #endif
 
 #if 1
   std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> ecpABfBC(nkl, zeta, projAB, projCB);
-  Radial_Int<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpT2(max_iter, thresh_int, ecpABfBC);
+  RadialInt<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpT2(ecpABfBC, true, max_iter, thresh_int);
 #endif
 
 #if 0
@@ -171,21 +180,21 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<CartesianGauss> cargaussAx = std::make_shared<CartesianGauss>(alphaA, angular_momentumAx, centreA);
   std::shared_ptr<ProjectionInt> projAxB = std::make_shared<ProjectionInt>(cargaussAx, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAxBC(projAxB, projCB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBC(max_iter, thresh_int, projAxBC);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBC(projAxBC, true, max_iter, thresh_int);
 
   cout << "int <010|00><00|000>(r) dr" << endl;
   std::array<int, 3> angular_momentumAy = {0, 1, 0};
   std::shared_ptr<CartesianGauss> cargaussAy = std::make_shared<CartesianGauss>(alphaA, angular_momentumAy, centreA);
   std::shared_ptr<ProjectionInt> projAyB = std::make_shared<ProjectionInt>(cargaussAy, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAyBC(projAyB, projCB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBC(max_iter, thresh_int, projAyBC);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBC(projAyBC, true, max_iter, thresh_int);
 
   cout << "int <001|00><00|000>(r) dr" << endl;
   std::array<int, 3> angular_momentumAz = {0, 0, 1};
   std::shared_ptr<CartesianGauss> cargaussAz = std::make_shared<CartesianGauss>(alphaA, angular_momentumAz, centreA);
   std::shared_ptr<ProjectionInt> projAzB = std::make_shared<ProjectionInt>(cargaussAz, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAzBC(projAzB, projCB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBC(max_iter, thresh_int, projAzBC);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBC(projAzBC, true, max_iter, thresh_int);
 #endif
 
 #if 0
@@ -196,46 +205,46 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<CartesianGauss> cargaussCx = std::make_shared<CartesianGauss>(alphaC, angular_momentumCx, centreC);
   std::shared_ptr<ProjectionInt> projCxB = std::make_shared<ProjectionInt>(cargaussCx, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAxBCx(projAxB, projCxB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCx(max_iter, thresh_int, projAxBCx);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCx(projAxBCx, true, max_iter, thresh_int);
 
   cout << "int <010|00><00|010>(r) dr" << endl;
   std::array<int, 3> angular_momentumCy = {0, 1, 0};
   std::shared_ptr<CartesianGauss> cargaussCy = std::make_shared<CartesianGauss>(alphaC, angular_momentumCy, centreC);
   std::shared_ptr<ProjectionInt> projCyB = std::make_shared<ProjectionInt>(cargaussCy, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAyBCy(projAyB, projCyB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCy(max_iter, thresh_int, projAyBCy);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCy(projAyBCy, true, max_iter, thresh_int);
 
   cout << "int <001|00><00|001>(r) dr" << endl;
   std::array<int, 3> angular_momentumCz = {0, 0, 1};
   std::shared_ptr<CartesianGauss> cargaussCz = std::make_shared<CartesianGauss>(alphaC, angular_momentumCz, centreC);
   std::shared_ptr<ProjectionInt> projCzB = std::make_shared<ProjectionInt>(cargaussCz, rsh);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAzBCz(projAzB, projCzB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCz(max_iter, thresh_int, projAzBCz);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCz(projAzBCz, true, max_iter, thresh_int)
 
   //off-diagonal
   // xy
   cout << "int <100|00><00|010>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAxBCy(projAxB, projCyB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCy(max_iter, thresh_int, projAxBCy);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCy(projAxBCy, true, max_iter, thresh_int);
   cout << "int <010|00><00|100>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAyBCx(projAyB, projCxB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCx(max_iter, thresh_int, projAyBCx);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCx(projAyBCx, true, max_iter, thresh_int);
 
   //yz
   cout << "int <010|00><00|001>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAyBCz(projAyB, projCzB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCz(max_iter, thresh_int, projAyBCz);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAyBCz(projAyBCz, true, max_iter, thresh_int);
   cout << "int <001|00><00|010>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAzBCy(projAzB, projCyB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCy(max_iter, thresh_int, projAzBCy);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCy(projAzBCy, true, max_iter, thresh_int);
 
   //zx
   cout << "int <001|00><00|100>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAzBCx(projAzB, projCxB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCx(max_iter, thresh_int, projAzBCx);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAzBCx(projAzBCy, true, max_iter, thresh_int);
   cout << "int <100|00><00|001>(r) dr" << endl;
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAxBCz(projAxB, projCzB);
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCz(max_iter, thresh_int, projAxBCz);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAxBCz(projAxBCz, true, max_iter, thresh_int);
 #endif
 
 #if 0
@@ -246,9 +255,9 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<ProjectionInt> projAB10 = std::make_shared<ProjectionInt>(cargaussA, rsh1);
   std::shared_ptr<ProjectionInt> projCB10 = std::make_shared<ProjectionInt>(cargaussC, rsh1);
 //std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB10C(projAB10, projCB10);
-//Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB10C(max_iter, thresh_int, projAB10C);
+//RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB10C(projAB10C, true, max_iter, thresh_int);
   std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB10C(nkl, zeta, projAB10, projCB10);
-  Radial_Int<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB10C(max_iter, thresh_int, projAB10C);
+  RadialInt<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB10C(projAB10C, true, max_iter, thresh_int);
 
   cout << "int <p | 11><11 | p>(r) dr" << endl;
   std::array<int, 2> lm2 = {1, 1};
@@ -256,9 +265,9 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<ProjectionInt> projAB11 = std::make_shared<ProjectionInt>(cargaussA, rsh2);
   std::shared_ptr<ProjectionInt> projCB11 = std::make_shared<ProjectionInt>(cargaussC, rsh2);
 //std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB11C(projAB11, projCB11);
-//Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB11C(max_iter, thresh_int, projAB11C);
+//RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB11C(projAB11C, true, max_iter, thresh_int);
   std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB11C(nkl, zeta, projAB11, projCB11);
-  Radial_Int<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB11C(max_iter, thresh_int, projAB11C);
+  RadialInt<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB11C(projAB11C, true, max_iter, thresh_int);
 
   cout << "int <p | 1-1><1-1 | p>(r) dr" << endl;
   std::array<int, 2> lm3 = {1, -1};
@@ -266,9 +275,9 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::shared_ptr<ProjectionInt> projAB1m1 = std::make_shared<ProjectionInt>(cargaussA, rsh3);
   std::shared_ptr<ProjectionInt> projCB1m1 = std::make_shared<ProjectionInt>(cargaussC, rsh3);
 //std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB1m1C(projAB1m1, projCB1m1);
-//Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB1m1C(max_iter, thresh_int, projAB1m1C);
+//RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB1m1C(projAB1m1C, true, max_iter, thresh_int);
   std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projAB1m1C(nkl, zeta, projAB1m1, projCB1m1);
-  Radial_Int<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB1m1C(max_iter, thresh_int, projAB1m1C);
+  RadialInt<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpAB1m1C(projAB1m1C, true, max_iter, thresh_int);
 
   cout << "Answer = " << (ecpAB10C.integral() + ecpAB11C.integral() + ecpAB1m1C.integral()) << endl;
 #endif
@@ -295,10 +304,10 @@ for (int iz = 0; iz <= maxl; ++iz) {
             std::shared_ptr<ProjectionInt> projABd = std::make_shared<ProjectionInt>(gA, rshd);
             std::shared_ptr<ProjectionInt> projCBd = std::make_shared<ProjectionInt>(gC, rshd);
 //          std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABdC(projABd, projCBd);
-//          Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(max_iter, thresh_int, projABdC);
+//          RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(projABdC, true, max_iter, thresh_int);
 //          cout << "<" << lxA << lyA << lzA << "|" << lmd[0] << lmd[1] << "><" << lmd[0] << lmd[1] << "|" << lxC << lyC << lzC << "> = " << ecpABdC.integral() << endl;
             std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABdC(nkl, zeta, projABd, projCBd);
-            Radial_Int<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(max_iter, thresh_int, projABdC);
+            RadialInt<ECP_Type2, std::tuple<int, double, std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABdC(projABdC, true, max_iter, thresh_int);
             int_dd += ecpABdC.integral();
           }
 //        cout << "<d_A|2m_B><2m_B|d_C> = " << int_dd << endl;
@@ -324,26 +333,26 @@ for (int iz = 0; iz <= maxl; ++iz) {
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projApBA(projApB, projAB);
   std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>> projABAp(projAB, projApB);
   cout << "int <200 | 22><22 | 200>(r) dr" << endl;
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABA(max_iter, thresh_int, projABA);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABA(projABA, true, max_iter, thresh_int);
   cout << "int <020 | 22><22 | 020>(r) dr" << endl;
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBAp(max_iter, thresh_int, projApBAp);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBAp(projApBAp, true, max_iter, thresh_int);
   cout << "int <020 | 22><22 | 200>(r) dr" << endl;
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBA(max_iter, thresh_int, projApBA);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpApBA(projApBA, true, max_iter, thresh_int);
   cout << "int <200 | 22><22 | 020>(r) dr" << endl;
-  Radial_Int<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABAp(max_iter, thresh_int, projABAp);
+  RadialInt<Projection2, std::pair<std::shared_ptr<ProjectionInt>, std::shared_ptr<ProjectionInt>>> ecpABAp(projABAp, true, max_iter, thresh_int);
   cout << " Answer = " << endl;
   cout << ecpABA.integral() - ecpApBA.integral() - ecpABAp.integral() + ecpApBAp.integral() << endl;
 #endif
 
 #if 0
   std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>> gsh(cargaussC, rsh);
-  Radial_Int<ABBB_ss, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>>> test_ss(max_iter, thresh_int, gsh);
+  RadialInt<ABBB_ss, std::pair<std::shared_ptr<CartesianGauss>, std::shared_ptr<RealSH>>> test_ss(gsh, true, max_iter, thresh_int);
 #endif
 
   // check normalization ss
 #if 0
   std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>> gproduct(0, cargaussA, cargaussA);
-  Radial_Int<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> norm(max_iter, thresh_int, gproduct);
+  RadialInt<GaussianProduct, std::tuple<int, std::shared_ptr<CartesianGauss>, std::shared_ptr<CartesianGauss>>> norm(gproduct, true, max_iter, thresh_int);
   cout << "Should be " << std::pow(2.0 / pi, 1.5) * std::pow(std::sqrt(pi / 2.0), 3.0) << endl;
 #endif
 

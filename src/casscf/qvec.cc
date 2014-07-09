@@ -42,7 +42,7 @@ Qvec::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_
   shared_ptr<const DFFullDist> full = half->compute_second_transform(coeff->slice(nclosed, nclosed+m))->apply_JJ();
 
   // [D|tu] = (D|xy)Gamma_xy,tu
-  shared_ptr<const DFFullDist> prdm = full->apply_2rdm(rdm->data());
+  shared_ptr<const DFFullDist> prdm = full->apply_2rdm(*rdm);
 
   // (r,u) = (rt|D)[D|tu]
   shared_ptr<const Matrix> tmp = half->form_2index(prdm, 1.0);

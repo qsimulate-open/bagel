@@ -33,18 +33,33 @@ namespace bagel {
 
 class RnBatch: public CoulombBatch_energy {
   protected:
+    int get_max_rterms() const {
+      int out = 0;
+      for (auto& aiter : mol_->atoms())
+        if (aiter->use_ecp_basis())
+          if (aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size() > out)
+            out = aiter->ecp_parameters()->shell_maxl_ecp()->ecp_exponents().size();
+      return out;
+    }
 
   public:
     RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
             const std::shared_ptr<const Molecule> mol, std::shared_ptr<StackMem> stack = nullptr)
-      : CoulombBatch_energy (_info, mol, stack) {}
+      : CoulombBatch_energy (_info, mol, stack) {
 
+       max_rterms_ = get_max_rterms();
+       this->allocate_arrays(primsize_ * natom_ * max_rterms_);
+    }
 
     RnBatch(const std::array<std::shared_ptr<const Shell>,2>& _info,
             const std::shared_ptr<const Molecule> mol, const int L, const double A = 0.0)
-      : CoulombBatch_energy (_info, mol, L, A) {}
+      : CoulombBatch_energy (_info, mol, L, A) {
+
+       max_rterms_ = get_max_rterms();
+       this->allocate_arrays(primsize_ * natom_ * max_rterms_);
+    }
       
-    ~RnBatch() {}
+    ~RnBatch() { }
 
 };
 

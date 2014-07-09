@@ -33,6 +33,9 @@ namespace bagel {
 
 template<typename DataType>
 class RotationMatrix {
+  public:
+    using data_type = DataType;
+
   protected:
     const int nclosed_;
     const int nact_;
@@ -84,7 +87,9 @@ class RotationMatrix {
     RotationMatrix<DataType>& operator-=(const RotationMatrix<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
     RotationMatrix<DataType>& operator*=(const DataType a) { scale(a); return *this; }
     RotationMatrix<DataType>& operator/=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
+    RotationMatrix<DataType>& operator*=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)*= o.data(i); return *this; }
     RotationMatrix<DataType> operator/(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out /= o; }
+    RotationMatrix<DataType> operator*(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out *= o; }
     RotationMatrix<DataType>& operator=(const RotationMatrix<DataType>& o) { std::copy_n(o.data(), size(), data());  return *this; }
 
     // size of the file
@@ -208,7 +213,8 @@ class RotationMatrix {
     }
 
     // print matrix
-    void print() const {
+    void print(const std::string in = "") const {
+      std::cout << "++++ " + in + " ++++" << std::endl;
       if (nact_ && nclosed_) {
         std::cout << " printing closed-active block" << std::endl;
         for (int i = 0; i != nact_; ++i) {

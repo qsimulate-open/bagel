@@ -43,8 +43,8 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
   const size_t nocca = ref_->nocc();
   const size_t nvirt = nmobasis - nocca;
 
-  shared_ptr<const Matrix> ocoeff = ref_->coeff()->slice(0, nocca);
-  shared_ptr<const Matrix> vcoeff = ref_->coeff()->slice(nocca, nmobasis);
+  const MatView ocoeff = ref_->coeff()->slice(0, nocca);
+  const MatView vcoeff = ref_->coeff()->slice(nocca, nmobasis);
 
   auto t = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
@@ -65,15 +65,15 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
 
     // J part
     shared_ptr<const Matrix> tvo = t->get_submatrix(nocca, 0, nvirt, nocca);
-    auto pbmao = make_shared<Matrix>(*ocoeff ^ (*vcoeff * *tvo));
+    auto pbmao = make_shared<Matrix>(ocoeff ^ (vcoeff * *tvo));
     pbmao->symmetrize();
-    Matrix jri = *geom_->df()->compute_Jop(pbmao) * *ocoeff;
-    Matrix jai = (*vcoeff % jri) * 4.0;
+    Matrix jri = *geom_->df()->compute_Jop(pbmao) * ocoeff;
+    Matrix jai = (vcoeff % jri) * 4.0;
 
     // K part
     // halfjj is an half transformed DF integral with J^{-1}_{DE}, given by the constructor
     shared_ptr<const Matrix> kir = halfjj_->compute_Kop_1occ(pbmao, -2.0);
-    Matrix kia = *kir * *vcoeff;
+    Matrix kia = *kir * vcoeff;
 
     for (int i = 0; i != nocca; ++i)
       for (int a = 0; a != nvirt; ++a)

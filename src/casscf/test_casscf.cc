@@ -23,9 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <sstream>
 #include <src/casscf/superci.h>
-#include <src/wfn/reference.h>
+#include <src/casscf/casbfgs.h>
+#include <src/casscf/cashybrid.h>
 
 double cas_energy(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
@@ -52,6 +52,20 @@ double cas_energy(std::string filename) {
 
         std::cout.rdbuf(backup_stream);
         return ref->energy();
+      } else if (algorithm == "hybrid") {
+        auto cas = std::make_shared<CASHYBRID>(itree, geom);
+        cas->compute();
+        std::shared_ptr<const Reference> ref = cas->conv_to_ref();
+
+        std::cout.rdbuf(backup_stream);
+        return ref->energy();
+      } else if (algorithm == "bfgs") {
+        auto cas = std::make_shared<CASBFGS>(itree, geom);
+        cas->compute();
+        std::shared_ptr<const Reference> ref = cas->conv_to_ref();
+
+        std::cout.rdbuf(backup_stream);
+        return ref->energy();
       }
     }
   }
@@ -63,6 +77,8 @@ BOOST_AUTO_TEST_SUITE(TEST_CASSCF)
 
 BOOST_AUTO_TEST_CASE(DF_CASSCF) {
     BOOST_CHECK(compare(cas_energy("lif_svp_cas22"),      -106.70563743));
+    BOOST_CHECK(compare(cas_energy("li2_tzvpp_cas43"),      -14.87300366));
+    BOOST_CHECK(compare(cas_energy("lih_tzvpp_cas22"),      -7.98191070));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -44,6 +44,9 @@ namespace bagel {
 
 template <typename DataType>
 class Dvector {
+  public:
+    using data_type = DataType;
+
   // Useful in templates involving Dvectors
   public: using DetType = Determinants;
   public: using Ci    = Civector<DataType>;
@@ -114,6 +117,11 @@ class Dvector {
         for (auto& i : o.dvec_)
           dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
       }
+    }
+
+    Dvector(const Dvector_base<DistCivector<DataType>>& o) : det_(o.det()), lena_(det_->lena()), lenb_(det_->lenb()), ij_(o.ij()) {
+      for (auto& i : o.dvec())
+        dvec_.push_back(std::make_shared<Civector<DataType>>(*i));
     }
 
     Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {

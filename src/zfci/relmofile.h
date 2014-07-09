@@ -88,6 +88,7 @@ class RelMOFile {
 
     double core_energy() const { return core_energy_; }
 
+    std::shared_ptr<const ZMatrix> kramers_coeff(const int i) const { return kramers_coeff_[i]; }
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return kramers_coeff_; }
     std::shared_ptr<const ZMatrix> coeff() const {
       auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_[0]->ndim(), nocc_*2);

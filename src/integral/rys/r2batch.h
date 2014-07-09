@@ -35,8 +35,7 @@ class R2Batch: public RnBatch {
   protected:
     void root_weight(const int ps) override;
     void compute_ssss(const double) override;
-    double scale_root(const double root, const double p, const double zeta) override {return 1.0 - (p * root)/(p + zeta); }
-    double scale_weight(const double weight, const double coef) override {return weight * coef; }
+    double scale_root(const double root, const double p, const double zeta) override { return 1.0 - (p * root)/(p + zeta); }
 
   public:
     R2Batch(const std::array<std::shared_ptr<const Shell>,2>& _info,
@@ -44,7 +43,7 @@ class R2Batch: public RnBatch {
       : RnBatch (_info, mol, stack) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
+      root_weight(primsize_*natom_*max_rterms_);
     }
 
 
@@ -53,7 +52,7 @@ class R2Batch: public RnBatch {
       : RnBatch (_info, mol, L, A) {
       const double integral_thresh = PRIM_SCREEN_THRESH;
       compute_ssss(integral_thresh);
-      root_weight(primsize_*natom_);
+      root_weight(primsize_*natom_*max_rterms_);
     }
 
 
