@@ -29,6 +29,32 @@ using namespace bagel;
 using namespace std;
 using namespace btas;
 
+// construction of a block from AO integrals
+DFBlock::DFBlock(shared_ptr<const StaticDist> adist_shell, shared_ptr<const StaticDist> adist,
+             const size_t a, const size_t b1, const size_t b2, const int as, const int b1s, const int b2s, const bool averaged)
+ : btas::Tensor3<double>(max(adist_shell->size(mpi__->rank()), max(adist->size(mpi__->rank()), a)), b1, b2),
+   adist_shell_(adist_shell), adist_(adist), averaged_(averaged), astart_(as), b1start_(b1s), b2start_(b2s) {
+
+  assert(asize() == adist_shell->size(mpi__->rank()) || asize() == adist_->size(mpi__->rank()) || asize() == adist_->nele());
+
+  // resize to the current size (moving the end pointer)
+  const btas::CRange<3> range(a, b1, b2);
+  this->resize(range);
+}
+
+
+DFBlock::DFBlock(const DFBlock& o)
+ : btas::Tensor3<double>(max(o.adist_shell_->size(mpi__->rank()), max(o.adist_->size(mpi__->rank()), o.asize())), o.b1size(), o.b2size()),
+   adist_shell_(o.adist_shell_), adist_(o.adist_), averaged_(o.averaged_), astart_(o.astart_), b1start_(o.b1start_), b2start_(o.b2start_) {
+
+  // resize to the current size
+  const btas::CRange<3> range(o.asize(), o.b1size(), o.b2size());
+  this->resize(range);
+
+  btas::Tensor3<double>::operator=(o);
+}
+
+
 shared_ptr<DFBlock> DFBlock::transform_second(const MatView cmat, const bool trans) const {
   assert(trans ? cmat.extent(1) : cmat.extent(0) == b1size());
   assert(cmat.range().ordinal().contiguous());
@@ -316,4 +342,168 @@ shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const
         (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
 
   return out;
+}
+
+
+// average the asize between MPI processes (block will be described by dist_)
+void DFBlock::average() {
+  if (averaged_) return;
+  averaged_ = true;
+
+  // first make a send and receive buffer
+  const size_t o_start = astart_;
+  const size_t o_end   = o_start + asize();
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_->range(myrank);
+
+  assert(o_end - t_end >= 0);
+  assert(o_start - t_start >= 0);
+
+  // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
+  const size_t asendsize = o_end - t_end;
+  const size_t arecvsize = o_start - t_start;
+
+  assert(asendsize < t_end-t_start && arecvsize < t_end-t_start);
+
+  unique_ptr<double[]> sendbuf;
+  unique_ptr<double[]> recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size()*b2size()]);
+    const size_t retsize = asize() - asendsize;
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(data()+retsize+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
+
+    task.compute();
+
+    // send to the next node
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank+1, myrank);
+  }
+
+  if (arecvsize) {
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size()*b2size()]);
+    // recv from the previous node
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank-1, myrank-1);
+  }
+
+  // second move local data
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize() - asendsize;
+    if (t_size <= asize()) {
+      for (size_t i = 0; i != b1size()*b2size(); ++i) {
+        if (i*asize() < (i+1)*t_size-retsize) {
+          copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
+        } else if (i*asize() > (i+1)*t_size-retsize) {
+          copy_n(data()+i*asize(), retsize, data()+(i+1)*t_size-retsize);
+        }
+      }
+    } else {
+      for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+        assert(i*asize() < (i+1)*t_size-retsize);
+        copy_backward(data()+i*asize(), data()+i*asize()+retsize, data()+(i+1)*t_size);
+      }
+    }
+  }
+
+  // set new astart_ and asize()
+  astart_ = t_start;
+  assert(this->storage().capacity() >= (t_end - t_start)*b1size()*b2size());
+  const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
+  this->resize(range);
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2, asize(), arecvsize, b1size());
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
+}
+
+
+// reverse operation of average() function
+void DFBlock::shell_boundary() {
+  if (!averaged_) return;
+  averaged_ = false;
+  const size_t o_start = astart_;
+  const size_t o_end = o_start + asize();
+  const int myrank = mpi__->rank();
+  size_t t_start, t_end;
+  tie(t_start, t_end) = adist_shell_->range(myrank);
+
+  const size_t asendsize = t_start - o_start;
+  const size_t arecvsize = t_end - o_end;
+  assert(t_start >= o_start && t_end >= o_end);
+
+  unique_ptr<double[]> sendbuf, recvbuf;
+  int sendtag = 0;
+  int recvtag = 0;
+
+  if (asendsize) {
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    sendbuf = unique_ptr<double[]>(new double[asendsize*b1size()*b2size()]);
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(data()+asize()*b1size()*b2, asize(), sendbuf.get()+asendsize*b1size()*b2, asendsize, asendsize, b1size());
+
+    task.compute();
+    assert(myrank > 0);
+    sendtag = mpi__->request_send(sendbuf.get(), asendsize*b1size()*b2size(), myrank-1, myrank);
+  }
+  if (arecvsize) {
+    assert(myrank+1 < mpi__->size());
+    recvbuf = unique_ptr<double[]>(new double[arecvsize*b1size()*b2size()]);
+    recvtag = mpi__->request_recv(recvbuf.get(), arecvsize*b1size()*b2size(), myrank+1, myrank+1);
+  }
+
+  if (arecvsize || asendsize) {
+    const size_t t_size = t_end - t_start;
+    const size_t retsize = asize() - asendsize;
+    assert(t_size >= retsize);
+    if (t_size <= asize()) {
+      for (size_t i = 0; i != b1size()*b2size(); ++i) {
+        assert(i*asize()+asendsize > i*t_size);
+        copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
+      }
+    } else {
+      for (long long int i = b1size()*b2size()-1; i >= 0; --i) {
+        if (i*asize()+asendsize > i*t_size) {
+          copy_n(data()+i*asize()+asendsize, retsize, data()+i*t_size);
+        } else if (i*asize()+asendsize < i*t_size) {
+          copy_backward(data()+i*asize()+asendsize, data()+(i+1)*asize(), data()+i*t_size+retsize);
+        }
+      }
+    }
+  }
+
+  // set new astart_ and asize()
+  astart_ = t_start;
+  assert(this->storage().capacity() >= (t_end - t_start)*b1size()*b2size());
+  const btas::CRange<3> range(t_end - t_start, b1size(), b2size());
+  this->resize(range);
+
+  // set received data
+  if (arecvsize) {
+    // wait for recv communication
+    mpi__->wait(recvtag);
+
+    TaskQueue<CopyBlockTask<double>> task(b2size());
+    for (size_t b2 = 0; b2 != b2size(); ++b2)
+      task.emplace_back(recvbuf.get()+arecvsize*b1size()*b2, arecvsize, data()+asize()*b1size()*b2+(asize()-arecvsize), asize(), arecvsize, b1size());
+    task.compute();
+  }
+
+  // wait for send communication
+  if (asendsize) mpi__->wait(sendtag);
 }
