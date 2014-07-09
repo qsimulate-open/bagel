@@ -26,6 +26,8 @@
 #ifndef __SRC_MEH_DIMESUBSPACE_H
 #define __SRC_MEH_DIMESUBSPACE_H
 
+#include <src/util/string.h>
+#include <src/math/csymmatrix.h>
 #include <src/dimer/dimer_cispace.h>
 
 namespace bagel {

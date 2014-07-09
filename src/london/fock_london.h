@@ -39,7 +39,7 @@ template<int DF>
 class Fock_London : public Fock_base_London {
   protected:
     void fock_two_electron_part(std::shared_ptr<const ZMatrix> den = nullptr);
-    void fock_two_electron_part_with_coeff(const std::shared_ptr<const ZMatrix> coeff, const bool rhf, const double scale_ex);
+    void fock_two_electron_part_with_coeff(const ZMatView coeff, const bool rhf, const double scale_ex);
 
     // when DF gradients are requested
     bool store_half_;
@@ -58,11 +58,15 @@ class Fock_London : public Fock_base_London {
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
     Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
-         const std::shared_ptr<const ZMatrix> ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
+                const ZMatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base_London(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
       fock_one_electron_part();
     }
+    // same as above
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
+                std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock_London(a,b,c,*o,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
@@ -314,7 +318,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
 }
 
 template<int DF>
-void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<const ZMatrix> ocoeff, const bool rhf, const double scale_exchange) {
+void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, const bool rhf, const double scale_exchange) {
   if (DF == 0) throw std::logic_error("Fock_London<DF>::fock_two_electron_part_with_coeff() is only for DF cases");
 
 #if 1
@@ -333,7 +337,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const std::shared_ptr<co
     pdebug.tick_print("Exchange build");
 
     if (rhf) {
-      auto coeff = std::make_shared<const ZMatrix>(*ocoeff->transpose()*2.0);
+      auto oc = std::make_shared<ZMatrix>(ocoeff);
+      auto coeff = std::make_shared<const ZMatrix>(*oc->transpose()*2.0);
       *this += *df->compute_Jop(half, coeff, true);
     } else {
       *this += *df->compute_Jop(density_);

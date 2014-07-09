@@ -26,6 +26,7 @@
 #ifdef _OPENMP
   #include <omp.h>
 #endif
+#include <cfenv>
 #include <thread>
 #include <src/global.h>
 #include <src/util/string.h>
@@ -63,6 +64,9 @@ void static_variables() {
     resources = unique_ptr<Resources>(new Resources(num_threads));
     resources__ = resources.get();
   }
+
+  // rounding mode in std::rint, std::lrint, and std::llrint
+  fesetround(FE_TONEAREST);
 }
 
 }

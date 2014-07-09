@@ -81,7 +81,7 @@ void SCF_London::compute() {
         aodensity_ = coeff_->form_density_rhf(nocc_, 0, 2.0);
         focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
       } else {
-        focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice_copy(0, nocc_), do_grad_, true/*rhf*/);
+        focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
       DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -124,7 +124,7 @@ void SCF_London::compute() {
       previous_fock = make_shared<Fock_London<0>>(cgeom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<ZMatrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice_copy(0, nocc_), do_grad_, true/*rhf*/);
+      previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 

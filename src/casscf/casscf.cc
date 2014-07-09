@@ -189,7 +189,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
 
     finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
-    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
     f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
   }
   {
@@ -284,20 +284,20 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
   rdm1mat->sqrt();
   rdm1mat->scale(1.0/sqrt(2.0));
-  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : nullptr;
+  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : MatView();
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nbasis_);
 
   unique_ptr<double[]> eig(new double[coeff_->mdim()]);
-  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, make_shared<Matrix>(*acoeff * *rdm1mat), false, /*rhf*/true);
+  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
   Matrix trans(nbasis_, nbasis_);
   trans.unit();
   if (nclosed_) {
-    Matrix ofock = *ocoeff % fock * *ocoeff;
+    Matrix ofock = ocoeff % fock * ocoeff;
     ofock.diagonalize(eig.get());
     trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
   }
-  Matrix vfock = *vcoeff % fock * *vcoeff;
+  Matrix vfock = vcoeff % fock * vcoeff;
   vfock.diagonalize(eig.get());
   trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
   return make_shared<Coeff>(*coeff_ * trans);

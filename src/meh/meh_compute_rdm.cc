@@ -29,9 +29,10 @@ using namespace std;
 using namespace bagel;
 
 void MEH_base::compute_rdm() const {
-//const int norbA = cispace_->template norb<0>();
-//const int norbB = cispace_->template norb<1>();
-//RDM<2> rdm(norbA+norbB);
+  const int norbA = dimer_->active_refs().first->nact();
+  const int norbB = dimer_->active_refs().second->nact();
+
+  RDM<2> rdm(norbA+norbB);
   // compute transformed gammas
 
 #if 0

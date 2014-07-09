@@ -133,10 +133,10 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
     if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
-    shared_ptr<const MatView> coeffs = spin->slice(start, end);
+    const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
-    hamiltonian = make_shared<Matrix>(*coeffs % *hamiltonian * *coeffs);
+    hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
     hamiltonian->diagonalize(eigs.data());
 
 #if 0
@@ -145,7 +145,7 @@ void RASCI::model_guess(shared_ptr<RASDvec>& out) {
       cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
 #endif
 
-    auto coeffs1 = make_shared<Matrix>(*coeffs * *hamiltonian);
+    auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
     for (int i = 0; i < nguess; ++i) {
       const bitset<nbit__> ia = basis[i].first;
       const bitset<nbit__> ib = basis[i].second;

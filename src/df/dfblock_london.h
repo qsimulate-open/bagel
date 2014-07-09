@@ -49,8 +49,8 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     DFBlock_London& operator+=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator+=(o); return *this; }
     DFBlock_London& operator-=(const DFBlock_London& o){ DFBlock_base<std::complex<double>>::operator-=(o); return *this; }
 
-    std::shared_ptr<DFBlock_London> transform_second(std::shared_ptr<const btas::TensorView2<std::complex<double>>> c, const bool trans = false) const;
-    std::shared_ptr<DFBlock_London> transform_third(std::shared_ptr<const btas::TensorView2<std::complex<double>>> c, const bool trans = false) const;
+    std::shared_ptr<DFBlock_London> transform_second(const ZMatView c, const bool trans = false) const;
+    std::shared_ptr<DFBlock_London> transform_third(const ZMatView c, const bool trans = false) const;
 
     std::shared_ptr<DFBlock_London> clone() const;
     std::shared_ptr<DFBlock_London> copy() const;
@@ -76,7 +76,7 @@ class DFBlock_London : public DFBlock_base<std::complex<double>> {
     std::shared_ptr<ZMatrix> form_aux_2index(const std::shared_ptr<const DFBlock_London> o, const double a) const;
 
     std::shared_ptr<ZVectorB> form_vec(const std::shared_ptr<const ZMatrix> den) const;
-    std::shared_ptr<ZMatrix> form_mat(const std::complex<double>* fit) const;
+    std::shared_ptr<ZMatrix> form_mat(const btas::Tensor1<std::complex<double>>& fit) const;
 
     void contrib_apply_J(const std::shared_ptr<const DFBlock_London> o, const std::shared_ptr<const ZMatrix> mat);
 

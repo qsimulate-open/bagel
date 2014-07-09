@@ -476,8 +476,8 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 
 
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
-  shared_ptr<const ZMatView> tmp = this->slice(offset, offset+n);
-  auto out = make_shared<ZMatrix>(*tmp ^ *tmp);
+  const ZMatView tmp = this->slice(offset, offset+n);
+  auto out = make_shared<ZMatrix>(tmp ^ tmp);
   *out *= scale;
   return out;
 }

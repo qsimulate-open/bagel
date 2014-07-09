@@ -147,8 +147,8 @@ pair<const double*, shared_ptr<RysIntegral<double, Int_t::Standard>>> DFDist_Lon
 }
 
 
-shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform(shared_ptr<const TensorView2<complex<double>>> c) const {
-  const int nocc = c->extent(1);
+shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform(const ZMatView c) const {
+  const int nocc = c.extent(1);
   auto out = make_shared<DFHalfDist_London>(shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_second(c));
@@ -156,8 +156,8 @@ shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform(shared_ptr<c
 }
 
 
-shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform_swap(shared_ptr<const TensorView2<complex<double>>> c) const {
-  const int nocc = c->extent(1);
+shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform_swap(const ZMatView c) const {
+  const int nocc = c.extent(1);
   auto out = make_shared<DFHalfDist_London>(shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c)->swap());
@@ -168,8 +168,8 @@ shared_ptr<DFHalfDist_London> DFDist_London::compute_half_transform_swap(shared_
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-shared_ptr<DFFullDist_London> DFHalfDist_London::compute_second_transform(shared_ptr<const TensorView2<complex<double>>> c) const {
-  const int nocc = c->extent(1);
+shared_ptr<DFFullDist_London> DFHalfDist_London::compute_second_transform(const ZMatView c) const {
+  const int nocc = c.extent(1);
   auto out = make_shared<DFFullDist_London>(df_, nindex1_, nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c));
@@ -193,8 +193,8 @@ shared_ptr<DFHalfDist_London> DFHalfDist_London::clone() const {
 }
 
 
-shared_ptr<DFDist_London> DFHalfDist_London::back_transform(shared_ptr<const TensorView2<complex<double>>> c) const{
-  assert(df_->nindex1() == c->extent(0));
+shared_ptr<DFDist_London> DFHalfDist_London::back_transform(const ZMatView c) const{
+  assert(df_->nindex1() == c.extent(0));
   auto out = make_shared<DFDist_London>(df_);
   for (auto& i : block_)
     out->add_block(i->transform_second(c, true));
@@ -205,7 +205,7 @@ shared_ptr<DFDist_London> DFHalfDist_London::back_transform(shared_ptr<const Ten
 void DFHalfDist_London::rotate_occ(const shared_ptr<const ZMatrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(d);
+    i = i->transform_second(*d);
 }
 
 
@@ -213,7 +213,7 @@ shared_ptr<DFHalfDist_London> DFHalfDist_London::apply_density(const shared_ptr<
   assert(den->mdim() == nindex2_);
   auto out = make_shared<DFHalfDist_London>(df_, nindex1_);
   for (auto& i : block_)
-    out->add_block(i->transform_third(den));
+    out->add_block(i->transform_third(*den));
   return out;
 }
 
@@ -245,13 +245,13 @@ shared_ptr<DFFullDist_London> DFFullDist_London::clone() const {
 void DFFullDist_London::rotate_occ1(const shared_ptr<const ZMatrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(d);
+    i = i->transform_second(*d);
 }
 
 
 // AO back transformation (q|rs)[CCdag]_rt [CCdag]_su
-shared_ptr<DFHalfDist_London> DFFullDist_London::back_transform(shared_ptr<const TensorView2<complex<double>>> c) const {
-  assert(c->extent(0) == df_->nindex2());
+shared_ptr<DFHalfDist_London> DFFullDist_London::back_transform(const ZMatView c) const {
+  assert(c.extent(0) == df_->nindex2());
   auto out = make_shared<DFHalfDist_London>(df_, nindex1_);
   for (auto& i : block_)
     out->add_block(i->transform_third(c, true));

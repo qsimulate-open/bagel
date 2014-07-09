@@ -64,10 +64,14 @@ class DFDist : public ParallelDF {
     void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
-    std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<const btas::TensorView2<double>> c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> compute_half_transform(std::shared_ptr<T> c) const { return compute_half_transform(*c); }
 
     // compute half transform using the third index. You get DFHalfDist with gamma/i/s (i.e., index are reordered)
-    std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<const btas::TensorView2<double>> c) const;
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> compute_half_transform_swap(std::shared_ptr<T> c) const { return compute_half_transform_swap(*c); }
 
     std::shared_ptr<DFDist> copy() const;
     std::shared_ptr<DFDist> clone() const;
@@ -170,8 +174,13 @@ class DFHalfDist : public ParallelDF {
     size_t nocc() const { return nindex1_; }
     size_t nbasis() const { return nindex2_; }
 
-    std::shared_ptr<DFFullDist> compute_second_transform(std::shared_ptr<const btas::TensorView2<double>> c) const;
-    std::shared_ptr<DFDist> back_transform(std::shared_ptr<const btas::TensorView2<double>> c) const;
+    std::shared_ptr<DFFullDist> compute_second_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFFullDist> compute_second_transform(std::shared_ptr<T> c) const { return compute_second_transform(*c); }
+
+    std::shared_ptr<DFDist> back_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFDist> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     std::shared_ptr<DFHalfDist> copy() const;
     std::shared_ptr<DFHalfDist> clone() const;
@@ -203,7 +212,9 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> copy() const;
     std::shared_ptr<DFFullDist> clone() const;
 
-    std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<const btas::TensorView2<double>> c) const;
+    std::shared_ptr<DFHalfDist> back_transform(const MatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
     void rotate_occ1(const std::shared_ptr<const Matrix> d);
 
