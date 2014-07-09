@@ -213,6 +213,7 @@ namespace impl {
     ZMatrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.mdim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
@@ -242,6 +243,7 @@ namespace impl {
     ZMatrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.ndim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
@@ -272,6 +274,7 @@ namespace impl {
     ZMatrix out(l, n, a.localized());
 
 #ifdef HAVE_SCALAPACK
+    const int m = a.mdim();
     assert(a.localized() == b.localized());
     if (a.localized() || std::min(std::min(l,m),n) < blocksize__) {
 #endif
