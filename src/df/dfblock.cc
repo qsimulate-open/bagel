@@ -196,7 +196,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
   // compress
   auto low = {0, nclosed, nclosed};
   auto up = {static_cast<int>(asize()), nclosed+nact, nclosed+nact};
-  Tensor3<double> buf(range().slice(low, up), storage());
+  Tensor3<double> buf = TensorView3<double>(range().slice(low, up), storage());
   Tensor3<double> buf2(asize(), nact, nact);
   {
     auto rdm2v = group(group(rdm,2,4),0,2);
