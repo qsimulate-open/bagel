@@ -153,7 +153,7 @@ vector<shared_ptr<const Shell>> Shell::split_if_possible(const size_t batchsize)
 // returns uncontracted cartesian shell with one higher or lower angular number if increment is + or - 1 respectively
 template<int increment>
 shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
-  static_assert(increment==1||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
+  static_assert(increment==1||increment==0||increment==-1, "illegal call of Shell::kinetic_balance_uncont");
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
@@ -182,14 +182,15 @@ void Shell::init_relativistic() {
 }
 
 
-void Shell::init_relativistic_london(const array<double,3> magnetic_field) {
+void Shell::init_relativistic_london(const array<double,3> magnetic_field, bool london) {
   if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
+  aux_same_ = london ? nullptr : kinetic_balance_uncont<0>();
 
   // zsmall is a transformation matrix (x,y,z components)
-  zsmall_ = moment_compute(magnetic_field);
+  zsmall_ = moment_compute(magnetic_field, london);
   for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
@@ -363,6 +364,7 @@ array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
   array<shared_ptr<Matrix>,6> mcart;
   for (int i=0; i!=3; i++) mcart[i] = make_shared<Matrix>(ninc, norig, true);
   if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<Matrix>(ndec, norig, true);
+  else for (int i=3; i!=6; i++) mcart[i] = nullptr;
   for (int i=0; i!=norig; i++) {
     int x, y, z;
     size_t column = 0;
@@ -418,7 +420,7 @@ array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
 
 
 // for each primitive basis function
-array<shared_ptr<const ZMatrix>,6> Shell::mblock(const double exponent, const array<double,3> magnetic_field) const {
+array<shared_ptr<const ZMatrix>,9> Shell::mblock(const double exponent, const array<double,3> magnetic_field, const bool london) const {
 
   const int norig = (angular_number_+1) * (angular_number_+2) / 2;
   const int ninc = norig + angular_number_ + 2;
@@ -427,10 +429,16 @@ array<shared_ptr<const ZMatrix>,6> Shell::mblock(const double exponent, const ar
   assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
   if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
   else assert (ndec == 0);
+  if (aux_same_) assert(norig == (aux_same_->angular_number_+1) * (aux_same_->angular_number_+2) / 2);
+  else assert (london);
 
-  array<shared_ptr<ZMatrix>,6> mcart;
+  array<shared_ptr<ZMatrix>,9> mcart;
   for (int i=0; i!=3; i++) mcart[i] = make_shared<ZMatrix>(ninc, norig, true);
   if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<ZMatrix>(ndec, norig, true);
+  else for (int i=3; i!=6; i++) mcart[i] = nullptr;
+  if (aux_same_) for (int i=6; i!=9; i++) mcart[i] = make_shared<ZMatrix>(norig, norig, true);
+  else for (int i=6; i!=9; i++) mcart[i] = nullptr;
+
   for (int i=0; i!=norig; i++) {
     int x, y, z;
     size_t column = 0;
@@ -489,19 +497,35 @@ array<shared_ptr<const ZMatrix>,6> Shell::mblock(const double exponent, const ar
             const size_t row = newindex[2]*(angular_number_+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
             mcart[k]->element(row, column) = -halfb[back[k]];
           }
+
+          // + 1/2 (B_y R_z - B_z R_y) phi
+          if (!london) {
+            array<int,3> newindex = index;
+            assert(newindex[0] + newindex[1] + newindex[2] == angular_number_);
+            const size_t row = newindex[2]*(angular_number_+1) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
+            mcart[6+k]->element(row, column) = halfb[fwd[k]]*position_[back[k]] - halfb[back[k]]*position_[fwd[k]];
+          }
+
         }
         column++;
       }
     }
   }
 
-  array<shared_ptr<const ZMatrix>,6> out;
+  array<shared_ptr<const ZMatrix>,9> out;
   const int nblock = aux_decrement_ ? 6 : 3;
   for (int i=0; i!=nblock; i++) mcart[i]->scale(complex<double>(0.0, -1.0));
+  if (!london) for (int i=6; i!=9; i++) mcart[i]->scale(complex<double>(0.0, -1.0));
 
   // convert this block from cartesian to spherical
-  if (spherical_) for (int i=0; i!=nblock; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
-  else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
+  if (spherical_) {
+    for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+    if (aux_decrement_) for (int i=3; i!=6; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+    else for (int i=3; i!=6; i++) out[i] = nullptr;
+    if (!london) for (int i=6; i!=9; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+    else for (int i=6; i!=9; i++) out[i] = nullptr;
+  }
+  else for (int i=0; i!=9; i++) out[i] = mcart[i];
 
   return out;
 }
@@ -519,9 +543,10 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
 
   assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2 );
   if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2 );
-  else assert (ndec == 0);
+  else assert(ndec == 0);
   assert(aux_increment_->num_primitive() == num_primitive());
-  if(aux_decrement_)assert(aux_decrement_->num_primitive() == num_primitive());
+  if (aux_decrement_) assert(aux_decrement_->num_primitive() == num_primitive());
+  assert(!aux_same_);
 
   // build the momentum transformation matrix for primitive functions
   // each exponent gets 2 blocks, one for L+1 & one for L-1
@@ -550,30 +575,36 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
 }
 
 
-array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> magnetic_field) const {
+array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> magnetic_field, const bool london) const {
 
   int norig;
   int n;
   norig = ( (angular_number_+1) * (angular_number_+2) / 2 );
   const int ninc = norig + (angular_number_ + 2);
+  const int nsame = london ? 0 : norig;
   const int ndec = norig - (angular_number_ + 1);
   if (spherical_ ) norig = 2*angular_number_+1;
-  n = ninc + ndec;
+  n = ninc + ndec + nsame;
 
   assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2 );
   if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2 );
-  else assert (ndec == 0);
+  else assert(ndec == 0);
+  if (aux_same_) assert(nsame == (aux_same_->angular_number_+1) * (aux_same_->angular_number_+2) / 2 );
+  else assert(nsame == 0);
   assert(aux_increment_->num_primitive() == num_primitive());
-  if(aux_decrement_)assert(aux_decrement_->num_primitive() == num_primitive());
+  if (aux_decrement_) assert(aux_decrement_->num_primitive() == num_primitive());
+  if (london) assert(aux_same_->num_primitive() == num_primitive());
+  else assert(!aux_same_);
 
   // build the momentum transformation matrix for primitive functions
-  // each exponent gets 2 blocks, one for L+1 & one for L-1
+  // each exponent gets 2-3 blocks, for L+1, L-1, and if needed, L+0 (in that order)
   array<shared_ptr<ZMatrix>,3> tmp;
   for (int i=0; i!=3; i++) tmp[i] = make_shared<ZMatrix>(n*num_primitive(), norig*num_primitive(), true);
   for (int j=0; j!=num_primitive(); j++) {
-    auto thisblock = mblock(exponents_[j], magnetic_field);
+    auto thisblock = mblock(exponents_[j], magnetic_field, london);
     for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
     if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
+    if (aux_same_) for (int i=0; i!=3; i++) tmp[i]->copy_block( (ninc+ndec)*num_primitive()+j*nsame, j*norig, nsame, norig, thisblock[6+i] );
   }
 
   // build the contraction matrix

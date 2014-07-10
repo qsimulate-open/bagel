@@ -58,10 +58,11 @@ class Shell : public Shell_base {
     std::array<std::shared_ptr<const Matrix>,6> mblock(const double exponent) const;
 
     // TODO Refactor - These next few are essentially the same as above, but for London integrals only
+    std::shared_ptr<const Shell> aux_same_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
-    std::array<std::shared_ptr<const ZMatrix>,3> moment_compute(const std::array<double,3> magnetic_field) const;
-    std::array<std::shared_ptr<const ZMatrix>,6> mblock(const double exponent, const std::array<double,3> magnetic_field) const;
+    std::array<std::shared_ptr<const ZMatrix>,3> moment_compute(const std::array<double,3> magnetic_field, const bool london) const;
+    std::array<std::shared_ptr<const ZMatrix>,9> mblock(const double exponent, const std::array<double,3> magnetic_field, const bool london) const;
 
     // magnetism
     std::array<double,3> vector_potential_;
@@ -131,7 +132,7 @@ class Shell : public Shell_base {
     const std::array<double,3>& vector_potential() const { return vector_potential_; };
 
     void init_relativistic();
-    void init_relativistic_london(const std::array<double,3> magnetic_field);
+    void init_relativistic_london(const std::array<double,3> magnetic_field, bool london);
 
     // Relativistic
     bool relativistic() const { return relativistic_; }
@@ -140,8 +141,10 @@ class Shell : public Shell_base {
     const std::shared_ptr<const ZMatrix> zsmallc(const int i) const { assert(relativistic_); return zsmallc_[i]; }
     const std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
     const std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
+    const std::shared_ptr<const Shell> aux_same() const { assert(relativistic_); return aux_same_; }
     int nbasis_aux_increment() const { return aux_increment_ ? aux_increment_->nbasis() : 0; }
     int nbasis_aux_decrement() const { return aux_decrement_ ? aux_decrement_->nbasis() : 0; }
+    int nbasis_aux_same() const { return aux_same_ ? aux_same_->nbasis() : 0; }
 
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;

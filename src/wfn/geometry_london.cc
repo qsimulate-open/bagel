@@ -635,7 +635,7 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->relativistic_london(magnetic_field_));
+    atom.push_back(i->relativistic_london(magnetic_field_, london_));
   geom->atoms_ = atom;
 
   geom->compute_relativistic_integrals(do_gaunt);
