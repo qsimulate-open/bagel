@@ -412,7 +412,10 @@ array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
   const int nblock = aux_decrement_ ? 6 : 3;
 
   // convert this block from cartesian to spherical
-  if (spherical_) for (int i=0; i!=nblock; i++) out[i] = make_shared<const Matrix>(*mcart[i] * *carsph_matrix(angular_number_));
+  if (spherical_) {
+    auto carsphmatrix = carsph_matrix(angular_number_);
+    for (int i=0; i!=nblock; i++) out[i] = make_shared<const Matrix>(*mcart[i] * *carsphmatrix);
+  }
   else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
 
   return out;
@@ -519,10 +522,11 @@ array<shared_ptr<const ZMatrix>,9> Shell::mblock(const double exponent, const ar
 
   // convert this block from cartesian to spherical
   if (spherical_) {
-    for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
-    if (aux_decrement_) for (int i=3; i!=6; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+    auto carsphmatrix = make_shared<const ZMatrix> (*carsph_matrix(angular_number_), 1.0);
+    for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
+    if (aux_decrement_) for (int i=3; i!=6; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
     else for (int i=3; i!=6; i++) out[i] = nullptr;
-    if (!london) for (int i=6; i!=9; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *make_shared<ZMatrix>(*carsph_matrix(angular_number_), 1.0));
+    if (!london) for (int i=6; i!=9; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
     else for (int i=6; i!=9; i++) out[i] = nullptr;
   }
   else for (int i=0; i!=9; i++) out[i] = mcart[i];
