@@ -263,6 +263,26 @@ void ZHarrison::compute_rdm12() {
   const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size();
   assert(fabs(orig_energy - recomp_energy) < 1.0e-8);
 
+#if 1
+  // check the partial trace condition for normalization
+  {
+    list<bitset<4>> bits = {bitset<4>("0000"),bitset<4>("1111"),bitset<4>("1010"),bitset<4>("0101")};
+    complex<double> norm2rdm = 0.0;
+    for (auto& i : bits) {
+      auto tmp2rdm = make_shared<ZMatrix>(norb_*norb_,norb_*norb_);
+      copy_n(rdm2_av_kramers(i)->data(), norb_*norb_*norb_*norb_, tmp2rdm->data());
+      auto tmp2rdm2 = tmp2rdm->copy();
+      SMITH::sort_indices<0,2,1,3,0,1,1,1>(tmp2rdm2->data(), tmp2rdm->data(), norb_, norb_, norb_, norb_); // sorts to chemist notation
+      for (int i=0; i!=norb_; ++i) {
+        for (int j=0; j!=norb_; ++j) {
+          norm2rdm += tmp2rdm->element(j*norb_ + j, i*norb_ + i);
+        } 
+      } 
+    } 
+      cout << setprecision(8) << " 2RDM normalization condition = " << real(norm2rdm) << endl;
+  }   
+#endif
+
 #if 0
   complex<double> recomp_energy2 = (trace1("00") + trace1("10")*2.0 + trace1("11")).real() + nuc_core;
   for (int i = 0; i != 16; ++i) {
