@@ -49,6 +49,9 @@ class Geometry_London: public Molecule {
     // for R12 calculations
     double gamma_;
 
+    // if false, use common origin with Gaussian orbitals
+    bool london_;
+
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh, const bool nodf);
@@ -61,7 +64,7 @@ class Geometry_London: public Molecule {
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
       ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
+         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_ << london_;
       const size_t dfindex = !df_ ? 0 : std::hash<ComplexDFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -73,7 +76,7 @@ class Geometry_London: public Molecule {
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
       ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_;
+         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_ >> london_;
 
       size_t dfindex;
       ar >> dfindex;
@@ -108,6 +111,7 @@ class Geometry_London: public Molecule {
     // Returns a constant
     int nirrep() const { return nirrep_; }
     double gamma() const {return gamma_; }
+    bool london() const {return london_; }
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }

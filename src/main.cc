@@ -77,7 +77,12 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        const string basis_type = to_lower(itree->get<string>("basis_type", cgeom ? "giao" : "gaussian"));
+        assert (!geom || !cgeom);
+        string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
+
+        if (itree->get_child_optional("magnetic_field")) basis_type = "giao";
+        if (cgeom) if (!cgeom->nonzero_magnetic_field()) basis_type = "giao";
+
         if (basis_type == "gaussian") {
           geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
           if (itree->get<bool>("restart", false))

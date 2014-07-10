@@ -73,6 +73,14 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   const bool tesla = geominfo->get<bool>("tesla", false);
   if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
 
+  // London basis or Gaussian w/ common origin
+  const string basis_type = to_lower(geominfo->get<string>("basis_type", "giao"));
+  if (basis_type == "giao" || basis_type == "london") london_ = true;
+  else if (basis_type == "gaussian") london_ = false;
+  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
+
+  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
+
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
   if (basisfile_ == "") {
@@ -92,7 +100,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, fieldin));
     }
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
@@ -101,7 +109,6 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-
   const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
 /*
 #if 1
@@ -322,7 +329,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3>
 
 
 Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_), london_(o.london_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -340,6 +347,12 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
+  // London basis or Gaussian w/ common origin
+  const string basis_type = to_lower(geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian"));
+  if (basis_type == "giao" || basis_type == "london") london_ = true;
+  else if (basis_type == "gaussian") london_ = false;
+  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
+
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
 
   // check if magnetic field has changed
@@ -349,6 +362,8 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     const bool tesla = geominfo->get<bool>("tesla", false);
     if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
   }
+
+  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
 
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
@@ -362,10 +377,10 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, magnetic_field_));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, fieldin));
     } else {
       for (auto& a : o.atoms_)
-        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem, magnetic_field_));
+        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem, fieldin));
     }
   }
   const string prevaux = auxfile_;
