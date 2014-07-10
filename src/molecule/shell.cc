@@ -597,7 +597,7 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> m
   else assert(nsame == 0);
   assert(aux_increment_->num_primitive() == num_primitive());
   if (aux_decrement_) assert(aux_decrement_->num_primitive() == num_primitive());
-  if (london) assert(aux_same_->num_primitive() == num_primitive());
+  if (!london) assert(aux_same_->num_primitive() == num_primitive());
   else assert(!aux_same_);
 
   // build the momentum transformation matrix for primitive functions
