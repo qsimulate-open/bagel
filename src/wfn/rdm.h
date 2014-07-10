@@ -55,6 +55,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     RDM() { }
 
     RDM(const int n) : btas::TensorN<DataType, N>(btas::CRange<N>(btas::Range1(n),N)) {
+      zero();
     }
 
     RDM(const RDM<rank,DataType>& o) : btas::TensorN<DataType, N>(o) {
