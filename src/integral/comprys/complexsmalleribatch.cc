@@ -52,8 +52,10 @@ void ComplexSmallERIBatch::compute() {
   const size_t a2size_inc = shells_[2]->nbasis_aux_increment();
   const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
   const size_t a2size_dec = shells_[2]->nbasis_aux_decrement();
-  const size_t a1 = a1size_inc + a1size_dec;
-  const size_t a2 = a2size_inc + a2size_dec;
+  const size_t a1size_same = shells_[1]->nbasis_aux_same();
+  const size_t a2size_same = shells_[2]->nbasis_aux_same();
+  const size_t a1 = a1size_inc + a1size_dec + a1size_same;
+  const size_t a2 = a2size_inc + a2size_dec + a2size_same;
 
   const size_t s0size = shells_[0]->nbasis();
   const size_t s1size = shells_[1]->nbasis();
@@ -92,7 +94,9 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
   const size_t a2size_inc = shells_[2]->nbasis_aux_increment();
   const size_t a1size_dec = shells_[1]->nbasis_aux_decrement();
   const size_t a2size_dec = shells_[2]->nbasis_aux_decrement();
-  const size_t a1 = a1size_inc + a1size_dec;
+  const size_t a1size_same = shells_[1]->nbasis_aux_same();
+  const size_t a2size_same = shells_[2]->nbasis_aux_same();
+  const size_t a1 = a1size_inc + a1size_dec + a1size_same;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
   auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); };
@@ -121,4 +125,43 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
     for (int i = 0; i != a2size_dec; i++)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
   }
+
+  // Unchanged angular momentum (common origin only)
+  if (shells_[1]->aux_same()) {
+    assert (shells_[2]->aux_same());
+    const size_t a1size_id = a1size_inc + a1size_dec;
+    const size_t a2size_id = a2size_inc + a2size_dec;
+    {
+      auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_increment(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
+      eric->compute();
+      for (int i = 0; i != a2size_same; i++)
+        copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_id+i));
+    }
+    {
+      auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_increment()}}, 2.0, 0.0, true, stack_);
+      eric->compute();
+      for (int i = 0; i != a2size_inc; i++)
+        copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,i));
+    }
+    {
+      auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
+      eric->compute();
+      for (int i = 0; i != a2size_same; i++)
+        copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,a2size_id+i));
+    }
+    if (shells_[1]->aux_decrement()) {
+      auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_decrement(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
+      eric->compute();
+      for (int i = 0; i != a2size_same; i++)
+        copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_id+i));
+    }
+    if (shells_[2]->aux_decrement()) {
+      auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_decrement()}}, 2.0, 0.0, true, stack_);
+      eric->compute();
+      for (int i = 0; i != a2size_dec; i++)
+        copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,a2size_inc+i));
+    }
+  } else assert (!shells_[2]->aux_same());
+
+
 }
