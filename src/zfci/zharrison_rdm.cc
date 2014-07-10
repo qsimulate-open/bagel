@@ -164,8 +164,10 @@ void ZHarrison::compute_rdm12() {
     }
 
     // for completeness we can compute all the blocks (2RDM), which are useful in CASSCF
-    if (rdm1_[istate].find(bitset<2>("10")) == rdm1_[istate].end())
+    if (rdm1_[istate].find(bitset<2>("10")) == rdm1_[istate].end()) {
       rdm1_[istate][bitset<2>("10")] = rdm1_[istate].at(bitset<2>("00"))->clone();
+      rdm1_[istate][bitset<2>("10")]->zero(); // TODO needing to do this after using clone is troublesome ...
+    }
 
     for (int i = 0; i != 4; ++i) {
       for (int j = 0; j != 4; ++j) {
@@ -192,8 +194,9 @@ void ZHarrison::compute_rdm12() {
           SMITH::sort_indices<1,0,2,3,0,1,1,1>(rdm2_[istate].at(s0132)->data(), rdm2_[istate].at(target)->data(), norb_, norb_, norb_, norb_);
           transform(rdm2_[istate].at(target)->data(), rdm2_[istate].at(target)->data()+norb_*norb_*norb_*norb_, rdm2_[istate].at(target)->data(), [](complex<double> a){ return -a; });
         } else {
-          // This is dangerous.. TODO
+          // This is dangerous... zeroing is much safer.
           rdm2_[istate][target] = make_shared<ZRDM<2>>(norb_);
+          rdm2_[istate][target]->zero();
 #if 0
           cout << target << endl;
           for (auto& i : rdm2_[istate]) cout << i.first << endl;
