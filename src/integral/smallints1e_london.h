@@ -91,8 +91,10 @@ class SmallInts1e_London {
       const int a1size_inc = shells_[1]->aux_increment()->nbasis();
       const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
       const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
-      const int a0 = a0size_inc + a0size_dec;
-      const int a1 = a1size_inc + a1size_dec;
+      const int a0size_same = shells_[0]->aux_same() ? shells_[0]->aux_same()->nbasis() : 0;
+      const int a1size_same = shells_[1]->aux_same() ? shells_[1]->aux_same()->nbasis() : 0;
+      const int a0 = a0size_inc + a0size_dec + a0size_same;
+      const int a1 = a1size_inc + a1size_dec + a1size_same;
 
       constexpr int N = Batch::Nblocks();
 
@@ -125,6 +127,43 @@ class SmallInts1e_London {
           unc[n]->copy_block(0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
       }
 
+      // Unchanged angular momentum (common origin only)
+      if (shells_[0]->aux_same()) {
+        assert (shells_[1]->aux_same());
+        const size_t a0size_id = a0size_inc + a0size_dec;
+        const size_t a1size_id = a1size_inc + a1size_dec;
+        {
+          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_increment(), shells_[1]->aux_same()}}, mol_);
+          uncc->compute();
+          for (int n = 0; n != N; ++n)
+            unc[n]->copy_block(0, a1size_id, a0size_inc, a1size_same, uncc->data(n));
+        }
+        {
+          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_increment()}}, mol_);
+          uncc->compute();
+          for (int n = 0; n != N; ++n)
+            unc[n]->copy_block(a0size_id, 0, a0size_same, a1size_inc, uncc->data(n));
+        }
+        {
+          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_same()}}, mol_);
+          uncc->compute();
+          for (int n = 0; n != N; ++n)
+            unc[n]->copy_block(a0size_id, a1size_id, a0size_same, a1size_same, uncc->data(n));
+        }
+        if (shells_[0]->aux_decrement()) {
+          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_decrement(), shells_[1]->aux_same()}}, mol_);
+          uncc->compute();
+          for (int n = 0; n != N; ++n)
+            unc[n]->copy_block(a0size_inc, a1size_id, a0size_dec, a1size_same, uncc->data(n));
+        }
+        if (shells_[1]->aux_decrement()) {
+          auto uncc = std::make_shared<Batch>(std::array<std::shared_ptr<const Shell>,2>{{shells_[0]->aux_same(), shells_[1]->aux_decrement()}}, mol_);
+          uncc->compute();
+          for (int n = 0; n != N; ++n)
+            unc[n]->copy_block(a0size_id, a1size_inc, a0size_same, a1size_dec, uncc->data(n));
+        }
+      } else assert (!shells_[1]->aux_same());
+
       transform(unc);
     }
 
@@ -144,8 +183,10 @@ void SmallInts1e_London<ComplexERIBatch>::compute(const Value& nshells) {
   const int a1size_inc = shells_[1]->aux_increment()->nbasis();
   const int a0size_dec = shells_[0]->aux_decrement() ? shells_[0]->aux_decrement()->nbasis() : 0;
   const int a1size_dec = shells_[1]->aux_decrement() ? shells_[1]->aux_decrement()->nbasis() : 0;
-  const int a0 = a0size_inc + a0size_dec;
-  const int a1 = a1size_inc + a1size_dec;
+  const int a0size_same = shells_[0]->aux_same() ? shells_[0]->aux_same()->nbasis() : 0;
+  const int a1size_same = shells_[1]->aux_same() ? shells_[1]->aux_same()->nbasis() : 0;
+  const int a0 = a0size_inc + a0size_dec + a0size_same;
+  const int a1 = a1size_inc + a1size_dec + a1size_same;
 
   auto dummy = std::make_shared<const Shell>(shells_[0]->spherical());
 
@@ -181,6 +222,43 @@ void SmallInts1e_London<ComplexERIBatch>::compute(const Value& nshells) {
       for (int n = 0; n != N; ++n)
         unc[n]->add_block(1.0, 0, a1size_inc, a0size_inc, a1size_dec, uncc->data(n));
     }
+
+    // Unchanged angular momentum (common origin only)
+    if (shells_[0]->aux_same()) {
+      assert (shells_[1]->aux_same());
+      const size_t a0size_id = a0size_inc + a0size_dec;
+      const size_t a1size_id = a1size_inc + a1size_dec;
+      {
+        auto uncc = std::make_shared<ComplexERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_increment(), shells_[1]->aux_same()}}, 2.0);
+        uncc->compute();
+        for (int n = 0; n != N; ++n)
+          unc[n]->add_block(1.0, 0, a1size_id, a0size_inc, a1size_same, uncc->data(n));
+      }
+      {
+        auto uncc = std::make_shared<ComplexERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_same(), shells_[1]->aux_increment()}}, 2.0);
+        uncc->compute();
+        for (int n = 0; n != N; ++n)
+          unc[n]->add_block(1.0, a0size_id, 0, a0size_same, a1size_inc, uncc->data(n));
+      }
+      {
+        auto uncc = std::make_shared<ComplexERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_same(), shells_[1]->aux_same()}}, 2.0);
+        uncc->compute();
+        for (int n = 0; n != N; ++n)
+          unc[n]->add_block(1.0, a0size_id, a1size_id, a0size_same, a1size_same, uncc->data(n));
+      }
+      if (shells_[0]->aux_decrement()) {
+        auto uncc = std::make_shared<ComplexERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_decrement(), shells_[1]->aux_same()}}, 2.0);
+        uncc->compute();
+        for (int n = 0; n != N; ++n)
+          unc[n]->add_block(1.0, a0size_inc, a1size_id, a0size_dec, a1size_same, uncc->data(n));
+      }
+      if (shells_[1]->aux_decrement()) {
+        auto uncc = std::make_shared<ComplexERIBatch>(std::array<std::shared_ptr<const Shell>,4>{{dummy, nshell, shells_[0]->aux_same(), shells_[1]->aux_decrement()}}, 2.0);
+        uncc->compute();
+        for (int n = 0; n != N; ++n)
+          unc[n]->add_block(1.0, a0size_id, a1size_inc, a0size_same, a1size_dec, uncc->data(n));
+       }
+    } else assert (!shells_[1]->aux_same());
   }
 
   transform(unc);
