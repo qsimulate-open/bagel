@@ -45,6 +45,7 @@ Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr
   // when computing gradient, we store half-transform integrals
   do_grad_ = idata->get<bool>("gradient", false);
 
+  if (!cgeom_->london()) throw runtime_error("Relativistic calculations with a common gauge origin are not currently available.");
   cgeom_ = cgeom->relativistic(gaunt_);
   common_init(idata);
 }

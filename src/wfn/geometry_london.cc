@@ -172,7 +172,9 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
 
 void Geometry_London::common_init2(const bool print, const double thresh, const bool nodf) {
-  if (!nonzero_magnetic_field()) cout << "  Zero magnetic field - This computation should be more efficient with a Gaussian basis set." << endl << endl;
+  if (london_ && nonzero_magnetic_field()) cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
+  if (!london_ && nonzero_magnetic_field()) cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << endl;
+  if (!nonzero_magnetic_field()) cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << endl;
 
   // symmetry set-up
   plist_ = make_shared<Petite>(atoms_, symmetry_);
