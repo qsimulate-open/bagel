@@ -42,6 +42,9 @@ BOOST_CLASS_EXPORT_IMPLEMENT(SOHcore_base)
 SOHcore_base::SOHcore_base(const shared_ptr<const Molecule> mol) : Matrix1e(mol) {
   init(mol);
   fill_upper();
+  soz_->fill_upper_negative();
+  sox_->fill_upper_negative();
+  soy_->fill_upper_negative();
 }
 
 
@@ -96,9 +99,9 @@ void SOHcore_base::computebatch(const array<shared_ptr<const Shell>,2>& input, c
         SOECPBatch soecp(input, mol);
         soecp.compute();
 
-        soz_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data());
-        sox_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
-        soy_->copy_block(offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
+        soz_->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, soecp.data());
+        sox_->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, soecp.data1());
+        soy_->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, soecp.data2());
       }
     }
   }

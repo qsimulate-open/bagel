@@ -229,8 +229,8 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
 
         const int hmin = max(abs(ld0-l), g - c1);
         const int hmax = min(c0, g - abs(ld1-l));
-        for (int i = 0; i < fm0lm1_[l].size(); ++i) {
-          tuple<int, int, int, double> fmm = fm0lm1_[l][i];
+        for (int i = 0; i != fm0lm1_[l-1].size(); ++i) {
+          tuple<int, int, int, double> fmm = fm0lm1_[l-1][i];
           const int ic = get<0>(fmm);
           const int m0 = get<1>(fmm);
           const int m1 = get<2>(fmm);
@@ -353,11 +353,11 @@ void SOBatch::init() {
       const array<double, 3> f = fm0lm1(l, m0-l, m1-l);
       for (int i = 0; i < 3; ++i) if (f[i] !=  0.0) {
         fmm[index] = make_tuple(i, m0, m1, f[i]);
-//      cout << " <" << m0 << " | l_" << i << " | " << m1 << "> = " << f[i] << endl;
         ++index;
       }
     }
-    fm0lm1_.push_back(fmm);
+    fmm.resize(index);
+    fm0lm1_[l-1] = fmm;
 //  cout << " index = " << index << " l = " << l << " 2l-1 = " << 2*l-1 << endl;
     assert (index <= (2*l-1)*3);
   }

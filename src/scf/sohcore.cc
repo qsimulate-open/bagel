@@ -38,18 +38,20 @@ SOHcore::SOHcore(const shared_ptr<const Geometry> geom, const shared_ptr<const S
 
 void SOHcore::form_sohcore() {
 
+  const int nbasis = geom_->nbasis();
   const complex<double> real(1.0, 0.0);
   const complex<double> imag(0.0, 1.0);
 
-  add_real_block(real, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_);
-  add_real_block(imag, 0, 0, hcore_->ndim(), hcore_->mdim(), hcore_->soz());
+  add_real_block(real, 0, 0, nbasis, nbasis, hcore_);
+  add_real_block(imag, 0, 0, nbasis, nbasis, hcore_->soz());
 
-  add_real_block(real, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_);
-  add_real_block(-imag, hcore_->ndim(), hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soz());
+  add_real_block(real, nbasis, nbasis, nbasis, nbasis, hcore_);
+  add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, hcore_->soz());
 
-  add_real_block( imag, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->sox());
-  add_real_block( real, 0, hcore_->mdim(), hcore_->ndim(), hcore_->mdim(), hcore_->soy());
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, hcore_->sox());
+  add_real_block(real, 0, nbasis, nbasis, nbasis, hcore_->soy());
 
-  add_real_block( imag, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->sox());
-  add_real_block(-real, hcore_->ndim(), 0, hcore_->ndim(), hcore_->mdim(), hcore_->soy());
+  add_real_block(imag, nbasis, 0, nbasis, nbasis, hcore_->sox());
+  add_real_block(-real, nbasis, 0, nbasis, nbasis, hcore_->soy());
+
 }

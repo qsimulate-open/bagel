@@ -87,14 +87,14 @@ void RadialInt::integrate() {
     if (print_intermediate_) {
        cout << "Iter = " << setw(5) << iter << setw(10) << "npts = " << setw(10) << n1 << endl;
        for (int ic = 0; ic != nc_; ++ic)
-         cout << setw(10) << "ans[" << ic << "] = " << setw(20) << setprecision(10) << ans[ic]
-              << setw(10) << "err[" << ic << "] = " << setw(20) << setprecision(10) << error[ic] << endl;
+         cout << setw(10) << "ans[" << ic << "] = " << setw(20) << setprecision(12) << ans[ic]
+              << setw(10) << "err[" << ic << "] = " << setw(20) << setprecision(12) << error[ic] << endl;
     }
     if (maxerror <= thresh_int_) {
       if (print_intermediate_) {
         cout << "Integration converged..." << endl;
         cout << "Radial integral:";
-        for (int ic = 0; ic != nc_; ++ic) cout << setw(20) << setprecision(9) << "[" << ic << "] = " << ans[ic] << ",  ";
+        for (int ic = 0; ic != nc_; ++ic) cout << setw(20) << setprecision(12) << "[" << ic << "] = " << ans[ic] << ",  ";
         cout << endl;
         cout << "Radial time = " << radialtime.tick() << endl;
       }
