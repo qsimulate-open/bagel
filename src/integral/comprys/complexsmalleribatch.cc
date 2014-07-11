@@ -128,7 +128,7 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
 
   // Unchanged angular momentum (common origin only)
   if (shells_[1]->aux_same()) {
-    assert (shells_[2]->aux_same());
+    assert(shells_[2]->aux_same());
     const size_t a1size_id = a1size_inc + a1size_dec;
     const size_t a2size_id = a2size_inc + a2size_dec;
     {
@@ -161,7 +161,7 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
       for (int i = 0; i != a2size_dec; i++)
         copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,a2size_inc+i));
     }
-  } else assert (!shells_[2]->aux_same());
+  } else assert(!shells_[2]->aux_same());
 
 
 }

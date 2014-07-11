@@ -357,14 +357,20 @@ array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
   const int norig = (angular_number_+1) * (angular_number_+2) / 2;
   const int ninc = norig + angular_number_ + 2;
   const int ndec = norig - angular_number_ - 1;
+
   assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
   if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
   else assert (ndec == 0);
 
   array<shared_ptr<Matrix>,6> mcart;
-  for (int i=0; i!=3; i++) mcart[i] = make_shared<Matrix>(ninc, norig, true);
-  if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<Matrix>(ndec, norig, true);
-  else for (int i=3; i!=6; i++) mcart[i] = nullptr;
+  for (int i=0; i!=3; i++)
+    mcart[i] = make_shared<Matrix>(ninc, norig, true);
+  if (aux_decrement_)
+    for (int i=3; i!=6; i++)
+      mcart[i] = make_shared<Matrix>(ndec, norig, true);
+  else
+    for (int i=3; i!=6; i++)
+      mcart[i] = nullptr;
   for (int i=0; i!=norig; i++) {
     int x, y, z;
     size_t column = 0;
@@ -409,14 +415,18 @@ array<shared_ptr<const Matrix>,6> Shell::mblock(const double exponent) const {
   }
 
   array<shared_ptr<const Matrix>,6> out;
-  const int nblock = aux_decrement_ ? 6 : 3;
 
   // convert this block from cartesian to spherical
   if (spherical_) {
     auto carsphmatrix = carsph_matrix(angular_number_);
-    for (int i=0; i!=nblock; i++) out[i] = make_shared<const Matrix>(*mcart[i] * *carsphmatrix);
+    for (int i=0; i!=6; i++)
+      if (mcart[i])
+        out[i] = make_shared<const Matrix>(*mcart[i] * *carsphmatrix);
+      else
+        out[i] = nullptr;
+  } else {
+    for (int i=0; i!=6; i++) out[i] = mcart[i];
   }
-  else for (int i=0; i!=nblock; i++) out[i] = mcart[i];
 
   return out;
 }
@@ -429,6 +439,7 @@ array<shared_ptr<const ZMatrix>,9> Shell::mblock(const double exponent, const ar
   const int ninc = norig + angular_number_ + 2;
   const int ndec = norig - angular_number_ - 1;
   const complex<double> imag (0.0, 1.0);
+
   assert(ninc == (aux_increment_->angular_number_+1) * (aux_increment_->angular_number_+2) / 2);
   if (aux_decrement_) assert(ndec == (aux_decrement_->angular_number_+1) * (aux_decrement_->angular_number_+2) / 2);
   else assert (ndec == 0);
@@ -436,11 +447,20 @@ array<shared_ptr<const ZMatrix>,9> Shell::mblock(const double exponent, const ar
   else assert (london);
 
   array<shared_ptr<ZMatrix>,9> mcart;
-  for (int i=0; i!=3; i++) mcart[i] = make_shared<ZMatrix>(ninc, norig, true);
-  if (aux_decrement_) for (int i=3; i!=6; i++) mcart[i] = make_shared<ZMatrix>(ndec, norig, true);
-  else for (int i=3; i!=6; i++) mcart[i] = nullptr;
-  if (aux_same_) for (int i=6; i!=9; i++) mcart[i] = make_shared<ZMatrix>(norig, norig, true);
-  else for (int i=6; i!=9; i++) mcart[i] = nullptr;
+  for (int i=0; i!=3; i++)
+    mcart[i] = make_shared<ZMatrix>(ninc, norig, true);
+  if (aux_decrement_)
+    for (int i=3; i!=6; i++)
+      mcart[i] = make_shared<ZMatrix>(ndec, norig, true);
+  else
+    for (int i=3; i!=6; i++)
+      mcart[i] = nullptr;
+  if (aux_same_)
+    for (int i=6; i!=9; i++)
+      mcart[i] = make_shared<ZMatrix>(norig, norig, true);
+  else
+    for (int i=6; i!=9; i++)
+      mcart[i] = nullptr;
 
   for (int i=0; i!=norig; i++) {
     int x, y, z;
@@ -516,20 +536,21 @@ array<shared_ptr<const ZMatrix>,9> Shell::mblock(const double exponent, const ar
   }
 
   array<shared_ptr<const ZMatrix>,9> out;
-  const int nblock = aux_decrement_ ? 6 : 3;
-  for (int i=0; i!=nblock; i++) mcart[i]->scale(complex<double>(0.0, -1.0));
-  if (!london) for (int i=6; i!=9; i++) mcart[i]->scale(complex<double>(0.0, -1.0));
+  for (int i=0; i!=9; i++)
+    if (mcart[i])
+      mcart[i]->scale(complex<double>(0.0, -1.0));
 
   // convert this block from cartesian to spherical
   if (spherical_) {
     auto carsphmatrix = make_shared<const ZMatrix> (*carsph_matrix(angular_number_), 1.0);
-    for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
-    if (aux_decrement_) for (int i=3; i!=6; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
-    else for (int i=3; i!=6; i++) out[i] = nullptr;
-    if (!london) for (int i=6; i!=9; i++) out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
-    else for (int i=6; i!=9; i++) out[i] = nullptr;
+    for (int i=0; i!=9; i++)
+      if (mcart[i])
+        out[i] = make_shared<const ZMatrix>(*mcart[i] * *carsphmatrix);
+      else
+        out[i] = nullptr;
+  } else {
+    for (int i=0; i!=9; i++) out[i] = mcart[i];
   }
-  else for (int i=0; i!=9; i++) out[i] = mcart[i];
 
   return out;
 }
@@ -555,26 +576,28 @@ array<shared_ptr<const Matrix>,3> Shell::moment_compute() const {
   // build the momentum transformation matrix for primitive functions
   // each exponent gets 2 blocks, one for L+1 & one for L-1
   array<shared_ptr<Matrix>,3> tmp;
-  for (int i=0; i!=3; i++) tmp[i] = make_shared<Matrix>(n*num_primitive(), norig*num_primitive(), true);
+  for (int i=0; i!=3; i++)
+    tmp[i] = make_shared<Matrix>(n*num_primitive(), norig*num_primitive(), true);
   for (int j=0; j!=num_primitive(); j++) {
     auto thisblock = mblock(exponents_[j]);
-    for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
-    if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
+    for (int i=0; i!=3; i++)
+      tmp[i]->copy_block(j*ninc, j*norig, ninc, norig, thisblock[i]);
+    if (aux_decrement_)
+      for (int i=0; i!=3; i++)
+        tmp[i]->copy_block(ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i]);
   }
 
   // build the contraction matrix
   auto contract = make_shared<Matrix>(norig*num_primitive(), norig*num_contracted(), true);
-  for (int j=0; j!=num_contracted(); j++) {
-    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++) {
-      for (int l=0; l!=norig; l++) {
+  for (int j=0; j!=num_contracted(); j++)
+    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++)
+      for (int l=0; l!=norig; l++)
         contract->element(k*norig+l, j*norig+l) = (contractions_[j])[k];
-      }
-    }
-  }
 
   // contract
   array<shared_ptr<const Matrix>,3> out;
-  for (int i=0; i!=3; i++) out[i] = make_shared<const Matrix>(*tmp[i] * *contract);
+  for (int i=0; i!=3; i++)
+    out[i] = make_shared<const Matrix>(*tmp[i] * *contract);
   return out;
 }
 
@@ -603,26 +626,30 @@ array<shared_ptr<const ZMatrix>,3> Shell::moment_compute(const array<double,3> m
   // build the momentum transformation matrix for primitive functions
   // each exponent gets 2-3 blocks, for L+1, L-1, and if needed, L+0 (in that order)
   array<shared_ptr<ZMatrix>,3> tmp;
-  for (int i=0; i!=3; i++) tmp[i] = make_shared<ZMatrix>(n*num_primitive(), norig*num_primitive(), true);
+  for (int i=0; i!=3; i++)
+    tmp[i] = make_shared<ZMatrix>(n*num_primitive(), norig*num_primitive(), true);
   for (int j=0; j!=num_primitive(); j++) {
     auto thisblock = mblock(exponents_[j], magnetic_field, london);
-    for (int i=0; i!=3; i++) tmp[i]->copy_block( j*ninc, j*norig, ninc, norig, thisblock[i] );
-    if (aux_decrement_) for (int i=0; i!=3; i++) tmp[i]->copy_block( ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i] );
-    if (aux_same_) for (int i=0; i!=3; i++) tmp[i]->copy_block( (ninc+ndec)*num_primitive()+j*nsame, j*norig, nsame, norig, thisblock[6+i] );
+    for (int i=0; i!=3; i++)
+      tmp[i]->copy_block(j*ninc, j*norig, ninc, norig, thisblock[i]);
+    if (aux_decrement_)
+      for (int i=0; i!=3; i++)
+        tmp[i]->copy_block(ninc*num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i]);
+    if (aux_same_)
+      for (int i=0; i!=3; i++)
+        tmp[i]->copy_block((ninc+ndec)*num_primitive()+j*nsame, j*norig, nsame, norig, thisblock[6+i]);
   }
 
   // build the contraction matrix
   auto contract = make_shared<ZMatrix>(norig*num_primitive(), norig*num_contracted(), true);
-  for (int j=0; j!=num_contracted(); j++) {
-    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++) {
-      for (int l=0; l!=norig; l++) {
+  for (int j=0; j!=num_contracted(); j++)
+    for (int k=contraction_ranges_[j].first; k!=contraction_ranges_[j].second; k++)
+      for (int l=0; l!=norig; l++)
         contract->element(k*norig+l, j*norig+l) = (contractions_[j])[k];
-      }
-    }
-  }
 
   // contract
   array<shared_ptr<const ZMatrix>,3> out;
-  for (int i=0; i!=3; i++) out[i] = make_shared<const ZMatrix>(*tmp[i] * *contract);
+  for (int i=0; i!=3; i++)
+    out[i] = make_shared<const ZMatrix>(*tmp[i] * *contract);
   return out;
 }
