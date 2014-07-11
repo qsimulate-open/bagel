@@ -65,6 +65,19 @@ class StateTensor {
       }
     }
 
+    auto begin() -> decltype(sparse_.begin()) { return sparse_.begin(); }
+    auto end() -> decltype(sparse_.end()) { return sparse_.end(); }
+    auto begin() const -> decltype(sparse_.cbegin()) { return sparse_.cbegin(); }
+    auto end() const -> decltype(sparse_.cend()) { return sparse_.cend(); }
+    auto cbegin() const -> decltype(sparse_.cbegin()) { return sparse_.cbegin(); }
+    auto cend() const -> decltype(sparse_.cend()) { return sparse_.cend(); }
+
+    int nblocks() const { return sparse_.size(); }
+
+    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const int k) const {
+      return sparse_.at(std::make_tuple(k, i, j));
+    }
+
 };
 
 }
