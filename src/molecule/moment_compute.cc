@@ -57,7 +57,7 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
       const int x = angular_number - y - z;
 
       // three components of the angular momentum
-      array<int,3> index = {{x, y, z}};
+      const array<int,3> index = {{x, y, z}};
 
       assert(column == index[2]*(angular_number+1) - index[2]*(index[2]-1)/2 + index[1]);
       const double talph = 2.0 * exponent;
@@ -109,7 +109,7 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
   const int norig = (angular_number+1) * (angular_number+2) / 2;
   const int ninc = norig + angular_number + 2;
   const int ndec = norig - angular_number - 1;
-  const complex<double> imag (0.0, 1.0);
+  const complex<double> imag(0.0, 1.0);
 
   assert(ninc == (shell.aux_increment()->angular_number()+1) * (shell.aux_increment()->angular_number()+2) / 2);
   if (shell.aux_decrement())
@@ -133,7 +133,7 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
       const int x = angular_number - y - z;
 
       // three components of the angular momentum
-      array<int,3> index = {{x, y, z}};
+      const array<int,3> index = {{x, y, z}};
       const array<int,3> fwd  = {{1, 2, 0}};
       const array<int,3> back = {{2, 0, 1}};
 
@@ -315,7 +315,7 @@ array<shared_ptr<const ZMatrix>,3> MomentCompute::call(const Shell& shell, const
   // contract
   array<shared_ptr<const ZMatrix>,3> out;
   for (int i = 0; i != 3; ++i)
-    out[i] = make_shared<const ZMatrix>(*tmp[i] * contract);
+    out[i] = make_shared<ZMatrix>(*tmp[i] * contract);
   return out;
 }
 
