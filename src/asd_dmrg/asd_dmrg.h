@@ -27,11 +27,9 @@
 #define __ASD_DMRG_ASD_DMRG_H
 
 #include <src/dimer/dimer.h>
-#include <src/meh/gamma_tensor.h>
+#include <src/asd_dmrg/dmrg_block.h>
 
 namespace bagel {
-
-using DMRG_Block = GammaTensor;
 
 /// Base class for DMRG using ASD
 class ASD_DMRG {

@@ -35,8 +35,12 @@ namespace bagel {
 
 template <class VecType>
 class GammaForestASD : public GammaForest<VecType, 1> {
+  protected:
+    using SparseList = std::list<std::tuple<std::list<GammaSQ>, MonomerKey, MonomerKey>>;
+    SparseList sparselist_;
+
   public:
-    GammaForestASD(std::map<SpaceKey, std::shared_ptr<const VecType>> monomer_states) {
+    GammaForestASD(std::map<MonomerKey, std::shared_ptr<const VecType>> monomer_states) {
       std::vector<std::list<GammaSQ>> possible_couplings = {
         {GammaSQ::AnnihilateAlpha},
         {GammaSQ::AnnihilateBeta},
@@ -78,6 +82,7 @@ class GammaForestASD : public GammaForest<VecType, 1> {
               }
               std::cout << "|" << i.first.q << ", " << i.first.m_s << ">" << std::endl;
 #endif
+              sparselist_.emplace_back(coupling, i.first, j.first);
               this->template insert<0>(i.second, i.first.tag(), j.second, j.first.tag(), coupling);
             }
           }
@@ -90,6 +95,8 @@ class GammaForestASD : public GammaForest<VecType, 1> {
       this->for_each_branch([] (std::shared_ptr<GammaBranch<VecType>> b) { for (auto& i : b->gammas()) i.second->print(); });
 #endif
     }
+
+    SparseList sparselist() const { return sparselist_; }
 
 };
 
