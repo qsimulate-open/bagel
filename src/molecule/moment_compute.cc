@@ -52,11 +52,9 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
     mcart[3+i] = shell.aux_decrement() ? make_shared<Matrix>(ndec, norig, true) : nullptr;
   }
 
-  for (int i = 0, column = 0; i <= angular_number; ++i) {
-    const int z = i;
-    for (int j = 0; j <= angular_number-i; ++j, ++column) {
-      const int y = j;
-      const int x = angular_number - i - j;
+  for (int z = 0, column = 0; z <= angular_number; ++z) {
+    for (int y = 0; y <= angular_number-z; ++y, ++column) {
+      const int x = angular_number - y - z;
 
       // three components of the angular momentum
       array<int,3> index = {{x, y, z}};
@@ -130,11 +128,9 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
     mcart[6+i] = shell.aux_same() ? make_shared<ZMatrix>(norig, norig, true) : nullptr;
   }
 
-  for (int i = 0, column = 0; i <= angular_number; ++i) {
-    const int z = i;
-    for (int j = 0; j <= angular_number-i; ++j, ++column) {
-      const int y = j;
-      const int x = angular_number - i - j;
+  for (int z = 0, column = 0; z <= angular_number; ++z) {
+    for (int y = 0; y <= angular_number-z; ++y, ++column) {
+      const int x = angular_number - y - z;
 
       // three components of the angular momentum
       array<int,3> index = {{x, y, z}};
@@ -199,7 +195,7 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
   array<shared_ptr<const ZMatrix>,9> out;
   for (int i = 0; i != 9; ++i)
     if (mcart[i])
-      mcart[i]->scale(complex<double>(0.0, -1.0));
+      mcart[i]->scale(-imag);
 
   // convert this block from cartesian to shell.spherical
   if (shell.spherical()) {
