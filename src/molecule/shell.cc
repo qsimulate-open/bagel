@@ -178,7 +178,7 @@ void Shell::init_relativistic() {
   aux_increment_ = kinetic_balance_uncont<1>();
 
   // small is a transformation matrix (x,y,z components)
-  small_ = moment_compute(*this);
+  small_ = MomentCompute::call(*this);
 }
 
 
@@ -190,7 +190,7 @@ void Shell::init_relativistic_london(const array<double,3> magnetic_field, bool 
   aux_same_ = london ? nullptr : kinetic_balance_uncont<0>();
 
   // zsmall is a transformation matrix (x,y,z components)
-  zsmall_ = moment_compute(*this, magnetic_field, london);
+  zsmall_ = MomentCompute::call(*this, magnetic_field, london);
   for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 

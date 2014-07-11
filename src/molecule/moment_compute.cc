@@ -32,7 +32,7 @@ using namespace bagel;
 
 
 // for each primitive basis function
-array<shared_ptr<const Matrix>,6> bagel::mblock(const Shell& shell, const double exponent) {
+array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, const double exponent) {
 
   const int angular_number = shell.angular_number();
 
@@ -105,7 +105,7 @@ array<shared_ptr<const Matrix>,6> bagel::mblock(const Shell& shell, const double
 
 
 // for each primitive basis function
-array<shared_ptr<const ZMatrix>,9> bagel::mblock(const Shell& shell, const double exponent, const array<double,3> magnetic_field, const bool london) {
+array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, const double exponent, const array<double,3> magnetic_field, const bool london) {
 
   const int angular_number = shell.angular_number();
 
@@ -218,7 +218,7 @@ array<shared_ptr<const ZMatrix>,9> bagel::mblock(const Shell& shell, const doubl
 }
 
 
-array<shared_ptr<const Matrix>,3> bagel::moment_compute(const Shell& shell) {
+array<shared_ptr<const Matrix>,3> MomentCompute::call(const Shell& shell) {
 
   const int angular_number = shell.angular_number();
 
@@ -268,7 +268,7 @@ array<shared_ptr<const Matrix>,3> bagel::moment_compute(const Shell& shell) {
 }
 
 
-array<shared_ptr<const ZMatrix>,3> bagel::moment_compute(const Shell& shell, const array<double,3> magnetic_field, const bool london) {
+array<shared_ptr<const ZMatrix>,3> MomentCompute::call(const Shell& shell, const array<double,3> magnetic_field, const bool london) {
 
   const int angular_number = shell.angular_number();
 

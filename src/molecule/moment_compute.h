@@ -34,13 +34,16 @@
 
 namespace bagel {
 
-// Gaussian orbitals
-std::array<std::shared_ptr<const Matrix>,3> moment_compute(const Shell& shell);
-std::array<std::shared_ptr<const Matrix>,6> mblock(const Shell& shell, const double exponent);
-
-// London orbitals (and common origin)
-std::array<std::shared_ptr<const ZMatrix>,3> moment_compute(const Shell& shell, const std::array<double,3> magnetic_field, const bool london);
-std::array<std::shared_ptr<const ZMatrix>,9> mblock(const Shell& shell, const double exponent, const std::array<double,3> magnetic_field, const bool london);
+struct MomentCompute {
+  private:
+    static std::array<std::shared_ptr<const Matrix>,6> mblock(const Shell& shell, const double exponent);
+    static std::array<std::shared_ptr<const ZMatrix>,9> mblock(const Shell& shell, const double exponent, const std::array<double,3> magnetic_field, const bool london);
+  public:
+    // Gaussian orbitals
+    static std::array<std::shared_ptr<const Matrix>,3> call(const Shell& shell);
+    // London orbitals (and common origin)
+    static std::array<std::shared_ptr<const ZMatrix>,3> call(const Shell& shell, const std::array<double,3> magnetic_field, const bool london);
+};
 
 }
 
