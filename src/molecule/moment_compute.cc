@@ -47,11 +47,10 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
     assert(ndec == 0);
 
   array<shared_ptr<Matrix>,6> mcart;
-  for (int i = 0; i != 3; ++i)
-    mcart[i] = make_shared<Matrix>(ninc, norig, true);
-
-  for (int i = 3; i != 6; ++i)
-    mcart[i] = shell.aux_decrement() ? make_shared<Matrix>(ndec, norig, true) : nullptr;
+  for (int i = 0; i != 3; ++i) {
+    mcart[i]   = make_shared<Matrix>(ninc, norig, true);
+    mcart[3+i] = shell.aux_decrement() ? make_shared<Matrix>(ndec, norig, true) : nullptr;
+  }
 
   for (int i = 0, column = 0; i <= angular_number; ++i) {
     const int z = i;
@@ -125,14 +124,11 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
     assert(london);
 
   array<shared_ptr<ZMatrix>,9> mcart;
-  for (int i = 0; i != 3; ++i)
-    mcart[i] = make_shared<ZMatrix>(ninc, norig, true);
-
-  for (int i = 3; i != 6; ++i)
-    mcart[i] = shell.aux_decrement() ? make_shared<ZMatrix>(ndec, norig, true) : nullptr;
-
-  for (int i = 6; i != 9; ++i)
-    mcart[i] = shell.aux_same() ? make_shared<ZMatrix>(norig, norig, true) : nullptr;
+  for (int i = 0; i != 3; ++i) {
+    mcart[i]   = make_shared<ZMatrix>(ninc, norig, true);
+    mcart[3+i] = shell.aux_decrement() ? make_shared<ZMatrix>(ndec, norig, true) : nullptr;
+    mcart[6+i] = shell.aux_same() ? make_shared<ZMatrix>(norig, norig, true) : nullptr;
+  }
 
   for (int i = 0, column = 0; i <= angular_number; ++i) {
     const int z = i;
@@ -246,11 +242,11 @@ array<shared_ptr<const Matrix>,3> MomentCompute::call(const Shell& shell) {
 
   for (int j = 0; j != shell.num_primitive(); ++j) {
     array<shared_ptr<const Matrix>,6> thisblock = mblock(shell, shell.exponents(j));
-    for (int i = 0; i != 3; ++i)
+    for (int i = 0; i != 3; ++i) {
       tmp[i]->copy_block(j*ninc, j*norig, ninc, norig, thisblock[i]);
-    if (shell.aux_decrement())
-      for (int i = 0; i != 3; ++i)
+      if (shell.aux_decrement())
         tmp[i]->copy_block(ninc*shell.num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i]);
+    }
   }
 
   // build the contraction matrix
@@ -301,16 +297,16 @@ array<shared_ptr<const ZMatrix>,3> MomentCompute::call(const Shell& shell, const
   array<shared_ptr<ZMatrix>,3> tmp;
   for (int i = 0; i != 3; ++i)
     tmp[i] = make_shared<ZMatrix>(n*shell.num_primitive(), norig*shell.num_primitive(), true);
+
   for (int j = 0; j != shell.num_primitive(); ++j) {
     array<shared_ptr<const ZMatrix>,9> thisblock = mblock(shell, shell.exponents(j), magnetic_field, london);
-    for (int i = 0; i != 3; ++i)
+    for (int i = 0; i != 3; ++i) {
       tmp[i]->copy_block(j*ninc, j*norig, ninc, norig, thisblock[i]);
-    if (shell.aux_decrement())
-      for (int i = 0; i != 3; ++i)
+      if (shell.aux_decrement())
         tmp[i]->copy_block(ninc*shell.num_primitive()+j*ndec, j*norig, ndec, norig, thisblock[3+i]);
-    if (shell.aux_same())
-      for (int i = 0; i != 3; ++i)
+      if (shell.aux_same())
         tmp[i]->copy_block((ninc+ndec)*shell.num_primitive()+j*nsame, j*norig, nsame, norig, thisblock[6+i]);
+    }
   }
 
   // build the contraction matrix
