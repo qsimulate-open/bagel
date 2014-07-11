@@ -42,6 +42,7 @@ class Shell_base {
     Shell_base() { }
     Shell_base(const bool spherical, const std::array<double,3>& position, int angular_num);
     Shell_base(const bool sph);
+    virtual ~Shell_base() { }
 
     bool spherical() const { return spherical_; };
 
