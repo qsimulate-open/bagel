@@ -147,7 +147,7 @@ array<shared_ptr<const ZMatrix>,9> bagel::mblock(const Shell& shell, const doubl
 
       assert(column == index[2]*(angular_number+1) - index[2]*(index[2]-1)/2 + index[1]);
       const complex<double> tialph = imag * 2.0 * exponent;
-      const array<const complex<double>,3> halfb = {{0.5*magnetic_field[0], 0.5*magnetic_field[1], 0.5*magnetic_field[2]}};
+      const array<complex<double>,3> halfb = {{0.5*magnetic_field[0], 0.5*magnetic_field[1], 0.5*magnetic_field[2]}};
 
       // k tells us which dimension of the momentum operator we're using
       for (int k = 0; k != 3; ++k) {
