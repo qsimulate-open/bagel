@@ -110,17 +110,6 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
   /* Set up aux_atoms_ */
   const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
-/*
-#if 1
-  magnetic_field_aux[0] = magnetic_field_[1];
-  magnetic_field_aux[1] = magnetic_field_[2];
-  magnetic_field_aux[2] = magnetic_field_[0];
-#else
-  magnetic_field_aux[0] = 0.0;
-  magnetic_field_aux[1] = 0.0;
-  magnetic_field_aux[2] = 0.0;
-#endif
-*/
 
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {

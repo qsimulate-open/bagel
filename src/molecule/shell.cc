@@ -167,7 +167,8 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
 }
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_, vector_potential_);
+  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
+  if (magnetism_) out->add_phase(vector_potential_);
   return out;
 }
 
