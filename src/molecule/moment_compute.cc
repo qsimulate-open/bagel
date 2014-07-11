@@ -26,7 +26,6 @@
 #include <src/molecule/moment_compute.h>
 #include <src/molecule/carsph_shell.h>
 #include <src/math/matop.h>
-#include <src/molecule/shell.h>
 
 using namespace std;
 using namespace bagel;

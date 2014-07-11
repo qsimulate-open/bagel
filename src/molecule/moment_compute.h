@@ -28,12 +28,11 @@
 #define __SRC_MOLECULE_MOMENT_COMPUTE_H
 
 #include <array>
+#include <src/molecule/shell.h>
 #include <src/math/matrix.h>
 #include <src/math/zmatrix.h>
 
 namespace bagel {
-
-class Shell;
 
 // Gaussian orbitals
 std::array<std::shared_ptr<const Matrix>,3> moment_compute(const Shell& shell);
