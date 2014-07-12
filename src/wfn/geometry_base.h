@@ -27,7 +27,6 @@
 #ifndef __SRC_WFN_GEOMETRY_BASE_H
 #define __SRC_WFN_GEOMETRY_BASE_H
 
-#include <src/df/df.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {

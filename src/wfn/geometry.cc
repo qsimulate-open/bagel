@@ -24,22 +24,12 @@
 //
 
 
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <cassert>
-#include <cmath>
-#include <algorithm>
-#include <stdexcept>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
 #include <src/integral/rys/mixederibatch.h>
 #include <src/integral/libint/libint.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/geometry_connect.h>
-#include <src/io/moldenin.h>
-#include <src/util/constants.h>
-#include <src/math/quatern.h>
 
 using namespace std;
 using namespace bagel;
