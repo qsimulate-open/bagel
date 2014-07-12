@@ -38,7 +38,7 @@ class Geometry_base : public Molecule {
     double overlap_thresh_;
 
     // Have integrals been calculated?
-    mutable bool dfints_;
+    bool dfints_;
 
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
@@ -85,6 +85,8 @@ class Geometry_base : public Molecule {
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
+
+    // careful, discarding integrals does not reset dfints_
     double dfints() const { return dfints_; }
 
     // returns schwarz screening TODO not working for DF yet

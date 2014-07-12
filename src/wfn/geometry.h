@@ -106,7 +106,7 @@ class Geometry: public Geometry_base {
     const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
 
     // TODO resolve "mutable" issues
-    void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); dfints_ = false; }
+    void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
