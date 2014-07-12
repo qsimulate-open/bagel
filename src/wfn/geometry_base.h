@@ -47,6 +47,9 @@ class Geometry_base : public Molecule {
     virtual void compute_integrals(const double thresh, const bool nodf) = 0;
     virtual void custom_init() = 0;
 
+    // So storage requirements are accurately calculated
+    virtual double dsize() const = 0;
+
   private:
     // serialization
     friend class boost::serialization::access;

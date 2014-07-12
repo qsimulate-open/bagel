@@ -55,6 +55,8 @@ class Geometry_London: public Geometry_base {
       magnetic();
     }
 
+    double dsize() const override { return 2.0; }
+
   private:
 
     // serialization

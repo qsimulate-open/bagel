@@ -50,6 +50,8 @@ class Geometry: public Geometry_base {
     void compute_integrals(const double thresh, const bool nodf) override;
     void custom_init() override { assert(!nonzero_magnetic_field()); }
 
+    double dsize() const override { return 1.0; }
+
   private:
 
     // serialization

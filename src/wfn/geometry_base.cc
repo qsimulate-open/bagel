@@ -142,7 +142,7 @@ void Geometry_base::common_init2(const bool print, const double thresh, const bo
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     cout << "    o Being stored without compression. Storage requirement is "
-         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*8.e-9 << " GB" << endl;
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*dsize()*8.e-9 << " GB" << endl;
     Timer timer;
     compute_integrals(thresh, nodf);
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
