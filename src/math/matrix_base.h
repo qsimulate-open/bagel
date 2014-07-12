@@ -223,10 +223,13 @@ class Matrix_base {
 
     virtual void fill_upper_negative() {
       assert(ndim_ == mdim_);
-      for (size_t i = 0; i != mdim_; ++i)
+      for (size_t i = 0; i != mdim_; ++i) {
+        assert(data_[i+i*ndim_] == 0.0);
         for (size_t j = i+1; j != ndim_; ++j)
           data_[i+j*ndim_] = -data_[j+i*ndim_];
+      }
     }
+
     void symmetrize() {
       assert(ndim_ == mdim_);
       const size_t n = mdim_;
