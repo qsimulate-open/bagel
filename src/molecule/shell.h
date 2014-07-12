@@ -132,7 +132,7 @@ class Shell : public Shell_base {
     void add_phase(const std::array<double,3>& phase_input);
 
     void init_relativistic();
-    void init_relativistic_london(const std::array<double,3> magnetic_field, bool london);
+    void init_relativistic(const std::array<double,3> magnetic_field, bool london);
 
     // Relativistic
     bool relativistic() const { return relativistic_; }

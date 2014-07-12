@@ -48,8 +48,56 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry_London)
 
-Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
+Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo)
+ : Geometry_base(geominfo) {
 
+  // London basis or Gaussian w/ common origin
+  const string basis_type = to_lower(geominfo->get<string>("basis_type", "giao"));
+  if (basis_type == "giao" || basis_type == "london") london_ = true;
+  else if (basis_type == "gaussian") london_ = false;
+  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
+
+  common_init2(true, overlap_thresh_);
+  get_electric_field(geominfo);
+}
+
+
+Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> o)
+ : Geometry_base(atoms, o) {
+  common_init2(true, overlap_thresh_);
+  get_electric_field(o);
+}
+
+
+Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<const PTree> idata, const bool discard)
+ : Geometry_base(o, idata, discard), london_(o.london_) {
+
+  // London basis or Gaussian w/ common origin
+  const string basis_type = to_lower(idata->get<string>("basis_type", london_ ? "giao" : "gaussian"));
+  if (basis_type == "giao" || basis_type == "london") london_ = true;
+  else if (basis_type == "gaussian") london_ = false;
+  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
+
+  auto atoms = idata->get_child_optional("geometry");
+  auto newfield = idata->get_child_optional("magnetic_field");
+  if (o.basisfile_ != basisfile_ || o.auxfile_ != auxfile_ || atoms || newfield) {
+    // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
+    if (discard)
+      o.discard_df();
+    common_init2(true, overlap_thresh_);
+  } else {
+    df_ = o.df_;
+    dfs_ = o.dfs_;
+    dfsl_ = o.dfsl_;
+    common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
+  }
+  external_ = o.external_;
+}
+
+
+#if 0
+Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) : Geometry(geominfo) {
+/*
   // members of Molecule
   spherical_ = true;
   lmax_ = 0;
@@ -79,7 +127,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   else if (basis_type == "gaussian") london_ = false;
   else throw runtime_error("Invalid basis type entered - should be london or gaussian");
 
-  /* Set up atoms_ */
+  *//* Set up atoms_ *//*
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
@@ -152,6 +200,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+*/
 }
 
 
@@ -186,141 +235,18 @@ void Geometry_London::common_init2(const bool print, const double thresh, const 
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
   }
 }
-
+#endif
 
 void Geometry_London::compute_integrals(const double thresh, const bool nodf) {
     df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
 }
 
 
-// suitable for geometry updates in optimization
-Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_) {
-  throw logic_error("This constructor of Geometry_London, designed for geometry optimization, has not been implemented or verified"); }
-
-/*
-  // Members of Molecule
-  spherical_ = o.spherical_;
-  aux_merged_ = o.aux_merged_;
-  basisfile_ = o.basisfile_;
-  auxfile_ = o.auxfile_;
-  gamma_ = o.gamma_;
-  symmetry_ = o.symmetry_;
-  external_ = o.external_;
-
-  // first construct atoms using displacements
-  int iat = 0;
-  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, ++iat) {
-    array<double,3> cdispl = {{displ->element(0,iat), displ->element(1,iat), displ->element(2,iat)}};
-    atoms_.push_back(make_shared<Atom>(**i, cdispl));
-    aux_atoms_.push_back(make_shared<Atom>(**j, cdispl));
-  }
-
-  // second find the unique frame.
-  // (i) center of chages
-  if (rotate) {
-    Quatern<double> oc = o.charge_center();
-    Quatern<double> mc = charge_center();
-    // (2) direction of the first atom
-    Quatern<double> oa = o.atoms().front()->position();
-    Quatern<double> ma =   atoms().front()->position();
-    Quatern<double> od = oa - oc;
-    Quatern<double> md = ma - mc;
-    // Quaternion that maps md to od.
-    od.normalize();
-    md.normalize();
-    Quatern<double> op = md * od;
-    op[0] = 1.0 - op[0];
-    op.normalize();
-    Quatern<double> opd = op.dagger();
-
-    // first subtract mc, rotate, and then add oc
-    vector<shared_ptr<const Atom>> newatoms;
-    vector<shared_ptr<const Atom>> newauxatoms;
-    for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-      assert((*i)->position() == (*j)->position());
-      Quatern<double> source = (*i)->position();
-      Quatern<double> target = op * (source - mc) * opd + oc;
-      array<double,3> cdispl = (target - source).ijk();
-
-      newatoms.push_back(make_shared<Atom>(**i, cdispl));
-      newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-    }
-    atoms_ = newatoms;
-    aux_atoms_ = newauxatoms;
-
-    // (3) plane of center of charges, first and second atoms.
-    if (natom() > 2) {
-      assert(natom() == o.natom());
-      Quatern<double> oa0 = o.atoms(0)->position();
-      Quatern<double> ma0 =   atoms(0)->position();
-      Quatern<double> oa1 = o.atoms(1)->position();
-      Quatern<double> ma1 =   atoms(1)->position();
-      mc = charge_center();
-      od = (oa0 - oc) * (oa1 - oc);
-      md = (ma0 - mc) * (ma1 - mc);
-      od[0] = 0.0;
-      md[0] = 0.0;
-      od.normalize();
-      md.normalize();
-      op = md * od;
-      op[0] = 1.0 - op[0];
-      op.normalize();
-      opd = op.dagger();
-
-      newatoms.clear();
-      newauxatoms.clear();
-      for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-        assert((*i)->position() == (*j)->position());
-        Quatern<double> source = (*i)->position();
-        Quatern<double> target = op * (source - mc) * opd + oc;
-        array<double,3> cdispl = (target - source).ijk();
-
-        newatoms.push_back(make_shared<Atom>(**i, cdispl));
-        newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-      }
-      atoms_ = newatoms;
-      aux_atoms_ = newauxatoms;
-    }
-  }
-
-  common_init1();
-  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
-  common_init2(false, overlap_thresh_, nodf);
-}
-*/
-
-
-Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
-  throw logic_error("This constructor of Geometry_London has not been implemented or verified"); }
-
-/*
-  // members of Molecule
-  spherical_ = o.spherical_;
-  aux_merged_ = o.aux_merged_;
-  basisfile_ = o.basisfile_;
-  auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
-  gamma_ = o.gamma_;
-  external_ = o.external_;
-
-  // first construct atoms using displacements
-  for (auto& i : o.atoms_) {
-    atoms_.push_back(make_shared<Atom>(*i, displ));
-  }
-
-  for (auto& j : o.aux_atoms_) {
-    aux_atoms_.push_back(make_shared<Atom>(*j, displ));
-  }
-
-  common_init1();
-  common_init2(false, overlap_thresh_);
-}
-*/
-
-
+#if 0
 Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTree> geominfo, const bool discard)
+  : Geometry(o, geominfo, discard) {
+
+/*
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), london_(o.london_) {
 
   // members of Molecule
@@ -400,7 +326,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     df_ = o.df_;
     dfs_ = o.dfs_;
     dfsl_ = o.dfsl_;
-    common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
+    common_init2(true, overlap_thresh_, true *//* not to calculate integrals *//*);
   }
   external_ = o.external_;
 
@@ -411,89 +337,15 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
     cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
   }
+*/
 }
-
-
-/************************************************************
-*  Merge info from multiple geometries to make one          *
-*  supergeometry                                            *
-************************************************************/
-Geometry_London::Geometry_London(vector<shared_ptr<const Geometry_London>> nmer) :
-   schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_)
-{ throw logic_error("This constructor of Geometry_London, designed for merging several into one, has not been implemented or verified"); }
-#if 0
-{
-   // A member of Molecule
-   spherical_ = nmer.front()->spherical_;
-   symmetry_ = nmer.front()->symmetry_;
-   external_ = nmer.front()->external_;
-
-   /************************************************************
-   * Going down the list of protected variables, merge the     *
-   * data, pick the best ones, or make sure they all match     *
-   ************************************************************/
-   /* spherical_ should match across the vector*/
-   for(auto& inmer : nmer) {
-      if (spherical_ != (inmer)->spherical_) {
-         throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
-      }
-   }
-
-   /* symmetry_ should match across the vector*/
-   for(auto& inmer : nmer) {
-      if (symmetry_ != (inmer)->symmetry_) {
-         throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
-      }
-   }
-
-   /* external field would hopefully match, but for now, if it doesn't, just disable */
-   for(auto& inmer : nmer) {
-      if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
-         fill(external_.begin(), external_.end(), 0.0); break;
-      }
-   }
-
-   /* atoms_ and aux_atoms_ can be merged */
-   vector<shared_ptr<const Atom>> new_atoms;
-   vector<shared_ptr<const Atom>> new_aux_atoms;
-   for(auto& inmer : nmer) {
-      auto iatoms = inmer->atoms();
-      auto iaux = inmer->aux_atoms();
-
-      new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
-      new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
-   }
-   atoms_ = new_atoms;
-   aux_atoms_ = new_aux_atoms;
-
-   basisfile_ = nmer.front()->basisfile_;
-   auxfile_ = nmer.front()->auxfile();
-   aux_merged_ = nmer.front()->aux_merged_;
-   gamma_ = nmer.front()->gamma();
-
-   /* Use the strictest thresholds */
-   for(auto& inmer : nmer) {
-      schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
-      overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
-   }
-
-   /* Data is merged (crossed fingers), now finish */
-   common_init1();
-   print_atoms();
-   common_init2(true,overlap_thresh_);
-
-   // static external field
-   if (external())
-   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
-                                                                          << setw(7) << external_[1] << ", "
-                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
-}
-#endif
 
 
 // used in SCF initial guess.
-Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) {
+Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo)
+ : Geometry(atoms, geominfo) {
 
+/*
   spherical_ = true;
   lmax_ = 0;
 
@@ -539,66 +391,9 @@ Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, con
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+*/
 }
-
-
-const shared_ptr<const Matrix> Geometry_London::compute_grad_vnuc() const {
-  // the derivative of Vnuc
-  auto grad = make_shared<Matrix>(3, natom());
-  int i = 0;
-  for (auto& a : atoms_) {
-    const double ac = a->atom_charge();
-    for (auto& b : atoms_) {
-      if (a == b) continue;
-      const array<double,3> displ = a->displ(b);
-      const double c = b->atom_charge() * ac;
-      const double dist = a->distance(b);
-      const double dist3 = dist*dist*dist;
-      grad->element(0,i) += c*displ[0]/dist3;
-      grad->element(1,i) += c*displ[1]/dist3;
-      grad->element(2,i) += c*displ[2]/dist3;
-    }
-    ++i;
-  }
-  return grad;
-}
-
-
-vector<double> Geometry_London::schwarz() const {
-  vector<shared_ptr<const Shell>> basis;
-  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
-    const vector<shared_ptr<const Shell>> tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());
-  }
-  const int size = basis.size();
-
-  vector<double> schwarz(size * size);
-  for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<const Shell> b0 = basis[i0];
-    for (int i1 = i0; i1 != size; ++i1) {
-      const shared_ptr<const Shell> b1 = basis[i1];
-
-      array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
-#ifdef LIBINT_INTERFACE
-      Libint eribatch(input);
-#else
-      ERIBatch eribatch(input, 1.0);
 #endif
-      eribatch.compute();
-      const double* eridata = eribatch.data();
-      const int datasize = eribatch.data_size();
-      double cmax = 0.0;
-      for (int xi = 0; xi != datasize; ++xi, ++eridata) {
-        const double absed = fabs(*eridata);
-        if (absed > cmax) cmax = absed;
-      }
-      schwarz[i0 * size + i1] = cmax;
-      schwarz[i1 * size + i0] = cmax;
-    }
-  }
-  return schwarz;
-}
-
 
 shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_gaunt) const {
   cout << "  *** Geometry_London (Relativistic) ***" << endl;
@@ -609,7 +404,7 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->relativistic_london(magnetic_field_, london_));
+    atom.push_back(i->relativistic(magnetic_field_, london_));
   geom->atoms_ = atom;
 
   geom->compute_relativistic_integrals(do_gaunt);
@@ -641,11 +436,16 @@ void Geometry_London::discard_relativistic() const {
 
 void Geometry_London::magnetic() {
 
+  Timer timer;
   const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
 
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
     atom.push_back(i->apply_magnetic_field(fieldin));
   atoms_ = atom;
+
+  cout << endl;
+  timer.tick_print("Magnetic field overhead");
+  cout << endl;
 }
 

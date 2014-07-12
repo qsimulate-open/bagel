@@ -140,7 +140,7 @@ class Atom {
 
     // inititalize relativistic calculation
     std::shared_ptr<const Atom> relativistic() const;
-    std::shared_ptr<const Atom> relativistic_london(const std::array<double,3>& magnetic_field, bool london) const;
+    std::shared_ptr<const Atom> relativistic(const std::array<double,3>& magnetic_field, bool london) const;
 
     // initialize magnetic field calculations
     std::shared_ptr<const Atom> apply_magnetic_field(const std::array<double,3>& field) const;

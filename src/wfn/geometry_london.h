@@ -28,16 +28,13 @@
 #define __SRC_WFN_GEOMETRY_LONDON_H
 
 #include <src/df/complexdf.h>
-#include <src/molecule/molecule.h>
+#include <src/wfn/geometry_base.h>
 #include <src/input/input.h>
 
 namespace bagel {
 
-class Geometry_London: public Molecule {
+class Geometry_London: public Geometry_base {
   protected:
-    // integral screening
-    double schwarz_thresh_;
-    double overlap_thresh_;
 
     // for DF calculations
     mutable std::shared_ptr<ComplexDFDist> df_;
@@ -50,18 +47,22 @@ class Geometry_London: public Molecule {
     bool london_;
 
     // Constructor helpers
-    void common_init2(const bool print, const double thresh, const bool nodf = false);
-    void compute_integrals(const double thresh, const bool nodf);
+    void compute_integrals(const double thresh, const bool nodf) override;
+    void custom_init() override {
+      if (london_ && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+      if (!london_ && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+      if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+      magnetic();
+    }
 
   private:
+
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Molecule>(*this);
-      ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_ << london_;
+      ar << boost::serialization::base_object<Geometry_base>(*this);
       const size_t dfindex = !df_ ? 0 : std::hash<ComplexDFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -71,10 +72,7 @@ class Geometry_London: public Molecule {
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_ >> london_;
-
+      ar >> boost::serialization::base_object<Geometry_base>(*this);
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<ComplexDFDist>> dfmap;
@@ -101,18 +99,9 @@ class Geometry_London: public Molecule {
     Geometry_London(const std::shared_ptr<const PTree>);
     Geometry_London(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
     Geometry_London(const Geometry_London& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
-    Geometry_London(const Geometry_London& o, const std::shared_ptr<const Matrix> disp, const std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
-    Geometry_London(const Geometry_London& o, const std::array<double,3> disp);
-    Geometry_London(std::vector<std::shared_ptr<const Geometry_London>>);
 
     // Returns a constant
     bool london() const {return london_; }
-    const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
-    double schwarz_thresh() const { return schwarz_thresh_; }
-    double overlap_thresh() const { return overlap_thresh_; }
-
-    // returns schwarz screening TODO not working for DF yet
-    std::vector<double> schwarz() const;
 
     // Returns DF data
     const std::shared_ptr<const ComplexDFDist> df() const { return df_; }
@@ -121,12 +110,6 @@ class Geometry_London: public Molecule {
 
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
-
-    // type T should be a derived class of DFDist
-    template<typename T>
-    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
-      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
-    }
 
     // initialize relativistic components
     std::shared_ptr<const Geometry_London> relativistic(const bool do_gaunt) const;

@@ -193,7 +193,7 @@ void Shell::init_relativistic() {
 }
 
 
-void Shell::init_relativistic_london(const array<double,3> magnetic_field, bool london) {
+void Shell::init_relativistic(const array<double,3> magnetic_field, bool london) {
   assert(magnetism_);
   if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
   relativistic_ = true;

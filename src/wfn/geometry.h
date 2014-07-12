@@ -28,15 +28,13 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
-#include <src/molecule/molecule.h>
+#include <src/wfn/geometry_base.h>
+#include <src/input/input.h>
 
 namespace bagel {
 
-class Geometry : public Molecule {
+class Geometry: public Geometry_base {
   protected:
-    // integral screening
-    double schwarz_thresh_;
-    double overlap_thresh_;
 
     // for DF calculations
     mutable std::shared_ptr<DFDist> df_;
@@ -45,19 +43,21 @@ class Geometry : public Molecule {
     // small-large component
     mutable std::shared_ptr<DFDist> dfsl_;
 
+    // if false, use common origin with Gaussian orbitals
+    bool london_;
+
     // Constructor helpers
-    void common_init2(const bool print, const double thresh, const bool nodf = false);
-    void compute_integrals(const double thresh, const bool nodf);
+    void compute_integrals(const double thresh, const bool nodf) override;
+    void custom_init() override { assert(!nonzero_magnetic_field()); }
 
   private:
+
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Molecule>(*this);
-      ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_;
+      ar << boost::serialization::base_object<Geometry_base>(*this);
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -67,10 +67,7 @@ class Geometry : public Molecule {
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_;
-
+      ar >> boost::serialization::base_object<Geometry_base>(*this);
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -101,26 +98,13 @@ class Geometry : public Molecule {
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
-    // Returns a constant
-    const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
-    double schwarz_thresh() const { return schwarz_thresh_; }
-    double overlap_thresh() const { return overlap_thresh_; }
-
-    // returns schwarz screening TODO not working for DF yet
-    std::vector<double> schwarz() const;
-
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
     const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
+
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
-
-    // type T should be a derived class of DFDist
-    template<typename T>
-    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
-      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
-    }
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;

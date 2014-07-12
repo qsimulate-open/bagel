@@ -512,13 +512,13 @@ shared_ptr<const Atom> Atom::relativistic() const {
 }
 
 
-shared_ptr<const Atom> Atom::relativistic_london(const array<double,3>& magnetic_field, bool london) const {
+shared_ptr<const Atom> Atom::relativistic(const array<double,3>& magnetic_field, bool london) const {
   // basically the same
   // except for shells_
   vector<shared_ptr<const Shell>> rshells;
   for (auto& i : shells_) {
     auto tmp = make_shared<Shell>(*i);
-    tmp->init_relativistic_london(magnetic_field, london);
+    tmp->init_relativistic(magnetic_field, london);
     rshells.push_back(tmp);
   }
   auto atom = make_shared<Atom>(*this);
