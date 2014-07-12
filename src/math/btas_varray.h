@@ -5,8 +5,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <btas/serialization.h>
 
-#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/array.hpp>
 
 namespace bagel {
 
@@ -402,29 +403,20 @@ inline bool operator!= (const bagel::varray<T>& a,
   return not (a == b);
 }
 
-}
+} // namespace bagel
 
 namespace boost {
-namespace serialization {
+  namespace serialization {
 
-  /// boost serialization: load as varray
+  /// boost serialization for varray
   template<class Archive, typename T>
-  void load (Archive& ar, bagel::varray<T>& x, const unsigned int version)
+  void serialize (Archive& ar, bagel::varray<T>& x, const unsigned int version)
   {
-      typename bagel::varray<T>::size_type n; ar >> n;
-      x.resize(n);
-      for (typename bagel::varray<T>::value_type& xi : x) ar >> xi;
+      ar & btas::make_array(x.data(), x.size());
   }
 
-  /// boost serialization: save as varray
-  template<class Archive, typename T>
-  void save (Archive& ar, const bagel::varray<T>& x, const unsigned int version)
-  {
-      ar << x.size();
-      for (const typename bagel::varray<T>::value_type& xi : x) ar << xi;
-  }
-}
-}
+  } // namespace serialization
+} // namespace boost
 
 template <typename T>
 inline bool operator== (const bagel::varray<T>& a,
