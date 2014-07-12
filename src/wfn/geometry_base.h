@@ -37,6 +37,9 @@ class Geometry_base : public Molecule {
     double schwarz_thresh_;
     double overlap_thresh_;
 
+    // Have integrals been calculated?
+    mutable bool dfints_;
+
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
     void get_electric_field(const std::shared_ptr<const PTree> geominfo);
@@ -52,14 +55,14 @@ class Geometry_base : public Molecule {
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
       ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_;
+         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << dfints_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
       ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_;
+         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> dfints_;
     }
 
     template<class Archive>
@@ -79,6 +82,7 @@ class Geometry_base : public Molecule {
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
+    double dfints() const { return dfints_; }
 
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;

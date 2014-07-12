@@ -83,7 +83,8 @@ Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<cons
 
 
 void Geometry_London::compute_integrals(const double thresh, const bool nodf) {
-    df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
+  df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
+  dfints_ = true;
 }
 
 

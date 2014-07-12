@@ -158,10 +158,11 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) {
 
 void Geometry::compute_integrals(const double thresh, const bool nodf) {
 #ifdef LIBINT_INTERFACE
-    df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
+  df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
 #else
-    df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
+  df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
 #endif
+  dfints_ = true;
 }
 
 

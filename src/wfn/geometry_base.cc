@@ -45,6 +45,7 @@ Geometry_base::Geometry_base(const shared_ptr<const PTree> geominfo) {
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
+  dfints_ = false;
 
   // symmetry
   symmetry_ = to_lower(geominfo->get<string>("symmetry", "c1"));
@@ -152,7 +153,7 @@ void Geometry_base::common_init2(const bool print, const double thresh, const bo
 
 // suitable for geometry updates in optimization
 Geometry_base::Geometry_base(const Geometry_base& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_) {
+  : schwarz_thresh_(o.schwarz_thresh_), dfints_(o.dfints_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -245,7 +246,7 @@ Geometry_base::Geometry_base(const Geometry_base& o, const shared_ptr<const Matr
 
 
 Geometry_base::Geometry_base(const Geometry_base& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dfints_(o.dfints_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -270,7 +271,7 @@ Geometry_base::Geometry_base(const Geometry_base& o, const array<double,3> displ
 
 
 Geometry_base::Geometry_base(const Geometry_base& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dfints_(o.dfints_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -350,6 +351,7 @@ Geometry_base::Geometry_base(const vector<shared_ptr<const Atom>> atoms, const s
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
+  dfints_ = false;
 
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
