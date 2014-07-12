@@ -56,97 +56,99 @@ using namespace bagel;
 
 namespace bagel {
 
-shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom,
+shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_base> geomin,
                                                   shared_ptr<const Reference> ref) {
   shared_ptr<Method> out;
-  if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
-  else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
-  else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
-  else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
-  else if (title == "soscf")  out = make_shared<SOSCF>(itree, geom, ref);
-  else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
-  else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
-  else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
-  else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
-  else if (title == "zfci")   out = make_shared<ZHarrison>(itree, geom, ref);
-  else if (title == "ras") {
-    const string algorithm = itree->get<string>("algorithm", "");
-    if ( algorithm == "local" || algorithm == "" ) {
-      out = make_shared<RASCI>(itree, geom, ref);
-    }
+
+  auto geom = std::dynamic_pointer_cast<const Geometry>(geomin);
+  auto cgeom = std::dynamic_pointer_cast<const Geometry_London>(geomin);
+  assert(geom || cgeom);
+
+  if (geom) {
+
+    if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
+    else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
+    else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
+    else if (title == "rohf")   out = make_shared<ROHF>(itree, geom, ref);
+    else if (title == "soscf")  out = make_shared<SOSCF>(itree, geom, ref);
+    else if (title == "mp2")    out = make_shared<MP2>(itree, geom, ref);
+    else if (title == "dhf")    out = make_shared<Dirac>(itree, geom, ref);
+    else if (title == "dmp2")   out = make_shared<DMP2>(itree, geom, ref);
+    else if (title == "smith")  out = make_shared<Smith>(itree, geom, ref);
+    else if (title == "zfci")   out = make_shared<ZHarrison>(itree, geom, ref);
+    else if (title == "ras") {
+      const string algorithm = itree->get<string>("algorithm", "");
+      if ( algorithm == "local" || algorithm == "" ) {
+        out = make_shared<RASCI>(itree, geom, ref);
+      }
 #ifdef HAVE_MPI_H
-    else if ( algorithm == "dist" || algorithm == "parallel" ) {
-      out = make_shared<DistRASCI>(itree, geom, ref);
+      else if ( algorithm == "dist" || algorithm == "parallel" ) {
+        out = make_shared<DistRASCI>(itree, geom, ref);
+      }
+#endif
+      else
+        throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
     }
-#endif
-    else
-      throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
-  }
-  else if (title == "fci") {
-    const string algorithm = itree->get<string>("algorithm", "");
-    const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
-    if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-      out = make_shared<KnowlesHandy>(itree, geom, ref);
-    } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian" || algorithm == "") {
-      out = make_shared<HarrisonZarrabian>(itree, geom, ref);
+    else if (title == "fci") {
+      const string algorithm = itree->get<string>("algorithm", "");
+      const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
+      if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
+        out = make_shared<KnowlesHandy>(itree, geom, ref);
+      } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian" || algorithm == "") {
+        out = make_shared<HarrisonZarrabian>(itree, geom, ref);
 #ifdef HAVE_MPI_H
-    } else if (algorithm == "parallel" || algorithm == "dist") {
-      out = make_shared<DistFCI>(itree, geom, ref);
+      } else if (algorithm == "parallel" || algorithm == "dist") {
+        out = make_shared<DistFCI>(itree, geom, ref);
 #endif
-    } else
-      throw runtime_error("unknown FCI algorithm specified. " + algorithm);
-  }
-  else if (title == "casscf") {
-    string algorithm = itree->get<string>("algorithm", "");
-    if (algorithm == "superci" || algorithm == "")
-      out = make_shared<SuperCI>(itree, geom, ref);
-    else if (algorithm == "hybrid")
-      out = make_shared<CASHYBRID>(itree, geom, ref);
+      } else
+        throw runtime_error("unknown FCI algorithm specified. " + algorithm);
+    }
+    else if (title == "casscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "superci" || algorithm == "")
+        out = make_shared<SuperCI>(itree, geom, ref);
+      else if (algorithm == "hybrid")
+        out = make_shared<CASHYBRID>(itree, geom, ref);
 #if 0
-    else if (algorithm == "werner" || algorithm == "knowles")
-      out = make_shared<WernerKnowles>(itree, geom, ref);
+      else if (algorithm == "werner" || algorithm == "knowles")
+        out = make_shared<WernerKnowles>(itree, geom, ref);
 #endif
-    else if (algorithm == "bfgs")
-      out = make_shared<CASBFGS>(itree, geom, ref);
-    else
-      throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+      else if (algorithm == "bfgs")
+        out = make_shared<CASBFGS>(itree, geom, ref);
+      else
+        throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+    }
+    else if (title == "caspt2grad") {
+      // TODO to be called from optimizer
+      out = make_shared<CASPT2Grad>(itree, geom, ref);
+    }
+    else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
+    else if (title == "zcasscf") {
+      string algorithm = itree->get<string>("algorithm", "");
+      if (algorithm == "bfgs" || algorithm == "")
+        out = make_shared<ZCASBFGS>(itree, geom, ref);
+      else if (algorithm == "superci")
+        out = make_shared<ZSuperCI>(itree, geom, ref);
+      else
+        cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
+    }
+  } else {
+    if (title == "hf")              out = make_shared<SCF_London>(itree, cgeom, ref);
+    else if (title == "dhf")        out = make_shared<Dirac_London>(itree, cgeom, ref);
+    else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
+    else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
+    else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
+    else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with an applied magnetic field.");
+    else if (title == "soscf")      throw runtime_error("SOSCF method has not been implemented with an applied magnetic field.");
+    else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with an applied magnetic field.");
+    else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with an applied magnetic field.");
+    else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with an applied magnetic field.");
+    else if (title == "zfci")       throw runtime_error("ZFCI method has not been implemented with an applied magnetic field.");
+    else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with an applied magnetic field.");
+    else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with an applied magnetic field.");
+    else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with an applied magnetic field.");
+    else if (title == "casscf")     throw runtime_error("CASSCF method has not been implemented with an applied magnetic field.");
   }
-  else if (title == "caspt2grad") {
-    // TODO to be called from optimizer
-    out = make_shared<CASPT2Grad>(itree, geom, ref);
-  }
-  else if (title == "nevpt2")  out = make_shared<NEVPT2>(itree, geom, ref);
-  else if (title == "zcasscf") {
-    string algorithm = itree->get<string>("algorithm", "");
-    if (algorithm == "bfgs" || algorithm == "")
-      out = make_shared<ZCASBFGS>(itree, geom, ref);
-    else if (algorithm == "superci")
-      out = make_shared<ZSuperCI>(itree, geom, ref);
-    else
-      cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-  }
-
-  return out;
-}
-
-shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_London> cgeom,
-                                                  shared_ptr<const Reference> ref) {
-  shared_ptr<Method> out;
-  if (title == "hf")              out = make_shared<SCF_London>(itree, cgeom, ref);
-  else if (title == "dhf")        out = make_shared<Dirac_London>(itree, cgeom, ref);
-  else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
-  else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
-  else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");
-  else if (title == "rohf")       throw runtime_error("ROHF method has not been implemented with an applied magnetic field.");
-  else if (title == "soscf")      throw runtime_error("SOSCF method has not been implemented with an applied magnetic field.");
-  else if (title == "mp2")        throw runtime_error("MP2 method has not been implemented with an applied magnetic field.");
-  else if (title == "dmp2")       throw runtime_error("DMP2 method has not been implemented with an applied magnetic field.");
-  else if (title == "smith")      throw runtime_error("SMITH method has not been implemented with an applied magnetic field.");
-  else if (title == "zfci")       throw runtime_error("ZFCI method has not been implemented with an applied magnetic field.");
-  else if (title == "nevpt2")     throw runtime_error("NEVPT2 method has not been implemented with an applied magnetic field.");
-  else if (title == "zcasscf")    throw runtime_error("ZCASSCF method has not been implemented with an applied magnetic field.");
-  else if (title == "caspt2grad") throw runtime_error("CASPT2grad method has not been implemented with an applied magnetic field.");
-  else if (title == "casscf")     throw runtime_error("CASSCF method has not been implemented with an applied magnetic field.");
   return out;
 }
 

@@ -57,8 +57,7 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Geometry> geom;
-    shared_ptr<Geometry_London> cgeom;
+    shared_ptr<Geometry_base> geom;
     shared_ptr<Method> method;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
@@ -77,46 +76,51 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-        assert (!geom || !cgeom);
+
+        // Figure out if we want Geometry or Geometry_London
         string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
+        if (itree->get_child_optional("magnetic_field"))
+          basis_type = "giao";
+        if (geom)
+          if (geom->nonzero_magnetic_field())
+            basis_type = "giao";
 
-        if (itree->get_child_optional("magnetic_field")) basis_type = "giao";
-        if (cgeom) if (!cgeom->nonzero_magnetic_field()) basis_type = "giao";
-
+        // Geometry
         if (basis_type == "gaussian") {
-          geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+          geom = geom ? make_shared<Geometry>(*dynamic_pointer_cast<Geometry>(geom), itree) : make_shared<Geometry>(itree);
           if (itree->get<bool>("restart", false))
             ref.reset();
-          if (ref) ref = ref->project_coeff(geom);
+          if (ref) ref = ref->project_coeff(dynamic_pointer_cast<Geometry>(geom));
+          //if (ref) ref = ref->project_coeff(geom);
+
+        // Geometry_London
         } else if (basis_type == "london" || basis_type == "giao") {
-          cgeom = cgeom ? make_shared<Geometry_London>(*cgeom, itree) : make_shared<Geometry_London>(itree);
+          geom = geom ? make_shared<Geometry_London>(*dynamic_pointer_cast<Geometry_London>(geom), itree) : make_shared<Geometry_London>(itree);
           if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
           if (ref) {
             auto cref = dynamic_pointer_cast<const Reference_London>(ref);
             if (cref) {
               // Projecting London to London
-              cref->project_coeff(cgeom);
+              cref->project_coeff(dynamic_pointer_cast<Geometry_London>(geom));
               ref = cref;
             } else {
               // Projecting Gaussian to London - not yet implemented
-              ref->project_coeff(cgeom);
+              ref->project_coeff(dynamic_pointer_cast<Geometry_London>(geom));
             }
           }
         } else throw runtime_error("basis type not understood - should be gaussian or london");
+
       } else {
-        if (!geom && !cgeom) throw runtime_error("molecule block is missing");
+        if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (geom) if (dodf && geom->df() == nullptr)   throw runtime_error("It seems that DF basis was not specified in molecule block");
-        if (cgeom) if (dodf && cgeom->df() == nullptr) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (dodf && !geom->dfints()) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
 
-      assert (!geom || !cgeom);
       // most methods are constructed here
-      if (geom) method = construct_method(title, itree, geom, ref);
-      if (cgeom) method = construct_method(title, itree, cgeom, ref);
+      method = construct_method(title, itree, geom, ref);
 
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
@@ -132,7 +136,7 @@ int main(int argc, char** argv) {
 
       } else if (title == "optimize") {
 
-        auto opt = make_shared<Optimize>(itree, geom);
+        auto opt = make_shared<Optimize>(itree, dynamic_pointer_cast<Geometry>(geom));
         opt->compute();
 
 
@@ -185,7 +189,7 @@ int main(int argc, char** argv) {
 
         if (mpi__->rank() == 0) {
           MoldenOut mfs(out_file);
-          mfs << geom;
+          mfs << dynamic_pointer_cast<Geometry>(geom);
           if (orbitals) mfs << ref;
         }
 

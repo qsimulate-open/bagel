@@ -124,7 +124,6 @@ Geometry_base::Geometry_base(const shared_ptr<const PTree> geominfo) {
 
 void Geometry_base::common_init2(const bool print, const double thresh, const bool nodf) {
 
-  cout << "about to run custom_init()" << endl;
   custom_init();
 
   // symmetry set-up
