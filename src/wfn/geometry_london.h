@@ -153,6 +153,9 @@ class Geometry_London: public Molecule {
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 
+    // initialize magnetic components
+    void magnetic();
+
 };
 
 }

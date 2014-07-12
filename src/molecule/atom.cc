@@ -35,7 +35,7 @@ using namespace bagel;
 static const AtomMap atommap_;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
-           shared_ptr<const PTree> elem, const array<double,3> magnetic_field, const bool aux, const bool ecp)
+           shared_ptr<const PTree> elem, const bool aux, const bool ecp)
 : spherical_(spherical), use_ecp_basis_(false), basis_(inp->get<string>(!aux ? "basis" : "df_basis", defbas.first)) {
   name_ = to_lower(inp->get<string>("atom"));
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
@@ -50,10 +50,6 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   position_ = inp->get_array<double,3>("xyz");
 
   for (auto& i : position_) i /= angstrom ? au2angstrom__ : 1.0;
-
-  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
-  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
-  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
 
   if (name_ == "q") {
     atom_charge_ = inp->get<double>("charge");
@@ -74,13 +70,8 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 
 // constructor that uses the old atom and basis
-Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem,
-           const array<double,3> magnetic_field)
+Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
  : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
-
-  vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
-  vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
-  vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
 
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   if (name_ == "q") {
@@ -219,12 +210,8 @@ Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> sh
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem, const array<double,3> mag_field)
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
  : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
-
-  vector_potential_[0] = 0.5*(mag_field[1]*position_[2] - mag_field[2]*position_[1]);
-  vector_potential_[1] = 0.5*(mag_field[2]*position_[0] - mag_field[0]*position_[2]);
-  vector_potential_[2] = 0.5*(mag_field[0]*position_[1] - mag_field[1]*position_[0]);
 
   if (elem)
     for (auto& i : *elem) {
@@ -355,7 +342,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
 
         vector<vector<double>> cont(1, *iter);
         vector<pair<int, int>> cran(1, *citer);
-        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran, vector_potential_);
+        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
         coverlap.compute();
@@ -363,7 +350,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto& d : *iter) d *= scal;
       }
 
-      shells_.push_back(make_shared<const Shell>(spherical_, position_, i, exponents, contractions, contranges, vector_potential_));
+      shells_.push_back(make_shared<Shell>(spherical_, position_, i, exponents, contractions, contranges));
       lmax_ = i;
     }
 
@@ -525,7 +512,7 @@ shared_ptr<const Atom> Atom::relativistic() const {
 }
 
 
-shared_ptr<const Atom> Atom::relativistic_london(array<double,3> magnetic_field, bool london) const {
+shared_ptr<const Atom> Atom::relativistic_london(const array<double,3>& magnetic_field, bool london) const {
   // basically the same
   // except for shells_
   vector<shared_ptr<const Shell>> rshells;
@@ -536,6 +523,27 @@ shared_ptr<const Atom> Atom::relativistic_london(array<double,3> magnetic_field,
   }
   auto atom = make_shared<Atom>(*this);
   atom->shells_ = rshells;
+  return atom;
+}
+
+
+shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magnetic_field) const {
+
+  auto atom = make_shared<Atom>(*this);
+  atom->vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+  atom->vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+  atom->vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+
+  // basically the same
+  // except for shells_
+  vector<shared_ptr<const Shell>> mshells;
+  for (auto& i : shells_) {
+    auto tmp = make_shared<Shell>(*i);
+    tmp->add_phase(atom->vector_potential_);
+    mshells.push_back(tmp);
+  }
+  atom->shells_ = mshells;
+
   return atom;
 }
 

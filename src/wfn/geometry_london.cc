@@ -79,8 +79,6 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
   else if (basis_type == "gaussian") london_ = false;
   else throw runtime_error("Invalid basis type entered - should be london or gaussian");
 
-  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
-
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
   if (basisfile_ == "") {
@@ -100,16 +98,13 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
     auto atoms = geominfo->get_child("geometry");
     for (auto& a : *atoms) {
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, fieldin));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem));
     }
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
   for (auto& i : atoms_)
     if (symmetry_ != "c1" && i->dummy())
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
-
-  /* Set up aux_atoms_ */
-  const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
 
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
@@ -119,7 +114,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
-          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
+          aux_atoms_.push_back(make_shared<const Atom>(spherical_, iatom->name(), iatom->position(), auxfile_, make_pair(auxfile_, bdata), elem));
         } else {
           // we need a dummy atom here to be consistent in gradient computations
           aux_atoms_.push_back(iatom);
@@ -128,7 +123,7 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
     } else {
       auto atoms = geominfo->get_child("geometry");
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux, true));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
     }
   }
 
@@ -161,6 +156,10 @@ Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo) {
 
 
 void Geometry_London::common_init2(const bool print, const double thresh, const bool nodf) {
+
+  // compute london phase factors & add them to shells
+  magnetic();
+
   if (london_ && nonzero_magnetic_field()) cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
   if (!london_ && nonzero_magnetic_field()) cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << endl;
   if (!nonzero_magnetic_field()) cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << endl;
@@ -354,8 +353,6 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
   }
 
-  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
-
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
@@ -368,10 +365,10 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, fieldin));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem));
     } else {
       for (auto& a : o.atoms_)
-        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem, fieldin));
+        atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
     }
   }
   const string prevaux = auxfile_;
@@ -380,14 +377,13 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
     aux_atoms_.clear();
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
-    const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem));
     } else {
       for (auto& a : o.atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
+        aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem));
     }
   }
 
@@ -514,14 +510,13 @@ Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, con
     // read the default basis file
     const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
-    const std::array<double,3> magnetic_field_aux = {{0.0, 0.0, 0.0}};
     if (atomlist) {
       for (auto& i : *atomlist)
-        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, magnetic_field_aux, true));
+        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
     } else {
       // in the molden case
       for (auto& i : atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem, magnetic_field_aux));
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
     }
   }
   // symmetry
@@ -635,6 +630,7 @@ shared_ptr<const Geometry_London> Geometry_London::relativistic(const bool do_ga
   return geom;
 }
 
+
 void Geometry_London::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
   dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
@@ -651,3 +647,15 @@ void Geometry_London::discard_relativistic() const {
   dfs_.reset();
   dfsl_.reset();
 }
+
+
+void Geometry_London::magnetic() {
+
+  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
+
+  vector<shared_ptr<const Atom>> atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->apply_magnetic_field(fieldin));
+  atoms_ = atom;
+}
+

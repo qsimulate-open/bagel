@@ -37,10 +37,9 @@ template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared
   vector<shared_ptr<const Shell>> nshells;
   for (auto& i : mol->atoms()) {
     if (i->finite_nucleus()) {
-      const array<double,3> vector_potential_zero = {{0.0, 0.0, 0.0}};
       const double fac = - i->atom_charge()*pow(i->atom_exponent()/pi__, 1.5);
       nshells.push_back(make_shared<Shell>(i->spherical(), i->position(), 0, vector<double>{i->atom_exponent()},
-                        vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}, vector_potential_zero));
+                        vector<vector<double>>{{fac}}, vector<pair<int,int>>{make_pair(0,1)}));
     }
   }
   batch.compute(nshells);

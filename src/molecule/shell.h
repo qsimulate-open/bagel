@@ -60,7 +60,8 @@ class Shell : public Shell_base {
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
 
-    // magnetism
+    // whether a london phase factor is being used
+    bool magnetism_;
     std::array<double,3> vector_potential_;
 
   private:
@@ -89,7 +90,7 @@ class Shell : public Shell_base {
   public:
     Shell() { }
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
-          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range, const std::array<double,3>& vector_potential);
+          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
     // default constructor for adding null basis
     Shell(const bool sph);
 
@@ -124,8 +125,11 @@ class Shell : public Shell_base {
 
     std::vector<std::shared_ptr<const Shell>> split_if_possible(const size_t batchsize) const;
 
+    // magnetism
+    bool magnetism() const { return magnetism_; }
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; };
+    void add_phase(const std::array<double,3>& phase_input);
 
     void init_relativistic();
     void init_relativistic_london(const std::array<double,3> magnetic_field, bool london);
