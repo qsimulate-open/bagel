@@ -179,7 +179,7 @@ void Geometry::compute_integrals(const double thresh, const bool nodf) {
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -187,6 +187,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
   symmetry_ = o.symmetry_;
+  gamma_ = o.gamma_;
   external_ = o.external_;
 
   // first construct atoms using displacements
@@ -272,7 +273,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -280,6 +281,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
   symmetry_ = o.symmetry_;
+  gamma_ = o.gamma_;
   external_ = o.external_;
 
   // first construct atoms using displacements
@@ -297,7 +299,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
 
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -308,6 +310,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   external_ = o.external_;
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
+  gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
 
   // check all the options
@@ -518,19 +521,6 @@ const shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
     ++i;
   }
   return grad;
-}
-
-
-void Geometry::merge_obs_aux() {
-  aux_merged_ = true;
-  atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
-  for (auto iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
-    for (auto citer = iter->begin(); citer != iter->end(); ++citer) {
-      *citer += nbasis_;
-    }
-  }
-  offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
-  nbasis_ += naux_;
 }
 
 

@@ -195,7 +195,7 @@ void Geometry_London::compute_integrals(const double thresh, const bool nodf) {
 
 // suitable for geometry updates in optimization
 Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_) {
   throw logic_error("This constructor of Geometry_London, designed for geometry optimization, has not been implemented or verified"); }
 
 /*
@@ -204,6 +204,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<cons
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
+  gamma_ = o.gamma_;
   symmetry_ = o.symmetry_;
   external_ = o.external_;
 
@@ -291,7 +292,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<cons
 
 
 Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_) {
   throw logic_error("This constructor of Geometry_London has not been implemented or verified"); }
 
 /*
@@ -301,6 +302,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3>
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
   symmetry_ = o.symmetry_;
+  gamma_ = o.gamma_;
   external_ = o.external_;
 
   // first construct atoms using displacements
@@ -319,7 +321,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, const array<double,3>
 
 
 Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTree> geominfo, const bool discard)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), gamma_(o.gamma_), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), london_(o.london_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -330,6 +332,7 @@ Geometry_London::Geometry_London(const Geometry_London& o, shared_ptr<const PTre
   external_ = o.external_;
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
+  gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
 
   // check all the options
@@ -558,19 +561,6 @@ const shared_ptr<const Matrix> Geometry_London::compute_grad_vnuc() const {
     ++i;
   }
   return grad;
-}
-
-
-void Geometry_London::merge_obs_aux() {
-  aux_merged_ = true;
-  atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
-  for (auto iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
-    for (auto citer = iter->begin(); citer != iter->end(); ++citer) {
-      *citer += nbasis_;
-    }
-  }
-  offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
-  nbasis_ += naux_;
 }
 
 

@@ -46,9 +46,6 @@ class Geometry_London: public Molecule {
     // small-large component
     mutable std::shared_ptr<ComplexDFDist> dfsl_;
 
-    // for R12 calculations
-    double gamma_;
-
     // if false, use common origin with Gaussian orbitals
     bool london_;
 
@@ -109,24 +106,13 @@ class Geometry_London: public Molecule {
     Geometry_London(std::vector<std::shared_ptr<const Geometry_London>>);
 
     // Returns a constant
-    int nirrep() const { return nirrep_; }
-    double gamma() const {return gamma_; }
     bool london() const {return london_; }
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
 
-    // The position of the specific function in the basis set.
-    const std::vector<std::vector<int>>& offsets() const { return offsets_; }
-    const std::vector<std::vector<int>>& aux_offsets() const { return aux_offsets_; }
-    const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
-    const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
-
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
-
-    // Returns the Petite list.
-    std::shared_ptr<Petite> plist() const { return plist_; }
 
     // Returns DF data
     const std::shared_ptr<const ComplexDFDist> df() const { return df_; }
@@ -135,12 +121,6 @@ class Geometry_London: public Molecule {
 
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
-
-    // In R12 methods, we need to construct a union of OBS and CABS.
-    // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
-    // After this, compute_nuclear_repulsion() should not be called.
-    // Not undo-able.
-    void merge_obs_aux();
 
     // type T should be a derived class of DFDist
     template<typename T>

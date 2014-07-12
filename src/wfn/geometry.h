@@ -45,9 +45,6 @@ class Geometry : public Molecule {
     // small-large component
     mutable std::shared_ptr<DFDist> dfsl_;
 
-    // for R12 calculations
-    double gamma_;
-
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh, const bool nodf);
@@ -60,7 +57,7 @@ class Geometry : public Molecule {
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
       ar << spherical_ << aux_merged_ << nbasis_ << nele_ << nfrc_ << naux_ << lmax_ << aux_lmax_
-         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_ << gamma_;
+         << offsets_ << aux_offsets_ << basisfile_ << auxfile_ << schwarz_thresh_ << overlap_thresh_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -72,7 +69,7 @@ class Geometry : public Molecule {
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
       ar >> spherical_ >> aux_merged_ >> nbasis_ >> nele_ >> nfrc_ >> naux_ >> lmax_ >> aux_lmax_
-         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_ >> gamma_;
+         >> offsets_ >> aux_offsets_ >> basisfile_ >> auxfile_ >> schwarz_thresh_ >> overlap_thresh_;
 
       size_t dfindex;
       ar >> dfindex;
@@ -105,23 +102,12 @@ class Geometry : public Molecule {
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
     // Returns a constant
-    int nirrep() const { return nirrep_; }
-    double gamma() const {return gamma_; }
     const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
 
-    // The position of the specific function in the basis set.
-    const std::vector<std::vector<int>>& offsets() const { return offsets_; }
-    const std::vector<std::vector<int>>& aux_offsets() const { return aux_offsets_; }
-    const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
-    const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
-
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
-
-    // Returns the Petite list.
-    std::shared_ptr<Petite> plist() const { return plist_; }
 
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
@@ -129,12 +115,6 @@ class Geometry : public Molecule {
     const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
-
-    // In R12 methods, we need to construct a union of OBS and CABS.
-    // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
-    // After this, compute_nuclear_repulsion() should not be called.
-    // Not undo-able.
-    void merge_obs_aux();
 
     // type T should be a derived class of DFDist
     template<typename T>

@@ -173,6 +173,19 @@ void Molecule::common_init1() {
 }
 
 
+void Molecule::merge_obs_aux() {
+  aux_merged_ = true;
+  atoms_.insert(atoms_.end(), aux_atoms_.begin(), aux_atoms_.end());
+  for (auto iter = aux_offsets_.begin(); iter != aux_offsets_.end(); ++iter) {
+    for (auto citer = iter->begin(); citer != iter->end(); ++citer) {
+      *citer += nbasis_;
+    }
+  }
+  offsets_.insert(offsets_.end(), aux_offsets_.begin(), aux_offsets_.end());
+  nbasis_ += naux_;
+}
+
+
 int Molecule::num_count_ncore_only() const {
   int out = 0;
   for (auto& it : atoms_) {

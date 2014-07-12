@@ -67,6 +67,9 @@ class Molecule {
     std::shared_ptr<Petite> plist_;
     int nirrep_;
 
+    // for R12 calculations
+    double gamma_;
+
     // external electric field
     std::array<double,3> external_;
 
@@ -85,7 +88,7 @@ class Molecule {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & external_ & magnetic_field_;
+      ar & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & gamma_ & external_ & magnetic_field_;
     }
 
   public:
@@ -112,6 +115,14 @@ class Molecule {
     const std::string auxfile() const { return auxfile_; }
     const std::string symmetry() const { return symmetry_; }
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
+    double gamma() const {return gamma_; }
+    int nirrep() const { return nirrep_; }
+
+    // The position of the specific function in the basis set.
+    const std::vector<std::vector<int>>& offsets() const { return offsets_; }
+    const std::vector<std::vector<int>>& aux_offsets() const { return aux_offsets_; }
+    const std::vector<int>& offset(const unsigned int i) const { return offsets_.at(i); }
+    const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
 
     int num_count_ncore_only() const; // also set nfrc_
     int num_count_full_valence_nocc() const;
@@ -122,6 +133,9 @@ class Molecule {
 
     std::array<double,3> charge_center() const;
     std::array<double,6> quadrupole() const;
+
+    // Returns the Petite list.
+    std::shared_ptr<Petite> plist() const { return plist_; }
 
     // finite nucleus
     bool has_finite_nucleus() const;
@@ -136,6 +150,12 @@ class Molecule {
     double magnetic_field(const int i) const { return magnetic_field_[i]; }
 
     std::shared_ptr<const XYZFile> xyz() const;
+
+    // In R12 methods, we need to construct a union of OBS and CABS.
+    // Currently, this is done by creating another object and merge OBS and CABS into atoms_.
+    // After this, compute_nuclear_repulsion() should not be called.
+    // Not undo-able.
+    void merge_obs_aux();
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
