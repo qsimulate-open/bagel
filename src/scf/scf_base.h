@@ -72,7 +72,7 @@ class SCF_base : public Method {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Method);
+      ar & boost::serialization::base_object<Method>(*this);
       ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & schwarz_ & eig_ & energy_
          & nocc_ & noccB_ & do_grad_ & restart_;

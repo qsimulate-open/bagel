@@ -74,7 +74,7 @@ class SubMethod : public Method_ {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Method_);
+      ar & boost::serialization::base_object<Method_>(*this);
       ar & geom_;
     }
 
