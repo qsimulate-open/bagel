@@ -39,7 +39,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
 
 SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
- : Method(idat, geom, re) {
+ : Method_London(idat, geom, re) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
@@ -52,7 +52,7 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   hcore_ = make_shared<const ZHcore>(geom);
   scfb.tick_print("Hcore matrix");
 
-  eig_.resize(cgeom_->nbasis());
+  eig_.resize(geom_->nbasis());
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
@@ -66,11 +66,11 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   multipole_print_ = idata_->get<int>("multipole", 1);
 
   const int ncharge = idata_->get<int>("charge", 0);
-  const int nact    = idata_->get<int>("nact", (cgeom_->nele()-ncharge)%2);
-  nocc_ = idata_->get<int>("nocc", (cgeom_->nele()-ncharge+nact)/2);
+  const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
+  nocc_ = idata_->get<int>("nocc", (geom_->nele()-ncharge+nact)/2);
   noccB_ = nocc_ - nact;
 
-  if (nocc_+noccB_ != cgeom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
+  if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
 
   tildex_ = overlap_->tildex(thresh_overlap_);
 
@@ -93,6 +93,6 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
 
 
 void SCF_base_London::init_schwarz() {
-  schwarz_ = cgeom_->schwarz();
+  schwarz_ = geom_->schwarz();
 }
 

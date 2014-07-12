@@ -56,16 +56,16 @@ using namespace bagel;
 
 namespace bagel {
 
-shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_base> geomin,
+shared_ptr<Method_> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry_base> geomin,
                                                   shared_ptr<const Reference> ref) {
-  shared_ptr<Method> out;
+  shared_ptr<Method_> out;
 
   auto geom = std::dynamic_pointer_cast<const Geometry>(geomin);
   auto cgeom = std::dynamic_pointer_cast<const Geometry_London>(geomin);
   assert(geom || cgeom);
+  assert(!geom || !cgeom);
 
   if (geom) {
-
     if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
     else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
     else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);

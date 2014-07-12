@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     auto idata = make_shared<const PTree>(input);
 
     shared_ptr<Geometry_base> geom;
-    shared_ptr<Method> method;
+    shared_ptr<Method_> method;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
 
@@ -124,9 +124,9 @@ int main(int argc, char** argv) {
 
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
-        Method* ptr;
+        Method_* ptr;
         archive >> ptr;
-        method = shared_ptr<Method>(ptr);
+        method = shared_ptr<Method_>(ptr);
       }
 
       if (method) {

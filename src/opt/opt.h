@@ -198,7 +198,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
     for ( ; m != --input_->end(); ++m) {
       const std::string title = to_lower((*m)->get<std::string>("title", ""));
       if (title != "molecule") {
-        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        std::shared_ptr<Method_> c = construct_method(title, *m, current_, ref);
         if (!c) throw std::runtime_error("unknown method in optimization");
         c->compute();
         ref = c->conv_to_ref();

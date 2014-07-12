@@ -34,11 +34,9 @@
 
 namespace bagel {
 
-class Method {
+class Method_ {
   protected:
     std::shared_ptr<const PTree> idata_;
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Geometry_London> cgeom_;
     std::shared_ptr<const Reference> ref_;
 
   private:
@@ -47,26 +45,50 @@ class Method {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & idata_ & geom_ & cgeom_ & ref_;
+      ar & idata_ & ref_;
     }
 
   public:
-    Method() { }
-    Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r)
-     : idata_(p), geom_(g), ref_(r) { }
-    Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry_London> g, std::shared_ptr<const Reference> r)
-     : idata_(p), cgeom_(g), ref_(r) { }
-    virtual ~Method() { }
+    Method_() { }
+    Method_(std::shared_ptr<const PTree> p, std::shared_ptr<const Reference> r)
+     : idata_(p), ref_(r) { }
+    virtual ~Method_() { }
 
     virtual void compute() = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
 
     std::shared_ptr<const PTree> idata() const { return idata_; }
     std::shared_ptr<const Reference> ref() const { return ref_; }
-    std::shared_ptr<const Geometry> geom() const { return geom_; }
-    std::shared_ptr<const Geometry_London> cgeom() const { return cgeom_; }
 
 };
+
+
+template<typename GeomType>
+class SubMethod : public Method_ {
+  protected:
+    std::shared_ptr<const GeomType> geom_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Method_);
+      ar & geom_;
+    }
+
+  public:
+    SubMethod() { }
+    SubMethod(std::shared_ptr<const PTree> p, std::shared_ptr<const GeomType> g, std::shared_ptr<const Reference> r)
+     : Method_(p, r), geom_(g) { }
+    virtual ~SubMethod() { }
+
+    std::shared_ptr<const GeomType> geom() const { return geom_; }
+};
+
+using Method = SubMethod<Geometry>;
+using Method_London = SubMethod<Geometry_London>;
 
 }
 

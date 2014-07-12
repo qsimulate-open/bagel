@@ -36,8 +36,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Dirac_London)
 
-Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> cgeom,
-             const shared_ptr<const Reference> re) : Method(idata, cgeom, re) {
+Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom,
+             const shared_ptr<const Reference> re) : Method_London(idata, geom, re) {
   gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   robust_ = idata->get<bool>("robust", false);
@@ -45,7 +45,7 @@ Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr
   // when computing gradient, we store half-transform integrals
   do_grad_ = idata->get<bool>("gradient", false);
 
-  cgeom_ = cgeom->relativistic(gaunt_);
+  geom_ = geom->relativistic(gaunt_);
   common_init(idata);
 }
 
@@ -61,10 +61,10 @@ void Dirac_London::common_init(const shared_ptr<const PTree> idata) {
   thresh_scf_ = idata->get<double>("thresh_scf", thresh_scf_);
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
-  nele_ = cgeom_->nele()-ncharge_;
+  nele_ = geom_->nele()-ncharge_;
 
-  hcore_ = make_shared<const RelHcore_London>(cgeom_);
-  overlap_ = make_shared<const RelOverlap_London>(cgeom_);
+  hcore_ = make_shared<const RelHcore_London>(geom_);
+  overlap_ = make_shared<const RelOverlap_London>(geom_);
   s12_ = overlap_->tildex(thresh_overlap_);
 
   nneg_ = s12_->mdim()/2;
@@ -88,18 +88,18 @@ void Dirac_London::compute() {
   shared_ptr<const DistZMatrix> aodensity = coeff->form_density_rhf(nele_, nneg_);
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-  cout << indent << fixed << setprecision(10) << setw(15) << cgeom_->nuclear_repulsion() << endl << endl;
+  cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
   cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
   scftime.tick_print("SCF startup");
   cout << endl;
-  cout << indent << "=== Dirac RHF iteration (" + cgeom_->basisfile() + ", RMB) ===" << endl << indent << endl;
+  cout << indent << "=== Dirac RHF iteration (" + geom_->basisfile() + ", RMB) ===" << endl << indent << endl;
 
   DIIS<DistZMatrix, ZMatrix> diis(5);
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    auto fock = make_shared<DFock_London>(cgeom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
+    auto fock = make_shared<DFock_London>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
 
 // TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
 #if 0
@@ -115,7 +115,7 @@ void Dirac_London::compute() {
 //    throw runtime_error(ss.str());
       cout << ss.str() << endl;
     }
-    energy_ = 0.5*prod.real() + cgeom_->nuclear_repulsion();
+    energy_ = 0.5*prod.real() + geom_->nuclear_repulsion();
 
     auto error_vector = make_shared<const DistZMatrix>(*distfock**aodensity**distovl - *distovl**aodensity**distfock);
     const double error = error_vector->rms();
@@ -156,7 +156,7 @@ void Dirac_London::compute() {
 
 //Print non dirac sea eigenvalues
 void Dirac_London::print_eig() const {
-  const int n = cgeom_->nbasis();
+  const int n = geom_->nbasis();
   for (int i = 0*n; i != 4*n; ++i) cout << setprecision(10) << setw(15) << eig_[i] <<  endl;
 }
 
@@ -164,7 +164,7 @@ void Dirac_London::print_eig() const {
 shared_ptr<const Reference> Dirac_London::conv_to_ref() const {
   // we store only positive state coefficients
   const size_t npos = coeff_->mdim() - nneg_;
-  auto out =  make_shared<RelReference_London>(cgeom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
+  auto out =  make_shared<RelReference_London>(geom_, coeff_, energy_, nneg_, nele_, npos-nele_, gaunt_, breit_);
   vector<double> eig(eig_.get()+nneg_, eig_.get()+nneg_+npos);
   vector<double> eigm(eig_.get(), eig_.get()+nneg_);
   eig.insert(eig.end(), eigm.begin(), eigm.end());
@@ -174,7 +174,7 @@ shared_ptr<const Reference> Dirac_London::conv_to_ref() const {
 
 
 shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const DistZMatrix> s12, const shared_ptr<const DistZMatrix> hcore) const {
-  const int n = cgeom_->nbasis();
+  const int n = geom_->nbasis();
   unique_ptr<double[]> eig(new double[hcore->ndim()]);
 
   shared_ptr<const DistZMatrix> coeff;
@@ -187,7 +187,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
   } else if (dynamic_pointer_cast<const RelReference_London>(ref_)) {
     // Relativistic, GIAO-based reference
     auto relref = dynamic_pointer_cast<const RelReference_London>(ref_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock_London>(cgeom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock_London>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -201,7 +201,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_block(1.0, 0,    0, n, nocc, cref->zcoeff()->data());
       ocoeff->add_block(1.0, n, nocc, n, nocc, cref->zcoeff()->data());
-      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       throw logic_error("This Reference interface not yet implemented - one that would be produced by gauge-invariant UHF?");
       /*
@@ -211,7 +211,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_block(1.0, 0,     0, n, nocca, cref->coeffA()->data());
       ocoeff->add_block(1.0, n, nocca, n, noccb, cref->coeffB()->data());
-      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
+      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
       */
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
@@ -227,7 +227,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_block(1.0, 0,    0, n, nocc, ref_->coeff()->data());
       ocoeff->add_block(1.0, n, nocc, n, nocc, ref_->coeff()->data());
-      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
+      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
     } else {
       const int nocca = ref_->noccA();
       const int noccb = ref_->noccB();
@@ -235,7 +235,7 @@ shared_ptr<const DistZMatrix> Dirac_London::initial_guess(const shared_ptr<const
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
      ocoeff->add_block(1.0, 0,     0, n, nocca, ref_->coeffA()->data());
       ocoeff->add_block(1.0, n, nocca, n, noccb, ref_->coeffB()->data());
-      fock = make_shared<DFock_London>(cgeom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
+      fock = make_shared<DFock_London>(geom_, hcore_, ocoeff, gaunt_, breit_, *//*store_half*//*false, robust_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig.get());

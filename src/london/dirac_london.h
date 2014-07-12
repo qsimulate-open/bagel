@@ -37,7 +37,7 @@
 
 namespace bagel {
 
-class Dirac_London : public Method {
+class Dirac_London : public Method_London {
   protected:
 
     int max_iter_;
@@ -71,9 +71,9 @@ class Dirac_London : public Method {
 
   public:
     Dirac_London() { }
-    Dirac_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> cgeom, const std::shared_ptr<const Reference> re = nullptr);
+    Dirac_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> geom, const std::shared_ptr<const Reference> re = nullptr);
 
-    ~Dirac_London() { cgeom_->discard_relativistic(); }
+    ~Dirac_London() { geom_->discard_relativistic(); }
 
     void compute() override;
 
@@ -81,8 +81,6 @@ class Dirac_London : public Method {
 
     void print_eig() const;
     double energy() const { return energy_; }
-
-    std::shared_ptr<const Geometry_London> cgeom() const { return cgeom_; }
 
     std::list<std::shared_ptr<RelDFHalf_London>> half() const { return half_; }
     void discard_half() { half_.clear(); }
