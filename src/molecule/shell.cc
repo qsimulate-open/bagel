@@ -82,6 +82,8 @@ string Shell::show() const {
   ss << "position: ";
   ss << position_[0] << " " << position_[1] << " "  << position_[2] << endl;
   ss << "angular: "  << angular_number_ << endl;
+  if (magnetism_)
+    ss << "vector potential: " << vector_potential_[0] << " " << vector_potential_[1] << " " << vector_potential_[2] << endl;
   ss << "exponents: ";
   for (int i = 0; i != exponents_.size(); ++i) {
     ss << " " << exponents_[i];
