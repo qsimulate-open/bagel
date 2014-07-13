@@ -40,8 +40,8 @@ shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geomet
   shared_ptr<ZMatrix> sinv = overlap.inverse();
 
   // TODO Kinetic energy uses the magnetic field of the new geometry - is this correct?
-  MixedBasis<ComplexOverlapBatch, ZMatrix, Geometry_London> smixed(cgeom_, geomin);
-  MixedBasis<ComplexKineticBatch, ZMatrix, Geometry_London, const array<double,3>> tmixed(cgeom_, geomin, geomin->magnetic_field());
+  MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(cgeom_, geomin);
+  MixedBasis<ComplexKineticBatch, ZMatrix, const array<double,3>> tmixed(cgeom_, geomin, geomin->magnetic_field());
   const int nb = geomin->nbasis();
   const int mb = cgeom_->nbasis();
   tmixed.scale(0.5/(c__*c__));

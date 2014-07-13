@@ -32,7 +32,7 @@
 namespace bagel {
 
 // variadic template
-template<typename TBatch, typename MatType=Matrix, typename GeomType=Geometry, typename... Value>
+template<typename TBatch, typename MatType=Matrix, typename... Value>
 class MixedBasis : public MatType {
   protected:
 
@@ -47,7 +47,7 @@ class MixedBasis : public MatType {
     }
 
   public:
-    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const GeomType> g1, Value... tail)
+    MixedBasis(const std::shared_ptr<const Molecule> g0, const std::shared_ptr<const Molecule> g1, Value... tail)
      : MatType(g1->nbasis(), g0->nbasis()) {
       size_t off0 = 0;
       for (auto& catom0 : g0->atoms()) {

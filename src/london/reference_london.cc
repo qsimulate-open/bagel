@@ -63,7 +63,7 @@ Reference_London::Reference_London(shared_ptr<const Geometry_London> g, shared_p
 shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
   shared_ptr<ZMatrix> snew = make_shared<ZOverlap>(geomin);
   snew->inverse();
-  MixedBasis<ComplexOverlapBatch, ZMatrix, Geometry_London> mixed(cgeom_, geomin);
+  MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(cgeom_, geomin);
   auto c = make_shared<ZCoeff>(*snew * mixed * *zcoeff_);
 
   auto out = make_shared<Reference_London>(geomin, c, nclosed_, nact_, zcoeff_->mdim()-nclosed_-nact_, energy_);
