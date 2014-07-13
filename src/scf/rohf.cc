@@ -34,8 +34,6 @@ BOOST_CLASS_EXPORT_IMPLEMENT(ROHF)
 
 void ROHF::compute() {
 
-  eigB_ = VectorB(geom_->nbasis());
-
   initial_guess();
 
   cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;

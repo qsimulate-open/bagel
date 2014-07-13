@@ -48,10 +48,17 @@ class UHF : public SCF_base {
 
     void initial_guess();
 
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<SCF_base>(*this) & eigB_;
+    }
+
   public:
     UHF() { }
     UHF(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr)
-      : SCF_base(idata, geom, re) {
+      : SCF_base(idata, geom, re), eigB_(geom->nbasis()) {
 
       std::cout << indent << "*** Open-shell HF ***" << std::endl << std::endl;
 
