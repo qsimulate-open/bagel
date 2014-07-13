@@ -129,8 +129,8 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
         copy_n(local_coeff->element_ptr(0, i), dimerbasis, subspace->element_ptr(0, pos++));
 
       auto subfock = make_shared<Matrix>(*subspace % *fock * *subspace);
-      vector<double> eigs(subspace->mdim());
-      subfock->diagonalize(eigs.data());
+      VectorB eigs(subspace->mdim());
+      subfock->diagonalize(eigs);
       subspace = make_shared<Matrix>(*subspace * *subfock);
 
       copy_n(subspace->data(), dimerbasis * subset.size(), out_coeff->element_ptr(0,imo));
@@ -368,8 +368,8 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
     const int nactB = active_refs_.second->nact();
     Matrix active_mos = sref_->coeff()->slice(nclosed, nclosed + nactA + nactB);
     Matrix fock_mo(active_mos % *fock * active_mos);
-    vector<double> eigs(active_mos.mdim(), 0.0);
-    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs.data(), vector<int>{{nactA, nactB}});
+    VectorB eigs(active_mos.mdim());
+    shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, vector<int>{{nactA, nactB}});
     active_mos *= *active_transformation;
     shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
     scoeff->copy_block(0, nclosed, scoeff->ndim(), active_mos.mdim(), active_mos);

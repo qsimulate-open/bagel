@@ -60,7 +60,7 @@ void UHF::initial_guess() {
 
 void UHF::compute() {
 
-  eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  eigB_ = VectorB(geom_->nbasis());
 
   initial_guess();
 
@@ -138,8 +138,8 @@ tuple<shared_ptr<Coeff>, int, vector<shared_ptr<RDM<1>>>> UHF::natural_orbitals(
   auto cinv = make_shared<Matrix>(*coeff_ % *overlap_);
   auto intermediate = make_shared<Matrix>(*cinv * *aodensity_ ^ *cinv);
   *intermediate *= -1.0;
-  unique_ptr<double[]> occup(new double[coeff_->mdim()]);
-  intermediate->diagonalize(occup.get());
+  VectorB occup(coeff_->mdim());
+  intermediate->diagonalize(occup);
 
   auto amat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityA_ ^ *cinv) * *intermediate);
   auto bmat = make_shared<Matrix>(*intermediate % (*cinv * *aodensityB_ ^ *cinv) * *intermediate);
@@ -181,8 +181,8 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   out->set_nocc(nocc_, noccB_);
 
   // compute an energy weighted 1RDM and store
-  vector<double> ea(eig_.data(), eig_.data()+nocc_);
-  vector<double> eb(eigB_.get(), eigB_.get()+nocc_);
+  const VecView ea = eig_.slice(0, nocc_);
+  const VecView eb = eigB_.slice(0, nocc_);
   shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
   *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
   *erdm *= 0.5;

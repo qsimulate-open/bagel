@@ -107,6 +107,9 @@ class MatView_ : public btas::TensorView2<DataType> {
     DataType* data()             { assert(contiguous()); return &*this->begin(); }
     const DataType* data() const { assert(contiguous()); return &*this->cbegin(); }
 
+    DataType& operator()(const int i, const int j) { return element(i,j); }
+    const DataType& operator()(const int i, const int j) const { return element(i,j); }
+
     bool localized() const { return localized_; }
     bool contiguous() const { return this->range().ordinal().contiguous(); }
 

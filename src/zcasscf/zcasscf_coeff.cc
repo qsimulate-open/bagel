@@ -233,11 +233,11 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
   auto t12 = overlap_->get_submatrix(n*2, n*2, n, n)->copy();
   t12->inverse_half(1.0e-10);
   auto shalf = overlap_->get_submatrix(0, 0, n, n)->copy();
-  unique_ptr<double[]> eig2(new double[shalf->mdim()]);
-  shalf->diagonalize(eig2.get());
+  VectorB eig2(shalf->mdim());
+  shalf->diagonalize(eig2);
   for (int k = 0; k != shalf->mdim(); ++k) {
     if (real(eig2[k]) >= 0.0)
-      blas::scale_n(sqrt(sqrt(eig2[k])), shalf->element_ptr(0, k), shalf->ndim());
+      blas::scale_n(sqrt(sqrt(eig2(k))), shalf->element_ptr(0, k), shalf->ndim());
   }
   *shalf = *shalf ^ *shalf;
   auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());

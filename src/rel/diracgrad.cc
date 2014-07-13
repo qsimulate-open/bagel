@@ -51,9 +51,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   // energy-weighted density matrix
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
-  const vector<double>& eig = ref->eig();
+  const VectorB& eig = ref->eig();
   for (int i = 0; i != ref->nocc(); ++i)
-    zscal_(ecoeff->ndim(), eig[i], ecoeff->element_ptr(0, i), 1);
+    zscal_(ecoeff->ndim(), eig(i), ecoeff->element_ptr(0, i), 1);
   auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
 
   const int nbasis = geom_->nbasis();

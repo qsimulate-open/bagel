@@ -109,8 +109,9 @@ DistMatrix DistMatrix::operator^(const DistMatrix& o) const {
 }
 
 
-void DistMatrix::diagonalize(double* eig) {
+void DistMatrix::diagonalize(VecView& eig) {
   if (ndim_ != mdim_) throw logic_error("illegal call of DistMatrix::diagonalize(double*)");
+  assert(eig.area() >= ndim());
   const int n = ndim_;
 
   DistMatrix tmp(*this);

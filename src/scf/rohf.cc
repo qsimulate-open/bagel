@@ -34,7 +34,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(ROHF)
 
 void ROHF::compute() {
 
-  eigB_ = unique_ptr<double[]>(new double[geom_->nbasis()]);
+  eigB_ = VectorB(geom_->nbasis());
 
   initial_guess();
 

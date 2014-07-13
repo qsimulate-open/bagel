@@ -44,13 +44,13 @@ class Denom {
     std::shared_ptr<const Matrix> shalf_xhh_;
     std::shared_ptr<const Matrix> shalf_xxh_;
 
-    std::unique_ptr<double[]> denom_x_;
-    std::unique_ptr<double[]> denom_h_;
-    std::unique_ptr<double[]> denom_xx_;
-    std::unique_ptr<double[]> denom_hh_;
-    std::unique_ptr<double[]> denom_xh_;
-    std::unique_ptr<double[]> denom_xhh_;
-    std::unique_ptr<double[]> denom_xxh_;
+    VectorB denom_x_;
+    VectorB denom_h_;
+    VectorB denom_xx_;
+    VectorB denom_hh_;
+    VectorB denom_xh_;
+    VectorB denom_xhh_;
+    VectorB denom_xxh_;
 
     // init functions
     void init_x_(const RDM<1>&, const RDM<2>&, const RDM<3>&, const RDM<4>&, const Matrix& fock);
@@ -72,13 +72,13 @@ class Denom {
     std::shared_ptr<const Matrix> shalf_xhh() const { return shalf_xhh_; }
     std::shared_ptr<const Matrix> shalf_xxh() const { return shalf_xxh_; }
 
-    const double& denom_x(const size_t i) const { return denom_x_[i]; }
-    const double& denom_h(const size_t i) const { return denom_h_[i]; }
-    const double& denom_xx(const size_t i) const { return denom_xx_[i]; }
-    const double& denom_hh(const size_t i) const { return denom_hh_[i]; }
-    const double& denom_xh(const size_t i) const { return denom_xh_[i]; }
-    const double& denom_xhh(const size_t i) const { return denom_xhh_[i]; }
-    const double& denom_xxh(const size_t i) const { return denom_xxh_[i]; }
+    const double& denom_x(const size_t i) const { return denom_x_(i); }
+    const double& denom_h(const size_t i) const { return denom_h_(i); }
+    const double& denom_xx(const size_t i) const { return denom_xx_(i); }
+    const double& denom_hh(const size_t i) const { return denom_hh_(i); }
+    const double& denom_xh(const size_t i) const { return denom_xh_(i); }
+    const double& denom_xhh(const size_t i) const { return denom_xhh_(i); }
+    const double& denom_xxh(const size_t i) const { return denom_xxh_(i); }
 
 };
 

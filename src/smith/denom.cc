@@ -54,8 +54,8 @@ void Denom::init_x_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, 
   dgemv_("N", size, nact*nact, 1.0, rdm2.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
 
   Matrix fss = shalf % work2 * shalf;
-  denom_x_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_x_.get());
+  denom_x_ = VectorB(dim);
+  fss.diagonalize(denom_x_);
   shalf_x_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -85,8 +85,8 @@ void Denom::init_h_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3, 
   dgemv_("N", size, nact*nact, 1.0, ovl.data(), size, fock.data(), 1, 0.0, work2.data(), 1);
 
   Matrix fss = shalf % work2 * shalf;
-  denom_h_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_h_.get());
+  denom_h_ = VectorB(dim);
+  fss.diagonalize(denom_h_);
   shalf_h_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -107,8 +107,8 @@ void Denom::init_xx_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
 
   sort_indices<0,2,1,3,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   Matrix fss = shalf % work * shalf;
-  denom_xx_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_xx_.get());
+  denom_xx_ = VectorB(dim);
+  fss.diagonalize(denom_xx_);
   shalf_xx_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -179,8 +179,8 @@ void Denom::init_hh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
 
   sort_indices<0,2,1,3,0,1,1,1>(work2.data(), work.data(), nact, nact, nact, nact);
   Matrix fss = shalf % work * shalf;
-  denom_hh_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_hh_.get());
+  denom_hh_ = VectorB(dim);
+  fss.diagonalize(denom_hh_);
   shalf_hh_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -253,8 +253,8 @@ void Denom::init_xh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3,
   num.add_block(-0.5, 0, dim, dim, dim, work);
 
   Matrix fss = shalf % num * shalf;
-  denom_xh_ = unique_ptr<double[]>(new double[2*dim]);
-  fss.diagonalize(denom_xh_.get());
+  denom_xh_ = VectorB(2*dim);
+  fss.diagonalize(denom_xh_);
   shalf_xh_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -297,8 +297,8 @@ void Denom::init_xhh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
   Matrix fss(dim, dim);
   sort_indices<4,0,1,5,3,2,0,1,1,1>(work2.data(), fss.data(), nact, nact, nact, nact, nact, nact);
   fss = shalf % fss * shalf;
-  denom_xhh_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_xhh_.get());
+  denom_xhh_ = VectorB(dim);
+  fss.diagonalize(denom_xhh_);
   shalf_xhh_ = make_shared<const Matrix>(fss % shalf);
 }
 
@@ -372,8 +372,8 @@ void Denom::init_xxh_(const RDM<1>& rdm1, const RDM<2>& rdm2, const RDM<3>& rdm3
   Matrix fss(dim, dim);
   sort_indices<0,1,3,5,4,2,0,1,1,1>(work2.data(), fss.data(), nact, nact, nact, nact, nact, nact);
   fss = shalf % fss * shalf;
-  denom_xxh_ = unique_ptr<double[]>(new double[dim]);
-  fss.diagonalize(denom_xxh_.get());
+  denom_xxh_ = VectorB(dim);
+  fss.diagonalize(denom_xxh_);
   shalf_xxh_ = make_shared<const Matrix>(fss % shalf);
 }
 

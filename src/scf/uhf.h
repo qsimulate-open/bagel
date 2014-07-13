@@ -41,8 +41,8 @@ class UHF : public SCF_base {
     std::shared_ptr<const Matrix> aodensityB_;
     std::shared_ptr<const Coeff> coeffB_;
 
-    std::unique_ptr<double[]> eigB_;
-    double* eigB() { return eigB_.get(); }
+    VectorB eigB_;
+    VectorB& eigB() { return eigB_; }
 
     void print_S2(const std::string) const;
 

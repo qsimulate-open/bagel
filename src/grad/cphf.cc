@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-CPHF::CPHF(const shared_ptr<const Matrix> grad, const vector<double>& eig, const shared_ptr<const DFHalfDist> h,
+CPHF::CPHF(const shared_ptr<const Matrix> grad, const VectorB& eig, const shared_ptr<const DFHalfDist> h,
            const shared_ptr<const Reference> r)
 : grad_(grad), eig_(eig), halfjj_(h), ref_(r), geom_(r->geom()) {
 
@@ -49,7 +49,7 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
   auto t = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
-      t->element(a,i) = grad_->element(a,i) / (eig_[a]-eig_[i]);
+      t->element(a,i) = grad_->element(a,i) / (eig_(a)-eig_(i));
 
   cout << "  === Z-vector iteration ===" << endl << endl;
 
@@ -61,7 +61,7 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
     // one electron part
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nocca+nvirt; ++a)
-        (*sigma)(a,i) = (eig_[a]-eig_[i]) * t->element(a,i);
+        (*sigma)(a,i) = (eig_(a)-eig_(i)) * t->element(a,i);
 
     // J part
     shared_ptr<const Matrix> tvo = t->get_submatrix(nocca, 0, nvirt, nocca);
@@ -86,7 +86,7 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
 
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nvirt+nocca; ++a)
-        t->element(a,i) /= (eig_[a]-eig_[i]);
+        t->element(a,i) /= (eig_(a)-eig_(i));
   }
 
   cout << endl;

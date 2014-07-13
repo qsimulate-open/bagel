@@ -383,20 +383,20 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   bdag.broadcast();
 
   Matrix bb = bdag % bdag * (-1.0);
-  unique_ptr<double[]> eig(new double[primsize]);
-  bb.diagonalize(eig.get());
+  VectorB eig(primsize);
+  bb.diagonalize(eig);
 
   // make them consistent if parallel and not using ScaLapack
 #ifndef HAVE_SCALAPACK
   bb.broadcast();
-  mpi__->broadcast(eig.get(), primsize, 0);
+  mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
   int ninternal = max(cartsize-6,1);
   for (int i = 0; i != ninternal; ++i) {
-    eig[i] *= -1.0;
-    if (eig[i] < 1.0e-10)
-      cout << "       ** caution **  small eigenvalue " << eig[i] << endl;
+    eig(i) *= -1.0;
+    if (eig(i) < 1.0e-10)
+      cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
   cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 

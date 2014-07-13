@@ -196,7 +196,7 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     // active-x Fock operator Dts finact_sx + Qtx
     fact = qxr->copy();// nbasis_ runs first
     for (int i = 0; i != nact_; ++i)
-      daxpy_(nbasis_, occup_[i], finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
+      daxpy_(nbasis_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
   }
 
   {
@@ -205,8 +205,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
     for (int i = 0; i != nact_; ++i)
       for (int j = 0; j != nact_; ++j) {
 #if 1
-        if (occup_[i]+occup_[j] > occup_thresh)
-          factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_[i]+occup_[j]);
+        if (occup_(i)+occup_(j) > occup_thresh)
+          factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_(i)+occup_(j));
         else
           factp->element(j,i) = 0.0;
 #else
@@ -219,8 +219,8 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   gaa = factp->clone();
   dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
   double p = 0.0;
-  for (int i = 0; i != nact_; ++i) p += occup_[i] * factp->element(i,i);
-  for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_[i] * p;
+  for (int i = 0; i != nact_; ++i) p += occup_(i) * factp->element(i,i);
+  for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_(i) * p;
 
   // denominator
   auto denom = make_shared<RotFile>(nclosed_, nact_, nvirt_);
@@ -228,9 +228,9 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   double* target = denom->ptr_va();
   for (int i = 0; i != nact_; ++i) {
-    if (occup_[i] > occup_thresh) {
+    if (occup_(i) > occup_thresh) {
       for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = (gaa->element(i,i) + occup_[i]*f->element(j+nocc_, j+nocc_)) / (superci ? occup_[i] : 1.0);
+        *target = (gaa->element(i,i) + occup_(i)*f->element(j+nocc_, j+nocc_)) / (superci ? occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nvirt_; ++j, ++target)
         *target = 1.0/occup_thresh;
@@ -244,9 +244,9 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
 
   target = denom->ptr_ca();
   for (int i = 0; i != nact_; ++i) {
-    if (2.0-occup_[i] > occup_thresh) {
+    if (2.0-occup_(i) > occup_thresh) {
       for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_[i])) / (superci ? 2.0-occup_[i] : 1.0);
+        *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_(i))) / (superci ? 2.0-occup_(i) : 1.0);
     } else {
       for (int j = 0; j != nclosed_; ++j, ++target)
         *target = 1.0/occup_thresh;
@@ -270,7 +270,7 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
 shared_ptr<Matrix> CASSCF::form_natural_orbs() {
   // here make a natural orbitals and update the coefficients
   // this effectively updates 1,2RDM and integrals
-  const pair<shared_ptr<Matrix>, vector<double>> natorb = fci_->natorb_convert();
+  const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
   // new coefficients
   coeff_ = update_coeff(coeff_, natorb.first);
   // occupation number of the natural orbitals
@@ -288,17 +288,17 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nbasis_);
 
-  unique_ptr<double[]> eig(new double[coeff_->mdim()]);
+  VectorB eig(coeff_->mdim());
   Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
   Matrix trans(nbasis_, nbasis_);
   trans.unit();
   if (nclosed_) {
     Matrix ofock = ocoeff % fock * ocoeff;
-    ofock.diagonalize(eig.get());
+    ofock.diagonalize(eig);
     trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
   }
   Matrix vfock = vcoeff % fock * vcoeff;
-  vfock.diagonalize(eig.get());
+  vfock.diagonalize(eig);
   trans.copy_block(nocc_, nocc_, nvirt_, nvirt_, vfock);
   return make_shared<Coeff>(*coeff_ * trans);
 }

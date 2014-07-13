@@ -114,7 +114,7 @@ shared_ptr<btas::Tensor3<double>> ParallelDF::get_block(const int i, const int i
 
 shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const VectorB> tmp0) const {
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  shared_ptr<Matrix> out = block_[0]->form_mat(*tmp0->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
+  shared_ptr<Matrix> out = block_[0]->form_mat(tmp0->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
   // all reduce
   if (!serial_)
     out->allreduce();

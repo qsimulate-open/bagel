@@ -110,7 +110,6 @@ shared_ptr<const Matrix> Dimer::form_projected_coeffs() {
   const size_t Amos = isolated_refs_.first->coeff()->mdim();
 
   // form "projected" coefficients
-  const int dimerbasis = sgeom_->nbasis();
   auto out = projected->clone();
 
   size_t current = 0;

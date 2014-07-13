@@ -76,9 +76,9 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     }
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
-    virtual void diagonalize(double* vec);
+    virtual void diagonalize(VecView vec);
 
-    std::shared_ptr<ZMatrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
+    std::shared_ptr<ZMatrix> diagonalize_blocks(VectorB& eig, std::vector<int> blocks) { return diagonalize_blocks_impl<ZMatrix>(eig, blocks); }
 
     std::tuple<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> svd(double* sing = nullptr);
     // compute S^-1. Assumes positive definite matrix
@@ -199,7 +199,7 @@ class DistZMatrix : public DistMatrix_base<std::complex<double>> {
     DistZMatrix(DistZMatrix&&);
     DistZMatrix(const ZMatrix&);
 
-    void diagonalize(double* vec) override;
+    void diagonalize(VecView vec) override;
 
     DistZMatrix operator*(const DistZMatrix&) const;
     DistZMatrix& operator*=(const DistZMatrix&);

@@ -42,7 +42,7 @@ class Dirac : public Method {
     double thresh_scf_;
     double thresh_overlap_;
     double energy_;
-    std::unique_ptr<double[]> eig_;
+    VectorB eig_;
     int ncharge_;
     int nele_;
     int nneg_;

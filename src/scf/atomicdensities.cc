@@ -144,10 +144,10 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
   auto hcore = make_shared<Hcore>(ga);
   DIIS<Matrix> diis(5);
   shared_ptr<const Matrix> coeff;
-  unique_ptr<double[]> eig(new double[ga->nbasis()]);
+  VectorB eig(ga->nbasis());
   {
     Matrix ints = *tildex % *hcore * *tildex;
-    ints = *ints.diagonalize_blocks(eig.get(), num);
+    ints = *ints.diagonalize_blocks(eig, num);
     coeff = make_shared<const Matrix>(*tildex * ints);
   }
 
@@ -202,7 +202,7 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     fock = diis.extrapolate({fock, residual});
 
     Matrix ints = *tildex % *fock * *tildex;
-    ints = *ints.diagonalize_blocks(eig.get(), num);
+    ints = *ints.diagonalize_blocks(eig, num);
 
     coeff  = make_shared<const Matrix>(*tildex * ints);
     ocoeff = make_shared<Matrix>(ga->nbasis(), sclosed);

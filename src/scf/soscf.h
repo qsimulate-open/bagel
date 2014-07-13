@@ -40,7 +40,7 @@ class SOSCF : public SCF_base {
     std::shared_ptr<const Coeff> socoeff_;
     std::shared_ptr<const Matrix> sooverlap_;
     std::shared_ptr<const Matrix> sotildex_;
-    std::unique_ptr<double[]> soeig_;
+    VectorB soeig_;
     
 
   public:

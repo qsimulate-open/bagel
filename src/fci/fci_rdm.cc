@@ -502,9 +502,9 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::compute_rdm34(const int ist) 
 }
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<shared_ptr<Matrix>, vector<double>> FCI::natorb_convert() {
+pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
   assert(rdm1_av_ != nullptr);
-  pair<shared_ptr<Matrix>, vector<double>> natorb = rdm1_av_->generate_natural_orbitals();
+  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   return natorb;

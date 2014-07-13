@@ -112,7 +112,7 @@ shared_ptr<btas::Tensor3<std::complex<double>>> ParallelDF_London::get_block(con
 
 shared_ptr<ZMatrix> ParallelDF_London::compute_Jop_from_cd(shared_ptr<const ZVectorB> tmp0) const {
   if (block_.size() != 1) throw logic_error("compute_Jop so far assumes block_.size() == 1");
-  shared_ptr<ZMatrix> out = block_[0]->form_mat(*tmp0->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
+  shared_ptr<ZMatrix> out = block_[0]->form_mat(tmp0->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
   // all reduce
   if (!serial_)
     out->allreduce();
