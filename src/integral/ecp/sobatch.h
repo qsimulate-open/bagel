@@ -51,9 +51,10 @@ class SOBatch : public RadialInt {
     std::vector<std::vector<std::tuple<int, int, int, double>>> fm0lm1_; // li, m0, m1, fmm
 
     void map_angular_number();
-    bool delta(const int i, const int j);
+    std::complex<double> theta(const int m) const;
+    std::complex<double> mu(const int m1, const int m2) const;
 
-    std::array<double, 3> fm0lm1(const int l, const int m0, const int m1);
+    std::array<double, 3> fm0lm1(const int l, const int m0, const int m1) const;
     std::vector<double> project(const int l, const std::vector<double> r);
     double angularA(const int h, const int ld, const std::vector<double> usp);
     double angularC(const int h, const int ld, const std::vector<double> usp);

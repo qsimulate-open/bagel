@@ -65,24 +65,45 @@ void SOBatch::map_angular_number() {
 
 }
 
-bool SOBatch::delta(const int i, const int j) { const double out = (i == j) ? true : false; return out; }
+complex<double> SOBatch::theta(const int m) const {
+  const double tau = (m < 0) ? 0.0 : 1.0;
+  const double delta = (m == 0) ? 1.0 : 0.0;
 
-array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) { /* Im <lm0 | lz, lx, ly | lm1> */
+  const double re = (1 - delta) * sqrt(0.5) * tau + 0.5 * delta;
+  const double im = (1 - delta) * sqrt(0.5) * (1.0 - tau);
+
+  return complex<double>(re, im);
+}
+
+complex<double> SOBatch::mu(const int m0, const int m1) const {
+  const complex<double> theta0 = theta(m0);
+  const complex<double> theta1 = theta(m1);
+  complex<double> out = conj(theta0) * theta1;
+  if (m0 * m1 == 0) out *= 2.0;
+
+  return out;
+}
+
+array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) const { /* Im{aa}, Re{ab}, Im{ab} */
 
   assert(l > 0);
   assert(abs(m0) <= l && abs(m1) <=l);
   assert(m1 < m0);
   array<double, 3> out = {{0.0, 0.0, 0.0}};
 
-  if (m0*m1 > 0) {
-    out[2] = delta(m0-1, m1) ? -0.5*sqrt((l+m0)*(l-m0+1)) : 0.0;
-  } else if (m0*m1 == 0) {
-    out[1] = delta(m1, -1) ? -sqrt(0.5*l*(l+1)) : 0.0;
-  } else {
-    if (delta(m0, -m1)) out[0] = -m0;
-    if (delta(m0, -m1+1)) out[1] = -0.5*sqrt((l+m0)*(l-m0+1));
-    if (delta(m0, -m1-1)) out[1] = -0.5*sqrt((l-m0)*(l+m0+1));
-  }
+  if (m0 == -m1) out[0] = 0.5 * m1;
+
+  const double deltap = (abs(m0) == abs(m1) + 1) ? 1.0 : 0.0;
+  const double deltam = (abs(m0) == abs(m1) - 1) ? 1.0 : 0.0;
+
+  const double tau0 = (m0 < 0) ? 0.0 : 1.0;
+  const double tau1 = (m1 < 0) ? 0.0 : 1.0;
+
+  complex<double> ab = 0.5 * mu(m0, m1) * (deltap - pow(-1.0, tau0+tau1) * deltam);
+  ab *= sqrt((l + m0*m0 - abs(m0*m1)) * (l + m1*m1 - abs(m0*m1)));
+
+  out[1] = real(ab);
+  out[2] = imag(ab);
 
   return out;
 }
@@ -236,21 +257,8 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
           const int m1 = get<2>(fmm);
           const double f = get<3>(fmm);
           for (int h = hmin; h <= hmax; h += 2)
-            sum[ic] = (angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]))*f;
+            sum[ic] += (angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]))*f;
         }
-#if 0
-        for (int m0 = 0; m0 <= 2*l; ++m0) {
-          for (int m1 = 0; m1 <= m0-1; ++m1) {
-            const array<double, 3> fm = fm0lm1(l, m0-l, m1-l);
-            const int hmin = max(abs(ld0-l), g - c1);
-            const int hmax = min(c0, g - abs(ld1-l));
-            for (int h = hmin; h <= hmax; h += 2) {
-              const double ABBC = angularA(h, ld0, usp[m0]) * angularC(g-h, ld1, usp[m1]) - angularA(h, ld0, usp[m1]) * angularC(g-h, ld1, usp[m0]);
-              for (int id = 0; id != 3; ++id) sum[id] += ABBC * fm[id];
-            }
-          }
-        }
-#endif
         for (int ir = 0; ir != r.size(); ++ir) {
           const double p = rbessel[ir][ld0*(l1_+l+1)+ld1] * pow(r[ir], g);
           for (int id = 0; id != 3; ++id) out[id*r.size() + ir] += sum[id] * p;
