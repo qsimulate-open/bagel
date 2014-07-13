@@ -37,6 +37,7 @@
 #include <btas/tensor.h>
 #include <btas/tensor_func.h>
 #include <src/math/btas_varray.h>
+#include <src/math/preallocarray.h>
 
 namespace btas {
   // int N is not nessesary, but leave it so that we can switch to fixed-rank tensors in the future
@@ -65,12 +66,41 @@ namespace btas {
   using TensorN = Tensor<T, CRange<N>, bagel::varray<T>>;
   template<typename T, int N>
   using TensorViewN = TensorView<T, CRange<N>, bagel::varray<T>>;
+
+  // Tensors on preallocated memory
+  template<typename T>
+  using PTensor1 = Tensor<T, CRange<1>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensor2 = Tensor<T, CRange<2>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensor3 = Tensor<T, CRange<3>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensor4 = Tensor<T, CRange<4>, bagel::PreAllocArray_<T>>;
+
+  template<typename T>
+  using PTensorView1 = TensorView<T, CRange<1>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensorView2 = TensorView<T, CRange<2>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensorView3 = TensorView<T, CRange<3>, bagel::PreAllocArray_<T>>;
+  template<typename T>
+  using PTensorView4 = TensorView<T, CRange<4>, bagel::PreAllocArray_<T>>;
+
+  template<typename T, int N>
+  using PTensorN = Tensor<T, CRange<N>, bagel::PreAllocArray_<T>>;
+  template<typename T, int N>
+  using PTensorViewN = TensorView<T, CRange<N>, bagel::PreAllocArray_<T>>;
 }
 
 extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
 extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
 extern template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
 extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
+
+extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<double>>;
+extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<double>>;
+extern template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<std::complex<double>>>;
+extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<std::complex<double>>>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(btas::Tensor1<double>)

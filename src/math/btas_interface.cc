@@ -32,3 +32,8 @@ template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varra
 
 BOOST_CLASS_EXPORT_IMPLEMENT(btas::Tensor1<double>)
 BOOST_CLASS_EXPORT_IMPLEMENT(btas::Tensor1<std::complex<double>>)
+
+template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<std::complex<double>>>;
+template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<std::complex<double>>>;
+template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<double>>;
+template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray_<double>>;
