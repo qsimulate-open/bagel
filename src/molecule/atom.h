@@ -72,7 +72,7 @@ class Atom {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & spherical_ & name_ & position_ & shells_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_;
+      ar & spherical_ & name_ & position_ & shells_ & use_ecp_basis_ & ecp_parameters_ & atom_number_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_;
     }
 
   public:

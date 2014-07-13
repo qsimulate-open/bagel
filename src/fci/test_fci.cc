@@ -70,6 +70,7 @@ std::vector<double> fci_energy(std::string inp) {
       else if (dfci) dfci->compute();
       else assert(false);
       result = fci ? fci->energy() : dfci->energy();
+#ifndef DISABLE_SERIALIZATION
     } else if (method == "continue") {
       IArchive archive(itree->get<std::string>("archive"));
       Method* ptr;
@@ -77,6 +78,9 @@ std::vector<double> fci_energy(std::string inp) {
       auto fci = std::shared_ptr<Method>(ptr);
       fci->compute();
       result = std::dynamic_pointer_cast<FCI>(fci)->energy();
+#endif
+    } else {
+      throw std::logic_error("unknown method in fci test");
     }
   }
   std::cout.rdbuf(backup_stream);
@@ -101,7 +105,9 @@ BOOST_AUTO_TEST_SUITE(TEST_FCI)
 
 BOOST_AUTO_TEST_CASE(KNOWLES_HANDY) {
     BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_kh"), reference_fci_energy()));
+#ifndef DISABLE_SERIALIZATION
 //  BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_restart"), reference_fci_energy()));
+#endif
     BOOST_CHECK(compare(fci_energy("hhe_svp_fci_kh_trip"), reference_fci_energy2()));
 }
 

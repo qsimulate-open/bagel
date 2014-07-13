@@ -271,11 +271,13 @@ void FCI::compute() {
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "fci_" << iter;
       OArchive ar(ss.str());
       ar << static_cast<Method*>(this);
     }
+#endif
 
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);

@@ -38,6 +38,13 @@ class Shell_base {
     std::array<double,3> position_;
     int angular_number_;
 
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & spherical_ & position_ & angular_number_;
+    }
+
   public:
     Shell_base() { }
     Shell_base(const bool spherical, const std::array<double,3>& position, int angular_num);

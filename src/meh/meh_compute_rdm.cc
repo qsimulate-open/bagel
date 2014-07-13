@@ -24,6 +24,7 @@
 //
 
 #include <src/meh/meh_base.h>
+#include <src/meh/state_tensor.h>
 
 using namespace std;
 using namespace bagel;
@@ -34,6 +35,9 @@ void MEH_base::compute_rdm() const {
 
   RDM<2> rdm(norbA+norbB);
   // compute transformed gammas
+
+  StateTensor st(adiabats_, subspaces_base());
+  st.print();
 
 #if 0
   // diagonal term

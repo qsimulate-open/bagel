@@ -69,5 +69,11 @@ namespace btas {
 
 extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
 extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
+extern template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
+extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(btas::Tensor1<double>)
+BOOST_CLASS_EXPORT_KEY(btas::Tensor1<std::complex<double>>)
 
 #endif

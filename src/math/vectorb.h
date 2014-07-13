@@ -93,6 +93,14 @@ class Vector_ : public btas::Tensor1<DataType> {
     using btas::Tensor1<DataType>::end;
     using btas::Tensor1<DataType>::cend;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      ar & boost::serialization::base_object<btas::Tensor1<DataType>>(*this);
+    }
+
   public:
     Vector_(const size_t n) : btas::Tensor1<DataType>(n) { this->fill(0.0); }
     Vector_(const Vector_<DataType>& o) : btas::Tensor1<DataType>(o) { }

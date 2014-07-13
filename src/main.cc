@@ -122,12 +122,14 @@ int main(int argc, char** argv) {
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
 
+#ifndef DISABLE_SERIALIZATION
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
         Method_* ptr;
         archive >> ptr;
         method = shared_ptr<Method_>(ptr);
       }
+#endif
 
       if (method) {
 

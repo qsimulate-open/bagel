@@ -60,6 +60,7 @@ double scf_energy(std::string filename, std::string extension = ".json") {
       auto scf = std::make_shared<ROHF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
+#ifndef DISABLE_SERIALIZATION
     } else if (method == "continue") {
       IArchive archive(itree->get<std::string>("archive"));
       Method* ptr;
@@ -67,6 +68,9 @@ double scf_energy(std::string filename, std::string extension = ".json") {
       auto scf = std::shared_ptr<Method>(ptr);
       scf->compute();
       ref = scf->conv_to_ref();
+#endif
+    } else {
+      throw std::logic_error("unknown method in scf test");
     }
   }
   std::cout.rdbuf(backup_stream);
@@ -78,7 +82,9 @@ BOOST_AUTO_TEST_SUITE(TEST_SCF)
 BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("hf_svp_hf"),          -99.84779026));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf"),        -99.84772354));
+#ifndef DISABLE_SERIALIZATION
 //  BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_restart"),-99.84772354));
+#endif
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf",".bgl"), -99.84772354));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_ext"),    -99.83765614));
     BOOST_CHECK(compare(scf_energy("hf_svp_dfhf_cart"),   -99.84911270));

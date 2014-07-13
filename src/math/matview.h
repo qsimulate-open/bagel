@@ -97,6 +97,9 @@ class MatView_ : public btas::TensorView2<DataType> {
     MatView_(Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
     MatView_(const Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
 
+    MatView_<DataType> operator=(const MatView_<DataType>& o) { localized_ = o.localized_; btas::TensorView2<DataType>::operator=(o); return *this; }
+    MatView_<DataType> operator=(MatView_<DataType>&& o)      { localized_ = o.localized_; btas::TensorView2<DataType>::operator=(o); return *this; }
+
     int ndim() const { return this->extent(0); }
     int mdim() const { return this->extent(1); }
     size_t size() const { return ndim() * mdim(); }

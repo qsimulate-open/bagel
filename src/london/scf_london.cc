@@ -115,11 +115,13 @@ void SCF_London::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer pdebug(1);
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "scf_" << iter;
       OArchive archive(ss.str());
       archive << static_cast<Method_London*>(this);
     }
+#endif
     if (!dodf_) {
       shared_ptr<ZMatrix> prev = previous_fock->copy();
       previous_fock = make_shared<Fock_London<0>>(geom_, previous_fock, densitychange, schwarz_);

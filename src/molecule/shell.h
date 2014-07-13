@@ -70,14 +70,14 @@ class Shell : public Shell_base {
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << spherical_ << position_ << vector_potential_ << angular_number_ << exponents_ << contractions_ << contraction_ranges_
-         << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_;
+      ar << boost::serialization::base_object<Shell_base>(*this);
+      ar << exponents_ << contractions_ << contraction_ranges_ << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_ << vector_potential_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> spherical_ >> position_ >> vector_potential_ >> angular_number_ >> exponents_ >> contractions_ >> contraction_ranges_
-         >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_;
+      ar >> boost::serialization::base_object<Shell_base>(*this);
+      ar >> exponents_ >> contractions_ >> contraction_ranges_ >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_ >> vector_potential_;
       if (relativistic_)
         init_relativistic();
     }

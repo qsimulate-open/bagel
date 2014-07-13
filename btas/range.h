@@ -1249,9 +1249,25 @@ namespace serialization {
   /// boost serialization
   template<class Archive, CBLAS_ORDER _Order,
            typename _Index, typename _Ordinal>
-  void serialize(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t,
-                 const unsigned int version) {
-    ar & t.lobound() & t.upbound() & t.ordinal();
+  void serialize(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    boost::serialization::split_free(ar, t, version);
+  }
+  template<class Archive, CBLAS_ORDER _Order,
+           typename _Index, typename _Ordinal>
+  void save(Archive& ar, const btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    auto lo = t.lobound();
+    auto up = t.upbound();
+    auto ordinal = t.ordinal();
+    ar << lo << up << ordinal;
+  }
+  template<class Archive, CBLAS_ORDER _Order,
+           typename _Index, typename _Ordinal>
+  void load(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    typedef typename btas::BaseRangeNd<btas::RangeNd<_Order, _Index, _Ordinal>>::index_type index_type;
+    index_type lo, up;
+    _Ordinal ordinal;
+    ar >> lo >> up >> ordinal;
+    t = btas::RangeNd<_Order, _Index, _Ordinal>(std::move(lo), std::move(up), std::move(ordinal));
   }
 
 }

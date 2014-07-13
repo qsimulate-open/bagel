@@ -671,8 +671,25 @@ namespace boost {
              typename _T,
              class _Range,
              class _Storage>
-    void serialize(Archive& ar, btas::Tensor<_T,_Range,_Storage> t, const unsigned int version) {
-      ar & t.range() & t.storage();
+    void serialize(Archive& ar, btas::Tensor<_T,_Range,_Storage>& t, const unsigned int version) {
+      boost::serialization::split_free(ar, t, version);
+    }
+    template<class Archive,
+             typename _T,
+             class _Range,
+             class _Storage>
+    void save(Archive& ar, const btas::Tensor<_T,_Range,_Storage>& t, const unsigned int version) {
+      ar << t.range() << t.storage();
+    }
+    template<class Archive,
+             typename _T,
+             class _Range,
+             class _Storage>
+    void load(Archive& ar, btas::Tensor<_T,_Range,_Storage>& t, const unsigned int version) {
+      _Range range;
+      _Storage storage;
+      ar >> range >> storage;
+      t = btas::Tensor<_T,_Range,_Storage>(range, storage);
     }
 
   } // namespace serialization
