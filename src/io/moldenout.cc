@@ -37,8 +37,8 @@ MoldenOut::MoldenOut(string filename) : MoldenIO(filename) {
   ofs_ << "[Molden Format]" << endl;
 }
 
-MoldenOut& MoldenOut::operator<< (shared_ptr<const Geometry> geom) {
-  geom_ = geom;
+MoldenOut& MoldenOut::operator<< (shared_ptr<const Molecule> mol) {
+  mol_ = mol;
   write_geom();
 
   return *this;
@@ -53,12 +53,12 @@ MoldenOut& MoldenOut::operator<< (shared_ptr<const Reference> ref) {
 }
 
 void MoldenOut::write_geom() {
-  const int num_atoms = geom_->natom();
+  const int num_atoms = mol_->natom();
 
   ofs_ << "[Atoms] Angs" << endl;
 
   for (int i = 0; i < num_atoms; ++i) {
-     shared_ptr<const Atom> cur_atom = geom_->atoms(i);
+     shared_ptr<const Atom> cur_atom = mol_->atoms(i);
 
      const string cur_name = cur_atom->name();
      const int cur_number = cur_atom->atom_number();
@@ -73,10 +73,10 @@ void MoldenOut::write_geom() {
 }
 
 void MoldenOut::write_mos() {
-  vector<shared_ptr<const Atom>> atoms = geom_->atoms();
-  const bool is_spherical = geom_->spherical();
+  vector<shared_ptr<const Atom>> atoms = mol_->atoms();
+  const bool is_spherical = mol_->spherical();
 
-  const int num_atoms = geom_->natom();
+  const int num_atoms = mol_->natom();
 
   /************************************************************
   *  Print GTO section                                        *

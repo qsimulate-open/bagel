@@ -40,7 +40,7 @@ class MoldenOut : public MoldenIO {
    public:
       MoldenOut(std::string filename);
 
-      MoldenOut& operator<< (std::shared_ptr<const Geometry>);
+      MoldenOut& operator<< (std::shared_ptr<const Molecule>);
       MoldenOut& operator<< (std::shared_ptr<const Reference>);
 
 };

@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
 
         if (mpi__->rank() == 0) {
           MoldenOut mfs(out_file);
-          mfs << dynamic_pointer_cast<Geometry>(geom);
+          mfs << geom;
           if (orbitals) mfs << ref;
         }
 
