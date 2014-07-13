@@ -102,12 +102,14 @@ int main(int argc, char** argv) {
       if (geom) method = construct_method(title, itree, geom, ref);
       if (cgeom) method = construct_method(title, itree, cgeom, ref);
 
+#ifndef DISABLE_SERIALIZATION
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
         Method* ptr;
         archive >> ptr;
         method = shared_ptr<Method>(ptr);
       }
+#endif
 
       if (method) {
 
