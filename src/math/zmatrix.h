@@ -40,6 +40,14 @@ using DistZMatrix = ZMatrix;
 #endif
 
 class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_shared_from_this<ZMatrix> {
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Matrix_base<std::complex<double>>>(*this);
+    }
+
   public:
 #ifdef HAVE_SCALAPACK
     ZMatrix(const int n, const int m, const bool localized = false);

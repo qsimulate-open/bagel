@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <btas/serialization.h>
-
+#include <boost/serialization/split_free.hpp>
 #include <boost/serialization/array.hpp>
 
 namespace bagel {
@@ -412,7 +412,21 @@ namespace boost {
   template<class Archive, typename T>
   void serialize (Archive& ar, bagel::varray<T>& x, const unsigned int version)
   {
-      ar & btas::make_array(x.data(), x.size());
+      boost::serialization::split_free(ar, x, version);
+  }
+  template<class Archive, typename T>
+  void save (Archive& ar, const bagel::varray<T>& x, const unsigned int version)
+  {
+      const typename bagel::varray<T>::size_type n = x.size();
+      ar << n << btas::make_array(x.data(), x.size());
+  }
+  template<class Archive, typename T>
+  void load (Archive& ar, bagel::varray<T>& x, const unsigned int version)
+  {
+      typename bagel::varray<T>::size_type n;
+      ar >> n;
+      x.resize(n);
+      ar >> btas::make_array(x.data(), x.size());
   }
 
   } // namespace serialization
