@@ -42,7 +42,7 @@ ComplexDFDist::ComplexDFDist(const int nbas, const int naux, const array<shared_
 }
 
 
-vector<shared_ptr<const DFDist>> ComplexDFDist::split_blocks() const {
+vector<shared_ptr<const DFDist>> ComplexDFDist::split_complex_blocks() const {
   assert(nindex1_ == nindex2_);
   assert(block_.size() % 2 == 0);
   vector<shared_ptr<const DFDist>> out;
@@ -69,7 +69,7 @@ array<shared_ptr<const DFDist>,2> ComplexDFDist::split_real_imag() const {
 
 
 // Note that we are transforming the bra index, so we need the complex conjugate
-shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const ZMatView c) const {
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(const ZMatView c) const {
 
   // TODO Avoid unnecessary copying here
   auto cmat = make_shared<const ZMatrix> (c);
@@ -95,7 +95,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform(const ZMatVi
 }
 
 
-shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform_swap(const ZMatView c) const {
+shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform_swap(const ZMatView c) const {
   throw runtime_error("ComplexDFDist::compute_half_transform_swap has not been verified - use caution.");
 
   // TODO Avoid unnecessary copying here
@@ -121,7 +121,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::compute_half_transform_swap(const Z
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::compute_Jop_from_cd(shared_ptr<const ZVectorB> tmp0) const {
+shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop_from_cd(shared_ptr<const ZVectorB> tmp0) const {
   if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   const shared_ptr<VectorB> dr = tmp0->get_real_part();
   const shared_ptr<VectorB> di = tmp0->get_imag_part();
@@ -141,7 +141,7 @@ shared_ptr<ZMatrix> ComplexDFDist::compute_Jop_from_cd(shared_ptr<const ZVectorB
 }
 
 
-shared_ptr<ZVectorB> ComplexDFDist::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<ZVectorB> ComplexDFDist::complex_compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2_;
@@ -173,7 +173,7 @@ shared_ptr<ZVectorB> ComplexDFDist::compute_cd(const shared_ptr<const ZMatrix> d
 }
 
 
-shared_ptr<ZVectorB> ComplexDFHalfDist::compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<ZVectorB> ComplexDFHalfDist::complex_compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
   if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2_;
@@ -205,26 +205,26 @@ shared_ptr<ZVectorB> ComplexDFHalfDist::compute_cd(const shared_ptr<const ZMatri
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ZMatrix> den) const {
+shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ZMatrix> den) const {
   auto tmp = dynamic_pointer_cast<const ComplexDFDist>(this->shared_from_this());
   assert(tmp);
-  return compute_Jop(tmp, den);
+  return complex_compute_Jop(tmp, den);
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ComplexDFDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
+shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ComplexDFDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZVectorB> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const ZVectorB> tmp0 = o->complex_compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  return compute_Jop_from_cd(tmp0);
+  return complex_compute_Jop_from_cd(tmp0);
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::compute_Jop(const shared_ptr<const ComplexDFHalfDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
+shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ComplexDFHalfDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZVectorB> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const ZVectorB> tmp0 = o->complex_compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
-  return compute_Jop_from_cd(tmp0);
+  return complex_compute_Jop_from_cd(tmp0);
 }
 
 
@@ -257,7 +257,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFHalfDist::complex_apply_J(const shared_pt
 }
 
 
-shared_ptr<ZMatrix> ComplexDFHalfDist::form_2index(shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap) const {
+shared_ptr<ZMatrix> ComplexDFHalfDist::complex_form_2index(shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap) const {
   if (block_.size() != 2 || o->block_.size() != 2) throw logic_error("so far assumes block_.size() == 2 for complex integrals");
 
   shared_ptr<ZMatrix> out;
@@ -269,7 +269,6 @@ shared_ptr<ZMatrix> ComplexDFHalfDist::form_2index(shared_ptr<const ComplexDFHal
     *rout += *block_[1]->form_2index(o->block_[1], a);
     *iout -= *block_[1]->form_2index(o->block_[0], a);
     out = make_shared<ZMatrix>(*rout, *iout);
-    out->print("Result of form_2index", 19);
   } else {
     throw runtime_error("Please verify carefully that ComplexDFHalfDist::form_2index(...) is correct when swap = true");
     shared_ptr<Matrix> rout = o->block_[0]->form_2index(block_[0], a);

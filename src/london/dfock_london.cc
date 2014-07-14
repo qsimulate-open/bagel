@@ -185,11 +185,11 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   vector<shared_ptr<const DFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
-    dfs = cgeom_->dfs()->split_blocks();
+    dfs = cgeom_->dfs()->split_complex_blocks();
     dfs.push_back(cgeom_->df());
   } else if (gaunt) {
     throw logic_error("Gaunt integral not yet implemented for DFock_London.");
-    //dfs = cgeom_->dfsl()->split_blocks();
+    //dfs = cgeom_->dfsl()->split_complex_blocks();
   }
 
   list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
