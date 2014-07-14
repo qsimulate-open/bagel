@@ -29,12 +29,17 @@
 using namespace std;
 using namespace bagel;
 
-RelDF_London::RelDF_London(shared_ptr<const ComplexDFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), dfdata_(df), swap_(false) {
+RelDF_London::RelDF_London(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
+  auto tmp = dynamic_pointer_cast<const ComplexDFDist>(df);
+  assert(tmp);
+  array<shared_ptr<const DFDist>,2> tmp2 = tmp->split_real_imag();
+  dfdata_[0] = tmp2[0];
+  dfdata_[1] = tmp2[1];
   set_basis();
 }
 
 
-RelDF_London::RelDF_London(const RelDF_London& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.df()), swap_(o.swap_) {
+RelDF_London::RelDF_London(const RelDF_London& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_(o.dfdata_), swap_(o.swap_) {
   set_basis();
   if (coo) {
     swap_ ^= true;
@@ -88,10 +93,10 @@ vector<shared_ptr<ZMatrix>> RelDF_London::compute_Jop(list<shared_ptr<const CDMa
   vector<shared_ptr<ZMatrix>> out;
   for (auto& i : sum) {
     // TODO Avoid using 4-multiplication
-    shared_ptr<const Matrix> rrdat = dfdata_->get_real()->compute_Jop_from_cd(i->get_real_part());
-    shared_ptr<const Matrix> ridat = dfdata_->get_real()->compute_Jop_from_cd(i->get_imag_part());
-    shared_ptr<const Matrix> irdat = dfdata_->get_imag()->compute_Jop_from_cd(i->get_real_part());
-    shared_ptr<const Matrix> iidat = dfdata_->get_imag()->compute_Jop_from_cd(i->get_imag_part());
+    shared_ptr<const Matrix> rrdat = get_real()->compute_Jop_from_cd(i->get_real_part());
+    shared_ptr<const Matrix> ridat = get_real()->compute_Jop_from_cd(i->get_imag_part());
+    shared_ptr<const Matrix> irdat = get_imag()->compute_Jop_from_cd(i->get_real_part());
+    shared_ptr<const Matrix> iidat = get_imag()->compute_Jop_from_cd(i->get_imag_part());
     out.push_back(make_shared<ZMatrix>(*rrdat - *iidat, *ridat + *irdat));
   }
 

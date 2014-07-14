@@ -305,7 +305,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::shared_ptr<ComplexDFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
     pdebug.tick_print("First index transform");
 
-    std::shared_ptr<ComplexDFHalfDist> half = halfbj->apply_J();
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->complex_apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->form_2index(half, -0.5);
@@ -330,7 +330,7 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, c
     std::shared_ptr<ComplexDFHalfDist> halfbj = df->compute_half_transform(ocoeff);
     pdebug.tick_print("First index transform");
 
-    std::shared_ptr<ComplexDFHalfDist> half = halfbj->apply_J();
+    std::shared_ptr<ComplexDFHalfDist> half = halfbj->complex_apply_J();
     pdebug.tick_print("Metric multiply");
 
     *this += *half->form_2index(half, -1.0*scale_exchange);

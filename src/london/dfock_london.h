@@ -81,7 +81,7 @@ class DFock_London : public ZMatrix {
             ++j;
         }
     }
-    static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const ComplexDFDist>>, bool);
+    static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
     static std::list<std::shared_ptr<RelDFHalf_London>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
 

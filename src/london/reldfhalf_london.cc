@@ -42,8 +42,8 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
   auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
 
   // TODO Using 4-multiplication - switch to 3
-  auto rdf = dynamic_pointer_cast<const DFDist>(df->df()->get_real());
-  auto idf = dynamic_pointer_cast<const DFDist>(df->df()->get_imag());
+  auto rdf = dynamic_pointer_cast<const DFDist>(df->get_real());
+  auto idf = dynamic_pointer_cast<const DFDist>(df->get_imag());
   assert(rdf && idf);
   if (df->swapped()) {
     auto rr = rdf->compute_half_transform_swap(rcoeff[index]);

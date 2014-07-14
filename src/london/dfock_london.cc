@@ -133,7 +133,7 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<
 }
 
 
-list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<const ComplexDFDist>> dfs, bool mixed) {
+list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool mixed) {
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
 
   list<shared_ptr<RelDF_London>> dfdists;
@@ -182,7 +182,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
 
   Timer timer(0);
 
-  vector<shared_ptr<const ComplexDFDist>> dfs;
+  vector<shared_ptr<const DFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
     dfs = cgeom_->dfs()->split_blocks();
@@ -278,7 +278,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2_real()));
+      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2()));
     }
   }
 

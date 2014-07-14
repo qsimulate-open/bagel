@@ -41,7 +41,7 @@ class CDMatrix_London;
 class RelDF_London : public RelDFBase, public std::enable_shared_from_this<RelDF_London> {
   protected:
     std::vector<int> alpha_;
-    std::shared_ptr<const ComplexDFDist> dfdata_;
+    std::array<std::shared_ptr<const DFDist>,2> dfdata_;
     bool swap_;
 
     void set_basis() {
@@ -58,12 +58,15 @@ class RelDF_London : public RelDFBase, public std::enable_shared_from_this<RelDF
     }
 
   public:
-    RelDF_London(std::shared_ptr<const ComplexDFDist>, std::pair<int, int>, const std::vector<int>);
+    RelDF_London(std::shared_ptr<const DFDist>, std::pair<int, int>, const std::vector<int>);
     RelDF_London(const RelDF_London&) = delete;
     RelDF_London(const RelDF_London&, bool);
     RelDF_London() = delete;
 
-    std::shared_ptr<const ComplexDFDist> df() const { return dfdata_; }
+    std::array<std::shared_ptr<const DFDist>, 2> get_data() const { return dfdata_; }
+    std::shared_ptr<const DFDist> get_real() const { return dfdata_[0]; }
+    std::shared_ptr<const DFDist> get_imag() const { return dfdata_[1]; }
+
     bool not_diagonal() const { return cartesian_.first != cartesian_.second; }
     bool swapped() const { return swap_; }
     std::shared_ptr<const RelDF_London> swap() const;

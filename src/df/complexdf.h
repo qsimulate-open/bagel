@@ -29,25 +29,18 @@
 
 #include <src/df/df.h>
 #include <src/df/complexdfinttask.h>
-#include <src/df/complexparalleldf.h>
 #include <src/math/zmatrix.h>
 
 namespace bagel {
 
 class ComplexDFHalfDist;
 
-class ComplexDFDist : public ComplexParallelDF {
-  protected:
-    std::shared_ptr<const StaticDist> make_table(const size_t nmax);
-    std::tuple<int, std::vector<std::shared_ptr<const Shell>>> get_ashell(const std::vector<std::shared_ptr<const Shell>>& all);
-    void compute_2index(const std::vector<std::shared_ptr<const Shell>>&, const double thresh, const bool compute_inv);
-
+class ComplexDFDist : public DFDist {
   public:
-    ComplexDFDist(const int nbas, const int naux, const int nblock, const std::shared_ptr<DFBlock> block = nullptr,
-                  std::shared_ptr<const ComplexParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr);
+    ComplexDFDist(const int nbas, const int naux, const std::array<std::shared_ptr<DFBlock>,2> block = {{nullptr, nullptr}},
+                  std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr);
 
-    ComplexDFDist(const std::shared_ptr<const ComplexParallelDF> df);
-    ComplexDFDist(const std::array<std::shared_ptr<DFBlock>,2> block, const std::shared_ptr<const ComplexParallelDF> df, const std::shared_ptr<Matrix> d2);
+    ComplexDFDist(const std::shared_ptr<const ParallelDF> df) : DFDist(df) { }
 
     bool has_2index() const { return data2_.get() != nullptr; }
     size_t nbasis0() const { return nindex2_; }
@@ -61,19 +54,18 @@ class ComplexDFDist : public ComplexParallelDF {
     std::shared_ptr<ComplexDFHalfDist> compute_half_transform_swap(const ZMatView c) const;
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<const ComplexDFDist>> split_blocks() const {
-      assert(nindex1_ == nindex2_);
-      std::vector<std::shared_ptr<DFBlock>> outr;
-      std::vector<std::shared_ptr<DFBlock>> outi;
-      std::vector<std::shared_ptr<const ComplexDFDist>> out;
-      for (int i=0; i!=nblock_; i++) {
-        outr.push_back(dfdata_[0]->block_[i]);
-        outi.push_back(dfdata_[1]->block_[i]);
-        std::array<std::shared_ptr<DFBlock>,2> in = {{ outr[i], outi[i] }};
-        out.push_back(std::make_shared<const ComplexDFDist>(in, df_ ? df_ : shared_from_this() , data2_));
-      }
-      return out;
-    }
+    std::vector<std::shared_ptr<const DFDist>> split_blocks() const override;
+
+    // split up real and imaginary parts into 2 dfdist objects
+    std::array<std::shared_ptr<const DFDist>,2> split_real_imag() const;
+
+    // compute a J operator, given density matrices in AO basis
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexDFHalfDist> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_Jop(const std::shared_ptr<const ComplexDFDist> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const;
+    std::shared_ptr<ZVectorB> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+
 };
 
 template<class TBatch>
@@ -93,10 +85,8 @@ class ComplexDFDist_ints : public ComplexDFDist {
 
       // due to performance issue, we need to reshape it to array
       std::array<std::shared_ptr<DFBlock>,2*TBatch::Nblocks()> blk;
-      for (int i = 0; i != TBatch::Nblocks(); ++i) {
-        const int i2 = 2*i;
-        blk[i2] =   get_real()->block_[i];
-        blk[i2+1] = get_imag()->block_[i];
+      for (int i = 0; i != 2*TBatch::Nblocks(); ++i) {
+        blk[i] = block_[i];
       }
 
       int j2 = 0;
@@ -124,7 +114,7 @@ class ComplexDFDist_ints : public ComplexDFDist {
 
   public:
     ComplexDFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum, const bool average = false) : ComplexDFDist(nbas, naux, TBatch::Nblocks()) {
+                const double thr, const bool inverse, const double dum, const bool average = false) : ComplexDFDist(nbas, naux) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
@@ -145,9 +135,8 @@ class ComplexDFDist_ints : public ComplexDFDist {
       const size_t b1size = std::accumulate(b1shell.begin(), b1shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
       const size_t b2size = std::accumulate(b2shell.begin(), b2shell.end(), 0, [](const int& i, const std::shared_ptr<const Shell>& o) { return i+o->nbasis(); });
 
-      for (int i = 0; i != TBatch::Nblocks(); i++) {
-        dfdata_[0]->block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
-        dfdata_[1]->block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
+      for (int i = 0; i != 2*TBatch::Nblocks(); ++i) {
+        block_.push_back(std::make_shared<DFBlock>(adist_shell, adist_averaged, asize, b1size, b2size, astart, 0, 0));
       }
 
       // 3-index integrals
@@ -161,24 +150,17 @@ class ComplexDFDist_ints : public ComplexDFDist {
 
 };
 
-
 // TODO Functions not needed for RHF have not been implemented (transform_second, back_transform, etc.)
-class ComplexDFHalfDist : public ComplexParallelDF {
-  protected:
-
+class ComplexDFHalfDist : public DFHalfDist {
   public:
-    //ComplexDFHalfDist(const std::shared_ptr<const ComplexParallelDF> df, const int nocc) : ComplexParallelDF(df->naux(), nocc, df->nindex2(), df->nblock(), df) { }
-    ComplexDFHalfDist(std::shared_ptr<DFHalfDist> rdf, std::shared_ptr<DFHalfDist> idf, const std::shared_ptr<const ComplexParallelDF>);
+    ComplexDFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : DFHalfDist(df, nocc) { }
 
-    size_t nocc() const { return nindex1_; }
-    size_t nbasis() const { return nindex2_; }
+    std::shared_ptr<ZVectorB> compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
 
-    std::shared_ptr<ComplexDFHalfDist> apply_J() const { return apply_J(df_->data2_real()); }
-    //std::shared_ptr<ComplexDFHalfDist> apply_J(const std::shared_ptr<const ComplexDFDist> d) const { return apply_J(d->data2_real()); }
-    std::shared_ptr<ComplexDFHalfDist> apply_J(const std::shared_ptr<const Matrix> o) const;
-
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap = false) const;
+    std::shared_ptr<ComplexDFHalfDist> complex_apply_J() const { return complex_apply_J(df_->data2()); }
+    std::shared_ptr<ComplexDFHalfDist> complex_apply_J(const std::shared_ptr<const Matrix> o) const;
 };
-
 
 }
 
