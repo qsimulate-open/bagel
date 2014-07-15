@@ -50,7 +50,7 @@ class SOECPBatch : public Integral {
     double* data2_;
 
     int ang0_, ang1_, cont0_, cont1_;
-    int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
+    int asize_final_, asize_;
     bool swap01_;
     size_t size_alloc_;
     double* stack_save_;
@@ -59,7 +59,7 @@ class SOECPBatch : public Integral {
     std::shared_ptr<StackMem> stack_;
 
     void common_init();
-    void get_data(double* intermediate, double* data);
+    void get_data(const double* intermediate, double* data) const;
 
   public:
     SOECPBatch(const std::array<std::shared_ptr<const Shell>,2>& info, const std::shared_ptr<const Molecule> mol,
