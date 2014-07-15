@@ -25,10 +25,14 @@
 
 
 #include <src/wfn/geometry.h>
+#include <src/df/complexdf.h>
 #include <src/wfn/geometry_connect.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
 #include <src/integral/rys/mixederibatch.h>
+#include <src/integral/comprys/complexeribatch.h>
+#include <src/integral/comprys/complexsmalleribatch.h>
+#include <src/integral/comprys/complexmixederibatch.h>
 #include <src/integral/libint/libint.h>
 #include <src/io/moldenin.h>
 #include <src/math/quatern.h>
@@ -39,7 +43,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
 
-Geometry::Geometry(const shared_ptr<const PTree> geominfo, Geometry_custom_init const& h) {
+Geometry::Geometry(const shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   // members of Molecule
   spherical_ = true;
@@ -63,6 +67,7 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo, Geometry_custom_init 
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
   if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+  set_london(geominfo);
 
   /* Set up atoms_ */
   basisfile_ = to_lower(geominfo->get<string>("basis", ""));
@@ -120,23 +125,23 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo, Geometry_custom_init 
 
   print_atoms();
 
-  set_london(geominfo);
-  common_init2(true, overlap_thresh_, false, h);
+  common_init2(true, overlap_thresh_);
   get_electric_field(geominfo);
 }
 
 
-void Geometry::common_init2(const bool print, const double thresh, const bool nodf, Geometry_custom_init const& h) {
+void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
 
-  h.custom_init();
+  if (london_ || nonzero_magnetic_field()) init_magnetism();
 
   if (!auxfile_.empty() && !nodf) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
+    const double scale = magnetism_ ? 2.0 : 1.0;
     cout << "    o Being stored without compression. Storage requirement is "
-         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*h.dsize()*8.e-9 << " GB" << endl;
+         << setprecision(3) << static_cast<size_t>(naux_)*nbasis()*nbasis()*scale*8.e-9 << " GB" << endl;
     Timer timer;
-    df_ = h.compute_integrals(thresh);
+    compute_integrals(thresh);
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
   }
 
@@ -151,12 +156,18 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
+
+  if (magnetism_) {
+    assert(london_ || nonzero_magnetic_field());
+  } else {
+    assert(!nonzero_magnetic_field() && !london_);
+  }
 }
 
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -241,6 +252,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
       atoms_ = newatoms;
       aux_atoms_ = newauxatoms;
     }
+    if (o.magnetism()) throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
   }
 
   common_init1();
@@ -251,7 +263,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), london_(o.london_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -273,11 +285,12 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
   common_init1();
   common_init2(false, overlap_thresh_);
+  if (o.magnetism()) throw logic_error("Geometry displacement in a magnetic field has not been set up or verified; use caution.");
 }
 
 
-Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard, Geometry_custom_init const& h)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), london_(o.london_) {
+Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false), london_(o.london_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -304,6 +317,11 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
     const bool tesla = geominfo->get<bool>("tesla", false);
     if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+
+    const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
+    if (basis == "giao" || basis == "london") london_ = true;
+    else if (basis == "gaussian") london_ = false;
+    else throw runtime_error("Basis set type not recognized; should be Gaussian or London");
   }
 
   // check if we need to construct shells and integrals
@@ -342,25 +360,23 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 
   common_init1();
 
-  set_london(geominfo);
-
   if (o.basisfile_ != basisfile_ || o.auxfile_ != auxfile_ || atoms || newfield) {
     // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
     if (discard)
       o.discard_df();
-    common_init2(true, overlap_thresh_, false, h);
+    common_init2(true, overlap_thresh_);
   } else {
     df_ = o.df_;
     dfs_ = o.dfs_;
     dfsl_ = o.dfsl_;
-    common_init2(true, overlap_thresh_, true /* not to calculate integrals */, h);
+    common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
   }
   external_ = o.external_;
 }
 
 
 // used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo, Geometry_custom_init const& h) {
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   spherical_ = true;
   lmax_ = 0;
@@ -397,8 +413,13 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
 
   print_atoms();
 
+  // static external magnetic field
+  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
+  const bool tesla = geominfo->get<bool>("tesla", false);
+  if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
-  common_init2(true, overlap_thresh_, false, h);
+
+  common_init2(true, overlap_thresh_);
   get_electric_field(geominfo);
 }
 
@@ -408,72 +429,74 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-   schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), london_(nmer.front()->london_) {
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_) {
 
-   // A member of Molecule
-   spherical_ = nmer.front()->spherical_;
-   symmetry_ = nmer.front()->symmetry_;
-   external_ = nmer.front()->external_;
+  // A member of Molecule
+  spherical_ = nmer.front()->spherical_;
+  symmetry_ = nmer.front()->symmetry_;
+  external_ = nmer.front()->external_;
 
-   /************************************************************
-   * Going down the list of protected variables, merge the     *
-   * data, pick the best ones, or make sure they all match     *
-   ************************************************************/
-   /* spherical_ should match across the vector*/
-   for(auto& inmer : nmer) {
-      if (spherical_ != (inmer)->spherical_) {
-         throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
-      }
-   }
+  /************************************************************
+  * Going down the list of protected variables, merge the     *
+  * data, pick the best ones, or make sure they all match     *
+  ************************************************************/
+  /* spherical_ should match across the vector*/
+  for(auto& inmer : nmer) {
+     if (spherical_ != (inmer)->spherical_) {
+        throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
+     }
+  }
 
-   /* symmetry_ should match across the vector*/
-   for(auto& inmer : nmer) {
-      if (symmetry_ != (inmer)->symmetry_) {
-         throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
-      }
-   }
+  /* symmetry_ should match across the vector*/
+  for(auto& inmer : nmer) {
+     if (symmetry_ != (inmer)->symmetry_) {
+        throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
+     }
+  }
 
-   /* external field would hopefully match, but for now, if it doesn't, just disable */
-   for(auto& inmer : nmer) {
-      if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
-         fill(external_.begin(), external_.end(), 0.0); break;
-      }
-   }
+  /* external field would hopefully match, but for now, if it doesn't, just disable */
+  for(auto& inmer : nmer) {
+     if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
+        fill(external_.begin(), external_.end(), 0.0); break;
+     }
+  }
 
-   /* atoms_ and aux_atoms_ can be merged */
-   vector<shared_ptr<const Atom>> new_atoms;
-   vector<shared_ptr<const Atom>> new_aux_atoms;
-   for(auto& inmer : nmer) {
-      auto iatoms = inmer->atoms();
-      auto iaux = inmer->aux_atoms();
+  /* atoms_ and aux_atoms_ can be merged */
+  vector<shared_ptr<const Atom>> new_atoms;
+  vector<shared_ptr<const Atom>> new_aux_atoms;
+  for(auto& inmer : nmer) {
+     auto iatoms = inmer->atoms();
+     auto iaux = inmer->aux_atoms();
 
-      new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
-      new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
-   }
-   atoms_ = new_atoms;
-   aux_atoms_ = new_aux_atoms;
+     new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
+     new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
+  }
+  atoms_ = new_atoms;
+  aux_atoms_ = new_aux_atoms;
 
-   basisfile_ = nmer.front()->basisfile_;
-   auxfile_ = nmer.front()->auxfile();
-   aux_merged_ = nmer.front()->aux_merged_;
-   gamma_ = nmer.front()->gamma();
+  basisfile_ = nmer.front()->basisfile_;
+  auxfile_ = nmer.front()->auxfile();
+  aux_merged_ = nmer.front()->aux_merged_;
+  gamma_ = nmer.front()->gamma();
 
-   /* Use the strictest thresholds */
-   for(auto& inmer : nmer) {
-      schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
-      overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
-   }
+  /* Use the strictest thresholds */
+  for(auto& inmer : nmer) {
+     schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
+     overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
+  }
 
-   /* Data is merged (crossed fingers), now finish */
-   common_init1();
-   print_atoms();
-   common_init2(true,overlap_thresh_);
+  /* Data is merged (crossed fingers), now finish */
+  common_init1();
+  print_atoms();
+  common_init2(true,overlap_thresh_);
 
-   // static external field
-   if (external())
-   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
-                                                                          << setw(7) << external_[1] << ", "
-                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+  // static external field
+  if (external())
+  cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
+                                                                         << setw(7) << external_[1] << ", "
+                                                                         << setw(7) << external_[2] << ") a.u." << endl << endl;
+
+  if (nmer.front()->magnetism()) throw logic_error("Combining Geometries in a magnetic field has not been set up or verified; use caution.");
 }
 
 
@@ -555,8 +578,14 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
 
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;
-  for (auto& i : atoms_)
-    atom.push_back(i->relativistic());
+
+  if (!magnetism_) {
+    for (auto& i : atoms_)
+      atom.push_back(i->relativistic());
+  } else {
+    for (auto& i : atoms_)
+      atom.push_back(i->relativistic(magnetic_field_, london_));
+  }
   geom->atoms_ = atom;
 
   geom->compute_relativistic_integrals(do_gaunt);
@@ -570,9 +599,16 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
 
 void Geometry::compute_relativistic_integrals(const bool do_gaunt) {
   df_->average_3index();
-  dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
-  if (do_gaunt)
-    dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+
+  if (!magnetism_) {
+    dfs_  = form_fit<DFDist_ints<SmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    if (do_gaunt)
+      dfsl_ = form_fit<DFDist_ints<MixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+  } else {
+    dfs_  = form_fit<ComplexDFDist_ints<ComplexSmallERIBatch>>(overlap_thresh_, true, 0.0, true);
+    if (do_gaunt)
+      dfsl_ = form_fit<ComplexDFDist_ints<ComplexMixedERIBatch>>(overlap_thresh_, true, 0.0, true);
+  }
 
   // suppress some of the printing
   resources__->proc()->set_print_level(2);
@@ -593,16 +629,43 @@ void Geometry::set_london(const shared_ptr<const PTree> geominfo) {
 }
 
 
-void Geometry_Gaussian_init::custom_init() const {
-  //assert(london_ = false);
-  //if (nonzero_magnetic_field()) throw runtime_error("Gaussian integral codes were called with a magnetic field applied.");
+void Geometry::compute_integrals(const double thresh) const {
+  if (!magnetism_) {
+#ifdef LIBINT_INTERFACE
+    df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
+#else
+    df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
+#endif
+  } else {
+    df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
+  }
 }
 
 
-std::shared_ptr<DFDist> Geometry_Gaussian_init::compute_integrals(const double thresh) const {
-#ifdef LIBINT_INTERFACE
-  return Geometry::form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
-#else
-  return Geometry::form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
-#endif
+void Geometry::init_magnetism() {
+  Timer timer;
+
+  magnetism_ = true;
+  if (london_ && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+  if (!london_ && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+  if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+
+  if (nonzero_magnetic_field()) {
+    cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "
+                                                              << setw(7) << magnetic_field_[1] << ", "
+                                                              << setw(7) << magnetic_field_[2] << ") a.u." << endl;
+    const double fieldsqr = magnetic_field_[0]*magnetic_field_[0] + magnetic_field_[1]*magnetic_field_[1] + magnetic_field_[2]*magnetic_field_[2];
+    cout << setprecision(0) << "  Field strength = " << au2tesla__*sqrt(fieldsqr) << " T" << endl << endl;
+  }
+
+  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
+
+  vector<shared_ptr<const Atom>> atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->apply_magnetic_field(fieldin));
+  atoms_ = atom;
+
+  cout << endl;
+  timer.tick_print("Magnetic field overhead");
+  cout << endl;
 }

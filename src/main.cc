@@ -27,7 +27,6 @@
 #include <src/io/moldenout.h>
 #include <src/mp2/mp2grad.h>
 #include <src/opt/optimize.h>
-#include <src/wfn/geometry_london.h>
 #include <src/london/reference_london.h>
 #include <src/molecule/localization.h>
 #include <src/meh/construct_meh.h>
@@ -57,8 +56,8 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
+    shared_ptr<Method> method;
     shared_ptr<Geometry> geom;
-    shared_ptr<Method_> method;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
 
@@ -76,44 +75,14 @@ int main(int argc, char** argv) {
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
       if (title == "molecule") {
-
-        // Figure out if we want Geometry or Geometry_London
-        string basis_type = to_lower(itree->get<string>("basis_type", "gaussian"));
-        if (itree->get_child_optional("magnetic_field"))
-          basis_type = "giao";
-        if (geom)
-          if (geom->nonzero_magnetic_field())
-            basis_type = "giao";
-
-        // Geometry
-        if (basis_type == "gaussian") {
-          geom = geom ? make_shared<Geometry>(*dynamic_pointer_cast<Geometry>(geom), itree) : make_shared<Geometry>(itree);
-          if (itree->get<bool>("restart", false))
-            ref.reset();
-          if (ref) ref = ref->project_coeff(dynamic_pointer_cast<Geometry>(geom));
-          //if (ref) ref = ref->project_coeff(geom);
-
-        // Geometry_London
-        } else if (basis_type == "london" || basis_type == "giao") {
-          geom = geom ? make_shared<Geometry_London>(*dynamic_pointer_cast<Geometry_London>(geom), itree) : make_shared<Geometry_London>(itree);
-          if (itree->get<bool>("restart", false)) throw runtime_error("Restart option not avaiable for London orbitals.");
-          if (ref) {
-            auto cref = dynamic_pointer_cast<const Reference_London>(ref);
-            if (cref) {
-              // Projecting London to London
-              cref->project_coeff(dynamic_pointer_cast<Geometry_London>(geom));
-              ref = cref;
-            } else {
-              // Projecting Gaussian to London - not yet implemented
-              ref->project_coeff(dynamic_pointer_cast<Geometry_London>(geom));
-            }
-          }
-        } else throw runtime_error("basis type not understood - should be gaussian or london");
-
+        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+        if (itree->get<bool>("restart", false))
+          ref.reset();
+        if (ref) ref = ref->project_coeff(geom);
       } else {
         if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (dodf && !geom->dfints()) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "fci") && ref == nullptr)
@@ -125,9 +94,9 @@ int main(int argc, char** argv) {
 #ifndef DISABLE_SERIALIZATION
       if (title == "continue") {
         IArchive archive(itree->get<string>("archive"));
-        Method_* ptr;
+        Method* ptr;
         archive >> ptr;
-        method = shared_ptr<Method_>(ptr);
+        method = shared_ptr<Method>(ptr);
       }
 #endif
 

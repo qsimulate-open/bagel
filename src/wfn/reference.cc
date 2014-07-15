@@ -133,11 +133,6 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
 }
 
 
-shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry_London> geomin) const {
-  throw std::logic_error("You appear to be trying to project from a Gaussian basis to a London one.  This feature has not been implemented.");
-}
-
-
 void Reference::set_eig(const std::vector<double>& eig) {
   eig_ = eig;
   mpi__->broadcast(&eig_[0], eig_.size(), 0);

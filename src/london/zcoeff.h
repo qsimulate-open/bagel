@@ -27,14 +27,14 @@
 #ifndef __src_london_zcoeff_h
 #define __src_london_zcoeff_h
 
-#include <src/wfn/geometry_london.h>
+#include <src/wfn/geometry.h>
 #include <src/math/zmatrix.h>
 
 namespace bagel {
 
 class ZCoeff : public ZMatrix {
   protected:
-    std::shared_ptr<const Geometry_London> cgeom_;
+    std::shared_ptr<const Geometry> geom_;
 
   private:
     int num_basis(std::vector<std::shared_ptr<const ZCoeff>> coeff_vec) const;
@@ -45,16 +45,16 @@ class ZCoeff : public ZMatrix {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & cgeom_;
+      ar & boost::serialization::base_object<ZMatrix>(*this) & geom_;
     }
 
   public:
     ZCoeff() { }
     ZCoeff(const ZMatrix&);
     ZCoeff(std::vector<std::shared_ptr<const ZCoeff>> coeff_vec);
-    ZCoeff(std::shared_ptr<const Geometry_London> g) : ZMatrix(g->nbasis(), g->nbasis()), cgeom_(g) {}
+    ZCoeff(std::shared_ptr<const Geometry> g) : ZMatrix(g->nbasis(), g->nbasis()), geom_(g) {}
 
-    std::shared_ptr<const Geometry_London> geom() const { assert(cgeom_); return cgeom_; }
+    std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
 
     std::shared_ptr<ZMatrix> form_weighted_density_rhf(const int n, const std::vector<std::complex<double>>& e, const int offset = 0) const;
     std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> split(const int, const int) const;

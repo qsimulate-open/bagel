@@ -34,11 +34,6 @@
 namespace bagel {
 
 class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
-  // TODO Refactor so fewer friends are needed?
-  friend class ComplexParallelDF;
-  friend class ComplexDFDist;
-  template<typename T> friend class ComplexDFDist_ints;
-
   protected:
     // blocks that this process has
     std::vector<std::shared_ptr<DFBlock>> block_;

@@ -38,8 +38,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
 
-SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
- : Method_London(idat, geom, re) {
+SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+ : Method(idat, geom, re) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);

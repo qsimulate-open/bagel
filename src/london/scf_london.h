@@ -70,7 +70,7 @@ class SCF_London : public SCF_base_London {
 
   public:
     SCF_London() { }
-    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> geom, const std::shared_ptr<const Reference> re = nullptr);
+    SCF_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
     virtual ~SCF_London() { }
 
     void compute() override;

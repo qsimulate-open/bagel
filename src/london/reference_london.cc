@@ -33,13 +33,12 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference_London)
 using namespace std;
 using namespace bagel;
 
-Reference_London::Reference_London(shared_ptr<const Geometry_London> g, shared_ptr<const ZCoeff> c,
+Reference_London::Reference_London(shared_ptr<const Geometry> g, shared_ptr<const ZCoeff> c,
                                    const int _nclosed, const int _nact, const int _nvirt,
                                    const double en) : Reference() {
-  cgeom_ = g;
-  geom_ = nullptr;
+  geom_ = g;
   energy_ = en;
-  zhcore_ = make_shared<ZHcore>(cgeom_);
+  zhcore_ = make_shared<ZHcore>(geom_);
   hcore_ = nullptr;
   nclosed_ = _nclosed;
   nact_ = _nact;
@@ -60,10 +59,10 @@ Reference_London::Reference_London(shared_ptr<const Geometry_London> g, shared_p
 }
 
 
-shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
+shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry> geomin) const {
   shared_ptr<ZMatrix> snew = make_shared<ZOverlap>(geomin);
   snew->inverse();
-  MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(cgeom_, geomin);
+  MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
   auto c = make_shared<ZCoeff>(*snew * mixed * *zcoeff_);
 
   auto out = make_shared<Reference_London>(geomin, c, nclosed_, nact_, zcoeff_->mdim()-nclosed_-nact_, energy_);
@@ -76,7 +75,3 @@ shared_ptr<Reference> Reference_London::project_coeff(shared_ptr<const Geometry_
   return out;
 }
 
-
-std::shared_ptr<Reference> Reference_London::project_coeff(std::shared_ptr<const Geometry> geomin) const {
-  throw std::logic_error("You appear to be trying to project from a London basis to a Gaussian one.  This feature has not been implemented.");
-}

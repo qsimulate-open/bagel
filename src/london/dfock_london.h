@@ -28,7 +28,6 @@
 #define __SRC_LONDON_DFOCK_LONDON_H
 
 #include <src/london/reference_london.h>
-#include <src/wfn/geometry_london.h>
 #include <src/math/zmatrix.h>
 #include <src/london/reldf_london.h>
 #include <src/london/relhcore_london.h>
@@ -38,7 +37,7 @@ namespace bagel {
 
 class DFock_London : public ZMatrix {
   protected:
-    std::shared_ptr<const Geometry_London> cgeom_;
+    std::shared_ptr<const Geometry> geom_;
     const bool gaunt_;
     const bool breit_;
 
@@ -58,11 +57,11 @@ class DFock_London : public ZMatrix {
     bool robust_;
 
   public:
-    DFock_London(const std::shared_ptr<const Geometry_London> a,
+    DFock_London(const std::shared_ptr<const Geometry> a,
           const std::shared_ptr<const ZMatrix> hc,
           const std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
           const bool store_half, const bool robust = false, const double scale_exch = 1.0)
-     : ZMatrix(*hc), cgeom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
+     : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
 
        assert(breit ? gaunt : true);
        two_electron_part(coeff, scale_exch);

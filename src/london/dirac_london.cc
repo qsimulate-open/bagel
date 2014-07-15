@@ -36,8 +36,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Dirac_London)
 
-Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom,
-             const shared_ptr<const Reference> re) : Method_London(idata, geom, re) {
+Dirac_London::Dirac_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
+             const shared_ptr<const Reference> re) : Method(idata, geom, re) {
   gaunt_ = idata->get<bool>("gaunt", false);
   breit_ = idata->get<bool>("breit", gaunt_);
   robust_ = idata->get<bool>("robust", false);

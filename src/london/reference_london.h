@@ -27,7 +27,6 @@
 #define __SRC_LONDON_REFERENCE_LONDON_H
 
 #include <src/wfn/reference.h>
-#include <src/wfn/geometry_london.h>
 #include <src/molecule/zhcore.h>
 #include <src/london/zcoeff.h>
 
@@ -35,7 +34,6 @@ namespace bagel {
 
 class Reference_London : public Reference {
   protected:
-    std::shared_ptr<const Geometry_London> cgeom_;
     std::shared_ptr<const ZCoeff> zcoeff_;
     std::shared_ptr<const ZHcore> zhcore_;
 
@@ -43,24 +41,21 @@ class Reference_London : public Reference {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & cgeom_ & zcoeff_ & zhcore_;
+      ar & boost::serialization::base_object<Reference>(*this) & geom_ & zcoeff_ & zhcore_;
     }
 
   public:
     Reference_London() { }
-    Reference_London(std::shared_ptr<const Geometry_London> g, std::shared_ptr<const ZCoeff> c,
+    Reference_London(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c,
                      const int nclo, const int nact, const int nvirt, const double en = 0.0);
 
     const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("Reference_London::coeff() should not be called"); }
     const std::shared_ptr<const Hcore> hcore() const override { throw std::logic_error("Reference_London::hcore() should not be called"); }
-    const std::shared_ptr<const Geometry> geom() const override { throw std::logic_error("Reference_London::geom() should not be called"); }
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
-    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry_London> geomin) const override;
 
     virtual const std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
 
     const std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }
-    const std::shared_ptr<const Geometry_London> cgeom() const { return cgeom_; }
 
 };
 

@@ -38,7 +38,7 @@ double london_energy(std::string filename) {
   std::stringstream ss; ss << "../../test/" << filename << ".json";
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
-  std::shared_ptr<Geometry_London> cgeom;
+  std::shared_ptr<Geometry> geom;
 
   std::shared_ptr<const Reference> ref_;
   double energy = 0.0;
@@ -47,14 +47,14 @@ double london_energy(std::string filename) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
-      cgeom = cgeom ? std::make_shared<Geometry_London>(*cgeom, itree) : std::make_shared<Geometry_London>(itree);
+      geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
     } else if (method == "hf") {
-      auto scf = std::make_shared<SCF_London>(itree, cgeom, ref_);
+      auto scf = std::make_shared<SCF_London>(itree, geom, ref_);
       scf->compute();
       ref_ = scf->conv_to_ref();
       energy = ref_->energy();
     } else if (method == "dhf") {
-      auto rel = std::make_shared<Dirac_London>(itree, cgeom, ref_);
+      auto rel = std::make_shared<Dirac_London>(itree, geom, ref_);
       rel->compute();
       ref_ = rel->conv_to_ref();
       energy = ref_->energy();

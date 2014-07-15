@@ -27,16 +27,16 @@
 #define __SRC_WFN_METHOD_H
 
 #include <src/wfn/geometry.h>
-#include <src/wfn/geometry_london.h>
 #include <src/wfn/reference.h>
 
 // this file should be header only (in order not to introduce additional dependency)
 
 namespace bagel {
 
-class Method_ {
+class Method {
   protected:
     std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
 
   private:
@@ -45,50 +45,23 @@ class Method_ {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & idata_ & ref_;
+      ar & geom_ & idata_ & ref_;
     }
 
   public:
-    Method_() { }
-    Method_(std::shared_ptr<const PTree> p, std::shared_ptr<const Reference> r)
-     : idata_(p), ref_(r) { }
-    virtual ~Method_() { }
+    Method() { }
+    Method(std::shared_ptr<const PTree> p, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r)
+     : idata_(p), geom_(g), ref_(r) { }
+    virtual ~Method() { }
 
     virtual void compute() = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
 
     std::shared_ptr<const PTree> idata() const { return idata_; }
     std::shared_ptr<const Reference> ref() const { return ref_; }
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
 
 };
-
-
-template<typename GeomType>
-class SubMethod : public Method_ {
-  protected:
-    std::shared_ptr<const GeomType> geom_;
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Method_>(*this);
-      ar & geom_;
-    }
-
-  public:
-    SubMethod() { }
-    SubMethod(std::shared_ptr<const PTree> p, std::shared_ptr<const GeomType> g, std::shared_ptr<const Reference> r)
-     : Method_(p, r), geom_(g) { }
-    virtual ~SubMethod() { }
-
-    std::shared_ptr<const GeomType> geom() const { return geom_; }
-};
-
-using Method = SubMethod<Geometry>;
-using Method_London = SubMethod<Geometry_London>;
 
 }
 

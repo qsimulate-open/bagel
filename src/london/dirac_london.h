@@ -30,14 +30,13 @@
 #include <string>
 #include <map>
 #include <src/wfn/method.h>
-#include <src/wfn/geometry_london.h>
 #include <src/london/relhcore_london.h>
 #include <src/london/reloverlap_london.h>
 #include <src/london/reldfhalf_london.h>
 
 namespace bagel {
 
-class Dirac_London : public Method_London {
+class Dirac_London : public Method {
   protected:
 
     int max_iter_;
@@ -71,7 +70,7 @@ class Dirac_London : public Method_London {
 
   public:
     Dirac_London() { }
-    Dirac_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London> geom, const std::shared_ptr<const Reference> re = nullptr);
+    Dirac_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re = nullptr);
 
     ~Dirac_London() { geom_->discard_relativistic(); }
 

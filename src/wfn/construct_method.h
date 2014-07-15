@@ -32,7 +32,7 @@
 #include <src/input/input.h>
 
 namespace bagel {
-  extern std::shared_ptr<Method_> construct_method(std::string title, std::shared_ptr<const PTree> itree,
+  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
                                                    std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
 }
 

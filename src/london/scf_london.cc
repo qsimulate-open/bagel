@@ -34,7 +34,7 @@ using namespace std;
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
 
-SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re)
+SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base_London(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
   cout << indent << "*** RHF ***" << endl << endl;
@@ -119,7 +119,7 @@ void SCF_London::compute() {
     if (restart_) {
       stringstream ss; ss << "scf_" << iter;
       OArchive archive(ss.str());
-      archive << static_cast<Method_London*>(this);
+      archive << static_cast<Method*>(this);
     }
 #endif
     if (!dodf_) {

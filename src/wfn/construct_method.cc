@@ -56,13 +56,11 @@ using namespace bagel;
 
 namespace bagel {
 
-shared_ptr<Method_> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry> geomin,
+shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom,
                                                   shared_ptr<const Reference> ref) {
-  shared_ptr<Method_> out;
 
-  auto cgeom = std::dynamic_pointer_cast<const Geometry_London>(geomin);
-
-  if (!cgeom) {
+  shared_ptr<Method> out;
+  if (!geom->magnetism()) {
     if (title == "hf")          out = make_shared<SCF>(itree, geom, ref);
     else if (title == "ks")     out = make_shared<KS>(itree, geom, ref);
     else if (title == "uhf")    out = make_shared<UHF>(itree, geom, ref);
@@ -130,8 +128,8 @@ shared_ptr<Method_> construct_method(string title, shared_ptr<const PTree> itree
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     }
   } else {
-    if (title == "hf")              out = make_shared<SCF_London>(itree, cgeom, ref);
-    else if (title == "dhf")        out = make_shared<Dirac_London>(itree, cgeom, ref);
+    if (title == "hf")              out = make_shared<SCF_London>(itree, geom, ref);
+    else if (title == "dhf")        out = make_shared<Dirac_London>(itree, geom, ref);
     else if (title == "fci")        throw runtime_error("FCI method has not been implemented with an applied magnetic field.");
     else if (title == "ks")         throw runtime_error("KS method has not been implemented with an applied magnetic field.");
     else if (title == "uhf")        throw runtime_error("UHF method has not been implemented with an applied magnetic field.");

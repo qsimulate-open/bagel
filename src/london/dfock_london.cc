@@ -25,8 +25,9 @@
 
 
 #include <src/util/constants.h>
-#include <src/london/dfock_london.h>
+#include <src/df/complexdf.h>
 #include <src/math/matrix.h>
+#include <src/london/dfock_london.h>
 #include <src/london/cdmatrix_london.h>
 
 using namespace std;
@@ -37,7 +38,7 @@ const static int batchsize = 250;
 
 void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, const double scale_exchange) {
 
-  assert(cgeom_->nbasis()*4 == coeff->ndim());
+  assert(geom_->nbasis()*4 == coeff->ndim());
 
   auto ocoeffall = make_shared<ZMatrix>(*coeff);
   const int nocc = coeff->mdim();
@@ -53,7 +54,7 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
     array<shared_ptr<const Matrix>, 4> tiocoeff;
 
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*cgeom_->nbasis(), itable.first, cgeom_->nbasis(), itable.second);
+      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), itable.first, geom_->nbasis(), itable.second);
       rocoeff[i] = ocoeff->get_real_part();
       iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();
@@ -71,7 +72,7 @@ void DFock_London::two_electron_part(const shared_ptr<const ZMatrix> coeff, cons
 
 void DFock_London::add_Jop_block(shared_ptr<const RelDF_London> dfdata, list<shared_ptr<const CDMatrix_London>> cd, const double scale) {
 
-  const int n = cgeom_->nbasis();
+  const int n = geom_->nbasis();
   vector<shared_ptr<ZMatrix>> dat = dfdata->compute_Jop(cd);
 
   //add it twice, once to first basis combo, then once to opposite basis combo
@@ -96,7 +97,7 @@ void DFock_London::add_Jop_block(shared_ptr<const RelDF_London> dfdata, list<sha
 void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<RelDFHalf_London> dfc2, const double scale, const bool diag) {
 
   // minus from -1 in the definition of exchange
-  const int n = cgeom_->nbasis();
+  const int n = geom_->nbasis();
 
   shared_ptr<Matrix> r, i;
   if (!dfc1->sum()) {
@@ -185,11 +186,15 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   vector<shared_ptr<const DFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
-    dfs = cgeom_->dfs()->split_complex_blocks();
-    dfs.push_back(cgeom_->df());
+
+    auto tmp0 = dynamic_pointer_cast<const ComplexDFDist>(geom_->df());
+    auto tmp1 = dynamic_pointer_cast<const ComplexDFDist>(geom_->dfs());
+    assert(tmp0 && tmp1);
+    dfs = tmp1->split_complex_blocks();
+    dfs.push_back(tmp0);
   } else if (gaunt) {
     throw logic_error("Gaunt integral not yet implemented for DFock_London.");
-    //dfs = cgeom_->dfsl()->split_complex_blocks();
+    //dfs = geom_->dfsl()->split_complex_blocks();
   }
 
   list<shared_ptr<RelDF_London>> dfdists = make_dfdists(dfs, gaunt);
@@ -222,10 +227,10 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
     for (auto& i : half_complex_exch)
       half_complex_exch2.push_back(i->copy());
 
-    auto breitint = make_shared<BreitInt>(cgeom_);
+    auto breitint = make_shared<BreitInt>(geom_);
     list<shared_ptr<Breit2Index>> breit_2index;
     for (int i = 0; i != breitint->Nblocks(); ++i) {
-      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), cgeom_->df()->data2()));
+      breit_2index.push_back(make_shared<Breit2Index>(breitint->index(i), breitint->data(i), geom_->df()->data2()));
 
       // if breit index is xy, xz, yz, get yx, zx, zy (which is the exact same with reversed index)
       if (breitint->not_diagonal(i))
@@ -278,7 +283,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
   // compute J operators
   for (auto& j : half_complex_exch2) {
     for (auto& i : j->basis()) {
-      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, cgeom_->df()->data2()));
+      cd.push_back(make_shared<CDMatrix_London>(j, i, trocoeff, tiocoeff, geom_->df()->data2()));
     }
   }
 

@@ -57,7 +57,7 @@ class Fock_London : public Fock_base_London {
     Fock_London() { }
     // Fock operator for DF cases
     template<int DF1 = DF, class = typename std::enable_if<DF1==1>::type>
-    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
+    Fock_London(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
                 const ZMatView ocoeff, const bool store = false, const bool rhf = false, const double scale_ex = 1.0)
      : Fock_base_London(a,b,c), store_half_(store) {
       fock_two_electron_part_with_coeff(ocoeff, rhf, scale_ex);
@@ -65,16 +65,16 @@ class Fock_London : public Fock_base_London {
     }
     // same as above
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
-    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
+    Fock_London(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c,
                 std::shared_ptr<T> o, const bool store = false, const bool rhf = false, const double scale_ex = 1.0) : Fock_London(a,b,c,*o,store,rhf,scale_ex) { }
 
     // Fock operator
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c, const std::vector<double>& d) : Fock_London(a,b,c,c,d) {}
+    Fock_London(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c, const std::vector<double>& d) : Fock_London(a,b,c,c,d) {}
 
     // Fock operator with a different density matrix for exchange
     template<int DF1 = DF, class = typename std::enable_if<DF1==1 or DF1==0>::type>
-    Fock_London(const std::shared_ptr<const Geometry_London> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c, std::shared_ptr<const ZMatrix> ex,
+    Fock_London(const std::shared_ptr<const Geometry> a, const std::shared_ptr<const ZMatrix> b, const std::shared_ptr<const ZMatrix> c, std::shared_ptr<const ZMatrix> ex,
          const std::vector<double>& d)
      : Fock_base_London(a,b,c,d), store_half_(false) {
       fock_two_electron_part(ex);
@@ -88,14 +88,14 @@ class Fock_London : public Fock_base_London {
 template<int DF>
 void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_ex) {
 
-  const std::vector<std::shared_ptr<const Atom>> atoms = cgeom_->atoms();
+  const std::vector<std::shared_ptr<const Atom>> atoms = geom_->atoms();
   std::vector<std::shared_ptr<const Shell>> basis;
   std::vector<int> offset;
   int cnt = 0;
   for (auto aiter = atoms.begin(); aiter != atoms.end(); ++aiter, ++cnt) {
     const std::vector<std::shared_ptr<const Shell>> tmp = (*aiter)->shells();
     basis.insert(basis.end(), tmp.begin(), tmp.end());
-    const std::vector<int> tmpoff = cgeom_->offset(cnt);
+    const std::vector<int> tmpoff = geom_->offset(cnt);
     offset.insert(offset.end(), tmpoff.begin(), tmpoff.end());
   }
 
@@ -133,7 +133,7 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
   if (DF == 0) {
     //////////////// ONLY FOR REFERENCES. //////////////////
 #if 1
-    std::shared_ptr<Petite> plist = cgeom_->plist();;
+    std::shared_ptr<Petite> plist = geom_->plist();;
 
     for (int i0 = 0; i0 != size; ++i0) {
       //if (!plist->in_p1(i0)) continue;
@@ -278,7 +278,8 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     std::cout << "    .. warning .. use a new Fock builder if possible (coeff_ required)" << std::endl;
 #endif
 
-    std::shared_ptr<const ComplexDFDist> df = cgeom_->df();
+    auto df = std::dynamic_pointer_cast<const ComplexDFDist>(geom_->df());
+    assert(df);
 
     // some constants
     assert(ndim() == df->nbasis0());
@@ -324,7 +325,8 @@ void Fock_London<DF>::fock_two_electron_part_with_coeff(const ZMatView ocoeff, c
 #if 1
   Timer pdebug(3);
 
-  std::shared_ptr<const ComplexDFDist> df = cgeom_->df();
+  auto df = std::dynamic_pointer_cast<const ComplexDFDist>(geom_->df());
+  assert(df);
 
   if (scale_exchange != 0.0) {
     std::shared_ptr<ComplexDFHalfDist> halfbj = df->complex_compute_half_transform(ocoeff);

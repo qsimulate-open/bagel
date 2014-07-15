@@ -34,16 +34,16 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::RelReference_London)
 using namespace std;
 using namespace bagel;
 
-shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geometry_London> geomin) const {
+shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geometry> geomin) const {
   // in this case we first form overlap matrices
   RelOverlap_London overlap(geomin);
   shared_ptr<ZMatrix> sinv = overlap.inverse();
 
   // TODO Kinetic energy uses the magnetic field of the new geometry - is this correct?
-  MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(cgeom_, geomin);
-  MixedBasis<ComplexKineticBatch, ZMatrix, const array<double,3>> tmixed(cgeom_, geomin, geomin->magnetic_field());
+  MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, geomin);
+  MixedBasis<ComplexKineticBatch, ZMatrix, const array<double,3>> tmixed(geom_, geomin, geomin->magnetic_field());
   const int nb = geomin->nbasis();
-  const int mb = cgeom_->nbasis();
+  const int mb = geom_->nbasis();
   tmixed.scale(0.5/(c__*c__));
   ZMatrix mixed(nb*4, mb*4);
   mixed.copy_block(0,    0, nb, mb, smixed);
@@ -52,5 +52,5 @@ shared_ptr<Reference> RelReference_London::project_coeff(shared_ptr<const Geomet
   mixed.copy_block(3*nb, 3*mb, nb, mb, tmixed);
 
   auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
-  return make_shared<RelReference_London>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-cgeom_->nbasis()), gaunt_, breit_);
+  return make_shared<RelReference_London>(geomin, c, energy_, 0, nocc(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_);
 }

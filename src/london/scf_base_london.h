@@ -34,7 +34,7 @@
 
 namespace bagel {
 
-class SCF_base_London : public Method_London {
+class SCF_base_London : public Method {
   protected:
     std::shared_ptr<const ZMatrix> tildex_;
     std::shared_ptr<const ZOverlap> overlap_;
@@ -73,7 +73,7 @@ class SCF_base_London : public Method_London {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Method_London>(*this);
+      ar & boost::serialization::base_object<Method>(*this);
       ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & schwarz_ & eig_ & energy_
          & nocc_ & noccB_ & do_grad_ & restart_;
@@ -81,7 +81,7 @@ class SCF_base_London : public Method_London {
 
   public:
     SCF_base_London() { }
-    SCF_base_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry_London>,
+    SCF_base_London(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
              const std::shared_ptr<const Reference>, const bool need_schwarz = false);
     virtual ~SCF_base_London() { }
 

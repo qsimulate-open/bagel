@@ -47,7 +47,7 @@ class RelReference_London : public Reference_London {
 
   public:
     RelReference_London() { }
-    RelReference_London(std::shared_ptr<const Geometry_London> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc,
+    RelReference_London(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZMatrix> c, const double en, const int nneg, const int nocc,
                         const int nvirt, const bool ga, const bool br)
      : Reference_London(g, nullptr, nocc, 0, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c->slice_copy(nneg_, c->mdim())), relcoeff_full_(c) {
     }
@@ -60,7 +60,7 @@ class RelReference_London : public Reference_London {
     bool breit() const { return breit_; }
     int nneg() const { return nneg_; }
 
-    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry_London> geomin) const override;
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 
 };
 
