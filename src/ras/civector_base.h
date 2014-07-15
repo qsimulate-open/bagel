@@ -53,6 +53,8 @@ class RASCivector_base {
     RASCivector_base(std::shared_ptr<const RASDeterminants> d) : det_(d) {}
 
   public:
+    size_t size() const { return det_->size(); }
+
     std::shared_ptr<const RASDeterminants> det() const { return det_; }
     void set_det(std::shared_ptr<const RASDeterminants> det) { det_ = det; }
 

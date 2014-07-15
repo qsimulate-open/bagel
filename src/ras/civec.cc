@@ -30,6 +30,9 @@
 #include <src/ras/civector.h>
 #include <src/util/taskqueue.h>
 
+template class bagel::RASCivector<double>;
+template class bagel::RASCivecView_<double>;
+
 using namespace std;
 using namespace bagel;
 
