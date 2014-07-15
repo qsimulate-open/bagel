@@ -132,8 +132,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 
-    virtual void print(const std::string in = "", const int size = 10) const;
-
 #ifdef HAVE_SCALAPACK
     // return a shared pointer to this ifndef HAVE_SCALAPACK
     std::shared_ptr<DistMatrix> distmatrix() const;

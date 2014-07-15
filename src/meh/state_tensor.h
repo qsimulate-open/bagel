@@ -34,13 +34,17 @@ namespace bagel {
 
 class StateTensor {
   protected:
-    using SparseMap = std::map<std::tuple<int, MonomerKey, MonomerKey>, std::shared_ptr<Matrix>>;
+    using SparseMap = std::map<std::tuple<int, MonomerKey, MonomerKey>, btas::PTensor2<const double>>;
+
+    // original data
+    std::shared_ptr<const Matrix> data_;
+
     SparseMap sparse_;
     int norb_;
     int nstates_;
 
   public:
-    StateTensor(std::shared_ptr<const Matrix> diab, const std::vector<DimerSubspace_base>& subspaces) : nstates_(diab->mdim()) {
+    StateTensor(std::shared_ptr<const Matrix> diab, const std::vector<DimerSubspace_base>& subspaces) : data_(diab), nstates_(diab->mdim()) {
       for (int istate = 0; istate != nstates_; ++istate) {
         for (auto& i : subspaces) {
           MonomerKey k0 = i.monomerkey<0>();
@@ -48,10 +52,12 @@ class StateTensor {
           const int n0 = k0.nstates();
           const int n1 = k1.nstates();
           if (n0*n1 == 0) continue;
-          auto block = std::make_shared<Matrix>(n0, n1);
 
           const int offset = i.offset();
-          std::copy_n(diab->element_ptr(offset, istate), n0*n1, block->data());
+          PreAllocArray<const double> storage(diab->element_ptr(offset, istate), n0*n1);
+          btas::CRange<2> range(n0, n1);
+          btas::PTensor2<const double> block(range, storage);
+
           sparse_.emplace(std::make_tuple(istate, k0, k1), block);
         }
       }
@@ -60,7 +66,7 @@ class StateTensor {
     void print() const {
       for (auto& i : sparse_) {
         std::string label = std::get<1>(i.first).to_string() + " " + std::get<2>(i.first).to_string();
-        i.second->print(label + " (state " + lexical_cast<std::string>(std::get<0>(i.first)) + ")");
+        btas::print(i.second, label + " (state " + lexical_cast<std::string>(std::get<0>(i.first)) + ")");
         std::cout << std::endl;
       }
     }
@@ -74,7 +80,7 @@ class StateTensor {
 
     int nblocks() const { return sparse_.size(); }
 
-    std::shared_ptr<const Matrix> get_block(const MonomerKey& i, const MonomerKey& j, const int k) const {
+    btas::PTensor2<const double> get_block(const MonomerKey& i, const MonomerKey& j, const int k) const {
       return sparse_.at(std::make_tuple(k, i, j));
     }
 

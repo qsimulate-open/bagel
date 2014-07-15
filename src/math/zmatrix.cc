@@ -354,16 +354,6 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
 }
 
 
-void ZMatrix::print(const string name, const int size) const {
-  cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size,ndim()); ++i) {
-    for (int j = 0; j != min(size,mdim()); ++j) {
-      cout << fixed << setw(30) << setprecision(8) << element(i, j) << " ";
-    }
-    cout << endl;
-  }
-}
-
 void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
   for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
     for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {

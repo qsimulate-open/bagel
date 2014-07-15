@@ -152,8 +152,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
-    void print(const std::string in = "", const int size = 10) const;
-
 #ifdef HAVE_SCALAPACK
     std::shared_ptr<DistZMatrix> distmatrix() const;
     ZMatrix(const DistZMatrix&);

@@ -396,19 +396,6 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
 }
 
 
-void Matrix::print(const string name, const int size) const {
-
-  cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size, ndim()); ++i) {
-    for (int j = 0; j != min(size, mdim()); ++j) {
-      cout << fixed << setw(12) << setprecision(9) << element(i, j)  << " ";
-    }
-    cout << endl;
-  }
-
-}
-
-
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistMatrix> Matrix::distmatrix() const {
   return make_shared<DistMatrix>(*this);

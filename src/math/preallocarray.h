@@ -32,56 +32,63 @@
 namespace bagel {
 
 template <class DataType>
-class PreAllocArray_ {
+class PreAllocArray {
   public:
     using value_type = DataType;
     using size_type = size_t;
     using iterator = DataType*;
-    using const_iterator = const DataType*;
+
+    using const_value_type = const typename std::remove_cv<DataType>::type;
+    using const_iterator = const typename std::remove_cv<DataType>::type*;
 
   protected:
     DataType* begin_;
     DataType* end_;
 
   public:
-    PreAllocArray_() : begin_(0), end_(0) { }
-    PreAllocArray_(DataType* b, size_t size) : begin_(b), end_(b+size) { }
-    PreAllocArray_(DataType* b, DataType* e) : begin_(b), end_(e) { }
-    PreAllocArray_(const PreAllocArray_<DataType>& o) : begin_(o.begin_), end_(o.end_) { }
+    PreAllocArray() : begin_(0), end_(0) { }
+    PreAllocArray(DataType* b, size_t size) : begin_(b), end_(b+size) { }
+    PreAllocArray(DataType* b, DataType* e) : begin_(b), end_(e) { }
+    PreAllocArray(const PreAllocArray<DataType>& o) : begin_(o.begin_), end_(o.end_) { }
 
-    DataType* begin() { return begin_; }
-    const DataType* begin() const { return begin_; }
-    const DataType* cbegin() const { return begin_; }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    iterator begin() { return begin_; }
+    const_iterator begin() const { return begin_; }
+    const_iterator cbegin() const { return begin_; }
 
-    DataType* end() { return end_; }
-    const DataType* end() const { return end_; }
-    const DataType* cend() const { return end_; }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    iterator end() { return end_; }
+    const_iterator end() const { return end_; }
+    const_iterator cend() const { return end_; }
 
     size_t size() const { return std::distance(begin_, end_); }
 
-    void resize(const int) { throw std::logic_error("resize is not allowed in PreAllocArray_"); }
+    void resize(const int) { throw std::logic_error("resize is not allowed in PreAllocArray"); }
     bool empty() const { return begin_ == end_; }
 
-    DataType& at(const size_t i) { return *(begin_+i); }
-    const DataType& at(const size_t i) const { return *(begin_+i); }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    value_type& at(const size_t i) { return *(begin_+i); }
+    const_value_type& at(const size_t i) const { return *(begin_+i); }
 
-    DataType& front() { return at(0); }
-    const DataType& front() const { return at(0); }
-    DataType& back() { return at(size()); }
-    const DataType& back() const { return at(size()); }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    value_type& front() { return at(0); }
+    const_value_type& front() const { return at(0); }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    value_type& back() { return at(size()); }
+    const_value_type& back() const { return at(size()); }
 
-    DataType* data() { return begin_; }
-    const DataType* data() const { return begin_; }
+    template <typename T = DataType, class = typename std::enable_if<not std::is_const<T>::value>::type>
+    iterator data() { return begin_; }
+    const_iterator data() const { return begin_; }
 
-    PreAllocArray_<DataType>& operator=(const PreAllocArray_<DataType>& o) { begin_ = o.begin_; end_ = o.end_; return *this; }
+    PreAllocArray<DataType>& operator=(const PreAllocArray<DataType>& o) { begin_ = o.begin_; end_ = o.end_; return *this; }
 };
-
-using PreAllocArray = PreAllocArray_<double>;
-using ZPreAllocArray = PreAllocArray_<std::complex<double>>;
 
 }
 
-extern template class bagel::PreAllocArray_<double>;
-extern template class bagel::PreAllocArray_<std::complex<double>>;
+extern template class bagel::PreAllocArray<double>;
+extern template class bagel::PreAllocArray<std::complex<double>>;
+extern template class bagel::PreAllocArray<const double>;
+extern template class bagel::PreAllocArray<const std::complex<double>>;
 
 #endif

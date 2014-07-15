@@ -24,5 +24,7 @@
 //
 
 #include <src/math/preallocarray.h>
-template class bagel::PreAllocArray_<double>;
-template class bagel::PreAllocArray_<std::complex<double>>;
+template class bagel::PreAllocArray<double>;
+template class bagel::PreAllocArray<std::complex<double>>;
+template class bagel::PreAllocArray<const double>;
+template class bagel::PreAllocArray<const std::complex<double>>;
