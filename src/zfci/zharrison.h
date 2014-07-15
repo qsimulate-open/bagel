@@ -196,6 +196,9 @@ class ZHarrison : public Method {
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
     std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
     std::array<std::shared_ptr<const ZMatrix>,2> kramers_coeff() const { return jop_->kramers_coeff(); }
+    void update_kramers_coeff(std::shared_ptr<ZMatrix> natorb_transform) {
+      jop_->update_kramers_coeff(natorb_transform);
+    }
 };
 
 }

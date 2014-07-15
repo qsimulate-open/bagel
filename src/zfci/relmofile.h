@@ -98,6 +98,7 @@ class RelMOFile {
       return coeff_tot;
     }
     std::shared_ptr<const ZMatrix> coeff_input() const { return coeff_; }
+    void update_kramers_coeff(std::shared_ptr<ZMatrix> coeff);
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; }
 
