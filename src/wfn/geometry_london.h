@@ -28,43 +28,30 @@
 #define __SRC_WFN_GEOMETRY_LONDON_H
 
 #include <src/df/complexdf.h>
-#include <src/wfn/geometry_base.h>
+#include <src/wfn/geometry.h>
 #include <src/input/input.h>
 
 namespace bagel {
 
-class Geometry_London: public Geometry_base {
+class Geometry_London_init : public Geometry_custom_init {
+    void custom_init() const override;
+    std::shared_ptr<DFDist> compute_integrals(const double thresh) const override;
+    int dsize() const override { return 2.0; }
+};
+
+
+class Geometry_London: public Geometry {
   protected:
-
-    // for DF calculations
-    mutable std::shared_ptr<ComplexDFDist> df_;
-    // small component
-    mutable std::shared_ptr<ComplexDFDist> dfs_;
-    // small-large component
-    mutable std::shared_ptr<ComplexDFDist> dfsl_;
-
-    // if false, use common origin with Gaussian orbitals
-    bool london_;
-
-    // Constructor helpers
-    void compute_integrals(const double thresh, const bool nodf) override;
-    void custom_init() override {
-      if (london_ && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
-      if (!london_ && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
-      if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
-      magnetic();
-    }
-
-    double dsize() const override { return 2.0; }
 
   private:
 
+#if 0
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Geometry_base>(*this);
+      ar << boost::serialization::base_object<Geometry>(*this);
       const size_t dfindex = !df_ ? 0 : std::hash<ComplexDFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -74,7 +61,7 @@ class Geometry_London: public Geometry_base {
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<Geometry_base>(*this);
+      ar >> boost::serialization::base_object<Geometry>(*this);
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<ComplexDFDist>> dfmap;
@@ -95,23 +82,13 @@ class Geometry_London: public Geometry_base {
     void serialize(Archive& ar, const unsigned int file_version) {
       boost::serialization::split_member(ar, *this, file_version);
     }
+#endif
 
   public:
     Geometry_London() { }
-    Geometry_London(const std::shared_ptr<const PTree>);
+    Geometry_London(const std::shared_ptr<const PTree> idata);
     Geometry_London(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
     Geometry_London(const Geometry_London& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
-
-    // Returns a constant
-    bool london() const {return london_; }
-
-    // Returns DF data
-    const std::shared_ptr<const ComplexDFDist> df() const { return df_; }
-    const std::shared_ptr<const ComplexDFDist> dfs() const { return dfs_; }
-    const std::shared_ptr<const ComplexDFDist> dfsl() const { return dfsl_; }
-
-    // TODO resolve "mutable" issues
-    void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
 
     // initialize relativistic components
     std::shared_ptr<const Geometry_London> relativistic(const bool do_gaunt) const;
@@ -122,6 +99,7 @@ class Geometry_London: public Geometry_base {
     void magnetic();
 
 };
+
 
 }
 

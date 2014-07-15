@@ -36,55 +36,32 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry_London)
 
 Geometry_London::Geometry_London(const shared_ptr<const PTree> geominfo)
- : Geometry_base(geominfo) {
-
-  // London basis or Gaussian w/ common origin
-  const string basis_type = to_lower(geominfo->get<string>("basis_type", "giao"));
-  if (basis_type == "giao" || basis_type == "london") london_ = true;
-  else if (basis_type == "gaussian") london_ = false;
-  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
-
-  common_init2(true, overlap_thresh_);
-  get_electric_field(geominfo);
+ : Geometry(geominfo, Geometry_London_init()) {
+  if (london() && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+  if (!london() && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+  if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+  magnetic();
+  df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(overlap_thresh_, true);
 }
 
 
 Geometry_London::Geometry_London(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> o)
- : Geometry_base(atoms, o) {
-  common_init2(true, overlap_thresh_);
-  get_electric_field(o);
+ : Geometry(atoms, o, Geometry_London_init()) {
+  if (london() && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+  if (!london() && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+  if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+  magnetic();
+  df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(overlap_thresh_, true);
 }
 
 
 Geometry_London::Geometry_London(const Geometry_London& o, const shared_ptr<const PTree> idata, const bool discard)
- : Geometry_base(o, idata, discard), london_(o.london_) {
-
-  // London basis or Gaussian w/ common origin
-  const string basis_type = to_lower(idata->get<string>("basis_type", london_ ? "giao" : "gaussian"));
-  if (basis_type == "giao" || basis_type == "london") london_ = true;
-  else if (basis_type == "gaussian") london_ = false;
-  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
-
-  auto atoms = idata->get_child_optional("geometry");
-  auto newfield = idata->get_child_optional("magnetic_field");
-  if (o.basisfile_ != basisfile_ || o.auxfile_ != auxfile_ || atoms || newfield) {
-    // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
-    if (discard)
-      o.discard_df();
-    common_init2(true, overlap_thresh_);
-  } else {
-    df_ = o.df_;
-    dfs_ = o.dfs_;
-    dfsl_ = o.dfsl_;
-    common_init2(true, overlap_thresh_, true /* not to calculate integrals */);
-  }
-  external_ = o.external_;
-}
-
-
-void Geometry_London::compute_integrals(const double thresh, const bool nodf) {
-  df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
-  dfints_ = true;
+ : Geometry(o, idata, discard, Geometry_London_init()) {
+  if (london() && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+  if (!london() && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+  if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+  magnetic();
+  df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(overlap_thresh_, true);
 }
 
 
@@ -142,3 +119,16 @@ void Geometry_London::magnetic() {
   cout << endl;
 }
 
+
+void Geometry_London_init::custom_init() const {
+  //if (o.london() && o.nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
+  //if (!o.london() && o.nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
+  //if (!o.nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+  //magnetic();
+}
+
+
+std::shared_ptr<DFDist> Geometry_London_init::compute_integrals(const double thresh) const {
+  //return form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
+  return nullptr;
+}

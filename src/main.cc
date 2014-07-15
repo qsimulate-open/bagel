@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Geometry_base> geom;
+    shared_ptr<Geometry> geom;
     shared_ptr<Method_> method;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 
       } else if (title == "optimize") {
 
-        auto opt = make_shared<Optimize>(itree, dynamic_pointer_cast<Geometry>(geom));
+        auto opt = make_shared<Optimize>(itree, geom);
         opt->compute();
 
 
