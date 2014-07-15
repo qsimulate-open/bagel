@@ -49,8 +49,10 @@ class Geometry: public Molecule {
 
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
-    void get_electric_field(const std::shared_ptr<const PTree> geominfo);
-    void set_london(const std::shared_ptr<const PTree> geominfo);
+    void compute_integrals(const double thresh) const;
+    void get_electric_field(const std::shared_ptr<const PTree>& geominfo);
+    void set_london(const std::shared_ptr<const PTree>& geominfo);
+    void init_magnetism();
 
     // Magnetism-specific parameters
     bool magnetism_;
@@ -123,8 +125,6 @@ class Geometry: public Molecule {
       return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
     }
 
-    void compute_integrals(const double thresh) const;
-
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
@@ -137,9 +137,6 @@ class Geometry: public Molecule {
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
-
-    // initialize magnetic components
-    void init_magnetism();
 
 };
 

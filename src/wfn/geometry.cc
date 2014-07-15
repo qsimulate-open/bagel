@@ -66,7 +66,9 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) : magnetism_(false) {
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
-  if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+  if (tesla)
+    for (int i=0; i!=3; ++i)
+      magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
 
   /* Set up atoms_ */
@@ -177,6 +179,7 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   symmetry_ = o.symmetry_;
   gamma_ = o.gamma_;
   external_ = o.external_;
+  magnetic_field_ = o.magnetic_field_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -252,13 +255,13 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
       atoms_ = newatoms;
       aux_atoms_ = newauxatoms;
     }
-    if (o.magnetism()) throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
   }
 
   common_init1();
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
   common_init2(false, overlap_thresh_, nodf);
+  if (o.magnetism()) throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
 
@@ -273,6 +276,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   symmetry_ = o.symmetry_;
   gamma_ = o.gamma_;
   external_ = o.external_;
+  magnetic_field_ = o.magnetic_field_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -316,7 +320,9 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   if (newfield) {
     magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
     const bool tesla = geominfo->get<bool>("tesla", false);
-    if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+    if (tesla)
+      for (int i=0; i!=3; ++i)
+        magnetic_field_[i] /= au2tesla__;
 
     const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
     if (basis == "giao" || basis == "london") london_ = true;
@@ -416,7 +422,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
-  if (tesla) for (int i=0; i!=3; i++) magnetic_field_[i] /= au2tesla__;
+  if (tesla)
+    for (int i=0; i!=3; ++i)
+      magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
 
   common_init2(true, overlap_thresh_);
@@ -435,6 +443,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
   spherical_ = nmer.front()->spherical_;
   symmetry_ = nmer.front()->symmetry_;
   external_ = nmer.front()->external_;
+  magnetic_field_ = nmer.front()->magnetic_field_;
 
   /************************************************************
   * Going down the list of protected variables, merge the     *
@@ -558,7 +567,7 @@ vector<double> Geometry::schwarz() const {
 }
 
 
-void Geometry::get_electric_field(const shared_ptr<const PTree> geominfo) {
+void Geometry::get_electric_field(const shared_ptr<const PTree>& geominfo) {
   // static external electric field
   external_[0] = geominfo->get<double>("ex", 0.0);
   external_[1] = geominfo->get<double>("ey", 0.0);
@@ -621,7 +630,7 @@ void Geometry::discard_relativistic() const {
 }
 
 
-void Geometry::set_london(const shared_ptr<const PTree> geominfo) {
+void Geometry::set_london(const shared_ptr<const PTree>& geominfo) {
   const string basis_type = to_lower(geominfo->get<string>("basis_type", (nonzero_magnetic_field() ? "london" : "gaussian")));
   if (basis_type == "giao" || basis_type == "london") london_ = true;
   else if (basis_type == "gaussian") london_ = false;
