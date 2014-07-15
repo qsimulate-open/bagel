@@ -64,8 +64,6 @@ ECPBatch::~ECPBatch() {
 
 void ECPBatch::compute() {
 
-  const SortList sort(spherical_);
-
   double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
   fill_n(intermediate_c, cont0_ * cont1_ * asize_, 0.0);
   double* current_data = intermediate_c;
@@ -89,7 +87,7 @@ void ECPBatch::compute() {
           radint.integrate();
           tmp += radint.integral().front();
         }
-        const int index = i + contA * asize_intermediate_ * basisinfo_[1]->contractions().size() + contC * asize_intermediate_;
+        const int index = i + contA * asize_ * basisinfo_[1]->contractions().size() + contC * asize_;
         current_data[index] = tmp;
       }
       ++i;
@@ -106,8 +104,8 @@ void ECPBatch::get_data(double* intermediate, double* data) {
 
   fill_n(data, size_alloc_, 0.0);
 
-  double* const intermediate_fi = stack_->get(cont0_ * cont1_ * asize_intermediate_);
-  const unsigned int array_size = cont0_ * cont1_ * asize_intermediate_;
+  const unsigned int array_size = cont0_ * cont1_ * asize_;
+  double* const intermediate_fi = stack_->get(array_size);
   copy_n(intermediate, array_size, intermediate_fi);
 
   if (spherical_) {
@@ -126,7 +124,7 @@ void ECPBatch::get_data(double* intermediate, double* data) {
     sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(cont0_*cont1_*asize_intermediate_, intermediate_fi);
+  stack_->release(cont0_*cont1_*asize_, intermediate_fi);
 
 }
 
@@ -148,17 +146,11 @@ void ECPBatch::common_init() {
   cont0_ = basisinfo_[0]->num_contracted();
   cont1_ = basisinfo_[1]->num_contracted();
 
-  amax_ = ang0_ + ang1_;
-  amax1_ = amax_ + 1;
-  amin_ = ang0_;
-
-  asize_ = 0;
-  for (int i = amin_; i != amax1_; ++i) asize_ += (i+1)*(i+2) / 2;
-  asize_intermediate_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
+  asize_ = (ang0_+1) * (ang0_+2) * (ang1_+1) * (ang1_+2) / 4;
   asize_final_ = (basisinfo_[0]->spherical() ? (2*ang0_+1) : (ang0_+1)*(ang0_+2)/2)
                * (basisinfo_[1]->spherical() ? (2*ang1_+1) : (ang1_+1)*(ang1_+2)/2);
 
-  size_alloc_ = cont0_ * cont1_ * max(asize_intermediate_, asize_);
+  size_alloc_ = cont0_ * cont1_ * asize_;
 
   stack_save_ = stack_->get(size_alloc_);
   data_ = stack_save_;

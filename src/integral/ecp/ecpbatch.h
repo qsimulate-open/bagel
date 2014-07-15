@@ -48,7 +48,7 @@ class ECPBatch : public Integral {
     double* data_;
 
     int ang0_, ang1_, cont0_, cont1_;
-    int amax_, amax1_, amin_, asize_, asize_final_, asize_intermediate_;
+    int asize_final_, asize_;
     bool swap01_;
     size_t size_alloc_;
     double* stack_save_;
