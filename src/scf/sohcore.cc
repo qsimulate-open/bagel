@@ -48,10 +48,10 @@ void SOHcore::form_sohcore() {
   add_real_block(real, nbasis, nbasis, nbasis, nbasis, hcore_);
   add_real_block(-imag, nbasis, nbasis, nbasis, nbasis, hcore_->soz());
 
-  add_real_block(imag, 0, nbasis, nbasis, nbasis, hcore_->sox());
-  add_real_block(real, 0, nbasis, nbasis, nbasis, hcore_->soy());
+  add_real_block(real, 0, nbasis, nbasis, nbasis, hcore_->sox());
+  add_real_block(imag, 0, nbasis, nbasis, nbasis, hcore_->soy());
 
-  add_real_block(imag, nbasis, 0, nbasis, nbasis, hcore_->sox());
-  add_real_block(-real, nbasis, 0, nbasis, nbasis, hcore_->soy());
+  add_real_block(-real, nbasis, 0, nbasis, nbasis, hcore_->sox());
+  add_real_block( imag, nbasis, 0, nbasis, nbasis, hcore_->soy());
 
 }
