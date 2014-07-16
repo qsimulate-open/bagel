@@ -37,15 +37,15 @@ namespace bagel {
 class DMRG_Block {
   protected:
     struct CouplingBlock {
-      std::pair<BlockKey, BlockKey> states;
+      std::pair<BlockInfo, BlockInfo> states;
       std::shared_ptr<btas::Tensor3<double>> data;
-      CouplingBlock(BlockKey ikey, BlockKey jkey, std::shared_ptr<btas::Tensor3<double>> d) : states({ikey,jkey}), data(d) {}
+      CouplingBlock(BlockInfo ikey, BlockInfo jkey, std::shared_ptr<btas::Tensor3<double>> d) : states({ikey,jkey}), data(d) {}
     };
     using SparseMap = std::map<std::list<GammaSQ>, std::vector<CouplingBlock>>;
 
     SparseMap sparse_;
     std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
-    std::set<BlockKey> blocks_;
+    std::set<BlockInfo> blocks_;
 
     int norb_;
 
@@ -57,15 +57,17 @@ class DMRG_Block {
     template <typename T>
     DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const int norb) : H2e_(h2e), norb_(norb) {
       // Build set of blocks
-      for (auto& i : h2e)
-        blocks_.insert(i.first);
+      for (auto& i : h2e) {
+        assert(i.second->ndim() == i.second->mdim());
+        blocks_.emplace(i.first.nelea, i.first.neleb, i.second->ndim());
+      }
 
       // initialize operator space
       for (auto o : forest.sparselist()) {
         std::list<GammaSQ> gammalist = std::get<0>(o);
 
-        BlockKey ikey = std::get<1>(o);
-        BlockKey jkey = std::get<2>(o);
+        BlockInfo ikey = std::get<1>(o);
+        BlockInfo jkey = std::get<2>(o);
 
         assert(blocks_.count(ikey));
         assert(blocks_.count(jkey));

@@ -28,16 +28,24 @@
 
 namespace bagel {
 
-// Only orders based on nelea and neleb. nstates is just extra info
+/// Convenient key for organizing blocks in ASD. Only holds nelea and neleb.
+/// Useful in maps.
 struct BlockKey {
   int nelea;
   int neleb;
-  int nstates;
 
-  BlockKey(const int na, const int nb, const int ns = 0) : nelea(na), neleb(nb), nstates(ns) {}
+  BlockKey(const int na, const int nb) : nelea(na), neleb(nb) {}
 
   bool operator<(const BlockKey& o) const { return std::make_pair(nelea, neleb) < std::make_pair(o.nelea, o.neleb); }
   bool operator==(const BlockKey& o) const { return std::make_pair(nelea, neleb) == std::make_pair(o.nelea, o.neleb); }
+};
+
+/// Extends BlockKey to also include the number of states.
+/// Use primarily as a store of information, NOT to organize data such as in a map
+struct BlockInfo : public BlockKey {
+  int nstates;
+  BlockInfo(const int na, const int nb, const int ns) : BlockKey(na,nb), nstates(ns) {}
+  BlockKey key() const { return BlockKey(nelea,neleb); }
 };
 
 }

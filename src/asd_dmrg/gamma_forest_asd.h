@@ -37,7 +37,7 @@ namespace bagel {
 template <class VecType>
 class GammaForestASD : public GammaForest<VecType, 1> {
   protected:
-    using SparseList = std::list<std::tuple<std::list<GammaSQ>, BlockKey, BlockKey>>;
+    using SparseList = std::list<std::tuple<std::list<GammaSQ>, BlockInfo, BlockInfo>>;
     SparseList sparselist_;
 
   public:
@@ -75,7 +75,7 @@ class GammaForestASD : public GammaForest<VecType, 1> {
           }
 
           for (auto& j : monomer_states) {
-            if (std::make_pair(new_nelea, new_neleb) == std::make_pair(j.first.nelea, j.first.neleb)) {
+            if (BlockKey(new_nelea, new_neleb)==i.first) {
 #ifdef DEBUG
               std::cout << "inserting: <" << j.first.nelea << ", " << j.first.neleb << "|";
               for (auto opiter = coupling.rbegin(); opiter != coupling.rend(); ++opiter) {
@@ -89,7 +89,7 @@ class GammaForestASD : public GammaForest<VecType, 1> {
               }
               std::cout << "|" << i.first.nelea << ", " << i.first.neleb << ">" << std::endl;
 #endif
-              sparselist_.emplace_back(coupling, i.first, j.first);
+              sparselist_.emplace_back(coupling, BlockInfo(i.first.nelea, i.first.neleb, i.second->ij()), BlockInfo(j.first.nelea, j.first.neleb, j.second->ij()));
               this->template insert<0>(i.second, block_tag(i.first), j.second, block_tag(j.first), coupling);
             }
           }
