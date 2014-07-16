@@ -28,7 +28,7 @@
 
 #include <src/molecule/zoverlap.h>
 #include <src/molecule/zhcore.h>
-#include <src/london/zcoeff.h>
+#include <src/scf/coeff.h>
 #include <src/london/fock_london.h>
 #include <src/wfn/method.h>
 

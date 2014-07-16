@@ -35,21 +35,25 @@ using namespace bagel;
 using namespace btas;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
+BOOST_CLASS_EXPORT_IMPLEMENT(ZCoeff)
 
-Coeff::Coeff(const Matrix& inp) : Matrix(inp.ndim(), inp.mdim()) {
+template <typename MatType, typename DataType>
+Coeff_<MatType, DataType>::Coeff_(const MatType& inp) : MatType(inp.ndim(), inp.mdim()) {
   copy_n(inp.data(), size(), data());
 }
 
 
-Coeff::Coeff(Matrix&& inp) : Matrix(move(inp)) {
+template <typename MatType, typename DataType>
+Coeff_<MatType, DataType>::Coeff_(MatType&& inp) : MatType(move(inp)) {
 }
 
 
-Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff_vec), num_basis(coeff_vec)) {
+template <typename MatType, typename DataType>
+Coeff_<MatType, DataType>::Coeff_(vector<shared_ptr<const Coeff_<MatType, DataType>>> coeff_vec) : MatType(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
-  double* cdata = data();
+  DataType* cdata = data();
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
-    const double* cur_data = (*icoeff)->data();
+    const DataType* cur_data = (*icoeff)->data();
 
     int cur_nstart = 0;
     for(auto iz0 = coeff_vec.begin(); iz0 != icoeff; ++iz0) { cur_nstart += (*iz0)->ndim(); }
@@ -74,30 +78,33 @@ Coeff::Coeff(vector<shared_ptr<const Coeff>> coeff_vec) : Matrix(num_basis(coeff
 }
 
 
-int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
-  return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff>& b) { return a+b->ndim(); });
+template <typename MatType, typename DataType>
+int Coeff_<MatType, DataType>::num_basis(vector<shared_ptr<const Coeff_<MatType, DataType>>> coeff_vec) const {
+  return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff_<MatType, DataType>>& b) { return a+b->ndim(); });
 }
 
 
-shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e) const {
-  auto out = make_shared<Matrix>(ndim(), ndim());
+template <typename MatType, typename DataType>
+shared_ptr<MatType> Coeff_<MatType, DataType>::form_weighted_density_rhf(const int n, const vector<double>& e) const {
+  auto out = make_shared<MatType>(ndim(), ndim());
   for (int i = 0; i != n; ++i) {
     auto sl = slice(i, i+1);
-    contract(2.0*e[i], sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2});
+    contract(2.0*e[i], sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2}, false, true);
   }
   return out;
 }
 
 
-pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const int nrow2) const {
-  auto out1 = make_shared<Matrix>(nrow1, mdim());
-  auto out2 = make_shared<Matrix>(nrow2, mdim());
+template <typename MatType, typename DataType>
+pair<shared_ptr<MatType>, shared_ptr<MatType>> Coeff_<MatType, DataType>::split(const int nrow1, const int nrow2) const {
+  auto out1 = make_shared<MatType>(nrow1, mdim());
+  auto out2 = make_shared<MatType>(nrow2, mdim());
 
   assert(nrow1+nrow2 == ndim());
 
-  const double* source = data();
-  double* data1 = out1->data();
-  double* data2 = out2->data();
+  const DataType* source = data();
+  DataType* data1 = out1->data();
+  DataType* data2 = out2->data();
 
   for (int m = 0; m != mdim(); ++m, data1+=out1->ndim(), data2+=out2->ndim(), source+=ndim()) {
     copy_n(source,       nrow1, data1);
@@ -106,3 +113,8 @@ pair<shared_ptr<Matrix>, shared_ptr<Matrix>> Coeff::split(const int nrow1, const
 
   return {out1, out2};
 }
+
+
+template class Coeff_<Matrix, double>;
+template class Coeff_<ZMatrix, complex<double>>;
+

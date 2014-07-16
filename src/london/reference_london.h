@@ -28,7 +28,6 @@
 
 #include <src/wfn/reference.h>
 #include <src/molecule/zhcore.h>
-#include <src/london/zcoeff.h>
 
 namespace bagel {
 
