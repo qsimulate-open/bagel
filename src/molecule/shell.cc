@@ -88,6 +88,7 @@ string Shell::show() const {
     ss << " " << exponents_[i];
   }
   ss << endl;
+  ss << "contraction coefficients: ";
   for (int i = 0; i != contractions_.size(); ++i) {
     ss << " (" << contraction_ranges_[i].first << "," << contraction_ranges_[i].second << ") ";
     for (int j = contraction_ranges_[i].first; j != contraction_ranges_[i].second; ++j)

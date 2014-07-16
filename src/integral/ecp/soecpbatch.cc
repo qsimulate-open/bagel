@@ -96,9 +96,15 @@ void SOECPBatch::compute() {
           iab += radint.integral(2);
         }
         const int index = i + contA * asize_ * basisinfo_[1]->contractions().size() + contC * asize_;
-        current_data[index]  = iaa;
-        current_data1[index] = rab;
-        current_data2[index] = iab;
+        if (swap01_) {
+          current_data[index]  =-iaa;
+          current_data1[index] =-rab;
+          current_data2[index] =-iab;
+        } else {
+          current_data[index]  = iaa;
+          current_data1[index] = rab;
+          current_data2[index] = iab;
+        }
       }
       ++i;
     }

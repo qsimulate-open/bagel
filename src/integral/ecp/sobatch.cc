@@ -123,7 +123,6 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
       for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
         for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-          const double coeff = c0_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
 
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
@@ -142,7 +141,7 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
             }
             out += zAB_[ld][mu] * sAB;
           }
-          out *= coeff;
+          out *= c0_[index];
         }
       }
     }
@@ -167,7 +166,6 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
       for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
         for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
           const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-          const double coeff = c1_[index];
           for (int mu = 0; mu <= 2*ld; ++mu) {
 
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
@@ -186,7 +184,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
             }
             out += zCB_[ld][mu] * sCB;
           }
-          out *= coeff;
+          out *= c1_[index];
         }
       }
     }
@@ -213,7 +211,7 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
     for (int i0 = begin0; i0 != end0; ++i0) {
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
       const double exp0  = basisinfo_[0]->exponents(i0);
-      const double fac0 = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
+      const double fac0 = coef0 * exp(-exp0*r[ir]*(r[ir]-dAB_));
       for (int i = 0; i <= l0_+l; ++i) {
         bessel0[i] += fac0 * msbessel.compute(i, 2.0 * exp0 * dAB_ * r[ir]);
       }
@@ -221,7 +219,7 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
     for (int i1 = begin1; i1 != end1; ++i1) {
       const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
       const double exp1  = basisinfo_[1]->exponents(i1);
-      const double fac1 = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
+      const double fac1 = coef1 * exp(-exp1*r[ir]*(r[ir]-dCB_));
       for (int i = 0; i <= l1_+l; ++i) {
         bessel1[i] += fac1 * msbessel.compute(i, 2.0 * exp1 * dCB_ * r[ir]);
       }
@@ -282,13 +280,14 @@ vector<double> SOBatch::compute(const vector<double> r) {
     vector<double> p = project(l, r);
     for (int i = 0; i != ishso->ecp_exponents().size(); ++i)
       if (ishso->ecp_coefficients(i) != 0) {
-        const double coeff = ishso->ecp_coefficients(i); /* 2/(2l+1) may or may not be necessary */
-        for (int ir = 0; ir != r.size(); ++ir)
+        const double ecpcoeff = 16.0 * pi__ * pi__ * ishso->ecp_coefficients(i); /* 2/(2l+1) may or may not be necessary */
+        for (int ir = 0; ir != r.size(); ++ir) {
+          const double coeff = ecpcoeff * pow(r[ir], ishso->ecp_r_power(i)) * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]);
           for (int id = 0; id != 3; ++id) {
             const int index = id*r.size() + ir;
-            out[index] += 16.0 * pi__ * pi__ * coeff * pow(r[ir], ishso->ecp_r_power(i))
-                               * exp(-ishso->ecp_exponents(i) * r[ir] * r[ir]) * p[index];
+            out[index] += coeff * p[index];
           }
+        }
       }
   }
 
