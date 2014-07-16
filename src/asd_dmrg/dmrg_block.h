@@ -26,17 +26,28 @@
 #ifndef BAGEL_ASD_DMRG_DMRG_BLOCK_H
 #define BAGEL_ASD_DMRG_DMRG_BLOCK_H
 
+#include <algorithm>
+
 #include <src/meh/gamma_tensor.h>
 #include <src/asd_dmrg/gamma_forest_asd.h>
 
 namespace bagel {
 
 /// Store matrix representations of all of the operators needed to apply the Hamiltonian to a tensor-product state
-class DMRG_Block : public GammaTensor {
+class DMRG_Block {
   protected:
-    using SparseMap = std::map<std::tuple<listGammaSQ, MonomerKey, MonomerKey>, std::shared_ptr<btas::Tensor3<double>>>;
+    struct CouplingBlock {
+      std::pair<BlockKey, BlockKey> states;
+      std::shared_ptr<btas::Tensor3<double>> data;
+      CouplingBlock(BlockKey ikey, BlockKey jkey, std::shared_ptr<btas::Tensor3<double>> d) : states({ikey,jkey}), data(d) {}
+    };
+    using SparseMap = std::map<std::list<GammaSQ>, std::vector<CouplingBlock>>;
 
-    std::map<MonomerKey, std::shared_ptr<const Matrix>> H2e_;
+    SparseMap sparse_;
+    std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
+    std::set<BlockKey> blocks_;
+
+    int norb_;
 
   public:
     /// default constructor
@@ -44,18 +55,27 @@ class DMRG_Block : public GammaTensor {
 
     /// constructor that takes an Rvalue reference to a GammaForestASD
     template <typename T>
-    DMRG_Block(GammaForestASD<T>&& forest, const std::map<MonomerKey, std::shared_ptr<const Matrix>> h2e) : H2e_(h2e) {
-      norb_ = forest.norb();
+    DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const int norb) : H2e_(h2e), norb_(norb) {
+      // Build set of blocks
+      for (auto& i : h2e)
+        blocks_.insert(i.first);
 
       // initialize operator space
       for (auto o : forest.sparselist()) {
         std::list<GammaSQ> gammalist = std::get<0>(o);
-        MonomerKey ikey = std::get<1>(o);
-        MonomerKey jkey = std::get<2>(o);
 
-        assert(forest.template exist<0>(ikey.tag(), jkey.tag(), gammalist));
-        std::shared_ptr<const Matrix> mat = forest.template get<0>(ikey.tag(), jkey.tag(), gammalist);
-        btas::CRange<3> range(ikey.nstates(), jkey.nstates(), std::lrint(std::pow(norb_, gammalist.size())));
+        BlockKey ikey = std::get<1>(o);
+        BlockKey jkey = std::get<2>(o);
+
+        assert(blocks_.count(ikey));
+        assert(blocks_.count(jkey));
+
+        const int itag = forest.block_tag(ikey);
+        const int jtag = forest.block_tag(jkey);
+
+        assert(forest.template exist<0>(itag, jtag, gammalist));
+        std::shared_ptr<const Matrix> mat = forest.template get<0>(itag, jtag, gammalist);
+        btas::CRange<3> range(ikey.nstates, jkey.nstates, std::lrint(std::pow(norb_, gammalist.size())));
         // checking ndim
         assert(mat->ndim() == range.extent(0)*range.extent(1));
         // checking mdim
@@ -65,7 +85,7 @@ class DMRG_Block : public GammaTensor {
         // convert this matrix to 3-tensor
         auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
         // add matrix
-        sparse_.emplace(std::make_tuple(listGammaSQ(gammalist, mat->mdim()), ikey, jkey), tensor);
+        sparse_[gammalist].emplace_back(ikey, jkey, tensor);
       }
     }
 };

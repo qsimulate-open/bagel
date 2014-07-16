@@ -30,17 +30,18 @@
 #include <list>
 
 #include <src/meh/gamma_forest.h>
+#include <src/asd_dmrg/block_key.h>
 
 namespace bagel {
 
 template <class VecType>
 class GammaForestASD : public GammaForest<VecType, 1> {
   protected:
-    using SparseList = std::list<std::tuple<std::list<GammaSQ>, MonomerKey, MonomerKey>>;
+    using SparseList = std::list<std::tuple<std::list<GammaSQ>, BlockKey, BlockKey>>;
     SparseList sparselist_;
 
   public:
-    GammaForestASD(std::map<MonomerKey, std::shared_ptr<const VecType>> monomer_states) {
+    GammaForestASD(std::map<BlockKey, std::shared_ptr<const VecType>> monomer_states) {
       std::vector<std::list<GammaSQ>> possible_couplings = {
         {GammaSQ::AnnihilateAlpha},
         {GammaSQ::AnnihilateBeta},
@@ -58,19 +59,25 @@ class GammaForestASD : public GammaForest<VecType, 1> {
 
       for (auto& i : monomer_states) {
         for (auto& coupling : possible_couplings) {
-          int new_charge = i.first.q;
-          int new_ms = i.first.m_s;
+          int new_nelea = i.first.nelea;
+          int new_neleb = i.first.neleb;
           for (GammaSQ& operation : coupling) {
-            const int dq = (operation == GammaSQ::AnnihilateAlpha || operation == GammaSQ::AnnihilateBeta) ? 1 : -1;
-            const int sign = (operation == GammaSQ::AnnihilateBeta || operation == GammaSQ::CreateBeta) ? 1 : -1;
-            new_charge += dq;
-            new_ms += dq*sign;
+            switch (operation) {
+              case GammaSQ::AnnihilateAlpha:
+                --new_nelea; break;
+              case GammaSQ::CreateAlpha:
+                ++new_nelea; break;
+              case GammaSQ::AnnihilateBeta:
+                --new_neleb; break;
+              case GammaSQ::CreateBeta:
+                ++new_neleb; break;
+            }
           }
 
           for (auto& j : monomer_states) {
-            if (new_charge == j.first.q && new_ms == j.first.m_s) {
+            if (std::make_pair(new_nelea, new_neleb) == std::make_pair(j.first.nelea, j.first.neleb)) {
 #ifdef DEBUG
-              std::cout << "inserting: <" << j.first.q << ", " << j.first.m_s << "|";
+              std::cout << "inserting: <" << j.first.nelea << ", " << j.first.neleb << "|";
               for (auto opiter = coupling.rbegin(); opiter != coupling.rend(); ++opiter) {
                 GammaSQ operation = *opiter;
                 if ( operation == GammaSQ::AnnihilateAlpha || operation == GammaSQ::CreateAlpha )
@@ -80,10 +87,10 @@ class GammaForestASD : public GammaForest<VecType, 1> {
                 if ( operation == GammaSQ::CreateAlpha || operation == GammaSQ::CreateBeta )
                   std::cout << "^t";
               }
-              std::cout << "|" << i.first.q << ", " << i.first.m_s << ">" << std::endl;
+              std::cout << "|" << i.first.nelea << ", " << i.first.neleb << ">" << std::endl;
 #endif
               sparselist_.emplace_back(coupling, i.first, j.first);
-              this->template insert<0>(i.second, i.first.tag(), j.second, j.first.tag(), coupling);
+              this->template insert<0>(i.second, block_tag(i.first), j.second, block_tag(j.first), coupling);
             }
           }
         }
@@ -97,6 +104,8 @@ class GammaForestASD : public GammaForest<VecType, 1> {
     }
 
     SparseList sparselist() const { return sparselist_; }
+
+    int block_tag(BlockKey b) const { return b.nelea + (b.neleb << 10); }
 
 };
 

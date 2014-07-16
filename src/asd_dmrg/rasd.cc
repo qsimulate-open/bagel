@@ -68,8 +68,8 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
 }
 
 shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref) {
-  map<MonomerKey, shared_ptr<const RASDvec>> states;
-  map<MonomerKey, shared_ptr<const Matrix>> h_2e;
+  map<pair<int, int>, shared_ptr<const RASDvec>> states;
+  map<pair<int, int>, shared_ptr<const Matrix>> h_2e;
   Timer rastime;
 
   for (auto& inp : inputs) {
@@ -87,18 +87,38 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
       shared_ptr<const Matrix> hamiltonian_2e = ras->compute_sigma2e();
       hamiltonian_2e->print();
 
-      MonomerKey mk(SpaceKey(spin, spin, charge), civecs->ij(), civecs->det()->nelea(), civecs->det()->neleb());
-      states.emplace(mk, civecs);
-      h_2e.emplace(mk, hamiltonian_2e);
+      // Combines data for vectors with the same nelea and neleb
+      auto organize_data = [&states, &h_2e] (shared_ptr<const RASDvec> civecs, shared_ptr<const Matrix> ham2e) {
+        pair<int, int> key = {civecs->det()->nelea(), civecs->det()->neleb()};
+        if (states.find(key) == states.end()) {
+          assert(h_2e.find(key) == h_2e.end());
+          states.emplace(key, civecs);
+          h_2e.emplace(key, ham2e);
+        }
+        else {
+          assert(h_2e.find(key) != h_2e.end());
+          vector<shared_ptr<RASCivec>> tmpvecs = states[key]->dvec();
+          vector<shared_ptr<RASCivec>> new_vecs = civecs->dvec();
+          tmpvecs.insert(tmpvecs.end(), new_vecs.begin(), new_vecs.end());
+          states[key] = std::make_shared<RASDvec>(tmpvecs);
+
+          shared_ptr<Matrix> tmp2e = h_2e[key]->copy();
+          const int oldsize = tmp2e->ndim();
+          const int newsize = ham2e->ndim();
+          tmp2e->resize(oldsize + newsize, oldsize + newsize);
+          tmp2e->copy_block(oldsize, oldsize, newsize, newsize, *ham2e);
+          h_2e[key] = tmp2e;
+        }
+      };
+
+      organize_data(civecs, hamiltonian_2e);
+
       for (int i = 0; i < spin; ++i) {
-        const int ms = spin - 2*(i+1);
         shared_ptr<RASDvec> tmpvec = civecs->spin_lower();
         for (auto& vec : tmpvec->dvec())
           vec->normalize();
 
-        MonomerKey new_mk(SpaceKey(spin, ms, charge), tmpvec->ij(), tmpvec->det()->nelea(), tmpvec->det()->neleb());
-        states.emplace(new_mk, tmpvec);
-        h_2e.emplace(new_mk, hamiltonian_2e);
+        organize_data(tmpvec, hamiltonian_2e);
         civecs = tmpvec;
       }
     }
@@ -107,8 +127,20 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
                                     << fixed << setw(10) << setprecision(2) << rastime.tick() << endl;
   }
 
-  GammaForestASD<RASDvec> forest(states);
-  return make_shared<DMRG_Block>(move(forest), h_2e);
+  // Process into BlockKeys
+  map<BlockKey, shared_ptr<const RASDvec>> forestdata;
+  map<BlockKey, shared_ptr<const Matrix>> hdata;
+  auto stateiter = states.begin();
+  for (auto hiter = h_2e.begin(); hiter != h_2e.end(); ++hiter, ++stateiter) {
+    assert(stateiter->first == hiter->first);
+    const int nstates = stateiter->second->ij();
+    assert(nstates == hiter->second->ndim());
+    forestdata.emplace(BlockKey(stateiter->first.first, hiter->first.second, nstates), stateiter->second);
+    hdata.emplace(BlockKey(hiter->first.first, hiter->first.second, nstates), hiter->second);
+  }
+
+  GammaForestASD<RASDvec> forest(forestdata);
+  return make_shared<DMRG_Block>(move(forest), hdata, ref->nact());
 }
 
 shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
