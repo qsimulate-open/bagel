@@ -56,7 +56,7 @@ class ZCoeff : public ZMatrix {
 
     std::shared_ptr<const Geometry> geom() const { assert(geom_); return geom_; }
 
-    std::shared_ptr<ZMatrix> form_weighted_density_rhf(const int n, const std::vector<std::complex<double>>& e, const int offset = 0) const;
+    std::shared_ptr<ZMatrix> form_weighted_density_rhf(const int n, const std::vector<double>& e, const int offset = 0) const;
     std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> split(const int, const int) const;
 };
 
