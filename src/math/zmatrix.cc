@@ -455,15 +455,6 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
 }
 
 
-void ZMatrix::fill_upper_conjg() {
-  assert(ndim() == mdim());
-  for (size_t i = 0; i != mdim(); ++i)
-    for (size_t j = i+1; j != ndim(); ++j)
-      element(i, j) = conj(element(j, i));
-}
-
-
-
 #ifdef HAVE_SCALAPACK
 shared_ptr<DistZMatrix> ZMatrix::distmatrix() const {
   return make_shared<DistZMatrix>(*this);

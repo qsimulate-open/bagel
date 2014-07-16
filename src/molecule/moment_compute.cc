@@ -188,7 +188,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
 array<shared_ptr<const Matrix>,3> MomentCompute::call(const Shell& shell) {
 
   const int angular_number = shell.angular_number();
-
   const int ncart = (angular_number+1) * (angular_number+2) / 2;
   const int ninc = ncart + (angular_number + 2);
   const int ndec = ncart - (angular_number + 1);
@@ -228,7 +227,6 @@ array<shared_ptr<const Matrix>,3> MomentCompute::call(const Shell& shell) {
 array<shared_ptr<const ZMatrix>,3> MomentCompute::call(const Shell& shell, const array<double,3> magnetic_field, const bool london) {
 
   const int angular_number = shell.angular_number();
-
   const int ncart = (angular_number+1) * (angular_number+2) / 2;
   const int ninc = ncart + (angular_number + 2);
   const int nsame = london ? 0 : ncart;
