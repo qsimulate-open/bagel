@@ -40,12 +40,6 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
   const int ninc = norig + angular_number + 2;
   const int ndec = norig - angular_number - 1;
 
-  assert(ninc == (shell.aux_increment()->angular_number()+1) * (shell.aux_increment()->angular_number()+2) / 2);
-  if (shell.aux_decrement())
-    assert(ndec == (shell.aux_decrement()->angular_number()+1) * (shell.aux_decrement()->angular_number()+2) / 2);
-  else
-    assert(ndec == 0);
-
   array<shared_ptr<Matrix>,6> mcart;
   for (int i = 0; i != 3; ++i) {
     mcart[i]   = make_shared<Matrix>(ninc, norig, true);
@@ -59,7 +53,6 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
       // three components of the angular momentum
       const array<int,3> index = {{x, y, z}};
 
-      assert(column == index[2]*(angular_number+1) - index[2]*(index[2]-1)/2 + index[1]);
       const double talph = 2.0 * exponent;
 
       // k tells us which dimension of the momentum operator we're using
@@ -69,7 +62,6 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
         if (index[k] != 0) {
           array<int,3> newindex = index;
           --newindex[k];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number - 1);
           const size_t row = newindex[2]*(angular_number) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[3+k]->element(row, column) = -index[k];
         }
@@ -78,7 +70,6 @@ array<shared_ptr<const Matrix>,6> MomentCompute::mblock(const Shell& shell, cons
         {
           array<int,3> newindex = index;
           ++newindex[k];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number + 1);
           const size_t row = newindex[2]*(angular_number+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[k]->element(row, column) = talph;
         }
@@ -111,16 +102,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
   const int ndec = norig - angular_number - 1;
   const complex<double> imag(0.0, 1.0);
 
-  assert(ninc == (shell.aux_increment()->angular_number()+1) * (shell.aux_increment()->angular_number()+2) / 2);
-  if (shell.aux_decrement())
-    assert(ndec == (shell.aux_decrement()->angular_number()+1) * (shell.aux_decrement()->angular_number()+2) / 2);
-  else
-    assert (ndec == 0);
-  if (shell.aux_same())
-    assert(norig == (shell.aux_same()->angular_number()+1) * (shell.aux_same()->angular_number()+2) / 2);
-  else
-    assert(london);
-
   array<shared_ptr<ZMatrix>,9> mcart;
   for (int i = 0; i != 3; ++i) {
     mcart[i]   = make_shared<ZMatrix>(ninc, norig, true);
@@ -137,7 +118,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
       const array<int,3> fwd  = {{1, 2, 0}};
       const array<int,3> back = {{2, 0, 1}};
 
-      assert(column == index[2]*(angular_number+1) - index[2]*(index[2]-1)/2 + index[1]);
       const complex<double> tialph = imag * 2.0 * exponent;
       const array<complex<double>,3> halfb = {{0.5*magnetic_field[0], 0.5*magnetic_field[1], 0.5*magnetic_field[2]}};
 
@@ -148,7 +128,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
         if (index[k] != 0) {
           array<int,3> newindex = index;
           --newindex[k];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number - 1);
           const size_t row = newindex[2]*(angular_number) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[3+k]->element(row, column) = -static_cast<double>(index[k])*imag;
         }
@@ -157,7 +136,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
         {
           array<int,3> newindex = index;
           ++newindex[k];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number + 1);
           const size_t row = newindex[2]*(angular_number+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[k]->element(row, column) = tialph;
         }
@@ -166,7 +144,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
         {
           array<int,3> newindex = index;
           ++newindex[back[k]];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number + 1);
           const size_t row = newindex[2]*(angular_number+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[k]->element(row, column) = halfb[fwd[k]];
         }
@@ -175,7 +152,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
         {
           array<int,3> newindex = index;
           ++newindex[fwd[k]];
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number + 1);
           const size_t row = newindex[2]*(angular_number+2) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[k]->element(row, column) = -halfb[back[k]];
         }
@@ -183,7 +159,6 @@ array<shared_ptr<const ZMatrix>,9> MomentCompute::mblock(const Shell& shell, con
         // + 1/2 (B_y R_z - B_z R_y) phi
         if (!london) {
           array<int,3> newindex = index;
-          assert(newindex[0] + newindex[1] + newindex[2] == angular_number);
           const size_t row = newindex[2]*(angular_number+1) - newindex[2]*(newindex[2]-1)/2 + newindex[1];
           mcart[6+k]->element(row, column) = halfb[fwd[k]]*shell.position(back[k]) - halfb[back[k]]*shell.position(fwd[k]);
         }
@@ -219,16 +194,6 @@ array<shared_ptr<const Matrix>,3> MomentCompute::call(const Shell& shell) {
   const int ndec = ncart - (angular_number + 1);
   const int n = ninc + ndec;
   const int norig = shell.spherical() ? 2*angular_number+1 : ncart;
-
-  assert(ninc == (shell.aux_increment()->angular_number()+1) * (shell.aux_increment()->angular_number()+2)/2);
-  if (shell.aux_decrement())
-    assert(ndec == (shell.aux_decrement()->angular_number()+1) * (shell.aux_decrement()->angular_number()+2)/2);
-  else
-    assert(ndec == 0);
-  assert(shell.aux_increment()->num_primitive() == shell.num_primitive());
-  if (shell.aux_decrement())
-    assert(shell.aux_decrement()->num_primitive() == shell.num_primitive());
-  assert(!shell.aux_same());
 
   // build the momentum transformation matrix for primitive functions
   // each exponent gets 2 blocks, one for L+1 & one for L-1
@@ -270,23 +235,6 @@ array<shared_ptr<const ZMatrix>,3> MomentCompute::call(const Shell& shell, const
   const int ndec = ncart - (angular_number + 1);
   const int norig = shell.spherical() ? 2*angular_number+1 : ncart;
   const int n = ninc + ndec + nsame;
-
-  assert(ninc == (shell.aux_increment()->angular_number()+1) * (shell.aux_increment()->angular_number()+2)/2);
-  if (shell.aux_decrement())
-    assert(ndec == (shell.aux_decrement()->angular_number()+1) * (shell.aux_decrement()->angular_number()+2)/2);
-  else
-    assert(ndec == 0);
-  if (shell.aux_same())
-    assert(nsame == (shell.aux_same()->angular_number()+1) * (shell.aux_same()->angular_number()+2)/2);
-  else
-    assert(nsame == 0);
-  assert(shell.aux_increment()->num_primitive() == shell.num_primitive());
-  if (shell.aux_decrement())
-    assert(shell.aux_decrement()->num_primitive() == shell.num_primitive());
-  if (!london)
-    assert(shell.aux_same()->num_primitive() == shell.num_primitive());
-  else
-    assert(!shell.aux_same());
 
   // build the momentum transformation matrix for primitive functions
   // each exponent gets 2-3 blocks, for L+1, L-1, and if needed, L+0 (in that order)
