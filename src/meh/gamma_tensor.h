@@ -106,7 +106,7 @@ class GammaTensor {
       norb_ = std::get<0>(o.front()).calculate_norb();
       for (auto& i : o) {
         assert(norb_ == std::get<0>(i).calculate_norb());
-        sparse_.emplace(i, std::make_shared<btas::Tensor3<double>>(std::get<0>(i).size, std::get<1>(i).nstates(), std::get<2>(i).nstates()));
+        sparse_.emplace(i, std::make_shared<btas::Tensor3<double>>(std::get<1>(i).nstates(), std::get<2>(i).nstates(), std::get<0>(i).size));
       }
     }
 
@@ -136,6 +136,7 @@ class GammaTensor {
     auto cend() const -> decltype(sparse_.cend()) { return sparse_.cend(); }
 
     int nblocks() const { return sparse_.size(); }
+    bool exist(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) const { return sparse_.find(tag) != sparse_.end(); }
 
     template <typename... Args>
     auto emplace(Args... args) -> decltype(sparse_.emplace(std::forward<Args>(args)...)) { return sparse_.emplace(std::forward<Args>(args)...); }
