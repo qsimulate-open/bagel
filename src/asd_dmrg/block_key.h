@@ -46,6 +46,8 @@ struct BlockInfo : public BlockKey {
   int nstates;
   BlockInfo(const int na, const int nb, const int ns) : BlockKey(na,nb), nstates(ns) {}
   BlockKey key() const { return BlockKey(nelea,neleb); }
+
+  bool operator==(const BlockInfo& o) const { return (key()==o.key() && nstates==o.nstates); }
 };
 
 }

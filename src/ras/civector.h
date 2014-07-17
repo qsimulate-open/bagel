@@ -651,7 +651,7 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
   protected:
     using RASCivector_base<RASBlock<DataType>>::blocks_;
 
-    double* data_ptr_;
+    double* const data_ptr_;
 
   public:
     RASCivecView_(std::shared_ptr<const RASDeterminants> det, double* const data) : RASCivector_impl<DataType, RASCivecView_<DataType>>(det), data_ptr_(data) {
@@ -669,6 +669,7 @@ class RASCivecView_ : public RASCivector_impl<DataType, RASCivecView_<DataType>>
 
     RASCivecView_(RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
     RASCivecView_(RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+    RASCivecView_(RASCivecView_<DataType>&& o) : RASCivecView_(o.det(), o.data()) {}
 
     using RASCivector_base<RASBlock<DataType>>::det;
 

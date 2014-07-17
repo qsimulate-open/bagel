@@ -69,11 +69,11 @@ class RASSpace {
       auto iter = detmap_.find({na,nb});
       std::shared_ptr<RASDeterminants> out;
       if (iter != detmap_.end()) {
-        out = *iter;
+        out = iter->second;
       }
       else {
         out = std::make_shared<RASDeterminants>(ras_, na, nb, max_holes_, max_particles_, /*mute*/true);
-        detmap_.emplace({na,nb}, out);
+        detmap_.emplace(std::make_pair(na,nb), out);
       }
       return out;
     }
@@ -81,6 +81,10 @@ class RASSpace {
     std::shared_ptr<const RASDeterminants> det(const int na, const int nb) const { return detmap_.at({na,nb}); }
 
     const std::map<std::pair<int,int>, std::shared_ptr<RASDeterminants>>& detmap() const { return detmap_; }
+
+    bool operator==(const RASSpace& o) { return (ras_==o.ras_ && max_holes_==o.max_holes_ && max_particles_==o.max_particles_); }
+
+    int norb() const { return ras_[0]+ras_[1]+ras_[2]; }
 };
 
 }
