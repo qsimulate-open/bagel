@@ -149,9 +149,8 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * *ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * *ocoeff);
 
 #if 0
-  // DEBUG : check trace of active block ; should be active-space 2-electron energy
   complex<double> en = 0.0;
   for (int i = 0; i != nact*2; ++i) en += element(i+nclosed*2, i) * 0.5;
-  cout << setprecision(16) << "active space 2-electron energy = " << en << endl;
+  cout << setprecision(10) << en << endl;
 #endif
 }

@@ -165,11 +165,11 @@ void ZSuperCI::compute() {
    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
   }
-
+//
 //  // block diagonalize coeff_ in nclosed and nvirt
 //  if (nact_)
 //    coeff_ = semi_canonical_orb();
-
+//
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
@@ -183,8 +183,17 @@ void ZSuperCI::compute() {
 
 void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
                                   shared_ptr<ZRotFile>& denom) {
+  // calculate 1RDM in an original basis set
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+  // make natural orbitals, update coeff_ and transform rdm1
+  shared_ptr<ZMatrix> natorb_coeff;
+  if (nact_) {
+    natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
+    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+  }
+
   assert(coeff_->mdim()== nbasis_*2);
-  // qvec has to be made before natorb transformation, then can be transformed after
+  // qvec
   shared_ptr<const ZMatrix> qvec;
   if (nact_) {
     qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
@@ -197,17 +206,6 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
       qvec = make_shared<const ZMatrix>(*tmp);
     }
 #endif
-  }
-
-  // calculate 1RDM in an original basis set
-  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
-  // make natural orbitals, update coeff_ and transform rdm1
-  shared_ptr<ZMatrix> natorb_coeff;
-  if (nact_) {
-    natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
-    fci_->update_kramers_coeff(natorb_coeff);   // needed to ensure coefficients are the same
-    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
-    qvec = update_qvec(qvec, natorb_coeff);     // update qvec to natural orbitals
   }
 
   shared_ptr<const ZMatrix> cfock;
