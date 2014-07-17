@@ -33,12 +33,13 @@ using namespace bagel;
 
 // Default constructor
 ComplexDFDist::ComplexDFDist(const int nbas, const int naux, const array<shared_ptr<DFBlock>,2> blocks, shared_ptr<const ParallelDF> df, shared_ptr<Matrix> data2)
-  : DFDist (nbas, naux, nullptr, df, data2) {
+  : DFDist (nbas, naux, nullptr, df, data2), ComplexDF_base() {
   assert((blocks[0] && blocks[1]) || (!blocks[0] && !blocks[1]));
   if (blocks[0]) {
     block_.push_back(blocks[0]);
     block_.push_back(blocks[1]);
   }
+  assign_complex_blocks(*this);
 }
 
 
@@ -91,6 +92,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(cons
     out->add_block(ipart);
   }
 
+  out->assign_complex_blocks(*out);
   return out;
 }
 
@@ -117,6 +119,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform_swap
     out->add_block(rpart);
     out->add_block(ipart);
   }
+  out->assign_complex_blocks(*out);
   return out;
 }
 
@@ -141,86 +144,14 @@ shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop_from_cd(shared_ptr<const 
 }
 
 
-shared_ptr<ZVectorB> ComplexDFDist::complex_compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
-  if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
-  if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
-  if (!dat2) dat2 = data2_;
-
-  auto tmp0 = make_shared<ZVectorB>(naux_);
-  const shared_ptr<Matrix> dr = den->get_real_part();
-  const shared_ptr<Matrix> di = den->get_imag_part();
-
-  // TODO Using 4-multiplication
-  // D = (D|rs)*d_rs
-  shared_ptr<VectorB> tmpr = block_[0]->form_vec(dr);
-  *tmpr -= *block_[1]->form_vec(di);
-  shared_ptr<VectorB> tmpi = block_[0]->form_vec(di);
-  *tmpi += *block_[1]->form_vec(dr);
-
-  auto tmp = make_shared<ZVectorB>(*tmpr, *tmpi);
-  copy_n(tmp->data(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
-
-  // All reduce
-  if (!serial_)
-    tmp0->allreduce();
-
-  // TODO Inefficient.  Multiply by dat2 before combining real and complex
-  auto cdat2 = make_shared<ZMatrix>(*dat2, 1.0);
-  *tmp0 = *cdat2 * *tmp0;
-  if (!onlyonce)
-    *tmp0 = *cdat2 * *tmp0;
-  return tmp0;
-}
-
-
-shared_ptr<ZVectorB> ComplexDFHalfDist::complex_compute_cd(const shared_ptr<const ZMatrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
-  if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
-  if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
-  if (!dat2) dat2 = data2_;
-
-  auto tmp0 = make_shared<ZVectorB>(naux_);
-  const shared_ptr<Matrix> dr = den->get_real_part();
-  const shared_ptr<Matrix> di = den->get_imag_part();
-
-  // TODO Using 4-multiplication
-  // D = (D|rs)*d_rs
-  shared_ptr<VectorB> tmpr = block_[0]->form_vec(dr);
-  *tmpr -= *block_[1]->form_vec(di);
-  shared_ptr<VectorB> tmpi = block_[0]->form_vec(di);
-  *tmpi += *block_[1]->form_vec(dr);
-
-  auto tmp = make_shared<ZVectorB>(*tmpr, *tmpi);
-  copy_n(tmp->data(), block_[0]->asize(), tmp0->data()+block_[0]->astart());
-
-  // All reduce
-  if (!serial_)
-    tmp0->allreduce();
-
-  // TODO Inefficient.  Multiply by dat2 before combining real and complex
-  auto cdat2 = make_shared<ZMatrix>(*dat2, 1.0);
-  *tmp0 = *cdat2 * *tmp0;
-  if (!onlyonce)
-    *tmp0 = *cdat2 * *tmp0;
-  return tmp0;
-}
-
-
 shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ZMatrix> den) const {
-  auto tmp = dynamic_pointer_cast<const ComplexDFDist>(this->shared_from_this());
+  auto tmp = dynamic_pointer_cast<const ComplexDFDist>(shared_from_this());
   assert(tmp);
   return complex_compute_Jop(tmp, den);
 }
 
 
-shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ComplexDFDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
-  // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const ZVectorB> tmp0 = o->complex_compute_cd(den, data2_, onlyonce);
-  // then compute J operator J_{rs} = |E*) (E|rs)
-  return complex_compute_Jop_from_cd(tmp0);
-}
-
-
-shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ComplexDFHalfDist> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
+shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const ComplexDF_base> o, const shared_ptr<const ZMatrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
   shared_ptr<const ZVectorB> tmp0 = o->complex_compute_cd(den, data2_, onlyonce);
   // then compute J operator J_{rs} = |E*) (E|rs)
@@ -253,6 +184,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFHalfDist::complex_apply_J(const shared_pt
       ++j;
     }
   }
+  out->assign_complex_blocks(*out);
   return out;
 }
 

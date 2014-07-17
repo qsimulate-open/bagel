@@ -59,6 +59,8 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     size_t nindex2() const { return nindex2_; }
     size_t size() const { return naux_*nindex1_*nindex2_; }
 
+    bool serial() const { return serial_; }
+
     std::vector<std::shared_ptr<DFBlock>>& block() { return block_; }
     const std::vector<std::shared_ptr<DFBlock>>& block() const { return block_; }
     std::shared_ptr<DFBlock> block(const size_t i) { return block_[i]; }

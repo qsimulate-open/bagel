@@ -28,6 +28,7 @@
 #define __SRC_DF_COMPLEXDF_H
 
 #include <src/df/df.h>
+#include <src/df/complexdf_base.h>
 #include <src/df/complexdfinttask.h>
 #include <src/math/zmatrix.h>
 
@@ -35,12 +36,12 @@ namespace bagel {
 
 class ComplexDFHalfDist;
 
-class ComplexDFDist : public DFDist {
+class ComplexDFDist : public DFDist, public ComplexDF_base {
   public:
     ComplexDFDist(const int nbas, const int naux, const std::array<std::shared_ptr<DFBlock>,2> block = {{nullptr, nullptr}},
                   std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr);
 
-    ComplexDFDist(const std::shared_ptr<const ParallelDF> df) : DFDist(df) { }
+    ComplexDFDist(const std::shared_ptr<const ParallelDF> df) : DFDist(df), ComplexDF_base() { }
 
     bool has_2index() const { return data2_.get() != nullptr; }
     size_t nbasis0() const { return nindex2_; }
@@ -61,11 +62,8 @@ class ComplexDFDist : public DFDist {
 
     // compute a J operator, given density matrices in AO basis
     std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ZMatrix> den) const;
-    std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ComplexDFHalfDist> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
-    std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ComplexDFDist> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
+    std::shared_ptr<ZMatrix> complex_compute_Jop(const std::shared_ptr<const ComplexDF_base> o, const std::shared_ptr<const ZMatrix> den, const bool onlyonce = false) const;
     std::shared_ptr<ZMatrix> complex_compute_Jop_from_cd(std::shared_ptr<const ZVectorB> cd) const;
-    std::shared_ptr<ZVectorB> complex_compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
-
 };
 
 template<class TBatch>
@@ -146,16 +144,16 @@ class ComplexDFDist_ints : public ComplexDFDist {
       // 3-index integrals, post process
       if (average)
         average_3index();
+
+      assign_complex_blocks(*this);
     }
 
 };
 
 // TODO Functions not needed for RHF have not been implemented (transform_second, back_transform, etc.)
-class ComplexDFHalfDist : public DFHalfDist {
+class ComplexDFHalfDist : public DFHalfDist, public ComplexDF_base {
   public:
-    ComplexDFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : DFHalfDist(df, nocc) { }
-
-    std::shared_ptr<ZVectorB> complex_compute_cd(const std::shared_ptr<const ZMatrix> den, std::shared_ptr<const Matrix> dat2 = nullptr, const bool onlyonce = false) const;
+    ComplexDFHalfDist(const std::shared_ptr<const ParallelDF> df, const int nocc) : DFHalfDist(df, nocc), ComplexDF_base() { }
 
     std::shared_ptr<ZMatrix> complex_form_2index(std::shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap = false) const;
     std::shared_ptr<ComplexDFHalfDist> complex_apply_J() const { return complex_apply_J(df_->data2()); }
