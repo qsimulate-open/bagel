@@ -29,12 +29,12 @@
 
 #include <src/math/zmatrix.h>
 #include <src/integral/smallints1e_london.h>
-#include <src/molecule/zmatrix1earray.h>
+#include <src/molecule/matrix1earray.h>
 
 namespace bagel {
 
 template <typename Batch>
-class Small1e_London : public ZMatrix1eArray<4*Batch::Nblocks()> {
+class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
   protected:
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
@@ -56,7 +56,7 @@ class Small1e_London : public ZMatrix1eArray<4*Batch::Nblocks()> {
 
 
   public:
-    Small1e_London(const std::shared_ptr<const Molecule> mol) : ZMatrix1eArray<4*Batch::Nblocks()>(mol) {
+    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
       init(mol);
     }
 
@@ -73,7 +73,7 @@ class Small1e_London : public ZMatrix1eArray<4*Batch::Nblocks()> {
     }
 
     void print(const std::string name = "") const override {
-      ZMatrix1eArray<4*Batch::Nblocks()>::print(name.empty() ? "Small1e" : name);
+      Matrix1eArray<4*Batch::Nblocks(), ZMatrix>::print(name.empty() ? "Small1e" : name);
     }
 };
 
