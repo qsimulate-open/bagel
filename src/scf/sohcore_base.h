@@ -33,16 +33,16 @@ namespace bagel {
 
 class SOHcore_base : public Matrix1e {
   protected:
-    std::shared_ptr<Matrix> soz_, sox_, soy_;
+    std::shared_ptr<Matrix> soiaa_, sorab_, soiab_;
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
   public:
     SOHcore_base() { }
     SOHcore_base(const std::shared_ptr<const Molecule>);
 
-    std::shared_ptr<const Matrix> soz() const { return soz_;}
-    std::shared_ptr<const Matrix> sox() const { return sox_;}
-    std::shared_ptr<const Matrix> soy() const { return soy_;}
+    std::shared_ptr<const Matrix> soiaa() const { return soiaa_;}
+    std::shared_ptr<const Matrix> sorab() const { return sorab_;}
+    std::shared_ptr<const Matrix> soiab() const { return soiab_;}
 };
 
 }
