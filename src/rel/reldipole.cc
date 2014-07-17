@@ -43,21 +43,21 @@ array<double,3> RelDipole::compute() {
   // loop over cartesian components
   for (int x = 0; x != 3; ++x) {
     auto zdip = make_shared<ZMatrix>(2*n, 2*n);
-    zdip->copy_real_block(1.0, 0, 0, n, n, *(*large)[x]);
-    zdip->copy_real_block(1.0, n, n, n, n, *(*large)[x]);
+    zdip->copy_real_block(1.0, 0, 0, n, n, (*large)[x]);
+    zdip->copy_real_block(1.0, n, n, n, n, (*large)[x]);
 
     // inefficient.. (but probably it does not matter)
     const complex<double> w(0.25/(c__*c__));
     const complex<double> wi(0,w.real());
     auto smalldip = zdip->clone();
-    smalldip->add_real_block(w,   0, 0, n, n,  *(*small)[0+x*4]);
-    smalldip->add_real_block(w,   n, n, n, n,  *(*small)[0+x*4]);
-    smalldip->add_real_block(wi,  0, 0, n, n,  *(*small)[1+x*4]);
-    smalldip->add_real_block(-wi, n, n, n, n,  *(*small)[1+x*4]);
-    smalldip->add_real_block(wi,  0, n, n, n,  *(*small)[2+x*4]);
-    smalldip->add_real_block(wi,  n, 0, n, n,  *(*small)[2+x*4]);
-    smalldip->add_real_block(w,   0, n, n, n,  *(*small)[3+x*4]);
-    smalldip->add_real_block(-w,  n, 0, n, n,  *(*small)[3+x*4]);
+    smalldip->add_real_block(w,   0, 0, n, n,  (*small)[0+x*4]);
+    smalldip->add_real_block(w,   n, n, n, n,  (*small)[0+x*4]);
+    smalldip->add_real_block(wi,  0, 0, n, n,  (*small)[1+x*4]);
+    smalldip->add_real_block(-wi, n, n, n, n,  (*small)[1+x*4]);
+    smalldip->add_real_block(wi,  0, n, n, n,  (*small)[2+x*4]);
+    smalldip->add_real_block(wi,  n, 0, n, n,  (*small)[2+x*4]);
+    smalldip->add_real_block(w,   0, n, n, n,  (*small)[3+x*4]);
+    smalldip->add_real_block(-w,  n, 0, n, n,  (*small)[3+x*4]);
 
     auto data = make_shared<ZMatrix>(n*4, n*4);
     data->copy_block(0, 0, 2*n, 2*n, zdip);
