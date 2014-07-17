@@ -54,7 +54,7 @@ class ComplexDFDist : public DFDist {
     std::shared_ptr<ComplexDFHalfDist> complex_compute_half_transform_swap(const ZMatView c) const;
 
     // split up smalleri integrals into 6 dfdist objects
-    std::vector<std::shared_ptr<const DFDist>> split_complex_blocks() const;
+    std::vector<std::shared_ptr<const ComplexDFDist>> split_complex_blocks() const;
 
     // split up real and imaginary parts into 2 dfdist objects
     std::array<std::shared_ptr<const DFDist>,2> split_real_imag() const;

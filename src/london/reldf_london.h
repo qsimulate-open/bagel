@@ -30,6 +30,7 @@
 #include <src/rel/alpha.h>
 #include <src/math/zmatrix.h>
 #include <src/rel/reldfbase.h>
+#include <src/df/complexdf.h>
 #include <src/london/cdmatrix_london.h>
 #include <src/london/reldfhalf_london.h>
 
@@ -58,7 +59,7 @@ class RelDF_London : public RelDFBase, public std::enable_shared_from_this<RelDF
     }
 
   public:
-    RelDF_London(std::shared_ptr<const DFDist>, std::pair<int, int>, const std::vector<int>);
+    RelDF_London(std::shared_ptr<const ComplexDFDist>, std::pair<int, int>, const std::vector<int>);
     RelDF_London(const RelDF_London&) = delete;
     RelDF_London(const RelDF_London&, bool);
     RelDF_London() = delete;

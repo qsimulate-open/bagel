@@ -29,12 +29,10 @@
 using namespace std;
 using namespace bagel;
 
-RelDF_London::RelDF_London(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
-  auto tmp = dynamic_pointer_cast<const ComplexDFDist>(df);
-  assert(tmp);
-  array<shared_ptr<const DFDist>,2> tmp2 = tmp->split_real_imag();
-  dfdata_[0] = tmp2[0];
-  dfdata_[1] = tmp2[1];
+RelDF_London::RelDF_London(shared_ptr<const ComplexDFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
+  array<shared_ptr<const DFDist>,2> tmp = df->split_real_imag();
+  dfdata_[0] = tmp[0];
+  dfdata_[1] = tmp[1];
   set_basis();
 }
 

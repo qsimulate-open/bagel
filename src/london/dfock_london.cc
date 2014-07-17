@@ -134,7 +134,7 @@ void DFock_London::add_Exop_block(shared_ptr<RelDFHalf_London> dfc1, shared_ptr<
 }
 
 
-list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<const DFDist>> dfs, bool mixed) {
+list<shared_ptr<RelDF_London>> DFock_London::make_dfdists(vector<shared_ptr<const ComplexDFDist>> dfs, bool mixed) {
   const vector<int> xyz = { Comp::X, Comp::Y, Comp::Z };
 
   list<shared_ptr<RelDF_London>> dfdists;
@@ -183,7 +183,7 @@ void DFock_London::driver(array<shared_ptr<const Matrix>, 4> rocoeff, array<shar
 
   Timer timer(0);
 
-  vector<shared_ptr<const DFDist>> dfs;
+  vector<shared_ptr<const ComplexDFDist>> dfs;
   if (!gaunt) {
     // get individual df dist objects for each block and add df to dfs
 

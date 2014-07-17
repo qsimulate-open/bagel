@@ -42,10 +42,10 @@ ComplexDFDist::ComplexDFDist(const int nbas, const int naux, const array<shared_
 }
 
 
-vector<shared_ptr<const DFDist>> ComplexDFDist::split_complex_blocks() const {
+vector<shared_ptr<const ComplexDFDist>> ComplexDFDist::split_complex_blocks() const {
   assert(nindex1_ == nindex2_);
   assert(block_.size() % 2 == 0);
-  vector<shared_ptr<const DFDist>> out;
+  vector<shared_ptr<const ComplexDFDist>> out;
   for (int i=0; i<block_.size(); i+=2) {
     array<shared_ptr<DFBlock>,2> in = {{ block_[i], block_[i+1] }};
     out.push_back(make_shared<const ComplexDFDist>(nindex1_, naux_, in, df_, data2_));
