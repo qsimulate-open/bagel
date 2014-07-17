@@ -34,9 +34,10 @@ namespace bagel {
 template <typename MatType = Matrix>
 class Coeff_ : public MatType {
   private:
-    int num_basis(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec) const;
-
+    static_assert((std::is_same<MatType, Matrix>::value || std::is_same<MatType, ZMatrix>::value), "Coeff_ should be instantiated only with Matrix or ZMatrix type.");
     using DataType = typename MatType::value_type;
+
+    int num_basis(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec) const;
 
     // serialization
     friend class boost::serialization::access;
