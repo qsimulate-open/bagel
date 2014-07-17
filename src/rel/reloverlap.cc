@@ -32,23 +32,23 @@ using namespace bagel;
 
 void RelOverlap::compute_() {
   const int n = mol_->nbasis();
-  copy_real_block(1.0, 0, 0, n, n, overlap_);
-  copy_real_block(1.0, n, n, n, n, overlap_);
-  copy_real_block(0.5/(c__*c__), 2*n, 2*n, n, n, kinetic_);
-  copy_real_block(0.5/(c__*c__), 3*n, 3*n, n, n, kinetic_);
+  copy_real_block(1.0, 0, 0, n, n, *overlap_);
+  copy_real_block(1.0, n, n, n, n, *overlap_);
+  copy_real_block(0.5/(c__*c__), 2*n, 2*n, n, n, *kinetic_);
+  copy_real_block(0.5/(c__*c__), 3*n, 3*n, n, n, *kinetic_);
 }
 
 
 shared_ptr<ZMatrix> RelOverlap::tildex(const double thresh) const {
-  shared_ptr<Matrix> tildeo = overlap_->tildex(thresh);
-  shared_ptr<Matrix> k = make_shared<Matrix>(*tildeo % *kinetic_ * *tildeo);
-  const bool nosing = k->inverse_half(thresh*1.0e2);
+  const Matrix tildeo = *overlap_->tildex(thresh);
+  Matrix k = tildeo % *kinetic_ * tildeo;
+  const bool nosing = k.inverse_half(thresh*1.0e2);
   if (!nosing)
     throw logic_error("positive and negative energy states have different linear dependency"); 
-  shared_ptr<Matrix> tildek = make_shared<Matrix>(*tildeo * *k);
+  const Matrix tildek = tildeo * k;
 
-  const int n = tildeo->ndim();
-  const int m = tildeo->mdim();
+  const int n = tildeo.ndim();
+  const int m = tildeo.mdim();
 
   auto out = make_shared<ZMatrix>(4*n, 4*m);
   out->copy_real_block(1.0, 0, 0, n, m, tildeo);

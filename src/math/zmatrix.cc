@@ -53,13 +53,13 @@ ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
 
 ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
   assert(r.ndim() == i.ndim() && r.mdim() == i.mdim());
-  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r.data());
-  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i.data());
+  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r);
+  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i);
 }
 
 
 ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
-  add_real_block(factor, 0, 0, ndim(), mdim(), r.data());
+  add_real_block(factor, 0, 0, ndim(), mdim(), r);
 }
 
 
@@ -354,67 +354,19 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
 }
 
 
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) = a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
+      element(k,i) = a * data(l, j);
 }
 
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) += a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
+      element(k,i) += a * data(l,j);
 }
 
 

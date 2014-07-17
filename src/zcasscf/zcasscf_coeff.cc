@@ -241,7 +241,7 @@ shared_ptr<ZMatrix> ZCASSCF::nonrel_to_relcoeff(const bool stripes) const {
   }
   *shalf = *shalf ^ *shalf;
   auto tcoeff = make_shared<ZMatrix>(nr_coeff_->ndim(), nr_coeff_->mdim());
-  tcoeff->add_real_block(1.0, 0, 0, n, n, nr_coeff_->data());
+  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff_);
   *tcoeff = *t12 * *shalf * *tcoeff;
   // copy non rel values into "+/-" stripes
   if (stripes) {

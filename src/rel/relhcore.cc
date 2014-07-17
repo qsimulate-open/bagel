@@ -32,25 +32,25 @@ using namespace bagel;
 void RelHcore::compute_() {
   const int n = geom_->nbasis();
 
-  auto nai     = make_shared<Matrix>(2*n, 2*n);
-  nai->copy_block(0, 0, n, n, nai_);
-  nai->copy_block(n, n, n, n, nai_);
+  Matrix nai(2*n, 2*n);
+  nai.copy_block(0, 0, n, n, nai_);
+  nai.copy_block(n, n, n, n, nai_);
 
-  auto kinetic = make_shared<Matrix>(2*n, 2*n);
-  kinetic->copy_block(0, 0, n, n, kinetic_);
-  kinetic->copy_block(n, n, n, n, kinetic_);
+  Matrix kinetic(2*n, 2*n);
+  kinetic.copy_block(0, 0, n, n, kinetic_);
+  kinetic.copy_block(n, n, n, n, kinetic_);
 
   const complex<double> w(0.25/(c__*c__));
   const complex<double> wi(0.0, w.real());
-  auto zsnai = make_shared<ZMatrix>(2*n, 2*n);
-  zsnai->add_real_block(  w, 0, 0, n, n, (*smallnai_)[0]);
-  zsnai->add_real_block(  w, n, n, n, n, (*smallnai_)[0]);
-  zsnai->add_real_block( wi, 0, 0, n, n, (*smallnai_)[1]);
-  zsnai->add_real_block(-wi, n, n, n, n, (*smallnai_)[1]);
-  zsnai->add_real_block( wi, 0, n, n, n, (*smallnai_)[2]);
-  zsnai->add_real_block( wi, n, 0, n, n, (*smallnai_)[2]);
-  zsnai->add_real_block(  w, 0, n, n, n, (*smallnai_)[3]);
-  zsnai->add_real_block( -w, n, 0, n, n, (*smallnai_)[3]);
+  ZMatrix zsnai(2*n, 2*n);
+  zsnai.add_real_block(  w, 0, 0, n, n, *(*smallnai_)[0]);
+  zsnai.add_real_block(  w, n, n, n, n, *(*smallnai_)[0]);
+  zsnai.add_real_block( wi, 0, 0, n, n, *(*smallnai_)[1]);
+  zsnai.add_real_block(-wi, n, n, n, n, *(*smallnai_)[1]);
+  zsnai.add_real_block( wi, 0, n, n, n, *(*smallnai_)[2]);
+  zsnai.add_real_block( wi, n, 0, n, n, *(*smallnai_)[2]);
+  zsnai.add_real_block(  w, 0, n, n, n, *(*smallnai_)[3]);
+  zsnai.add_real_block( -w, n, 0, n, n, *(*smallnai_)[3]);
 
   // RKB hcore: T is off diagonal block matrices, V is first main diagonal, and 1/4m^2c^2W-T is second main diagonal
   zero();
