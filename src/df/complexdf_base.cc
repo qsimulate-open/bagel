@@ -46,7 +46,8 @@ shared_ptr<ZVectorB> ComplexDF_base::complex_compute_cd(const shared_ptr<const Z
   if (real_block_.size() != 1 || imag_block_.size() !=1 ) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   if (!dat2) throw logic_error("ComplexDF_base::compute_cd was called without 2-index integrals");
 
-  auto tmp0 = make_shared<ZVectorB>(cnaux_);
+  auto outr = make_shared<VectorB>(cnaux_);
+  auto outi = make_shared<VectorB>(cnaux_);
   const shared_ptr<Matrix> dr = den->get_real_part();
   const shared_ptr<Matrix> di = den->get_imag_part();
 
@@ -58,16 +59,20 @@ shared_ptr<ZVectorB> ComplexDF_base::complex_compute_cd(const shared_ptr<const Z
   *tmpi += *imag_block_[0]->form_vec(dr);
 
   auto tmp = make_shared<ZVectorB>(*tmpr, *tmpi);
-  copy_n(tmp->data(), real_block_[0]->asize(), tmp0->data()+real_block_[0]->astart());
+  copy_n(tmpr->data(), real_block_[0]->asize(), outr->data()+real_block_[0]->astart());
+  copy_n(tmpi->data(), imag_block_[0]->asize(), outi->data()+imag_block_[0]->astart());
 
   // All reduce
-  if (!cserial_)
-    tmp0->allreduce();
+  if (!cserial_) {
+    outr->allreduce();
+    outi->allreduce();
+  }
 
-  // TODO Inefficient.  Multiply by dat2 before combining real and imagingary parts
-  auto cdat2 = make_shared<ZMatrix>(*dat2, 1.0);
-  *tmp0 = *cdat2 * *tmp0;
-  if (!onlyonce)
-    *tmp0 = *cdat2 * *tmp0;
-  return tmp0;
+  *outr = *dat2 * *outr;
+  *outi = *dat2 * *outi;
+  if (!onlyonce) {
+    *outr = *dat2 * *outr;
+    *outi = *dat2 * *outi;
+  }
+  return make_shared<ZVectorB>(*outr, *outi);
 }
