@@ -106,7 +106,7 @@ class GammaTensor {
       norb_ = std::get<0>(o.front()).calculate_norb();
       for (auto& i : o) {
         assert(norb_ == std::get<0>(i).calculate_norb());
-        sparse_.emplace(i, std::make_shared<Matrix>(std::get<0>(i).size, std::get<1>(i).nstates()*std::get<2>(i).nstates()));
+        sparse_.emplace(i, std::make_shared<btas::Tensor3<double>>(std::get<0>(i).size, std::get<1>(i).nstates(), std::get<2>(i).nstates()));
       }
     }
 

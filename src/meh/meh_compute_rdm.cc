@@ -28,6 +28,7 @@
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 void MEH_base::compute_rdm() const {
   const int norbA = dimer_->active_refs().first->nact();
@@ -38,6 +39,22 @@ void MEH_base::compute_rdm() const {
 
   StateTensor st(adiabats_, subspaces_base());
   st.print();
+
+  // TODO parallelize
+  // Loop over both tensors and mupltiply
+  const int istate = 0;
+  GammaTensor half;
+  for (auto& i : *gammatensor_[0]) {
+    for (auto& j : st) {
+      // if the third index of the gamma tensor is identical to the first one of the state tensor we contract
+      if (get<0>(j.first) == istate && get<2>(i.first) == get<1>(j.first)) {
+        auto tag = make_tuple(get<0>(i.first), get<1>(i.first), get<2>(j.first));
+        auto data = make_shared<Tensor3<double>>(get<0>(i.first).size, get<1>(i.first).nstates(), get<2>(j.first).nstates());
+        contract(1.0, *i.second, {0,1,2}, j.second, {2,3}, 0.0, *data, {0,1,3});
+        half.emplace(tag, data);
+      }
+    }
+  }
 
 #if 0
   // diagonal term
