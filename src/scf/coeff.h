@@ -31,12 +31,13 @@
 
 namespace bagel {
 
-template <typename MatType = Matrix, typename DataType = std::conditional<std::is_same<MatType, Matrix>::value, double, std::complex<double>>>
+template <typename MatType = Matrix>
 class Coeff_ : public MatType {
   private:
-    int num_basis(std::vector<std::shared_ptr<const Coeff_<MatType, DataType>>> coeff_vec) const;
+    int num_basis(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec) const;
 
-  private:
+    using DataType = typename MatType::value_type;
+
     // serialization
     friend class boost::serialization::access;
 
@@ -49,7 +50,7 @@ class Coeff_ : public MatType {
     Coeff_() { }
     Coeff_(const MatType&);
     Coeff_(MatType&&);
-    Coeff_(std::vector<std::shared_ptr<const Coeff_<MatType, DataType>>> coeff_vec);
+    Coeff_(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec);
     Coeff_(std::shared_ptr<const Geometry> g) : MatType(g->nbasis(), g->nbasis()) {}
 
     std::shared_ptr<MatType> form_weighted_density_rhf(const int n, const std::vector<double>& e) const;
@@ -63,13 +64,13 @@ class Coeff_ : public MatType {
     using MatType::slice;
 };
 
-using Coeff = Coeff_<Matrix, double>;
-using ZCoeff = Coeff_<ZMatrix, std::complex<double>>;
+using Coeff = Coeff_<Matrix>;
+using ZCoeff = Coeff_<ZMatrix>;
 
 }
 
-extern template class bagel::Coeff_<bagel::Matrix, double>;
-extern template class bagel::Coeff_<bagel::ZMatrix, std::complex<double>>;
+extern template class bagel::Coeff_<bagel::Matrix>;
+extern template class bagel::Coeff_<bagel::ZMatrix>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(bagel::Coeff)
