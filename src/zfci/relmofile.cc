@@ -72,7 +72,14 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
   if (!restricted) {
     kramers_coeff_ = kramers_zquat(nstart, nfence, coeff_->slice_copy(nstart, nfence), overlap, hcore);
   } else {
+#if 1
+    array<shared_ptr<const ZMatrix>,2> tmp;
+    tmp[0] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart, nstart+(nfence-nstart)/2));
+    tmp[1] = make_shared<const ZMatrix>(*coeff_->slice_copy(nstart+(nfence-nstart)/2, nfence));
+    kramers_coeff_ = tmp;
+#else
     kramers_coeff_ = kramers(coeff_->slice_copy(nstart, nfence), overlap, core_fock_);
+#endif
   }
 
   // calculate 1-e MO integrals

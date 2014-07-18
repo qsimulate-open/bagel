@@ -259,8 +259,8 @@ shared_ptr<ZMatrix> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm
   }
 
   if (!unitmat) {
-    unique_ptr<double[]> vec(new double[rdm1->ndim()]);
-    zquatev_(tmp->ndim(), tmp->data(), vec.get()); // TODO : maybe replace with standard diagonalize
+    vector<double> vec(rdm1->ndim());
+    zquatev_(tmp->ndim(), tmp->data(), vec.data());
 
     map<int,int> emap;
     auto buf2 = tmp->clone();

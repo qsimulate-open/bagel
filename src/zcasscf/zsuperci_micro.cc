@@ -86,7 +86,7 @@ void ZSuperCIMicro::compute() {
          << setw(10) << scientific << setprecision(2) << error << fixed << " " << mtimer.tick() << endl;
 
     if (error < casscf_->thresh_micro()) { cout << endl; break; }
-//    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
+    if (miter+1 == casscf_->max_micro_iter()) throw runtime_error("max_micro_iter_ is reached in CASSCF");
 
     // update cc0 and cc1
     cc1 = mbfgs->extrapolate(residual, davidson.civec().front())->second();

@@ -146,7 +146,12 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   qri[bitset<1>("0")] = qri[bitset<1>("0")]->get_conjg();
   qri[bitset<1>("1")] = qri[bitset<1>("1")]->get_conjg();
 
+#if 0
   *this = *qri[bitset<1>("0")] * (*kcoeff[0] % *overlap * *ocoeff) + *qri[bitset<1>("1")] * (*kcoeff[1] % *overlap * *ocoeff);
+#else
+  this->copy_block(0,    0, ndim(), nact, qri[bitset<1>("0")]->data());
+  this->copy_block(0, nact, ndim(), nact, qri[bitset<1>("1")]->data());
+#endif
 
 #if 0
   complex<double> en = 0.0;

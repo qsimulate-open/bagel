@@ -306,6 +306,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   rdm1_tot->copy_block(norb_,     0, norb_, norb_, rdm1_av_kramers("10")->data());
   rdm1_tot->copy_block(    0, norb_, norb_, norb_, rdm1_tot->get_submatrix(norb_, 0, norb_, norb_)->transpose_conjg());
 
+#if 0
   auto coeff_tot = coeff()->get_conjg();
 
   // RDM transform as D_ij = (C*_ri)^+ S_rr' D_r's' S_s's C*_sj
@@ -314,22 +315,36 @@ shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   shared_ptr<const ZMatrix> ocoeff = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
   const ZMatrix co = *ocoeff % *overlap * *coeff_tot;
   return make_shared<ZMatrix>(co * *rdm1_tot ^ co);
+#else
+  return rdm1_tot;
+#endif
 }
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const { 
   // transformed 2RDM ; input format is i^+ k^+ j l ; output format is i^+ j k^+ l
+  // TODO : slot in 2RDM by hand to avoid matrix multiplication ; should be slightly cheaper
 
+  unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
+#if 0
   // forming transformation matrices
   auto coeff_tot = jop_->coeff_input()->slice_copy(ncore_*2, ncore_*2+norb_*2)->get_conjg();
   auto overlap = make_shared<const RelOverlap>(geom_);
-  unordered_map<bitset<1>, shared_ptr<const ZMatrix>> trans;
   for (int i = 0; i != 2; ++i) {
     shared_ptr<const ZMatrix> ocoeff = jop_->kramers_coeff(i)->get_conjg();
     auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
     bitset<1> b(i);
     trans.insert(make_pair(b, co)); 
   }
+#else
+  auto unit = make_shared<ZMatrix>(norb_*2,norb_*2);
+  unit->unit();
+  for (int i = 0; i != 2; ++i) {
+    auto co = make_shared<const ZMatrix>(*unit->slice(i*norb_,(i+1)*norb_)); 
+    bitset<1> b(i);
+    trans.insert(make_pair(b, co)); 
+  }
+#endif
 
   // loop over each component 
   auto ikjl = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
