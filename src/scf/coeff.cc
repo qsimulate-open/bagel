@@ -40,19 +40,20 @@ template class Coeff_<ZMatrix>;
 BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
 BOOST_CLASS_EXPORT_IMPLEMENT(ZCoeff)
 
-template <typename MatType>
-Coeff_<MatType>::Coeff_(const MatType& inp) : MatType(inp.ndim(), inp.mdim()) {
+
+template <typename MatType, class Enable>
+Coeff_<MatType, Enable>::Coeff_(const MatType& inp) : MatType(inp.ndim(), inp.mdim()) {
   copy_n(inp.data(), size(), data());
 }
 
 
-template <typename MatType>
-Coeff_<MatType>::Coeff_(MatType&& inp) : MatType(move(inp)) {
+template <typename MatType, class Enable>
+Coeff_<MatType, Enable>::Coeff_(MatType&& inp) : MatType(move(inp)) {
 }
 
 
-template <typename MatType>
-Coeff_<MatType>::Coeff_(vector<shared_ptr<const Coeff_<MatType>>> coeff_vec) : MatType(num_basis(coeff_vec), num_basis(coeff_vec)) {
+template <typename MatType, class Enable>
+Coeff_<MatType, Enable>::Coeff_(vector<shared_ptr<const Coeff_<MatType>>> coeff_vec) : MatType(num_basis(coeff_vec), num_basis(coeff_vec)) {
 
   DataType* cdata = data();
   for(auto icoeff = coeff_vec.begin(); icoeff != coeff_vec.end(); ++icoeff) {
@@ -81,14 +82,14 @@ Coeff_<MatType>::Coeff_(vector<shared_ptr<const Coeff_<MatType>>> coeff_vec) : M
 }
 
 
-template <typename MatType>
-int Coeff_<MatType>::num_basis(vector<shared_ptr<const Coeff_<MatType>>> coeff_vec) const {
+template <typename MatType, class Enable>
+int Coeff_<MatType, Enable>::num_basis(vector<shared_ptr<const Coeff_<MatType>>> coeff_vec) const {
   return accumulate(coeff_vec.begin(), coeff_vec.end(), 0, [](const int& a, shared_ptr<const Coeff_<MatType>>& b) { return a+b->ndim(); });
 }
 
 
-template <typename MatType>
-shared_ptr<MatType> Coeff_<MatType>::form_weighted_density_rhf(const int n, const vector<double>& e) const {
+template <typename MatType, class Enable>
+shared_ptr<MatType> Coeff_<MatType, Enable>::form_weighted_density_rhf(const int n, const vector<double>& e) const {
   auto out = make_shared<MatType>(ndim(), ndim());
   for (int i = 0; i != n; ++i) {
     auto sl = slice(i, i+1);
@@ -98,8 +99,8 @@ shared_ptr<MatType> Coeff_<MatType>::form_weighted_density_rhf(const int n, cons
 }
 
 
-template <typename MatType>
-pair<shared_ptr<MatType>, shared_ptr<MatType>> Coeff_<MatType>::split(const int nrow1, const int nrow2) const {
+template <typename MatType, class Enable>
+pair<shared_ptr<MatType>, shared_ptr<MatType>> Coeff_<MatType, Enable>::split(const int nrow1, const int nrow2) const {
   auto out1 = make_shared<MatType>(nrow1, mdim());
   auto out2 = make_shared<MatType>(nrow2, mdim());
 
