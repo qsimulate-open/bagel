@@ -47,7 +47,7 @@ class DMRG_Block {
     std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
     std::set<BlockInfo> blocks_;
 
-    int norb_;
+    std::shared_ptr<const Matrix> coeff_; ///< Coefficients for orbitals stored in DMRG_Block
 
   public:
     /// default constructor
@@ -55,7 +55,7 @@ class DMRG_Block {
 
     /// constructor that takes an Rvalue reference to a GammaForestASD
     template <typename T>
-    DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, const int norb) : H2e_(h2e), norb_(norb) {
+    DMRG_Block(GammaForestASD<T>&& forest, const std::map<BlockKey, std::shared_ptr<const Matrix>> h2e, std::shared_ptr<const Matrix> coeff) : H2e_(h2e), coeff_(coeff) {
       // Build set of blocks
       for (auto& i : h2e) {
         assert(i.second->ndim() == i.second->mdim());
@@ -77,7 +77,7 @@ class DMRG_Block {
 
         assert(forest.template exist<0>(itag, jtag, gammalist));
         std::shared_ptr<const Matrix> mat = forest.template get<0>(itag, jtag, gammalist);
-        btas::CRange<3> range(ikey.nstates, jkey.nstates, std::lrint(std::pow(norb_, gammalist.size())));
+        btas::CRange<3> range(ikey.nstates, jkey.nstates, std::lrint(std::pow(norb(), gammalist.size())));
         // checking ndim
         assert(mat->ndim() == range.extent(0)*range.extent(1));
         // checking mdim
@@ -90,6 +90,10 @@ class DMRG_Block {
         sparse_[gammalist].emplace_back(ikey, jkey, tensor);
       }
     }
+
+    int norb() const { return coeff_->mdim(); }
+
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 };
 
 }
