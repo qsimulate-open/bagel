@@ -141,6 +141,8 @@ class GammaTensor {
     template <typename... Args>
     auto emplace(Args... args) -> decltype(sparse_.emplace(std::forward<Args>(args)...)) { return sparse_.emplace(std::forward<Args>(args)...); }
 
+    std::shared_ptr<btas::Tensor3<double>> get_block(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) { return sparse_.at(tag); }
+    std::shared_ptr<const btas::Tensor3<double>> get_block(const std::tuple<listGammaSQ, MonomerKey, MonomerKey> tag) const { return sparse_.at(tag); }
     std::shared_ptr<const btas::Tensor3<double>> get_block(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
       return sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
     }
@@ -148,7 +150,7 @@ class GammaTensor {
     MatView get_block_as_matview(const MonomerKey& i, const MonomerKey& j, const std::initializer_list<GammaSQ>& o) const {
       auto tensor = sparse_.at(std::make_tuple(listGammaSQ(std::list<GammaSQ>(o), std::lrint(std::pow(norb_, o.size()))), i, j));
       btas::CRange<2> range(tensor->extent(0)*tensor->extent(1), tensor->extent(2));
-      return MatView(range, tensor->storage(), /*localized*/false);
+      return MatView(btas::make_view(range, tensor->storage()), /*localized*/false);
     }
 
     std::list<std::tuple<listGammaSQ, MonomerKey, MonomerKey>> blocks() const {
