@@ -125,7 +125,14 @@ class Vector_ : public btas::Tensor1<DataType> {
     std::shared_ptr<Vector_<DataType>> clone() const { return std::make_shared<Vector_<DataType>>(size()); }
     std::shared_ptr<Vector_<DataType>> copy()  const { return std::make_shared<Vector_<DataType>>(*this); }
 
-    VecView_<DataType> slice(const int mstart, const int mend) const {
+    VecView_<DataType> slice(const int mstart, const int mend) {
+      auto low = {mstart};
+      auto up  = {mend};
+      assert(mstart >= 0 && mend <= size());
+      return VecView_<DataType>(btas::make_view(this->range().slice(low, up), this->storage()));
+    }
+
+    const VecView_<DataType> slice(const int mstart, const int mend) const {
       auto low = {mstart};
       auto up  = {mend};
       assert(mstart >= 0 && mend <= size());
