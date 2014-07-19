@@ -363,7 +363,7 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
 
-  const ZMatView ocoeff = nclosed_ ? coeff_->slice(0, nclosed_*2) : ZMatView();
+  const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
   const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
   
   auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);

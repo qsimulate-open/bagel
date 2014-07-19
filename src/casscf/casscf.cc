@@ -284,7 +284,7 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
   rdm1mat->sqrt();
   rdm1mat->scale(1.0/sqrt(2.0));
-  auto ocoeff = nclosed_ ? coeff_->slice(0, nclosed_) : MatView();
+  auto ocoeff = coeff_->slice(0, nclosed_);
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nbasis_);
 
