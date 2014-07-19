@@ -183,15 +183,6 @@ void ZSuperCI::compute() {
 
 void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
                                   shared_ptr<ZRotFile>& denom) {
-  // calculate 1RDM in an original basis set
-  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
-  // make natural orbitals, update coeff_ and transform rdm1
-  shared_ptr<ZMatrix> natorb_coeff;
-  if (nact_) {
-    natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
-    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
-  }
-
   assert(coeff_->mdim()== nbasis_*2);
   // qvec
   shared_ptr<const ZMatrix> qvec;
@@ -206,6 +197,17 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
       qvec = make_shared<const ZMatrix>(*tmp);
     }
 #endif
+  }
+
+  // calculate 1RDM in an original basis set
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+  // make natural orbitals, update coeff_ and transform rdm1
+  shared_ptr<ZMatrix> natorb_coeff;
+  if (nact_) {
+    natorb_coeff = make_natural_orbitals(rdm1); // NOTE : updates coeff_
+    qvec = update_qvec(qvec, natorb_coeff);
+    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+//    fci_->update_kramers_coeff(natorb_coeff);
   }
 
   shared_ptr<const ZMatrix> cfock;
