@@ -70,7 +70,7 @@ double relcas_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_RELCAS)
 
 BOOST_AUTO_TEST_CASE(ZCASSCF) {
-  BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931816));
+  BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931791));
   BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
   BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
 }
