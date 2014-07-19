@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: product_ci.cc
+// Filename: product_civec.cc
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -24,7 +24,7 @@
 //
 
 
-#include <src/asd_dmrg/product_ci.h>
+#include <src/asd_dmrg/product_civec.h>
 
 using namespace std;
 using namespace bagel;
