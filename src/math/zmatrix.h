@@ -72,7 +72,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatView slice(const int mstart, const int mend) const {
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
-      return ZMatView(this->range().slice(low, up), this->storage(), localized_);
+      return ZMatView(btas::make_view(this->range().slice(low, up), this->storage()), localized_);
     }
 
     // diagonalize this matrix (overwritten by a coefficient matrix)

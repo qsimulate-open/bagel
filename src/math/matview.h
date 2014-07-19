@@ -93,7 +93,7 @@ class MatView_ : public btas::TensorView2<DataType> {
     MatView_(const MatView_& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
     MatView_(const btas::TensorView2<DataType>& o, const bool lo) : btas::TensorView2<DataType>(o), localized_(lo) { init(); }
     MatView_(btas::TensorView2<DataType>&& o, const bool lo) : btas::TensorView2<DataType>(std::move(o)), localized_(lo) { init(); }
-    MatView_(const btas::CRange<2>& r, const typename btas::Tensor2<DataType>::storage_type& s, const bool lo) : btas::TensorView2<DataType>(r, s), localized_(lo) { init(); }
+//  MatView_(const btas::CRange<2>& r, const typename btas::Tensor2<DataType>::storage_type& s, const bool lo) : btas::TensorView2<DataType>(r, s), localized_(lo) { init(); }
     MatView_(Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
     MatView_(const Matrix_base<DataType>& o) : btas::TensorView2<DataType>(o), localized_(o.localized()) { init(); }
 

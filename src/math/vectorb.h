@@ -128,8 +128,7 @@ class Vector_ : public btas::Tensor1<DataType> {
       auto low = {mstart};
       auto up  = {mend};
       assert(mstart >= 0 && mend <= size());
-      btas::TensorView1<DataType> tmp(this->range().slice(low, up), this->storage());
-      return VecView_<DataType>(std::move(tmp));
+      return VecView_<DataType>(btas::make_view(this->range().slice(low, up), this->storage()));
     }
 
     size_t size() const { return this->storage().size(); }

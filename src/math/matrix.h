@@ -72,7 +72,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
       assert(mstart >= 0 && mend <= mdim());
-      return MatView(this->range().slice(low, up), this->storage(), localized_);
+      return MatView(btas::make_view(this->range().slice(low, up), this->storage()), localized_);
     }
 
     // antisymmetrize

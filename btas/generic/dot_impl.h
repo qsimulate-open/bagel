@@ -106,7 +106,6 @@ struct dotc_impl<double>
 #ifdef _HAS_CBLAS
       return cblas_ddot(Nsize, itrX, incX, itrY, incY);
 #else
-      int count = 1;
       return_type val = (*itrX) * (*itrY);
       itrX += incX;
       itrY += incY;

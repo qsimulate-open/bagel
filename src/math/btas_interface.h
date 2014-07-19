@@ -55,18 +55,18 @@ namespace btas {
   using Tensor4 = Tensor<T, CRange<4>, bagel::varray<T>>;
 
   template<typename T>
-  using TensorView1 = TensorView<T, CRange<1>, bagel::varray<T>>;
+  using TensorView1 = TensorView<T, CRange<1>, bagel::varray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using TensorView2 = TensorView<T, CRange<2>, bagel::varray<T>>;
+  using TensorView2 = TensorView<T, CRange<2>, bagel::varray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using TensorView3 = TensorView<T, CRange<3>, bagel::varray<T>>;
+  using TensorView3 = TensorView<T, CRange<3>, bagel::varray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using TensorView4 = TensorView<T, CRange<4>, bagel::varray<T>>;
+  using TensorView4 = TensorView<T, CRange<4>, bagel::varray<T>,btas::TensorViewPolicy<true>>;
 
   template<typename T, int N>
   using TensorN = Tensor<T, CRange<N>, bagel::varray<T>>;
   template<typename T, int N>
-  using TensorViewN = TensorView<T, CRange<N>, bagel::varray<T>>;
+  using TensorViewN = TensorView<T, CRange<N>, bagel::varray<T>,btas::TensorViewPolicy<true>>;
 
   // Tensors on preallocated memory
   template<typename T>
@@ -79,18 +79,18 @@ namespace btas {
   using PTensor4 = Tensor<T, CRange<4>, bagel::PreAllocArray<T>>;
 
   template<typename T>
-  using PTensorView1 = TensorView<T, CRange<1>, bagel::PreAllocArray<T>>;
+  using PTensorView1 = TensorView<T, CRange<1>, bagel::PreAllocArray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using PTensorView2 = TensorView<T, CRange<2>, bagel::PreAllocArray<T>>;
+  using PTensorView2 = TensorView<T, CRange<2>, bagel::PreAllocArray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using PTensorView3 = TensorView<T, CRange<3>, bagel::PreAllocArray<T>>;
+  using PTensorView3 = TensorView<T, CRange<3>, bagel::PreAllocArray<T>,btas::TensorViewPolicy<true>>;
   template<typename T>
-  using PTensorView4 = TensorView<T, CRange<4>, bagel::PreAllocArray<T>>;
+  using PTensorView4 = TensorView<T, CRange<4>, bagel::PreAllocArray<T>,btas::TensorViewPolicy<true>>;
 
   template<typename T, int N>
   using PTensorN = Tensor<T, CRange<N>, bagel::PreAllocArray<T>>;
   template<typename T, int N>
-  using PTensorViewN = TensorView<T, CRange<N>, bagel::PreAllocArray<T>>;
+  using PTensorViewN = TensorView<T, CRange<N>, bagel::PreAllocArray<T>,btas::TensorViewPolicy<true>>;
 
   // print functions for Tensor2
   template <typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
@@ -110,14 +110,14 @@ namespace btas {
 }
 
 extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
-extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
+extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>,btas::TensorViewPolicy<true>>;
 extern template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
-extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
+extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>,btas::TensorViewPolicy<true>>;
 
 extern template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<double>>;
-extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<double>>;
+extern template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<double>,btas::TensorViewPolicy<true>>;
 extern template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<std::complex<double>>>;
-extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<std::complex<double>>>;
+extern template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<std::complex<double>>,btas::TensorViewPolicy<true>>;
 
 #include <src/util/archive.h>
 BOOST_CLASS_EXPORT_KEY(btas::Tensor1<double>)
