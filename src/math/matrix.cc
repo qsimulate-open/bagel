@@ -372,9 +372,9 @@ void Matrix::sqrt() {
   else {
     unique_ptr<double[]> scal(new double[n]);
     shared_ptr<DistMatrix> dist = distmatrix();
-    dist->diagonalize(vec.get());
+    dist->diagonalize(vec);
     for (int i = 0; i != n; ++i)
-      scal[i] = std::sqrt(std::sqrt(vec[i]));
+      scal[i] = std::sqrt(std::sqrt(vec(i)));
     dist->scale(scal.get());
     *this = *(*dist ^ *dist).matrix();
   }
