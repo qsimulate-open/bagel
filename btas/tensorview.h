@@ -472,6 +472,13 @@ namespace btas {
                 typename Range,
                 typename Storage>
       friend TensorView<T, Range, const Storage> make_cview(const Range& range, const Storage& storage);
+      template <typename Range,
+                typename Storage>
+      friend TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>> make_rwview(const Range& range, Storage& storage);
+      template <typename T,
+                typename Range,
+                typename Storage>
+      friend TensorView<T, Range, Storage, TensorViewPolicy<true>> make_rwview(const Range& range, Storage& storage);
 
       template <class __T,
                       class __Range,
@@ -630,6 +637,86 @@ namespace btas {
     return TensorView<T,
                       typename Tensor::range_type,
                       const typename Tensor::storage_type>(tensor);
+  }
+
+  /// Helper function that constructs writable TensorView.
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename Range,
+            typename Storage>
+  TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>>
+  make_rwview(const Range& range, Storage& storage)
+  {
+    TensorView<typename Storage::value_type, Range, Storage> tmp = make_view(range, storage);
+    return TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>>(tmp);
+  }
+
+  /// Helper function that constructs writable TensorView, with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats.
+  /// \tparam T the element type of the resulting view
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range,
+            typename Storage>
+  TensorView<T, Range, Storage, TensorViewPolicy<true>>
+  make_rwview(const Range& range, Storage& storage)
+  {
+    TensorView<T, Range, Storage> tmp = make_view(range, storage);
+    return TensorView<T, Range, Storage, TensorViewPolicy<true>>(tmp);
+  }
+
+  /// Helper function that constructs a full writable TensorView of a Tensor.
+  /// \tparam Tensor the tensor type
+  /// \param tensor the Tensor object
+  /// \return TensorView, a full view of the \c tensor
+  /// \note Provided for completeness.
+  template <typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  TensorView<typename Tensor::value_type,
+             typename Tensor::range_type,
+             typename Tensor::storage_type,
+             TensorViewPolicy<true>>
+  make_rwview(Tensor& tensor)
+  {
+    TensorView<typename Tensor::value_type,
+               typename Tensor::range_type,
+               typename Tensor::storage_type> tmp = make_view(tensor);
+    return TensorView<typename Tensor::value_type,
+                      typename Tensor::range_type,
+                      typename Tensor::storage_type,
+                      TensorViewPolicy<true>>(tmp);
+  }
+
+  /// Helper function that constructs a full writable TensorView of a Tensor,
+  /// with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats.
+  /// \tparam T the element type of the resulting view
+  /// \tparam Tensor the tensor type
+  /// \param tensor the Tensor object
+  /// \return TensorView, a full view of the \c tensor
+  /// \note Provided for completeness.
+  template <typename T, typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  TensorView<T,
+             typename Tensor::range_type,
+             typename Tensor::storage_type,
+             TensorViewPolicy<true>>
+  make_rwview(Tensor& tensor)
+  {
+    TensorView<T,
+               typename Tensor::range_type,
+               typename Tensor::storage_type> tmp = make_view(tensor);
+    return TensorView<T,
+                      typename Tensor::range_type,
+                      typename Tensor::storage_type,
+                      TensorViewPolicy<true>>(tmp);
   }
 
   template <typename _T, typename _Range, typename _Storage>

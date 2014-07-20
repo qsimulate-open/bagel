@@ -46,9 +46,11 @@ class VecView_ : public btas::TensorView1<DataType> {
 
   public:
     VecView_(VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
-    VecView_(const VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
-    VecView_(const btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(VecView_<DataType>&& o) : btas::TensorView1<DataType>(std::move(o)) { }
+    VecView_(const VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(btas::TensorView1<DataType>&& o) : btas::TensorView1<DataType>(std::move(o)) { }
+    VecView_(const btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(const Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_() { }
@@ -129,14 +131,14 @@ class Vector_ : public btas::Tensor1<DataType> {
       auto low = {mstart};
       auto up  = {mend};
       assert(mstart >= 0 && mend <= size());
-      return VecView_<DataType>(btas::make_view(this->range().slice(low, up), this->storage()));
+      return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
     }
 
     const VecView_<DataType> slice(const int mstart, const int mend) const {
       auto low = {mstart};
       auto up  = {mend};
       assert(mstart >= 0 && mend <= size());
-      return VecView_<DataType>(btas::make_view(this->range().slice(low, up), this->storage()));
+      return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
     }
 
     size_t size() const { return this->storage().size(); }
