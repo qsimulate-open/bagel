@@ -37,13 +37,20 @@ RelDFFull_London::RelDFFull_London(shared_ptr<const RelDFHalf_London> df, array<
 
   const int index = basis_.front()->basis(1);
 
-  // TODO this could be cheaper by using a zgemm3m-type algorithm
+  // df->get_real() + df->get_imag() needed for 3-multiplication algorithm
+  auto dfri = make_shared<DFHalfDist>(df->get_real()->df(), df->get_real()->nocc());
+  const int n = df->get_real()->block().size();
+  for (int i=0; i!=n; ++i) {
+    dfri->add_block(df->get_real()->block(i)->copy());
+    dfri->block(i)->ax_plus_y(1.0, df->get_imag()->block(i));
+  }
+  auto ricoeff = make_shared<Matrix>(*rcoeff[index] + *icoeff[index]);
+
   dffull_[0] = df->get_real()->compute_second_transform(rcoeff[index]);
-  dffull_[0]->ax_plus_y(-1.0, df->get_imag()->compute_second_transform(icoeff[index]));
-
-  dffull_[1] = df->get_imag()->compute_second_transform(rcoeff[index]);
-  dffull_[1]->ax_plus_y( 1.0, df->get_real()->compute_second_transform(icoeff[index]));
-
+  auto tmp = df->get_imag()->compute_second_transform(icoeff[index]);
+  dffull_[1] = dfri->compute_second_transform(ricoeff);
+  dffull_[1]->ax_plus_y(-1.0, dffull_[0]);
+  dffull_[1]->ax_plus_y(-1.0, tmp);
 }
 
 
@@ -159,9 +166,7 @@ shared_ptr<ZMatrix> RelDFFull_London::form_4index_1fixed(shared_ptr<const RelDFF
   shared_ptr<Matrix> imag = dffull_[0]->form_4index_1fixed(a->dffull_[1], fac, i);
   *imag += *dffull_[1]->form_4index_1fixed(a->dffull_[0], fac, i);
 
-  // TODO Careful...  this should be right though
   return make_shared<ZMatrix>(*real, *imag);
-  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
@@ -172,9 +177,7 @@ shared_ptr<ZMatrix> RelDFFull_London::form_4index(shared_ptr<const RelDFFull_Lon
   shared_ptr<Matrix> imag = dffull_[0]->form_4index(a->dffull_[1], fac);
   *imag += *dffull_[1]->form_4index(a->dffull_[0], fac);
 
-  // TODO Careful...  this should be right though
   return make_shared<ZMatrix>(*real, *imag);
-  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
@@ -187,9 +190,7 @@ shared_ptr<ZMatrix> RelDFFull_London::form_2index(shared_ptr<const RelDFFull_Lon
   shared_ptr<Matrix> imag = dffull_[0]->form_2index(a->dffull_[1], fac);
   *imag += *dffull_[1]->form_2index(a->dffull_[0], fac*ifac);
 
-  // TODO Careful...  this should be right though
   return make_shared<ZMatrix>(*real, *imag);
-  //return make_shared<ZMatrix>(*real + (*imag * complex<double>(0.0, 1.0)));
 }
 
 
