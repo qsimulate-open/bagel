@@ -142,12 +142,21 @@ shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop_from_cd(shared_ptr<const 
   if (block_.size() != 2) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   const shared_ptr<VectorB> dr = tmp0->get_real_part();
   const shared_ptr<VectorB> di = tmp0->get_imag_part();
+  shared_ptr<Matrix> outr, outi;
 
-  // TODO using 4-multiplication
-  shared_ptr<Matrix> outr = block_[0]->form_mat(*dr->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
-  shared_ptr<Matrix> outi = block_[0]->form_mat(*di->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
-  *outr -= *block_[1]->form_mat(*di->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
-  *outi += *block_[1]->form_mat(*dr->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
+  {
+    auto dri = make_shared<VectorB>(*dr + *di);
+    shared_ptr<DFBlock> blockri = block_[0]->copy();
+    *blockri += *block_[1];
+
+    outr = block_[0]->form_mat(*dr->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
+    outi = blockri->form_mat(*dri->slice(blockri->astart(), blockri->astart()+blockri->asize()));
+    shared_ptr<Matrix> tmp = block_[1]->form_mat(*di->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
+
+    *outi -= *outr;
+    *outi -= *tmp;
+    *outr -= *tmp;
+  }
 
   auto out = make_shared<ZMatrix>(*outr, *outi);
 
@@ -188,21 +197,38 @@ shared_ptr<ZMatrix> ComplexDFHalfDist::complex_form_2index(shared_ptr<const Comp
 
   shared_ptr<ZMatrix> out;
 
-  // TODO using 4-multiplication
   if (!swap) {
+    shared_ptr<DFBlock> blockri = block_[0]->copy();
+    *blockri -= *block_[1];
+    shared_ptr<DFBlock> oblockri = o->block_[0]->copy();
+    *oblockri += *o->block_[1];
+
     shared_ptr<Matrix> rout = block_[0]->form_2index(o->block_[0], a);
-    shared_ptr<Matrix> iout = block_[0]->form_2index(o->block_[1], a);
-    *rout += *block_[1]->form_2index(o->block_[1], a);
-    *iout -= *block_[1]->form_2index(o->block_[0], a);
+    shared_ptr<Matrix> tmp = block_[1]->form_2index(o->block_[1], a);
+    shared_ptr<Matrix> iout = blockri->form_2index(oblockri, a);
+
+    *iout -= *rout;
+    *iout += *tmp;
+    *rout += *tmp;
     out = make_shared<ZMatrix>(*rout, *iout);
   } else {
     throw runtime_error("Please verify carefully that ComplexDFHalfDist::form_2index(...) is correct when swap = true");
+    shared_ptr<DFBlock> oblockri = o->block_[0]->copy();
+    *oblockri -= *o->block_[1];
+    shared_ptr<DFBlock> blockri = block_[0]->copy();
+    *blockri += *block_[1];
+
     shared_ptr<Matrix> rout = o->block_[0]->form_2index(block_[0], a);
-    shared_ptr<Matrix> iout = o->block_[0]->form_2index(block_[1], a);
-    *rout += *o->block_[1]->form_2index(block_[1], a);
-    *iout -= *o->block_[1]->form_2index(block_[0], a);
+    shared_ptr<Matrix> tmp = o->block_[1]->form_2index(block_[1], a);
+    shared_ptr<Matrix> iout = oblockri->form_2index(blockri, a);
+
+    *iout -= *rout;
+    *iout += *tmp;
+    *rout += *tmp;
+
     out = make_shared<ZMatrix>(*rout, *iout);
   }
+
   if (!serial_)
     out->allreduce();
   return out;
