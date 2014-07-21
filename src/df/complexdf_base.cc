@@ -46,19 +46,27 @@ shared_ptr<ZVectorB> ComplexDF_base::complex_compute_cd(const shared_ptr<const Z
   if (real_block_.size() != 1 || imag_block_.size() !=1 ) throw logic_error("compute_Jop so far assumes block_.size() == 2 for complex integrals");
   if (!dat2) throw logic_error("ComplexDF_base::compute_cd was called without 2-index integrals");
 
+  // D = (D|rs)*d_rs  (using zgemm3m-like algorithm for complex multiplication)
+  shared_ptr<VectorB> tmpr, tmpi;
+  {
+    const shared_ptr<Matrix> dr = den->get_real_part();
+    const shared_ptr<Matrix> di = den->get_imag_part();
+    auto dri = make_shared<Matrix>(*dr + *di);
+
+    tmpr = real_block_[0]->form_vec(dr);
+    shared_ptr<VectorB> tmp0 = imag_block_[0]->form_vec(di);
+
+    shared_ptr<DFBlock> blockri = real_block_[0]->copy();
+    *blockri += *imag_block_[0];
+
+    tmpi = blockri->form_vec(dri);
+    *tmpi -= *tmpr;
+    *tmpi -= *tmp0;
+    *tmpr -= *tmp0;
+  }
+
   auto outr = make_shared<VectorB>(cnaux_);
   auto outi = make_shared<VectorB>(cnaux_);
-  const shared_ptr<Matrix> dr = den->get_real_part();
-  const shared_ptr<Matrix> di = den->get_imag_part();
-
-  // TODO Using 4-multiplication
-  // D = (D|rs)*d_rs
-  shared_ptr<VectorB> tmpr = real_block_[0]->form_vec(dr);
-  *tmpr -= *imag_block_[0]->form_vec(di);
-  shared_ptr<VectorB> tmpi = real_block_[0]->form_vec(di);
-  *tmpi += *imag_block_[0]->form_vec(dr);
-
-  auto tmp = make_shared<ZVectorB>(*tmpr, *tmpi);
   copy_n(tmpr->data(), real_block_[0]->asize(), outr->data()+real_block_[0]->astart());
   copy_n(tmpi->data(), imag_block_[0]->asize(), outi->data()+imag_block_[0]->astart());
 
