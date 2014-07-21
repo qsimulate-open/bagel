@@ -159,31 +159,10 @@ shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop(const shared_ptr<const Co
 }
 
 
-// TODO Essentially the same as DFHalfDist::apply_J, except for the return type
 shared_ptr<ComplexDFHalfDist> ComplexDFHalfDist::complex_apply_J(const shared_ptr<const Matrix> d) const {
-  auto out = make_shared<ComplexDFHalfDist>(df_, nindex1_);
-  for (auto& i : block_)
-    out->add_block(i->clone());
-#ifdef HAVE_MPI_H
-  if (!serial_) {
-    Timer mult(3);
-    auto work = make_shared<DFDistT>(shared_from_this());
-    mult.tick_print("Form DFDistT");
-    work = work->apply_J(d);
-    mult.tick_print("Application of Inverse");
-    work->get_paralleldf(out);
-    mult.tick_print("Return DFDist");
-  } else {
-#else
-  {
-#endif
-    auto j = block_.begin();
-    for (auto& i : out->block_) {
-      i->zero();
-      i->contrib_apply_J(*j, d);
-      ++j;
-    }
-  }
+  auto tmp = apply_J(d);
+  auto out = make_shared<ComplexDFHalfDist>(tmp, nindex1_);
+  out->block_ = tmp->block();
   out->assign_complex_blocks(*out);
   return out;
 }
