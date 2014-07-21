@@ -135,11 +135,12 @@ shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop_from_cd(shared_ptr<const 
   *outr -= *block_[1]->form_mat(*di->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
   *outi += *block_[1]->form_mat(*dr->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
 
+  auto out = make_shared<ZMatrix>(*outr, *outi);
+
   // all reduce
   if (!serial_)
-    outr->allreduce();
+    out->allreduce();
 
-  auto out = make_shared<ZMatrix>(*outr, *outi);
   return out;
 }
 
