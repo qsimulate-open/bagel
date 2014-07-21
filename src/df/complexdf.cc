@@ -76,18 +76,25 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(cons
   auto cmat = make_shared<const ZMatrix> (c);
   const shared_ptr<Matrix> cr = cmat->get_real_part();
   const shared_ptr<Matrix> ci = cmat->get_imag_part();
+  auto cri = make_shared<Matrix>(*cr - *ci);
 
   const int nocc = c.extent(1);
   auto out = make_shared<ComplexDFHalfDist>(shared_from_this(), nocc);
   const int n = block_.size() / 2;
   assert(2*n == block_.size());
 
-  // TODO Using 4-multiplication
   for (int i=0; i!=n; ++i) {
+    shared_ptr<DFBlock> blockri = block_[i]->copy();
+    *blockri += *block_[i+1];
+
     auto rpart = block_[i]->transform_second(*cr);
-    rpart->ax_plus_y( 1.0, block_[i+1]->transform_second(*ci));
-    auto ipart = block_[i+1]->transform_second(*cr);
-    ipart->ax_plus_y(-1.0, block_[i]->transform_second(*ci));
+    auto tmp = block_[i+1]->transform_second(*ci);
+    auto ipart = blockri->transform_second(*cri);
+
+    *ipart -= *rpart;
+    *ipart += *tmp;
+    *rpart += *tmp;
+
     out->add_block(rpart);
     out->add_block(ipart);
   }
@@ -98,24 +105,31 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(cons
 
 
 shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform_swap(const ZMatView c) const {
-  throw runtime_error("ComplexDFDist::compute_half_transform_swap has not been verified - use caution.");
+  throw runtime_error("ComplexDFDist::complex_compute_half_transform_swap has not been verified - use caution.");
 
   // TODO Avoid unnecessary copying here
   auto cmat = make_shared<const ZMatrix> (c);
   const shared_ptr<Matrix> cr = cmat->get_real_part();
   const shared_ptr<Matrix> ci = cmat->get_imag_part();
+  auto cri = make_shared<Matrix>(*cr + *ci);
 
   const int nocc = c.extent(1);
   auto out = make_shared<ComplexDFHalfDist>(shared_from_this(), nocc);
   const int n = block_.size() / 2;
   assert(2*n == block_.size());
 
-  // TODO Using 4-multiplication
   for (int i=0; i!=n; ++i) {
-    auto rpart = block_[i]->transform_second(*cr);
-    rpart->ax_plus_y(-1.0, block_[i+1]->transform_third(*ci));
-    auto ipart = block_[i+1]->transform_second(*cr);
-    ipart->ax_plus_y( 1.0, block_[i]->transform_third(*ci));
+    shared_ptr<DFBlock> blockri = block_[i]->copy();
+    *blockri += *block_[i+1];
+
+    auto rpart = block_[i]->transform_third(*cr);
+    auto tmp = block_[i+1]->transform_third(*ci);
+    auto ipart = blockri->transform_third(*cri);
+
+    *ipart -= *rpart;
+    *ipart -= *tmp;
+    *rpart -= *tmp;
+
     out->add_block(rpart);
     out->add_block(ipart);
   }
