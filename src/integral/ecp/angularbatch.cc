@@ -94,9 +94,8 @@ vector<double> AngularBatch::project_AB(const int l, const vector<double> usp, c
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
       const double exp0  = basisinfo_[0]->exponents(i0);
       const double fac = coef0 * exp(-exp0 * pow(dAB_-r[ir], 2));
-      for (int i = 0; i <= l0_+l; ++i) {
+      for (int i = 0; i <= l0_+l; ++i)
         bessel[i] += fac * msbessel.compute(i, 2.0 * exp0 * dAB_ * r[ir]);
-      }
     }
     rbessel[ir] = bessel;
   }
@@ -159,9 +158,8 @@ vector<double> AngularBatch::project_CB(const int l, const vector<double> usp, c
       const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
       const double exp1  = basisinfo_[1]->exponents(i1);
       const double fac = coef1 * exp(-exp1 * pow(dCB_-r[ir], 2));
-      for (int i = 0; i <= l1_+l; ++i) {
+      for (int i = 0; i <= l1_+l; ++i)
         bessel[i] += fac * msbessel.compute(i, 2.0 * exp1 * dCB_ * r[ir]);
-      }
     }
     rbessel[ir] = bessel;
   }
@@ -224,10 +222,11 @@ vector<double> AngularBatch::compute(const vector<double> r) {
         vector<double> pA = project_AB(l, usp, r);
         vector<double> pC = project_CB(l, usp, r);
         for (int i = 0; i != ishecp->ecp_exponents().size(); ++i)
-          if (ishecp->ecp_coefficients(i) != 0)
-          for (int ir = 0; ir != r.size(); ++ir)
-            out[ir] += 16.0 * pi__ * pi__ * ishecp->ecp_coefficients(i) * pow(r[ir], ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r[ir] * r[ir])
-                            * pA[ir] * pC[ir];
+          if (ishecp->ecp_coefficients(i) != 0) {
+            const double coeff = 16.0 * pi__ * pi__ * ishecp->ecp_coefficients(i);
+            for (int ir = 0; ir != r.size(); ++ir)
+              out[ir] += coeff * pow(r[ir], ishecp->ecp_r_power(i)) * exp(-ishecp->ecp_exponents(i) * r[ir] * r[ir]) * pA[ir] * pC[ir];
+          }
       }
     }
   }

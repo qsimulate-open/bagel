@@ -65,7 +65,7 @@ struct SphUSPList {
       sphuspfunc[10] = &sphusp_10;
     }
 
-    std::vector<double> sphuspfunc_call(const int l, const int m) const { return sphuspfunc[l](m); }
+    std::vector<double> sphuspfunc_call(const int l, const int m) const { assert(l <= 10); return sphuspfunc[l](m); }
 
 };
 

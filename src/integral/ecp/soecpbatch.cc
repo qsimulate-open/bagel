@@ -64,13 +64,12 @@ SOECPBatch::~SOECPBatch() {
 
 void SOECPBatch::compute() {
 
-  const size_t size_c = cont0_ * cont1_ * asize_;
-  double* const intermediate_c = stack_->get(3*size_c);
-  fill_n(intermediate_c, 3*size_c, 0.0);
+  double* const intermediate_c = stack_->get(3*size_alloc_);
+  fill_n(intermediate_c, 3*size_alloc_, 0.0);
 
   double* current_data = intermediate_c;
-  double* current_data1 = intermediate_c + size_c;
-  double* current_data2 = intermediate_c + size_c;
+  double* current_data1 = intermediate_c + size_alloc_;
+  double* current_data2 = intermediate_c + size_alloc_;
 
   int i = 0;
   for (int izA = 0; izA <= ang0_; ++izA)
@@ -114,7 +113,7 @@ void SOECPBatch::compute() {
   get_data(current_data1, data1_);
   get_data(current_data2, data2_);
 
-  stack_->release(3*size_c, intermediate_c);
+  stack_->release(3*size_alloc_, intermediate_c);
 
 }
 
@@ -122,9 +121,8 @@ void SOECPBatch::get_data(const double* intermediate, double* data) const {
 
   fill_n(data, size_alloc_, 0.0);
 
-  const unsigned int array_size = cont0_ * cont1_ * asize_;
-  double* const intermediate_fi = stack_->get(array_size);
-  copy_n(intermediate, array_size, intermediate_fi);
+  double* const intermediate_fi = stack_->get(size_alloc_);
+  copy_n(intermediate, size_alloc_, intermediate_fi);
 
   if (spherical_) {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
@@ -142,7 +140,7 @@ void SOECPBatch::get_data(const double* intermediate, double* data) const {
     sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(cont0_*cont1_*asize_, intermediate_fi);
+  stack_->release(size_alloc_, intermediate_fi);
 
 }
 

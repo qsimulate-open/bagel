@@ -64,8 +64,8 @@ ECPBatch::~ECPBatch() {
 
 void ECPBatch::compute() {
 
-  double* const intermediate_c = stack_->get(cont0_ * cont1_ * asize_);
-  fill_n(intermediate_c, cont0_ * cont1_ * asize_, 0.0);
+  double* const intermediate_c = stack_->get(size_alloc_);
+  fill_n(intermediate_c, size_alloc_, 0.0);
   double* current_data = intermediate_c;
 
   int i = 0;
@@ -96,7 +96,7 @@ void ECPBatch::compute() {
 
   get_data(current_data, data_);
 
-  stack_->release(cont0_*cont1_*asize_, intermediate_c);
+  stack_->release(size_alloc_, intermediate_c);
 
 }
 
@@ -104,9 +104,8 @@ void ECPBatch::get_data(double* intermediate, double* data) {
 
   fill_n(data, size_alloc_, 0.0);
 
-  const unsigned int array_size = cont0_ * cont1_ * asize_;
-  double* const intermediate_fi = stack_->get(array_size);
-  copy_n(intermediate, array_size, intermediate_fi);
+  double* const intermediate_fi = stack_->get(size_alloc_);
+  copy_n(intermediate, size_alloc_, intermediate_fi);
 
   if (spherical_) {
     double* const intermediate_i = stack_->get(cont0_ * cont1_ * asize_final_);
@@ -124,7 +123,7 @@ void ECPBatch::get_data(double* intermediate, double* data) {
     sort.sortfunc_call(sort_index, data, intermediate_fi, cont1_, cont0_, 1, swap01_);
   }
 
-  stack_->release(cont0_*cont1_*asize_, intermediate_fi);
+  stack_->release(size_alloc_, intermediate_fi);
 
 }
 
