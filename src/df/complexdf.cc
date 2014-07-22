@@ -79,7 +79,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(cons
   auto cri = make_shared<Matrix>(*cr - *ci);
 
   const int nocc = c.extent(1);
-  auto out = make_shared<ComplexDFHalfDist>(shared_from_this(), nocc);
+  auto out = make_shared<ComplexDFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   const int n = block_.size() / 2;
   assert(2*n == block_.size());
 
@@ -114,7 +114,7 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform_swap
   auto cri = make_shared<Matrix>(*cr + *ci);
 
   const int nocc = c.extent(1);
-  auto out = make_shared<ComplexDFHalfDist>(shared_from_this(), nocc);
+  auto out = make_shared<ComplexDFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   const int n = block_.size() / 2;
   assert(2*n == block_.size());
 
