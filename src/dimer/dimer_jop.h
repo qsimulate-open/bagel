@@ -61,6 +61,17 @@ class DimerJop : public Jop {
 
     template<int unit> std::shared_ptr<MOFile> monomer_jop() const { return ( unit == 0 ? jops_.first : jops_.second ); }
 
+    /**
+      \brief Generates a subset of the two-electron integrals \f$\langle ab|cd\rangle = (ac|bd)\f$
+              where each of \f$a,b,c,d\f$ can belong to either monomer \f$A\f$ or \f$B\f$.
+      \details Returns a Matrix(\f$N_A,N_B\f$) where \f$N_A=(\mbox{norb}_A)^d\f$,
+               \f$N_B=(\mbox{norb}_B)^{(4-d)}\f$ and \f$d\f$ is the number of \f$A\f$ operators.
+
+      \tparam A specifies whether the first index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam B specifies whether the second index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam C specifies whether the third index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+      \tparam D specifies whether the fourth index belongs to monomer \f$A\f$ (0) or \f$B\f$ (1)
+    */
     template<int A, int B, int C, int D>
     std::shared_ptr<const Matrix> coulomb_matrix();
 
