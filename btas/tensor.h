@@ -509,7 +509,7 @@ namespace btas {
       void
       resize (const Range& range, typename std::enable_if<is_boxrange<Range>::value,Enabler>::type = Enabler())
       {
-        range_ = range;
+        range_ = range_type(range.lobound(),range.upbound());
         array_adaptor<storage_type>::resize(storage_, range_.area());
       }
 

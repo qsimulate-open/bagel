@@ -16,6 +16,11 @@
 
 namespace btas {
 
+  enum TensorViewPolicy_ConstnessPolicy {
+    TensorViewPolicy_RuntimeConst = 1,
+    TensorViewPolicy_CompiletimeConst = 0
+  };
+
   /// TensorViewPolicy configures behavior of certain features of TensorView
   /// \tparam RuntimeConst: if true, constness of data access is checked at runtime. This involves
   ///      extra space overhead (enough to store a boolean readwrite flag). Non-const data access members
@@ -23,10 +28,10 @@ namespace btas {
   ///      testing. This feature is needed if you want to use a single TensorView<T,Range,Storage> type
   ///      for mutable (non-const) and immutable (const) views. The default value is false, which requires use
   ///      of TensorView<T,Range,const Storage>, aka TensorConstView<T.Range,Storage>, for immutable views.
-  template <bool RuntimeConst = false>
+  template <TensorViewPolicy_ConstnessPolicy ConstnessPolicy = TensorViewPolicy_CompiletimeConst>
   struct TensorViewPolicy {
-      /// value of RuntimeConst template parameter
-      static constexpr bool runtimeconst = RuntimeConst;
+      /// true if constness tracked at runtime
+      static constexpr bool runtimeconst = (ConstnessPolicy == TensorViewPolicy_RuntimeConst);
   };
 
   /// View (aka generalized slice) of a tensor
@@ -100,7 +105,7 @@ namespace btas {
       {
       }
 
-      /// conversion from const Tensor to non-const View only possible if RuntimeConst=true
+      /// conversion from const Tensor to non-const View only possible if \c Policy::runtimeconst is \c true
       template<class _Tensor,
                class Storage = _Storage,
                class Policy = _Policy,
@@ -283,9 +288,15 @@ namespace btas {
         return const_iterator(range().end(), storage());
       }
 
-      /// \return element without range check
+      /// Immutable access to an element without range check.
+
+      /// Available when \c value_type == \c storage_type::value_type
+      /// \return const reference to the element indexed by {\c first, \c rest}
       template<typename index0, typename... _args>
-      typename std::enable_if<std::is_integral<index0>::value, const value_type&>::type
+      typename std::enable_if<std::is_integral<index0>::value &&
+                               std::is_same<value_type,typename storage_type::value_type>::value,
+                              const value_type&
+                             >::type
       operator() (const index0& first, const _args&... rest) const
       {
         typedef typename common_signed_type<index0, typename index_type::value_type>::type ctype;
@@ -295,17 +306,29 @@ namespace btas {
         return storageref_.get()[ range_.ordinal(index) ];
       }
 
-      /// \return element without range check (rank() == general)
+      /// Immutable access to an element without range check.
+
+      /// Available when \c value_type == \c storage_type::value_type
+      /// \return const reference to the element indexed by \c index
       template <typename Index>
-      typename std::enable_if<is_index<Index>::value, const value_type&>::type
+      typename std::enable_if<is_index<Index>::value &&
+                               std::is_same<value_type,typename storage_type::value_type>::value,
+                              const value_type&
+                             >::type
       operator() (const Index& index) const
       {
         return storageref_.get()[range_.ordinal(index)];
       }
 
-      /// access element without range check
+      /// Mutable access to an element without range check.
+
+      /// Available when \c value_type == \c storage_type::value_type
+      /// \return reference to the element indexed by {\c first, \c rest}
       template<typename index0, typename... _args>
-      typename std::enable_if<std::is_integral<index0>::value, value_type&>::type
+      typename std::enable_if<std::is_integral<index0>::value &&
+                               std::is_same<value_type,typename storage_type::value_type>::value,
+                              value_type&
+                             >::type
       operator() (const index0& first, const _args&... rest)
       {
         assert_writable();
@@ -316,14 +339,52 @@ namespace btas {
         return storageref_.get()[ range_.ordinal(index) ];
       }
 
-      /// access element without range check (rank() == general)
+      /// Mutable access to an element without range check (rank() == general)
+
+      /// Available when \c value_type == \c storag_type::value_type
+      /// \return reference to the element indexed by \c index
       template <typename Index>
-      typename std::enable_if<is_index<Index>::value, value_type&>::type
+      typename std::enable_if<is_index<Index>::value &&
+                               std::is_same<value_type,typename storage_type::value_type>::value,
+                              value_type&
+                             >::type
       operator() (const Index& index)
       {
         assert_writable();
         return storageref_.get()[range_.ordinal(index)];
       }
+
+      /// Immutable access to an element without range check.
+
+      /// Available when \c value_type != \c storage_type::value_type
+      /// \return value of the element indexed by {\c first, \c rest}
+      template<typename index0, typename... _args>
+      typename std::enable_if<std::is_integral<index0>::value &&
+                              not std::is_same<value_type,typename storage_type::value_type>::value,
+                              value_type>::type
+      operator() (const index0& first, const _args&... rest) const
+      {
+        typedef typename common_signed_type<index0, typename index_type::value_type>::type ctype;
+        auto indexv = {static_cast<ctype>(first), static_cast<ctype>(rest)...};
+        index_type index = array_adaptor<index_type>::construct(indexv.size());
+        std::copy(std::begin(indexv), std::end(indexv), std::begin(index));
+        return storageref_.get()[ range_.ordinal(index) ];
+      }
+
+      /// Immutable access to an element without range check (rank() == general)
+
+      /// Available when \c value_type != \c storage_type::value_type
+      /// \return value of the element indexed by \c index
+      template <typename Index>
+      typename std::enable_if<is_index<Index>::value &&
+                               not std::is_same<value_type,typename storage_type::value_type>::value,
+                              value_type
+                             >::type
+      operator() (const Index& index) const
+      {
+        return storageref_.get()[range_.ordinal(index)];
+      }
+
 
       /// \return element without range check
       template<typename index0, typename... _args>
@@ -453,37 +514,36 @@ namespace btas {
           assert(can_write_ == true);
       }
 
-      /// construct from \c range and \c storage
-      explicit TensorView(const range_type& range, storage_type& storage) :
-          range_(range), storageref_(std::ref(storage)) {
+      /// construct from \c range and \c storage; pass \c can_write explicitly if needed
+      explicit TensorView (range_type&& range, storage_type& storage,
+                           bool can_write = not _Policy::runtimeconst ? not std::is_const<storage_type>::value : false) :
+          range_(std::move(range)), storageref_(std::ref(storage)), can_write_(can_write) {
       }
 
-      template <typename Range,
-                typename Storage>
-      friend TensorView<typename Storage::value_type, Range, Storage> make_view(const Range& range, Storage& storage);
       template <typename T,
                 typename Range,
-                typename Storage>
-      friend TensorView<T, Range, Storage> make_view(const Range& range, Storage& storage);
-      template <typename Range,
-                typename Storage>
-      friend TensorView<typename Storage::value_type, Range, const Storage> make_cview(const Range& range, const Storage& storage);
+                typename Storage,
+                typename Policy>
+      friend TensorView<T,
+                 Range,
+                 typename std::conditional<std::is_same<T,typename Storage::value_type>::value,
+                                           Storage,
+                                           typename std::add_const<Storage>::type
+                                          >::type,
+                 Policy>
+      __make_view(Range&& range, Storage& storage,
+                  Policy,
+                  bool can_write);
       template <typename T,
                 typename Range,
-                typename Storage>
-      friend TensorView<T, Range, const Storage> make_cview(const Range& range, const Storage& storage);
-      template <typename Range,
-                typename Storage>
-      friend TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>> make_rwview(const Range& range, Storage& storage);
-      template <typename T,
-                typename Range,
-                typename Storage>
-      friend TensorView<T, Range, Storage, TensorViewPolicy<true>> make_rwview(const Range& range, Storage& storage);
+                typename Storage,
+                typename Policy>
+      friend TensorView<T, Range, const Storage, Policy> __make_cview(Range&& range, const Storage& storage, Policy);
 
       template <class __T,
-                      class __Range,
-                      class __Storage,
-                      class __Policy>
+                class __Range,
+                class __Storage,
+                class __Policy>
       friend class TensorView;
   }; // end of TensorView
 
@@ -499,23 +559,122 @@ namespace btas {
   template <typename _T,
             class _Range   = btas::DEFAULT::range,
             class _Storage = btas::DEFAULT::storage<_T>,
-            class _Policy  = btas::TensorViewPolicy<true>
+            class _Policy  = btas::TensorViewPolicy<TensorViewPolicy_RuntimeConst>
            >
-  using TensorRWView = TensorView<_T, _Range, _Storage, _Policy>;
+  using TensorRWView = TensorView<_T, _Range, typename std::remove_const<_Storage>::type, _Policy>;
 
-  /// Helper function that constructs TensorView.
+
+  /// Helper function (friendly to TensorView) that constructs a view with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats.
+  /// \tparam T the element type of the resulting view
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \tparam Policy the TensorViewPolicy type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range and policy \c Policy
+  /// \attention use __make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range,
+            typename Storage,
+            typename Policy>
+  TensorView<T,
+             Range,
+             typename std::conditional<std::is_same<T,typename Storage::value_type>::value,
+                                       Storage,
+                                       typename std::add_const<Storage>::type
+                                      >::type,
+             Policy>
+  __make_view(Range&& range, Storage& storage,
+              Policy = Policy(),
+              bool can_write = not Policy::runtimeconst
+                               ? (not std::is_const<Storage>::value && std::is_same<T,typename Storage::value_type>::value)
+                               : false)
+  {
+    typedef  TensorView<T,
+        Range,
+        typename std::conditional<std::is_same<T,typename Storage::value_type>::value,
+                                  Storage,
+                                  typename std::add_const<Storage>::type
+                                 >::type,
+        Policy> result_type;
+    return result_type(std::move(range), storage, can_write);
+  }
+
+  /// Helper function (friendly to TensorView) that constructs a view, with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats. \sa TensorConstView
+  /// \tparam T the element type of the resulting view
   /// \tparam Range the range type
   /// \tparam Storage the storage type
   /// \param range the range object defining the view
   /// \param storage the storage object that will be viewed into
-  /// \return TensorView into \c storage using \c range
+  /// \return TensorView into \c storage using \c range and policy \c Policy
+  template <typename T,
+            typename Range,
+            typename Storage,
+            typename Policy>
+  TensorView<T, Range, const Storage, Policy>
+  __make_cview(Range&& range, const Storage& storage, Policy = Policy())
+  {
+    return TensorView<T, Range, const Storage, Policy>(std::move(range), storage, false);
+  }
+
+  /// Helper function that constructs TensorView.
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \tparam Policy the TensorViewPolicy type; if the Policy requires additional runtime parameters use __make_view instead
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range, with policy \c Policy
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
   template <typename Range,
-            typename Storage>
-  TensorView<typename Storage::value_type, Range, Storage>
-  make_view(const Range& range, Storage& storage)
+            typename Storage,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorView<typename Storage::value_type, Range, Storage, Policy>
+  make_view(const Range& range, Storage& storage, Policy = Policy())
   {
-    return TensorView<typename Storage::value_type, Range, Storage>(range, storage);
+    return make_view<typename Storage::value_type, Range, Storage, Policy>(range, storage);
+  }
+
+  /// Helper function that constructs TensorView.
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \tparam Policy the TensorViewPolicy type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range, with policy \c Policy
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename Range,
+            typename Storage,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorView<typename Storage::value_type, Range, Storage, Policy>
+  make_view(Range&& range, Storage& storage, Policy = Policy())
+  {
+    return make_view<typename Storage::value_type, Range, Storage, Policy>(range, storage);
+  }
+
+
+  /// Helper function that constructs TensorView, with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats.
+  /// \tparam T the element type of the resulting view
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \tparam Policy the TensorViewPolicy type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range, with policy \c Policy
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range,
+            typename Storage,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  auto
+  make_view(const Range& range, Storage& storage, Policy = Policy()) -> decltype(__make_view<T, Range, Storage, Policy>(Range(range), storage))
+  {
+    return __make_view<T, Range, Storage, Policy>(Range(range), storage);
   }
 
   /// Helper function that constructs TensorView, with an explicitly-specified element type of the view. Useful if need to
@@ -523,17 +682,20 @@ namespace btas {
   /// \tparam T the element type of the resulting view
   /// \tparam Range the range type
   /// \tparam Storage the storage type
+  /// \tparam Policy the TensorViewPolicy type
   /// \param range the range object defining the view
   /// \param storage the storage object that will be viewed into
-  /// \return TensorView into \c storage using \c range
+  /// \return TensorView into \c storage using \c range, with policy \c Policy
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
   template <typename T,
             typename Range,
-            typename Storage>
-  TensorView<T, Range, Storage>
-  make_view(const Range& range, Storage& storage)
+            typename Storage,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  auto
+  make_view(Range&& range, Storage& storage, Policy = Policy()) -> decltype(__make_view<T, Range, Storage, Policy>(range, storage))
   {
-    return TensorView<T, Range, Storage>(range, storage);
+    return __make_view<T, Range, Storage, Policy>(range, storage);
   }
 
   /// Helper function that constructs a full TensorView of a Tensor.
@@ -542,15 +704,19 @@ namespace btas {
   /// \return TensorView, a full view of the \c tensor
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c tensor is a const reference.
   /// \note Provided for completeness.
-  template <typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  template <typename Tensor,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
   TensorView<typename Tensor::value_type,
              typename Tensor::range_type,
-             typename Tensor::storage_type>
-  make_view(Tensor& tensor)
+             typename Tensor::storage_type,
+             Policy>
+  make_view(Tensor& tensor, Policy = Policy())
   {
     return TensorView<typename Tensor::value_type,
                       typename Tensor::range_type,
-                      typename Tensor::storage_type>(tensor);
+                      typename Tensor::storage_type,
+                      Policy>(tensor);
   }
 
   /// Helper function that constructs a full TensorView of a Tensor,
@@ -562,15 +728,26 @@ namespace btas {
   /// \return TensorView, a full view of the \c tensor
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c tensor is a const reference.
   /// \note Provided for completeness.
-  template <typename T, typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  template <typename T, typename Tensor,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
   TensorView<T,
              typename Tensor::range_type,
-             typename Tensor::storage_type>
-  make_view(Tensor& tensor)
+             typename std::conditional<std::is_same<T,typename Tensor::storage_type::value_type>::value,
+                                       typename Tensor::storage_type,
+                                       typename std::add_const<typename Tensor::storage_type>::type
+                                      >::type,
+             Policy>
+  make_view(Tensor& tensor, Policy = Policy())
   {
-    return TensorView<T,
-                      typename Tensor::range_type,
-                      typename Tensor::storage_type>(tensor);
+      typedef   TensorView<T,
+          typename Tensor::range_type,
+          typename std::conditional<std::is_same<T,typename Tensor::storage_type::value_type>::value,
+                                    typename Tensor::storage_type,
+                                    typename std::add_const<typename Tensor::storage_type>::type
+                                   >::type,
+          Policy> result_type;
+    return result_type(tensor);
   }
 
   /// Helper function that constructs a constant TensorView. \sa TensorConstView
@@ -580,11 +757,13 @@ namespace btas {
   /// \param storage the storage object that will be viewed into
   /// \return TensorView into \c storage using \c range
   template <typename Range,
-            typename Storage>
-  TensorView<typename Storage::value_type, Range, const Storage>
-  make_cview(const Range& range, const Storage& storage)
+            typename Storage,
+            typename Policy = btas::TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorView<typename Storage::value_type, Range, const Storage, Policy>
+  make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return TensorView<typename Storage::value_type, Range, const Storage>(range, storage);
+    return make_cview<typename Storage::value_type, Range, Storage, Policy>(range, storage);
   }
 
   /// Helper function that constructs a constant TensorView, with an explicitly-specified element type of the view. Useful if need to
@@ -597,11 +776,13 @@ namespace btas {
   /// \return TensorView into \c storage using \c range
   template <typename T,
             typename Range,
-            typename Storage>
-  TensorView<T, Range, const Storage>
-  make_cview(const Range& range, const Storage& storage)
+            typename Storage,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorView<T, Range, const Storage, Policy>
+  make_cview(const Range& range, const Storage& storage, Policy = Policy())
   {
-    return TensorView<T, Range, const Storage>(range, storage);
+    return __make_cview<T, Range, const Storage, Policy>(Range(range), storage);
   }
 
   /// Helper function that constructs a full constant TensorView of a Tensor.
@@ -609,15 +790,19 @@ namespace btas {
   /// \param tensor the Tensor object
   /// \return TensorView, a full view of the \c tensor
   /// \note Provided for completeness.
-  template <typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  template <typename Tensor,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
   TensorView<typename Tensor::value_type,
              typename Tensor::range_type,
-             const typename Tensor::storage_type>
+             const typename Tensor::storage_type,
+             Policy>
   make_cview(const Tensor& tensor)
   {
     return TensorView<typename Tensor::value_type,
                       typename Tensor::range_type,
-                      const typename Tensor::storage_type>(tensor);
+                      const typename Tensor::storage_type,
+                      Policy>(tensor);
   }
 
   /// Helper function that constructs a full constant TensorView of a Tensor,
@@ -628,15 +813,19 @@ namespace btas {
   /// \param tensor the Tensor object
   /// \return TensorView, a full view of the \c tensor
   /// \note Provided for completeness.
-  template <typename T, typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
+  template <typename T, typename Tensor,
+            typename Policy = TensorViewPolicy<TensorViewPolicy_CompiletimeConst>,
+            class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
   TensorView<T,
              typename Tensor::range_type,
-             const typename Tensor::storage_type>
+             const typename Tensor::storage_type,
+             Policy>
   make_cview(const Tensor& tensor)
   {
     return TensorView<T,
                       typename Tensor::range_type,
-                      const typename Tensor::storage_type>(tensor);
+                      const typename Tensor::storage_type,
+                      Policy>(tensor);
   }
 
   /// Helper function that constructs writable TensorView.
@@ -647,12 +836,36 @@ namespace btas {
   /// \return TensorView into \c storage using \c range
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
   template <typename Range,
-            typename Storage>
-  TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>>
-  make_rwview(const Range& range, Storage& storage)
+            typename Storage,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorRWView<typename Storage::value_type, Range, Storage>
+  make_rwview(const Range& range,
+              Storage& storage,
+              bool can_write = not std::is_const<Storage>::value)
   {
-    TensorView<typename Storage::value_type, Range, Storage> tmp = make_view(range, storage);
-    return TensorView<typename Storage::value_type, Range, Storage, TensorViewPolicy<true>>(tmp);
+    // enforce mutability
+    can_write = can_write && (not std::is_const<Storage>::value);
+    return make_rwview(Range(range), storage, can_write);
+  }
+
+  /// Helper function that constructs writable TensorView.
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename Range,
+            typename Storage,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorRWView<typename Storage::value_type, Range, Storage>
+  make_rwview(Range&& range,
+              Storage& storage,
+              bool can_write = not std::is_const<Storage>::value)
+  {
+    // enforce mutability
+    can_write = can_write && (not std::is_const<Storage>::value);
+    return make_rwview<typename Storage::value_type, Range, Storage>(std::move(range), storage, can_write);
   }
 
   /// Helper function that constructs writable TensorView, with an explicitly-specified element type of the view. Useful if need to
@@ -666,12 +879,49 @@ namespace btas {
   /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
   template <typename T,
             typename Range,
-            typename Storage>
-  TensorView<T, Range, Storage, TensorViewPolicy<true>>
-  make_rwview(const Range& range, Storage& storage)
+            typename Storage,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorRWView<T, Range, Storage>
+  make_rwview(const Range& range, Storage& storage,
+              bool can_write = not std::is_const<Storage>::value &&
+                               std::is_same<T,typename Storage::value_type>::value)
   {
-    TensorView<T, Range, Storage> tmp = make_view(range, storage);
-    return TensorView<T, Range, Storage, TensorViewPolicy<true>>(tmp);
+    // enforce mutability
+    can_write = can_write && (not std::is_const<Storage>::value &&
+                              std::is_same<T,typename Storage::value_type>::value);
+    return make_rwview(Range(range),
+                       storage,
+                       can_write);
+  }
+
+  /// Helper function that constructs writable TensorView, with an explicitly-specified element type of the view. Useful if need to
+  /// view a tensor of floats as a tensor of complex floats.
+  /// \tparam T the element type of the resulting view
+  /// \tparam Range the range type
+  /// \tparam Storage the storage type
+  /// \param range the range object defining the view
+  /// \param storage the storage object that will be viewed into
+  /// \return TensorView into \c storage using \c range
+  /// \attention use make_cview if you must force a const view; this will provide const view, however, if \c storage is a const reference.
+  template <typename T,
+            typename Range,
+            typename Storage,
+            class = typename std::enable_if<not std::is_reference<Range>::value>::type>
+  TensorRWView<T, Range, Storage>
+  make_rwview(Range&& range, Storage& storage,
+              bool can_write = not std::is_const<Storage>::value &&
+                               std::is_same<T,typename Storage::value_type>::value)
+  {
+    // enforce mutability
+    can_write = can_write && (not std::is_const<Storage>::value &&
+                              std::is_same<T,typename Storage::value_type>::value);
+    return __make_view<T,
+                       Range,
+                       typename std::remove_const<Storage>::type,
+                       TensorViewPolicy<TensorViewPolicy_RuntimeConst> >(std::move(range),
+                          const_cast<typename std::remove_const<Storage>::type&>(storage),
+                          TensorViewPolicy<TensorViewPolicy_RuntimeConst>(),
+                          can_write);
   }
 
   /// Helper function that constructs a full writable TensorView of a Tensor.
@@ -680,19 +930,16 @@ namespace btas {
   /// \return TensorView, a full view of the \c tensor
   /// \note Provided for completeness.
   template <typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<typename Tensor::value_type,
-             typename Tensor::range_type,
-             typename Tensor::storage_type,
-             TensorViewPolicy<true>>
-  make_rwview(Tensor& tensor)
-  {
-    TensorView<typename Tensor::value_type,
+  TensorRWView<typename Tensor::value_type,
                typename Tensor::range_type,
-               typename Tensor::storage_type> tmp = make_view(tensor);
-    return TensorView<typename Tensor::value_type,
-                      typename Tensor::range_type,
-                      typename Tensor::storage_type,
-                      TensorViewPolicy<true>>(tmp);
+               typename Tensor::storage_type>
+  make_rwview(Tensor& tensor,
+              bool can_write = not std::is_const<Tensor>::value &&
+                               not std::is_const<typename Tensor::storage_type>::value)
+  {
+      // enforce mutability
+      can_write = can_write && (not std::is_const<Tensor>::value && not std::is_const<typename Tensor::storage_type>::value);
+      return make_rwview(tensor.range(), tensor.storage(), can_write);
   }
 
   /// Helper function that constructs a full writable TensorView of a Tensor,
@@ -704,19 +951,20 @@ namespace btas {
   /// \return TensorView, a full view of the \c tensor
   /// \note Provided for completeness.
   template <typename T, typename Tensor, class = typename std::enable_if<is_boxtensor<Tensor>::value>::type>
-  TensorView<T,
-             typename Tensor::range_type,
-             typename Tensor::storage_type,
-             TensorViewPolicy<true>>
-  make_rwview(Tensor& tensor)
-  {
-    TensorView<T,
+  TensorRWView<T,
                typename Tensor::range_type,
-               typename Tensor::storage_type> tmp = make_view(tensor);
-    return TensorView<T,
-                      typename Tensor::range_type,
-                      typename Tensor::storage_type,
-                      TensorViewPolicy<true>>(tmp);
+               typename Tensor::storage_type>
+  make_rwview(Tensor& tensor,
+              bool can_write = not std::is_const<Tensor>::value &&
+                               not std::is_const<typename Tensor::storage_type>::value &&
+                               std::is_same<T,typename Tensor::storage_type::value_type>::value)
+  {
+      // enforce mutability
+      can_write = can_write &&
+                  (not std::is_const<Tensor>::value &&
+                   not std::is_const<typename Tensor::storage_type>::value &&
+                   std::is_same<T,typename Tensor::storage_type::value_type>::value);
+      return make_rwview(tensor.range(), tensor.storage(), can_write);
   }
 
   template <typename _T, typename _Range, typename _Storage>

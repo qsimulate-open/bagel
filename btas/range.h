@@ -148,7 +148,7 @@ namespace btas {
 
         const_reference_type stride() const { return stride_; }
 
-        /// Size of Range1d is the number of elements encountered in iteration rom begin to end.
+        /// Size of Range1d is the number of elements encountered in iteration from begin to end.
         size_t size() const {
           return (upbound_ - lobound_) / stride_;
         }
