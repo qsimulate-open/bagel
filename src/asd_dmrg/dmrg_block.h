@@ -33,15 +33,17 @@
 
 namespace bagel {
 
+struct CouplingBlock {
+  std::pair<BlockInfo, BlockInfo> states;
+  std::shared_ptr<btas::Tensor3<double>> data;
+  CouplingBlock(BlockInfo ikey, BlockInfo jkey, std::shared_ptr<btas::Tensor3<double>> d) : states({ikey,jkey}), data(d) {}
+  std::pair<BlockKey, BlockKey> key() const { return {states.first.key(), states.second.key()}; }
+};
+
 /// Store matrix representations of all of the operators needed to apply the Hamiltonian to a tensor-product state
 class DMRG_Block {
   protected:
-    struct CouplingBlock {
-      std::pair<BlockInfo, BlockInfo> states;
-      std::shared_ptr<btas::Tensor3<double>> data;
-      CouplingBlock(BlockInfo ikey, BlockInfo jkey, std::shared_ptr<btas::Tensor3<double>> d) : states({ikey,jkey}), data(d) {}
-    };
-    using SparseMap = std::map<std::list<GammaSQ>, std::vector<CouplingBlock>>;
+    using SparseMap = std::map<std::list<GammaSQ>, std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>>;
 
     SparseMap sparse_;
     std::map<BlockKey, std::shared_ptr<const Matrix>> H2e_;
@@ -87,11 +89,18 @@ class DMRG_Block {
         // convert this matrix to 3-tensor
         auto tensor = std::make_shared<btas::Tensor3<double>>(range, std::move(mat->storage()));
         // add matrix
-        sparse_[gammalist].emplace_back(ikey, jkey, tensor);
+        CouplingBlock cb(ikey, jkey, tensor);
+        sparse_[gammalist].emplace(cb.key(), cb);
       }
     }
 
     int norb() const { return coeff_->mdim(); }
+    int nstates() const { return std::accumulate(blocks_.begin(), blocks_.end(), 0, [] (const int o, const BlockInfo& b) { return o + b.nstates; }); }
+    std::set<BlockInfo>& blocks() { return blocks_; }
+    const std::set<BlockInfo>& blocks() const { return blocks_; }
+
+    const std::map<std::pair<BlockKey, BlockKey>, CouplingBlock>& coupling(const std::list<GammaSQ>& l) const { return sparse_.at(l); }
+    std::shared_ptr<const Matrix> h2e(const BlockKey& b) const { return H2e_.at(b); }
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 };

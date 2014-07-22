@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 
 // Constructor
-ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, set<BlockInfo>& left_blocks, const int nelea, const int neleb) :
+ProductRASCivec::ProductRASCivec(shared_ptr<RASSpace> space, const set<BlockInfo>& left_blocks, const int nelea, const int neleb) :
   space_(space), lblocks_(left_blocks), nelea_(nelea), neleb_(neleb) {
 
   for (auto& block : lblocks_) {

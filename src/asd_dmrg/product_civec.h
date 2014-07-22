@@ -61,6 +61,7 @@ class RASBlockVectors : public Matrix {
     RASCivecView civec(const int i) { return RASCivecView(det_, element_ptr(0,i)); }
 
     int nstates() const { return left_state_.nstates; }
+    std::shared_ptr<const RASDeterminants> det() const { return det_; }
 
     using Matrix::data;
     using Matrix::element_ptr;
@@ -81,12 +82,15 @@ class ProductRASCivec {
     int neleb_;
 
   public:
-    ProductRASCivec(std::shared_ptr<RASSpace> space, std::set<BlockInfo>& left_blocks, const int nelea, const int neleb); ///< Constructor
+    ProductRASCivec(std::shared_ptr<RASSpace> space, const std::set<BlockInfo>& left_blocks, const int nelea, const int neleb); ///< Constructor
     ProductRASCivec(const ProductRASCivec& o); ///< Copy-constructor
     ProductRASCivec(ProductRASCivec&& o); ///< Move-constructor
 
     ProductRASCivec& operator=(const ProductRASCivec& o); ///< Copy-assignment
     ProductRASCivec& operator=(ProductRASCivec&& o); ///< Move-assignment
+
+    std::shared_ptr<ProductRASCivec> clone() const { return std::make_shared<ProductRASCivec>(space_, lblocks_, nelea_, neleb_); }
+    std::shared_ptr<ProductRASCivec> copy() const { return std::make_shared<ProductRASCivec>(*this); }
 
     int nelea() const { return nelea_; }
     int neleb() const { return neleb_; }
@@ -97,18 +101,39 @@ class ProductRASCivec {
 
     const std::set<BlockInfo>& lblocks() const { return lblocks_; }
 
+    std::map<BlockKey, std::shared_ptr<RASBlockVectors>> sectors() { return sectors_; }
+    const std::map<BlockKey, std::shared_ptr<RASBlockVectors>> sectors() const { return sectors_; }
+
+    std::shared_ptr<RASBlockVectors> sector(const BlockKey& b) { return sectors_.at(b); }
+    std::shared_ptr<const RASBlockVectors> sector(const BlockKey& b) const { return sectors_.at(b); }
+
     bool matches(const ProductRASCivec& o) const {
       return (*space_==*o.space_ && std::make_pair(nelea_,neleb_)==std::make_pair(o.nelea(),o.neleb()) && std::equal(lblocks_.begin(), lblocks_.end(), o.lblocks_.begin()));
     }
 
     void scale(const double a);
     void ax_plus_y(const double& a, const ProductRASCivec& o);
+    void ax_plus_y(const double& a, std::shared_ptr<const ProductRASCivec>& o) { ax_plus_y(a, *o); }
 
-    double dot_product(const ProductRASCivec& o) const ;
+    double dot_product(const ProductRASCivec& o) const;
+    double dot_product(std::shared_ptr<const ProductRASCivec>& o) const { return dot_product(*o); }
 
     double norm() const { return std::sqrt(dot_product(*this)); }
     double variance() const { return dot_product(*this)/size(); }
     double rms() const { return std::sqrt(variance()); }
+
+    double normalize() {
+      const double nrm = norm();
+      scale(nrm > numerical_zero__ ? 1.0/nrm : 0.0);
+      return nrm;
+    }
+
+    // TODO this can be better
+    void print(const double thresh = 0.05) const {
+      for (auto& isec: sectors_)
+        for (auto& civec : isec.second->civecs())
+          civec.print(thresh);
+    }
 };
 
 }
