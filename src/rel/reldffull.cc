@@ -38,7 +38,7 @@ RelDFFull::RelDFFull(shared_ptr<const RelDFHalf> df, array<shared_ptr<const Matr
   const int index = basis_.front()->basis(1);
 
   // df->get_real() + df->get_imag() needed for 3-multiplication algorithm
-  auto dfri = make_shared<DFHalfDist>(df->get_real()->df(), df->get_real()->nocc());
+  auto dfri = make_shared<DFHalfDist>(df->get_imag()->df(), df->get_imag()->nocc());
   const int n = df->get_real()->block().size();
   for (int i=0; i!=n; ++i) {
     dfri->add_block(df->get_real()->block(i)->copy());

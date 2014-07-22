@@ -43,7 +43,7 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
   auto ricoeff = make_shared<const Matrix>(*rcoeff[index] + *icoeff_scaled);
 
   // df->get_real() +/- df->get_imag() needed for 3-multiplication algorithm
-  auto dfri = make_shared<DFDist>(df->get_imag()->nindex1(), df->get_imag()->naux(), nullptr, df->get_imag()->shared_from_this());
+  auto dfri = make_shared<DFDist>(df->get_imag());
   const int n = df->get_real()->block().size();
   const double scale = df->swapped() ? -1.0 : 1.0;
   for (int i=0; i!=n; ++i) {

@@ -50,19 +50,18 @@ class Shell : public Shell_base {
     // whether a relativistic part is initialized
     bool relativistic_;
 
+    // whether a london phase factor is being used
+    bool magnetism_;
+    std::array<double,3> vector_potential_;
+
     // protected members for relativistic calculations
     std::array<std::shared_ptr<const Matrix>,3>  small_;
     std::shared_ptr<const Shell> aux_increment_;
     std::shared_ptr<const Shell> aux_decrement_;
 
-    // TODO Refactor - These next few are essentially the same as above, but for London integrals only
-    std::shared_ptr<const Shell> aux_same_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
     std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
-
-    // whether a london phase factor is being used
-    bool magnetism_;
-    std::array<double,3> vector_potential_;
+    std::shared_ptr<const Shell> aux_same_;
 
   private:
     // serialization
