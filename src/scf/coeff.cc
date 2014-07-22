@@ -89,7 +89,7 @@ int Coeff_<MatType, Enable>::num_basis(vector<shared_ptr<const Coeff_<MatType>>>
 
 
 template <typename MatType, class Enable>
-shared_ptr<MatType> Coeff_<MatType, Enable>::form_weighted_density_rhf(const int n, const vector<double>& e) const {
+shared_ptr<MatType> Coeff_<MatType, Enable>::form_weighted_density_rhf(const int n, const VecView e) const {
   auto out = make_shared<MatType>(ndim(), ndim());
   for (int i = 0; i != n; ++i) {
     auto sl = slice(i, i+1);

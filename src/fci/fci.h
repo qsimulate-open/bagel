@@ -192,7 +192,7 @@ class FCI : public Method {
     std::shared_ptr<Dvec> rdm4deriv(const int istate) const;
 
     // move to natural orbitals
-    std::pair<std::shared_ptr<Matrix>, std::vector<double>> natorb_convert();
+    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();
 
     const std::shared_ptr<const Geometry> geom() const { return geom_; }
 

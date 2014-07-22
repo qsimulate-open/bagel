@@ -56,7 +56,7 @@ void DFDist::add_direct_product(const vector<shared_ptr<const VectorB>> cd, cons
 
   auto d = dd.begin();
   for (auto& c : cd) {
-    auto aslice = make_shared<VectorB>(*c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
+    auto aslice = make_shared<VectorB>(c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
     block_[0]->add_direct_product(aslice, *d++, a);
   }
   assert(d == dd.end());

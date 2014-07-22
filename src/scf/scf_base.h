@@ -52,7 +52,7 @@ class SCF_base : public Method {
     std::vector<double> schwarz_;
     void init_schwarz();
 
-    std::vector<double> eig_;
+    VectorB eig_;
     double energy_;
 
     int nocc_;
@@ -101,7 +101,7 @@ class SCF_base : public Method {
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
-    double* eig() { return eig_.data(); };
+    VectorB& eig() { return eig_; }
 
     std::shared_ptr<DFHalfDist> half() const { return half_; }
     void discard_half() { half_.reset(); }

@@ -72,7 +72,7 @@ shared_ptr<Matrix> OrbitalLocalization::localize() {
   if (!diagonals_.empty()) {
     ordering = out->copy();
     for (int i = 0; i < ordering->mdim(); ++i) {
-      const double e = std::sqrt(diagonals_[i]);
+      const double e = std::sqrt(diagonals_(i));
       for_each(ordering->element_ptr(0,i), ordering->element_ptr(0,i+1), [&e](double& a){ return a *= e; });
     }
     ordering = make_shared<Matrix>(*ordering ^ *ordering);
@@ -158,8 +158,8 @@ shared_ptr<Matrix> RegionLocalization::localize_space(shared_ptr<const Matrix> c
   auto ortho_density = make_shared<Matrix>(*sqrt_S_ % den * *sqrt_S_);
 
   // transform will hold the eigenvectors of each block
-  vector<double> eigenvalues(nbasis, 0.0);
-  Matrix T = *ortho_density->diagonalize_blocks(eigenvalues.data(), sizes_);
+  VectorB eigenvalues(nbasis);
+  Matrix T = *ortho_density->diagonalize_blocks(eigenvalues, sizes_);
 
   *ortho_density = T % *ortho_density * T;
 

@@ -45,9 +45,12 @@ class VecView_ : public btas::TensorView1<DataType> {
     using btas::TensorView1<DataType>::cend;
 
   public:
+    VecView_(VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(VecView_<DataType>&& o) : btas::TensorView1<DataType>(std::move(o)) { }
     VecView_(const VecView_<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
+    VecView_(btas::TensorView1<DataType>&& o) : btas::TensorView1<DataType>(std::move(o)) { }
     VecView_(const btas::TensorView1<DataType>& o) : btas::TensorView1<DataType>(o) { }
-    VecView_(VecView_&& o) : btas::TensorView1<DataType>(std::move(o)) { }
     VecView_(Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_(const Vector_<DataType>& o) : btas::TensorView1<DataType>(o) { }
     VecView_() { }
@@ -58,6 +61,9 @@ class VecView_ : public btas::TensorView1<DataType> {
 
     DataType* data() { assert(contiguous()); return &*begin(); }
     const DataType* data() const { assert(contiguous()); return &*cbegin(); }
+
+    DataType& operator()(const int i) { return *(data()+i); }
+    const DataType& operator()(const int i) const { return *(data()+i); }
 
     bool contiguous() const { return this->range().ordinal().contiguous(); }
 
@@ -121,12 +127,18 @@ class Vector_ : public btas::Tensor1<DataType> {
     std::shared_ptr<Vector_<DataType>> clone() const { return std::make_shared<Vector_<DataType>>(size()); }
     std::shared_ptr<Vector_<DataType>> copy()  const { return std::make_shared<Vector_<DataType>>(*this); }
 
-    std::shared_ptr<VecView_<DataType>> slice(const int mstart, const int mend) const {
+    VecView_<DataType> slice(const int mstart, const int mend) {
       auto low = {mstart};
       auto up  = {mend};
       assert(mstart >= 0 && mend <= size());
-      btas::TensorView1<DataType> tmp(this->range().slice(low, up), this->storage());
-      return std::make_shared<VecView_<DataType>>(std::move(tmp));
+      return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
+    }
+
+    const VecView_<DataType> slice(const int mstart, const int mend) const {
+      auto low = {mstart};
+      auto up  = {mend};
+      assert(mstart >= 0 && mend <= size());
+      return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
     }
 
     size_t size() const { return this->storage().size(); }

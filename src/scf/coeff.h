@@ -53,7 +53,7 @@ class Coeff_ : public MatType {
     Coeff_(std::vector<std::shared_ptr<const Coeff_<MatType>>> coeff_vec);
     Coeff_(std::shared_ptr<const Geometry> g) : MatType(g->nbasis(), g->nbasis()) {}
 
-    std::shared_ptr<MatType> form_weighted_density_rhf(const int n, const std::vector<double>& e) const;
+    std::shared_ptr<MatType> form_weighted_density_rhf(const int n, const VecView e) const;
     std::pair<std::shared_ptr<MatType>, std::shared_ptr<MatType>> split(const int, const int) const;
 
   public:

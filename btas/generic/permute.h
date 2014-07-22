@@ -21,15 +21,19 @@ namespace btas {
                                            is_boxtensor<_TensorY>::value
                                           >::type
           >
-  void permute(const _TensorX& X, const _Permutation& p, _TensorY& Y) {
-    Y.resize(permute(X.range(), p));
-    auto itrX = std::begin(X);
+  void
+  permute(const _TensorX& X, const _Permutation& p, _TensorY& Y)
+    {
+    const auto pr = permute(X.range(),p);
+    Y.resize(pr);
+    const auto itrX = std::begin(X);
     auto itrY = std::begin(Y);
-    for (auto i : X.range()) {
-      *(itrY + Y.range().ordinal(i)) = *itrX;
-      ++itrX;
+    for(auto i : Y.range())
+        {
+        *itrY = *(itrX + pr.ordinal(i));
+        ++itrY;
+        }
     }
-  }
 
   /// permute \c X using permutation \c p, write result to \c Y
   template<class _TensorX, class _TensorY, typename _T,
@@ -80,8 +84,8 @@ namespace btas {
     }
 
    // calculate permutation
-   typedef btas::varray<size_t> _Permutation;
-   _Permutation prm(Xrank);
+
+   btas::varray<size_t> prm(Xrank);
 
    const auto first = std::begin(aX);
    const auto last  = std::end(aX);

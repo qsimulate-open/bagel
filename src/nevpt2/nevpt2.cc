@@ -86,8 +86,8 @@ void NEVPT2::compute() {
   timer.tick_print("RDMs, hole RDMs, others ");
 
   // make canonical orbitals in closed and virtual subspaces
-  vector<double> veig;
-  vector<double> oeig;
+  VectorB veig(nvirt_);
+  VectorB oeig(nclosed_);
   shared_ptr<Matrix> coeffall;
   // fock
   shared_ptr<const Matrix> fock;
@@ -111,13 +111,11 @@ void NEVPT2::compute() {
     // MO Fock
     if (nclosed_) {
       Matrix omofock(*ccoeff % *fockao * *ccoeff);
-      oeig.resize(nclosed_);
-      omofock.diagonalize(oeig.data());
+      omofock.diagonalize(oeig);
       *ccoeff *= omofock;
     } {
       Matrix vmofock(*vcoeff % *fockao * *vcoeff);
-      veig.resize(nvirt_);
-      vmofock.diagonalize(veig.data());
+      vmofock.diagonalize(veig);
       *vcoeff *= vmofock;
     }
     coeffall = make_shared<Matrix>(acoeff->ndim(), nclosed_+nact_+nvirt_);
@@ -399,7 +397,7 @@ void NEVPT2::compute() {
       const double norm2  = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaR.data());
       const double denom2 = (i == j ? 0.5 : 1.0) * blas::dot_product(mat_aa.data(), mat_aa.size(), mat_aaK.data());
       if (norm2 > norm_thresh_)
-        energy[sect.at("(+2)")] += norm2 / (-denom2/norm2 + oeig[i]+oeig[j]);
+        energy[sect.at("(+2)")] += norm2 / (-denom2/norm2 + oeig(i)+oeig(j));
 
       // TODO should thread
       // S(1)ij,r sector
@@ -418,7 +416,7 @@ void NEVPT2::compute() {
           denom += (2.0*(va*vaK + av*avK) - av*vaK - va*avK);
         }
         if (norm > norm_thresh_)
-          en1 += norm / (-denom/norm-veig[v]+oeig[i]+oeig[j]);
+          en1 += norm / (-denom/norm-veig(v)+oeig(i)+oeig(j));
       }
       if (i == j) en1 *= 0.5;
       energy[sect.at("(+1)")] += en1;
@@ -429,10 +427,10 @@ void NEVPT2::compute() {
         for (int u = v+1; u < nvirt_; ++u) {
           const double vu = mat(v, u);
           const double uv = mat(u, v);
-          en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig[v]+oeig[i]-veig[u]+oeig[j]);
+          en += 2.0*(uv*uv + vu*vu - uv*vu) / (-veig(v)+oeig(i)-veig(u)+oeig(j));
         }
         const double vv = mat(v, v);
-        en += vv*vv / (-veig[v]+oeig[i]-veig[v]+oeig[j]);
+        en += vv*vv / (-veig(v)+oeig(i)-veig(v)+oeig(j));
       }
       if (i != j) en *= 2.0;
       energy[sect.at("(+0)")] += en;
@@ -498,7 +496,7 @@ void NEVPT2::compute() {
           const double norm  = (r == s ? 1.0 : 2.0) * (mat2R.dot_product(mat2) + mat1R.dot_product(mat1) - mat2R.dot_product(mat1));
           const double denom = (r == s ? 1.0 : 2.0) * (mat2K.dot_product(mat2) + mat1K.dot_product(mat1) - mat2K.dot_product(mat1));
           if (norm > norm_thresh_)
-            energy[sect.at("(-1)")] += norm / (denom/norm + oeig[i] - veig[r] - veig[s]);
+            energy[sect.at("(-1)")] += norm / (denom/norm + oeig(i) - veig[r] - veig[s]);
         }
 
         // S(0)ir sector
@@ -518,7 +516,7 @@ void NEVPT2::compute() {
                           + 2.0*fock_c->element(ir,i)*fock_c->element(ir,i);
         const double denom = 2.0*mat1A.dot_product(mat1) - blas::dot_product(mat1Asym.data(), mat1Asym.size(), mat2.data()) + mat2D.dot_product(mat2);
         if (norm > norm_thresh_)
-          energy[sect.at("(+0)'")] += norm / (-denom/norm + oeig[i] - veig[r]);
+          energy[sect.at("(+0)'")] += norm / (-denom/norm + oeig(i) - veig[r]);
       }
 
       // S(1)i sector
@@ -534,7 +532,7 @@ void NEVPT2::compute() {
         (*heff)(a) = fock_c->element(a+nclosed_, i);
       const double norm  = *abc % (*ardm3_sorted % *abc) + *heff % (2.0 * *ardm2_sorted % *abc + *hrdm1_ % *heff);
       const double denom = *abc % (*amat3t_ % *abc)      + *heff % (*bmat2t_ % *abc + *cmat2t_ * *abc + *dmat1t_ % *heff);
-      energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig[i]);
+      energy[sect.at("(+1)'")] += norm / (-denom/norm + oeig(i));
     }
   }
 

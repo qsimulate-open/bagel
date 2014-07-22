@@ -45,7 +45,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(SOSCF)
 SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base(idata, geom, re) {
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
-  soeig_ = unique_ptr<double[]> (new double[geom_->nbasis() * 2]);
+  soeig_ = VectorB(geom_->nbasis() * 2);
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
 
   sohcore_ = make_shared<SOHcore>(geom_, sohcore_base_);
@@ -58,7 +58,7 @@ void SOSCF::initial_guess() {
 
   shared_ptr<const Matrix> sofock = sohcore_;
   shared_ptr<Matrix> intermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
-  intermediate->diagonalize(soeig_.get());
+  intermediate->diagonalize(soeig_);
   socoeff_ = make_shared<Coeff>(*sotildex_ * *intermediate);
   aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
 }
@@ -97,7 +97,7 @@ void SOSCF::compute() {
     }
 
     shared_ptr<Matrix> intermediate = make_shared<Matrix>(*sotildex_ % *sofock * *sotildex_);
-    intermediate->diagonalize(soeig_.get());
+    intermediate->diagonalize(soeig_);
     socoeff_ = make_shared<Coeff>(*sotildex_ * *intermediate);
     aodensity_ = socoeff_->form_density_rhf(nocc_ * 2);
   }

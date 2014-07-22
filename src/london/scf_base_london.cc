@@ -39,7 +39,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
 
 SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
- : Method(idat, geom, re) {
+ : Method(idat, geom, re), eig_(cgeom_->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
@@ -51,8 +51,6 @@ SCF_base_London::SCF_base_London(const shared_ptr<const PTree> idat, const share
   scfb.tick_print("Overlap matrix");
   hcore_ = make_shared<const ZHcore>(geom);
   scfb.tick_print("Hcore matrix");
-
-  eig_.resize(geom_->nbasis());
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);

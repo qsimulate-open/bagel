@@ -34,6 +34,7 @@
 #include <src/parallel/scalapack.h>
 #include <src/parallel/mpi_interface.h>
 #include <src/util/serialization.h>
+#include <src/math/vectorb.h>
 
 #define MATRIX_BASE
 #include <src/math/matview.h>
@@ -138,15 +139,16 @@ class Matrix_base : public btas::Tensor2<DataType> {
       return n;
     }
     template<class T>
-    std::shared_ptr<T> diagonalize_blocks_impl(double* eig, std::vector<int> blocks) {
+    std::shared_ptr<T> diagonalize_blocks_impl(VectorB& eig, std::vector<int> blocks) {
       if (!((ndim() == mdim()) && (ndim() == std::accumulate(blocks.begin(), blocks.end(), 0))))
         throw std::logic_error("illegal call of Matrix::diagonalize_blocks");
+      assert(eig.size() >= ndim());
       auto out = std::make_shared<T>(ndim(),ndim());
       int location = 0;
       for (auto& block_size : blocks) {
         if (block_size == 0) continue;
         auto submat = get_submatrix_impl<T>(location, location, block_size, block_size);
-        submat->diagonalize(eig + location);
+        submat->diagonalize(eig.slice(location, location+block_size));
         out->copy_block(location, location, block_size, block_size, submat);
         location += block_size;
       }
@@ -261,7 +263,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
           element(i, j) = element(j, i) = 0.5*(element(i, j)+element(j, i));
     }
 
-    virtual void diagonalize(double* vec) = 0;
+    virtual void diagonalize(VecView vec) = 0;
 
     void zero() { DataType z(0.0); fill(z); }
     void fill(const DataType a) { std::fill_n(data(), size(), a); }
@@ -332,6 +334,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void synchronize() {
       broadcast();
     }
+
+    virtual void print(const std::string tag = "", const int size = 10) const { btas::print(*this, tag, size); }
 
     // if we use this matrix within node, or in parallel
     void delocalize() { localized_ = false;

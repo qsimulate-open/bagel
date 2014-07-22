@@ -55,9 +55,11 @@ class Matrix1eArray {
     }
 
     std::shared_ptr<MatType>& data(const int i) { return matrices_[i]; }
-    std::shared_ptr<MatType>& operator[](const int i) { return data(i); }
     std::shared_ptr<const MatType> data(const int i) const { return matrices_[i]; }
-    std::shared_ptr<const MatType> operator[](const int i) const { return matrices_[i]; }
+
+    MatType& operator[](const int i) { return *matrices_[i]; }
+    const MatType& operator[](const int i) const { return *matrices_[i]; }
+
     constexpr static int Nblocks() { return N; }
 
     void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }

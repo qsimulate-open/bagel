@@ -290,12 +290,12 @@ void Fock_London<DF>::fock_two_electron_part(std::shared_ptr<const ZMatrix> den_
     *coeff *= -1.0;
     int nocc = 0;
     {
-      std::unique_ptr<double[]> vec(new double[ndim()]);
-      coeff->diagonalize(vec.get());
+      VectorB vec(ndim());
+      coeff->diagonalize(vec);
       for (int i = 0; i != ndim(); ++i) {
         if (vec[i] < -1.0e-8) {
           ++nocc;
-          const double fac = std::sqrt(-vec[i]);
+          const double fac = std::sqrt(-vec(i));
           std::for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](std::complex<double>& i) { i *= fac; });
         } else { break; }
       }

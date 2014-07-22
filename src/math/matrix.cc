@@ -81,8 +81,9 @@ Matrix& Matrix::operator/=(const Matrix& o) {
 }
 
 
-void Matrix::diagonalize(double* eig) {
+void Matrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diagonalize(double*)");
+  assert(eig.size() >= ndim());
   const int n = ndim();
   int info;
 
@@ -92,7 +93,7 @@ void Matrix::diagonalize(double* eig) {
   if (localized_ || n <= blocksize__) {
 #endif
     unique_ptr<double[]> work(new double[n*6]);
-    dsyev_("V", "L", n, data(), n, eig, work.get(), n*6, info);
+    dsyev_("V", "L", n, data(), n, eig.data(), work.get(), n*6, info);
     mpi__->broadcast(data(), n*n, 0);
 #ifdef HAVE_SCALAPACK
   } else {
@@ -105,13 +106,13 @@ void Matrix::diagonalize(double* eig) {
     // first compute worksize
     double wsize;
     int liwork = 1;
-    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), &wsize, -1, &liwork, 1, info);
+    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), &wsize, -1, &liwork, 1, info);
     unique_ptr<int[]> iwork(new int[liwork]);
     wsize =  max(131072.0, wsize*2.0);
 
     const int lwork = round(wsize);
     unique_ptr<double[]> work(new double[lwork]);
-    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
+    pdsyevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), work.get(), lwork, iwork.get(), liwork, info);
     setlocal_(coeff);
   }
 #endif
@@ -271,11 +272,11 @@ shared_ptr<Matrix> Matrix::solve(shared_ptr<const Matrix> A, const int n) const 
 bool Matrix::inverse_symmetric(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
-  unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
+  VectorB vec(n);
+  diagonalize(vec);
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/std::sqrt(vec[i]) : 0.0;
+    double s = vec(i) > thresh ? 1.0/std::sqrt(vec[i]) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
   }
   *this = *this ^ *this;
@@ -296,14 +297,14 @@ bool Matrix::inverse_symmetric(const double thresh) {
 bool Matrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
-  unique_ptr<double[]> vec(new double[n]);
+  VectorB vec(n);
 
 #ifdef HAVE_SCALAPACK
   if (localized_) {
 #endif
-    diagonalize(vec.get());
+    diagonalize(vec);
     for (int i = 0; i != n; ++i) {
-      double s = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+      double s = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
       for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
     }
     *this = *this ^ *this;
@@ -311,9 +312,9 @@ bool Matrix::inverse_half(const double thresh) {
   } else {
     unique_ptr<double[]> scal(new double[n]);
     shared_ptr<DistMatrix> dist = distmatrix();
-    dist->diagonalize(vec.get());
+    dist->diagonalize(vec);
     for (int i = 0; i != n; ++i)
-      scal[i] = vec[i] > thresh ? 1.0/std::sqrt(std::sqrt(vec[i])) : 0.0;
+      scal[i] = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
     dist->scale(scal.get());
     *this = *(*dist ^ *dist).matrix();
   }
@@ -336,12 +337,12 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
     // use canonical orthogonalization. Start over
     cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
-    unique_ptr<double[]> eig(new double[ndim()]);
-    out->diagonalize(eig.get());
+    VectorB eig(ndim());
+    out->diagonalize(eig);
     int m = 0;
     for (int i = 0; i != mdim(); ++i) {
-      if (eig[i] > thresh) {
-        const double e = 1.0/std::sqrt(eig[i]);
+      if (eig(i) > thresh) {
+        const double e = 1.0/std::sqrt(eig(i));
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](double a){ return a*e; });
       }
     }
@@ -354,15 +355,15 @@ shared_ptr<Matrix> Matrix::tildex(const double thresh) const {
 void Matrix::sqrt() {
   assert(ndim() == mdim());
   const int n = ndim();
-  unique_ptr<double[]> vec(new double[n]);
+  VectorB vec(n);
 #ifdef HAVE_SCALAPACK
   if (localized_) {
 #endif
-    diagonalize(vec.get());
+    diagonalize(vec);
 
     for (int i = 0; i != n; ++i) {
-      if (vec[i] < -numerical_zero__) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
-      blas::scale_n(std::sqrt(std::sqrt(fabs(vec[i]))), element_ptr(0,i), n);
+      if (vec(i) < -numerical_zero__) throw runtime_error("Matrix::sqrt() called, but this matrix is not positive definite");
+      blas::scale_n(std::sqrt(std::sqrt(fabs(vec(i)))), element_ptr(0,i), n);
     }
 
     *this = *this ^ *this;
@@ -371,9 +372,9 @@ void Matrix::sqrt() {
   else {
     unique_ptr<double[]> scal(new double[n]);
     shared_ptr<DistMatrix> dist = distmatrix();
-    dist->diagonalize(vec.get());
+    dist->diagonalize(vec);
     for (int i = 0; i != n; ++i)
-      scal[i] = std::sqrt(std::sqrt(vec[i]));
+      scal[i] = std::sqrt(std::sqrt(vec(i)));
     dist->scale(scal.get());
     *this = *(*dist ^ *dist).matrix();
   }
@@ -392,19 +393,6 @@ void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
   else {
     for_each(rotations.begin(), rotations.end(), [this] (tuple<int, int, double> irot) { rotate(get<0>(irot), get<1>(irot), get<2>(irot)); });
   }
-}
-
-
-void Matrix::print(const string name, const int size) const {
-
-  cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size, ndim()); ++i) {
-    for (int j = 0; j != min(size, mdim()); ++j) {
-      cout << fixed << setw(12) << setprecision(9) << element(i, j)  << " ";
-    }
-    cout << endl;
-  }
-
 }
 
 

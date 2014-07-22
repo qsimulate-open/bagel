@@ -149,9 +149,9 @@ shared_ptr<ZMatrix> ComplexDFDist::complex_compute_Jop_from_cd(shared_ptr<const 
     shared_ptr<DFBlock> blockri = block_[0]->copy();
     *blockri += *block_[1];
 
-    outr = block_[0]->form_mat(*dr->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
-    outi = blockri->form_mat(*dri->slice(blockri->astart(), blockri->astart()+blockri->asize()));
-    shared_ptr<Matrix> tmp = block_[1]->form_mat(*di->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
+    outr = block_[0]->form_mat(dr->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
+    outi = blockri->form_mat(dri->slice(blockri->astart(), blockri->astart()+blockri->asize()));
+    shared_ptr<Matrix> tmp = block_[1]->form_mat(di->slice(block_[1]->astart(), block_[1]->astart()+block_[1]->asize()));
 
     *outi -= *outr;
     *outi -= *tmp;

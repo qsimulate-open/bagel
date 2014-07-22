@@ -71,7 +71,35 @@ namespace btas {
     return std::get<3>(x);
   }
 
-}
+  namespace detail {
+
+    /// helper empty class designed to be used with bool in std::conditional<>
+    template <bool B>
+    struct bool_type {
+        static constexpr bool value = B;
+        bool_type() = default;
+        bool_type(const bool_type& other) = default;
+        bool_type(bool_type&& other) = default;
+        bool_type(bool b) {
+          assert(b == value);
+        }
+        operator bool() {
+          return value;
+        }
+        bool operator()() const noexcept {
+          return value;
+        }
+    };
+
+    template <bool B>
+    bool operator==(const bool_type<B>& one, bool two) {
+      assert(bool_type<B>::value == two);
+      return true;
+    }
+
+  } // namespace btas::detail
+
+} // namespace btas
 
 
 #endif /* BTAS_FUNCTIONAL_H_ */

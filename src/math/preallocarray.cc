@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: cphf.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: preallocarray.cc
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,33 +23,8 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-
-#ifndef __SRC_GRAD_CPHF_H
-#define __SRC_GRAD_CPHF_H
-
-#include <src/math/linearRM.h>
-#include <src/wfn/reference.h>
-
-namespace bagel {
-
-class CPHF {
-  protected:
-    std::shared_ptr<LinearRM<Matrix>> solver_;
-    std::shared_ptr<const Matrix> grad_;
-    VectorB eig_;
-    std::shared_ptr<const DFHalfDist> halfjj_;
-    std::shared_ptr<const Reference> ref_;
-    std::shared_ptr<const Geometry> geom_;
-
-  public:
-    CPHF(const std::shared_ptr<const Matrix> grad, const VectorB& eig,
-         const std::shared_ptr<const DFHalfDist> half, const std::shared_ptr<const Reference> g);
-
-    std::shared_ptr<Matrix> solve(const double thresh, const int maxiter = 100);
-
-};
-
-}
-
-#endif
-
+#include <src/math/preallocarray.h>
+template class bagel::PreAllocArray<double>;
+template class bagel::PreAllocArray<std::complex<double>>;
+template class bagel::PreAllocArray<const double>;
+template class bagel::PreAllocArray<const std::complex<double>>;

@@ -26,9 +26,14 @@
 #include <src/math/btas_interface.h>
 
 template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
-template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>>;
+template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::varray<std::complex<double>>,btas::TensorViewPolicy<btas::TensorViewPolicy_RuntimeConst>>;
 template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
-template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>>;
+template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::varray<double>,btas::TensorViewPolicy<btas::TensorViewPolicy_RuntimeConst>>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(btas::Tensor1<double>)
 BOOST_CLASS_EXPORT_IMPLEMENT(btas::Tensor1<std::complex<double>>)
+
+template class btas::Tensor    <std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<std::complex<double>>>;
+template class btas::TensorView<std::complex<double>,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<std::complex<double>>,btas::TensorViewPolicy<btas::TensorViewPolicy_RuntimeConst>>;
+template class btas::Tensor    <double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<double>>;
+template class btas::TensorView<double,btas::RangeNd<CblasColMajor>,bagel::PreAllocArray<double>,btas::TensorViewPolicy<btas::TensorViewPolicy_RuntimeConst>>;

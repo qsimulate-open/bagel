@@ -242,11 +242,11 @@ void ZCASBFGS::compute() {
     *amat *= 1.0 * complex<double>(0.0, -1.0);
 
     // restore the matrix from RotFile
-    unique_ptr<double[]> teig(new double[amat->ndim()]);
-    amat->diagonalize(teig.get());
+    VectorB teig(amat->ndim());
+    amat->diagonalize(teig);
     auto amat_sav = amat->copy();
     for (int i = 0; i != amat->ndim(); ++i) {
-      complex<double> ex = exp(complex<double>(0.0, teig[i]));
+      complex<double> ex = exp(complex<double>(0.0, teig(i)));
       for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
     }
     auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);

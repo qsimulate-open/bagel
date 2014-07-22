@@ -65,7 +65,7 @@ class DavidsonDiag {
     // Hamiltonian
     std::shared_ptr<MatType> mat_;
     // eivenvalues
-    std::vector<double> vec_;
+    VectorB vec_;
     // an eigenvector
     std::shared_ptr<MatType> eig_;
     // overlap matrix
@@ -134,7 +134,7 @@ class DavidsonDiag {
 
       // diagonalize matrix to get
       eig_ = std::make_shared<MatType>(*ovlp_scr % *mat_ * *ovlp_scr);
-      eig_->diagonalize(vec_.data());
+      eig_->diagonalize(vec_);
       eig_ = std::make_shared<MatType>(*ovlp_scr * eig_->slice(0,nstate_));
 
       // first basis vector is always the current best guess
@@ -190,7 +190,7 @@ class DavidsonDiag {
         overlap_ = overlap_->get_submatrix(0, 0, size_, size_);
       }
 
-      return std::vector<double>(vec_.data(), vec_.data()+nstate_);
+      return std::vector<double>(vec_.begin(), vec_.begin()+nstate_);
     }
 
     // perhaps can be cleaner.
@@ -201,7 +201,7 @@ class DavidsonDiag {
         int k = 0;
         for (auto& iv : basis_) {
           if ( std::abs(eig_->element(k++,i)) > 1.0e-16 )
-            tmp->ax_plus_y(-vec_[i]*eig_->element(k-1,i), iv->cc);
+            tmp->ax_plus_y(-vec_(i)*eig_->element(k-1,i), iv->cc);
         }
         k = 0;
         for (auto& iv : basis_) {
