@@ -93,7 +93,7 @@ shared_ptr<MatType> Coeff_<MatType, Enable>::form_weighted_density_rhf(const int
   auto out = make_shared<MatType>(ndim(), ndim());
   for (int i = 0; i != n; ++i) {
     auto sl = slice(i, i+1);
-    contract(2.0*e[i], sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2}, false, true);
+    contract(2.0*e(i), sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2}, false, true);
   }
   return out;
 }

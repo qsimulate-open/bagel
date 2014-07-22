@@ -31,36 +31,36 @@ using namespace bagel;
 void RelHcore_London::compute_() {
   const int n = geom_->nbasis();
 
-  auto nai     = make_shared<ZMatrix>(2*n, 2*n);
-  nai->copy_block(0, 0, n, n, nai_);
-  nai->copy_block(n, n, n, n, nai_);
+  ZMatrix nai(2*n, 2*n);
+  nai.copy_block(0, 0, n, n, nai_);
+  nai.copy_block(n, n, n, n, nai_);
 
-  auto kinetic = make_shared<ZMatrix>(2*n, 2*n);
-  kinetic->copy_block(0, 0, n, n, kinetic_);
-  kinetic->copy_block(n, n, n, n, kinetic_);
+  ZMatrix kinetic(2*n, 2*n);
+  kinetic.copy_block(0, 0, n, n, kinetic_);
+  kinetic.copy_block(n, n, n, n, kinetic_);
 
   const complex<double> w(0.25/(c__*c__));
   const complex<double> wi(0.0, w.real());
-  auto zsnai = make_shared<ZMatrix>(2*n, 2*n);
-  zsnai->add_block(  w, 0, 0, n, n, (*smallnai_)[0]);
-  zsnai->add_block(  w, n, n, n, n, (*smallnai_)[0]);
-  zsnai->add_block( wi, 0, 0, n, n, (*smallnai_)[1]);
-  zsnai->add_block(-wi, n, n, n, n, (*smallnai_)[1]);
-  zsnai->add_block( wi, 0, n, n, n, (*smallnai_)[2]);
-  zsnai->add_block( wi, n, 0, n, n, (*smallnai_)[2]);
-  zsnai->add_block(  w, 0, n, n, n, (*smallnai_)[3]);
-  zsnai->add_block( -w, n, 0, n, n, (*smallnai_)[3]);
+  ZMatrix zsnai(2*n, 2*n);
+  zsnai.add_block(  w, 0, 0, n, n, (*smallnai_)[0]);
+  zsnai.add_block(  w, n, n, n, n, (*smallnai_)[0]);
+  zsnai.add_block( wi, 0, 0, n, n, (*smallnai_)[1]);
+  zsnai.add_block(-wi, n, n, n, n, (*smallnai_)[1]);
+  zsnai.add_block( wi, 0, n, n, n, (*smallnai_)[2]);
+  zsnai.add_block( wi, n, 0, n, n, (*smallnai_)[2]);
+  zsnai.add_block(  w, 0, n, n, n, (*smallnai_)[3]);
+  zsnai.add_block( -w, n, 0, n, n, (*smallnai_)[3]);
 
   const complex<double> rh (-0.5);
   const complex<double> ih (0.0, rh.real());
-  auto zeeman = make_shared<ZMatrix>(2*n, 2*n);
+  ZMatrix zeeman(2*n, 2*n);
 
-  zeeman->add_block(  rh*geom_->magnetic_field(2), 0, 0, n, n, overlap_);
-  zeeman->add_block( -rh*geom_->magnetic_field(2), n, n, n, n, overlap_);
-  zeeman->add_block(  rh*geom_->magnetic_field(0), 0, n, n, n, overlap_);
-  zeeman->add_block(  rh*geom_->magnetic_field(0), n, 0, n, n, overlap_);
-  zeeman->add_block( -ih*geom_->magnetic_field(1), 0, n, n, n, overlap_);
-  zeeman->add_block(  ih*geom_->magnetic_field(1), n, 0, n, n, overlap_);
+  zeeman.add_block( rh*geom_->magnetic_field(2), 0, 0, n, n, overlap_);
+  zeeman.add_block(-rh*geom_->magnetic_field(2), n, n, n, n, overlap_);
+  zeeman.add_block( rh*geom_->magnetic_field(0), 0, n, n, n, overlap_);
+  zeeman.add_block( rh*geom_->magnetic_field(0), n, 0, n, n, overlap_);
+  zeeman.add_block(-ih*geom_->magnetic_field(1), 0, n, n, n, overlap_);
+  zeeman.add_block( ih*geom_->magnetic_field(1), n, 0, n, n, overlap_);
 
   // RMB hcore: all 1-electron integrals over magnetically balanced 2-spinors
   zero();

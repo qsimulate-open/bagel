@@ -32,44 +32,44 @@ using namespace bagel;
 
 void RelOverlap_London::compute_() {
   const int n = mol_->nbasis();
-  auto scalekinetic = make_shared<ZMatrix>(*kinetic_ * (0.5/(c__*c__)));
-  copy_block(0, 0, n, n, overlap_);
-  copy_block(n, n, n, n, overlap_);
+  ZMatrix scalekinetic = *kinetic_ * (0.5/(c__*c__));
+  copy_block(0, 0, n, n, *overlap_);
+  copy_block(n, n, n, n, *overlap_);
   copy_block(2*n, 2*n, n, n, scalekinetic);
   copy_block(3*n, 3*n, n, n, scalekinetic);
 
   const complex<double> r2 (0.25 / (c__*c__));
   const complex<double> i2 (0.0, r2.real());
-  add_block(  r2*mol_->magnetic_field(2), 2*n, 2*n, n, n, overlap_);
-  add_block( -r2*mol_->magnetic_field(2), 3*n, 3*n, n, n, overlap_);
-  add_block(  r2*mol_->magnetic_field(0), 2*n, 3*n, n, n, overlap_);
-  add_block(  r2*mol_->magnetic_field(0), 3*n, 2*n, n, n, overlap_);
-  add_block( -i2*mol_->magnetic_field(1), 2*n, 3*n, n, n, overlap_);
-  add_block( +i2*mol_->magnetic_field(1), 3*n, 2*n, n, n, overlap_);
+  add_block(  r2*mol_->magnetic_field(2), 2*n, 2*n, n, n, *overlap_);
+  add_block( -r2*mol_->magnetic_field(2), 3*n, 3*n, n, n, *overlap_);
+  add_block(  r2*mol_->magnetic_field(0), 2*n, 3*n, n, n, *overlap_);
+  add_block(  r2*mol_->magnetic_field(0), 3*n, 2*n, n, n, *overlap_);
+  add_block( -i2*mol_->magnetic_field(1), 2*n, 3*n, n, n, *overlap_);
+  add_block( +i2*mol_->magnetic_field(1), 3*n, 2*n, n, n, *overlap_);
 }
 
 
 shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
-  shared_ptr<ZMatrix> tildeo = overlap_->tildex(thresh);
+  const ZMatrix tildeo = *overlap_->tildex(thresh);
 
-  const int n = tildeo->ndim();
-  const int m = tildeo->mdim();
+  const int n = tildeo.ndim();
+  const int m = tildeo.mdim();
 
   const int j = mol_->nbasis();
-  auto soverlap = make_shared<ZMatrix>(2*j, 2*j);
-  auto scalekinetic = make_shared<ZMatrix>(*kinetic_ * (0.5/(c__*c__)));
-  soverlap->copy_block(0, 0, n, n, scalekinetic);
-  soverlap->copy_block(n, n, n, n, scalekinetic);
+  ZMatrix soverlap(2*j, 2*j);
+  const ZMatrix scalekinetic = *kinetic_ * (0.5/(c__*c__));
+  soverlap.copy_block(0, 0, n, n, scalekinetic);
+  soverlap.copy_block(n, n, n, n, scalekinetic);
   const complex<double> r2 (0.25 / (c__*c__));
   const complex<double> i2 (0.0, r2.real());
-  soverlap->add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, overlap_);
-  soverlap->add_block( -r2*mol_->magnetic_field(2), n, n, n, n, overlap_);
-  soverlap->add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, overlap_);
-  soverlap->add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, overlap_);
-  soverlap->add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, overlap_);
-  soverlap->add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, overlap_);
-  shared_ptr<ZMatrix> tildes = soverlap->tildex(thresh/(c__*c__));
-  if (tildes->ndim() != 2*n || tildes->mdim() != 2*m)
+  soverlap.add_block( r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
+  soverlap.add_block(-r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
+  soverlap.add_block( r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
+  soverlap.add_block( r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
+  soverlap.add_block(-i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
+  soverlap.add_block( i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
+  const ZMatrix tildes = *soverlap.tildex(thresh/(c__*c__));
+  if (tildes.ndim() != 2*n || tildes.mdim() != 2*m)
     throw logic_error("positive and negative energy states have different linear dependency");
 
   auto out = make_shared<ZMatrix>(4*n, 4*m);
@@ -86,20 +86,20 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   oinv.inverse();
   const int n = oinv.ndim();
 
-  auto soverlap = make_shared<ZMatrix>(2*n, 2*n);
-  auto scalekinetic = make_shared<ZMatrix>(*kinetic_ * (0.5/(c__*c__)));
-  soverlap->copy_block(0, 0, n, n, scalekinetic);
-  soverlap->copy_block(n, n, n, n, scalekinetic);
+  ZMatrix soverlap(2*n, 2*n);
+  const ZMatrix scalekinetic = *kinetic_ * (0.5/(c__*c__));
+  soverlap.copy_block(0, 0, n, n, scalekinetic);
+  soverlap.copy_block(n, n, n, n, scalekinetic);
   const complex<double> r2 (0.25 / (c__*c__));
   const complex<double> i2 (0.0, r2.real());
-  soverlap->add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, overlap_);
-  soverlap->add_block( -r2*mol_->magnetic_field(2), n, n, n, n, overlap_);
-  soverlap->add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, overlap_);
-  soverlap->add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, overlap_);
-  soverlap->add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, overlap_);
-  soverlap->add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, overlap_);
-  soverlap->inverse();
-  if (soverlap->ndim() != 2*oinv.ndim())
+  soverlap.add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
+  soverlap.add_block( -r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
+  soverlap.add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
+  soverlap.add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
+  soverlap.add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
+  soverlap.add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
+  soverlap.inverse();
+  if (soverlap.ndim() != 2*oinv.ndim())
     throw logic_error("positive and negative energy states have different linear dependency");
 
   out->copy_block(0, 0, n, n, oinv);
