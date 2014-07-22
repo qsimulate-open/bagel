@@ -40,29 +40,33 @@ RelDFHalf_London::RelDFHalf_London(shared_ptr<const RelDF_London> df, std::vecto
 
   // -1 due to dagger (We are transforming the bra.)
   auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
+  auto ricoeff = make_shared<const Matrix>(*rcoeff[index] + *icoeff_scaled);
 
-  // TODO Using 4-multiplication - switch to 3
-  auto rdf = dynamic_pointer_cast<const DFDist>(df->get_real());
-  auto idf = dynamic_pointer_cast<const DFDist>(df->get_imag());
-  assert(rdf && idf);
+  // df->get_real() +/- df->get_imag() needed for 3-multiplication algorithm
+  auto dfri = make_shared<DFDist>(df->get_imag()->nindex1(), df->get_imag()->naux(), nullptr, df->get_imag()->shared_from_this());
+  const int n = df->get_real()->block().size();
+  const double scale = df->swapped() ? -1.0 : 1.0;
+  for (int i=0; i!=n; ++i) {
+    dfri->add_block(df->get_real()->block(i)->copy());
+    dfri->block(i)->ax_plus_y(scale, df->get_imag()->block(i));
+  }
+
   if (df->swapped()) {
-    auto rr = rdf->compute_half_transform_swap(rcoeff[index]);
-    auto ri = rdf->compute_half_transform_swap(icoeff_scaled);
-    auto ir = idf->compute_half_transform_swap(rcoeff[index]);
-    auto ii = idf->compute_half_transform_swap(icoeff_scaled);
-    dfhalf_[0] = rr;
-    dfhalf_[0]->ax_plus_y(1.0, ii);
-    dfhalf_[1] = ri;
-    dfhalf_[1]->ax_plus_y(-1.0, ir);
+    dfhalf_[0] = df->get_real()->compute_half_transform_swap(rcoeff[index]);
+    auto tmp = df->get_imag()->compute_half_transform_swap(icoeff_scaled);
+    dfhalf_[1] = dfri->compute_half_transform_swap(ricoeff);
+
+    dfhalf_[1]->ax_plus_y(-1.0, dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y( 1.0, tmp);
+    dfhalf_[0]->ax_plus_y( 1.0, tmp);
   } else {
-    auto rr = rdf->compute_half_transform(rcoeff[index]);
-    auto ri = rdf->compute_half_transform(icoeff_scaled);
-    auto ir = idf->compute_half_transform(rcoeff[index]);
-    auto ii = idf->compute_half_transform(icoeff_scaled);
-    dfhalf_[0] = rr;
-    dfhalf_[0]->ax_plus_y(-1.0, ii);
-    dfhalf_[1] = ri;
-    dfhalf_[1]->ax_plus_y(1.0, ir);
+    dfhalf_[0] = df->get_real()->compute_half_transform(rcoeff[index]);
+    auto tmp = df->get_imag()->compute_half_transform(icoeff_scaled);
+    dfhalf_[1] = dfri->compute_half_transform(ricoeff);
+
+    dfhalf_[1]->ax_plus_y(-1.0, dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y(-1.0, tmp);
+    dfhalf_[0]->ax_plus_y(-1.0, tmp);
   }
 }
 
