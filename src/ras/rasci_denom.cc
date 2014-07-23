@@ -25,53 +25,38 @@
 
 #include <src/ras/rasci.h>
 #include <src/ras/distrasci.h>
+#include <src/ras/denomtask.h>
 
 using namespace std;
 using namespace bagel;
 
-namespace bagel {
-  namespace RAS {
-    struct DenomTask {
-      double* const data_;
-      const bitset<nbit__> abit_;
-      shared_ptr<const RASString> stringb_;
-      const double* const jop_;
-      const double* const kop_;
-      const double* const h_;
+void RAS::DenomTask::compute() {
+  const int nspin = abit_.count() - stringb_->nele();
+  const int nspin2 = nspin*nspin;
+  const int norb = stringb_->norb();
 
-      DenomTask(double* o, bitset<nbit__> ia, shared_ptr<const RASString> sb, double* j, double* k, double* h) :
-        data_(o), abit_(ia), stringb_(sb), jop_(j), kop_(k), h_(h) {}
+  double* iter = data_;
+  const bitset<nbit__> ia = abit_;
+  for (auto& ib : *stringb_) {
+    const int nopen = (ia^ib).count();
+    const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
+    *iter = 0.0;
+    for (int i = 0; i < norb; ++i) {
+      const int nia = ia[i];
+      const int nib = ib[i];
+      const int niab = (nia + nib);
+      const int Ni = (nia ^ nib);
+      for (int j = 0; j < i; ++j) {
+        const int nja = ia[j];
+        const int njb = ib[j];
+        const int Nj = nja ^ njb;
+        const int addj = niab * (nja + njb);
 
-      void compute() {
-        const int nspin = abit_.count() - stringb_->nele();
-        const int nspin2 = nspin*nspin;
-        const int norb = stringb_->norb();
-
-        double* iter = data_;
-        const bitset<nbit__> ia = abit_;
-        for (auto& ib : *stringb_) {
-          const int nopen = (ia^ib).count();
-          const double F = (nopen >> 1) ? (static_cast<double>(nspin2 - nopen)/(nopen*(nopen-1))) : 0.0;
-          *iter = 0.0;
-          for (int i = 0; i < norb; ++i) {
-            const int nia = ia[i];
-            const int nib = ib[i];
-            const int niab = (nia + nib);
-            const int Ni = (nia ^ nib);
-            for (int j = 0; j < i; ++j) {
-              const int nja = ia[j];
-              const int njb = ib[j];
-              const int Nj = nja ^ njb;
-              const int addj = niab * (nja + njb);
-
-              *iter += jop_[j+norb*i] * 2.0 * addj - kop_[j+norb*i] * (F*Ni*Nj + addj);
-            }
-            *iter += h_[i] * niab - kop_[i+norb*i] * 0.5 * (Ni - niab*niab);
-          }
-          ++iter;
-        }
+        *iter += jop_[j+norb*i] * 2.0 * addj - kop_[j+norb*i] * (F*Ni*Nj + addj);
       }
-    };
+      *iter += h_[i] * niab - kop_[i+norb*i] * 0.5 * (Ni - niab*niab);
+    }
+    ++iter;
   }
 }
 
