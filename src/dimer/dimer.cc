@@ -214,29 +214,29 @@ shared_ptr<Reference> Dimer::build_reference(const int site, const vector<bool> 
   const int nsites = meanfield.size();
   assert(nsites==2 && (site==0 || site==1));
 
-  vector<MatView> closed_orbitals = {sref_->coeff()->slice(0, sref_->nclosed())};
+  vector<shared_ptr<const MatView>> closed_orbitals = {make_shared<MatView>(sref_->coeff()->slice(0, sref_->nclosed()))};
   const MatView active_orbitals = sref_->coeff()->slice(sref_->nclosed() + (site==0 ? 0 : active_refs_.first->nact()), sref_->nclosed() + (site==0 ? active_refs_.first->nact() : active_refs_.second->nact()));
   if (site == 0 && meanfield[1]) {
     const int nstart = sref_->nclosed() + active_refs_.first->nact();
     const int nfence = nstart + (isolated_refs_.second->nclosed() - active_refs_.second->nclosed());
-    closed_orbitals.push_back(sref_->coeff()->slice(nstart, nfence));
+    closed_orbitals.push_back(make_shared<MatView>(sref_->coeff()->slice(nstart, nfence)));
   }
   else if (site == 1 && meanfield[0]) {
     const int nstart = sref_->nclosed();
     const int nfence = nstart + isolated_refs_.first->nclosed() - active_refs_.first->nclosed();
-    closed_orbitals.push_back(sref_->coeff()->slice(nstart, nfence));
+    closed_orbitals.push_back(make_shared<MatView>(sref_->coeff()->slice(nstart, nfence)));
   }
 
-  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [] (const int a, const MatView m) { return a + m.mdim(); });
+  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [] (const int a, shared_ptr<const MatView> m) { return a + m->mdim(); });
   const int nact = active_orbitals.mdim();
 
   auto out = make_shared<Matrix>(sref_->geom()->nbasis(), nclosed+nact);
 
   int current = 0;
-  closed_orbitals.push_back(active_orbitals);
+  closed_orbitals.push_back(make_shared<MatView>(active_orbitals));
   for (auto& orbitals : closed_orbitals) {
-    copy_n(orbitals.data(), orbitals.mdim()*orbitals.ndim(), out->element_ptr(0, current));
-    current += orbitals.mdim();
+    copy_n(orbitals->data(), orbitals->mdim()*orbitals->ndim(), out->element_ptr(0, current));
+    current += orbitals->mdim();
   }
 
   return make_shared<Reference>(sgeom_, make_shared<Coeff>(move(*out)), nclosed, nact, 0);
