@@ -392,12 +392,12 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
 
   shared_ptr<const Matrix> z0 = z->first();
   shared_ptr<const Dvec>   z1 = z->second();
-  const MatView ccoeff = nclosed ? coeff_->slice(0, nclosed) : MatView();
+  const MatView ccoeff = coeff_->slice(0, nclosed);
   const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   const MatView az0 = z0->slice(nclosed, nocca);
   const MatView oz0 = z0->slice(0, nocca);
-  const MatView cz0 = nclosed ? z0->slice(0, nclosed) : MatView();
+  const MatView cz0 = z0->slice(0, nclosed);
   shared_ptr<const Matrix>  ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * cz0) : nullptr;
 
   shared_ptr<RDM<1>> rdm1_av = ref_->rdm1_av()->copy();

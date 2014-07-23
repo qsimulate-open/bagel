@@ -109,7 +109,7 @@ class DistMatrix_base {
     int ndim() const { return ndim_; }
     int mdim() const { return mdim_; }
 
-    virtual void diagonalize(double* vec) = 0;
+    virtual void diagonalize(VecView vec) = 0;
 
     void fill(const DataType a) { std::fill_n(local_.get(), size(), a); }
     void zero() { const DataType zero(0.0); fill(zero); }

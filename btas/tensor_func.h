@@ -33,7 +33,7 @@ namespace btas {
   TensorViewOf<_T>
   permute( _T&& t,
            _Permutation p) {
-      return TensorViewOf<_T>( permute(t.range(), p), t.storage() );
+      return make_view( permute(t.range(), p), t.storage() );
   }
 
   template<typename _T,
@@ -41,14 +41,14 @@ namespace btas {
   TensorViewOf<_T>
   permute( _T&& t,
            std::initializer_list<_U> p) {
-      return TensorViewOf<_T>( permute(t.range(), p), t.storage() );
+      return make_view( permute(t.range(), p), t.storage() );
   }
 
   template <typename _T>
   TensorViewOf<_T>
   diag(_T&& T)
     {
-    return TensorViewOf<_T>(diag(T.range()),T.storage());
+    return make_view(diag(T.range()),T.storage());
     }
 
   template <typename _T, typename ArrayType>
@@ -56,7 +56,7 @@ namespace btas {
   tieIndex(_T&& T,
            const ArrayType& inds)
     {
-    return TensorViewOf<_T>(tieIndex(T.range(),inds),T.storage());
+    return make_view(tieIndex(T.range(),inds),T.storage());
     }
 
   template <typename _T, typename... _args>
@@ -67,7 +67,7 @@ namespace btas {
     {
     const auto size = 1 + sizeof...(rest);
     std::array<size_t,size> inds = { i0, static_cast<size_t>(rest)...};
-    return TensorViewOf<_T>(tieIndex(T.range(),inds),T.storage());
+    return make_view(tieIndex(T.range(),inds),T.storage());
     }
 
   template <typename _T>
@@ -76,14 +76,14 @@ namespace btas {
         size_t istart,
         size_t iend)
     {
-    return TensorViewOf<_T>(group(T.range(),istart,iend),T.storage());
+    return make_view(group(T.range(),istart,iend),T.storage());
     }
 
   template <typename _T>
   TensorViewOf<_T>
   flatten(_T&& T)
     {
-    return TensorViewOf<_T>(flatten(T.range()),T.storage());
+    return make_view(flatten(T.range()),T.storage());
     }
 
 } // namespace btas

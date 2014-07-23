@@ -54,7 +54,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     double energy_;
 
     std::shared_ptr<const Hcore> hcore_;
-    std::vector<double> eig_;
+    VectorB eig_;
 
     int nclosed_;
     int nact_;
@@ -106,8 +106,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     void set_coeff(std::shared_ptr<const Matrix> matrix) { coeff_ = std::make_shared<const Coeff>(*matrix); }
     void set_nocc(const int a, const int b) { noccA_ = a; noccB_ = b; }
 
-    void set_eig(const std::vector<double>& eig);
-    const std::vector<double>& eig() const { return eig_; }
+    void set_eig(const VectorB& eig);
+    const VectorB& eig() const { return eig_; }
     void set_erdm1(const std::shared_ptr<const Matrix> o);
     std::shared_ptr<const Matrix> erdm1() const { return erdm1_; }
 

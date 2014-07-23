@@ -24,9 +24,11 @@
 //
 
 #include <src/meh/meh_base.h>
+#include <src/meh/state_tensor.h>
 
 using namespace std;
 using namespace bagel;
+using namespace btas;
 
 void MEH_base::compute_rdm() const {
   const int norbA = dimer_->active_refs().first->nact();
@@ -34,6 +36,45 @@ void MEH_base::compute_rdm() const {
 
   RDM<2> rdm(norbA+norbB);
   // compute transformed gammas
+
+  StateTensor st(adiabats_, subspaces_base());
+  st.print();
+
+  // TODO parallelize
+  // Loop over both tensors and mupltiply
+  const int istate = 0;
+  GammaTensor half;
+  for (auto& i : *gammatensor_[0]) {
+    for (auto& j : st) {
+      // if the third index of the gamma tensor is identical to the first one of the state tensor we contract
+      auto& ikey = i.first;
+      auto& jkey = j.first;
+      if (get<0>(jkey) == istate && get<2>(ikey) == get<1>(jkey)) {
+        auto tag = make_tuple(get<0>(ikey), get<1>(ikey), get<2>(jkey));
+        auto data = make_shared<Tensor3<double>>(get<1>(ikey).nstates(), get<2>(jkey).nstates(), get<0>(ikey).size);
+        contract(1.0, *i.second, {0,1,2}, j.second, {1,3}, 0.0, *data, {0,3,2});
+        half.emplace(tag, data);
+      }
+    }
+  }
+
+  GammaTensor full;
+  for (auto& i : half) {
+    for (auto& j : st) {
+      auto& ikey = i.first;
+      auto& jkey = j.first;
+      if (get<0>(jkey) == istate && get<1>(ikey) == get<1>(jkey)) {
+        auto tag = make_tuple(get<0>(ikey), get<2>(jkey), get<2>(ikey));
+        // we need to compute it only when gamamtensor_[1] has a non zero block.
+        if (gammatensor_[1]->exist(tag)) {
+          // TODO check operator ranks and see if this computation is necessary
+          auto data = make_shared<Tensor3<double>>(get<2>(jkey).nstates(), get<2>(ikey).nstates(), get<0>(ikey).size);
+          contract(1.0, *i.second, {0,1,2}, j.second, {0,3}, 0.0, *data, {3,1,2});
+          full.emplace(tag, data);
+        }
+      }
+    }
+  }
 
 #if 0
   // diagonal term

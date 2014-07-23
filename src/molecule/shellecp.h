@@ -38,6 +38,13 @@ class Shell_ECP : public Shell_base {
     std::vector<double> ecp_coefficients_;
     std::vector<int> ecp_r_power_;
 
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<Shell_base>(*this) & ecp_exponents_ & ecp_coefficients_ & ecp_r_power_;
+    }
+
   public:
     Shell_ECP();
 

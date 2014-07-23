@@ -148,7 +148,7 @@ namespace btas {
 
         const_reference_type stride() const { return stride_; }
 
-        /// Size of Range1d is the number of elements encountered in iteration rom begin to end.
+        /// Size of Range1d is the number of elements encountered in iteration from begin to end.
         size_t size() const {
           return (upbound_ - lobound_) / stride_;
         }
@@ -216,6 +216,48 @@ namespace btas {
         os << "," << r.stride();
       os << ")";
       return os;
+    }
+
+    /// Range1d equality operator
+
+    /// comparison of two Range1d objects, with potentially different index types
+    /// \tparam _Index1
+    /// \tparam _Index2
+    /// \param r1 the first, Range1d<_Index1>, object
+    /// \param r2 the second, Range1d<_Index1>, object
+    /// returns true if \c r1 and \c r2 have identical lobound, upbound, and stride
+    template <typename _Index1, typename _Index2>
+    bool operator==(const Range1d<_Index1>& r1,
+                    const Range1d<_Index2>& r2) {
+      return r1.lobound() == r2.lobound() && r1.upbound() == r2.upbound() && r1.stride() == r2.stride();
+    }
+
+    /// Range1d inequality operator
+
+    /// comparison of two Range1d objects, with potentially different index types
+    /// \tparam _Index1
+    /// \tparam _Index2
+    /// \param r1 the first, Range1d<_Index1>, object
+    /// \param r2 the second, Range1d<_Index1>, object
+    /// returns false if \c r1 and \c r2 have identical lobound, upbound, and stride
+    template <typename _Index1, typename _Index2>
+    bool operator!=(const Range1d<_Index1>& r1,
+                    const Range1d<_Index2>& r2) {
+      return !operator==(r1,r2);
+    }
+
+    /// Range1d congruence test
+
+    /// two Range1d objects are congruent if their sizes are equal
+    /// \tparam _Index1
+    /// \tparam _Index2
+    /// \param r1 the first, Range1d<_Index1>, object
+    /// \param r2 the second, Range1d<_Index1>, object
+    /// returns true if \c r1 and \c r2 have identical sizes
+    template <typename _Index1, typename _Index2>
+    bool congruent(const Range1d<_Index1>& r1,
+                    const Range1d<_Index2>& r2) {
+      return r1.size() == r2.size();
     }
 
     /// convenient to iterate over dimensions according to \c Order
@@ -994,6 +1036,47 @@ namespace btas {
       return ! operator ==(r1, r2);
     }
 
+    /// Tests congruency of two Ranges
+
+    /// Ranges are congruent if the have identical extents. The congruency of \c r1 and \c r2 of rank N is checked by the following code:
+    /// \code
+    ///   if (_Order1 == _Order2)
+    ///     result = r1.extent()[0] == r2.extent()[0] && r1.extent()[1] == r2.extent()[1] && ... ;
+    ///   else
+    ///     result = r1.extent()[0] == r2.extent()[N-1] && r1.extent()[1] == r2.extent()[N-2] && ... ;
+    /// \endcode
+    /// \tparam _Order1
+    /// \tparam _Index1
+    /// \tparam _Ordinal1
+    /// \tparam _Order2
+    /// \tparam _Index2
+    /// \tparam _Ordinal2
+    /// \param r1 a RangeNd<_Order1,_Index1,_Ordinal1> object
+    /// \param r2 a RangeNd<_Order2,_Index2,_Ordinal2> object
+    /// \return \c true when \c r1 and \c r2 have same extents, otherwise \c false
+    /// \note To compare also lobound (except when the ranges have diffferent Order) use Range::operator==()
+    template <CBLAS_ORDER _Order1,
+              typename _Index1,
+              typename _Ordinal1,
+              CBLAS_ORDER _Order2,
+              typename _Index2,
+              typename _Ordinal2
+             >
+    inline bool congruent(const RangeNd<_Order1,_Index1,_Ordinal1>& r1,
+                          const RangeNd<_Order2,_Index2,_Ordinal2>& r2) {
+      const auto r1_extent = r1.extent();
+      auto r2_extent = r2.extent(); // no std::crbegin even in C++14, hence no const here
+      if (_Order1 == _Order2)
+        // 7/15/2014: broken with clang++/libc++ (clang-503.0.40) on OS X
+        //auto eq =  std::equal(std::cbegin(r1.extent()), std::cend(r1.extent()),
+        //                     std::cbegin(r2.extent()));
+        return std::equal(std::cbegin(r1_extent), std::cend(r1_extent),
+                          std::cbegin(r2_extent));
+      else
+        return std::equal(std::cbegin(r1_extent), std::cend(r1_extent),
+                          std::rbegin(r2_extent));
+    }
+
     /// Permutes a Range
 
     /// permutes the dimensions using permutation \c p = {p[0], p[1], ... }; for example, if \c lobound() initially returned
@@ -1249,9 +1332,25 @@ namespace serialization {
   /// boost serialization
   template<class Archive, CBLAS_ORDER _Order,
            typename _Index, typename _Ordinal>
-  void serialize(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t,
-                 const unsigned int version) {
-    ar & t.lobound() & t.upbound() & t.ordinal();
+  void serialize(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    boost::serialization::split_free(ar, t, version);
+  }
+  template<class Archive, CBLAS_ORDER _Order,
+           typename _Index, typename _Ordinal>
+  void save(Archive& ar, const btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    auto lo = t.lobound();
+    auto up = t.upbound();
+    auto ordinal = t.ordinal();
+    ar << lo << up << ordinal;
+  }
+  template<class Archive, CBLAS_ORDER _Order,
+           typename _Index, typename _Ordinal>
+  void load(Archive& ar, btas::RangeNd<_Order, _Index, _Ordinal>& t, const unsigned int version) {
+    typedef typename btas::BaseRangeNd<btas::RangeNd<_Order, _Index, _Ordinal>>::index_type index_type;
+    index_type lo, up;
+    _Ordinal ordinal;
+    ar >> lo >> up >> ordinal;
+    t = btas::RangeNd<_Order, _Index, _Ordinal>(std::move(lo), std::move(up), std::move(ordinal));
   }
 
 }

@@ -49,13 +49,13 @@ class SCF : public SCF_base {
 
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
-      ar << BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base);
+      ar << boost::serialization::base_object<SCF_base>(*this);
       ar << lshift_ << dodf_ << diis_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
-      ar >> BOOST_SERIALIZATION_BASE_OBJECT_NVP(SCF_base);
+      ar >> boost::serialization::base_object<SCF_base>(*this);
       ar >> lshift_ >> dodf_ >> diis_;
       if (lshift_ != 0.0)
         levelshift_ = std::make_shared<ShiftVirtual<DistMatrix>>(nocc_, lshift_);

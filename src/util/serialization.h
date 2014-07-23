@@ -263,4 +263,12 @@ namespace boost {
   }
 }
 
+// If serialization is diabled, we reset the macros
+#ifdef DISABLE_SERIALIZATION
+  #undef BOOST_CLASS_EXPORT_KEY
+  #define BOOST_CLASS_EXPORT_KEY(x)
+  #undef BOOST_CLASS_EXPORT_IMPLEMENT
+  #define BOOST_CLASS_EXPORT_IMPLEMENT(x)
+#endif
+
 #endif

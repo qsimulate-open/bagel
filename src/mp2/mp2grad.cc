@@ -88,8 +88,8 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // assemble
   auto buf = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
   auto buf2 = make_shared<Matrix>(nocc*nvirt, nocc); // it is implicitly assumed that o^2v can be kept in core in each node
-  vector<double> eig_tm = ref_->eig();
-  vector<double> eig(eig_tm.begin()+ncore, eig_tm.end());
+  const VectorB eig_tm = ref_->eig();
+  const VecView eig = eig_tm.slice(ncore, eig_tm.size());
 
   auto dmp2 = make_shared<Matrix>(nmobasis, nmobasis);
   double* optr = dmp2->element_ptr(ncore, ncore);
@@ -109,7 +109,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
     for (size_t j = 0; j != nocc; ++j) {
       for (size_t k = 0; k != nvirt; ++k) {
         for (size_t l = 0; l != nocc; ++l, ++tdata, ++bdata) {
-          const double denom = 1.0 / (-eig[i+nocc]+eig[j]-eig[k+nocc]+eig[l]);
+          const double denom = 1.0 / (-eig(i+nocc)+eig(j)-eig(k+nocc)+eig(l));
           *tdata *= denom;
           *bdata *= denom;
         }
@@ -156,7 +156,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   // core-occ density matrix elements
   for (int i = 0; i != ncore; ++i)
     for (int j = ncore; j != nocca; ++j)
-      dmp2->element(j,i) = dmp2->element(i,j) = lif(j-ncore, i) / (eig_tm[j]-eig_tm[i]);
+      dmp2->element(j,i) = dmp2->element(i,j) = lif(j-ncore, i) / (eig_tm(j)-eig_tm(i));
 
   // 2*J_al(d_rs)
   auto dmp2ao_part = make_shared<const Matrix>(*ref_->coeff() * *dmp2 ^ *ref_->coeff());
@@ -241,13 +241,13 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto wd = make_shared<Matrix>(nmobasis, nmobasis);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nocca; ++j)
-      wd->element(j,i) += dtot->element(j,i) * eig_tm[j];
+      wd->element(j,i) += dtot->element(j,i) * eig_tm(j);
   for (int i = 0; i != nvirt; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocca,i+nocca) += dmp2->element(j+nocca,i+nocca) * eig_tm[j+nocca];
+      wd->element(j+nocca,i+nocca) += dmp2->element(j+nocca,i+nocca) * eig_tm(j+nocca);
   for (int i = 0; i != nocca; ++i)
     for (int j = 0; j != nvirt; ++j)
-      wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm[i];
+      wd->element(j+nocca,i) += 2.0 * dmp2->element(j+nocca,i) * eig_tm(i);
   // Liq + Laq
   wd->add_block(1.0, ncore, 0, nocc, nocca, *lip * ocmat);
   wd->add_block(1.0, nocca, 0, nvirt, nocca, *laq * ocmat * 2.0);

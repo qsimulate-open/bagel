@@ -103,7 +103,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
   // just for convenience
   sigmaz->scale(-1.0);
 
-  unique_ptr<double[]> tmp(new double[mdim]);
+  VectorB tmp(mdim);
 
   list<int> done;
   for (int i = 0; i != mdim; ++i) {
@@ -125,7 +125,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
 
     auto corig = cnow->copy();
     auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
-    s->diagonalize(tmp.get());
+    s->diagonalize(tmp);
     *cnow *= *s;
 
     // fix the phase - making the largest large-component element in each colomn real

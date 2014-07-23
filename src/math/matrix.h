@@ -68,19 +68,26 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     std::shared_ptr<Matrix> resize(const int n, const int m) const { return this->resize_impl<Matrix>(n, m); }
     std::shared_ptr<Matrix> merge(const std::shared_ptr<const Matrix> o) const { return this->merge_impl<Matrix>(o); }
 
-    MatView slice(const int mstart, const int mend) const {
+    MatView slice(const int mstart, const int mend) {
       auto low = {0, mstart};
       auto up  = {ndim(), mend};
       assert(mstart >= 0 && mend <= mdim());
-      return MatView(this->range().slice(low, up), this->storage(), localized_);
+      return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+    }
+
+    const MatView slice(const int mstart, const int mend) const {
+      auto low = {0, mstart};
+      auto up  = {ndim(), mend};
+      assert(mstart >= 0 && mend <= mdim());
+      return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
     }
 
     // antisymmetrize
     void antisymmetrize();
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
-    void diagonalize(double* vec) override;
-    std::shared_ptr<Matrix> diagonalize_blocks(double* eig, std::vector<int> blocks) { return diagonalize_blocks_impl<Matrix>(eig, blocks); }
+    void diagonalize(VecView vec) override;
+    std::shared_ptr<Matrix> diagonalize_blocks(VectorB& eig, std::vector<int> blocks) { return diagonalize_blocks_impl<Matrix>(eig, blocks); }
     std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> svd(double* sing = nullptr);
     // compute S^-1. Assumes positive definite matrix
     void inverse();
@@ -132,8 +139,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 
-    virtual void print(const std::string in = "", const int size = 10) const;
-
 #ifdef HAVE_SCALAPACK
     // return a shared pointer to this ifndef HAVE_SCALAPACK
     std::shared_ptr<DistMatrix> distmatrix() const;
@@ -183,7 +188,7 @@ class DistMatrix : public DistMatrix_base<double> {
     DistMatrix(DistMatrix&&);
     DistMatrix(const Matrix&);
 
-    void diagonalize(double* vec) override;
+    void diagonalize(VecView vec) override;
 
     DistMatrix operator*(const DistMatrix&) const;
     DistMatrix& operator*=(const DistMatrix&);

@@ -79,11 +79,11 @@ int Coeff::num_basis(vector<shared_ptr<const Coeff>> coeff_vec) const {
 }
 
 
-shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const vector<double>& e) const {
+shared_ptr<Matrix> Coeff::form_weighted_density_rhf(const int n, const VecView e) const {
   auto out = make_shared<Matrix>(ndim(), ndim());
   for (int i = 0; i != n; ++i) {
     auto sl = slice(i, i+1);
-    contract(2.0*e[i], sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2});
+    contract(2.0*e(i), sl, {0,1}, sl, {2,1}, 1.0, *out, {0,2});
   }
   return out;
 }

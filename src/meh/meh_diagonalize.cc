@@ -59,14 +59,14 @@ void MEH_base::generate_initial_guess(shared_ptr<Matrix> cc, const vector<DimerS
     // build spin operator
     shared_ptr<Matrix> spn = spin_->apply(*basis);
     spn = make_shared<Matrix>( *spn % *basis );
-    vector<double> spin_values(b.size(), 0.0);
-    spn->diagonalize(spin_values.data());
+    VectorB spin_values(b.size());
+    spn->diagonalize(spin_values);
     const double expected_spin = 0.25 * static_cast<double>(nspin_ * (nspin_ + 2));
     int start, end;
     for (start = 0; start < nguess; ++start)
-      if (fabs(spin_values[start] - expected_spin) < 1.0e-4) break;
+      if (fabs(spin_values(start) - expected_spin) < 1.0e-4) break;
     for (end = start; end < nguess; ++end)
-      if (fabs(spin_values[end] - expected_spin) > 1.0e-4) break;
+      if (fabs(spin_values(end) - expected_spin) > 1.0e-4) break;
 
     trialsize = end - start;
 
@@ -75,8 +75,8 @@ void MEH_base::generate_initial_guess(shared_ptr<Matrix> cc, const vector<DimerS
 
       shared_ptr<const Matrix> sigma = apply_hamiltonian(*basis, subspaces_base());
       auto H = make_shared<Matrix>(*sigma % *basis);
-      vector<double> energies(trialsize, 0.0);
-      H->diagonalize(energies.data());
+      VectorB energies(trialsize);
+      H->diagonalize(energies);
 
       basis = make_shared<Matrix>(*basis * *H);
       for (int i = 0; i < nstates; ++i)

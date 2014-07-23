@@ -55,6 +55,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     RDM() { }
 
     RDM(const int n) : btas::TensorN<DataType, N>(btas::CRange<N>(btas::Range1(n),N)) {
+      zero();
     }
 
     RDM(const RDM<rank,DataType>& o) : btas::TensorN<DataType, N>(o) {
@@ -97,9 +98,9 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return nullptr;
     }
 
-    std::pair<std::shared_ptr<Matrix>, std::vector<double>> generate_natural_orbitals() const {
+    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals() const {
       throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
-      return std::pair<std::shared_ptr<Matrix>, std::vector<double>>();
+      return std::pair<std::shared_ptr<Matrix>, VectorB>();
     }
 
     void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
@@ -140,7 +141,7 @@ using ZRDM = RDM<rank, std::complex<double>>;
 template<> bool RDM<1,double>::natural_orbitals() const;
 template<> std::vector<double> RDM<1,double>::diag() const;
 
-template<> std::pair<std::shared_ptr<Matrix>, std::vector<double>> RDM<1,double>::generate_natural_orbitals() const;
+template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals() const;
 
 template<> void RDM<1,double>::transform(const std::shared_ptr<Matrix>& coeff);
 template<> void RDM<2,double>::transform(const std::shared_ptr<Matrix>& coeff);

@@ -116,27 +116,27 @@ void FCI::model_guess(shared_ptr<Dvec> out) {
   const int nguess = basis.size();
 
   shared_ptr<Matrix> spin = make_shared<CISpin>(basis, norb_);
-  vector<double> eigs(nguess, 0.0);
-  spin->diagonalize(eigs.data());
+  VectorB eigs(nguess);
+  spin->diagonalize(eigs);
 
   int start, end;
   const double target_spin = 0.25 * static_cast<double>(det_->nspin()*(det_->nspin()+2));
   for (start = 0; start < nguess; ++start)
-    if (fabs(eigs[start] - target_spin) < 1.0e-8) break;
+    if (fabs(eigs(start) - target_spin) < 1.0e-8) break;
   for (end = start; end < nguess; ++end)
-    if (fabs(eigs[end] - target_spin) > 1.0e-8) break;
+    if (fabs(eigs(end) - target_spin) > 1.0e-8) break;
 
   if ((end-start) >= nstate_) {
     const MatView coeffs = spin->slice(start, end);
 
     shared_ptr<Matrix> hamiltonian = make_shared<CIHamiltonian>(basis, jop_);
     hamiltonian = make_shared<Matrix>(coeffs % *hamiltonian * coeffs);
-    hamiltonian->diagonalize(eigs.data());
+    hamiltonian->diagonalize(eigs);
 
 #if 0
     const double nuc_core = geom_->nuclear_repulsion() + jop_->core_energy();
     for (int i = 0; i < end-start; ++i)
-      cout << setw(12) << setprecision(8) << eigs[i] + nuc_core << endl;
+      cout << setw(12) << setprecision(8) << eigs(i) + nuc_core << endl;
 #endif
 
     auto coeffs1 = make_shared<Matrix>(coeffs * *hamiltonian);
@@ -271,11 +271,13 @@ void FCI::compute() {
     shared_ptr<Dvec> sigma = form_sigma(cc_, jop_, conv);
     pdebug.tick_print("sigma vector");
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "fci_" << iter;
       OArchive ar(ss.str());
       ar << static_cast<Method*>(this);
     }
+#endif
 
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const Dvec>(cc_);

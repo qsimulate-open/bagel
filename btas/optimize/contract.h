@@ -192,12 +192,13 @@ template<
     is_tensor<_TensorA>::value &
     is_tensor<_TensorB>::value &
     is_tensor<_TensorC>::value &
-    _TensorA::range_type::order == CblasColMajor & //checking if A, B, and C are all Colomn major
-    _TensorB::range_type::order == CblasColMajor & //checking if A, B, and C are all Colomn major
-    _TensorC::range_type::order == CblasColMajor & //checking if A, B, and C are all Colomn major
-    std::is_same<typename _TensorA::value_type, typename _TensorB::value_type>::value &
-    std::is_same<typename _TensorA::value_type, typename _TensorC::value_type>::value &
-    (std::is_same<typename _TensorA::value_type, double>::value or std::is_same<typename _TensorA::value_type, std::complex<double>>::value)
+    (_TensorA::range_type::order == CblasColMajor) & //checking if A, B, and C are all Colomn major
+    (_TensorB::range_type::order == CblasColMajor) & //checking if A, B, and C are all Colomn major
+    (_TensorC::range_type::order == CblasColMajor) & //checking if A, B, and C are all Colomn major
+    std::is_same<typename std::remove_cv<typename _TensorA::value_type>::type, typename std::remove_cv<typename _TensorB::value_type>::type>::value &
+    std::is_same<typename std::remove_cv<typename _TensorA::value_type>::type, typename std::remove_cv<typename _TensorC::value_type>::type>::value &
+    (std::is_same<typename std::remove_cv<typename _TensorA::value_type>::type, double>::value
+  or std::is_same<typename std::remove_cv<typename _TensorA::value_type>::type, std::complex<double>>::value)
   >::type
 >
 void contract(

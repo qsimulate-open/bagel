@@ -53,13 +53,13 @@ ZMatrix::ZMatrix(ZMatrix&& o) : Matrix_base<complex<double>>(move(o)) {
 
 ZMatrix::ZMatrix(const Matrix& r, const Matrix& i) : Matrix_base<complex<double>>(r.ndim(), r.mdim()) {
   assert(r.ndim() == i.ndim() && r.mdim() == i.mdim());
-  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r.data());
-  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i.data());
+  add_real_block(complex<double>(1.0, 0.0), 0, 0, ndim(), mdim(), r);
+  add_real_block(complex<double>(0.0, 1.0), 0, 0, ndim(), mdim(), i);
 }
 
 
 ZMatrix::ZMatrix(const Matrix& r, const complex<double> factor) : Matrix_base<complex<double>>(r.ndim(), r.mdim(), r.localized()) {
-  add_real_block(factor, 0, 0, ndim(), mdim(), r.data());
+  add_real_block(factor, 0, 0, ndim(), mdim(), r);
 }
 
 
@@ -87,8 +87,9 @@ ZMatrix& ZMatrix::operator/=(const ZMatrix& o) {
 }
 
 
-void ZMatrix::diagonalize(double* eig) {
+void ZMatrix::diagonalize(VecView eig) {
   if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diagonalize(complex<double>*)");
+  assert(eig.size() >= ndim());
 
   //assert that matrix is hermitian to ensure real eigenvalues
   assert((*this - *(this->transpose_conjg())).norm()/size() < 1e-10);
@@ -100,7 +101,7 @@ void ZMatrix::diagonalize(double* eig) {
 #endif
     unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
     unique_ptr<double[]> rwork(new double[3*ndim()]);
-    zheev_("V", "L", n, data(), n, eig, work.get(), n*6, rwork.get(), info);
+    zheev_("V", "L", n, data(), n, eig.data(), work.get(), n*6, rwork.get(), info);
     mpi__->broadcast(data(), n*n, 0);
 #ifdef HAVE_SCALAPACK
   } else {
@@ -117,11 +118,11 @@ void ZMatrix::diagonalize(double* eig) {
     unique_ptr<double[]> rwork(new double[lrwork]);
     unique_ptr<int[]> iwork(new int[liwork]);
 
-    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), &wsize, -1, rwork.get(), lrwork, iwork.get(), liwork, info);
 
     const int lwork = round(max(131072.0, wsize.real()*2.0));
     unique_ptr<complex<double>[]> work(new complex<double>[lwork]);
-    pzheevd_("V", "U", n, local.get(), desc_.data(), eig, coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
+    pzheevd_("V", "U", n, local.get(), desc_.data(), eig.data(), coeff.get(), desc_.data(), work.get(), lwork, rwork.get(), lrwork, iwork.get(), liwork, info);
     if(info) throw runtime_error("diagonalize failed");
 
     setlocal_(coeff);
@@ -312,11 +313,11 @@ void ZMatrix::inverse() {
 bool ZMatrix::inverse_half(const double thresh) {
   assert(ndim() == mdim());
   const int n = ndim();
-  unique_ptr<double[]> vec(new double[n]);
-  diagonalize(vec.get());
+  VectorB vec(n);
+  diagonalize(vec);
 
   for (int i = 0; i != n; ++i) {
-    double s = vec[i] > thresh ? 1.0/sqrt(sqrt(vec[i])) : 0.0;
+    double s = vec(i) > thresh ? 1.0/sqrt(sqrt(vec(i))) : 0.0;
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](complex<double>& a) { a *= s; });
   }
 
@@ -327,7 +328,7 @@ bool ZMatrix::inverse_half(const double thresh) {
 
   *this = *this ^ *this;
 
-  const bool lindep = std::any_of(vec.get(), vec.get() + n, [&thresh] (const double& e) { return e < thresh; });
+  const bool lindep = std::any_of(vec.begin(), vec.end(), [&thresh] (const double& e) { return e < thresh; });
   return !lindep;
 }
 
@@ -338,12 +339,12 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   if (!nolindep) {
     // use canonical orthogonalization. Start over
     out = this->copy();
-    unique_ptr<double[]> eig(new double[ndim()]);
-    out->diagonalize(eig.get());
+    VectorB eig(ndim());
+    out->diagonalize(eig);
     int m = 0;
     for (int i = 0; i != mdim(); ++i) {
       if (eig[i] > thresh) {
-        const double e = 1.0/std::sqrt(eig[i]);
+        const double e = 1.0/std::sqrt(eig(i));
         transform(out->element_ptr(0,i), out->element_ptr(0,i+1), out->element_ptr(0,m++), [&e](complex<double> a) { return a*e; });
       }
     }
@@ -353,77 +354,19 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
 }
 
 
-void ZMatrix::print(const string name, const int size) const {
-  cout << "++++ " + name + " ++++" << endl;
-  for (int i = 0; i != min(size,ndim()); ++i) {
-    for (int j = 0; j != min(size,mdim()); ++j) {
-      cout << fixed << setw(30) << setprecision(8) << element(i, j) << " ";
-    }
-    cout << endl;
-  }
-}
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) = a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::copy_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  copy_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
+      element(k,i) = a * data(l, j);
 }
 
 
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const double* data) {
-  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j) {
-    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l) {
-      element(k,i) += a * *(data + j*ndim + l);
-    }
-  }
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const unique_ptr<double[]> data) {
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.get());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const Matrix> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const shared_ptr<const MatView> data) {
-  assert(ndim == data->ndim() && mdim == data->mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data->data());
-}
-
-
-void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const Matrix& data) {
+void ZMatrix::add_real_block(const complex<double> a, const int ndim_i, const int mdim_i, const int ndim, const int mdim, const MatView data) {
   assert(ndim == data.ndim() && mdim == data.mdim());
-  add_real_block(a, ndim_i, mdim_i, ndim, mdim, data.data());
+  for (int i = mdim_i, j = 0; i != mdim_i + mdim ; ++i, ++j)
+    for (int k = ndim_i, l = 0; k != ndim_i + ndim ; ++k, ++l)
+      element(k,i) += a * data(l,j);
 }
 
 

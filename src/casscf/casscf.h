@@ -54,7 +54,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double thresh_;
     double thresh_micro_;
 
-    std::vector<double> occup_;
+    VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;
 
     std::shared_ptr<FCI> fci_;
@@ -102,8 +102,8 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
 
-    void set_occup(const std::vector<double>& o) { occup_ = o; };
-    double occup(const int i) const { return occup_[i]; }
+    void set_occup(const VectorB& o) { occup_ = o; };
+    double occup(const int i) const { return occup_(i); }
 
     double energy(const int i) const { return energy_[i]; };
     double energy() const { return energy_[istate_]; };

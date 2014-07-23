@@ -206,11 +206,13 @@ void ZHarrison::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer fcitime;
 
+#ifndef DISABLE_SERIALIZATION
     if (restart_) {
       stringstream ss; ss << "zfci_" << iter;
       OArchive ar(ss.str());
       ar << static_cast<Method*>(this);
     }
+#endif
 
     // form a sigma vector given cc
     shared_ptr<RelZDvec> sigma = form_sigma(cc_, jop_, conv);

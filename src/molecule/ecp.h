@@ -43,6 +43,13 @@ class ECP {
     int nshell_;
     std::array<int, 3> nr_;
 
+  private:
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ecp_ncore_ & ecp_maxl_ & shells_ecp_ & ishell_maxl_ & nshell_ & nr_;
+    }
+
   public:
     ECP();
     ECP(const int ncore, const int maxl, std::vector<std::shared_ptr<const Shell_ECP>> shells_ecp);

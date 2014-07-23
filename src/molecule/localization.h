@@ -44,7 +44,7 @@ class OrbitalLocalization {
     std::vector<std::pair<int, int>> region_bounds_;
 
     // used to reorder subspaces only
-    std::vector<double> diagonals_;
+    VectorB diagonals_;
 
     virtual std::shared_ptr<Matrix> localize_space(std::shared_ptr<const Matrix> coeff) = 0;
 

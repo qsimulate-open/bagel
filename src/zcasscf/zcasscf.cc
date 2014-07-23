@@ -81,8 +81,8 @@ void ZCASSCF::init() {
       auto hctmp = hcore_->copy();
       auto s12 = overlap_->tildex(1.0e-10);
       *hctmp = *s12 % *hctmp * *s12;
-      unique_ptr<double[]> eig(new double[hctmp->ndim()]);
-      hctmp->diagonalize(eig.get());
+      VectorB eig(hctmp->ndim());
+      hctmp->diagonalize(eig);
       *hctmp = *s12 * *hctmp;
       auto tmp = hctmp->clone();
       tmp->copy_block(0, nneg_, tmp->ndim(), nneg_, hctmp->slice(0,nneg_));
@@ -214,9 +214,9 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 
 shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> rdm1, const bool with_hcore) const {
   // form natural orbitals
-  unique_ptr<double[]> eig(new double[nact_*2]);
+  VectorB eig(nact_*2);
   auto tmp = make_shared<ZMatrix>(*rdm1);
-  tmp->diagonalize(eig.get());
+  tmp->diagonalize(eig);
   const ZMatView ocoeff = coeff_->slice(nclosed_*2, nclosed_*2+nact_*2);
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik
   auto natorb = make_shared<ZMatrix>(ocoeff * *tmp->get_conjg());
@@ -363,18 +363,18 @@ shared_ptr<const ZMatrix> ZCASSCF::semi_canonical_orb() {
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   shared_ptr<const ZMatrix> afockao = active_fock(rdm1, /*with_hcore*/true);
 
-  const ZMatView ocoeff = nclosed_ ? coeff_->slice(0, nclosed_*2) : ZMatView();
+  const ZMatView ocoeff = coeff_->slice(0, nclosed_*2);
   const ZMatView vcoeff = coeff_->slice(nocc_*2, nbasis_*2);
   
   auto trans = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
   trans->unit();
   if (nclosed_) {
     auto ofock = make_shared<ZMatrix>(ocoeff % *afockao * ocoeff);
-    unique_ptr<double[]> eig(new double[ofock->ndim()]);
+    VectorB eig(ofock->ndim());
     if (nclosed_ == 1) {
-      ofock->diagonalize(eig.get());
+      ofock->diagonalize(eig);
     } else if (nclosed_ > 1) {
-      zquatev_(ofock->ndim(), ofock->data(), eig.get());
+      zquatev_(ofock->ndim(), ofock->data(), eig.data());
     }
     trans->copy_block(0, 0, nclosed_*2, nclosed_*2, ofock->data());
   } 
