@@ -101,3 +101,14 @@ void ProductRASCivec::ax_plus_y(const double& a, const ProductRASCivec& o) {
   for (auto& b : lblocks_)
     sectors_.at(b)->ax_plus_y(a, *o.sectors_.at(b));
 }
+
+void ProductRASCivec::print(const double thresh) const {
+  for (auto& isec: sectors_) {
+    const int nstate = isec.second->nstates();
+    for (int ist = 0; ist < nstate; ++ist) {
+      cout << "    |na:" << isec.first.nelea << ",nb:" << isec.first.neleb << "," << ist << "> (x)" << endl;
+      isec.second->civec(ist).print(thresh);
+    }
+    cout << endl;
+  }
+}

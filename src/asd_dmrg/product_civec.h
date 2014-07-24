@@ -129,11 +129,7 @@ class ProductRASCivec {
     }
 
     // TODO this can be better
-    void print(const double thresh = 0.05) const {
-      for (auto& isec: sectors_)
-        for (auto& civec : isec.second->civecs())
-          civec.print(thresh);
-    }
+    void print(const double thresh = 0.05) const;
 };
 
 }
