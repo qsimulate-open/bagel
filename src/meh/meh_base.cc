@@ -56,7 +56,7 @@ MEH_base::MEH_base(const shared_ptr<const PTree> input, shared_ptr<const Dimer> 
         array<int,2> charges = b->get_array<int, 2>("charges");
         array<int,2> spins = b->get_array<int, 2>("spins");
         const int nstates = b->get<int>("nstates");
-        this_model.emplace_back( make_pair(spins[0],spins[1]), make_pair(charges[0],charges[1]), make_pair(p,p), nstates );
+        this_model.emplace_back(make_pair(spins[0],spins[1]), make_pair(charges[0],charges[1]), make_pair(p,p), nstates);
       }
       models_to_form_.emplace_back(move(this_model));
     }

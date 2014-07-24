@@ -61,8 +61,13 @@ class ASD_DMRG {
     virtual std::shared_ptr<DMRG_Block> compute_first_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref) = 0;
     /// Adds one site to the block
     virtual std::shared_ptr<DMRG_Block> grow_block(std::vector<std::shared_ptr<PTree>> inputs, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> left, const int site) = 0;
-    /// Adds one site to the system block
-    virtual std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment) = 0;
+    /** Performs one step in the sweep by adding one site to the system block
+        @param input input describing the desired total system wavefunction
+        @param ref one-particle reference for site
+        @param system block to be grown
+        @param environment block being decimated
+    */
+    virtual std::shared_ptr<DMRG_Block> decimate_block(std::shared_ptr<PTree> input, std::shared_ptr<const Reference> ref, std::shared_ptr<DMRG_Block> system, std::shared_ptr<DMRG_Block> environment, const int site) = 0;
 
   public:
     /// Unlike MEH classes, ASD_DMRG will also be the driver for CI calculations

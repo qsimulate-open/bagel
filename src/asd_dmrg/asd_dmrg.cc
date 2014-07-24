@@ -86,5 +86,12 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
 }
 
 shared_ptr<PTree> ASD_DMRG::prepare_sweeping_input(const int site) const {
-  return nullptr;
+  shared_ptr<PTree> out = input_->get_child_optional(input_->get<string>("method"));
+  if (!out) out = make_shared<PTree>();
+
+  out->erase("charge"); out->put("charge", input_->get<string>("charge", "0"));
+  out->erase("nspin"); out->put("nspin", input_->get<string>("nspin", "0"));
+  out->erase("nstate"); out->put("nstate", input_->get<string>("nstate", "1"));
+
+  return out;
 }

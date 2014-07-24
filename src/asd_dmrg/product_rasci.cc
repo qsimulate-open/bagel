@@ -87,10 +87,10 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
 
   // compute integrals
   auto coeff = make_shared<Matrix>(ref_->geom()->nbasis(), ref_->nclosed() + ref_->nact() + left_->norb());
-  coeff->copy_block(0, 0, ref_->geom()->nbasis(), ref_->nclosed() + ref_->nact(), *ref_->coeff());
+  coeff->copy_block(0, 0, ref_->geom()->nbasis(), ref_->nclosed() + ref_->nact(), ref_->coeff()->slice(0, ref_->nclosed() + ref_->nact()));
   coeff->copy_block(0, ref_->nclosed() + ref_->nact(), ref_->geom()->nbasis(), left_->norb(), *left_->coeff());
   ref_ = make_shared<Reference>(ref_->geom(), std::make_shared<Coeff>(move(*coeff)), ref_->nclosed(), ref_->nact() + left_->norb(), 0);
-  jop_ = make_shared<DimerJop>(ref_, ref_->nclosed(), ref_->nclosed() + ref_->nact(), coeff->mdim(), ref_->coeff());
+  jop_ = make_shared<DimerJop>(ref_, ref_->nclosed(), ref_->nclosed() + norb_, ref_->nclosed() + ref_->nact(), ref_->coeff());
 
   construct_denom();
 }
@@ -185,17 +185,17 @@ void ProductRASCI::compute() {
   Timer pdebug(0);
 
   // Creating an initial CI vector
-  cc_.resize(nstate_);
-  generate(cc_.begin(), cc_.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_->blocks(), nelea_, neleb_); });
+  vector<shared_ptr<ProductRASCivec>> cc(nstate_);
+  generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_->blocks(), nelea_, neleb_); });
 
   // find determinants that have small diagonal energies
 #if 0
   if (nguess_ <= nstate_)
 #endif
-    generate_guess(nelea_-neleb_, nstate_, cc_);
+    generate_guess(nelea_-neleb_, nstate_, cc);
 #if 0
   else
-    model_guess(cc_);
+    model_guess(cc);
 #endif
   pdebug.tick_print("guess generation");
 
@@ -225,14 +225,14 @@ void ProductRASCI::compute() {
     Timer calctime;
 
     // form a sigma vector given cc
-    vector<shared_ptr<ProductRASCivec>> sigma = form_sigma(cc_, jop_, converged);
+    vector<shared_ptr<ProductRASCivec>> sigma = form_sigma(cc, jop_, converged);
     pdebug.tick_print("sigma formation");
 
     // feeding sigma vectors into Davidson
     vector<shared_ptr<const ProductRASCivec>> ccn, sigman;
     for (int i = 0; i < nstate_; ++i) {
       if (!converged[i]) {
-        ccn.push_back(make_shared<const ProductRASCivec>(*cc_.at(i))); // copy in civec
+        ccn.push_back(make_shared<const ProductRASCivec>(*cc.at(i))); // copy in civec
         sigman.push_back(sigma.at(i)); // place in sigma
       }
       else {
@@ -260,14 +260,14 @@ void ProductRASCI::compute() {
         for (auto& denomsector : denom_->sectors()) {
           auto dbegin = denomsector.second->begin();
           auto dend = denomsector.second->end();
-          auto targ_iter = cc_.at(ist)->sector(denomsector.first)->begin();
+          auto targ_iter = cc.at(ist)->sector(denomsector.first)->begin();
           auto source_iter = errvec.at(ist)->sector(denomsector.first)->begin();
           const double en = energies.at(ist);
           transform(dbegin, dend, source_iter, targ_iter, [&en] (const double den, const double cc) { return cc / min(en - den, -0.1); });
         }
-        cc_.at(ist)->normalize();
-        //cc_.at(ist)->spin_decontaminate();
-        //cc_.at(ist)->synchronize();
+        cc.at(ist)->normalize();
+        //cc.at(ist)->spin_decontaminate();
+        //cc.at(ist)->synchronize();
       }
     }
 

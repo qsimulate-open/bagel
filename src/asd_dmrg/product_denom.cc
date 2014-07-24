@@ -79,7 +79,6 @@ void ProductRASCI::construct_denom() {
       }
       h(i) = rasjop->mo1e(i,i);
     }
-    denom_t.tick_print("jop, kop");
 
     TaskQueue<RAS::DenomTask> tasks;
     for (auto& sec : denom_->sectors()) {
@@ -104,8 +103,8 @@ void ProductRASCI::construct_denom() {
     btas::Tensor3<double> jop(rnorb, lnorb, lnorb);
     btas::Tensor3<double> kop(rnorb, lnorb, lnorb);
     {
-      btas::TensorView4<double> fulljop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,0,1,0>()->storage()));
-      btas::TensorView4<double> fullkop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,1,0,0>()->storage()));
+      const btas::TensorView4<double> fulljop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,0,1,0>()->storage()));
+      const btas::TensorView4<double> fullkop(btas::make_view(btas::CRange<4>(rnorb,rnorb,lnorb,lnorb), jop_->coulomb_matrix<1,1,0,0>()->storage()));
       for (int i = 0; i < lnorb; ++i) {
         for (int j = 0; j < lnorb; ++j) {
           for (int k = 0; k < rnorb; ++k) {
@@ -142,8 +141,8 @@ void ProductRASCI::construct_denom() {
                 double ja_pq = 0.0; // ja_pq = \sum_r n_r^alpha (pq|rr)
                 double ka_pq = 0.0; // ka_pq = \sum_r n_r^alpha (pr|qr)
                 for (int r = 0; r < rnorb; ++r) {
-                  ja_pq += jop(p,q,r)*abit[r];
-                  ka_pq += kop(p,q,r)*abit[r];
+                  ja_pq += jop(r,p,q)*abit[r];
+                  ka_pq += kop(r,p,q)*abit[r];
                 }
 
                 for (size_t ib = 0; ib < lb; ++ib) {
@@ -152,8 +151,8 @@ void ProductRASCI::construct_denom() {
                   double j_pq = ja_pq; // j_pq = \sum_r n_r^beta (pq|rr) + ja_pq
                   double kb_pq = 0.0; // kb_pq = \sum_r n_r^beta (pr|qr)
                   for (int r = 0; r < rnorb; ++r) {
-                    j_pq += jop(p,q,r)*bbit[r];
-                    kb_pq += kop(p,q,r)*bbit[r];
+                    j_pq += jop(r,p,q)*bbit[r];
+                    kb_pq += kop(r,p,q)*bbit[r];
                   }
                   data_base[ib] += alphaview(i,i,p,q) * (j_pq - ka_pq) + betaview(i,i,p,q) * (j_pq - kb_pq);
                 }

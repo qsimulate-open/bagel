@@ -70,7 +70,7 @@ void ASD_DMRG::compute() {
       right_block = (site == nsites_-1) ? nullptr : right_blocks_[nsites_ - site - 2];
       shared_ptr<const Reference> ref = dimer_->build_reference(site, vector<bool>(nsites_, false));
 
-      right_block = decimate_block(prepare_sweeping_input(site), ref, right_block, left_block);
+      right_block = decimate_block(prepare_sweeping_input(site), ref, right_block, left_block, site);
       right_blocks_[nsites_ - site - 1] = right_block;
       cout << "  " << print_progress(site, "<<", "<<") << setw(16) << dmrg_timer.tick() << endl;
     }
@@ -81,7 +81,7 @@ void ASD_DMRG::compute() {
       right_block = right_blocks_[nsites_ - site - 2];
       shared_ptr<const Reference> ref = dimer_->build_reference(site, vector<bool>(nsites_, false));
 
-      left_block = decimate_block(prepare_sweeping_input(site), ref, left_block, right_block);
+      left_block = decimate_block(prepare_sweeping_input(site), ref, left_block, right_block, site);
       left_blocks_[site] = left_block;
       cout << "  " << print_progress(site, ">>", ">>") << setw(16) << dmrg_timer.tick() << endl;
     }

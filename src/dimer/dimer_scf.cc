@@ -306,10 +306,7 @@ void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool loca
     }
   }
 
-  auto out = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
-
-
-  sref_ = out;
+  sref_ = make_shared<Reference>(sgeom_, make_shared<Coeff>(*out_coeff), nclosed, nact, nexternA+nexternB - (nclosed+nact));
 }
 
 // RHF and then localize

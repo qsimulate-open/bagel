@@ -86,7 +86,7 @@ class ProductRASCI {
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }
 
-    std::vector<std::shared_ptr<ProductRASCivec>> civectors() const { return cc_; }
+    const std::vector<std::shared_ptr<ProductRASCivec>>& civectors() const { return cc_; }
   private:
 
     void construct_denom(); ///< construct denominator

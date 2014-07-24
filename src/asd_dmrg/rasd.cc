@@ -25,6 +25,7 @@
 
 #include <src/asd_dmrg/rasd.h>
 #include <src/asd_dmrg/gamma_forest_asd.h>
+#include <src/asd_dmrg/product_rasci.h>
 
 #define DEBUG
 
@@ -74,10 +75,10 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
 
   for (auto& inp : inputs) {
     // finish preparing the input
-    const int spin = inp->get<int>("nspin");
-    const int charge = inp->get<int>("charge");
     inp->put("nclosed", ref->nclosed());
     read_restricted(inp, 0);
+    const int spin = inp->get<int>("nspin");
+    const int charge = inp->get<int>("charge");
     {
       Muffle hide_cout;
       // RAS calculations
@@ -132,12 +133,98 @@ shared_ptr<DMRG_Block> RASD::compute_first_block(vector<shared_ptr<PTree>> input
 }
 
 shared_ptr<DMRG_Block> RASD::grow_block(vector<shared_ptr<PTree>> inputs, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> left, const int site) {
+  map<BlockKey, vector<shared_ptr<const ProductRASCivec>>> states;
+  map<BlockKey, shared_ptr<const Matrix>> h_2e;
+
+  Timer growtime;
+  for (auto& inp : inputs) {
+    // finish preparing the input
+    const int charge = inp->get<int>("charge");
+    const int spin = inp->get<int>("spin");
+    inp->put("nclosed", ref->nclosed());
+    read_restricted(inp, site);
+    {
+      //Muffle hide_cout;
+      // ProductRAS calculations
+      auto prod_ras = make_shared<ProductRASCI>(inp, ref, left);
+      prod_ras->compute();
+      vector<shared_ptr<ProductRASCivec>> civecs = prod_ras->civectors();
+      //shared_ptr<const Matrix> hamiltonian_2e = prod_ras->compute_sigma2e();
+      auto hamiltonian_2e = make_shared<Matrix>(civecs.size(), civecs.size());
+      //hamiltonian_2e->print();
+
+      // Combines data for vectors with the same nelea and neleb
+      auto organize_data = [&states, &h_2e, &prod_ras] (vector<shared_ptr<ProductRASCivec>> civecs, shared_ptr<const Matrix> ham2e) {
+        BlockKey key(prod_ras->nelea(), prod_ras->neleb());
+        states[key].insert(states[key].end(), civecs.begin(), civecs.end());
+        if (h_2e.find(key) == h_2e.end()) {
+          h_2e.emplace(key, ham2e);
+        }
+        else {
+          shared_ptr<Matrix> tmp2e = h_2e[key]->copy();
+          const int oldsize = tmp2e->ndim();
+          const int newsize = ham2e->ndim();
+          tmp2e->resize(oldsize + newsize, oldsize + newsize);
+          tmp2e->copy_block(oldsize, oldsize, newsize, newsize, *ham2e);
+          h_2e[key] = tmp2e;
+        }
+      };
+
+      organize_data(civecs, hamiltonian_2e);
+
+#if 0
+      for (int i = 0; i < spin; ++i) {
+        shared_ptr<RASDvec> tmpvec = civecs->spin_lower();
+        for (auto& vec : tmpvec->dvec())
+          vec->normalize();
+
+        organize_data(tmpvec, hamiltonian_2e);
+        civecs = tmpvec;
+      }
+#endif
+    }
+    const int nstates = inp->get<int>("nstate");
+    cout << "      - charge: " << charge << ", nspin: " << spin << ", nstates: " << nstates
+                                    << fixed << setw(10) << setprecision(2) << growtime.tick() << endl;
+  }
+
+#if 1
   return nullptr;
+#else
+  return make_shared<DMRG_Block>(/*stuff*/);
+#endif
 }
 
-shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> system, shared_ptr<DMRG_Block> environment) {
-  for (int i = 0; i < nstates_; ++i) {
-    sweep_energies_[i].push_back(0.0);
+shared_ptr<DMRG_Block> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block> system, shared_ptr<DMRG_Block> environment, const int site) {
+  //map<BlockKey, vector<shared_ptr<const ProductRASCivec>>> states;
+  //map<BlockKey, shared_ptr<const Matrix>> h_2e;
+
+  Timer decimatetime;
+  // assume the input is already fully formed, this may be revisited later
+  input->put("nclosed", ref->nclosed());
+  read_restricted(input, site);
+  {
+    //Muffle hide_cout;
+    // ProductRAS calculations
+    if (!system) {
+      auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
+      prod_ras->compute();
+      // diagonalize RDM to get RASCivecs
+      vector<shared_ptr<ProductRASCivec>> civecs = prod_ras->civectors();
+      //shared_ptr<const Matrix> hamiltonian_2e = prod_ras->compute_sigma2e();
+      //auto hamiltonian_2e = make_shared<Matrix>(civecs.size(), civecs.size());
+      //hamiltonian_2e->print();
+      for (auto& i : civecs) i->print();
+      for (int i = 0; i < nstates_; ++i)
+        sweep_energies_[i].push_back(prod_ras->energy(i));
+    }
+    else {
+      throw logic_error("Full DMRG sweep not yet implemented!");
+    }
   }
+#if 1
   return nullptr;
+#else
+  return make_shared<DMRG_Block>(/*stuff*/);
+#endif
 }
