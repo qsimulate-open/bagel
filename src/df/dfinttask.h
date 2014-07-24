@@ -62,8 +62,7 @@ class DFIntTask {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
             std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j1+nbin*j0));
             if (N == 1)
-              //std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j0+nbin*j1));
-              for (int n=0; n!=shell_[1]->nbasis(); n++) data[offset_[2]+naux*(j0+nbin*j1)+n] = std::conj(ppt[n]);
+              std::copy_n(ppt, shell_[1]->nbasis(), data+offset_[2]+naux*(j0+nbin*j1));
           }
         }
       }
