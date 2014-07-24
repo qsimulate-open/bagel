@@ -251,7 +251,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(ndim() == mdim());
       for (size_t i = 0; i != mdim(); ++i)
         for (size_t j = i+1; j != ndim(); ++j)
-          element(i, j) = std::conj(element(j, i));
+          element(i, j) = detail::conj(element(j, i));
     }
 
 

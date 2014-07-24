@@ -28,7 +28,6 @@
 #define __SRC_MOLECULE_ECP_H
 
 #include <vector>
-#include <memory>
 #include <algorithm>
 #include <src/molecule/shellecp.h>
 

@@ -40,12 +40,12 @@ void RelOverlap_London::compute_() {
 
   const complex<double> r2 (0.25 / (c__*c__));
   const complex<double> i2 (0.0, r2.real());
-  add_block(  r2*mol_->magnetic_field(2), 2*n, 2*n, n, n, *overlap_);
-  add_block( -r2*mol_->magnetic_field(2), 3*n, 3*n, n, n, *overlap_);
-  add_block(  r2*mol_->magnetic_field(0), 2*n, 3*n, n, n, *overlap_);
-  add_block(  r2*mol_->magnetic_field(0), 3*n, 2*n, n, n, *overlap_);
-  add_block( -i2*mol_->magnetic_field(1), 2*n, 3*n, n, n, *overlap_);
-  add_block( +i2*mol_->magnetic_field(1), 3*n, 2*n, n, n, *overlap_);
+  add_block( r2*mol_->magnetic_field(2), 2*n, 2*n, n, n, *overlap_);
+  add_block(-r2*mol_->magnetic_field(2), 3*n, 3*n, n, n, *overlap_);
+  add_block( r2*mol_->magnetic_field(0), 2*n, 3*n, n, n, *overlap_);
+  add_block( r2*mol_->magnetic_field(0), 3*n, 2*n, n, n, *overlap_);
+  add_block(-i2*mol_->magnetic_field(1), 2*n, 3*n, n, n, *overlap_);
+  add_block( i2*mol_->magnetic_field(1), 3*n, 2*n, n, n, *overlap_);
 }
 
 
@@ -92,12 +92,12 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   soverlap.copy_block(n, n, n, n, scalekinetic);
   const complex<double> r2 (0.25 / (c__*c__));
   const complex<double> i2 (0.0, r2.real());
-  soverlap.add_block(  r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
-  soverlap.add_block( -r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
-  soverlap.add_block(  r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
-  soverlap.add_block(  r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
-  soverlap.add_block( -i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
-  soverlap.add_block( +i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
+  soverlap.add_block( r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
+  soverlap.add_block(-r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
+  soverlap.add_block( r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
+  soverlap.add_block( r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
+  soverlap.add_block(-i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
+  soverlap.add_block( i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
   soverlap.inverse();
   if (soverlap.ndim() != 2*oinv.ndim())
     throw logic_error("positive and negative energy states have different linear dependency");

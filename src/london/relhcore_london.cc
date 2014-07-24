@@ -64,14 +64,14 @@ void RelHcore_London::compute_() {
 
   // RMB hcore: all 1-electron integrals over magnetically balanced 2-spinors
   zero();
-  copy_block(0,   0, 2*n, 2*n, nai);
-  copy_block(0, 2*n, 2*n, 2*n, kinetic);
-  copy_block(2*n, 0, 2*n, 2*n, kinetic);
+  copy_block(  0,   0, 2*n, 2*n, nai);
+  copy_block(  0, 2*n, 2*n, 2*n, kinetic);
+  copy_block(2*n,   0, 2*n, 2*n, kinetic);
   copy_block(2*n, 2*n, 2*n, 2*n, zsnai);
   add_block(-1.0, 2*n, 2*n, 2*n, 2*n, kinetic);
-  add_block( -1.0, 0, 2*n, 2*n, 2*n, zeeman);
-  add_block( -1.0, 2*n, 0, 2*n, 2*n, zeeman);
-  add_block(  1.0, 2*n, 2*n, 2*n, 2*n, zeeman);
+  add_block(-1.0,   0, 2*n, 2*n, 2*n, zeeman);
+  add_block(-1.0, 2*n,   0, 2*n, 2*n, zeeman);
+  add_block( 1.0, 2*n, 2*n, 2*n, 2*n, zeeman);
 
 }
 

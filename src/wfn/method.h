@@ -45,7 +45,7 @@ class Method {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & geom_ & idata_ & ref_;
+      ar & idata_ & geom_ & ref_;
     }
 
   public:

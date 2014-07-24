@@ -34,12 +34,6 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-template class Coeff_<Matrix>;
-template class Coeff_<ZMatrix>;
-
-BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
-BOOST_CLASS_EXPORT_IMPLEMENT(ZCoeff)
-
 
 template <typename MatType, class Enable>
 Coeff_<MatType, Enable>::Coeff_(const MatType& inp) : MatType(inp.ndim(), inp.mdim()) {
@@ -117,4 +111,10 @@ pair<shared_ptr<MatType>, shared_ptr<MatType>> Coeff_<MatType, Enable>::split(co
 
   return {out1, out2};
 }
+
+template class Coeff_<Matrix>;
+template class Coeff_<ZMatrix>;
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Coeff)
+BOOST_CLASS_EXPORT_IMPLEMENT(ZCoeff)
 

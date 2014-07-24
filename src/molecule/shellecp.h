@@ -27,7 +27,6 @@
 #ifndef __SRC_MOLECULE_SHELL_ECP_H
 #define __SRC_MOLECULE_SHELL_ECP_H
 
-#include <vector>
 #include <src/molecule/shell_base.h>
 
 namespace bagel {

@@ -159,11 +159,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
 
-  if (magnetism_) {
-    assert(london_ || nonzero_magnetic_field());
-  } else {
-    assert(!nonzero_magnetic_field() && !london_);
-  }
+  assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 }
 
 
@@ -261,7 +257,8 @@ Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, cons
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
   common_init2(false, overlap_thresh_, nodf);
-  if (o.magnetism()) throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
+  if (o.magnetism())
+    throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
 
@@ -289,7 +286,8 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 
   common_init1();
   common_init2(false, overlap_thresh_);
-  if (o.magnetism()) throw logic_error("Geometry displacement in a magnetic field has not been set up or verified; use caution.");
+  if (o.magnetism())
+    throw logic_error("Geometry displacement in a magnetic field has not been set up or verified; use caution.");
 }
 
 
@@ -381,57 +379,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 }
 
 
-// used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) : magnetism_(false) {
-
-  spherical_ = true;
-  lmax_ = 0;
-
-  atoms_ = atoms;
-
-  auto atomlist = geominfo->get_child_optional("geometry");
-  const bool angstrom = geominfo->get<bool>("angstrom", false);
-
-  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
-  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
-
-  // cartesian or not. Look in the atoms info to find out
-  spherical_ = atoms.front()->spherical();
-  // basis
-  auxfile_ = geominfo->get<string>("df_basis", "");
-  if (!auxfile_.empty()) {
-    // read the default basis file
-    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
-    if (atomlist) {
-      for (auto& i : *atomlist)
-        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
-    } else {
-      // in the molden case
-      for (auto& i : atoms_)
-        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
-    }
-  }
-  // symmetry
-  symmetry_ = geominfo->get<string>("symmetry", "c1");
-
-  common_init1();
-
-  print_atoms();
-
-  // static external magnetic field
-  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
-  const bool tesla = geominfo->get<bool>("tesla", false);
-  if (tesla)
-    for (int i=0; i!=3; ++i)
-      magnetic_field_[i] /= au2tesla__;
-  set_london(geominfo);
-
-  common_init2(true, overlap_thresh_);
-  get_electric_field(geominfo);
-}
-
-
 /************************************************************
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
@@ -505,7 +452,59 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
 
-  if (nmer.front()->magnetism()) throw logic_error("Combining Geometries in a magnetic field has not been set up or verified; use caution.");
+  if (nmer.front()->magnetism())
+    throw logic_error("Combining Geometries in a magnetic field has not been set up or verified; use caution.");
+}
+
+
+// used in SCF initial guess.
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) : magnetism_(false) {
+
+  spherical_ = true;
+  lmax_ = 0;
+
+  atoms_ = atoms;
+
+  auto atomlist = geominfo->get_child_optional("geometry");
+  const bool angstrom = geominfo->get<bool>("angstrom", false);
+
+  schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
+  overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
+
+  // cartesian or not. Look in the atoms info to find out
+  spherical_ = atoms.front()->spherical();
+  // basis
+  auxfile_ = geominfo->get<string>("df_basis", "");
+  if (!auxfile_.empty()) {
+    // read the default basis file
+    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    if (atomlist) {
+      for (auto& i : *atomlist)
+        aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
+    } else {
+      // in the molden case
+      for (auto& i : atoms_)
+        aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
+    }
+  }
+  // symmetry
+  symmetry_ = geominfo->get<string>("symmetry", "c1");
+
+  common_init1();
+
+  print_atoms();
+
+  // static external magnetic field
+  magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
+  const bool tesla = geominfo->get<bool>("tesla", false);
+  if (tesla)
+    for (int i=0; i!=3; ++i)
+      magnetic_field_[i] /= au2tesla__;
+  set_london(geominfo);
+
+  common_init2(true, overlap_thresh_);
+  get_electric_field(geominfo);
 }
 
 
@@ -588,15 +587,10 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt) const {
   // except for atoms_->shells
   vector<shared_ptr<const Atom>> atom;
 
-  if (!magnetism_) {
-    for (auto& i : atoms_)
-      atom.push_back(i->relativistic());
-  } else {
-    for (auto& i : atoms_)
-      atom.push_back(i->relativistic(magnetic_field_, london_));
-  }
-  geom->atoms_ = atom;
+  for (auto& i : atoms_)
+    atom.push_back(!magnetism_ ? i->relativistic() : i->relativistic(magnetic_field_, london_));
 
+  geom->atoms_ = atom;
   geom->compute_relativistic_integrals(do_gaunt);
 
   cout << endl;
@@ -634,20 +628,22 @@ void Geometry::set_london(const shared_ptr<const PTree>& geominfo) {
   const string basis_type = to_lower(geominfo->get<string>("basis_type", (nonzero_magnetic_field() ? "london" : "gaussian")));
   if (basis_type == "giao" || basis_type == "london") london_ = true;
   else if (basis_type == "gaussian") london_ = false;
-  else throw runtime_error("Invalid basis type entered - should be london or gaussian");
+  else
+    throw runtime_error("Invalid basis type entered - should be london or gaussian");
 }
 
 
 void Geometry::compute_integrals(const double thresh) const {
-  if (!magnetism_) {
 #ifdef LIBINT_INTERFACE
-    df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
+  if (magnetism_)
+    throw runtime_error("Libint cannot compute London orbital integrals; use BAGEL's native integral code.");
+  df_ = form_fit<DFDist_ints<Libint>>(thresh, true); // true means we construct J^-1/2
 #else
+  if (!magnetism_)
     df_ = form_fit<DFDist_ints<ERIBatch>>(thresh, true); // true means we construct J^-1/2
-#endif
-  } else {
+  else
     df_ = form_fit<ComplexDFDist_ints<ComplexERIBatch>>(thresh, true); // true means we construct J^-1/2
-  }
+#endif
 }
 
 
@@ -655,9 +651,12 @@ void Geometry::init_magnetism() {
   Timer timer;
 
   magnetism_ = true;
-  if (london_ && nonzero_magnetic_field()) std::cout << "  Using London orbital basis to enforce gauge-invariance" << std::endl;
-  if (!london_ && nonzero_magnetic_field()) std::cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << std::endl;
-  if (!nonzero_magnetic_field()) std::cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << std::endl;
+  if (london_ && nonzero_magnetic_field())
+    cout << "  Using London orbital basis to enforce gauge-invariance" << endl;
+  if (!london_ && nonzero_magnetic_field())
+    cout << "  Using a common gauge origin - NOT RECOMMENDED for accurate calculations.  (Use a London orbital basis instead.)" << endl;
+  if (!nonzero_magnetic_field())
+    cout << "  Zero magnetic field - This computation would be more efficient with a Gaussian basis set." << endl;
 
   if (nonzero_magnetic_field()) {
     cout << "  Applied magnetic field:  (" << setprecision(4) << setw(7) << magnetic_field_[0] << ", "

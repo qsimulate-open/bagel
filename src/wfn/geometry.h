@@ -34,7 +34,7 @@
 namespace bagel {
 
 
-class Geometry: public Molecule {
+class Geometry : public Molecule {
   protected:
     // integral screening
     double schwarz_thresh_;
@@ -119,12 +119,6 @@ class Geometry: public Molecule {
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
 
-    // type T should be a derived class of DFDist
-    template<typename T>
-    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
-      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
-    }
-
     // Returns DF data
     const std::shared_ptr<const DFDist> df() const { return df_; }
     const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
@@ -132,6 +126,12 @@ class Geometry: public Molecule {
 
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }
+
+    // type T should be a derived class of DFDist
+    template<typename T>
+    std::shared_ptr<T> form_fit(const double thr, const bool inverse, const double gam = 0.0, const bool average = false) const {
+      return std::make_shared<T>(nbasis(), naux(), atoms(), aux_atoms(), thr, inverse, gam, average);
+    }
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt) const;

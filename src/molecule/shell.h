@@ -138,9 +138,9 @@ class Shell : public Shell_base {
     const std::shared_ptr<const Matrix>  small(const int i)  const { assert(relativistic_); return  small_[i]; }
     const std::shared_ptr<const ZMatrix> zsmall(const int i) const { assert(relativistic_); return zsmall_[i]; }
     const std::shared_ptr<const ZMatrix> zsmallc(const int i) const { assert(relativistic_); return zsmallc_[i]; }
-    const std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
-    const std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
-    const std::shared_ptr<const Shell> aux_same() const { assert(relativistic_); return aux_same_; }
+    std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
+    std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
+    std::shared_ptr<const Shell> aux_same() const { assert(relativistic_); return aux_same_; }
     int nbasis_aux_increment() const { return aux_increment_ ? aux_increment_->nbasis() : 0; }
     int nbasis_aux_decrement() const { return aux_decrement_ ? aux_decrement_->nbasis() : 0; }
     int nbasis_aux_same() const { return aux_same_ ? aux_same_->nbasis() : 0; }

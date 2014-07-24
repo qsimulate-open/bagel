@@ -98,7 +98,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     virtual ~Reference() { }
 
-    const std::shared_ptr<const Geometry> geom() const { return geom_; }
+    std::shared_ptr<const Geometry> geom() const { return geom_; }
     const std::vector<double> schwarz() const { return geom_->schwarz(); }
     virtual const std::shared_ptr<const Hcore> hcore() const { return hcore_; }
     virtual const std::shared_ptr<const Coeff> coeff() const { return coeff_; }
