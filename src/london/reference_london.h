@@ -40,7 +40,7 @@ class Reference_London : public Reference {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & geom_ & zcoeff_ & zhcore_;
+      ar & boost::serialization::base_object<Reference>(*this) & zcoeff_ & zhcore_;
     }
 
   public:
