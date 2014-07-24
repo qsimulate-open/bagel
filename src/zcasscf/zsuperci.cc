@@ -134,8 +134,18 @@ void ZSuperCI::compute() {
 #else
     kramers_adapt(amat, nvirtnr_);
 #endif
-   amat->scale(sqrt(2.0));
-   shared_ptr<ZMatrix> expa = amat->exp();
+  // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
+  *amat *= sqrt(2.0) * complex<double>(0.0, -1.0);
+  // restore the matrix from RotFile
+  vector<double> teig(amat->ndim());
+  amat->diagonalize(teig.data());
+  auto amat_sav = amat->copy();
+  for (int i = 0; i != amat->ndim(); ++i) {
+    complex<double> ex = exp(complex<double>(0.0, teig[i]));
+    for_each(amat->element_ptr(0,i), amat->element_ptr(0,i+1), [&ex](complex<double>& a) { a *= ex; });
+  }
+  auto expa = make_shared<ZMatrix>(*amat ^ *amat_sav);
+  expa->purify_unitary();
 
 #ifdef BOTHSPACES
    coeff_ = make_shared<const ZMatrix>(*coeff_ * *expa);
