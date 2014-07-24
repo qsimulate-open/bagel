@@ -193,18 +193,23 @@ void ZSuperCI::compute() {
 
 void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& fact, shared_ptr<ZMatrix>& factp, shared_ptr<ZMatrix>& gaa,
                                   shared_ptr<ZRotFile>& denom) {
+  bool a2approx = idata_->get<bool>("a2approx", false);
   assert(coeff_->mdim()== nbasis_*2);
   // qvec
   shared_ptr<const ZMatrix> qvec;
   if (nact_) {
-    qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
+    if (!a2approx) {
+      qvec = make_shared<ZQvec>(nbasis_, nact_, geom_, coeff_, nclosed_, fci_, gaunt_, breit_);
 #ifndef BOTHSPACES
-    { // take non-rel parts out
-      auto tmp = make_shared<ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
-      tmp->copy_block(0,0,nocc_*2, nact_*2, qvec->get_submatrix(0,0,nocc_*2,nact_*2)->data());
-      tmp->copy_block(nocc_*2, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2,0,nvirtnr_,nact_*2)->data());
-      tmp->copy_block(nocc_*2+nvirtnr_, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2+nvirt_,0,nvirtnr_,nact_*2)->data());
-      qvec = make_shared<const ZMatrix>(*tmp);
+      { // take non-rel parts out
+        auto tmp = make_shared<ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
+        tmp->copy_block(0,0,nocc_*2, nact_*2, qvec->get_submatrix(0,0,nocc_*2,nact_*2)->data());
+        tmp->copy_block(nocc_*2, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2,0,nvirtnr_,nact_*2)->data());
+        tmp->copy_block(nocc_*2+nvirtnr_, 0, nvirtnr_, nact_*2, qvec->get_submatrix(nocc_*2+nvirt_,0,nvirtnr_,nact_*2)->data());
+        qvec = make_shared<const ZMatrix>(*tmp);
+      }
+    } else {
+      qvec = make_shared<const ZMatrix>(nocc_*2+nvirtnr_*2, nact_*2);
     }
 #endif
   }
@@ -268,7 +273,8 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   if (nact_) {
     gaa = factp->clone();
     shared_ptr<const ZMatrix> nat_rdm2 = natorb_rdm2_transform(natorb_coeff, fci_->rdm2_av());
-    zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
+    if (!a2approx)
+      zgemv_("N", nact_*nact_*4, nact_*nact_*4, 1.0, nat_rdm2->data(), nact_*nact_*4, factp->data(), 1, 0.0, gaa->data(), 1);
     complex<double> p = complex<double> (0.0,0.0);
     for (int i = 0; i != nact_*2; ++i) p += occup_[i] * factp->element(i,i);
     for (int i = 0; i != nact_*2; ++i) gaa->element(i,i) -= occup_[i] * p;
