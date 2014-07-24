@@ -48,13 +48,13 @@ class Reference_London : public Reference {
     Reference_London(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c,
                      const int nclo, const int nact, const int nvirt, const double en = 0.0);
 
-    const std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("Reference_London::coeff() should not be called"); }
-    const std::shared_ptr<const Hcore> hcore() const override { throw std::logic_error("Reference_London::hcore() should not be called"); }
+    std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("Reference_London::coeff() should not be called"); }
+    std::shared_ptr<const Hcore> hcore() const override { throw std::logic_error("Reference_London::hcore() should not be called"); }
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 
-    virtual const std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
+    virtual std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
 
-    const std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }
+    std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }
 
 };
 

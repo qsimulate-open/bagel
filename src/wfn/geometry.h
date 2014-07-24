@@ -50,8 +50,8 @@ class Geometry : public Molecule {
     // Constructor helpers
     void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh) const;
-    void get_electric_field(const std::shared_ptr<const PTree>& geominfo);
-    void set_london(const std::shared_ptr<const PTree>& geominfo);
+    void get_electric_field(std::shared_ptr<const PTree>& geominfo);
+    void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
     // Magnetism-specific parameters
@@ -102,15 +102,15 @@ class Geometry : public Molecule {
 
   public:
     Geometry() { }
-    Geometry(const std::shared_ptr<const PTree> idata);
-    Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, const std::shared_ptr<const PTree> o);
-    Geometry(const Geometry& o, const std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
-    Geometry(const Geometry& o, const std::shared_ptr<const Matrix> disp, const std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
+    Geometry(std::shared_ptr<const PTree> idata);
+    Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, std::shared_ptr<const PTree> o);
+    Geometry(const Geometry& o, std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
+    Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 
     // Returns a constant
-    const std::shared_ptr<const Matrix> compute_grad_vnuc() const;
+    std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
     bool london() const { return london_; }
@@ -120,9 +120,9 @@ class Geometry : public Molecule {
     std::vector<double> schwarz() const;
 
     // Returns DF data
-    const std::shared_ptr<const DFDist> df() const { return df_; }
-    const std::shared_ptr<const DFDist> dfs() const { return dfs_; }
-    const std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
+    std::shared_ptr<const DFDist> df() const { return df_; }
+    std::shared_ptr<const DFDist> dfs() const { return dfs_; }
+    std::shared_ptr<const DFDist> dfsl() const { return dfsl_; }
 
     // TODO resolve "mutable" issues
     void discard_df() const { df_.reset(); dfs_.reset(); dfsl_.reset(); }

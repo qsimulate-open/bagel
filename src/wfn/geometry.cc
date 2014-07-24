@@ -43,7 +43,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
 
-Geometry::Geometry(const shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   // members of Molecule
   spherical_ = true;
@@ -85,8 +85,8 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) : magnetism_(false) {
   } else {
 
     // read the default basis file
-    const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
+    shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
+    shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
     const bool use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
@@ -102,8 +102,8 @@ Geometry::Geometry(const shared_ptr<const PTree> geominfo) : magnetism_(false) {
   auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
   if (!auxfile_.empty()) {
     // read the default aux basis file
-    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (basisfile_ == "molden") {
       for(auto& iatom : atoms_) {
         if (!iatom->dummy()) {
@@ -164,7 +164,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 
 // suitable for geometry updates in optimization
-Geometry::Geometry(const Geometry& o, const shared_ptr<const Matrix> displ, const shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
+Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
   : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_) {
 
   // Members of Molecule
@@ -335,8 +335,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms) {
     atoms_.clear();
-    const shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
+    shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
+    shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
@@ -350,8 +350,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   auxfile_ = to_lower(geominfo->get<string>("df_basis", auxfile_));
   if (prevaux != auxfile_ || atoms) {
     aux_atoms_.clear();
-    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
@@ -458,7 +458,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 
 
 // used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false) {
 
   spherical_ = true;
   lmax_ = 0;
@@ -477,8 +477,8 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
   auxfile_ = geominfo->get<string>("df_basis", "");
   if (!auxfile_.empty()) {
     // read the default basis file
-    const shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
-    const shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
     if (atomlist) {
       for (auto& i : *atomlist)
         aux_atoms_.push_back(make_shared<const Atom>(i, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
@@ -508,7 +508,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, const shared_ptr<
 }
 
 
-const shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
+shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
   auto grad = make_shared<Matrix>(3, natom());
   int i = 0;
@@ -540,9 +540,9 @@ vector<double> Geometry::schwarz() const {
 
   vector<double> schwarz(size * size);
   for (int i0 = 0; i0 != size; ++i0) {
-    const shared_ptr<const Shell> b0 = basis[i0];
+    shared_ptr<const Shell> b0 = basis[i0];
     for (int i1 = i0; i1 != size; ++i1) {
-      const shared_ptr<const Shell> b1 = basis[i1];
+      shared_ptr<const Shell> b1 = basis[i1];
 
       array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
 #ifdef LIBINT_INTERFACE
@@ -566,7 +566,7 @@ vector<double> Geometry::schwarz() const {
 }
 
 
-void Geometry::get_electric_field(const shared_ptr<const PTree>& geominfo) {
+void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
   // static external electric field
   external_[0] = geominfo->get<double>("ex", 0.0);
   external_[1] = geominfo->get<double>("ey", 0.0);
@@ -624,7 +624,7 @@ void Geometry::discard_relativistic() const {
 }
 
 
-void Geometry::set_london(const shared_ptr<const PTree>& geominfo) {
+void Geometry::set_london(shared_ptr<const PTree>& geominfo) {
   const string basis_type = to_lower(geominfo->get<string>("basis_type", (nonzero_magnetic_field() ? "london" : "gaussian")));
   if (basis_type == "giao" || basis_type == "london") london_ = true;
   else if (basis_type == "gaussian") london_ = false;
