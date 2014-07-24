@@ -192,9 +192,15 @@ void atomic_orbital::set_data (const double* pos, const double exp, const int* a
     position[i] = pos[i];
     angular_momentum[i] = ang_mom[i];
   }
+#if 0  // For London orbitals
   vector_potential[0] = 0.5*(field[1]*pos[2] - field[2]*pos[1]);
   vector_potential[1] = 0.5*(field[2]*pos[0] - field[0]*pos[2]);
   vector_potential[2] = 0.5*(field[0]*pos[1] - field[1]*pos[0]);
+#else  // For common origin
+  vector_potential[0] = 0.0;
+  vector_potential[1] = 0.0;
+  vector_potential[2] = 0.0;
+#endif
   exponent = exp;
   prefactor = 1.0;
 }
@@ -350,10 +356,17 @@ std::pair<std::complex<double>,std::complex<double>> compute_eri_ssss (const std
   const double p = alpha + beta;
   const double q = gamma + delta;
   const double rho = p*q/(p+q);
+#if 0 // For London orbitals
   double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
   double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
   double A_C[3] = { 0.5*(field[1]*C[2] - field[2]*C[1]), 0.5*(field[2]*C[0] - field[0]*C[2]), 0.5*(field[0]*C[1] - field[1]*C[0]) };
   double A_D[3] = { 0.5*(field[1]*D[2] - field[2]*D[1]), 0.5*(field[2]*D[0] - field[0]*D[2]), 0.5*(field[0]*D[1] - field[1]*D[0]) };
+#else // For common origin
+  double A_A[3] = { 0.0, 0.0, 0.0 };
+  double A_B[3] = { 0.0, 0.0, 0.0 };
+  double A_C[3] = { 0.0, 0.0, 0.0 };
+  double A_D[3] = { 0.0, 0.0, 0.0 };
+#endif
   if (alpha == 0.0 || beta == 0.0) {
     for (int i=0; i!=3; i++) A_A[i] = 0.0;
     for (int i=0; i!=3; i++) A_B[i] = 0.0;
@@ -834,8 +847,13 @@ pair<complex<double>,complex<double>> compute_ss (const vector<double> field, at
   const double alpha = A_.exponent;
   const double beta  = B_.exponent;
   const double p = alpha + beta;
+#if 0 // For London orbitals
   const double A_A[3] = { 0.5*(field[1]*A[2] - field[2]*A[1]), 0.5*(field[2]*A[0] - field[0]*A[2]), 0.5*(field[0]*A[1] - field[1]*A[0]) };
   const double A_B[3] = { 0.5*(field[1]*B[2] - field[2]*B[1]), 0.5*(field[2]*B[0] - field[0]*B[2]), 0.5*(field[0]*B[1] - field[1]*B[0]) };
+#else // For common origin
+  const double A_A[3] = { 0.0, 0.0, 0.0 };
+  const double A_B[3] = { 0.0, 0.0, 0.0 };
+#endif
 
   complex<double> Abar[3];
   complex<double> Bbar[3];
@@ -1362,7 +1380,7 @@ complex<double> get_smallnai_matrix_element (const vector<double> field, atomic_
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 0
+#if 1
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1434,7 +1452,7 @@ complex<double> get_smalloverlap_matrix_element (const vector<double> field, ato
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 0
+#if 1
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1497,7 +1515,6 @@ complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<mo
           cout << "Magnitude = " << abs(coeff_prod * current_term) << endl;
           cout << "Phase = " << arg(coeff_prod * current_term) << endl << endl;
 #endif
-          cout << "      this term = " << scientific << Full_NAI << endl;
         }
       }
     }
@@ -1505,7 +1522,6 @@ complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<mo
     const double Zfac = -charge*pow((nuclei[k].exponent/(std::atan(1.0)*4.0)),1.5);
     thisnai *= Zfac;
     Full_NAI += thisnai;
-    cout << "Full NAI= " << scientific << Full_NAI << endl;
   }
 #if 0
   cout << "Full NAI = " << Full_NAI << endl;
@@ -1513,7 +1529,6 @@ complex<double> compute_small_finitenai (vector<atomic_orbital> basis, vector<mo
   cout << "Phase = " << arg(Full_NAI) << endl;
 #endif
 
-  cout << endl << endl;
   return Full_NAI;
 }
 
@@ -1542,7 +1557,7 @@ complex<double> get_small_finitenai_matrix_element (const vector<double> field, 
   for (int i=0; i!=3; i++) axd[i] = ax[i];
   for (int i=0; i!=3; i++) bxd[i] = bx[i];
 
-#if 0
+#if 1
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
@@ -1720,7 +1735,7 @@ complex<double> get_smalleri_matrix_element (const vector<double> field, atomic_
   for (int i=0; i!=3; i++) cxd[i] = cx[i];
   for (int i=0; i!=3; i++) dxd[i] = dx[i];
 
-#if 0
+#if 1
   const int nterms = 5;  // For Gaussian orbitals (common origin)
 #else
   const int nterms = 4;  // For London orbitals
