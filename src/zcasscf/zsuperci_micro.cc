@@ -217,7 +217,7 @@ void ZSuperCIMicro::sigma_ai_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
 }
 
 
-// sigma_ti_ti = - delta_ij ((2-nt-nu)Fact_tu - G_tu)/sqrt((2-nt)(2-nu)) - delta_tu f_ij // TODO : check normalization factors
+// sigma_ti_ti = - delta_ij ((1-nt-nu)Fact_tu - G_tu)/sqrt((1-nt)(1-nu)) - delta_tu f_ij
 void ZSuperCIMicro::sigma_ti_ti_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
