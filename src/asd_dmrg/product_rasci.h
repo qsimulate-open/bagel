@@ -92,8 +92,7 @@ class ProductRASCI {
     void construct_denom(); ///< construct denominator
 
     void common_init(); ///< initializer
-    void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<ProductRASCivec>>& out); ///< obtain determinants for guess generation
-    //void model_guess(std::shared_ptr<RASDvec>& out);
+    void model_guess(std::vector<std::shared_ptr<ProductRASCivec>>& out);
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet); ///< generate spin-adapted guess configurations
 
     void print_header() const; ///< print functions
