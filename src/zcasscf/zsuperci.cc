@@ -259,7 +259,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
   if (nact_) { // active Fock' operator (Fts+Fst) / (ns+nt)
     factp = make_shared<ZMatrix>(nact_*2, nact_*2);
-    shared_ptr<ZMatrix> fact_conjg = fact->get_conjg()->copy();
+    shared_ptr<ZMatrix> fact_conjg = fact->get_conjg();
     for (int i = 0; i != nact_*2; ++i) {
       for (int j = 0; j != nact_*2; ++j) {
         if (occup_[i] + occup_[j] > zoccup_thresh)
