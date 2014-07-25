@@ -308,9 +308,9 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     if (nact_) {
       target = dtmp->ptr_ca();
       for (int i = 0; i != nact_*2; ++i) {
-        if (1.0-occup_[i] > zoccup_thresh) { // TODO : check if the factor is 2.0 - or 1.0 - ...
+        if (1.0-occup_[i] > zoccup_thresh) {
           for (int j = 0; j != nclosed_*2; ++j, ++target)
-            *target = ((f->element(nclosed_*2+i,nclosed_*2+i)-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(1.0-occup_[i])) / (1.0-occup_[i]); // TODO : check on the factors of 2.0
+            *target = ((f->element(nclosed_*2+i,nclosed_*2+i)-fact->element(i+nclosed_*2,i)) - f->element(j, j)*(1.0-occup_[i])) / (1.0-occup_[i]);
         } else {
           for (int j = 0; j != nclosed_*2; ++j, ++target)
             *target = 1.0/zoccup_thresh;
