@@ -1,7 +1,7 @@
 //
 // BAGEL - Parallel electron correlation program.
 // Filename: ecp.cc
-// Copyright (C) 2009 Toru Shiozaki
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,7 +23,9 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <iostream>
 #include <src/molecule/ecp.h>
+
 using namespace std;
 using namespace bagel;
 

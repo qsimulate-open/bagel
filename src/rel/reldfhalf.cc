@@ -50,6 +50,48 @@ RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const Sp
 }
 
 
+RelDFHalf::RelDFHalf(shared_ptr<const RelDF_London> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+: RelDFBase(*df) {
+
+  basis_ = bas;
+
+  const int index = basis_.front()->basis(0);
+  for (auto& i : basis_)
+    if (i->basis(0) != index) throw logic_error("basis should have the same first index");
+  // -1 due to dagger (We are transforming the bra.)
+  auto icoeff_scaled = make_shared<const Matrix>(*icoeff[index] * (-1.0));
+  auto ricoeff = make_shared<const Matrix>(*rcoeff[index] + *icoeff_scaled);
+
+  // df->get_real() +/- df->get_imag() needed for 3-multiplication algorithm
+  auto dfri = make_shared<DFDist>(df->get_imag());
+  const int n = df->get_real()->block().size();
+  const double scale = df->swapped() ? -1.0 : 1.0;
+  for (int i=0; i!=n; ++i) {
+    dfri->add_block(df->get_real()->block(i)->copy());
+    dfri->block(i)->ax_plus_y(scale, df->get_imag()->block(i));
+  }
+
+  if (df->swapped()) {
+    dfhalf_[0] = df->get_real()->compute_half_transform_swap(rcoeff[index]);
+    auto tmp = df->get_imag()->compute_half_transform_swap(icoeff_scaled);
+    dfhalf_[1] = dfri->compute_half_transform_swap(ricoeff);
+
+    dfhalf_[1]->ax_plus_y(-1.0, dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y( 1.0, tmp);
+    dfhalf_[0]->ax_plus_y( 1.0, tmp);
+  } else {
+    dfhalf_[0] = df->get_real()->compute_half_transform(rcoeff[index]);
+    auto tmp = df->get_imag()->compute_half_transform(icoeff_scaled);
+    dfhalf_[1] = dfri->compute_half_transform(ricoeff);
+
+    dfhalf_[1]->ax_plus_y(-1.0, dfhalf_[0]);
+    dfhalf_[1]->ax_plus_y(-1.0, tmp);
+    dfhalf_[0]->ax_plus_y(-1.0, tmp);
+  }
+}
+
+
+
 RelDFHalf::RelDFHalf(array<shared_ptr<DFHalfDist>,2> data, pair<int, int> cartesian, vector<shared_ptr<const SpinorInfo>> bas) : RelDFBase(cartesian), dfhalf_(data) {
   basis_ = bas;
 }

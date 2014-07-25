@@ -103,7 +103,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<Matrix> get_imag_part() const;
 
     std::shared_ptr<ZMatrix> get_conjg() const;
-    void fill_upper_conjg();
 
     std::shared_ptr<ZMatrix> get_submatrix(const int nstart, const int mstart, const int ndim, const int mdim) const {
       return this->get_submatrix_impl<ZMatrix>(nstart, mstart, ndim, mdim);

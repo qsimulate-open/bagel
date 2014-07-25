@@ -153,7 +153,7 @@ pair<const double*, shared_ptr<RysInt>> DFDist::compute_batch(array<shared_ptr<c
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform(const MatView c) const {
   const int nocc = c.extent(1);
-  auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
+  auto out = make_shared<DFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_second(c));
   return out;
@@ -162,7 +162,7 @@ shared_ptr<DFHalfDist> DFDist::compute_half_transform(const MatView c) const {
 
 shared_ptr<DFHalfDist> DFDist::compute_half_transform_swap(const MatView c) const {
   const int nocc = c.extent(1);
-  auto out = make_shared<DFHalfDist>(shared_from_this(), nocc);
+  auto out = make_shared<DFHalfDist>(df_ ? df_ : shared_from_this(), nocc);
   for (auto& i : block_)
     out->add_block(i->transform_third(c)->swap());
   return out;
@@ -315,7 +315,7 @@ shared_ptr<Matrix> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullD
 void DFFullDist::add_product(const shared_ptr<const DFFullDist> o, const shared_ptr<const Matrix> c, const int jdim, const size_t off, const double fac) {
   // TODO needs more work
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  block_[0]->add_block(o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize(), fac);
+  block_[0]->add_block(*o->block_[0]->form_Dj(c, jdim), jdim, off*block_[0]->asize(), fac);
 }
 
 

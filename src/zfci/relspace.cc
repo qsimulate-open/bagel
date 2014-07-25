@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: space.cc
+// Filename: relspace.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Michael Caldwell <caldwell@u.northwestern.edu >

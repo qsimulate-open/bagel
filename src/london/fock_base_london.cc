@@ -32,8 +32,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Fock_base_London)
 
-Fock_base_London::Fock_base_London(const shared_ptr<const Geometry_London> geom, const shared_ptr<const ZMatrix> previous, const std::shared_ptr<const ZMatrix> den, const vector<double>& schwarz)
- : ZMatrix1e(geom), cgeom_(geom), previous_(previous), density_(den), schwarz_(schwarz) {
+Fock_base_London::Fock_base_London(const shared_ptr<const Geometry> geom, const shared_ptr<const ZMatrix> previous, const std::shared_ptr<const ZMatrix> den, const vector<double>& schwarz)
+ : ZMatrix1e(geom), geom_(geom), previous_(previous), density_(den), schwarz_(schwarz) {
 
   schwarz_thresh_ = geom->schwarz_thresh();
 
@@ -46,12 +46,12 @@ void Fock_base_London::fock_one_electron_part() {
   //const int nbasis = ndim();
   assert(ndim() == mdim());
 
-  const int nirrep = cgeom_->nirrep();
+  const int nirrep = geom_->nirrep();
   if (nirrep != 1) throw std::runtime_error("London-based methods currently cannot make use of symmetry.");
   #if 0
     ZMatrix intermediate(nbasis, nbasis);
     for (int i = 1; i != nirrep; ++i) {
-      SymMat symm(cgeom_, i);
+      SymMat symm(geom_, i);
       ZMatrix tmp = symm % (*this) * symm;
       intermediate += tmp;
     }

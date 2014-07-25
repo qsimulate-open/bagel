@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: zcoeff.h
+// Filename: reference_london.h
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -23,46 +23,44 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef __SRC_LONDON_REFERENCE_LONDON_H
+#define __SRC_LONDON_REFERENCE_LONDON_H
 
-#ifndef __src_london_zcoeff_h
-#define __src_london_zcoeff_h
-
-#include <src/wfn/geometry_london.h>
-#include <src/math/zmatrix.h>
+#include <src/wfn/reference.h>
+#include <src/molecule/zhcore.h>
 
 namespace bagel {
 
-class ZCoeff : public ZMatrix {
+class Reference_London : public Reference {
   protected:
-    std::shared_ptr<const Geometry_London> cgeom_;
+    std::shared_ptr<const ZCoeff> zcoeff_;
+    std::shared_ptr<const ZHcore> zhcore_;
 
   private:
-    int num_basis(std::vector<std::shared_ptr<const ZCoeff>> coeff_vec) const;
-
-  private:
-    // serialization
     friend class boost::serialization::access;
-
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix>(*this) & cgeom_;
+      ar & boost::serialization::base_object<Reference>(*this) & zcoeff_ & zhcore_;
     }
 
   public:
-    ZCoeff() { }
-    ZCoeff(const ZMatrix&);
-    ZCoeff(std::vector<std::shared_ptr<const ZCoeff>> coeff_vec);
-    ZCoeff(std::shared_ptr<const Geometry_London> g) : ZMatrix(g->nbasis(), g->nbasis()), cgeom_(g) {}
+    Reference_London() { }
+    Reference_London(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c,
+                     const int nclo, const int nact, const int nvirt, const double en = 0.0);
 
-    std::shared_ptr<const Geometry_London> geom() const { assert(cgeom_); return cgeom_; }
+    std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("Reference_London::coeff() should not be called"); }
+    std::shared_ptr<const Hcore> hcore() const override { throw std::logic_error("Reference_London::hcore() should not be called"); }
+    std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin) const override;
 
-    std::shared_ptr<ZMatrix> form_weighted_density_rhf(const int n, const std::vector<std::complex<double>>& e, const int offset = 0) const;
-    std::pair<std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>> split(const int, const int) const;
+    virtual std::shared_ptr<const ZCoeff> zcoeff() const { return zcoeff_; }
+
+    std::shared_ptr<const ZHcore> zhcore() const { return zhcore_; }
+
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::ZCoeff)
+BOOST_CLASS_EXPORT_KEY(bagel::Reference_London)
 
 #endif

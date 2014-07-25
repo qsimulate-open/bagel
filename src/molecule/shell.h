@@ -27,6 +27,8 @@
 #ifndef __SRC_MOLECULE_SHELL_H
 #define __SRC_MOLECULE_SHELL_H
 
+#include <src/math/matrix.h>
+#include <src/math/zmatrix.h>
 #include <src/molecule/shell_base.h>
 #include <src/util/serialization.h>
 
@@ -48,15 +50,18 @@ class Shell : public Shell_base {
     // whether a relativistic part is initialized
     bool relativistic_;
 
+    // whether a london phase factor is being used
+    bool magnetism_;
+    std::array<double,3> vector_potential_;
+
     // protected members for relativistic calculations
-    std::array<std::shared_ptr<const Matrix>,3> small_;
+    std::array<std::shared_ptr<const Matrix>,3>  small_;
     std::shared_ptr<const Shell> aux_increment_;
     std::shared_ptr<const Shell> aux_decrement_;
-    std::array<std::shared_ptr<const Matrix>,3> moment_compute() const;
-    std::array<std::shared_ptr<const Matrix>,6> mblock(const double exponent) const;
 
-    // magnetism
-    std::array<double,3> vector_potential_;
+    std::array<std::shared_ptr<const ZMatrix>,3> zsmall_;
+    std::array<std::shared_ptr<const ZMatrix>,3> zsmallc_;
+    std::shared_ptr<const Shell> aux_same_;
 
   private:
     // serialization
@@ -84,10 +89,9 @@ class Shell : public Shell_base {
   public:
     Shell() { }
     Shell(const bool spherical, const std::array<double,3>& position, int angular_num, const std::vector<double>& exponents,
-          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range, const std::array<double,3>& vector_potential);
+          const std::vector<std::vector<double>>& contraction, const std::vector<std::pair<int, int>>& cont_range);
     // default constructor for adding null basis
     Shell(const bool sph);
-    virtual ~Shell() { }
 
     bool dummy() const { return dummy_; };
     int num_primitive() const { return exponents_.size(); };
@@ -120,18 +124,26 @@ class Shell : public Shell_base {
 
     std::vector<std::shared_ptr<const Shell>> split_if_possible(const size_t batchsize) const;
 
+    // magnetism
+    bool magnetism() const { return magnetism_; }
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; };
+    void add_phase(const std::array<double,3>& phase_input);
 
     void init_relativistic();
+    void init_relativistic(const std::array<double,3> magnetic_field, bool london);
 
     // Relativistic
     bool relativistic() const { return relativistic_; }
-    const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
-    const std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
-    const std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
+    const std::shared_ptr<const Matrix>  small(const int i)  const { assert(relativistic_); return  small_[i]; }
+    const std::shared_ptr<const ZMatrix> zsmall(const int i) const { assert(relativistic_); return zsmall_[i]; }
+    const std::shared_ptr<const ZMatrix> zsmallc(const int i) const { assert(relativistic_); return zsmallc_[i]; }
+    std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
+    std::shared_ptr<const Shell> aux_decrement() const { assert(relativistic_); return aux_decrement_; }
+    std::shared_ptr<const Shell> aux_same() const { assert(relativistic_); return aux_same_; }
     int nbasis_aux_increment() const { return aux_increment_ ? aux_increment_->nbasis() : 0; }
     int nbasis_aux_decrement() const { return aux_decrement_ ? aux_decrement_->nbasis() : 0; }
+    int nbasis_aux_same() const { return aux_same_ ? aux_same_->nbasis() : 0; }
 
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;

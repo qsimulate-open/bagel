@@ -35,7 +35,7 @@ namespace bagel {
 
   class MoldenIO : public FileIO {
      protected:
-        std::shared_ptr<const Geometry> geom_;
+        std::shared_ptr<const Molecule> mol_;
         std::shared_ptr<const Reference> ref_;
 
         std::vector<std::vector<int>> m2b_cart_;

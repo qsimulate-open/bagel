@@ -1,9 +1,9 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: dfblock_base.cc
+// Filename: zkinetic.h
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,8 +23,37 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/df/dfblock_base.h>
 
-using namespace std;
-template class bagel::DFBlock_base<double>;
-template class bagel::DFBlock_base<complex<double>>;
+#ifndef __SRC_MOLECULE_ZKINETIC_H
+#define __SRC_MOLECULE_ZKINETIC_H
+
+#include <src/molecule/zmatrix1e.h>
+
+namespace bagel {
+
+class ZKinetic : public ZMatrix1e {
+  protected:
+    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<ZMatrix1e>(*this);
+    }
+
+  public:
+    ZKinetic() { }
+    ZKinetic(const std::shared_ptr<const Molecule>);
+
+};
+
+}
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ZKinetic)
+
+#endif
+

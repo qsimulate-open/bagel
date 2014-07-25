@@ -149,7 +149,7 @@ void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
       if (i != myrank) {
         request.push_back(mpi__->request_send((*buf)->data()+adist->start(i)*bsize_, adist->size(i)*bsize_, i, myrank));
       } else {
-        copy_n((*buf)->data()+adist->start(i)*bsize_, out->block(0)->asize()*dist_->size(i), out->block(0)->data()+out->block(0)->asize()*dist_->start(i));
+        copy_n((*buf)->data()+adist->start(i)*bsize_, iblock->asize()*dist_->size(i), iblock->data()+iblock->asize()*dist_->start(i));
       }
     }
     ++dat;

@@ -1,0 +1,24 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "basis_type" : "gaussian",
+  "magnetic_field" : [  0.2000,   0.3000,  -0.1500   ],
+  "tesla" : "false",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "Cl",  "xyz" : [ -1.200000,      2.500000,      2.720616], "exponent" : 3.8463852873E+08 },
+    { "atom" : "H",   "xyz" : [ -1.200000,      2.500000,      0.305956] }
+  ]
+},
+
+{
+  "title" : "dhf",
+  "gaunt" : "false",
+  "breit" : "false"
+}
+
+]}

@@ -48,7 +48,7 @@ class ZCASBFGS : public ZCASSCF {
                  std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
 
   public:
-    ZCASBFGS(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr) 
+    ZCASBFGS(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr)
        : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;

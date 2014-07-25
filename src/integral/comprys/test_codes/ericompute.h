@@ -77,13 +77,15 @@ class nucleus {
 
   public:
   int charge;
+  double exponent;
   double position[3];
 
   //constructor
-  nucleus (int Z, std::vector<double> coords) {
+  nucleus (int Z, std::vector<double> coords, double exp) {
     if (Z<1) throw std::runtime_error ("Nucleus should have a positive charge.  Check that inputs are being read properly.");
     charge = Z;
     for (int i=0; i!=3; i++) position[i] = coords[i];
+    exponent = exp;
   }
 };
 
@@ -122,6 +124,8 @@ std::complex<double> compute_eri (std::vector<atomic_orbital> basis, std::vector
 std::pair<std::complex<double>,std::complex<double>> compute_ss(const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 std::complex<double> get_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 std::complex<double> compute_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
+std::complex<double> compute_finite_nai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei);
+std::complex<double> get_finite_nai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 
 ryan::polynomial<std::complex<double>> get_NAI_III (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
 ryan::polynomial<std::complex<double>> get_NAI_Ix (const int dimension, const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_);
@@ -131,6 +135,16 @@ std::complex<double> kinetic_MO (std::vector<double> field, molecular_orbital A_
 std::complex<double> kinetic (std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
 std::vector<std::complex<double>> momentum_MO (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis);
 std::vector<std::complex<double>> momentum (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_);
+
+// Used for small component integrals
+std::complex<double> compute_smallnai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei, const int ia, const int ib);
+std::complex<double> compute_small_finitenai (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, std::vector<nucleus> nuclei, const int ia, const int ib);
+std::complex<double> get_smallnai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_, const int ia, const int ib);
+std::complex<double> get_small_finitenai_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, nucleus C_, const int ia, const int ib);
+std::complex<double> compute_smalloverlap (std::vector<double> field, molecular_orbital A_, molecular_orbital B_, std::vector<atomic_orbital> basis, const int ia, const int ib);
+std::complex<double> get_smalloverlap_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, const int ia, const int ib);
+std::complex<double> compute_smalleri (std::vector<atomic_orbital> basis, std::vector<molecular_orbital> input, std::vector<double> field, const int ia, const int ib);
+std::complex<double> get_smalleri_matrix_element (const std::vector<double> field, atomic_orbital A_, atomic_orbital B_, atomic_orbital C_, atomic_orbital D_, const int ia, const int ib);
 
 }
 

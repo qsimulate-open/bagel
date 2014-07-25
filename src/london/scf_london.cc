@@ -24,6 +24,7 @@
 //
 
 #include <src/london/scf_london.h>
+#include <src/london/reference_london.h>
 #include <src/prop/multipole.h>
 #include <src/scf/atomicdensities.h>
 
@@ -33,7 +34,7 @@ using namespace std;
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_London)
 
 
-SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry_London> geom, const shared_ptr<const Reference> re)
+SCF_London::SCF_London(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : SCF_base_London(idata, geom, re, !idata->get<bool>("df",true)), dodf_(idata->get<bool>("df",true)), restarted_(false) {
 
   cout << indent << "*** RHF ***" << endl << endl;
@@ -65,10 +66,10 @@ void SCF_London::compute() {
   if (!restarted_) {
     if (coeff_ == nullptr) {
       shared_ptr<const DistZMatrix> fock = hcore;
-      if (dodf_ && cgeom_->spherical()) {
-        auto aden = make_shared<const AtomicDensities>(cgeom_);
+      if (dodf_ && geom_->spherical()) {
+        auto aden = make_shared<const AtomicDensities>(geom_);
         auto zaden = std::make_shared<ZMatrix>(*aden, 1.0);
-        auto focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, zaden, schwarz_);
+        auto focka = make_shared<const Fock_London<1>>(geom_, hcore_, zaden, schwarz_);
         fock = focka->distmatrix();
       }
 
@@ -79,9 +80,9 @@ void SCF_London::compute() {
       shared_ptr<const ZMatrix> focka;
       if (!dodf_) {
         aodensity_ = coeff_->form_density_rhf(nocc_, 0, 2.0);
-        focka = make_shared<const Fock_London<0>>(cgeom_, hcore_, aodensity_, schwarz_);
+        focka = make_shared<const Fock_London<0>>(geom_, hcore_, aodensity_, schwarz_);
       } else {
-        focka = make_shared<const Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        focka = make_shared<const Fock_London<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
       DistZMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -90,11 +91,11 @@ void SCF_London::compute() {
     coeff_ = make_shared<const ZCoeff>(*coeff->matrix());
 
     cout << indent << "=== Nuclear Repulsion ===" << endl << indent << endl;
-    cout << indent << fixed << setprecision(10) << setw(15) << cgeom_->nuclear_repulsion() << endl << endl;
+    cout << indent << fixed << setprecision(10) << setw(15) << geom_->nuclear_repulsion() << endl << endl;
     cout << indent << "    * DIIS with orbital gradients will be used." << endl << endl;
     scftime.tick_print("SCF startup");
     cout << endl;
-    cout << indent << "=== RHF iteration (" + cgeom_->basisfile() + ") ===" << endl << indent << endl;
+    cout << indent << "=== RHF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
 
     diis_ = make_shared<DIIS<DistZMatrix,ZMatrix>>(diis_size_);
   } else {
@@ -123,17 +124,20 @@ void SCF_London::compute() {
 #endif
     if (!dodf_) {
       shared_ptr<ZMatrix> prev = previous_fock->copy();
-      previous_fock = make_shared<Fock_London<0>>(cgeom_, previous_fock, densitychange, schwarz_);
+      previous_fock = make_shared<Fock_London<0>>(geom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<ZMatrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock_London<1>>(cgeom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      previous_fock = make_shared<Fock_London<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistZMatrix> fock = previous_fock->distmatrix();
 
-    const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + cgeom_->nuclear_repulsion();
+    const complex<double> zenergy  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
     energy_  = real(zenergy);
-    if (abs(imag(zenergy))>1.0e-8) cout << scientific << "energy = " << zenergy << endl;;
-    if (abs(imag(zenergy))>1.0e-8) throw logic_error("Energy should be real!");
+    if (fabs(zenergy.imag()) > 1.0e-12) {
+      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << zenergy.imag();
+//    throw runtime_error(ss.str());
+      cout << ss.str() << endl;
+    }
 
     pdebug.tick_print("Fock build");
 
@@ -183,9 +187,9 @@ void SCF_London::compute() {
 
   //TODO If we're going to compute dipole moments in SCF_London, this is the place to do it
 #if 0
-  if (!cgeom_->external()) {
+  if (!geom_->external()) {
     if (dodf_) aodensity_ = aodensity->matrix();
-    Multipole mu(cgeom_, aodensity_, multipole_print_);
+    Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
   }
 #endif
@@ -193,9 +197,7 @@ void SCF_London::compute() {
 
 
 shared_ptr<const Reference> SCF_London::conv_to_ref() const {
-  cout << endl << "CAUTION:  Reference class has not been properly set up for London orbital basis." << endl << endl; // TODO
-  //auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
-  //out->set_eig(eig_);
-  //return out;
-  return nullptr;
+  auto out = make_shared<Reference_London>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  out->set_eig(eig_);
+  return out;
 }

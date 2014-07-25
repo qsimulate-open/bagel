@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fci_london.cc
+// Filename: zkinetic.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
@@ -23,21 +23,34 @@
 // the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include <src/london/fci_london.h>
 
-using namespace bagel;
+#include <src/molecule/zkinetic.h>
+#include <src/integral/compos/complexkineticbatch.h>
+
 using namespace std;
+using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(FCI_London)
+BOOST_CLASS_EXPORT_IMPLEMENT(ZKinetic)
 
-void FCI_London::compute() {
-  cout << "  Full Configuration Interaction method with London orbitals to be implemented soon!" << endl;
+ZKinetic::ZKinetic(const shared_ptr<const Molecule> mol) : ZMatrix1e(mol) {
+
+  init(mol);
+  fill_upper_conjg();
+
 }
 
 
-shared_ptr<const Reference> FCI_London::conv_to_ref() const {
-//  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
-//  out->set_eig(eig_);
-//  return out;
-  return nullptr;
+void ZKinetic::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+
+  // input = [b1, b0]
+  assert(input.size() == 2);
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
+
+  ComplexKineticBatch kinetic(input, mol->magnetic_field());
+  kinetic.compute();
+
+  copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
 }
+
+

@@ -128,7 +128,7 @@ array<shared_ptr<const ZMatrix>,2> RelMOFile::kramers(shared_ptr<const ZMatrix> 
     s->diagonalize(tmp);
     *cnow *= *s;
 
-    // fix the phase - making the largest large-component element in each colomn real
+    // fix the phase - making the largest large-component element in each column real
 #if 1
     for (int i = 0; i != n; ++i) {
       const int iblock = i/(n/2);

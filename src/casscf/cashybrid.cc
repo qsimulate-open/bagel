@@ -35,18 +35,18 @@
 
 void CASHYBRID::compute() {
 
-  double global_thresh = idata_->get<double>("thresh", 1.0e-8); 
+  double global_thresh = idata_->get<double>("thresh", 1.0e-8);
   shared_ptr<Method> active_method;
   // construct and compute SuperCI
   {
     auto idata = make_shared<PTree>(*idata_);
     if (maxiter_switch_ != -1) {
       idata->erase("maxiter");
-      idata->put("maxiter", maxiter_switch_); 
+      idata->put("maxiter", maxiter_switch_);
     }
     if (thresh_switch_ > 0.0) {
       idata->erase("thresh");
-      idata->put("thresh",  thresh_switch_); 
+      idata->put("thresh",  thresh_switch_);
     }
     active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
@@ -74,6 +74,6 @@ void CASHYBRID::compute() {
 
 shared_ptr<const Reference> CASHYBRID::conv_to_ref() const {
   assert(refout_);
-  return refout_; 
+  return refout_;
 }
 

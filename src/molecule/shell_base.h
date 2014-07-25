@@ -28,7 +28,7 @@
 #define __SRC_MOLECULE_SHELL_BASE_H
 
 #include <array>
-#include <src/math/matrix.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 

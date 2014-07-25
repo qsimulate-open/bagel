@@ -338,6 +338,7 @@ shared_ptr<ZMatrix> ZMatrix::tildex(const double thresh) const {
   bool nolindep = out->inverse_half(thresh);
   if (!nolindep) {
     // use canonical orthogonalization. Start over
+    cout << "    * Using canonical orthogonalization due to linear dependency" << endl << endl;
     out = this->copy();
     VectorB eig(ndim());
     out->diagonalize(eig);
@@ -395,15 +396,6 @@ shared_ptr<ZMatrix> ZMatrix::get_conjg() const {
     o = conj(*i++);
   return out;
 }
-
-
-void ZMatrix::fill_upper_conjg() {
-  assert(ndim() == mdim());
-  for (size_t i = 0; i != mdim(); ++i)
-    for (size_t j = i+1; j != ndim(); ++j)
-      element(i, j) = conj(element(j, i));
-}
-
 
 
 #ifdef HAVE_SCALAPACK

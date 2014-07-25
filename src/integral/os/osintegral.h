@@ -88,6 +88,7 @@ class OSIntegral : public Integral_base<DataType> {
     bool swap01() const { return swap01_; }
 
     size_t size_block() const { return size_block_; }
+    size_t asize_final() const { return asize_final_; }
 
     virtual std::shared_ptr<GradFile> compute_gradient(std::shared_ptr<const Matrix> d, const int iatom0, const int iatom1, const int natom) const;
 };

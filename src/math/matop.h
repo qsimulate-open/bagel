@@ -364,7 +364,7 @@ inline ZVectorB operator*(const ZMatView& a, const ZVectorB& b) { ZVectorB out(a
 inline ZVectorB operator*(const ZMatView& a, const ZVecView& b) { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
 // TODO % and ^ operators require specification of complex conjugate
 
-// operator* with scalar 
+// operator* with scalar
 inline Matrix&  operator*=(Matrix& a, const double b)  { blas::scale_n(b, a.data(), a.size()); return a; }
 inline MatView& operator*=(MatView& a, const double b) { blas::scale_n(b, a.data(), a.size()); return a; }
 inline Matrix operator*(const Matrix& a, const double b)  { Matrix c(a); blas::scale_n(b, c.data(), c.size()); return c; }

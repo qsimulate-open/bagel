@@ -83,7 +83,7 @@ void ZCASBFGS::___debug___orbital_rotation(const bool kramers) {
 
   if (kramers) {
     kramers_adapt(expatmp, nvirt_);
-    assert( ( (*expatmp->get_submatrix(nocc_*2, 0, nvirt_, nclosed_)) 
+    assert( ( (*expatmp->get_submatrix(nocc_*2, 0, nvirt_, nclosed_))
              - (*expatmp->get_submatrix(nocc_*2+nvirt_, nclosed_, nvirt_, nclosed_)->get_conjg()) ).rms() < 1e-20 );
   }
 
@@ -96,7 +96,7 @@ void ZCASBFGS::___debug___orbital_rotation(const bool kramers) {
     auto orth = make_shared<ZMatrix>(*pco % *overlap * *pco);
     auto unit = orth->clone();
     unit->unit();
-    *orth -= *unit; 
+    *orth -= *unit;
     if (orth->rms() > 1e-14) {
       stringstream ss;
       ss << "coefficients are not orthonormal. Residual: " << scientific << setprecision(4) << orth->rms();
@@ -104,8 +104,8 @@ void ZCASBFGS::___debug___orbital_rotation(const bool kramers) {
     }
   }
 
-  cout << "norm coeff  = "        << setprecision(20) << coeff_->norm() << endl; 
-  cout << "norm pcoeff = "        << setprecision(20) << pco->norm() << endl; 
+  cout << "norm coeff  = "        << setprecision(20) << coeff_->norm() << endl;
+  cout << "norm pcoeff = "        << setprecision(20) << pco->norm() << endl;
   cout << "norm delta(coeff) = "  << setprecision(8) << tt->norm() << endl;
   cout << "<<<<<<<<<<<< debug <<<<<<<<<<<<" << endl << endl;
 
@@ -320,12 +320,12 @@ shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_diagonal_hessian(shared_p
 
   for (int t = 0; t != nact_*2; ++t) {
     for (int i = 0; i != nclosed_*2; ++i) {
-      const int nt = t + nclosed_*2; 
+      const int nt = t + nclosed_*2;
       (*mitti)(i, t) += (*cfock)(nt, nt) + (*afock)(nt, nt) - (*cfock)(i, i) - (*afock)(i, i)
                         + (*rdm1)(t,t)*(*cfock)(i, i) - (*cfockd)(t, t) - (*qxr->get_conjg())(nt ,t)
                         + (*miitt2rdm)(i, t) + (*miitt1rdm)(i, t);
-    }                   
-  } 
+    }
+  }
 
   if (verbose) {
     mitti->get_submatrix(morbital, norbital, 1, 1)->print("G(1,1)_{ti,ti}");
@@ -396,7 +396,7 @@ shared_ptr<ZMatrix> ZCASBFGS::___debug___closed_active_offdiagonal_hessian_krame
   shared_ptr<const ZMatrix> rdm1 = transform_rdm1();
   if (verbose)
     rdm1->print("1rdm");
-  shared_ptr<ZMatrix> kmitit     = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true); 
+  shared_ptr<ZMatrix> kmitit     = ___debug___diagonal_integrals_exchange_kramers(coeffi, coefft, true);
   shared_ptr<ZMatrix> offd1rdmx  = ___debug___closed_active_offdiagonal_1rdm_exchange(coeffi, coefft);
   shared_ptr<ZMatrix> kmitit2rdm = ___debug___closed_active_offdiagonal_2rdm_exchange(coeffi, coefft);
   if (verbose) {
@@ -457,7 +457,7 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
   }
 
 //  shared_ptr<ZRotFile> a = srbfgs->conjugate_gradient(newgrad, newrot);
-  const bool tight = idata_->get<bool>("tight", false); 
+  const bool tight = idata_->get<bool>("tight", false);
   const int limmem = idata_->get<int>("limited_memory", 0);
   auto reset = srbfgs->check_step(energy, newgrad, newrot, tight, limmem);
   cout << " reset ?!?! = " << reset << endl;
@@ -501,8 +501,8 @@ tuple<shared_ptr<ZRotFile>, vector<double>, shared_ptr<ZRotFile>, shared_ptr<ZRo
 
 
 shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  int nr_nvirt = nvirt_ - nneg_/2; 
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2); 
+  int nr_nvirt = nvirt_ - nneg_/2;
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2);
   if (nr_nvirt != 0) {
     for (int i = 0; i != nclosed_; ++i) {
       for (int j = 0; j != nr_nvirt;   ++j) {
@@ -539,8 +539,8 @@ shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_electronic_rotations(shared_ptr<c
 
 
 shared_ptr<ZRotFile> ZCASBFGS::___debug___copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  int nvirtnr = nvirt_ - nneg_/2; 
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_); 
+  int nvirtnr = nvirt_ - nneg_/2;
+  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_);
   if (nclosed_ != 0) {
     for (int i = 0; i != nclosed_; ++i) {
       for (int j = 0; j != nneg_/2;   ++j) {
@@ -652,7 +652,7 @@ double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZR
     }
 
     auto newgrad = ___debug___compute_energy_and_gradients(newcoeff);
-    zero_positronic_elements(newgrad); 
+    zero_positronic_elements(newgrad);
     cout << setprecision(8) << " newgrad rms = " << newgrad->rms() << endl;
 
     // check wolfe conditions
@@ -670,7 +670,7 @@ double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZR
       curvature_condition = true;
     cout << scientific << " +++ grad * grad = " << grad->dot_product(grad) << " +++ " << endl;
     cout << scientific << " +++ newgrad * newgrad = " << newgrad->dot_product(newgrad) << " +++ " << endl;
-    
+
     if (sufficient_decrease) { // && curvature_condition) {
       cout << " Line search converged in " << k << " iterations " << endl;
       break;
@@ -686,6 +686,6 @@ double ZCASBFGS::___debug___line_search(shared_ptr<ZRotFile> grad, shared_ptr<ZR
     }
     cout << " alpha = " << alpha << endl;
   }
-  
+
   return alpha;
 }
