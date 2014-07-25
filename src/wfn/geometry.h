@@ -33,7 +33,6 @@
 
 namespace bagel {
 
-
 class Geometry : public Molecule {
   protected:
     // integral screening
@@ -139,7 +138,6 @@ class Geometry : public Molecule {
     void discard_relativistic() const;
 
 };
-
 
 }
 

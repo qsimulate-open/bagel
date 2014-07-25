@@ -121,7 +121,7 @@ void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
       copy_n(eric->data(), s0size*a1size_inc*s2cart, tmp);
     }
 
-    for (int i = 0; i != s2size; i++)
+    for (int i = 0; i != s2size; ++i)
       copy_n(tmp + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
 
     stack_->release(s0size * a1size_inc * s2cart, tmp);
@@ -148,7 +148,7 @@ void ComplexMixedERIBatch::eri_compute(complex<double>* eri) const {
       copy_n(eric->data(), s0size*a1size_dec*s2cart, tmp);
     }
 
-    for (int i = 0; i != s2size; i++)
+    for (int i = 0; i != s2size; ++i)
       copy_n(tmp + i*s0size*a1size_dec, s0size*a1size_dec, eri + m(0,a1size_inc,i));
 
     stack_->release(s0size * a1size_dec * s2cart, tmp);

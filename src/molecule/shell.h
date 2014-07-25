@@ -55,7 +55,7 @@ class Shell : public Shell_base {
     std::array<double,3> vector_potential_;
 
     // protected members for relativistic calculations
-    std::array<std::shared_ptr<const Matrix>,3>  small_;
+    std::array<std::shared_ptr<const Matrix>,3> small_;
     std::shared_ptr<const Shell> aux_increment_;
     std::shared_ptr<const Shell> aux_decrement_;
 
@@ -135,7 +135,7 @@ class Shell : public Shell_base {
 
     // Relativistic
     bool relativistic() const { return relativistic_; }
-    const std::shared_ptr<const Matrix>  small(const int i)  const { assert(relativistic_); return  small_[i]; }
+    const std::shared_ptr<const Matrix> small(const int i) const { assert(relativistic_); return small_[i]; }
     const std::shared_ptr<const ZMatrix> zsmall(const int i) const { assert(relativistic_); return zsmall_[i]; }
     const std::shared_ptr<const ZMatrix> zsmallc(const int i) const { assert(relativistic_); return zsmallc_[i]; }
     std::shared_ptr<const Shell> aux_increment() const { assert(relativistic_); return aux_increment_; }
