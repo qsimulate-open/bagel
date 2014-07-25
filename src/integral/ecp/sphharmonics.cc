@@ -65,10 +65,11 @@ SphHarmonics::SphHarmonics(const int l, const int m)
 
 double SphHarmonics::LegendrePolynomial(const int l, const int am, const double x) const {
 
-  if (am < 0 || am > l || fabs(x) > 1.0) throw std::runtime_error("SH: abs(m) must be in [0, l] and x in [-1, 1]");
+  if (am < 0 || am > l || fabs(x) > 1.0)
+    throw runtime_error("SH: abs(m) must be in [0, l] and x in [-1, 1]");
   double pmm = 1.0;
   if (am > 0) {
-    double somx2 = std::sqrt((1.0 - x)*(1.0 + x));
+    double somx2 = sqrt((1.0 - x)*(1.0 + x));
     double fact = 1.0;
     for (int i = 1; i <= am; ++i) {
       pmm *= -fact * somx2;
@@ -101,7 +102,8 @@ complex<double> SphHarmonics::ylm() const {
 
   const double cth = cos(theta_);
   const int am = abs(m);
-  if (am > l) throw std::runtime_error ("SphHarmonics.ylm: |m| > l");
+  if (am > l)
+    throw runtime_error ("SphHarmonics.ylm: |m| > l");
 
   const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;
@@ -112,8 +114,8 @@ complex<double> SphHarmonics::ylm() const {
   double real = coef * plm * cos(am * phi_);
   double imag = coef * plm * sin(am * phi_);
   if (m < 0) {
-    real *= std::pow(-1, m);
-    imag *= std::pow(-1, m+1);
+    real *= pow(-1, m);
+    imag *= pow(-1, m+1);
   }
 
   return complex<double>(real, imag);
@@ -127,7 +129,8 @@ double SphHarmonics::zlm() const {
 
   const double cth = cos(theta_);
   const int am = abs(m);
-  if (am > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+  if (am > l)
+    throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
   const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;
@@ -149,7 +152,8 @@ double SphHarmonics::zlm(const int l, const int m) const {
 
   const double cth = cos(theta_);
   const int am = abs(m);
-  if (am > l) throw runtime_error ("SphHarmonics.zlm: |m| > l");
+  if (am > l)
+    throw runtime_error ("SphHarmonics.zlm: |m| > l");
 
   const double plm = LegendrePolynomial(l, am, cth);
   double fact = 1.0;

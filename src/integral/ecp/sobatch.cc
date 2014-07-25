@@ -371,7 +371,6 @@ void SOBatch::init() {
     }
     fmm.resize(index);
     fm0lm1_[l-1] = fmm;
-//  cout << " index = " << index << " l = " << l << " 2l-1 = " << 2*l-1 << endl;
     assert (index <= (2*l-1)*3);
   }
 
