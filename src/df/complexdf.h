@@ -38,7 +38,7 @@ class ComplexDFHalfDist;
 
 class ComplexDFDist : public DFDist, public ComplexDF_base {
   public:
-    ComplexDFDist(const int nbas, const int naux, const std::array<std::shared_ptr<DFBlock>,2> block = {{nullptr, nullptr}},
+    ComplexDFDist(const int nbas, const int naux, const std::array<std::shared_ptr<DFBlock>,2> block = std::array<std::shared_ptr<DFBlock>,2>{{nullptr, nullptr}},
                   std::shared_ptr<const ParallelDF> df = nullptr, std::shared_ptr<Matrix> data2 = nullptr);
 
     ComplexDFDist(const std::shared_ptr<const ParallelDF> df) : DFDist(df), ComplexDF_base() { }
@@ -112,7 +112,7 @@ class ComplexDFDist_ints : public ComplexDFDist {
 
   public:
     ComplexDFDist_ints(const int nbas, const int naux, const std::vector<std::shared_ptr<const Atom>>& atoms, const std::vector<std::shared_ptr<const Atom>>& aux_atoms,
-                const double thr, const bool inverse, const double dum, const bool average = false) : ComplexDFDist(nbas, naux) {
+                       const double thr, const bool inverse, const double dum, const bool average = false) : ComplexDFDist(nbas, naux) {
 
       // 3index Integral is now made in DFBlock.
       std::vector<std::shared_ptr<const Shell>> ashell, b1shell, b2shell;
