@@ -186,7 +186,7 @@ void ZSuperCIMicro::sigma_at_ai_(shared_ptr<const ZRotFile> cc, shared_ptr<ZRotF
   ZMatrix tmp(nclosed*2, nact*2);
   tmp.zero();
   for (int i = 0; i != nact*2; ++i) {
-    const double fac = -2.0 * std::sqrt(casscf_->occup(i)); // TODO check on a factor of 0.5
+    const double fac = -2.0 * std::sqrt(casscf_->occup(i));
     zaxpy_(nclosed*2, fac, fockact_->element_ptr(0,i), 1, tmp.element_ptr(0,i), 1);
   }
   zgemm3m_("N", "N", nvirt*2, nact*2, nclosed*2, 1.0, cc->ptr_vc(), nvirt*2, tmp.data(), nclosed*2, 1.0, sigma->ptr_va(), nvirt*2);
