@@ -69,8 +69,8 @@ complex<double> SOBatch::theta(const int m) const {
   const double tau = (m < 0) ? 0.0 : 1.0;
   const double delta = (m == 0) ? 1.0 : 0.0;
 
-  const double re = (1 - delta) * sqrt(0.5) * tau + 0.5 * delta;
-  const double im = (1 - delta) * sqrt(0.5) * (1.0 - tau);
+  const double re = (m==0) ? 0.5 : (1-delta) * sqrt(0.5) * tau;
+  const double im = (m==0) ? 0.0 : (1-delta) * sqrt(0.5)* (1.0-tau);
 
   return complex<double>(re, im);
 }
@@ -122,7 +122,7 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
 
       for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
         for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
-          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+          double smu = 0.0;
           for (int mu = 0; mu <= 2*ld; ++mu) {
 
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
@@ -139,9 +139,10 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
                 sAB += usp1[i] * usp[j] * xyz;
               }
             }
-            out += zAB_[ld][mu] * sAB;
+            smu += zAB_[ld][mu] * sAB;
           }
-          out *= c0_[index];
+          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+          out += smu*c0_[index];
         }
       }
     }
@@ -165,7 +166,7 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
 
       for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
         for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
-          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+          double smu = 0.0;
           for (int mu = 0; mu <= 2*ld; ++mu) {
 
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
@@ -182,9 +183,10 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
                 sCB += usp1[i] * usp[j] * xyz;
               }
             }
-            out += zCB_[ld][mu] * sCB;
+            smu += zCB_[ld][mu] * sCB;
           }
-          out *= c1_[index];
+          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+          out += smu*c1_[index];
         }
       }
     }
@@ -210,23 +212,21 @@ vector<double> SOBatch::project(const int l, const vector<double> r) {
 
     for (int i0 = begin0; i0 != end0; ++i0) {
       const double coef0 = basisinfo_[0]->contractions()[cont0_][i0];
-      const double exp0  = basisinfo_[0]->exponents(i0);
+      const double exp0 = basisinfo_[0]->exponents(i0);
       const double fac0 = coef0 * exp(-exp0*r[ir]*(r[ir]-2.0*dAB_));
-      for (int i = 0; i <= l0_+l; ++i) {
+      for (int i = 0; i <= l0_+l; ++i)
         bessel0[i] += fac0 * msbessel.compute(i, 2.0*exp0*dAB_*r[ir]);
-      }
     }
     double exp01 = 0.0;
     for (int i1 = begin1; i1 != end1; ++i1) {
       const double coef1 = basisinfo_[1]->contractions()[cont1_][i1];
-      const double exp1  = basisinfo_[1]->exponents(i1);
+      const double exp1 = basisinfo_[1]->exponents(i1);
       const double fac1 = coef1 * exp(-exp1*r[ir]*(r[ir]-2.0*dCB_));
-      for (int i = 0; i <= l1_+l; ++i) {
+      for (int i = 0; i <= l1_+l; ++i)
         bessel1[i] += fac1 * msbessel.compute(i, 2.0*exp1*dCB_*r[ir]);
-      }
       for (int i0 = begin0; i0 != end0; ++i0) {
-        const double exp0  = basisinfo_[0]->exponents(i0);
-        exp01 +=  -exp0*exp1*pow(dAC_, 2)/(exp0+exp1);
+        const double exp0 = basisinfo_[0]->exponents(i0);
+        exp01 += -exp0*exp1*pow(dAC_, 2)/(exp0+exp1);
       }
     }
     vector<double> b((l0_+l+1)*(l1_+l+1));
