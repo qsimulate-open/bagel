@@ -52,7 +52,6 @@ class SOBatch : public RadialInt {
 
     void map_angular_number();
     std::complex<double> theta(const int m) const;
-    std::complex<double> mu(const int m1, const int m2) const;
 
     std::array<double, 3> fm0lm1(const int l, const int m0, const int m1) const;
     std::vector<double> project(const int l, const std::vector<double> r);

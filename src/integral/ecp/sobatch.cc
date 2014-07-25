@@ -75,15 +75,6 @@ complex<double> SOBatch::theta(const int m) const {
   return complex<double>(re, im);
 }
 
-complex<double> SOBatch::mu(const int m0, const int m1) const {
-  const complex<double> theta0 = theta(m0);
-  const complex<double> theta1 = theta(m1);
-  complex<double> out = conj(theta0) * theta1;
-  if (m0 * m1 == 0) out *= 2.0;
-
-  return out;
-}
-
 array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) const { /* Im{aa}, Re{ab}, Im{ab} */
 
   assert(l > 0);
@@ -99,7 +90,9 @@ array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) const 
   const double tau0 = (m0 < 0) ? 0.0 : 1.0;
   const double tau1 = (m1 < 0) ? 0.0 : 1.0;
 
-  complex<double> ab = 0.5 * mu(m0, m1) * (deltap - pow(-1.0, tau0+tau1) * deltam);
+  const complex<double> mu = (m0*m1==0) ? 0.5 : conj(theta(m0))*theta(m1);
+
+  complex<double> ab = 0.5 * mu * (deltap - pow(-1.0, tau0+tau1) * deltam);
   ab *= sqrt((l + m0*m0 - abs(m0*m1)) * (l + m1*m1 - abs(m0*m1)));
 
   out[1] = real(ab);
