@@ -32,7 +32,7 @@
 #include <src/wfn/method.h>
 #include <src/london/relhcore_london.h>
 #include <src/london/reloverlap_london.h>
-#include <src/london/reldfhalf_london.h>
+#include <src/rel/reldfhalf.h>
 
 namespace bagel {
 
@@ -66,7 +66,7 @@ class Dirac_London : public Method {
 
     // if gradient is requested, half-transformed integrals will be reused
     bool do_grad_;
-    std::list<std::shared_ptr<RelDFHalf_London>> half_;
+    std::list<std::shared_ptr<RelDFHalf>> half_;
 
   public:
     Dirac_London() { }
@@ -81,7 +81,7 @@ class Dirac_London : public Method {
     void print_eig() const;
     double energy() const { return energy_; }
 
-    std::list<std::shared_ptr<RelDFHalf_London>> half() const { return half_; }
+    std::list<std::shared_ptr<RelDFHalf>> half() const { return half_; }
     void discard_half() { half_.clear(); }
 
 };

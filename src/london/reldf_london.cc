@@ -56,8 +56,8 @@ shared_ptr<const RelDF_London> RelDF_London::swap() const {
 }
 
 
-vector<shared_ptr<RelDFHalf_London>> RelDF_London::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
-  vector<shared_ptr<RelDFHalf_London>> out;
+vector<shared_ptr<RelDFHalf>> RelDF_London::compute_half_transform(array<shared_ptr<const Matrix>,4> rc, array<shared_ptr<const Matrix>,4> ic) const {
+  vector<shared_ptr<RelDFHalf>> out;
 
   // first make a subset
   vector<vector<shared_ptr<const SpinorInfo>>> subsets;
@@ -72,12 +72,12 @@ vector<shared_ptr<RelDFHalf_London>> RelDF_London::compute_half_transform(array<
 
   // transform
   for (auto& i : subsets)
-    out.push_back(make_shared<RelDFHalf_London>(shared_from_this(), i, rc, ic));
+    out.push_back(make_shared<RelDFHalf>(shared_from_this(), i, rc, ic));
   return out;
 }
 
 
-vector<shared_ptr<ZMatrix>> RelDF_London::compute_Jop(list<shared_ptr<const CDMatrix_London>>& cd) const {
+vector<shared_ptr<ZMatrix>> RelDF_London::compute_Jop(list<shared_ptr<const CDMatrix>>& cd) const {
 
   vector<shared_ptr<ZVectorB>> sum;
   for (auto& b : basis_) {

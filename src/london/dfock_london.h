@@ -31,7 +31,7 @@
 #include <src/math/zmatrix.h>
 #include <src/london/reldf_london.h>
 #include <src/london/relhcore_london.h>
-#include <src/london/cdmatrix_london.h>
+#include <src/rel/cdmatrix.h>
 
 namespace bagel {
 
@@ -43,15 +43,15 @@ class DFock_London : public ZMatrix {
 
     void two_electron_part(const std::shared_ptr<const ZMatrix> coeff, const double scale_ex);
 
-    void add_Jop_block(std::shared_ptr<const RelDF_London>, std::list<std::shared_ptr<const CDMatrix_London>>, const double scale);
-    void add_Exop_block(std::shared_ptr<RelDFHalf_London>, std::shared_ptr<RelDFHalf_London>, const double scale, const bool diag = false);
+    void add_Jop_block(std::shared_ptr<const RelDF_London>, std::list<std::shared_ptr<const CDMatrix>>, const double scale);
+    void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
     void driver(std::array<std::shared_ptr<const Matrix>, 4> rocoeff, std::array<std::shared_ptr<const Matrix>, 4> iocoeff,
                            std::array<std::shared_ptr<const Matrix>, 4> trocoeff, std::array<std::shared_ptr<const Matrix>, 4>tiocoeff, bool gaunt, bool breit,
                            const double scale_exchange);
 
     // when gradient is requested, we store half-transformed integrals
     bool store_half_;
-    std::list<std::shared_ptr<RelDFHalf_London>> half_;
+    std::list<std::shared_ptr<RelDFHalf>> half_;
 
     // if true, do not use bra-ket symmetry in the exchange build (only useful for breit when accurate orbitals are needed).
     bool robust_;
@@ -81,10 +81,10 @@ class DFock_London : public ZMatrix {
         }
     }
     static std::list<std::shared_ptr<RelDF_London>> make_dfdists(std::vector<std::shared_ptr<const ComplexDFDist>>, bool);
-    static std::list<std::shared_ptr<RelDFHalf_London>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const Matrix>,4>,
+    static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF_London>>, std::array<std::shared_ptr<const Matrix>,4>,
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
 
-    std::list<std::shared_ptr<RelDFHalf_London>> half() const { assert(store_half_); return half_; }
+    std::list<std::shared_ptr<RelDFHalf>> half() const { assert(store_half_); return half_; }
 
 };
 

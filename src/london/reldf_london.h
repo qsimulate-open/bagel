@@ -31,13 +31,13 @@
 #include <src/math/zmatrix.h>
 #include <src/rel/reldfbase.h>
 #include <src/df/complexdf.h>
-#include <src/london/cdmatrix_london.h>
-#include <src/london/reldfhalf_london.h>
+#include <src/rel/cdmatrix.h>
+#include <src/rel/reldfhalf.h>
 
 namespace bagel {
 
-class RelDFHalf_London;
-class CDMatrix_London;
+class RelDFHalf;
+class CDMatrix;
 
 class RelDF_London : public RelDFBase, public std::enable_shared_from_this<RelDF_London> {
   protected:
@@ -72,11 +72,11 @@ class RelDF_London : public RelDFBase, public std::enable_shared_from_this<RelDF
     bool swapped() const { return swap_; }
     std::shared_ptr<const RelDF_London> swap() const;
 
-    std::vector<std::shared_ptr<RelDFHalf_London>>
+    std::vector<std::shared_ptr<RelDFHalf>>
         compute_half_transform(std::array<std::shared_ptr<const Matrix>,4> r,
                                std::array<std::shared_ptr<const Matrix>,4> i) const;
 
-    std::vector<std::shared_ptr<ZMatrix>> compute_Jop(std::list<std::shared_ptr<const CDMatrix_London>>& cd) const;
+    std::vector<std::shared_ptr<ZMatrix>> compute_Jop(std::list<std::shared_ptr<const CDMatrix>>& cd) const;
 };
 
 }
