@@ -50,13 +50,16 @@ namespace detail {
     static const bool value = std::is_base_of<ZVecView, T>::value or std::is_base_of<ZVectorB, T>::value;
   };
   template <typename T, typename U>
-  struct is_valid_pair {
-    static const bool value = (is_mat<T>::value and is_mat<U>::value) or (is_zmat<T>::value and is_zmat<U>::value)
-                           or (is_vec<T>::value and is_vec<U>::value) or (is_zvec<T>::value and is_zvec<U>::value);
-  };
-  template <typename T, typename U>
   struct is_matrix_pair {
     static const bool value = (is_mat<T>::value and is_mat<U>::value) or (is_zmat<T>::value and is_zmat<U>::value);
+  };
+  template <typename T, typename U>
+  struct is_vector_pair {
+    static const bool value = (is_vec<T>::value and is_vec<U>::value) or (is_zvec<T>::value and is_zvec<U>::value);
+  };
+  template <typename T, typename U>
+  struct is_valid_pair {
+    static const bool value = is_matrix_pair<T, U>::value or is_vector_pair<T, U>::value;
   };
   template <typename T>
   struct is_any_matrix {
@@ -305,45 +308,76 @@ template <class T, class U,
 auto operator^(const T& a,  const U& b) ->decltype(impl::multTN(a,b)) { return impl::multNT(a,b); }
 
 // operator*=
-inline Matrix& operator*=(Matrix& a,  const Matrix& b)  { a = a*b; return a; }
-inline Matrix& operator*=(Matrix& a,  const MatView& b) { a = a*b; return a; }
-
-inline ZMatrix& operator*=(ZMatrix& a,  const ZMatrix& b)  { a = a*b; return a; }
-inline ZMatrix& operator*=(ZMatrix& a,  const ZMatView& b) { a = a*b; return a; }
+template <class T, class U,
+          class = typename std::enable_if<detail::is_matrix_pair<T,U>::value and std::is_base_of<typename detail::returnable<T>::type, T>::value>::type
+         >
+T& operator*=(T& a,  const U& b) { a = a*b; return a; }
 
 // operator % between vectors (which will return dot products).
-inline double operator%(const VectorB& a, const VectorB& b) { return btas::dotc(a, b); }
-inline double operator%(const VectorB& a, const VecView& b) { return btas::dotc(a, b); }
-inline double operator%(const VecView& a, const VectorB& b) { return btas::dotc(a, b); }
-inline double operator%(const VecView& a, const VecView& b) { return btas::dotc(a, b); }
-inline std::complex<double> operator%(const ZVectorB& a, const ZVectorB& b) { return btas::dotc(a, b); }
-inline std::complex<double> operator%(const ZVectorB& a, const ZVecView& b) { return btas::dotc(a, b); }
-inline std::complex<double> operator%(const ZVecView& a, const ZVectorB& b) { return btas::dotc(a, b); }
-inline std::complex<double> operator%(const ZVecView& a, const ZVecView& b) { return btas::dotc(a, b); }
+template <typename T, typename U, class = typename std::enable_if<detail::is_vector_pair<T, U>::value>::type>
+auto operator%(const T& a, const U& b) -> decltype(btas::dotc(a, b)) { return btas::dotc(a, b); }
 
 // operator * and % between Matrix and VectorB
-inline VectorB operator*(const Matrix& a, const VectorB& b)  { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator*(const Matrix& a, const VecView& b)  { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator*(const MatView& a, const VectorB& b) { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator*(const MatView& a, const VecView& b) { VectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const Matrix& a, const VectorB& b)  { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const Matrix& a, const VecView& b)  { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const MatView& a, const VectorB& b) { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const MatView& a, const VecView& b) { VectorB out(a.extent(1)); btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const VectorB& a, const Matrix& b)  { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const VecView& a, const Matrix& b)  { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const VectorB& a, const MatView& b) { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
-inline VectorB operator%(const VecView& a, const MatView& b) { VectorB out(a.extent(1)); btas::contract(1.0, b, {1,0}, a, {1}, 0.0, out, {0}); return out; }
-inline Matrix  operator^(const VectorB& a, const VectorB& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
-inline Matrix  operator^(const VectorB& a, const VecView& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
-inline Matrix  operator^(const VecView& a, const VectorB& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
-inline Matrix  operator^(const VecView& a, const VecView& b) { Matrix out(a.extent(0), b.extent(0)); /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/ dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0)); return out; }
+template <class T, class U,
+          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
+                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
+                                         >::type
+         >
+typename detail::returnable<U>::type operator*(const T& a, const U& b)  {
+  typename detail::returnable<U>::type out(a.extent(0));
+  btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0});
+  return out;
+}
 
-inline ZVectorB operator*(const ZMatrix& a, const ZVectorB& b)  { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline ZVectorB operator*(const ZMatrix& a, const ZVecView& b)  { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline ZVectorB operator*(const ZMatView& a, const ZVectorB& b) { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-inline ZVectorB operator*(const ZMatView& a, const ZVecView& b) { ZVectorB out(a.extent(0)); btas::contract(1.0, a, {0,1}, b, {1}, 0.0, out, {0}); return out; }
-// TODO % and ^ operators require specification of complex conjugate
+template <class T, class U,
+          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
+                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
+                                         >::type
+         >
+typename detail::returnable<U>::type operator%(const T& a, const U& b)  {
+  typename detail::returnable<U>::type out(a.extent(1));
+  btas::contract(1.0, a, {1,0}, b, {1}, 0.0, out, {0}, true, false);
+  return out;
+}
+
+template <class T, class U,
+          class = typename std::enable_if<detail::is_mat<T>::value and detail::is_vec<U>::value
+                                      and std::is_same<typename std::remove_cv<typename T::value_type>::type, typename std::remove_cv<typename U::value_type>::type>::value
+                                         >::type
+         >
+typename detail::returnable<U>::type operator%(const U& b, const T& a)  {
+  auto out = a % b;
+  for (auto& i : out)
+    i = detail::conj(i);
+  return out;
+}
+
+// TODO to be cleaned up
+inline Matrix  operator^(const VectorB& a, const VectorB& b) {
+  Matrix out(a.extent(0), b.extent(0));
+  /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/
+  dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0));
+  return out;
+}
+inline Matrix  operator^(const VectorB& a, const VecView& b) {
+  Matrix out(a.extent(0), b.extent(0));
+  /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/
+  dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0));
+  return out;
+}
+inline Matrix  operator^(const VecView& a, const VectorB& b) {
+  Matrix out(a.extent(0), b.extent(0));
+  /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/
+  dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0));
+  return out;
+}
+inline Matrix  operator^(const VecView& a, const VecView& b) {
+  Matrix out(a.extent(0), b.extent(0));
+  /*btas::contract(1.0, a, {0}, b, {1}, 0.0, out, {0,1});*/
+  dger_(a.extent(0), b.extent(0), 1.0, a.data(), 1, b.data(), 1, out.data(), a.extent(0));
+  return out;
+}
+
 
 // operator* with scalar
 template <class T, typename U,
