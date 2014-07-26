@@ -104,25 +104,25 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
   {
     auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_increment(), shells_[2]->aux_increment()}}, 2.0, 0.0, true, stack_);
     eric->compute();
-    for (int i = 0; i != a2size_inc; i++)
+    for (int i = 0; i != a2size_inc; ++i)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,i));
   }
   if (shells_[1]->aux_decrement() && shells_[2]->aux_decrement()) {
     auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_decrement(), shells_[2]->aux_decrement()}}, 2.0, 0.0, true, stack_);
     eric->compute();
-    for (int i = 0; i != a2size_dec; i++)
+    for (int i = 0; i != a2size_dec; ++i)
       copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_inc+i));
   }
   if (shells_[1]->aux_decrement()) {
     auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_decrement(), shells_[2]->aux_increment()}}, 2.0, 0.0, true, stack_);
     eric->compute();
-    for (int i = 0; i != a2size_inc; i++)
+    for (int i = 0; i != a2size_inc; ++i)
       copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc, i));
   }
   if (shells_[2]->aux_decrement()) {
     auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_increment(), shells_[2]->aux_decrement()}}, 2.0, 0.0, true, stack_);
     eric->compute();
-    for (int i = 0; i != a2size_dec; i++)
+    for (int i = 0; i != a2size_dec; ++i)
       copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_inc+i));
   }
 
@@ -134,31 +134,31 @@ void ComplexSmallERIBatch::eri_compute(complex<double>* eri) const {
     {
       auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_increment(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
       eric->compute();
-      for (int i = 0; i != a2size_same; i++)
+      for (int i = 0; i != a2size_same; ++i)
         copy_n(eric->data() + i * s0size * a1size_inc, s0size * a1size_inc, eri + m(0,0,a2size_id+i));
     }
     {
       auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_increment()}}, 2.0, 0.0, true, stack_);
       eric->compute();
-      for (int i = 0; i != a2size_inc; i++)
+      for (int i = 0; i != a2size_inc; ++i)
         copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,i));
     }
     {
       auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
       eric->compute();
-      for (int i = 0; i != a2size_same; i++)
+      for (int i = 0; i != a2size_same; ++i)
         copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,a2size_id+i));
     }
     if (shells_[1]->aux_decrement()) {
       auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_decrement(), shells_[2]->aux_same()}}, 2.0, 0.0, true, stack_);
       eric->compute();
-      for (int i = 0; i != a2size_same; i++)
+      for (int i = 0; i != a2size_same; ++i)
         copy_n(eric->data() + i * s0size * a1size_dec, s0size * a1size_dec, eri + m(0,a1size_inc,a2size_id+i));
     }
     if (shells_[2]->aux_decrement()) {
       auto eric = make_shared<ComplexERIBatch>(array<shared_ptr<const Shell>,4>{{dummy, shells_[0], shells_[1]->aux_same(), shells_[2]->aux_decrement()}}, 2.0, 0.0, true, stack_);
       eric->compute();
-      for (int i = 0; i != a2size_dec; i++)
+      for (int i = 0; i != a2size_dec; ++i)
         copy_n(eric->data() + i * s0size * a1size_same, s0size * a1size_same, eri + m(0,a1size_id,a2size_inc+i));
     }
   } else assert(!shells_[2]->aux_same());

@@ -68,11 +68,11 @@ class ComplexDFIntTask {
         double* const data_i = dfblocks_[i2+1]->data();
         for (int j0 = offset_[0]; j0 != offset_[0] + shell_[3]->nbasis(); ++j0) {
           for (int j1 = offset_[1]; j1 != offset_[1] + shell_[2]->nbasis(); ++j1, ppt += shell_[1]->nbasis()) {
-            for (int n=0; n!=shell_[1]->nbasis(); n++) data_r[offset_[2]+naux*(j1+nbin*j0)+n] = std::real(ppt[n]);
-            for (int n=0; n!=shell_[1]->nbasis(); n++) data_i[offset_[2]+naux*(j1+nbin*j0)+n] = std::imag(ppt[n]);
+            for (int n=0; n!=shell_[1]->nbasis(); ++n) data_r[offset_[2]+naux*(j1+nbin*j0)+n] = std::real(ppt[n]);
+            for (int n=0; n!=shell_[1]->nbasis(); ++n) data_i[offset_[2]+naux*(j1+nbin*j0)+n] = std::imag(ppt[n]);
             if (N == 2) {
-              for (int n=0; n!=shell_[1]->nbasis(); n++) data_r[offset_[2]+naux*(j0+nbin*j1)+n] = std::real(ppt[n]);
-              for (int n=0; n!=shell_[1]->nbasis(); n++) data_i[offset_[2]+naux*(j0+nbin*j1)+n] = -std::imag(ppt[n]);
+              for (int n=0; n!=shell_[1]->nbasis(); ++n) data_r[offset_[2]+naux*(j0+nbin*j1)+n] = std::real(ppt[n]);
+              for (int n=0; n!=shell_[1]->nbasis(); ++n) data_i[offset_[2]+naux*(j0+nbin*j1)+n] = -std::imag(ppt[n]);
             }
           }
         }
