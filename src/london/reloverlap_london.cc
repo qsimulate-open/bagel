@@ -56,18 +56,7 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   const int m = tildeo.mdim();
 
   const int j = mol_->nbasis();
-  ZMatrix soverlap(2*j, 2*j);
-  const ZMatrix scalekinetic = *kinetic_ * (0.5/(c__*c__));
-  soverlap.copy_block(0, 0, n, n, scalekinetic);
-  soverlap.copy_block(n, n, n, n, scalekinetic);
-  const complex<double> r2 (0.25 / (c__*c__));
-  const complex<double> i2 (0.0, r2.real());
-  soverlap.add_block( r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
-  soverlap.add_block(-r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
-  soverlap.add_block( r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
-  soverlap.add_block( r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
-  soverlap.add_block(-i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
-  soverlap.add_block( i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
+  const ZMatrix soverlap = *get_submatrix(2*j, 2*j, 2*j, 2*j);
   const ZMatrix tildes = *soverlap.tildex(thresh/(c__*c__));
   if (tildes.ndim() != 2*n || tildes.mdim() != 2*m)
     throw logic_error("positive and negative energy states have different linear dependency");
@@ -86,18 +75,7 @@ shared_ptr<ZMatrix> RelOverlap_London::inverse() const {
   oinv.inverse();
   const int n = oinv.ndim();
 
-  ZMatrix soverlap(2*n, 2*n);
-  const ZMatrix scalekinetic = *kinetic_ * (0.5/(c__*c__));
-  soverlap.copy_block(0, 0, n, n, scalekinetic);
-  soverlap.copy_block(n, n, n, n, scalekinetic);
-  const complex<double> r2 (0.25 / (c__*c__));
-  const complex<double> i2 (0.0, r2.real());
-  soverlap.add_block( r2*mol_->magnetic_field(2), 0, 0, n, n, *overlap_);
-  soverlap.add_block(-r2*mol_->magnetic_field(2), n, n, n, n, *overlap_);
-  soverlap.add_block( r2*mol_->magnetic_field(0), 0, n, n, n, *overlap_);
-  soverlap.add_block( r2*mol_->magnetic_field(0), n, 0, n, n, *overlap_);
-  soverlap.add_block(-i2*mol_->magnetic_field(1), 0, n, n, n, *overlap_);
-  soverlap.add_block( i2*mol_->magnetic_field(1), n, 0, n, n, *overlap_);
+  ZMatrix soverlap = *get_submatrix(2*n, 2*n, 2*n, 2*n);
   soverlap.inverse();
   if (soverlap.ndim() != 2*oinv.ndim())
     throw logic_error("positive and negative energy states have different linear dependency");
