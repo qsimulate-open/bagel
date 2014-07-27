@@ -67,10 +67,9 @@ void SOBatch::map_angular_number() {
 
 complex<double> SOBatch::theta(const int m) const {
   const double tau = (m < 0) ? 0.0 : 1.0;
-  const double delta = (m == 0) ? 1.0 : 0.0;
 
-  const double re = (m==0) ? 0.5 : (1-delta) * sqrt(0.5) * tau;
-  const double im = (m==0) ? 0.0 : (1-delta) * sqrt(0.5)* (1.0-tau);
+  const double re = (m==0) ? 0.5 : tau/sqrt(2.0);
+  const double im = (m==0) ? 0.0 : (1.0-tau)/sqrt(2.0);
 
   return complex<double>(re, im);
 }
@@ -90,7 +89,8 @@ array<double, 3> SOBatch::fm0lm1(const int l, const int m0, const int m1) const 
   const double tau0 = (m0 < 0) ? 0.0 : 1.0;
   const double tau1 = (m1 < 0) ? 0.0 : 1.0;
 
-  const complex<double> mu = (m0*m1==0) ? 0.5 : conj(theta(m0))*theta(m1);
+  complex<double> mu = conj(theta(m0))*theta(m1);
+  if (m0*m1==0) mu *= 2.0;
 
   complex<double> ab = 0.5 * mu * (deltap - pow(-1.0, tau0+tau1) * deltam);
   ab *= sqrt((l + m0*m0 - abs(m0*m1)) * (l + m1*m1 - abs(m0*m1)));
