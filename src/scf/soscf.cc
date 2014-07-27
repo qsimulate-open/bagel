@@ -34,8 +34,10 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(SOSCF)
 
 SOSCF::SOSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : SCF_base(idata, geom, re) {
+ : SCF_base(idata, geom, re), dodf_(idata->get<bool>("df",true)) {
   cout << indent << "*** Two-component ECP-SCF ***" << endl << endl;
+  if (!dodf_)
+    throw runtime_error("SOSCF requires density fitting!");
   soeig_ = unique_ptr<double[]> (new double[geom_->nbasis() * 2]);
   sohcore_base_ = make_shared<const SOHcore_base>(geom);
 
