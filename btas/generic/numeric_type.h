@@ -137,6 +137,11 @@ template <> struct NumericType<std::complex<double>>
    }
 };
 
+namespace impl {
+    template<typename T> T conj(const T& t) { return t; }
+    template<typename T> std::complex<T> conj(const std::complex<T>& t) { return std::conj(t); }
+}
+
 }; // namespace btas
 
 #endif // __BTAS_NUMERIC_TYPE_H

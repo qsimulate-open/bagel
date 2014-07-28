@@ -139,58 +139,7 @@ namespace btas {
 namespace std {
 
   template <typename T, size_t N>
-  auto cbegin(const std::array<T,N>& x) -> decltype(x.cbegin()) {
-    return x.cbegin();
-  }
-  template <typename T, size_t N>
-  auto cend(const std::array<T,N>& x) -> decltype(x.cend()) {
-    return x.cend();
-  }
-  template <typename T, size_t N>
-  auto rbegin(std::array<T,N>& x) -> decltype(x.rbegin()) {
-    return x.rbegin();
-  }
-  template <typename T, size_t N>
-  auto rend(std::array<T,N>& x) -> decltype(x.rend()) {
-    return x.rend();
-  }
-
-  template <typename T>
-  auto cbegin(const btas::varray<T>& x) -> decltype(x.cbegin()) {
-    return x.cbegin();
-  }
-  template <typename T>
-  auto cend(const btas::varray<T>& x) -> decltype(x.cend()) {
-    return x.cend();
-  }
-  template <typename T>
-  auto rbegin(btas::varray<T>& x) -> decltype(x.rbegin()) {
-    return x.rbegin();
-  }
-  template <typename T>
-  auto rend(btas::varray<T>& x) -> decltype(x.rend()) {
-    return x.rend();
-  }
-
-  template <typename T>
-  auto cbegin(const std::vector<T>& x) -> decltype(x.cbegin()) {
-    return x.cbegin();
-  }
-  template <typename T>
-  auto cend(const std::vector<T>& x) -> decltype(x.cend()) {
-    return x.cend();
-  }
-  template <typename T>
-  auto rbegin(std::vector<T>& x) -> decltype(x.rbegin()) {
-    return x.rbegin();
-  }
-  template <typename T>
-  auto rend(std::vector<T>& x) -> decltype(x.rend()) {
-    return x.rend();
-  }
-
-  template <typename T, size_t N>
-  const T* cbegin(const T (&x)[N]) {
+  const T* cbegin(const T(&x)[N]) {
     return &x[0];
   }
   template <typename T, size_t N>
@@ -205,6 +154,38 @@ namespace std {
   const T* rend(T(&x)[N]) {
     return &x[0] - 1;
   }
+
+  template <typename T>
+  const T* cbegin(const T* x) {
+    return x;
+  }
+  template <typename T>
+  const T* cbegin(T* x) {
+    return x;
+  }
+  template <typename T>
+  T* begin(T* x) {
+    return x;
+  }
+
+#if __cplusplus == 201103L // add useful bits to make transition to C++14 easier
+  template <typename C>
+  constexpr auto cbegin(const C& x) -> decltype(std::begin(x)) {
+    return std::begin(x);
+  }
+  template <typename C>
+  constexpr auto cend(const C& x) -> decltype(std::end(x)) {
+    return std::end(x);
+  }
+  template <typename C>
+  auto rbegin(C& x) -> decltype(x.rbegin()) {
+    return x.rbegin();
+  }
+  template <typename C>
+  auto rend(C& x) -> decltype(x.rend()) {
+    return x.rend();
+  }
+#endif
 
   template <typename T>
   struct make_unsigned<std::vector<T> > {
