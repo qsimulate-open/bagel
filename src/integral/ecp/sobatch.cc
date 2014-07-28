@@ -107,17 +107,18 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
 
   const int l = static_cast<int>(round(sqrt(usp.size()*2)-1));
   assert((l+1)*(l+2) == usp.size() * 2);
-  for (int j = 0; j != usp.size(); ++j) {
-    if (usp[j] != 0.0) {
-      map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
-      assert (pj != map_[l].end());
-      const array<int, 3> kj = pj->second;
 
-      for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
-        for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
-          double smu = 0.0;
+  for (int a = max(0, h-ang0_[1]-ang0_[2]); a <= min(ang0_[0], h); ++a) {
+    for (int b = max(0, h-a-ang0_[2]); b <= min(ang0_[1], h-a); ++b) {
+
+      double smu = 0.0;
+      for (int j = 0; j != usp.size(); ++j) {
+        if (usp[j] != 0.0) {
+          map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+          assert (pj != map_[l].end());
+          const array<int, 3> kj = pj->second;
+
           for (int mu = 0; mu <= 2*ld; ++mu) {
-
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
             double sAB = 0.0;
             for (int i = 0; i != usp1.size(); ++i) {
@@ -134,10 +135,10 @@ double SOBatch::angularA(const int h, const int ld, const vector<double> usp) {
             }
             smu += zAB_[ld][mu] * sAB;
           }
-          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-          out += smu*c0_[index];
         }
       }
+      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+      out += smu*c0_[index];
     }
   }
 
@@ -151,17 +152,18 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
 
   const int l = static_cast<int>(round(sqrt(usp.size()*2)-1));
   assert((l+1)*(l+2) == usp.size() * 2);
-  for (int j = 0; j != usp.size(); ++j) {
-    if (usp[j] != 0.0) {
-      map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
-      assert (pj != map_[l].end());
-      const array<int, 3> kj = pj->second;
 
-      for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
-        for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
-          double smu = 0.0;
+  for (int a = max(0, h-ang1_[1]-ang1_[2]); a <= min(ang1_[0], h); ++a) {
+    for (int b = max(0, h-a-ang1_[2]); b <= min(ang1_[1], h-a); ++b) {
+
+      double smu = 0.0;
+      for (int j = 0; j != usp.size(); ++j) {
+        if (usp[j] != 0.0) {
+          map<int, array<int, 3>>::const_iterator pj = map_[l].find(j);
+          assert (pj != map_[l].end());
+          const array<int, 3> kj = pj->second;
+
           for (int mu = 0; mu <= 2*ld; ++mu) {
-
             const vector<double> usp1 = sphusplist.sphuspfunc_call(ld, mu-ld);
             double sCB = 0.0;
             for (int i = 0; i != usp1.size(); ++i) {
@@ -178,10 +180,10 @@ double SOBatch::angularC(const int h, const int ld, const vector<double> usp) {
             }
             smu += zCB_[ld][mu] * sCB;
           }
-          const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
-          out += smu*c1_[index];
         }
       }
+      const int index = a * ANG_HRR_END * ANG_HRR_END + b * ANG_HRR_END + h - a - b;
+      out += smu*c1_[index];
     }
   }
 
