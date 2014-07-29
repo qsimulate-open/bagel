@@ -319,19 +319,20 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatri
 shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
   shared_ptr<ZMatrix> tmp = rdm2->clone();
   auto start = make_shared<const ZMatrix>(*coeff);
+  shared_ptr<const ZMatrix> start_conjg = start->get_conjg();
   int ndim  = coeff->ndim();
   int ndim2 = rdm2->ndim();
   unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
-  // first half transformation 
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->get_conjg()->data(), ndim, 0.0, buf.get(), ndim2*ndim);
-  for (int i = 0; i != ndim; ++i) 
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
+  // first half transformation
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->data(), ndim, 0.0, buf.get(), ndim2*ndim);
+  for (int i = 0; i != ndim; ++i)
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, tmp->data()+i*ndim2*ndim, ndim2);
   // then tranpose
   blas::transpose(tmp->data(), ndim2, ndim2, buf.get());
   // and do it again
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start->get_conjg()->data(), ndim, 0.0, tmp->data(), ndim2*ndim);
+  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start->data(), ndim, 0.0, tmp->data(), ndim2*ndim);
   for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
+    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, tmp->data()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
   // to make sure for non-symmetric density matrices (and anyway this should be cheap).
   blas::transpose(buf.get(), ndim2, ndim2, tmp->data());
   auto out = make_shared<const ZMatrix>(*tmp);
