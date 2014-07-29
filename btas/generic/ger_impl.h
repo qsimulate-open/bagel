@@ -62,11 +62,12 @@ template<> struct ger_impl<true>
 
 #ifdef _HAS_CBLAS
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, float>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const unsigned long& Msize,
       const unsigned long& Nsize,
-      const float& alpha,
+      const _T& alpha,
       const float* itrX,
       const typename std::iterator_traits<float*>::difference_type& incX,
       const float* itrY,
@@ -77,11 +78,12 @@ template<> struct ger_impl<true>
       cblas_sger(order, Msize, Nsize, alpha, itrX, incX, itrY, incY, itrA, LDA);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, double>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const unsigned long& Msize,
       const unsigned long& Nsize,
-      const double& alpha,
+      const _T& alpha,
       const double* itrX,
       const typename std::iterator_traits<double*>::difference_type& incX,
       const double* itrY,
@@ -92,11 +94,12 @@ template<> struct ger_impl<true>
       cblas_dger(order, Msize, Nsize, alpha, itrX, incX, itrY, incY, itrA, LDA);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<float>>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const unsigned long& Msize,
       const unsigned long& Nsize,
-      const std::complex<float>& alpha,
+      const _T& alpha,
       const std::complex<float>* itrX,
       const typename std::iterator_traits<std::complex<float>*>::difference_type& incX,
       const std::complex<float>* itrY,
@@ -105,14 +108,16 @@ template<> struct ger_impl<true>
       const unsigned long& LDA)
    {
       // FIXME: implement cgerc and cgeru separately.
-      cblas_cgeru(order, Msize, Nsize, &alpha, itrX, incX, itrY, incY, itrA, LDA);
+      const std::complex<float> alphac(std::move(alpha));
+      cblas_cgeru(order, Msize, Nsize, &alphac, itrX, incX, itrY, incY, itrA, LDA);
    }
 
+   template <typename _T, class = typename std::enable_if<std::is_convertible<_T, std::complex<double>>::value>::type>
    static void call (
       const CBLAS_ORDER& order,
       const unsigned long& Msize,
       const unsigned long& Nsize,
-      const std::complex<double>& alpha,
+      const _T& alpha,
       const std::complex<double>* itrX,
       const typename std::iterator_traits<std::complex<double>*>::difference_type& incX,
       const std::complex<double>* itrY,
@@ -121,7 +126,8 @@ template<> struct ger_impl<true>
       const unsigned long& LDA)
    {
       // FIXME: implement zgerc and zgeru separately.
-      cblas_zgeru(order, Msize, Nsize, &alpha, itrX, incX, itrY, incY, itrA, LDA);
+      const std::complex<double> alphac(std::move(alpha));
+      cblas_zgeru(order, Msize, Nsize, &alphac, itrX, incX, itrY, incY, itrA, LDA);
    }
 
 #endif // _HAS_CBLAS
@@ -208,7 +214,7 @@ void ger (
    static_assert(std::is_same<typename __traits_A::iterator_category, std::random_access_iterator_tag>::value,
                  "iterator A must be a random access iterator");
 
-   ger_impl<std::is_same<value_type, _T>::value>::call(order, Msize, Nsize, alpha, itrX, incX, itrY, incY, itrA, LDA);
+   ger_impl<std::is_convertible<_T, value_type>::value>::call(order, Msize, Nsize, alpha, itrX, incX, itrY, incY, itrA, LDA);
 }
 
 //  ================================================================================================
