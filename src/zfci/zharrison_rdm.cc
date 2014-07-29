@@ -258,6 +258,12 @@ void ZHarrison::compute_rdm12() {
             + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
   cout << "    *  recalculated FCI energy (state averaged)" << endl;
   cout << setw(29) << setprecision(8) << recomp_energy << endl;
+  const double twoelectron_energy =
+          (trace2("0000")*0.5 + trace2("1111")*0.5
+            + zdotc_(norb_*norb_*norb_*norb_, tmp0101->get_conjg()->data(), 1, rdm2_av_kramers(bitset<4>("0101"))->data(), 1)
+            + trace2("1100") + trace2("0100")*2.0 + trace2("1101")*2.0).real();
+  cout << "    *  recalculated FCI 2electron energy (state averaged)" << endl;
+  cout << setw(29) << setprecision(16) << twoelectron_energy << endl;
 
   // checking against the original energies
   const double orig_energy = accumulate(energy_.begin(), energy_.end(), 0.0) / energy_.size();
@@ -333,6 +339,7 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
   for (int i = 0; i != 2; ++i) {
     shared_ptr<const ZMatrix> ocoeff = jop_->kramers_coeff(i)->get_conjg();
     auto co = make_shared<ZMatrix>(*coeff_tot % *overlap * *ocoeff);
+    co->get_real_part()->print("co 2rdm",co->ndim());
     bitset<1> b(i);
     trans.insert(make_pair(b, co)); 
   }
@@ -369,6 +376,20 @@ shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
 
   // sort indices : G(ik|jl) -> G(ij|kl)
   SMITH::sort_indices<0,2,1,3,0,1,1,1>(ikjl->data(), out->data(), 2*norb_, 2*norb_, 2*norb_, 2*norb_);
+#if 0
+// DEBUG : check normalization trace condition and symmetry requirement
+  {
+    complex<double> norm2rdm = 0.0;
+    for (int i=0; i!=2*norb_; ++i) {
+      for (int j=0; j!=2*norb_; ++j) {
+        norm2rdm += out->element(j*2*norb_ + j, i*2*norb_ + i);
+      } 
+    } 
+    cout << setprecision(16) << " normalization 2RDM = " << real(norm2rdm) << endl;
+    // check overall symmetry
+    cout << setprecision(16) << " symmetry requirement rms = " << (*out - *out->transpose()).rms() << endl;
+  } 
+#endif
 
   return out;
 }
